@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{BCD6B896-6CD0-4601-AA13-5672A15E0CAD}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>AntShares</RootNamespace>
+    <AssemblyName>AntSharesCore</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>
+    </DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Security" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Core\AgencyTransaction.cs" />
+    <Compile Include="Core\Block.cs" />
+    <Compile Include="Core\ContractTransaction.cs" />
+    <Compile Include="Core\GenerationTransaction.cs" />
+    <Compile Include="Core\Helper.cs" />
+    <Compile Include="Core\Order.cs" />
+    <Compile Include="Core\RegisterTransaction.cs" />
+    <Compile Include="Core\RegisterType.cs" />
+    <Compile Include="Core\Scripts\ScriptBuilder.cs" />
+    <Compile Include="Core\Scripts\ScriptOp.cs" />
+    <Compile Include="Core\Scripts\Stack.cs" />
+    <Compile Include="Core\Transaction.cs" />
+    <Compile Include="Core\TransactionAttribute.cs" />
+    <Compile Include="Core\TransactionAttributeUsage.cs" />
+    <Compile Include="Core\TransactionInput.cs" />
+    <Compile Include="Core\TransactionOutput.cs" />
+    <Compile Include="Core\TransactionType.cs" />
+    <Compile Include="Cryptography\Helper.cs" />
+    <Compile Include="Cryptography\MerkleTree.cs" />
+    <Compile Include="IO\Helper.cs" />
+    <Compile Include="IO\ISerializable.cs" />
+    <Compile Include="Cryptography\Base58.cs" />
+    <Compile Include="Cryptography\Secp256r1Curve.cs" />
+    <Compile Include="Cryptography\Secp256r1Element.cs" />
+    <Compile Include="Cryptography\Secp256r1Point.cs" />
+    <Compile Include="Helper.cs" />
+    <Compile Include="Threading\ConcurrentSet.cs" />
+    <Compile Include="Network\LocalNode.cs" />
+    <Compile Include="Network\Message.cs" />
+    <Compile Include="Network\Payloads\Payload.cs" />
+    <Compile Include="Network\RemoteNode.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Threading\Helper.cs" />
+    <Compile Include="Threading\SemaphoreContext.cs" />
+    <Compile Include="Threading\Worker.cs" />
+    <Compile Include="UInt160.cs" />
+    <Compile Include="UInt256.cs" />
+    <Compile Include="UIntBase.cs" />
+    <Compile Include="Wallets\ProtectionContext.cs" />
+    <Compile Include="Wallets\Wallet.cs" />
+    <Compile Include="Wallets\WalletEntry.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
