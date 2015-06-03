@@ -1,7 +1,9 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO;
+using AntShares.Network.Payloads;
 using System;
 using System.IO;
+using System.Text;
 
 namespace AntShares.Network
 {
@@ -44,7 +46,7 @@ namespace AntShares.Network
 
         public BinaryReader OpenReader()
         {
-            return new BinaryReader(new MemoryStream(Payload, false));
+            return new BinaryReader(new MemoryStream(Payload, false), Encoding.UTF8);
         }
 
         public void Serialize(BinaryWriter writer)

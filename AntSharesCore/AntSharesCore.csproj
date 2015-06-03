@@ -64,14 +64,12 @@
     <Compile Include="Cryptography\Secp256r1Element.cs" />
     <Compile Include="Cryptography\Secp256r1Point.cs" />
     <Compile Include="Helper.cs" />
-    <Compile Include="Threading\ConcurrentSet.cs" />
     <Compile Include="Network\LocalNode.cs" />
     <Compile Include="Network\Message.cs" />
     <Compile Include="Network\Payloads\Payload.cs" />
+    <Compile Include="Network\Payloads\VersionPayload.cs" />
     <Compile Include="Network\RemoteNode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Threading\Helper.cs" />
-    <Compile Include="Threading\SemaphoreContext.cs" />
     <Compile Include="Threading\Worker.cs" />
     <Compile Include="UInt160.cs" />
     <Compile Include="UInt256.cs" />

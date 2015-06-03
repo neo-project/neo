@@ -1,11 +1,11 @@
 ﻿using AntShares.Threading;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,8 +20,6 @@ namespace AntShares.Network
         public const int DEFAULT_PORT = 10333;
 
         private static readonly string path_state = Path.Combine(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, "Data", "node.dat");
-        internal static readonly IPEndPoint localEndpoint = new IPEndPoint(Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork), DEFAULT_PORT);
-
         private static readonly string[] SeedList =
         {
             "seed1.antshares.org",
@@ -31,11 +29,12 @@ namespace AntShares.Network
             "seed5.antshares.org"
         };
 
-        private ConcurrentSet<IPEndPoint> unconnectedPeers = new ConcurrentSet<IPEndPoint>();
-        private ConcurrentDictionary<IPEndPoint, RemoteNode> pendingPeers = new ConcurrentDictionary<IPEndPoint, RemoteNode>();
-        private ConcurrentDictionary<IPEndPoint, RemoteNode> connectedPeers = new ConcurrentDictionary<IPEndPoint, RemoteNode>();
-        private static ConcurrentSet<IPEndPoint> badPeers = new ConcurrentSet<IPEndPoint>();
+        private HashSet<IPEndPoint> unconnectedPeers = new HashSet<IPEndPoint>();
+        private static HashSet<IPEndPoint> badPeers = new HashSet<IPEndPoint>();
+        internal HashSet<RemoteNode> pendingPeers = new HashSet<RemoteNode>();
+        internal Dictionary<IPEndPoint, RemoteNode> connectedPeers = new Dictionary<IPEndPoint, RemoteNode>();
 
+        internal readonly IPEndPoint LocalEndpoint;
         private TcpListener listener = new TcpListener(IPAddress.Any, DEFAULT_PORT);
         private Worker connectWorker;
         private int started = 0;
@@ -49,34 +48,37 @@ namespace AntShares.Network
             }
         }
 
-        public RemoteNode[] RemoteNodes
-        {
-            get
-            {
-                return connectedPeers.Values.ToArray();
-            }
-        }
+        public string UserAgent { get; set; }
 
-        public LocalNode()
+        public LocalNode(int port = 0)
         {
-            this.connectWorker = new Worker(string.Format("ConnectToPeersLoop@{0}", localEndpoint), ConnectToPeersLoop, true, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+            if (port == 0)
+                port = DEFAULT_PORT;
+            this.LocalEndpoint = new IPEndPoint(Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork), port);
+            this.connectWorker = new Worker(string.Format("ConnectToPeersLoop@{0}", LocalEndpoint), ConnectToPeersLoop, true, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+            this.UserAgent = string.Format("/AntSharesCore:{0}/", Assembly.GetExecutingAssembly().GetName().Version.ToString(3));
         }
 
         public async Task ConnectToPeerAsync(IPEndPoint remoteEndpoint)
         {
-            unconnectedPeers.Remove(remoteEndpoint);
-            if (pendingPeers.ContainsKey(remoteEndpoint) || connectedPeers.ContainsKey(remoteEndpoint))
-                return;
-            RemoteNode remoteNode = new RemoteNode(this, remoteEndpoint);
-            if (!pendingPeers.TryAdd(remoteEndpoint, remoteNode))
-                return;
-            remoteNode.Disconnected += RemoteNode_Disconnected;
-            remoteNode.NewPeers += RemoteNode_NewPeers;
-            if (await remoteNode.ConnectAsync())
+            RemoteNode remoteNode;
+            lock (unconnectedPeers)
             {
-                connectedPeers.TryAdd(remoteEndpoint, remoteNode);
+                unconnectedPeers.Remove(remoteEndpoint);
             }
-            pendingPeers.TryRemove(remoteEndpoint, out remoteNode);
+            lock (pendingPeers)
+            {
+                lock (connectedPeers)
+                {
+                    if (pendingPeers.Any(p => p.RemoteEndpoint == remoteEndpoint) || connectedPeers.ContainsKey(remoteEndpoint))
+                        return;
+                }
+                remoteNode = new RemoteNode(this, remoteEndpoint);
+                pendingPeers.Add(remoteNode);
+                remoteNode.Disconnected += RemoteNode_Disconnected;
+                remoteNode.NewPeers += RemoteNode_NewPeers;
+            }
+            await remoteNode.ConnectAsync();
         }
 
         private void ConnectToPeersLoop(CancellationToken cancel)
@@ -90,8 +92,11 @@ namespace AntShares.Network
                 List<Task> tasks = new List<Task>();
                 if (unconnectedCount > 0)
                 {
-                    int connectCount = Math.Min(unconnectedCount, maxConnections - (connectedCount + pendingCount));
-                    IPEndPoint[] remoteEndpoints = unconnectedPeers.Take(connectCount).ToArray();
+                    IPEndPoint[] remoteEndpoints;
+                    lock (unconnectedPeers)
+                    {
+                        remoteEndpoints = unconnectedPeers.Take(maxConnections - (connectedCount + pendingCount)).ToArray();
+                    }
                     foreach (IPEndPoint remoteEndpoint in remoteEndpoints)
                     {
                         if (cancel.IsCancellationRequested)
@@ -101,7 +106,12 @@ namespace AntShares.Network
                 }
                 else if (connectedCount > 0)
                 {
-                    foreach (RemoteNode remoteNode in connectedPeers.Values)
+                    RemoteNode[] remoteNodes;
+                    lock (connectedPeers)
+                    {
+                        remoteNodes = connectedPeers.Values.ToArray();
+                    }
+                    foreach (RemoteNode remoteNode in remoteNodes)
                     {
                         if (cancel.IsCancellationRequested)
                             return;
@@ -134,7 +144,14 @@ namespace AntShares.Network
                 connectWorker.Dispose();
                 if (started > 0)
                 {
-                    IPEndPoint[] peers = unconnectedPeers.Union(connectedPeers.Keys).Take(UNCONNECTED_MAX).ToArray();
+                    IPEndPoint[] peers;
+                    lock (unconnectedPeers)
+                    {
+                        lock (connectedPeers)
+                        {
+                            peers = unconnectedPeers.Union(connectedPeers.Keys).Take(UNCONNECTED_MAX).ToArray();
+                        }
+                    }
                     using (FileStream fs = new FileStream(path_state, FileMode.Create, FileAccess.Write, FileShare.None))
                     using (BinaryWriter writer = new BinaryWriter(fs))
                     {
@@ -145,23 +162,22 @@ namespace AntShares.Network
                             writer.Write((UInt16)endpoint.Port);
                         }
                     }
-                    foreach (RemoteNode remoteNode in pendingPeers.Values.ToArray())
+                    lock (connectedPeers)
                     {
-                        try
+                        foreach (RemoteNode remoteNode in connectedPeers.Values.ToArray())
                         {
                             remoteNode.Disconnect(false);
                         }
-                        catch { }
-                    }
-                    foreach (RemoteNode remoteNode in connectedPeers.Values.ToArray())
-                    {
-                        try
-                        {
-                            remoteNode.Disconnect(false);
-                        }
-                        catch { }
                     }
                 }
+            }
+        }
+
+        public RemoteNode[] GetRemoteNodes()
+        {
+            lock (connectedPeers)
+            {
+                return connectedPeers.Values.ToArray();
             }
         }
 
@@ -171,18 +187,46 @@ namespace AntShares.Network
             remoteNode.Disconnected -= RemoteNode_Disconnected;
             remoteNode.NewPeers -= RemoteNode_NewPeers;
             if (error)
-                badPeers.Add(remoteNode.RemoteEndpoint);
-            RemoteNode ignore;
-            unconnectedPeers.Remove(remoteNode.RemoteEndpoint);
-            pendingPeers.TryRemove(remoteNode.RemoteEndpoint, out ignore);
-            connectedPeers.TryRemove(remoteNode.RemoteEndpoint, out ignore);
+            {
+                lock (badPeers)
+                {
+                    badPeers.Add(remoteNode.RemoteEndpoint);
+                }
+            }
+            lock (unconnectedPeers)
+            {
+                lock (pendingPeers)
+                {
+                    lock (connectedPeers)
+                    {
+                        unconnectedPeers.Remove(remoteNode.RemoteEndpoint);
+                        pendingPeers.Remove(remoteNode);
+                        connectedPeers.Remove(remoteNode.RemoteEndpoint);
+                    }
+                }
+            }
         }
 
         private void RemoteNode_NewPeers(object sender, IPEndPoint[] peers)
         {
-            if (unconnectedPeers.Count < UNCONNECTED_MAX)
+            lock (unconnectedPeers)
             {
-                unconnectedPeers.UnionWith(peers.Except(badPeers).Except(connectedPeers.Keys).Except(pendingPeers.Keys));
+                if (unconnectedPeers.Count < UNCONNECTED_MAX)
+                {
+                    lock (badPeers)
+                    {
+                        lock (pendingPeers)
+                        {
+                            lock (connectedPeers)
+                            {
+                                unconnectedPeers.UnionWith(peers);
+                                unconnectedPeers.ExceptWith(badPeers);
+                                unconnectedPeers.ExceptWith(pendingPeers.Select(p => p.RemoteEndpoint));
+                                unconnectedPeers.ExceptWith(connectedPeers.Keys);
+                            }
+                        }
+                    }
+                }
             }
         }
 

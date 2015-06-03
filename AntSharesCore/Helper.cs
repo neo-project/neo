@@ -105,9 +105,9 @@ namespace AntShares
             return sb.ToString();
         }
 
-        public static UInt64 ToTimestamp(this DateTime time)
+        public static UInt32 ToTimestamp(this DateTime time)
         {
-            return (UInt64)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
+            return (UInt32)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
         }
     }
 }
