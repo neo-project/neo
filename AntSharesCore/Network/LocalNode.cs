@@ -230,7 +230,7 @@ namespace AntShares.Network
             }
         }
 
-        public void Start()
+        public async void Start()
         {
             if (Interlocked.Exchange(ref started, 1) == 0)
             {
@@ -250,6 +250,15 @@ namespace AntShares.Network
                 }
                 connectWorker.Start();
                 listener.Start();
+                while (disposed == 0)
+                {
+                    RemoteNode remoteNode = new RemoteNode(this, await listener.AcceptTcpClientAsync());
+                    lock (pendingPeers)
+                    {
+                        pendingPeers.Add(remoteNode);
+                    }
+                    remoteNode.StartProtocolAsync().Void();
+                }
             }
         }
     }
