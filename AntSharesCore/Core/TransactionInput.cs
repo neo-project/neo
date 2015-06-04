@@ -9,13 +9,13 @@ namespace AntShares.Core
         public UInt256 PrevTxId;
         public UInt16 PrevIndex;
 
-        public void Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(BinaryReader reader)
         {
             this.PrevTxId = reader.ReadSerializable<UInt256>();
             this.PrevIndex = reader.ReadUInt16();
         }
 
-        public void Serialize(BinaryWriter writer)
+        void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(PrevTxId);
             writer.Write(PrevIndex);

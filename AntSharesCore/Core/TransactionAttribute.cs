@@ -9,7 +9,7 @@ namespace AntShares.Core
         public TransactionAttributeUsage Usage;
         public byte[] Data;
 
-        public void Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(BinaryReader reader)
         {
             this.Usage = (TransactionAttributeUsage)reader.ReadByte();
             if (!Enum.IsDefined(typeof(TransactionAttributeUsage), Usage))
@@ -18,7 +18,7 @@ namespace AntShares.Core
             this.Data = reader.ReadBytes(32);
         }
 
-        public void Serialize(BinaryWriter writer)
+        void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Usage);
             writer.Write(Data);

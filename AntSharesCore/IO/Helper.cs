@@ -7,6 +7,15 @@ namespace AntShares.IO
 {
     internal static class Helper
     {
+        public static T AsSerializable<T>(this byte[] value) where T : ISerializable, new()
+        {
+            using (MemoryStream ms = new MemoryStream(value, false))
+            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            {
+                return reader.ReadSerializable<T>();
+            }
+        }
+
         public static byte[][] ReadBytesArray(this BinaryReader reader)
         {
             byte[][] array = new byte[reader.ReadVarInt()][];
@@ -57,6 +66,16 @@ namespace AntShares.IO
         public static string ReadVarString(this BinaryReader reader)
         {
             return Encoding.UTF8.GetString(reader.ReadBytes((int)reader.ReadVarInt()));
+        }
+
+        public static byte[] ToArray(this ISerializable value)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            {
+                value.Serialize(writer);
+                return ms.ToArray();
+            }
         }
 
         public static void Write(this BinaryWriter writer, ISerializable value)

@@ -11,7 +11,7 @@ namespace AntShares.Core
         public UInt64 Value;
         public UInt160 ScriptHash;
 
-        public void Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(BinaryReader reader)
         {
             this.AssetType = reader.ReadSerializable<UInt256>();
             this.AssetAttribute = reader.ReadByte();
@@ -19,7 +19,7 @@ namespace AntShares.Core
             this.ScriptHash = reader.ReadSerializable<UInt160>();
         }
 
-        public void Serialize(BinaryWriter writer)
+        void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(AssetType);
             writer.Write(AssetAttribute);

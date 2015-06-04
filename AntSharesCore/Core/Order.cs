@@ -16,7 +16,7 @@ namespace AntShares.Core
         public TransactionInput[] Inputs;
         public byte[][] Scripts;
 
-        public void Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(BinaryReader reader)
         {
             if (reader.ReadByte() != OrderType)
                 throw new FormatException();
@@ -30,7 +30,7 @@ namespace AntShares.Core
             this.Scripts = reader.ReadBytesArray();
         }
 
-        public void Serialize(BinaryWriter writer)
+        void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(OrderType);
             writer.Write(AssetType);

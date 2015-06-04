@@ -1,4 +1,5 @@
-﻿using AntShares.IO;
+﻿using AntShares.Cryptography;
+using AntShares.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,12 +13,26 @@ namespace AntShares.Core
         public TransactionOutput[] Outputs;
         public byte[][] Scripts;
 
+        private UInt256 hash = null;
+
+        public UInt256 Hash
+        {
+            get
+            {
+                if (hash == null)
+                {
+                    hash = new UInt256(this.ToArray().Sha256().Sha256());
+                }
+                return hash;
+            }
+        }
+
         protected Transaction(TransactionType type)
         {
             this.Type = type;
         }
 
-        public void Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(BinaryReader reader)
         {
             if ((TransactionType)reader.ReadByte() != Type)
                 throw new FormatException();
@@ -26,7 +41,7 @@ namespace AntShares.Core
 
         protected abstract void DeserializeExclusiveData(BinaryReader reader);
 
-        public static Transaction DeserializeFrom(BinaryReader reader)
+        internal static Transaction DeserializeFrom(BinaryReader reader)
         {
             TransactionType type = (TransactionType)reader.ReadByte();
             string typeName = string.Format("{0}.{1}", typeof(Transaction).Namespace, type);
@@ -45,7 +60,7 @@ namespace AntShares.Core
             this.Scripts = reader.ReadBytesArray();
         }
 
-        public void Serialize(BinaryWriter writer)
+        void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Type);
             SerializeExclusiveData(writer);

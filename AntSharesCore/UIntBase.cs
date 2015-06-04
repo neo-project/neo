@@ -21,7 +21,7 @@ namespace AntShares
             this.data_bytes = value;
         }
 
-        public void Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(BinaryReader reader)
         {
             reader.Read(data_bytes, 0, data_bytes.Length);
         }
@@ -51,7 +51,7 @@ namespace AntShares
             return BitConverter.ToInt32(data_bytes, 0);
         }
 
-        public void Serialize(BinaryWriter writer)
+        void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(data_bytes);
         }

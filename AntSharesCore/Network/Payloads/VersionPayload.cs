@@ -4,10 +4,10 @@ using System.IO;
 
 namespace AntShares.Network.Payloads
 {
-    internal class VersionPayload : Payload
+    public class VersionPayload : ISerializable
     {
-        public byte Version;
-        public byte Services;
+        public UInt32 Version;
+        public UInt64 Services;
         public UInt32 Timestamp;
         public UInt16 Port;
         public string UserAgent;
@@ -18,7 +18,7 @@ namespace AntShares.Network.Payloads
             return new VersionPayload
             {
                 Version = LocalNode.PROTOCOL_VERSION,
-                Services = 0,
+                Services = 1,
                 Timestamp = DateTime.Now.ToTimestamp(),
                 Port = (UInt16)port,
                 UserAgent = userAgent,
@@ -26,17 +26,17 @@ namespace AntShares.Network.Payloads
             };
         }
 
-        public override void Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(BinaryReader reader)
         {
-            Version = reader.ReadByte();
-            Services = reader.ReadByte();
+            Version = reader.ReadUInt32();
+            Services = reader.ReadUInt64();
             Timestamp = reader.ReadUInt32();
             Port = reader.ReadUInt16();
             UserAgent = reader.ReadVarString();
             StartHeight = reader.ReadUInt32();
         }
 
-        public override void Serialize(BinaryWriter writer)
+        void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(Version);
             writer.Write(Services);

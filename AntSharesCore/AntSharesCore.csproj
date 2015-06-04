@@ -47,6 +47,7 @@
     <Compile Include="Core\RegisterTransaction.cs" />
     <Compile Include="Core\RegisterType.cs" />
     <Compile Include="Core\Scripts\ScriptBuilder.cs" />
+    <Compile Include="Core\Scripts\ScriptEngine.cs" />
     <Compile Include="Core\Scripts\ScriptOp.cs" />
     <Compile Include="Core\Scripts\Stack.cs" />
     <Compile Include="Core\Transaction.cs" />
@@ -66,7 +67,11 @@
     <Compile Include="Helper.cs" />
     <Compile Include="Network\LocalNode.cs" />
     <Compile Include="Network\Message.cs" />
-    <Compile Include="Network\Payloads\Payload.cs" />
+    <Compile Include="Network\Payloads\AddrPayload.cs" />
+    <Compile Include="Network\Payloads\GetDataPayload.cs" />
+    <Compile Include="Network\Payloads\InventoryType.cs" />
+    <Compile Include="Network\Payloads\InventoryVector.cs" />
+    <Compile Include="Network\Payloads\NetworkAddressWithTime.cs" />
     <Compile Include="Network\Payloads\VersionPayload.cs" />
     <Compile Include="Network\RemoteNode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

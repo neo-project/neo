@@ -1,6 +1,5 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO;
-using AntShares.Network.Payloads;
 using System;
 using System.IO;
 using System.Text;
@@ -14,7 +13,7 @@ namespace AntShares.Network
         public UInt32 Checksum;
         public byte[] Payload;
 
-        public static Message Create(string command, Payload payload = null)
+        public static Message Create(string command, ISerializable payload = null)
         {
             return Create(command, payload == null ? new byte[0] : payload.ToArray());
         }
@@ -30,7 +29,7 @@ namespace AntShares.Network
             return message;
         }
 
-        public void Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(BinaryReader reader)
         {
             if (reader.ReadUInt32() != Magic)
                 throw new FormatException();
@@ -49,7 +48,7 @@ namespace AntShares.Network
             return new BinaryReader(new MemoryStream(Payload, false), Encoding.UTF8);
         }
 
-        public void Serialize(BinaryWriter writer)
+        void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(Magic);
             writer.WriteFixedString(Command, 12);

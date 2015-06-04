@@ -13,7 +13,7 @@ namespace AntShares.Network
 {
     public class LocalNode : IDisposable
     {
-        public const byte PROTOCOL_VERSION = 0x00;
+        public const UInt32 PROTOCOL_VERSION = 0;
         private const int CONNECTED_MAX = 100;
         private const int PENDING_MAX = CONNECTED_MAX;
         private const int UNCONNECTED_MAX = 5000;

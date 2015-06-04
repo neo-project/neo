@@ -1,4 +1,5 @@
-﻿using AntShares.IO;
+﻿using AntShares.Core;
+using AntShares.IO;
 using AntShares.Network.Payloads;
 using System;
 using System.IO;
@@ -14,6 +15,7 @@ namespace AntShares.Network
     public class RemoteNode : IDisposable
     {
         public event EventHandler<bool> Disconnected;
+        internal event EventHandler<Block> NewBlock;
         internal event EventHandler<IPEndPoint[]> NewPeers;
 
         private LocalNode localNode;
@@ -25,7 +27,7 @@ namespace AntShares.Network
 
         public IPEndPoint RemoteEndpoint { get; private set; }
 
-        public byte Version { get; private set; }
+        public VersionPayload Version { get; private set; }
 
         internal RemoteNode(LocalNode localNode, IPEndPoint remoteEndpoint)
         {
@@ -78,11 +80,59 @@ namespace AntShares.Network
             Disconnect(false);
         }
 
+        private void OnAddrMessageReceived(AddrPayload payload)
+        {
+            IPEndPoint[] peers = payload.AddressList.Select(p => p.GetIPEndPoint()).Where(p => !p.Equals(localNode.LocalEndpoint)).ToArray();
+            if (NewPeers != null && peers.Length > 0)
+            {
+                NewPeers(this, peers);
+            }
+        }
+
+        private void OnBlockMessageReceived(Block block)
+        {
+            if (NewBlock != null)
+            {
+                NewBlock(this, block);
+            }
+        }
+
         private void OnConnected()
         {
             reader = new BinaryReader(tcp.GetStream(), Encoding.UTF8, true);
             writer = new BinaryWriter(tcp.GetStream(), Encoding.UTF8, true);
             connected = true;
+        }
+
+        private void OnGetAddrMessageReceived()
+        {
+            AddrPayload payload;
+            lock (localNode.connectedPeers)
+            {
+                payload = AddrPayload.Create(localNode.connectedPeers.Take(10).Select(p => NetworkAddressWithTime.Create(p.Value.RemoteEndpoint, p.Value.Version.Services, p.Value.Version.Timestamp)).ToArray());
+            }
+            SendMessage("addr", payload);
+        }
+
+        private void OnMessageReceived(Message message)
+        {
+            switch (message.Command)
+            {
+                case "addr":
+                    OnAddrMessageReceived(message.Payload.AsSerializable<AddrPayload>());
+                    break;
+                case "block":
+                    OnBlockMessageReceived(message.Payload.AsSerializable<Block>());
+                    break;
+                case "getaddr":
+                    OnGetAddrMessageReceived();
+                    break;
+                case "verack":
+                case "version":
+                default:
+                    Disconnect(true);
+                    break;
+            }
         }
 
         private void ReceiveLoop()
@@ -92,7 +142,15 @@ namespace AntShares.Network
                 Message message = ReceiveMessage();
                 if (message == null)
                     break;
-                //OnMessageReceived(message);
+                try
+                {
+                    OnMessageReceived(message);
+                }
+                catch (FormatException)
+                {
+                    Disconnect(true);
+                    break;
+                }
             }
         }
 
@@ -123,7 +181,7 @@ namespace AntShares.Network
 
         internal async Task RequestPeersAsync()
         {
-
+            await SendMessageAsync("getaddr");
         }
 
         private bool SendMessage(Message message)
@@ -148,7 +206,7 @@ namespace AntShares.Network
             return false;
         }
 
-        private bool SendMessage(string command, Payload payload = null)
+        private bool SendMessage(string command, ISerializable payload = null)
         {
             return SendMessage(Message.Create(command, payload));
         }
@@ -161,7 +219,7 @@ namespace AntShares.Network
             });
         }
 
-        private async Task<bool> SendMessageAsync(string command, Payload payload = null)
+        private async Task<bool> SendMessageAsync(string command, ISerializable payload = null)
         {
             return await SendMessageAsync(Message.Create(command, payload));
         }
@@ -178,24 +236,23 @@ namespace AntShares.Network
                 Disconnect(true);
                 return;
             }
-            VersionPayload payload;
             try
             {
-                payload = Payload.FromBytes<VersionPayload>(message.Payload);
+                Version = message.Payload.AsSerializable<VersionPayload>();
             }
             catch (FormatException)
             {
                 Disconnect(true);
                 return;
             }
-            if (RemoteEndpoint != null && RemoteEndpoint.Port != payload.Port)
+            if (RemoteEndpoint != null && RemoteEndpoint.Port != Version.Port)
             {
                 Disconnect(true);
                 return;
             }
             if (RemoteEndpoint == null)
             {
-                IPEndPoint remoteEndpoint = new IPEndPoint(((IPEndPoint)tcp.Client.RemoteEndPoint).Address, payload.Port);
+                IPEndPoint remoteEndpoint = new IPEndPoint(((IPEndPoint)tcp.Client.RemoteEndPoint).Address, Version.Port);
                 lock (localNode.pendingPeers)
                 {
                     lock (localNode.connectedPeers)
