@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace AntShares
 {
-    public class UInt160 : UIntBase
+    public class UInt160 : UIntBase, IComparable<UInt160>
     {
         public static readonly UInt160 Zero = new UInt160();
 
@@ -16,6 +16,20 @@ namespace AntShares
         public UInt160(byte[] value)
             : base(20, value)
         {
+        }
+
+        public int CompareTo(UInt160 other)
+        {
+            byte[] x = ToArray();
+            byte[] y = other.ToArray();
+            for (int i = x.Length - 1; i >= 0; i--)
+            {
+                if (x[i] > y[i])
+                    return 1;
+                if (x[i] < y[i])
+                    return -1;
+            }
+            return 0;
         }
 
         public static UInt160 Parse(string value)
@@ -52,6 +66,26 @@ namespace AntShares
                 }
             result = new UInt160(data.Reverse().ToArray());
             return true;
+        }
+
+        public static bool operator >(UInt160 left, UInt160 right)
+        {
+            return left.CompareTo(right) > 0;
+        }
+
+        public static bool operator >=(UInt160 left, UInt160 right)
+        {
+            return left.CompareTo(right) >= 0;
+        }
+
+        public static bool operator <(UInt160 left, UInt160 right)
+        {
+            return left.CompareTo(right) < 0;
+        }
+
+        public static bool operator <=(UInt160 left, UInt160 right)
+        {
+            return left.CompareTo(right) <= 0;
         }
     }
 }

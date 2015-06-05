@@ -1,10 +1,11 @@
-﻿using AntShares.IO;
+﻿using AntShares.Cryptography;
+using AntShares.IO;
 using System;
 using System.IO;
 
 namespace AntShares.Core
 {
-    public class Order : ISerializable
+    public class Order : ISerializable, ISignable
     {
         public const byte OrderType = 0;
         public UInt256 AssetType;
@@ -28,6 +29,41 @@ namespace AntShares.Core
             this.Agent = reader.ReadSerializable<UInt160>();
             this.Inputs = reader.ReadSerializableArray<TransactionInput>();
             this.Scripts = reader.ReadBytesArray();
+        }
+
+        byte[] ISignable.GetHashForSigning()
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms))
+            {
+                writer.Write(OrderType);
+                writer.Write(AssetType);
+                writer.Write(ValueType);
+                writer.Write(Amount);
+                writer.Write(Price);
+                writer.Write(ScriptHash);
+                writer.Write(Agent);
+                writer.Write(Inputs);
+                writer.Flush();
+                return ms.ToArray().Sha256();
+            }
+        }
+
+        UInt160[] ISignable.GetScriptHashesForVerifying()
+        {
+            //TODO: 列出需要对订单签名的地址列表
+            //1. 所有的输入地址
+            //2. 如果订单中购买或售出的资产是股权，那么输出ScriptHash也需要对订单签名
+            //需要本地区块链数据库，否则无法验证
+            //3. 无法验证的情况下，抛出异常：
+            //throw new InvalidOperationException();
+
+            throw new NotImplementedException();
+        }
+
+        byte[][] ISignable.GetScriptsForVerifying()
+        {
+            return Scripts;
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

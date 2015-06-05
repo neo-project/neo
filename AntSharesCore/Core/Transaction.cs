@@ -6,7 +6,7 @@ using System.IO;
 
 namespace AntShares.Core
 {
-    public abstract class Transaction : ISerializable
+    public abstract class Transaction : ISerializable, ISignable
     {
         public readonly TransactionType Type;
         public TransactionInput[] Inputs;
@@ -58,6 +58,37 @@ namespace AntShares.Core
             this.Inputs = reader.ReadSerializableArray<TransactionInput>();
             this.Outputs = reader.ReadSerializableArray<TransactionOutput>();
             this.Scripts = reader.ReadBytesArray();
+        }
+
+        byte[] ISignable.GetHashForSigning()
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms))
+            {
+                writer.Write((byte)Type);
+                SerializeExclusiveData(writer);
+                writer.Write(Inputs);
+                writer.Write(Outputs);
+                writer.Flush();
+                return ms.ToArray().Sha256();
+            }
+        }
+
+        public virtual UInt160[] GetScriptHashesForVerifying()
+        {
+            //TODO: 获取交易中所有需要签名的地址
+            //1. 获取所有 TransactionInput 所指向的 TransactionOutput 中的 ScriptHash
+            //2. 去重并排序
+            //需要本地区块链数据库，否则无法验证
+            //3. 无法验证的情况下，抛出异常：
+            //throw new InvalidOperationException();
+
+            throw new NotImplementedException();
+        }
+
+        byte[][] ISignable.GetScriptsForVerifying()
+        {
+            return Scripts;
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

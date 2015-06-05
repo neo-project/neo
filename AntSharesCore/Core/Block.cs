@@ -1,5 +1,4 @@
-﻿using AntShares.Core.Scripts;
-using AntShares.Cryptography;
+﻿using AntShares.Cryptography;
 using AntShares.IO;
 using System;
 using System.IO;
@@ -7,7 +6,7 @@ using System.Linq;
 
 namespace AntShares.Core
 {
-    public class Block : ISerializable
+    public class Block : ISerializable, ISignable
     {
         public const UInt32 Version = 0;
         public UInt256 PrevBlock;
@@ -27,17 +26,22 @@ namespace AntShares.Core
             {
                 if (hash == null)
                 {
-                    hash = new UInt256(this.ToArray().Sha256().Sha256());
+                    using (MemoryStream ms = new MemoryStream())
+                    using (BinaryWriter writer = new BinaryWriter(ms))
+                    {
+                        writer.Write(Version);
+                        writer.Write(PrevBlock);
+                        writer.Write(MerkleRoot);
+                        writer.Write(Timestamp);
+                        writer.Write(Bits);
+                        writer.Write(Nonce);
+                        writer.Write(Miner);
+                        writer.WriteVarInt(Script.Length); writer.Write(Script);
+                        writer.Flush();
+                        hash = new UInt256(ms.ToArray().Sha256().Sha256());
+                    }
                 }
                 return hash;
-            }
-        }
-
-        private byte[] CreateScript()
-        {
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                return sb.Add(Script).Push(ScriptOp.OP_DUP).Push(ScriptOp.OP_HASH160).Push(Miner).Push(ScriptOp.OP_EQUALVERIFY).Push(ScriptOp.OP_EVAL).ToArray();
             }
         }
 
@@ -53,7 +57,7 @@ namespace AntShares.Core
             this.Nonce = reader.ReadUInt32();
             this.Miner = reader.ReadSerializable<UInt160>();
             this.Script = reader.ReadBytes((int)reader.ReadVarInt());
-            if (!ScriptEngine.Execute(CreateScript(), GetHashForSigning()))
+            if (!this.Verify())
                 throw new FormatException();
             this.Transactions = new Transaction[reader.ReadVarInt()];
             for (int i = 0; i < Transactions.Length; i++)
@@ -64,7 +68,7 @@ namespace AntShares.Core
                 throw new FormatException();
         }
 
-        private byte[] GetHashForSigning()
+        byte[] ISignable.GetHashForSigning()
         {
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms))
@@ -77,8 +81,18 @@ namespace AntShares.Core
                 writer.Write(Nonce);
                 writer.Write(Miner);
                 writer.Flush();
-                return ms.ToArray();
+                return ms.ToArray().Sha256();
             }
+        }
+
+        UInt160[] ISignable.GetScriptHashesForVerifying()
+        {
+            return new UInt160[] { Miner };
+        }
+
+        byte[][] ISignable.GetScriptsForVerifying()
+        {
+            return new byte[][] { Script };
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
