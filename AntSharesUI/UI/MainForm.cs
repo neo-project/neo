@@ -1,6 +1,7 @@
 ﻿using AntShares.Core;
 using AntShares.Wallets;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -48,6 +49,16 @@ namespace AntShares.UI
         private void 修改密码CToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //弹出对话框，验证原密码，保存新密码
+        }
+
+        private void 官网WToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Process.Start("https://weangel.com/project.aspx?id=57");
+        }
+
+        private void 开发人员工具TToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

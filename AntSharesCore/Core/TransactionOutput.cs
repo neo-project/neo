@@ -8,14 +8,14 @@ namespace AntShares.Core
     {
         public UInt256 AssetType;
         public byte AssetAttribute;
-        public UInt64 Value;
+        public Int64 Value;
         public UInt160 ScriptHash;
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
             this.AssetType = reader.ReadSerializable<UInt256>();
             this.AssetAttribute = reader.ReadByte();
-            this.Value = reader.ReadUInt64();
+            this.Value = reader.ReadInt64();
             this.ScriptHash = reader.ReadSerializable<UInt160>();
         }
 

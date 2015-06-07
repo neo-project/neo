@@ -341,7 +341,7 @@ namespace AntShares.Core.Scripts
                         byte[][] pubkeys = new byte[n][];
                         for (int i = 0; i < n; i++)
                         {
-                            pubkeys[i] = stack.PopBytes();
+                            pubkeys[i] = Secp256r1Point.DecodePoint(stack.PopBytes()).EncodePoint(false).Skip(1).ToArray();
                         }
                         byte m = (byte)stack.PopBigInteger();
                         if (m < 1 || m > n) return false;
@@ -415,8 +415,7 @@ namespace AntShares.Core.Scripts
         private static bool VerifySignature(byte[] hash, byte[] signature, byte[] pubkey)
         {
             const int ECDSA_PUBLIC_P256_MAGIC = 0x31534345;
-            pubkey = Secp256r1Point.DecodePoint(pubkey).EncodePoint(false);
-            pubkey = BitConverter.GetBytes(ECDSA_PUBLIC_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey.Skip(1)).ToArray();
+            pubkey = BitConverter.GetBytes(ECDSA_PUBLIC_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey).ToArray();
             using (CngKey key = CngKey.Import(pubkey, CngKeyBlobFormat.EccPublicBlob))
             using (ECDsaCng ecdsa = new ECDsaCng(key))
             {

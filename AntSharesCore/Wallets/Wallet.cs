@@ -42,13 +42,13 @@ namespace AntShares.Wallets
                 throw new ArgumentException();
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.Push(ScriptOp.OP_1 - 1 + m);
+                sb.Add(ScriptOp.OP_1 - 1 + m);
                 for (int i = 0; i < publicKey.Length; i++)
                 {
                     sb.Push(publicKey[i]);
                 }
-                sb.Push(ScriptOp.OP_1 - 1 + (byte)publicKey.Length);
-                sb.Push(ScriptOp.OP_CHECKMULTISIG);
+                sb.Add(ScriptOp.OP_1 - 1 + (byte)publicKey.Length);
+                sb.Add(ScriptOp.OP_CHECKMULTISIG);
                 return sb.ToArray();
             }
         }

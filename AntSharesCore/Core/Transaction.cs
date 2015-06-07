@@ -106,5 +106,19 @@ namespace AntShares.Core
         }
 
         protected abstract void SerializeExclusiveData(BinaryWriter writer);
+
+        byte[] ISignable.ToUnsignedArray()
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms))
+            {
+                writer.Write((byte)Type);
+                SerializeExclusiveData(writer);
+                writer.Write(Inputs);
+                writer.Write(Outputs);
+                writer.Flush();
+                return ms.ToArray();
+            }
+        }
     }
 }

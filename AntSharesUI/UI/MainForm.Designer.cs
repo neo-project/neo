@@ -34,6 +34,15 @@
             this.打开钱包数据库OToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.修改密码CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            this.退出XToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.帮助HToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.查看帮助VToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.官网WToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            this.开发人员工具TToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
+            this.关于AntSharesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.listView1 = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.menuStrip1.SuspendLayout();
@@ -42,7 +51,8 @@
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.钱包WToolStripMenuItem});
+            this.钱包WToolStripMenuItem,
+            this.帮助HToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Padding = new System.Windows.Forms.Padding(7, 3, 0, 3);
@@ -56,7 +66,9 @@
             this.创建钱包数据库NToolStripMenuItem,
             this.打开钱包数据库OToolStripMenuItem,
             this.toolStripSeparator1,
-            this.修改密码CToolStripMenuItem});
+            this.修改密码CToolStripMenuItem,
+            this.toolStripSeparator2,
+            this.退出XToolStripMenuItem});
             this.钱包WToolStripMenuItem.Name = "钱包WToolStripMenuItem";
             this.钱包WToolStripMenuItem.Size = new System.Drawing.Size(64, 21);
             this.钱包WToolStripMenuItem.Text = "钱包(&W)";
@@ -87,6 +99,66 @@
             this.修改密码CToolStripMenuItem.Size = new System.Drawing.Size(187, 22);
             this.修改密码CToolStripMenuItem.Text = "修改密码(&C)...";
             this.修改密码CToolStripMenuItem.Click += new System.EventHandler(this.修改密码CToolStripMenuItem_Click);
+            // 
+            // toolStripSeparator2
+            // 
+            this.toolStripSeparator2.Name = "toolStripSeparator2";
+            this.toolStripSeparator2.Size = new System.Drawing.Size(184, 6);
+            // 
+            // 退出XToolStripMenuItem
+            // 
+            this.退出XToolStripMenuItem.Name = "退出XToolStripMenuItem";
+            this.退出XToolStripMenuItem.Size = new System.Drawing.Size(187, 22);
+            this.退出XToolStripMenuItem.Text = "退出(&X)";
+            // 
+            // 帮助HToolStripMenuItem
+            // 
+            this.帮助HToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.查看帮助VToolStripMenuItem,
+            this.官网WToolStripMenuItem,
+            this.toolStripSeparator3,
+            this.开发人员工具TToolStripMenuItem,
+            this.toolStripSeparator4,
+            this.关于AntSharesToolStripMenuItem});
+            this.帮助HToolStripMenuItem.Name = "帮助HToolStripMenuItem";
+            this.帮助HToolStripMenuItem.Size = new System.Drawing.Size(61, 21);
+            this.帮助HToolStripMenuItem.Text = "帮助(&H)";
+            // 
+            // 查看帮助VToolStripMenuItem
+            // 
+            this.查看帮助VToolStripMenuItem.Name = "查看帮助VToolStripMenuItem";
+            this.查看帮助VToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.查看帮助VToolStripMenuItem.Text = "查看帮助(&V)";
+            // 
+            // 官网WToolStripMenuItem
+            // 
+            this.官网WToolStripMenuItem.Name = "官网WToolStripMenuItem";
+            this.官网WToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.官网WToolStripMenuItem.Text = "官网(&W)";
+            this.官网WToolStripMenuItem.Click += new System.EventHandler(this.官网WToolStripMenuItem_Click);
+            // 
+            // toolStripSeparator3
+            // 
+            this.toolStripSeparator3.Name = "toolStripSeparator3";
+            this.toolStripSeparator3.Size = new System.Drawing.Size(160, 6);
+            // 
+            // 开发人员工具TToolStripMenuItem
+            // 
+            this.开发人员工具TToolStripMenuItem.Name = "开发人员工具TToolStripMenuItem";
+            this.开发人员工具TToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.开发人员工具TToolStripMenuItem.Text = "开发人员工具(&T)";
+            this.开发人员工具TToolStripMenuItem.Click += new System.EventHandler(this.开发人员工具TToolStripMenuItem_Click);
+            // 
+            // toolStripSeparator4
+            // 
+            this.toolStripSeparator4.Name = "toolStripSeparator4";
+            this.toolStripSeparator4.Size = new System.Drawing.Size(160, 6);
+            // 
+            // 关于AntSharesToolStripMenuItem
+            // 
+            this.关于AntSharesToolStripMenuItem.Name = "关于AntSharesToolStripMenuItem";
+            this.关于AntSharesToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.关于AntSharesToolStripMenuItem.Text = "关于&AntShares";
             // 
             // listView1
             // 
@@ -138,6 +210,15 @@
         private System.Windows.Forms.ToolStripMenuItem 修改密码CToolStripMenuItem;
         private System.Windows.Forms.ListView listView1;
         private System.Windows.Forms.ColumnHeader columnHeader1;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
+        private System.Windows.Forms.ToolStripMenuItem 退出XToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem 帮助HToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem 查看帮助VToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem 官网WToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
+        private System.Windows.Forms.ToolStripMenuItem 开发人员工具TToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
+        private System.Windows.Forms.ToolStripMenuItem 关于AntSharesToolStripMenuItem;
     }
 }
 

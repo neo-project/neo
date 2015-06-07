@@ -78,5 +78,23 @@ namespace AntShares.Core
             writer.Write(Inputs);
             writer.Write(Scripts);
         }
+
+        byte[] ISignable.ToUnsignedArray()
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms))
+            {
+                writer.Write(OrderType);
+                writer.Write(AssetType);
+                writer.Write(ValueType);
+                writer.Write(Amount);
+                writer.Write(Price);
+                writer.Write(ScriptHash);
+                writer.Write(Agent);
+                writer.Write(Inputs);
+                writer.Flush();
+                return ms.ToArray();
+            }
+        }
     }
 }

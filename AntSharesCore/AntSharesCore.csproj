@@ -36,14 +36,17 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Security" />
+    <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\AgencyTransaction.cs" />
     <Compile Include="Core\Block.cs" />
+    <Compile Include="Core\Blockchain.cs" />
     <Compile Include="Core\ContractTransaction.cs" />
     <Compile Include="Core\GenerationTransaction.cs" />
     <Compile Include="Core\Helper.cs" />
     <Compile Include="Core\ISignable.cs" />
+    <Compile Include="Core\MultiSigContext.cs" />
     <Compile Include="Core\Order.cs" />
     <Compile Include="Core\RegisterTransaction.cs" />
     <Compile Include="Core\RegisterType.cs" />
@@ -51,6 +54,7 @@
     <Compile Include="Core\Scripts\ScriptEngine.cs" />
     <Compile Include="Core\Scripts\ScriptOp.cs" />
     <Compile Include="Core\Scripts\Stack.cs" />
+    <Compile Include="Core\SignatureContext.cs" />
     <Compile Include="Core\Transaction.cs" />
     <Compile Include="Core\TransactionAttribute.cs" />
     <Compile Include="Core\TransactionAttributeUsage.cs" />
@@ -66,6 +70,12 @@
     <Compile Include="Cryptography\Secp256r1Element.cs" />
     <Compile Include="Cryptography\Secp256r1Point.cs" />
     <Compile Include="Helper.cs" />
+    <Compile Include="IO\Json\JArray.cs" />
+    <Compile Include="IO\Json\JBoolean.cs" />
+    <Compile Include="IO\Json\JNull.cs" />
+    <Compile Include="IO\Json\JNumber.cs" />
+    <Compile Include="IO\Json\JObject.cs" />
+    <Compile Include="IO\Json\JString.cs" />
     <Compile Include="Network\LocalNode.cs" />
     <Compile Include="Network\Message.cs" />
     <Compile Include="Network\Payloads\AddrPayload.cs" />
