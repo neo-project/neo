@@ -14,8 +14,26 @@ namespace AntShares.Core
             this.Usage = (TransactionAttributeUsage)reader.ReadByte();
             if (!Enum.IsDefined(typeof(TransactionAttributeUsage), Usage))
                 throw new FormatException();
-            //Data的长度由Usage决定，目前只有32字节一种情况
-            this.Data = reader.ReadBytes(32);
+            int length;
+            switch (Usage)
+            {
+                case TransactionAttributeUsage.ContractHash:
+                case TransactionAttributeUsage.ECDH02:
+                case TransactionAttributeUsage.ECDH03:
+                    length = 32;
+                    break;
+                case TransactionAttributeUsage.LockAfter:
+                case TransactionAttributeUsage.LockBefore:
+                    length = 4;
+                    break;
+                default:
+                    if (Usage >= TransactionAttributeUsage.Remark)
+                        length = reader.ReadByte();
+                    else
+                        throw new FormatException();
+                    break;
+            }
+            this.Data = reader.ReadBytes(length);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

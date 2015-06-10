@@ -31,6 +31,23 @@ namespace AntShares.Core
             this.Scripts = reader.ReadBytesArray();
         }
 
+        void ISignable.FromUnsignedArray(byte[] value)
+        {
+            using (MemoryStream ms = new MemoryStream(value, false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                if (reader.ReadByte() != OrderType)
+                    throw new FormatException();
+                this.AssetType = reader.ReadSerializable<UInt256>();
+                this.ValueType = reader.ReadSerializable<UInt256>();
+                this.Amount = reader.ReadInt64();
+                this.Price = reader.ReadUInt64();
+                this.ScriptHash = reader.ReadSerializable<UInt160>();
+                this.Agent = reader.ReadSerializable<UInt160>();
+                this.Inputs = reader.ReadSerializableArray<TransactionInput>();
+            }
+        }
+
         byte[] ISignable.GetHashForSigning()
         {
             using (MemoryStream ms = new MemoryStream())

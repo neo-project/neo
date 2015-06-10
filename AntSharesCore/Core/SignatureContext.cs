@@ -1,6 +1,7 @@
 ﻿using AntShares.IO.Json;
 using System;
 using System.Linq;
+using System.Reflection;
 
 namespace AntShares.Core
 {
@@ -47,6 +48,32 @@ namespace AntShares.Core
             return signatures.Select(p => p.GetScript()).ToArray();
         }
 
+        public static SignatureContext Parse(string value)
+        {
+            JObject json = JObject.Parse(value);
+            string typename = string.Format("{0}.{1}", typeof(SignatureContext).Namespace, json["type"].AsString());
+            ISignable signable = Assembly.GetExecutingAssembly().CreateInstance(typename) as ISignable;
+            signable.FromUnsignedArray(json["hex"].AsString().HexToBytes());
+            SignatureContext context = new SignatureContext(signable);
+            JArray multisignatures = (JArray)json["multi_signatures"];
+            for (int i = 0; i < multisignatures.Count; i++)
+            {
+                if (multisignatures[i] != null)
+                {
+                    context.signatures[i] = new MultiSigContext(multisignatures[i]["redeem_script"].AsString().HexToBytes());
+                    JArray sigs = (JArray)multisignatures[i]["signatures"];
+                    for (int j = 0; j < sigs.Count; j++)
+                    {
+                        if (sigs[j] != null)
+                        {
+                            context.signatures[i].signatures[j] = sigs[j].AsString().HexToBytes();
+                        }
+                    }
+                }
+            }
+            return context;
+        }
+
         public override string ToString()
         {
             JObject json = new JObject();
@@ -57,7 +84,7 @@ namespace AntShares.Core
             {
                 if (signatures[i] == null)
                 {
-                    multisignatures.Add(JNull.Value);
+                    multisignatures.Add(null);
                 }
                 else
                 {
@@ -68,7 +95,7 @@ namespace AntShares.Core
                     {
                         if (signatures[i].signatures[j] == null)
                         {
-                            sigs.Add(JNull.Value);
+                            sigs.Add(null);
                         }
                         else
                         {

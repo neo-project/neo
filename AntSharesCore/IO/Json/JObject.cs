@@ -7,6 +7,7 @@ namespace AntShares.IO.Json
 {
     internal class JObject
     {
+        public static readonly JObject Null = null;
         private Dictionary<string, JObject> properties = new Dictionary<string, JObject>();
 
         public JObject this[string name]
@@ -14,7 +15,7 @@ namespace AntShares.IO.Json
             get
             {
                 if (!properties.ContainsKey(name))
-                    return JNull.Value;
+                    return null;
                 return properties[name];
             }
             set

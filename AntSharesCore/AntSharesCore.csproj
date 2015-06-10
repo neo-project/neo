@@ -72,7 +72,6 @@
     <Compile Include="Helper.cs" />
     <Compile Include="IO\Json\JArray.cs" />
     <Compile Include="IO\Json\JBoolean.cs" />
-    <Compile Include="IO\Json\JNull.cs" />
     <Compile Include="IO\Json\JNumber.cs" />
     <Compile Include="IO\Json\JObject.cs" />
     <Compile Include="IO\Json\JString.cs" />

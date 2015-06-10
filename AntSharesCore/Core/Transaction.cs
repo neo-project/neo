@@ -3,6 +3,7 @@ using AntShares.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace AntShares.Core
 {
@@ -60,6 +61,19 @@ namespace AntShares.Core
             this.Scripts = reader.ReadBytesArray();
         }
 
+        void ISignable.FromUnsignedArray(byte[] value)
+        {
+            using (MemoryStream ms = new MemoryStream(value, false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                if ((TransactionType)reader.ReadByte() != Type)
+                    throw new FormatException();
+                DeserializeExclusiveData(reader);
+                this.Inputs = reader.ReadSerializableArray<TransactionInput>();
+                this.Outputs = reader.ReadSerializableArray<TransactionOutput>();
+            }
+        }
+
         byte[] ISignable.GetHashForSigning()
         {
             using (MemoryStream ms = new MemoryStream())
@@ -76,14 +90,16 @@ namespace AntShares.Core
 
         public virtual UInt160[] GetScriptHashesForVerifying()
         {
-            //TODO: 获取交易中所有需要签名的地址
-            //1. 获取所有 TransactionInput 所指向的 TransactionOutput 中的 ScriptHash
-            //2. 去重并排序
-            //需要本地区块链数据库，否则无法验证
-            //3. 无法验证的情况下，抛出异常：
-            //throw new InvalidOperationException();
-
-            throw new NotImplementedException();
+            HashSet<UInt160> hashes = new HashSet<UInt160>();
+            for (int i = 0; i < Inputs.Length; i++)
+            {
+                //TODO: 获取 TransactionInput 所指向的 TransactionOutput 中的 ScriptHash，用以确定交易中需要签名的地址
+                //需要本地区块链数据库，否则无法验证
+                //无法验证的情况下，抛出异常：
+                //throw new InvalidOperationException();
+                throw new NotImplementedException();
+            }
+            return hashes.OrderBy(p => p).ToArray();
         }
 
         byte[][] ISignable.GetScriptsForVerifying()

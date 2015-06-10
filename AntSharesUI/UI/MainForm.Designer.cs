@@ -45,6 +45,8 @@
             this.关于AntSharesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.listView1 = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.交易TToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.签名SToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -52,6 +54,7 @@
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.钱包WToolStripMenuItem,
+            this.交易TToolStripMenuItem,
             this.帮助HToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
@@ -180,6 +183,21 @@
             this.columnHeader1.Text = "地址";
             this.columnHeader1.Width = 300;
             // 
+            // 交易TToolStripMenuItem
+            // 
+            this.交易TToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.签名SToolStripMenuItem});
+            this.交易TToolStripMenuItem.Name = "交易TToolStripMenuItem";
+            this.交易TToolStripMenuItem.Size = new System.Drawing.Size(59, 21);
+            this.交易TToolStripMenuItem.Text = "交易(&T)";
+            // 
+            // 签名SToolStripMenuItem
+            // 
+            this.签名SToolStripMenuItem.Name = "签名SToolStripMenuItem";
+            this.签名SToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.签名SToolStripMenuItem.Text = "签名(&S)...";
+            this.签名SToolStripMenuItem.Click += new System.EventHandler(this.签名SToolStripMenuItem_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
@@ -219,6 +237,8 @@
         private System.Windows.Forms.ToolStripMenuItem 开发人员工具TToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
         private System.Windows.Forms.ToolStripMenuItem 关于AntSharesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem 交易TToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem 签名SToolStripMenuItem;
     }
 }
 

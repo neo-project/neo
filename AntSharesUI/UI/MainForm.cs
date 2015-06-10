@@ -7,7 +7,7 @@ using System.Windows.Forms;
 
 namespace AntShares.UI
 {
-    public partial class MainForm : Form
+    internal partial class MainForm : Form
     {
         private UserWallet wallet_current;
 
@@ -51,6 +51,11 @@ namespace AntShares.UI
             //弹出对话框，验证原密码，保存新密码
         }
 
+        private void 签名SToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
         private void 官网WToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Process.Start("https://weangel.com/project.aspx?id=57");
@@ -58,7 +63,7 @@ namespace AntShares.UI
 
         private void 开发人员工具TToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
+            Helper.Show<DeveloperToolsForm>();
         }
     }
 }

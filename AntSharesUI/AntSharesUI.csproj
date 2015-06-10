@@ -62,6 +62,7 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Security" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Cryptography\Helper.cs" />
@@ -75,6 +76,19 @@
     </Compile>
     <Compile Include="UI\CreateWalletDialog.designer.cs">
       <DependentUpon>CreateWalletDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\DeveloperToolsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\DeveloperToolsForm.Designer.cs">
+      <DependentUpon>DeveloperToolsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\Helper.cs" />
+    <Compile Include="UI\InformationBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\InformationBox.Designer.cs">
+      <DependentUpon>InformationBox.cs</DependentUpon>
     </Compile>
     <Compile Include="UI\MainForm.cs">
       <SubType>Form</SubType>
@@ -90,10 +104,25 @@
     <Compile Include="UI\OpenWalletDialog.designer.cs">
       <DependentUpon>OpenWalletDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\SigningDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\SigningDialog.Designer.cs">
+      <DependentUpon>SigningDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Wallets\KeyNames.cs" />
     <Compile Include="Wallets\UserWallet.cs" />
+    <EmbeddedResource Include="UI\DeveloperToolsForm.resx">
+      <DependentUpon>DeveloperToolsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\InformationBox.resx">
+      <DependentUpon>InformationBox.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\OpenWalletDialog.resx">
       <DependentUpon>OpenWalletDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\SigningDialog.resx">
+      <DependentUpon>SigningDialog.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Data\Wallet.dbml.layout">
       <DependentUpon>Wallet.dbml</DependentUpon>

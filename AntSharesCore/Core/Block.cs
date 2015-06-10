@@ -68,6 +68,30 @@ namespace AntShares.Core
                 throw new FormatException();
         }
 
+        void ISignable.FromUnsignedArray(byte[] value)
+        {
+            using (MemoryStream ms = new MemoryStream(value, false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                if (reader.ReadUInt32() != Version)
+                    throw new FormatException();
+                this.PrevBlock = reader.ReadSerializable<UInt256>();
+                this.MerkleRoot = reader.ReadSerializable<UInt256>();
+                this.Timestamp = reader.ReadUInt32();
+                if (reader.ReadUInt32() != Bits)
+                    throw new FormatException();
+                this.Nonce = reader.ReadUInt32();
+                this.Miner = reader.ReadSerializable<UInt160>();
+                this.Transactions = new Transaction[reader.ReadVarInt()];
+                for (int i = 0; i < Transactions.Length; i++)
+                {
+                    Transactions[i] = Transaction.DeserializeFrom(reader);
+                }
+                if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
+                    throw new FormatException();
+            }
+        }
+
         byte[] ISignable.GetHashForSigning()
         {
             using (MemoryStream ms = new MemoryStream())
