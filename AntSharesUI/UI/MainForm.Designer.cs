@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.钱包WToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.创建钱包数据库NToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -36,6 +37,8 @@
             this.修改密码CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.退出XToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.交易TToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.签名SToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.帮助HToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.查看帮助VToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.官网WToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -45,9 +48,10 @@
             this.关于AntSharesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.listView1 = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.交易TToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.签名SToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.复制到剪贴板CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
+            this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // menuStrip1
@@ -114,6 +118,22 @@
             this.退出XToolStripMenuItem.Size = new System.Drawing.Size(187, 22);
             this.退出XToolStripMenuItem.Text = "退出(&X)";
             // 
+            // 交易TToolStripMenuItem
+            // 
+            this.交易TToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.签名SToolStripMenuItem});
+            this.交易TToolStripMenuItem.Name = "交易TToolStripMenuItem";
+            this.交易TToolStripMenuItem.Size = new System.Drawing.Size(59, 21);
+            this.交易TToolStripMenuItem.Text = "交易(&T)";
+            // 
+            // 签名SToolStripMenuItem
+            // 
+            this.签名SToolStripMenuItem.Enabled = false;
+            this.签名SToolStripMenuItem.Name = "签名SToolStripMenuItem";
+            this.签名SToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.签名SToolStripMenuItem.Text = "签名(&S)...";
+            this.签名SToolStripMenuItem.Click += new System.EventHandler(this.签名SToolStripMenuItem_Click);
+            // 
             // 帮助HToolStripMenuItem
             // 
             this.帮助HToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -167,6 +187,7 @@
             // 
             this.listView1.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader1});
+            this.listView1.ContextMenuStrip = this.contextMenuStrip1;
             this.listView1.FullRowSelect = true;
             this.listView1.GridLines = true;
             this.listView1.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
@@ -183,20 +204,20 @@
             this.columnHeader1.Text = "地址";
             this.columnHeader1.Width = 300;
             // 
-            // 交易TToolStripMenuItem
+            // contextMenuStrip1
             // 
-            this.交易TToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.签名SToolStripMenuItem});
-            this.交易TToolStripMenuItem.Name = "交易TToolStripMenuItem";
-            this.交易TToolStripMenuItem.Size = new System.Drawing.Size(59, 21);
-            this.交易TToolStripMenuItem.Text = "交易(&T)";
+            this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.复制到剪贴板CToolStripMenuItem});
+            this.contextMenuStrip1.Name = "contextMenuStrip1";
+            this.contextMenuStrip1.Size = new System.Drawing.Size(165, 26);
+            this.contextMenuStrip1.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip1_Opening);
             // 
-            // 签名SToolStripMenuItem
+            // 复制到剪贴板CToolStripMenuItem
             // 
-            this.签名SToolStripMenuItem.Name = "签名SToolStripMenuItem";
-            this.签名SToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.签名SToolStripMenuItem.Text = "签名(&S)...";
-            this.签名SToolStripMenuItem.Click += new System.EventHandler(this.签名SToolStripMenuItem_Click);
+            this.复制到剪贴板CToolStripMenuItem.Name = "复制到剪贴板CToolStripMenuItem";
+            this.复制到剪贴板CToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.复制到剪贴板CToolStripMenuItem.Text = "复制到剪贴板(&C)";
+            this.复制到剪贴板CToolStripMenuItem.Click += new System.EventHandler(this.复制到剪贴板CToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -213,6 +234,7 @@
             this.Text = "AntShares UI";
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
+            this.contextMenuStrip1.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -239,6 +261,8 @@
         private System.Windows.Forms.ToolStripMenuItem 关于AntSharesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 交易TToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 签名SToolStripMenuItem;
+        private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
+        private System.Windows.Forms.ToolStripMenuItem 复制到剪贴板CToolStripMenuItem;
     }
 }
 

@@ -1,6 +1,7 @@
 ﻿using AntShares.Core;
 using AntShares.Wallets;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Windows.Forms;
@@ -9,8 +10,6 @@ namespace AntShares.UI
 {
     internal partial class MainForm : Form
     {
-        private UserWallet wallet_current;
-
         public MainForm()
         {
             InitializeComponent();
@@ -18,11 +17,12 @@ namespace AntShares.UI
 
         private void OnWalletChanged()
         {
-            修改密码CToolStripMenuItem.Enabled = wallet_current != null;
+            修改密码CToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            签名SToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             listView1.Items.Clear();
-            if (wallet_current != null)
+            if (Program.CurrentWallet != null)
             {
-                listView1.Items.AddRange(wallet_current.GetAddresses().Select(p => new ListViewItem(new string[] { p.ToAddress() })).ToArray());
+                listView1.Items.AddRange(Program.CurrentWallet.GetAddresses().Select(p => new ListViewItem(new string[] { p.ToAddress() })).ToArray());
             }
         }
 
@@ -31,7 +31,7 @@ namespace AntShares.UI
             using (CreateWalletDialog dialog = new CreateWalletDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                wallet_current = UserWallet.CreateDatabase(dialog.WalletPath, dialog.Password);
+                Program.CurrentWallet = UserWallet.CreateDatabase(dialog.WalletPath, dialog.Password);
             }
             OnWalletChanged();
         }
@@ -41,7 +41,7 @@ namespace AntShares.UI
             using (OpenWalletDialog dialog = new OpenWalletDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                wallet_current = UserWallet.OpenDatabase(dialog.WalletPath, dialog.Password);
+                Program.CurrentWallet = UserWallet.OpenDatabase(dialog.WalletPath, dialog.Password);
             }
             OnWalletChanged();
         }
@@ -53,7 +53,10 @@ namespace AntShares.UI
 
         private void 签名SToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
+            using (SigningDialog dialog = new SigningDialog())
+            {
+                dialog.ShowDialog();
+            }
         }
 
         private void 官网WToolStripMenuItem_Click(object sender, EventArgs e)
@@ -64,6 +67,16 @@ namespace AntShares.UI
         private void 开发人员工具TToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Helper.Show<DeveloperToolsForm>();
+        }
+
+        private void contextMenuStrip1_Opening(object sender, CancelEventArgs e)
+        {
+            复制到剪贴板CToolStripMenuItem.Enabled = listView1.SelectedIndices.Count == 1;
+        }
+
+        private void 复制到剪贴板CToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Clipboard.SetText(listView1.SelectedItems[0].Text);
         }
     }
 }

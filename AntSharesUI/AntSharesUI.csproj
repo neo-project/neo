@@ -159,10 +159,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Data\wt.mdf" />
-    <Content Include="Data\wt_log.ldf">
+    <None Include="Data\wt.mdf" />
+    <None Include="Data\wt_log.ldf">
       <DependentUpon>wt.mdf</DependentUpon>
-    </Content>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5.2">

@@ -44,7 +44,7 @@ namespace AntShares.Core
                 pubkeys.Add(pubkey);
                 i += redeemScript[i] + 1;
             }
-            if (pubkeys.Count != redeemScript[i] || pubkeys.Count < m)
+            if (pubkeys.Count != redeemScript[i] - 0x50 || pubkeys.Count < m)
                 throw new FormatException();
             this.pubkeys = pubkeys.ToArray();
             this.signatures = new byte[pubkeys.Count][];

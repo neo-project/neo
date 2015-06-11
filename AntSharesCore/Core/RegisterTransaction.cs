@@ -1,6 +1,5 @@
 ﻿using AntShares.IO;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -42,12 +41,7 @@ namespace AntShares.Core
 
         public override UInt160[] GetScriptHashesForVerifying()
         {
-            IEnumerable<UInt160> hashes = base.GetScriptHashesForVerifying().Union(new UInt160[] { Issuer, Admin });
-            if (RegisterType.HasFlag(RegisterType.Share))
-            {
-                hashes = hashes.Union(Outputs.Select(p => p.ScriptHash));
-            }
-            return hashes.OrderBy(p => p).ToArray();
+            return base.GetScriptHashesForVerifying().Union(new UInt160[] { Issuer, Admin }).OrderBy(p => p).ToArray();
         }
 
         protected override void SerializeExclusiveData(BinaryWriter writer)

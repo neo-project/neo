@@ -6,7 +6,7 @@ namespace AntShares.Cryptography
 {
     internal static class Helper
     {
-        public static void AesDecrypt(byte[] data, byte[] key)
+        public static void AesDecrypt(this byte[] data, byte[] key)
         {
             if (data == null || key == null) throw new ArgumentNullException();
             if (data.Length % 16 != 0 || key.Length != 32) throw new ArgumentException();
@@ -26,7 +26,7 @@ namespace AntShares.Cryptography
             Array.Clear(buffer, 0, buffer.Length);
         }
 
-        public static void AesEncrypt(byte[] data, byte[] key)
+        public static void AesEncrypt(this byte[] data, byte[] key)
         {
             if (data == null || key == null) throw new ArgumentNullException();
             if (data.Length % 16 != 0 || key.Length != 32) throw new ArgumentException();

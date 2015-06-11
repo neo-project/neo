@@ -6,7 +6,7 @@ using System.Text;
 
 namespace AntShares
 {
-    internal static class Helper
+    public static class Helper
     {
         private static readonly DateTime unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
@@ -27,13 +27,13 @@ namespace AntShares
                 : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31)))));
         }
 
-        public static int GetBitLength(this BigInteger i)
+        internal static int GetBitLength(this BigInteger i)
         {
             byte[] b = i.ToByteArray();
             return (b.Length - 1) * 8 + BitLen(i.Sign > 0 ? b[b.Length - 1] : 255 - b[b.Length - 1]);
         }
 
-        public static int GetLowestSetBit(this BigInteger i)
+        internal static int GetLowestSetBit(this BigInteger i)
         {
             if (i.Sign == 0)
                 return -1;
@@ -59,7 +59,7 @@ namespace AntShares
             return result;
         }
 
-        public static BigInteger Mod(this BigInteger x, BigInteger y)
+        internal static BigInteger Mod(this BigInteger x, BigInteger y)
         {
             x %= y;
             if (x.Sign < 0)
@@ -67,7 +67,7 @@ namespace AntShares
             return x;
         }
 
-        public static BigInteger NextBigInteger(this Random rand, int sizeInBits)
+        internal static BigInteger NextBigInteger(this Random rand, int sizeInBits)
         {
             if (sizeInBits < 0)
                 throw new ArgumentException("sizeInBits must be non-negative");
@@ -82,7 +82,7 @@ namespace AntShares
             return new BigInteger(b);
         }
 
-        public static bool TestBit(this BigInteger i, int index)
+        internal static bool TestBit(this BigInteger i, int index)
         {
             return (i.ToByteArray()[index / 8] & 1 << index % 8) > 0;
         }

@@ -1,12 +1,6 @@
 ﻿using AntShares.Core;
+using AntShares.IO;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace AntShares.UI
@@ -26,7 +20,28 @@ namespace AntShares.UI
                 return;
             }
             SignatureContext context = SignatureContext.Parse(textBox1.Text);
-            //TODO: 签名
+            if (!Program.CurrentWallet.Sign(context))
+            {
+                MessageBox.Show("没有足够的私钥对数据进行签名。");
+                return;
+            }
+            if (context.Completed)
+            {
+                context.Signable.Scripts = context.GetScripts();
+                textBox2.Text = context.Signable.ToArray().ToHexString();
+                MessageBox.Show("签名完成，该对象的签名信息已经完整，可以广播。");
+            }
+            else
+            {
+                textBox2.Text = context.ToString();
+                MessageBox.Show("签名完成，但该对象的签名信息还不完整。");
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            textBox2.SelectAll();
+            textBox2.Copy();
         }
     }
 }

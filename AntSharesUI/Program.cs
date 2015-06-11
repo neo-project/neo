@@ -1,13 +1,16 @@
 ﻿using AntShares.UI;
+using AntShares.Wallets;
 using System;
 using System.Windows.Forms;
 
 namespace AntShares
 {
-    static class Program
+    internal static class Program
     {
+        public static UserWallet CurrentWallet;
+
         [STAThread]
-        static void Main()
+        public static void Main()
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

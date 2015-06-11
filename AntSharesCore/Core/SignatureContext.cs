@@ -7,8 +7,8 @@ namespace AntShares.Core
 {
     public class SignatureContext
     {
-        private ISignable signable;
-        private UInt160[] scriptHashes;
+        public readonly ISignable Signable;
+        public readonly UInt160[] ScriptHashes;
         private MultiSigContext[] signatures;
 
         public bool Completed
@@ -21,17 +21,17 @@ namespace AntShares.Core
 
         public SignatureContext(ISignable signable)
         {
-            this.signable = signable;
-            this.scriptHashes = signable.GetScriptHashesForVerifying();
-            this.signatures = new MultiSigContext[scriptHashes.Length];
+            this.Signable = signable;
+            this.ScriptHashes = signable.GetScriptHashesForVerifying();
+            this.signatures = new MultiSigContext[ScriptHashes.Length];
         }
 
         public bool Add(byte[] redeemScript, UInt160 pubKeyHash, byte[] signature)
         {
             UInt160 scriptHash = redeemScript.ToScriptHash();
-            for (int i = 0; i < scriptHashes.Length; i++)
+            for (int i = 0; i < ScriptHashes.Length; i++)
             {
-                if (scriptHashes[i] == scriptHash)
+                if (ScriptHashes[i] == scriptHash)
                 {
                     if (signatures[i] == null)
                         signatures[i] = new MultiSigContext(redeemScript);
@@ -77,8 +77,8 @@ namespace AntShares.Core
         public override string ToString()
         {
             JObject json = new JObject();
-            json["type"] = signable.GetType().Name;
-            json["hex"] = signable.ToUnsignedArray().ToHexString();
+            json["type"] = Signable.GetType().Name;
+            json["hex"] = Signable.ToUnsignedArray().ToHexString();
             JArray multisignatures = new JArray();
             for (int i = 0; i < signatures.Length; i++)
             {

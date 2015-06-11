@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace AntShares.Core
 {
-    public class Block : ISerializable, ISignable
+    public class Block : ISignable
     {
         public const UInt32 Version = 0;
         public UInt256 PrevBlock;
@@ -42,6 +42,20 @@ namespace AntShares.Core
                     }
                 }
                 return hash;
+            }
+        }
+
+        public byte[][] Scripts
+        {
+            get
+            {
+                return new byte[][] { Script };
+            }
+            set
+            {
+                if (value.Length != 1)
+                    throw new ArgumentException();
+                Script = value[0];
             }
         }
 
@@ -112,11 +126,6 @@ namespace AntShares.Core
         UInt160[] ISignable.GetScriptHashesForVerifying()
         {
             return new UInt160[] { Miner };
-        }
-
-        byte[][] ISignable.GetScriptsForVerifying()
-        {
-            return new byte[][] { Script };
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

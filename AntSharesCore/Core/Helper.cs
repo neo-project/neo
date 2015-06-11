@@ -27,7 +27,7 @@ namespace AntShares.Core
             return Base58.Encode(data.Concat(data.Sha256().Sha256().Take(4)).ToArray());
         }
 
-        public static UInt160 ToPublicKeyHash(this byte[] pubkey)
+        internal static byte[] ToCompressedPublicKey(this byte[] pubkey)
         {
             switch (pubkey.Length)
             {
@@ -35,16 +35,22 @@ namespace AntShares.Core
                     break;
                 case 64:
                 case 65:
+                case 72:
                     pubkey = new byte[] { (byte)(pubkey[pubkey.Length - 1] % 2 + 2) }.Concat(pubkey.Skip(pubkey.Length - 64).Take(32)).ToArray();
                     break;
-                case 72:
+                case 96:
                 case 104:
-                    pubkey = new byte[] { (byte)(pubkey[71] % 2 + 2) }.Concat(pubkey.Skip(8).Take(32)).ToArray();
+                    pubkey = new byte[] { (byte)(pubkey[pubkey.Length - 33] % 2 + 2) }.Concat(pubkey.Skip(pubkey.Length - 96).Take(32)).ToArray();
                     break;
                 default:
                     throw new FormatException();
             }
-            return new UInt160(pubkey.Sha256().RIPEMD160());
+            return pubkey;
+        }
+
+        public static UInt160 ToPublicKeyHash(this byte[] pubkey)
+        {
+            return new UInt160(pubkey.ToCompressedPublicKey().Sha256().RIPEMD160());
         }
 
         public static UInt64 ToSatoshi(this decimal value)
@@ -77,7 +83,7 @@ namespace AntShares.Core
         internal static bool Verify(this ISignable signable)
         {
             UInt160[] hashes = signable.GetScriptHashesForVerifying();
-            byte[][] scripts = signable.GetScriptsForVerifying();
+            byte[][] scripts = signable.Scripts;
             if (hashes.Length != scripts.Length)
                 return false;
             for (int i = 0; i < hashes.Length; i++)

@@ -40,7 +40,7 @@ namespace AntShares.Wallets
                 byte[] passwordKey = password.ToAesKey();
                 byte[] masterKey = new byte[32];
                 rng.GetNonZeroBytes(masterKey);
-                Helper.AesEncrypt(masterKey, passwordKey);
+                masterKey.AesEncrypt(passwordKey);
                 Array.Clear(passwordKey, 0, passwordKey.Length);
                 ctx.Keys.InsertOnSubmit(new Key
                 {
@@ -103,7 +103,7 @@ namespace AntShares.Wallets
                 Key key = ctx.Keys.FirstOrDefault(p => p.Name == KeyNames.MasterKey);
                 byte[] masterKey = key.Value;
                 byte[] passwordKey = password.ToAesKey();
-                Helper.AesDecrypt(masterKey, passwordKey);
+                masterKey.AesDecrypt(passwordKey);
                 Array.Clear(passwordKey, 0, passwordKey.Length);
                 return new UserWallet(connectionString, masterKey);
             }

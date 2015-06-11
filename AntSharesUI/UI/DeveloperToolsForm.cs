@@ -28,13 +28,13 @@ namespace AntShares.UI
         {
             RegisterTransaction antshare = new RegisterTransaction
             {
-                RegisterType = RegisterType.System,
+                RegisterType = RegisterType.AntShare,
                 RegisterName = "[{'lang':'zh-CHS','name':'小蚁股'},{'lang':'en','name':'AntShare'}]",
                 Amount = (Int64)numericUpDown1.Value,
                 Issuer = textBox1.Text.ToScriptHash(),
                 Admin = textBox2.Text.ToScriptHash(),
                 Inputs = new TransactionInput[0],
-                Outputs = new TransactionOutput[0],
+                Outputs = new TransactionOutput[0]
             };
             SignatureContext context = new SignatureContext(antshare);
             InformationBox.Show(context.ToString(), "小蚁股签名上下文");

@@ -5,7 +5,7 @@ using System.IO;
 
 namespace AntShares.Core
 {
-    public class Order : ISerializable, ISignable
+    public class Order : ISignable
     {
         public const byte OrderType = 0;
         public UInt256 AssetType;
@@ -15,7 +15,8 @@ namespace AntShares.Core
         public UInt160 ScriptHash;
         public UInt160 Agent;
         public TransactionInput[] Inputs;
-        public byte[][] Scripts;
+
+        public byte[][] Scripts { get; set; }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
@@ -76,11 +77,6 @@ namespace AntShares.Core
             //throw new InvalidOperationException();
 
             throw new NotImplementedException();
-        }
-
-        byte[][] ISignable.GetScriptsForVerifying()
-        {
-            return Scripts;
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

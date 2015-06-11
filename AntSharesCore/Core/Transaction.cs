@@ -7,12 +7,11 @@ using System.Linq;
 
 namespace AntShares.Core
 {
-    public abstract class Transaction : ISerializable, ISignable
+    public abstract class Transaction : ISignable
     {
         public readonly TransactionType Type;
         public TransactionInput[] Inputs;
         public TransactionOutput[] Outputs;
-        public byte[][] Scripts;
 
         private UInt256 hash = null;
 
@@ -27,6 +26,8 @@ namespace AntShares.Core
                 return hash;
             }
         }
+
+        public byte[][] Scripts { get; set; }
 
         protected Transaction(TransactionType type)
         {
@@ -100,11 +101,6 @@ namespace AntShares.Core
                 throw new NotImplementedException();
             }
             return hashes.OrderBy(p => p).ToArray();
-        }
-
-        byte[][] ISignable.GetScriptsForVerifying()
-        {
-            return Scripts;
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

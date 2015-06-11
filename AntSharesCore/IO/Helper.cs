@@ -5,7 +5,7 @@ using System.Text;
 
 namespace AntShares.IO
 {
-    internal static class Helper
+    public static class Helper
     {
         public static T AsSerializable<T>(this byte[] value) where T : ISerializable, new()
         {
@@ -74,6 +74,7 @@ namespace AntShares.IO
             using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
             {
                 value.Serialize(writer);
+                writer.Flush();
                 return ms.ToArray();
             }
         }

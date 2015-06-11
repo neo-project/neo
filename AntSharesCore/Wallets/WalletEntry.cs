@@ -1,29 +1,50 @@
 ﻿using AntShares.Core;
+using AntShares.Cryptography;
 using System;
+using System.Linq;
 using System.Security.Cryptography;
 
 namespace AntShares.Wallets
 {
     public class WalletEntry : IEquatable<WalletEntry>
     {
-        public byte[][] PrivateKey;
+        public byte[][] PrivateKeys;
+        public byte[][] PublicKeys;
         public readonly byte[] RedeemScript;
         public readonly UInt160 ScriptHash;
 
-        internal WalletEntry(byte[] redeemScript, params byte[][] privateKey)
+        internal WalletEntry(byte[] redeemScript, params byte[][] privateKeys)
         {
-            this.PrivateKey = privateKey;
+            this.PrivateKeys = new byte[privateKeys.Length][];
+            this.PublicKeys = new byte[privateKeys.Length][];
+            for (int i = 0; i < privateKeys.Length; i++)
+            {
+                if (privateKeys[i].Length != 32 && privateKeys[i].Length != 96 && privateKeys[i].Length != 104)
+                    throw new ArgumentException();
+                PrivateKeys[i] = new byte[32];
+                Buffer.BlockCopy(privateKeys[i], privateKeys[i].Length - 32, PrivateKeys[i], 0, 32);
+                if (privateKeys[i].Length == 32)
+                {
+                    Secp256r1Point p = Secp256r1Curve.G * privateKeys[i];
+                    PublicKeys[i] = p.EncodePoint(false).Skip(1).ToArray();
+                }
+                else
+                {
+                    PublicKeys[i] = new byte[64];
+                    Buffer.BlockCopy(privateKeys[i], privateKeys[i].Length - 96, PublicKeys[i], 0, 64);
+                }
+            }
             this.RedeemScript = redeemScript;
             this.ScriptHash = redeemScript.ToScriptHash();
-            foreach (byte[] data in privateKey)
+            for (int i = 0; i < PrivateKeys.Length; i++)
             {
-                ProtectedMemory.Protect(data, MemoryProtectionScope.SameProcess);
+                ProtectedMemory.Protect(PrivateKeys[i], MemoryProtectionScope.SameProcess);
             }
         }
 
         public IDisposable Decrypt(int index)
         {
-            return new ProtectionContext(PrivateKey[index]);
+            return new ProtectionContext(PrivateKeys[index]);
         }
 
         public bool Equals(WalletEntry other)
