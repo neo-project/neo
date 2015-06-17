@@ -128,6 +128,11 @@ namespace AntShares.Core
             return new UInt160[] { Miner };
         }
 
+        public void RebuildMerkleRoot()
+        {
+            MerkleRoot = MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray());
+        }
+
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(Version);

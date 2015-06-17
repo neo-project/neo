@@ -71,6 +71,12 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Wallet.dbml</DependentUpon>
     </Compile>
+    <Compile Include="UI\AccountDetailsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\AccountDetailsDialog.Designer.cs">
+      <DependentUpon>AccountDetailsDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\CreateWalletDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -112,6 +118,9 @@
     </Compile>
     <Compile Include="Wallets\KeyNames.cs" />
     <Compile Include="Wallets\UserWallet.cs" />
+    <EmbeddedResource Include="UI\AccountDetailsDialog.resx">
+      <DependentUpon>AccountDetailsDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\DeveloperToolsForm.resx">
       <DependentUpon>DeveloperToolsForm.cs</DependentUpon>
     </EmbeddedResource>

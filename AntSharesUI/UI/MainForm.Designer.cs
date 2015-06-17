@@ -49,6 +49,7 @@
             this.listView1 = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.显示详情DToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.复制到剪贴板CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
@@ -130,7 +131,7 @@
             // 
             this.签名SToolStripMenuItem.Enabled = false;
             this.签名SToolStripMenuItem.Name = "签名SToolStripMenuItem";
-            this.签名SToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.签名SToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.签名SToolStripMenuItem.Text = "签名(&S)...";
             this.签名SToolStripMenuItem.Click += new System.EventHandler(this.签名SToolStripMenuItem_Click);
             // 
@@ -150,37 +151,38 @@
             // 查看帮助VToolStripMenuItem
             // 
             this.查看帮助VToolStripMenuItem.Name = "查看帮助VToolStripMenuItem";
-            this.查看帮助VToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.查看帮助VToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
             this.查看帮助VToolStripMenuItem.Text = "查看帮助(&V)";
             // 
             // 官网WToolStripMenuItem
             // 
             this.官网WToolStripMenuItem.Name = "官网WToolStripMenuItem";
-            this.官网WToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.官网WToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
             this.官网WToolStripMenuItem.Text = "官网(&W)";
             this.官网WToolStripMenuItem.Click += new System.EventHandler(this.官网WToolStripMenuItem_Click);
             // 
             // toolStripSeparator3
             // 
             this.toolStripSeparator3.Name = "toolStripSeparator3";
-            this.toolStripSeparator3.Size = new System.Drawing.Size(160, 6);
+            this.toolStripSeparator3.Size = new System.Drawing.Size(188, 6);
             // 
             // 开发人员工具TToolStripMenuItem
             // 
             this.开发人员工具TToolStripMenuItem.Name = "开发人员工具TToolStripMenuItem";
-            this.开发人员工具TToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.开发人员工具TToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F12;
+            this.开发人员工具TToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
             this.开发人员工具TToolStripMenuItem.Text = "开发人员工具(&T)";
             this.开发人员工具TToolStripMenuItem.Click += new System.EventHandler(this.开发人员工具TToolStripMenuItem_Click);
             // 
             // toolStripSeparator4
             // 
             this.toolStripSeparator4.Name = "toolStripSeparator4";
-            this.toolStripSeparator4.Size = new System.Drawing.Size(160, 6);
+            this.toolStripSeparator4.Size = new System.Drawing.Size(188, 6);
             // 
             // 关于AntSharesToolStripMenuItem
             // 
             this.关于AntSharesToolStripMenuItem.Name = "关于AntSharesToolStripMenuItem";
-            this.关于AntSharesToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.关于AntSharesToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
             this.关于AntSharesToolStripMenuItem.Text = "关于&AntShares";
             // 
             // listView1
@@ -207,10 +209,18 @@
             // contextMenuStrip1
             // 
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.显示详情DToolStripMenuItem,
             this.复制到剪贴板CToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(165, 26);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(165, 48);
             this.contextMenuStrip1.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip1_Opening);
+            // 
+            // 显示详情DToolStripMenuItem
+            // 
+            this.显示详情DToolStripMenuItem.Name = "显示详情DToolStripMenuItem";
+            this.显示详情DToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.显示详情DToolStripMenuItem.Text = "显示详情(&D)...";
+            this.显示详情DToolStripMenuItem.Click += new System.EventHandler(this.显示详情DToolStripMenuItem_Click);
             // 
             // 复制到剪贴板CToolStripMenuItem
             // 
@@ -263,6 +273,7 @@
         private System.Windows.Forms.ToolStripMenuItem 签名SToolStripMenuItem;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem 复制到剪贴板CToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem 显示详情DToolStripMenuItem;
     }
 }
 

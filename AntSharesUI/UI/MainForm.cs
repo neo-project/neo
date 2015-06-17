@@ -71,7 +71,17 @@ namespace AntShares.UI
 
         private void contextMenuStrip1_Opening(object sender, CancelEventArgs e)
         {
+            显示详情DToolStripMenuItem.Enabled = listView1.SelectedIndices.Count == 1;
             复制到剪贴板CToolStripMenuItem.Enabled = listView1.SelectedIndices.Count == 1;
+        }
+
+        private void 显示详情DToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            WalletEntry entry = Program.CurrentWallet.GetEntry(listView1.SelectedItems[0].Text.ToScriptHash());
+            using (AccountDetailsDialog dialog = new AccountDetailsDialog(entry))
+            {
+                dialog.ShowDialog();
+            }
         }
 
         private void 复制到剪贴板CToolStripMenuItem_Click(object sender, EventArgs e)

@@ -13,6 +13,22 @@ namespace AntShares.Wallets
         public readonly byte[] RedeemScript;
         public readonly UInt160 ScriptHash;
 
+        public byte M
+        {
+            get
+            {
+                return (byte)(RedeemScript[0] - 0x50);
+            }
+        }
+
+        public byte N
+        {
+            get
+            {
+                return (byte)((RedeemScript.Length - 3) / 34);
+            }
+        }
+
         internal WalletEntry(byte[] redeemScript, params byte[][] privateKeys)
         {
             this.PrivateKeys = new byte[privateKeys.Length][];

@@ -32,7 +32,7 @@ namespace AntShares.Wallets
             }
         }
 
-        private static byte[] CreateRedeemScript(byte m, params byte[][] publicKeys)
+        public static byte[] CreateRedeemScript(byte m, params byte[][] publicKeys)
         {
             if (!(1 <= m && m <= publicKeys.Length && publicKeys.Length <= 16))
                 throw new ArgumentException();
@@ -53,7 +53,7 @@ namespace AntShares.Wallets
 
         protected abstract void GetEncryptedEntry(UInt160 scriptHash, out byte[] redeemScript, out byte[] encryptedPrivateKey);
 
-        private WalletEntry GetEntry(UInt160 scriptHash)
+        public WalletEntry GetEntry(UInt160 scriptHash)
         {
             byte[] redeemScript, encryptedPrivateKey;
             GetEncryptedEntry(scriptHash, out redeemScript, out encryptedPrivateKey);

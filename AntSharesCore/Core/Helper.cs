@@ -27,7 +27,7 @@ namespace AntShares.Core
             return Base58.Encode(data.Concat(data.Sha256().Sha256().Take(4)).ToArray());
         }
 
-        internal static byte[] ToCompressedPublicKey(this byte[] pubkey)
+        public static byte[] ToCompressedPublicKey(this byte[] pubkey)
         {
             switch (pubkey.Length)
             {
