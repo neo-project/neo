@@ -26,7 +26,7 @@ namespace AntShares.Core.Scripts
         {
             if (!ExecuteScript(script))
                 return false;
-            return stack.Count == 0;
+            return stack.Count == 0 || (stack.Count == 1 && stack.PeekBool());
         }
 
         public static bool Execute(byte[] script, byte[] hash)
