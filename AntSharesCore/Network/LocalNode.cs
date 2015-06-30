@@ -1,4 +1,5 @@
-﻿using AntShares.Threading;
+﻿using AntShares.Core;
+using AntShares.Threading;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -38,6 +39,7 @@ namespace AntShares.Network
         private TcpListener listener = new TcpListener(IPAddress.Any, DEFAULT_PORT);
         private Worker connectWorker;
         private int started = 0;
+        private int started_sync = 0;
         private int disposed = 0;
 
         public int RemoteNodeCount
@@ -57,6 +59,13 @@ namespace AntShares.Network
             this.LocalEndpoint = new IPEndPoint(Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork), port);
             this.connectWorker = new Worker(string.Format("ConnectToPeersLoop@{0}", LocalEndpoint), ConnectToPeersLoop, true, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
             this.UserAgent = string.Format("/AntSharesCore:{0}/", Assembly.GetExecutingAssembly().GetName().Version.ToString(3));
+        }
+
+        public async Task ConnectToPeerAsync(string hostNameOrAddress)
+        {
+            IPHostEntry entry = await Dns.GetHostEntryAsync(hostNameOrAddress);
+            IPAddress ipAddress = entry.AddressList.FirstOrDefault();
+            await ConnectToPeerAsync(new IPEndPoint(ipAddress, DEFAULT_PORT));
         }
 
         public async Task ConnectToPeerAsync(IPEndPoint remoteEndpoint)
@@ -122,14 +131,14 @@ namespace AntShares.Network
                 {
                     foreach (string hostNameOrAddress in SeedList)
                     {
-                        IPAddress ipAddress = Dns.GetHostEntry(hostNameOrAddress).AddressList.FirstOrDefault();
-                        if (ipAddress != null)
-                        {
-                            tasks.Add(ConnectToPeerAsync(new IPEndPoint(ipAddress, DEFAULT_PORT)));
-                        }
+                        tasks.Add(ConnectToPeerAsync(hostNameOrAddress));
                     }
                 }
-                Task.WaitAll(tasks.ToArray());
+                try
+                {
+                    Task.WaitAll(tasks.ToArray());
+                }
+                catch (AggregateException) { };
             }
         }
 
@@ -259,6 +268,15 @@ namespace AntShares.Network
                     }
                     remoteNode.StartProtocolAsync().Void();
                 }
+            }
+        }
+
+        public async void StartSynchronize(Blockchain blockchain)
+        {
+            Start();
+            if (Interlocked.Exchange(ref started_sync, 1) == 0)
+            {
+                //开始同步区块链数据
             }
         }
     }

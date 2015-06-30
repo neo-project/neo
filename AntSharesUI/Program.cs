@@ -1,4 +1,7 @@
-﻿using AntShares.UI;
+﻿using AntShares.Core;
+using AntShares.Network;
+using AntShares.Properties;
+using AntShares.UI;
 using AntShares.Wallets;
 using System;
 using System.Windows.Forms;
@@ -7,7 +10,15 @@ namespace AntShares
 {
     internal static class Program
     {
+        public static readonly LevelDBBlockchain Blockchain;
+        public static readonly LocalNode LocalNode;
         public static UserWallet CurrentWallet;
+
+        static Program()
+        {
+            Blockchain = new LevelDBBlockchain();
+            LocalNode = new LocalNode(Settings.Default.NodePort);
+        }
 
         [STAThread]
         public static void Main()
@@ -15,6 +26,8 @@ namespace AntShares
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());
+            LocalNode.Dispose();
+            Blockchain.Dispose();
         }
     }
 }

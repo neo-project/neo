@@ -1,0 +1,12 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="AntShares.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="DataDirectoryPath" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">.\Data</Value>
+    </Setting>
+    <Setting Name="NodePort" Type="System.UInt16" Scope="Application">
+      <Value Profile="(Default)">10333</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
