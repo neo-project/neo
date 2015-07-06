@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace AntShares.Cryptography
 {
-    internal static class Helper
+    public static class Helper
     {
         private static ThreadLocal<SHA256Cng> _sha256 = new ThreadLocal<SHA256Cng>(() => new SHA256Cng());
         private static ThreadLocal<RIPEMD160Managed> _ripemd160 = new ThreadLocal<RIPEMD160Managed>(() => new RIPEMD160Managed());

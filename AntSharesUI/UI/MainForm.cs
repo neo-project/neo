@@ -18,7 +18,7 @@ namespace AntShares.UI
         private void OnWalletChanged()
         {
             修改密码CToolStripMenuItem.Enabled = Program.CurrentWallet != null;
-            签名SToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            交易TToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             listView1.Items.Clear();
             if (Program.CurrentWallet != null)
             {
@@ -64,9 +64,19 @@ namespace AntShares.UI
             }
         }
 
+        private void 资产分发IToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //TODO: 对已登记的资产进行分发操作
+            //1. 检索当前钱包所有账户，找出登记过的所有资产；
+            //2. 用户选择一种资产，并设置分发数量等；
+            //3. 检查是否符合规则，如是否超过总量、分发方式是否符合约定等；
+            //4. 构造交易，签名；
+            //5. 广播交易
+        }
+
         private void 官网WToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start("https://weangel.com/project.aspx?id=57");
+            Process.Start("https://weangel.com/AntShares");
         }
 
         private void 开发人员工具TToolStripMenuItem_Click(object sender, EventArgs e)

@@ -50,7 +50,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="LevelDB.Net, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\LevelDB.Net.0.9\lib\LevelDB.Net.dll</HintPath>
+      <HintPath>..\packages\LevelDB.Net.1.1\lib\net40\LevelDB.Net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -63,7 +63,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Core\LevelDBBlockchain.cs" />
+    <Compile Include="Data\LBlockchain.cs" />
     <Compile Include="Cryptography\Helper.cs" />
     <Compile Include="Data\Wallet.designer.cs">
       <AutoGen>True</AutoGen>
@@ -161,7 +161,9 @@
       <LastGenOutput>Wallet.designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </None>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

@@ -1,4 +1,5 @@
 ﻿using AntShares.Core;
+using AntShares.Data;
 using AntShares.Network;
 using AntShares.Properties;
 using AntShares.UI;
@@ -10,13 +11,13 @@ namespace AntShares
 {
     internal static class Program
     {
-        public static readonly LevelDBBlockchain Blockchain;
+        public static readonly LBlockchain Blockchain;
         public static readonly LocalNode LocalNode;
         public static UserWallet CurrentWallet;
 
         static Program()
         {
-            Blockchain = new LevelDBBlockchain();
+            Blockchain = new LBlockchain();
             LocalNode = new LocalNode(Settings.Default.NodePort);
         }
 
