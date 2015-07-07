@@ -9,7 +9,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace AntShares.Data
+namespace AntShares.Wallets
 {
 	using System.Data.Linq;
 	using System.Data.Linq.Mapping;
@@ -36,6 +36,12 @@ namespace AntShares.Data
     partial void InsertKey(Key instance);
     partial void UpdateKey(Key instance);
     partial void DeleteKey(Key instance);
+    partial void InsertUnspent(Unspent instance);
+    partial void UpdateUnspent(Unspent instance);
+    partial void DeleteUnspent(Unspent instance);
+    partial void InsertTransaction(Transaction instance);
+    partial void UpdateTransaction(Transaction instance);
+    partial void DeleteTransaction(Transaction instance);
     #endregion
 		
 		public WalletDataContext(string connection) : 
@@ -77,10 +83,26 @@ namespace AntShares.Data
 				return this.GetTable<Key>();
 			}
 		}
+		
+		public System.Data.Linq.Table<Unspent> Unspents
+		{
+			get
+			{
+				return this.GetTable<Unspent>();
+			}
+		}
+		
+		public System.Data.Linq.Table<Transaction> Transactions
+		{
+			get
+			{
+				return this.GetTable<Transaction>();
+			}
+		}
 	}
 	
 	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.Account")]
-	internal partial class Account : INotifyPropertyChanging, INotifyPropertyChanged
+	public partial class Account : INotifyPropertyChanging, INotifyPropertyChanged
 	{
 		
 		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
@@ -274,6 +296,274 @@ namespace AntShares.Data
 					this._Value = value;
 					this.SendPropertyChanged("Value");
 					this.OnValueChanged();
+				}
+			}
+		}
+		
+		public event PropertyChangingEventHandler PropertyChanging;
+		
+		public event PropertyChangedEventHandler PropertyChanged;
+		
+		protected virtual void SendPropertyChanging()
+		{
+			if ((this.PropertyChanging != null))
+			{
+				this.PropertyChanging(this, emptyChangingEventArgs);
+			}
+		}
+		
+		protected virtual void SendPropertyChanged(String propertyName)
+		{
+			if ((this.PropertyChanged != null))
+			{
+				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+			}
+		}
+	}
+	
+	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.Unspent")]
+	public partial class Unspent : INotifyPropertyChanging, INotifyPropertyChanged
+	{
+		
+		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
+		
+		private System.Data.Linq.Binary _TxId;
+		
+		private short _Index;
+		
+		private System.Data.Linq.Binary _AssetType;
+		
+		private long _Value;
+		
+		private System.Data.Linq.Binary _ScriptHash;
+		
+    #region 可扩展性方法定义
+    partial void OnLoaded();
+    partial void OnValidate(System.Data.Linq.ChangeAction action);
+    partial void OnCreated();
+    partial void OnTxIdChanging(System.Data.Linq.Binary value);
+    partial void OnTxIdChanged();
+    partial void OnIndexChanging(short value);
+    partial void OnIndexChanged();
+    partial void OnAssetTypeChanging(System.Data.Linq.Binary value);
+    partial void OnAssetTypeChanged();
+    partial void OnValueChanging(long value);
+    partial void OnValueChanged();
+    partial void OnScriptHashChanging(System.Data.Linq.Binary value);
+    partial void OnScriptHashChanged();
+    #endregion
+		
+		public Unspent()
+		{
+			OnCreated();
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_TxId", DbType="Binary(32) NOT NULL", CanBeNull=false, IsPrimaryKey=true)]
+		public System.Data.Linq.Binary TxId
+		{
+			get
+			{
+				return this._TxId;
+			}
+			set
+			{
+				if ((this._TxId != value))
+				{
+					this.OnTxIdChanging(value);
+					this.SendPropertyChanging();
+					this._TxId = value;
+					this.SendPropertyChanged("TxId");
+					this.OnTxIdChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Index", DbType="SmallInt NOT NULL", IsPrimaryKey=true)]
+		public short Index
+		{
+			get
+			{
+				return this._Index;
+			}
+			set
+			{
+				if ((this._Index != value))
+				{
+					this.OnIndexChanging(value);
+					this.SendPropertyChanging();
+					this._Index = value;
+					this.SendPropertyChanged("Index");
+					this.OnIndexChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_AssetType", DbType="Binary(32) NOT NULL", CanBeNull=false, UpdateCheck=UpdateCheck.Never)]
+		public System.Data.Linq.Binary AssetType
+		{
+			get
+			{
+				return this._AssetType;
+			}
+			set
+			{
+				if ((this._AssetType != value))
+				{
+					this.OnAssetTypeChanging(value);
+					this.SendPropertyChanging();
+					this._AssetType = value;
+					this.SendPropertyChanged("AssetType");
+					this.OnAssetTypeChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Value", DbType="BigInt NOT NULL", UpdateCheck=UpdateCheck.Never)]
+		public long Value
+		{
+			get
+			{
+				return this._Value;
+			}
+			set
+			{
+				if ((this._Value != value))
+				{
+					this.OnValueChanging(value);
+					this.SendPropertyChanging();
+					this._Value = value;
+					this.SendPropertyChanged("Value");
+					this.OnValueChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ScriptHash", DbType="Binary(20) NOT NULL", CanBeNull=false, UpdateCheck=UpdateCheck.Never)]
+		public System.Data.Linq.Binary ScriptHash
+		{
+			get
+			{
+				return this._ScriptHash;
+			}
+			set
+			{
+				if ((this._ScriptHash != value))
+				{
+					this.OnScriptHashChanging(value);
+					this.SendPropertyChanging();
+					this._ScriptHash = value;
+					this.SendPropertyChanged("ScriptHash");
+					this.OnScriptHashChanged();
+				}
+			}
+		}
+		
+		public event PropertyChangingEventHandler PropertyChanging;
+		
+		public event PropertyChangedEventHandler PropertyChanged;
+		
+		protected virtual void SendPropertyChanging()
+		{
+			if ((this.PropertyChanging != null))
+			{
+				this.PropertyChanging(this, emptyChangingEventArgs);
+			}
+		}
+		
+		protected virtual void SendPropertyChanged(String propertyName)
+		{
+			if ((this.PropertyChanged != null))
+			{
+				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+			}
+		}
+	}
+	
+	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.Transaction")]
+	public partial class Transaction : INotifyPropertyChanging, INotifyPropertyChanged
+	{
+		
+		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
+		
+		private System.Data.Linq.Binary _Hash;
+		
+		private global::AntShares.Core.TransactionType _Type;
+		
+		private byte[] _RawData;
+		
+    #region 可扩展性方法定义
+    partial void OnLoaded();
+    partial void OnValidate(System.Data.Linq.ChangeAction action);
+    partial void OnCreated();
+    partial void OnHashChanging(System.Data.Linq.Binary value);
+    partial void OnHashChanged();
+    partial void OnTypeChanging(global::AntShares.Core.TransactionType value);
+    partial void OnTypeChanged();
+    partial void OnRawDataChanging(byte[] value);
+    partial void OnRawDataChanged();
+    #endregion
+		
+		public Transaction()
+		{
+			OnCreated();
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Hash", DbType="Binary(32) NOT NULL", CanBeNull=false, IsPrimaryKey=true)]
+		public System.Data.Linq.Binary Hash
+		{
+			get
+			{
+				return this._Hash;
+			}
+			set
+			{
+				if ((this._Hash != value))
+				{
+					this.OnHashChanging(value);
+					this.SendPropertyChanging();
+					this._Hash = value;
+					this.SendPropertyChanged("Hash");
+					this.OnHashChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Type", DbType="TinyInt NOT NULL", CanBeNull=false, UpdateCheck=UpdateCheck.Never)]
+		public global::AntShares.Core.TransactionType Type
+		{
+			get
+			{
+				return this._Type;
+			}
+			set
+			{
+				if ((this._Type != value))
+				{
+					this.OnTypeChanging(value);
+					this.SendPropertyChanging();
+					this._Type = value;
+					this.SendPropertyChanged("Type");
+					this.OnTypeChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_RawData", DbType="VarBinary(MAX) NOT NULL", CanBeNull=false, UpdateCheck=UpdateCheck.Never)]
+		public byte[] RawData
+		{
+			get
+			{
+				return this._RawData;
+			}
+			set
+			{
+				if ((this._RawData != value))
+				{
+					this.OnRawDataChanging(value);
+					this.SendPropertyChanging();
+					this._RawData = value;
+					this.SendPropertyChanged("RawData");
+					this.OnRawDataChanged();
 				}
 			}
 		}

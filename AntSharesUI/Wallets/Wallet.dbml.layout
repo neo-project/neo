@@ -14,5 +14,17 @@
         <elementListCompartment Id="78d9566c-12f5-4427-b84e-a410c1dba3cd" absoluteBounds="3.7649999999999997, 1.21, 1.9700000000000002, 0.60771687825520826" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
+    <classShape Id="3341b874-c3f0-4223-8b22-cc89e0674e1a" absoluteBounds="0.75, 3.75, 2, 1.7220992024739577">
+      <DataClassMoniker Name="/WalletDataContext/Unspent" />
+      <nestedChildShapes>
+        <elementListCompartment Id="e76d1595-97fd-44e2-80fa-b7876374e40e" absoluteBounds="0.765, 4.21, 1.9700000000000002, 1.1620992024739583" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <classShape Id="45e2229e-f4ee-42b4-a00a-e26bb77eac01" absoluteBounds="3.75, 2.75, 2, 1.3525109863281246">
+      <DataClassMoniker Name="/WalletDataContext/Transaction" />
+      <nestedChildShapes>
+        <elementListCompartment Id="23ba9376-64cc-4f66-9ccf-619da0485a01" absoluteBounds="3.7649999999999997, 3.21, 1.9700000000000002, 0.792510986328125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
   </nestedChildShapes>
 </ordesignerObjectsDiagram>

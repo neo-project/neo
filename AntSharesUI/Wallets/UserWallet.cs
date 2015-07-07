@@ -1,5 +1,4 @@
 ﻿using AntShares.Cryptography;
-using AntShares.Data;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -107,6 +106,15 @@ namespace AntShares.Wallets
                 Array.Clear(passwordKey, 0, passwordKey.Length);
                 return new UserWallet(connectionString, masterKey);
             }
+        }
+
+        public void Rebuild()
+        {
+            //TODO: 重建钱包数据库中的交易数据
+            //1. 清空所有交易数据；
+            //2. 穷举所有的Unspent，找出钱包账户所持有的那部分；
+            //3. 写入数据库；
+            throw new NotImplementedException();
         }
 
         protected override void SaveEncryptedEntry(UInt160 scriptHash, byte[] redeemScript, byte[] encryptedPrivateKey)

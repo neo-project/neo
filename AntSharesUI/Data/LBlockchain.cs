@@ -34,19 +34,23 @@ namespace AntShares.Data
         protected override void OnBlock(Block block)
         {
             WriteBatch batch = new WriteBatch();
-            batch.Put(block.Hash.ToArray(), block.Trim());
+            batch.Put(block.Key(), block.Trim());
             foreach (Transaction tx in block.Transactions)
             {
-                batch.Put(tx.Hash.ToArray(), tx.ToArray());
+                batch.Put(tx.Key(), tx.ToArray());
+                if (tx.Type == TransactionType.RegisterTransaction)
+                {
+                    RegisterTransaction reg_tx = (RegisterTransaction)tx;
+                    batch.Put(reg_tx.IndexKey(), reg_tx.ToArray());
+                }
                 for (ushort index = 0; index < tx.Outputs.Length; index++)
                 {
-                    byte[] key = tx.Hash.ToArray().Concat(BitConverter.GetBytes(index)).ToArray();
-                    batch.Put(key, tx.Outputs[index].ToArray());
+                    batch.Put(tx.UnspentKey(index), tx.Outputs[index].ToArray());
                 }
             }
             foreach (TransactionInput input in block.Transactions.SelectMany(p => p.GetAllInputs()))
             {
-                batch.Delete(input.ToArray());
+                batch.Delete(input.UnspentKey());
             }
             db.Write(WriteOptions.Default, batch);
         }
