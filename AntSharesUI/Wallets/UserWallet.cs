@@ -22,17 +22,9 @@ namespace AntShares.Wallets
         public static UserWallet CreateDatabase(string path, string password)
         {
             SqlConnectionStringBuilder sb = new SqlConnectionStringBuilder();
+            sb.AttachDBFilename = path;
             sb.DataSource = @"(LocalDB)\v11.0";
             sb.IntegratedSecurity = true;
-            using (WalletDataContext ctx = new WalletDataContext(sb.ToString()))
-            {
-                try
-                {
-                    ctx.ExecuteCommand(string.Format("DROP DATABASE \"{0}\"", path));
-                }
-                catch { }
-            }
-            sb.AttachDBFilename = path;
             using (WalletDataContext ctx = new WalletDataContext(sb.ToString()))
             using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
             {
@@ -41,13 +33,14 @@ namespace AntShares.Wallets
                 rng.GetNonZeroBytes(masterKey);
                 masterKey.AesEncrypt(passwordKey);
                 Array.Clear(passwordKey, 0, passwordKey.Length);
-                ctx.Keys.InsertOnSubmit(new Key
+                ctx.Database.Delete();
+                ctx.Database.Create();
+                ctx.Keys.Add(new Key
                 {
-                    Name = KeyNames.MasterKey,
+                    Name = Key.MasterKey,
                     Value = masterKey
                 });
-                ctx.CreateDatabase();
-                ctx.SubmitChanges();
+                ctx.SaveChanges();
             }
             UserWallet wallet = OpenDatabase(path, password);
             wallet.CreateEntry();
@@ -61,7 +54,8 @@ namespace AntShares.Wallets
                 Account account = ctx.Accounts.FirstOrDefault(p => p.ScriptHash == scriptHash.ToArray());
                 if (account != null)
                 {
-                    ctx.Accounts.DeleteOnSubmit(account);
+                    ctx.Accounts.Remove(account);
+                    ctx.SaveChanges();
                 }
             }
         }
@@ -70,7 +64,7 @@ namespace AntShares.Wallets
         {
             using (WalletDataContext ctx = new WalletDataContext(connectionString))
             {
-                return ctx.Accounts.Select(p => p.ScriptHash.ToArray()).ToArray().Select(p => new UInt160(p));
+                return ctx.Accounts.Select(p => p.ScriptHash).ToArray().Select(p => new UInt160(p));
             }
         }
 
@@ -78,7 +72,15 @@ namespace AntShares.Wallets
         {
             using (WalletDataContext ctx = new WalletDataContext(connectionString))
             {
-                Account account = ctx.Accounts.FirstOrDefault(p => p.ScriptHash == scriptHash.ToArray());
+                //Account account = ctx.Accounts.FirstOrDefault(p => p.ScriptHash == scriptHash.ToArray());
+                //It throws a NotSupportedException:
+                //LINQ to Entities does not recognize the method 'Byte[] ToArray()' method, and this method cannot be translated into a store expression.
+                //I don't know why.
+                //So,
+                byte[] temp = scriptHash.ToArray();
+                Account account = ctx.Accounts.FirstOrDefault(p => p.ScriptHash == temp);
+                //It works!
+
                 if (account == null)
                 {
                     redeemScript = null;
@@ -99,7 +101,7 @@ namespace AntShares.Wallets
             string connectionString = sb.ToString();
             using (WalletDataContext ctx = new WalletDataContext(connectionString))
             {
-                Key key = ctx.Keys.FirstOrDefault(p => p.Name == KeyNames.MasterKey);
+                Key key = ctx.Keys.FirstOrDefault(p => p.Name == Key.MasterKey);
                 byte[] masterKey = key.Value;
                 byte[] passwordKey = password.ToAesKey();
                 masterKey.AesDecrypt(passwordKey);
@@ -121,10 +123,11 @@ namespace AntShares.Wallets
         {
             using (WalletDataContext ctx = new WalletDataContext(connectionString))
             {
-                Account account = ctx.Accounts.FirstOrDefault(p => p.ScriptHash == scriptHash.ToArray());
+                byte[] scriptHashBytes = scriptHash.ToArray();
+                Account account = ctx.Accounts.FirstOrDefault(p => p.ScriptHash == scriptHashBytes);
                 if (account == null)
                 {
-                    ctx.Accounts.InsertOnSubmit(account = new Account
+                    account = ctx.Accounts.Add(new Account
                     {
                         ScriptHash = scriptHash.ToArray(),
                         RedeemScript = redeemScript,
@@ -136,7 +139,7 @@ namespace AntShares.Wallets
                     account.RedeemScript = redeemScript;
                     account.PrivateKeyEncrypted = encryptedPrivateKey;
                 }
-                ctx.SubmitChanges();
+                ctx.SaveChanges();
             }
         }
     }

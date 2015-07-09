@@ -49,11 +49,20 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="LevelDB.Net, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\LevelDB.Net.1.1\lib\net40\LevelDB.Net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Data.Linq" />
@@ -67,11 +76,10 @@
     <Compile Include="Data\Helper.cs" />
     <Compile Include="Data\LBlockchain.cs" />
     <Compile Include="Cryptography\Helper.cs" />
-    <Compile Include="Wallets\Wallet.designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Wallet.dbml</DependentUpon>
-    </Compile>
+    <Compile Include="Wallets\Account.cs" />
+    <Compile Include="Wallets\Key.cs" />
+    <Compile Include="Wallets\Transaction.cs" />
+    <Compile Include="Wallets\UnspentCoin.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
@@ -122,8 +130,8 @@
     <Compile Include="UI\SigningDialog.Designer.cs">
       <DependentUpon>SigningDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="Wallets\KeyNames.cs" />
     <Compile Include="Wallets\UserWallet.cs" />
+    <Compile Include="Wallets\WalletDataContext.cs" />
     <EmbeddedResource Include="UI\AccountDetailsDialog.resx">
       <DependentUpon>AccountDetailsDialog.cs</DependentUpon>
     </EmbeddedResource>
@@ -139,9 +147,6 @@
     <EmbeddedResource Include="UI\SigningDialog.resx">
       <DependentUpon>SigningDialog.cs</DependentUpon>
     </EmbeddedResource>
-    <None Include="Wallets\Wallet.dbml.layout">
-      <DependentUpon>Wallet.dbml</DependentUpon>
-    </None>
     <EmbeddedResource Include="UI\CreateWalletDialog.resx">
       <DependentUpon>CreateWalletDialog.cs</DependentUpon>
     </EmbeddedResource>
@@ -158,11 +163,6 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <None Include="Wallets\Wallet.dbml">
-      <Generator>MSLinqToSQLGenerator</Generator>
-      <LastGenOutput>Wallet.designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </None>
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
@@ -172,7 +172,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AntSharesCore\AntSharesCore.csproj">
