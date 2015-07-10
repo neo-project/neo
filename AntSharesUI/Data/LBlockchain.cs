@@ -3,6 +3,7 @@ using AntShares.IO;
 using AntShares.Properties;
 using LevelDB;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace AntShares.Data
@@ -28,6 +29,18 @@ namespace AntShares.Data
             {
                 db.Dispose();
                 db = null;
+            }
+        }
+
+        public override IEnumerable<RegisterTransaction> GetAssets()
+        {
+            yield return Blockchain.AntCoin;
+            using (Iterator it = db.NewIterator(ReadOptions.Default))
+            {
+                for (it.Seek((byte)DataEntryPrefix.IX_Register); it.Valid() && it.Key() < (byte)DataEntryPrefix.IX_Register + 1; it.Next())
+                {
+                    yield return it.Value().ToArray().AsSerializable<RegisterTransaction>();
+                }
             }
         }
 
