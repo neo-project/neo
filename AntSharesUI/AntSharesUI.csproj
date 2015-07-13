@@ -73,9 +73,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\DataEntryPrefix.cs" />
-    <Compile Include="Data\Helper.cs" />
     <Compile Include="Data\LBlockchain.cs" />
     <Compile Include="Cryptography\Helper.cs" />
+    <Compile Include="Data\SliceBuilder.cs" />
+    <Compile Include="UI\IssueDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\IssueDialog.Designer.cs">
+      <DependentUpon>IssueDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Wallets\Account.cs" />
     <Compile Include="Wallets\Key.cs" />
     <Compile Include="Wallets\Transaction.cs" />
@@ -140,6 +146,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\InformationBox.resx">
       <DependentUpon>InformationBox.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\IssueDialog.resx">
+      <DependentUpon>IssueDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\OpenWalletDialog.resx">
       <DependentUpon>OpenWalletDialog.cs</DependentUpon>

@@ -1,5 +1,8 @@
 ﻿using AntShares.IO;
+using AntShares.IO.Json;
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -10,7 +13,7 @@ namespace AntShares.Core
         public RegisterType RegisterType;
         public string RegisterName;
         /// <summary>
-        /// 发行总量，共有3中模式：
+        /// 发行总量，共有3种模式：
         /// 1. 限量模式：当Amount为正数时，表示当前资产的最大总量为Amount，且不可修改（股权在未来可能会支持扩股或增发，会考虑需要公司签名或一定比例的股东签名认可）。
         /// 2. 信贷模式：当Amount等于0时，表示当前资产的发行方式为信贷方式。通常网关会采用这种模式，当用户充值时，产生正负两枚货币，负值表示负债，不可转让；当用户提现时，正负合并归零。无论何时，该资产在链上的总和为0。
         /// 3. 不限量模式：当Amount等于-1时，表示当前资产可以由创建者无限量发行。这种模式的自由度最大，但是公信力最低，不建议使用。
@@ -22,6 +25,8 @@ namespace AntShares.Core
         public Int64 Amount;
         public UInt160 Issuer;
         public UInt160 Admin;
+
+        private Dictionary<CultureInfo, string> _names;
 
         public RegisterTransaction()
             : base(TransactionType.RegisterTransaction)
@@ -39,6 +44,34 @@ namespace AntShares.Core
             this.Admin = reader.ReadSerializable<UInt160>();
         }
 
+        public string GetName(CultureInfo culture = null)
+        {
+            if (RegisterType == RegisterType.Share)
+            {
+                //TODO: 获取证书上的名称
+                //股权的名称由证书上的公司名称决定，不能自定义
+                //目前实名认证的相关设计还没有完全定型，所以暂时先不实现股权资产的名称查询
+                throw new NotImplementedException();
+            }
+            if (_names == null)
+            {
+                _names = ((JArray)JObject.Parse(RegisterName)).ToDictionary(p => CultureInfo.GetCultureInfo(p["lang"].AsString()), p => p["name"].AsString());
+            }
+            if (culture == null) culture = CultureInfo.CurrentCulture;
+            if (_names.ContainsKey(culture))
+            {
+                return _names[culture];
+            }
+            else if (_names.ContainsKey(CultureInfo.GetCultureInfo("en")))
+            {
+                return _names[CultureInfo.GetCultureInfo("en")];
+            }
+            else
+            {
+                return _names.Values.First();
+            }
+        }
+
         public override UInt160[] GetScriptHashesForVerifying()
         {
             return base.GetScriptHashesForVerifying().Union(new UInt160[] { Issuer, Admin }).OrderBy(p => p).ToArray();
@@ -51,6 +84,14 @@ namespace AntShares.Core
             writer.Write(Amount);
             writer.Write(Issuer);
             writer.Write(Admin);
+        }
+
+        public override string ToString()
+        {
+            //TODO: 在资产名称的后面加上发行者的名称
+            //如：CNY(由xxx公司发行)
+            //用以区分不同主体发行的相同名称的资产
+            return GetName();
         }
     }
 }

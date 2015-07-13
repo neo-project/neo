@@ -276,7 +276,7 @@ namespace AntShares.Network
             Start();
             if (Interlocked.Exchange(ref started_sync, 1) == 0)
             {
-                //开始同步区块链数据
+                //TODO: 开始同步区块链数据
             }
         }
     }

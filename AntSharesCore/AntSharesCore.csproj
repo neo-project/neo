@@ -46,6 +46,7 @@
     <Compile Include="Core\GenerationTransaction.cs" />
     <Compile Include="Core\Helper.cs" />
     <Compile Include="Core\ISignable.cs" />
+    <Compile Include="Core\IssueTransaction.cs" />
     <Compile Include="Core\MultiSigContext.cs" />
     <Compile Include="Core\Order.cs" />
     <Compile Include="Core\RegisterTransaction.cs" />

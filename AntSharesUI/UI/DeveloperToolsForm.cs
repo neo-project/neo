@@ -18,7 +18,6 @@ namespace AntShares.UI
         {
             InitializeComponent();
             tabControl1.TabPages.Remove(tabPage100);
-            textBox3.Text = Blockchain.AntShare.ToArray().ToHexString();
         }
 
         private void DeveloperToolsForm_KeyDown(object sender, KeyEventArgs e)
@@ -40,7 +39,7 @@ namespace AntShares.UI
             RegisterTransaction antshare = new RegisterTransaction
             {
                 RegisterType = RegisterType.AntShare,
-                RegisterName = "[{'lang':'zh-CHS','name':'小蚁股'},{'lang':'en','name':'AntShare'}]",
+                RegisterName = "[{'lang':'zh-CN','name':'小蚁股'},{'lang':'en','name':'AntShare'}]",
                 Amount = (Int64)numericUpDown1.Value,
                 Issuer = textBox1.Text.ToScriptHash(),
                 Admin = textBox2.Text.ToScriptHash(),
