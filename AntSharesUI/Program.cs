@@ -11,13 +11,12 @@ namespace AntShares
 {
     internal static class Program
     {
-        public static readonly LBlockchain Blockchain;
         public static readonly LocalNode LocalNode;
         public static UserWallet CurrentWallet;
 
         static Program()
         {
-            Blockchain = new LBlockchain();
+            Blockchain.RegisterBlockchain(new LBlockchain());
             LocalNode = new LocalNode(Settings.Default.NodePort);
         }
 
@@ -28,7 +27,7 @@ namespace AntShares
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());
             LocalNode.Dispose();
-            Blockchain.Dispose();
+            ((IDisposable)Blockchain.Default).Dispose();
         }
     }
 }

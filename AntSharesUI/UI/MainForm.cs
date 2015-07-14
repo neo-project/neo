@@ -1,4 +1,5 @@
 ﻿using AntShares.Core;
+using AntShares.IO;
 using AntShares.Wallets;
 using System;
 using System.ComponentModel;
@@ -28,7 +29,7 @@ namespace AntShares.UI
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            Program.LocalNode.StartSynchronize(Program.Blockchain);
+            Program.LocalNode.StartSynchronize();
         }
 
         private void 创建钱包数据库NToolStripMenuItem_Click(object sender, EventArgs e)
@@ -68,7 +69,21 @@ namespace AntShares.UI
         {
             using (IssueDialog dialog = new IssueDialog())
             {
-                dialog.ShowDialog();
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                IssueTransaction tx = dialog.GetTransaction();
+                if (tx == null) return;
+                //TODO: 检查是否符合规则，如是否超过总量、分发方式是否符合约定等；
+                SignatureContext context = new SignatureContext(tx);
+                Program.CurrentWallet.Sign(context);
+                if (context.Completed)
+                {
+                    context.Signable.Scripts = context.GetScripts();
+                    InformationBox.Show(context.Signable.ToArray().ToHexString(), "分发交易构造完成，并已完整签名，可以广播。");
+                }
+                else
+                {
+                    InformationBox.Show(context.ToString(), "分发交易构造完成，但签名信息还不完整。");
+                }
             }
         }
 

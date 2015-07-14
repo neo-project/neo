@@ -1,5 +1,4 @@
-﻿using AntShares.Core;
-using AntShares.Threading;
+﻿using AntShares.Threading;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -271,7 +270,7 @@ namespace AntShares.Network
             }
         }
 
-        public async void StartSynchronize(Blockchain blockchain)
+        public async void StartSynchronize()
         {
             Start();
             if (Interlocked.Exchange(ref started_sync, 1) == 0)

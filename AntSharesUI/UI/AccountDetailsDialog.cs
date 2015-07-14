@@ -5,7 +5,7 @@ using System.Windows.Forms;
 
 namespace AntShares.UI
 {
-    public partial class AccountDetailsDialog : Form
+    internal partial class AccountDetailsDialog : Form
     {
         public AccountDetailsDialog(WalletEntry entry)
         {

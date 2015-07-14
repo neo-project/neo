@@ -1,12 +1,17 @@
 ﻿using AntShares.IO;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace AntShares.Core
 {
     public abstract class Blockchain
     {
-        //备用矿工未来要有5-7个
+        internal static List<Blockchain> blockchains = new List<Blockchain>();
+        private static object onblock_sync_obj = new object();
+
+        //TODO: 备用矿工未来要有5-7个
         public static readonly byte[][] StandbyMiners =
         {
             "02c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd0".HexToBytes()
@@ -25,6 +30,21 @@ namespace AntShares.Core
             Scripts = new byte[0][]
         };
 
+        public static Blockchain Default
+        {
+            get
+            {
+                lock (blockchains)
+                {
+                    if (blockchains.Count == 0)
+                        return null;
+                    return blockchains[0];
+                }
+            }
+        }
+
+        public abstract bool IsReadOnly { get; }
+
         public virtual IEnumerable<RegisterTransaction> GetAssets()
         {
             return new RegisterTransaction[] { AntShare, AntCoin };
@@ -32,6 +52,27 @@ namespace AntShares.Core
 
         public abstract long GetQuantityIssued(UInt256 asset_type);
 
+        internal static void RaiseOnBlock(Block block)
+        {
+            lock (onblock_sync_obj)
+            {
+                Blockchain[] chains;
+                lock (blockchains)
+                {
+                    chains = blockchains.Where(p => !p.IsReadOnly).ToArray();
+                }
+                Task.WaitAll(chains.Select(p => Task.Run(() => p.OnBlock(block))).ToArray());
+            }
+        }
+
         protected abstract void OnBlock(Block block);
+
+        public static void RegisterBlockchain(Blockchain blockchain)
+        {
+            lock (blockchains)
+            {
+                blockchains.Add(blockchain);
+            }
+        }
     }
 }

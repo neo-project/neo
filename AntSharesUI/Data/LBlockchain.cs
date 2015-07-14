@@ -12,6 +12,14 @@ namespace AntShares.Data
     {
         private DB db;
 
+        public override bool IsReadOnly
+        {
+            get
+            {
+                return false;
+            }
+        }
+
         public LBlockchain()
         {
             Slice initialized;
@@ -48,14 +56,14 @@ namespace AntShares.Data
         public override long GetQuantityIssued(UInt256 asset_type)
         {
             if (asset_type == AntCoin.Hash) throw new ArgumentException();
-            Slice quantity;
-            if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset_type), out quantity))
-                throw new ArgumentException();
+            Slice quantity = 0L;
+            db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset_type), out quantity);
             return quantity.ToInt64();
         }
 
         protected override void OnBlock(Block block)
         {
+            Dictionary<UInt256, long> assets = new Dictionary<UInt256, long>();
             WriteBatch batch = new WriteBatch();
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.Block).Add(block.Hash), block.Trim());
             foreach (Transaction tx in block.Transactions)
@@ -68,11 +76,21 @@ namespace AntShares.Data
                 }
                 else if (tx.Type == TransactionType.IssueTransaction)
                 {
-                    //TODO: 统计发行量，并记录到数据库
-                    //1. 从交易输出中找出本交易所涉及到的所有资产，并针对每一种类型的资产执行以下步骤：
-                    //2. 对于存在负数输出的资产，必然是货币发行，发行量始终为0，所以不做记录；
-                    //3. 对于其它种类的资产，对交易输出中的数量求和，得到本次的发行量；
-                    //4. 将本次发行量增加到上一次的统计结果中，并写入数据库；
+                    foreach (var asset in tx.Outputs.GroupBy(p => p.AssetType).Where(g => g.All(p => p.Value > 0)).Select(g => new
+                    {
+                        AssetType = g.Key,
+                        Sum = g.Sum(p => p.Value)
+                    }))
+                    {
+                        if (assets.ContainsKey(asset.AssetType))
+                        {
+                            assets[asset.AssetType] += asset.Sum;
+                        }
+                        else
+                        {
+                            assets.Add(asset.AssetType, asset.Sum);
+                        }
+                    }
                 }
                 for (ushort index = 0; index < tx.Outputs.Length; index++)
                 {
@@ -82,6 +100,12 @@ namespace AntShares.Data
             foreach (TransactionInput input in block.Transactions.SelectMany(p => p.GetAllInputs()))
             {
                 batch.Delete(SliceBuilder.Begin(DataEntryPrefix.Unspent).Add(input.PrevTxId).Add(input.PrevIndex));
+            }
+            foreach (var asset in assets)
+            {
+                Slice amount = 0L;
+                db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset.Key), out amount);
+                batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset.Key), amount.ToInt64() + asset.Value);
             }
             db.Write(WriteOptions.Default, batch);
         }
