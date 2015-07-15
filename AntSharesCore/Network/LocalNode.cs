@@ -1,4 +1,6 @@
-﻿using AntShares.Threading;
+﻿using AntShares.Core;
+using AntShares.Network.Payloads;
+using AntShares.Threading;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,7 +22,7 @@ namespace AntShares.Network
         private const int UNCONNECTED_MAX = 5000;
         public const int DEFAULT_PORT = 10333;
 
-        private static readonly string path_state = Path.Combine(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, "Data", "node.dat");
+        //TODO: 需要搭建一批种子节点
         private static readonly string[] SeedList =
         {
             "seed1.antshares.org",
@@ -29,7 +32,10 @@ namespace AntShares.Network
             "seed5.antshares.org"
         };
 
-        private HashSet<IPEndPoint> unconnectedPeers = new HashSet<IPEndPoint>();
+        internal static Dictionary<UInt256, Transaction> MemoryPool = new Dictionary<UInt256, Transaction>();
+        internal static HashSet<UInt256> KnownHashes = new HashSet<UInt256>();
+
+        private static HashSet<IPEndPoint> unconnectedPeers = new HashSet<IPEndPoint>();
         private static HashSet<IPEndPoint> badPeers = new HashSet<IPEndPoint>();
         internal HashSet<RemoteNode> pendingPeers = new HashSet<RemoteNode>();
         internal Dictionary<IPEndPoint, RemoteNode> connectedPeers = new Dictionary<IPEndPoint, RemoteNode>();
@@ -97,41 +103,24 @@ namespace AntShares.Network
             int maxConnections = Math.Max(CONNECTED_MAX + 20, PENDING_MAX);
             if (connectedCount < CONNECTED_MAX && pendingCount < PENDING_MAX && (connectedCount + pendingCount) < maxConnections)
             {
-                List<Task> tasks = new List<Task>();
+                Task[] tasks;
                 if (unconnectedCount > 0)
                 {
-                    IPEndPoint[] remoteEndpoints;
                     lock (unconnectedPeers)
                     {
-                        remoteEndpoints = unconnectedPeers.Take(maxConnections - (connectedCount + pendingCount)).ToArray();
-                    }
-                    foreach (IPEndPoint remoteEndpoint in remoteEndpoints)
-                    {
-                        if (cancel.IsCancellationRequested)
-                            break;
-                        tasks.Add(ConnectToPeerAsync(remoteEndpoint));
+                        tasks = unconnectedPeers.Take(maxConnections - (connectedCount + pendingCount)).Select(p => ConnectToPeerAsync(p)).ToArray();
                     }
                 }
                 else if (connectedCount > 0)
                 {
-                    RemoteNode[] remoteNodes;
                     lock (connectedPeers)
                     {
-                        remoteNodes = connectedPeers.Values.ToArray();
-                    }
-                    foreach (RemoteNode remoteNode in remoteNodes)
-                    {
-                        if (cancel.IsCancellationRequested)
-                            return;
-                        tasks.Add(remoteNode.RequestPeersAsync());
+                        tasks = connectedPeers.Values.Select(p => p.RequestPeersAsync()).ToArray();
                     }
                 }
                 else
                 {
-                    foreach (string hostNameOrAddress in SeedList)
-                    {
-                        tasks.Add(ConnectToPeerAsync(hostNameOrAddress));
-                    }
+                    tasks = SeedList.Select(p => ConnectToPeerAsync(p)).ToArray();
                 }
                 try
                 {
@@ -152,22 +141,14 @@ namespace AntShares.Network
                 connectWorker.Dispose();
                 if (started > 0)
                 {
-                    IPEndPoint[] peers;
                     lock (unconnectedPeers)
                     {
-                        lock (connectedPeers)
+                        if (unconnectedPeers.Count < UNCONNECTED_MAX)
                         {
-                            peers = unconnectedPeers.Union(connectedPeers.Keys).Take(UNCONNECTED_MAX).ToArray();
-                        }
-                    }
-                    using (FileStream fs = new FileStream(path_state, FileMode.Create, FileAccess.Write, FileShare.None))
-                    using (BinaryWriter writer = new BinaryWriter(fs))
-                    {
-                        writer.Write(peers.Length);
-                        foreach (IPEndPoint endpoint in peers)
-                        {
-                            writer.Write(endpoint.Address.GetAddressBytes().Take(4).ToArray());
-                            writer.Write((UInt16)endpoint.Port);
+                            lock (connectedPeers)
+                            {
+                                unconnectedPeers.UnionWith(connectedPeers.Keys.Take(UNCONNECTED_MAX - unconnectedPeers.Count));
+                            }
                         }
                     }
                     lock (connectedPeers)
@@ -187,6 +168,44 @@ namespace AntShares.Network
             {
                 return connectedPeers.Values.ToArray();
             }
+        }
+
+        public static void LoadState(Stream stream)
+        {
+            unconnectedPeers.Clear();
+            using (BinaryReader reader = new BinaryReader(stream, Encoding.ASCII, true))
+            {
+                int count = reader.ReadInt32();
+                for (int i = 0; i < count; i++)
+                {
+                    IPAddress address = new IPAddress(reader.ReadBytes(4));
+                    int port = reader.ReadUInt16();
+                    unconnectedPeers.Add(new IPEndPoint(address, port));
+                }
+            }
+        }
+
+        public async Task<bool> RelayAsync(Transaction tx)
+        {
+            lock (MemoryPool)
+            {
+                if (!MemoryPool.ContainsKey(tx.Hash))
+                {
+                    //TODO: 清理内存池
+                    //如果交易无效或者已经在区块链中，那么就永远没有机会将它从内存池中移除
+                    //需要有一种机制能够定期从池中将旧的交易清理掉
+                    MemoryPool.Add(tx.Hash, tx);
+                }
+            }
+            if (connectedPeers.Count == 0) return false;
+            RemoteNode[] remoteNodes;
+            lock (connectedPeers)
+            {
+                remoteNodes = connectedPeers.Values.ToArray();
+            }
+            if (remoteNodes.Length == 0) return false;
+            await Task.WhenAll(remoteNodes.Select(p => p.RelayAsync(InventoryType.MSG_TX, tx.Hash)));
+            return true;
         }
 
         private void RemoteNode_Disconnected(object sender, bool error)
@@ -238,24 +257,29 @@ namespace AntShares.Network
             }
         }
 
+        public static void SaveState(Stream stream)
+        {
+            IPEndPoint[] peers;
+            lock (unconnectedPeers)
+            {
+                peers = unconnectedPeers.Take(UNCONNECTED_MAX).ToArray();
+            }
+            if (peers.Length == 0) return;
+            using (BinaryWriter writer = new BinaryWriter(stream, Encoding.ASCII, true))
+            {
+                writer.Write(peers.Length);
+                foreach (IPEndPoint endpoint in peers)
+                {
+                    writer.Write(endpoint.Address.GetAddressBytes().Take(4).ToArray());
+                    writer.Write((UInt16)endpoint.Port);
+                }
+            }
+        }
+
         public async void Start()
         {
             if (Interlocked.Exchange(ref started, 1) == 0)
             {
-                if (File.Exists(path_state))
-                {
-                    using (FileStream fs = new FileStream(path_state, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    using (BinaryReader reader = new BinaryReader(fs))
-                    {
-                        int count = reader.ReadInt32();
-                        for (int i = 0; i < count; i++)
-                        {
-                            IPAddress address = new IPAddress(reader.ReadBytes(4));
-                            int port = reader.ReadUInt16();
-                            unconnectedPeers.Add(new IPEndPoint(address, port));
-                        }
-                    }
-                }
                 connectWorker.Start();
                 listener.Start();
                 while (disposed == 0)

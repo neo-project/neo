@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace AntShares.Core
 {
@@ -16,11 +18,20 @@ namespace AntShares.Core
 
         public override UInt160[] GetScriptHashesForVerifying()
         {
-            //TODO: 资产分发交易的签名验证列表
-            //1. 所有的交易输入地址；
-            //2. 资产的管理员；
-            //3. 如果是股权交易，则还要包含所有的接受者；
-            throw new NotImplementedException();
+            Blockchain blockchain = Blockchain.Default;
+            if (blockchain == null) throw new InvalidOperationException();
+            HashSet<UInt160> hashes = new HashSet<UInt160>(base.GetScriptHashesForVerifying());
+            foreach (var group in Outputs.GroupBy(p => p.AssetId))
+            {
+                RegisterTransaction tx = blockchain.GetTransaction(group.Key) as RegisterTransaction;
+                if (tx == null) throw new InvalidOperationException();
+                hashes.Add(tx.Admin);
+                if (tx.RegisterType == RegisterType.Share)
+                {
+                    hashes.UnionWith(group.Select(p => p.ScriptHash));
+                }
+            }
+            return hashes.OrderBy(p => p).ToArray();
         }
 
         protected override void SerializeExclusiveData(BinaryWriter writer)

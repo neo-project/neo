@@ -25,7 +25,7 @@ namespace AntShares.Wallets
         }
 
         [Column(TypeName = "Binary"), Index, MaxLength(32), Required]
-        public byte[] AssetType { get; set; }
+        public byte[] AssetId { get; set; }
 
         public long Value { get; set; }
 

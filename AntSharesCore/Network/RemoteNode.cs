@@ -114,6 +114,18 @@ namespace AntShares.Network
             SendMessage("addr", payload);
         }
 
+        private void OnInvMessageReceived(InvPayload payload)
+        {
+            lock (LocalNode.KnownHashes)
+            {
+                foreach (InventoryVector vector in payload.Inventories)
+                {
+                    if (LocalNode.KnownHashes.Contains(vector.Hash)) continue;
+                    //TODO: 准备下载广播数据
+                }
+            }
+        }
+
         private void OnMessageReceived(Message message)
         {
             switch (message.Command)
@@ -126,6 +138,9 @@ namespace AntShares.Network
                     break;
                 case "getaddr":
                     OnGetAddrMessageReceived();
+                    break;
+                case "inv":
+                    OnInvMessageReceived(message.Payload.AsSerializable<InvPayload>());
                     break;
                 case "verack":
                 case "version":
@@ -177,6 +192,15 @@ namespace AntShares.Network
             {
                 return ReceiveMessage();
             });
+        }
+
+        internal async Task RelayAsync(InventoryType type, UInt256 hash)
+        {
+            await SendMessageAsync("inv", InvPayload.Create(new InventoryVector
+            {
+                Type = type,
+                Hash = hash
+            }));
         }
 
         internal async Task RequestPeersAsync()

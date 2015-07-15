@@ -36,9 +36,7 @@ namespace AntShares.Core
             {
                 lock (blockchains)
                 {
-                    if (blockchains.Count == 0)
-                        return null;
-                    return blockchains[0];
+                    return blockchains.FirstOrDefault();
                 }
             }
         }
@@ -50,7 +48,16 @@ namespace AntShares.Core
             return new RegisterTransaction[] { AntShare, AntCoin };
         }
 
-        public abstract long GetQuantityIssued(UInt256 asset_type);
+        public abstract long GetQuantityIssued(UInt256 asset_id);
+
+        public virtual Transaction GetTransaction(UInt256 hash)
+        {
+            if (hash == AntCoin.Hash)
+                return AntCoin;
+            return GenesisBlock.Transactions.FirstOrDefault(p => p.Hash == hash);
+        }
+
+        protected abstract void OnBlock(Block block);
 
         internal static void RaiseOnBlock(Block block)
         {
@@ -64,8 +71,6 @@ namespace AntShares.Core
                 Task.WaitAll(chains.Select(p => Task.Run(() => p.OnBlock(block))).ToArray());
             }
         }
-
-        protected abstract void OnBlock(Block block);
 
         public static void RegisterBlockchain(Blockchain blockchain)
         {

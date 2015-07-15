@@ -33,7 +33,7 @@ namespace AntShares.UI
                 Inputs = new TransactionInput[0], //TODO: 从区块链或钱包中找出负资产，并合并到交易中
                 Outputs = listBox1.Items.OfType<IssueListBoxItem>().GroupBy(p => p.Account).Select(g => new TransactionOutput
                 {
-                    AssetType = tx.Hash,
+                    AssetId = tx.Hash,
                     ScriptHash = g.Key,
                     Value = g.Sum(p => p.Amount)
                 }).ToArray()

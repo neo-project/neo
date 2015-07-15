@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace AntShares.Core
 {
@@ -42,6 +43,15 @@ namespace AntShares.Core
         }
 
         protected abstract void DeserializeExclusiveData(BinaryReader reader);
+
+        public static Transaction DeserializeFrom(byte[] value)
+        {
+            using (MemoryStream ms = new MemoryStream(value, false))
+            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            {
+                return DeserializeFrom(reader);
+            }
+        }
 
         internal static Transaction DeserializeFrom(BinaryReader reader)
         {
@@ -91,14 +101,15 @@ namespace AntShares.Core
 
         public virtual UInt160[] GetScriptHashesForVerifying()
         {
+            if (Inputs.Length == 0) return new UInt160[0];
+            Blockchain blockchain = Blockchain.Default;
+            if (blockchain == null) throw new InvalidOperationException();
             HashSet<UInt160> hashes = new HashSet<UInt160>();
-            for (int i = 0; i < Inputs.Length; i++)
+            foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
             {
-                //TODO: 获取 TransactionInput 所指向的 TransactionOutput 中的 ScriptHash，用以确定交易中需要签名的地址
-                //需要本地区块链数据库，否则无法验证
-                //无法验证的情况下，抛出异常：
-                //throw new InvalidOperationException();
-                throw new NotImplementedException();
+                Transaction tx = blockchain.GetTransaction(group.Key);
+                if (tx == null) throw new InvalidOperationException();
+                hashes.UnionWith(group.Select(p => tx.Outputs[p.PrevIndex].ScriptHash));
             }
             return hashes.OrderBy(p => p).ToArray();
         }

@@ -53,12 +53,26 @@ namespace AntShares.Data
             }
         }
 
-        public override long GetQuantityIssued(UInt256 asset_type)
+        public override long GetQuantityIssued(UInt256 asset_id)
         {
-            if (asset_type == AntCoin.Hash) throw new ArgumentException();
+            if (asset_id == AntCoin.Hash) throw new ArgumentException();
             Slice quantity = 0L;
-            db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset_type), out quantity);
+            db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset_id), out quantity);
             return quantity.ToInt64();
+        }
+
+        public override Transaction GetTransaction(UInt256 hash)
+        {
+            Transaction tx = base.GetTransaction(hash);
+            if (tx == null)
+            {
+                Slice value;
+                if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(hash), out value))
+                {
+                    tx = Transaction.DeserializeFrom(value.ToArray());
+                }
+            }
+            return tx;
         }
 
         protected override void OnBlock(Block block)
@@ -76,19 +90,19 @@ namespace AntShares.Data
                 }
                 else if (tx.Type == TransactionType.IssueTransaction)
                 {
-                    foreach (var asset in tx.Outputs.GroupBy(p => p.AssetType).Where(g => g.All(p => p.Value > 0)).Select(g => new
+                    foreach (var asset in tx.Outputs.GroupBy(p => p.AssetId).Where(g => g.All(p => p.Value > 0)).Select(g => new
                     {
-                        AssetType = g.Key,
+                        AssetId = g.Key,
                         Sum = g.Sum(p => p.Value)
                     }))
                     {
-                        if (assets.ContainsKey(asset.AssetType))
+                        if (assets.ContainsKey(asset.AssetId))
                         {
-                            assets[asset.AssetType] += asset.Sum;
+                            assets[asset.AssetId] += asset.Sum;
                         }
                         else
                         {
-                            assets.Add(asset.AssetType, asset.Sum);
+                            assets.Add(asset.AssetId, asset.Sum);
                         }
                     }
                 }
