@@ -1,16 +1,13 @@
 ﻿using AntShares.IO;
+using AntShares.IO.Caching;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace AntShares.Core
 {
-    public abstract class Blockchain
+    public class Blockchain
     {
-        internal static List<Blockchain> blockchains = new List<Blockchain>();
-        private static object onblock_sync_obj = new object();
-
         //TODO: 备用矿工未来要有5-7个
         public static readonly byte[][] StandbyMiners =
         {
@@ -30,25 +27,45 @@ namespace AntShares.Core
             Scripts = new byte[0][]
         };
 
-        public static Blockchain Default
+        //TODO: 是否应该根据内存大小来优化缓存容量？
+        private static BlockCache cache = new BlockCache(5760);
+
+        public static Blockchain Default { get; private set; }
+
+        public virtual bool IsReadOnly
         {
             get
             {
-                lock (blockchains)
-                {
-                    return blockchains.FirstOrDefault();
-                }
+                return true;
             }
         }
 
-        public abstract bool IsReadOnly { get; }
+        static Blockchain()
+        {
+            Blockchain.Default = new Blockchain();
+        }
+
+        public virtual bool ContainsBlock(UInt256 hash)
+        {
+            return hash == GenesisBlock.Hash || cache.Contains(hash);
+        }
+
+        public virtual bool ContainsTransaction(UInt256 hash)
+        {
+            return hash == AntCoin.Hash || GenesisBlock.Transactions.Any(p => p.Hash == hash);
+        }
 
         public virtual IEnumerable<RegisterTransaction> GetAssets()
         {
             return new RegisterTransaction[] { AntShare, AntCoin };
         }
 
-        public abstract long GetQuantityIssued(UInt256 asset_id);
+        public virtual long GetQuantityIssued(UInt256 asset_id)
+        {
+            RegisterTransaction tx = GetTransaction(asset_id) as RegisterTransaction;
+            if (tx == null || tx.RegisterType == RegisterType.Currency) return 0;
+            return GenesisBlock.Transactions.OfType<IssueTransaction>().SelectMany(p => p.Outputs).Where(p => p.AssetId == asset_id).Sum(p => p.Value);
+        }
 
         public virtual Transaction GetTransaction(UInt256 hash)
         {
@@ -57,27 +74,14 @@ namespace AntShares.Core
             return GenesisBlock.Transactions.FirstOrDefault(p => p.Hash == hash);
         }
 
-        protected abstract void OnBlock(Block block);
-
-        internal static void RaiseOnBlock(Block block)
+        protected virtual void OnBlock(Block block)
         {
-            lock (onblock_sync_obj)
-            {
-                Blockchain[] chains;
-                lock (blockchains)
-                {
-                    chains = blockchains.Where(p => !p.IsReadOnly).ToArray();
-                }
-                Task.WaitAll(chains.Select(p => Task.Run(() => p.OnBlock(block))).ToArray());
-            }
+            cache.Add(block);
         }
 
         public static void RegisterBlockchain(Blockchain blockchain)
         {
-            lock (blockchains)
-            {
-                blockchains.Add(blockchain);
-            }
+            Default = blockchain;
         }
     }
 }

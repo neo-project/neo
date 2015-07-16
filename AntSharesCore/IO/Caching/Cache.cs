@@ -7,32 +7,22 @@ namespace AntShares.IO.Caching
 {
     internal abstract class Cache<TKey, TValue> : ICollection<TValue>, IDisposable
     {
-        private class CacheItem
+        protected Dictionary<TKey, CacheItem<TKey, TValue>> InnerDictionary = new Dictionary<TKey, CacheItem<TKey, TValue>>();
+        private int max_capacity;
+
+        public virtual TValue this[TKey key]
         {
-            public TKey Key;
-            public TValue Value;
-            public DateTime LastUpdate;
-
-            public CacheItem(TKey key, TValue value)
+            get
             {
-                this.Key = key;
-                this.Value = value;
-            }
-
-            public void Update()
-            {
-                LastUpdate = DateTime.Now;
+                return InnerDictionary[key].Value;
             }
         }
-
-        private Dictionary<TKey, CacheItem> dictionary = new Dictionary<TKey, CacheItem>();
-        private int max_capacity;
 
         public int Count
         {
             get
             {
-                return dictionary.Count;
+                return InnerDictionary.Count;
             }
         }
 
@@ -52,44 +42,48 @@ namespace AntShares.IO.Caching
         public void Add(TValue item)
         {
             TKey key = GetKeyForItem(item);
-            if (dictionary.ContainsKey(key))
+            if (InnerDictionary.ContainsKey(key))
             {
-                dictionary[key].Update();
+                InnerDictionary[key].Update();
             }
             else
             {
-                if (dictionary.Count >= max_capacity)
+                if (InnerDictionary.Count >= max_capacity)
                 {
                     //TODO: 对PLINQ查询进行性能测试，以便确定此处使用何种算法更优（并行或串行）
-                    foreach (CacheItem item_del in dictionary.Values.AsParallel().OrderBy(p => p.LastUpdate).Take(dictionary.Count - max_capacity + 1))
+                    foreach (CacheItem<TKey, TValue> item_del in InnerDictionary.Values.AsParallel().OrderBy(p => p.LastUpdate).Take(InnerDictionary.Count - max_capacity + 1))
                     {
                         RemoveInternal(item_del);
                     }
                 }
-                dictionary.Add(key, new CacheItem(key, item));
+                InnerDictionary.Add(key, new CacheItem<TKey, TValue>(key, item));
             }
         }
 
         public void Clear()
         {
-            foreach (CacheItem item_del in dictionary.Values.ToArray())
+            foreach (CacheItem<TKey, TValue> item_del in InnerDictionary.Values.ToArray())
             {
                 RemoveInternal(item_del);
             }
         }
 
+        public virtual bool Contains(TKey key)
+        {
+            return InnerDictionary.ContainsKey(key);
+        }
+
         public bool Contains(TValue item)
         {
-            TKey key = GetKeyForItem(item);
-            return dictionary.ContainsKey(key);
+            return Contains(GetKeyForItem(item));
         }
 
         public void CopyTo(TValue[] array, int arrayIndex)
         {
             if (array == null) throw new ArgumentNullException();
             if (arrayIndex < 0) throw new ArgumentOutOfRangeException();
-            if (arrayIndex + dictionary.Count > array.Length) throw new ArgumentException();
-            foreach (TValue item in dictionary.Values.Select(p => p.Value))
+            if (arrayIndex + InnerDictionary.Count > array.Length) throw new ArgumentException();
+            foreach (TValue item in InnerDictionary.Values.Select(p => p.Value))
             {
                 array[arrayIndex++] = item;
             }
@@ -105,14 +99,14 @@ namespace AntShares.IO.Caching
         public bool Remove(TValue item)
         {
             TKey key = GetKeyForItem(item);
-            if (!dictionary.ContainsKey(key)) return false;
-            RemoveInternal(dictionary[key]);
+            if (!InnerDictionary.ContainsKey(key)) return false;
+            RemoveInternal(InnerDictionary[key]);
             return true;
         }
 
-        private void RemoveInternal(CacheItem item)
+        private void RemoveInternal(CacheItem<TKey, TValue> item)
         {
-            dictionary.Remove(item.Key);
+            InnerDictionary.Remove(item.Key);
             IDisposable disposable = item.Value as IDisposable;
             if (disposable != null)
             {
@@ -122,7 +116,7 @@ namespace AntShares.IO.Caching
 
         public IEnumerator<TValue> GetEnumerator()
         {
-            return dictionary.Values.Select(p => p.Value).GetEnumerator();
+            return InnerDictionary.Values.Select(p => p.Value).GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()

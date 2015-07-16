@@ -64,7 +64,9 @@
     <Compile Include="Core\TransactionType.cs" />
     <Compile Include="Cryptography\Helper.cs" />
     <Compile Include="Cryptography\MerkleTree.cs" />
+    <Compile Include="IO\Caching\BlockCache.cs" />
     <Compile Include="IO\Caching\Cache.cs" />
+    <Compile Include="IO\Caching\CacheItem.cs" />
     <Compile Include="IO\Helper.cs" />
     <Compile Include="IO\ISerializable.cs" />
     <Compile Include="Cryptography\Base58.cs" />

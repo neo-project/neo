@@ -22,12 +22,10 @@ namespace AntShares.Core
 
         public override UInt160[] GetScriptHashesForVerifying()
         {
-            Blockchain blockchain = Blockchain.Default;
-            if (blockchain == null) throw new InvalidOperationException();
             HashSet<UInt160> hashes = new HashSet<UInt160>(base.GetScriptHashesForVerifying());
             foreach (var group in Outputs.GroupBy(p => p.AssetId))
             {
-                RegisterTransaction tx = blockchain.GetTransaction(group.Key) as RegisterTransaction;
+                RegisterTransaction tx = Blockchain.Default.GetTransaction(group.Key) as RegisterTransaction;
                 if (tx == null) throw new InvalidOperationException();
                 if (tx.RegisterType == RegisterType.Share)
                 {

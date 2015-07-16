@@ -2,6 +2,7 @@
 using AntShares.IO;
 using AntShares.Network.Payloads;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -18,6 +19,7 @@ namespace AntShares.Network
         internal event EventHandler<Block> NewBlock;
         internal event EventHandler<IPEndPoint[]> NewPeers;
 
+        private HashSet<InventoryVector> missions = new HashSet<InventoryVector>();
         private LocalNode localNode;
         private TcpClient tcp;
         private BinaryReader reader;
@@ -41,6 +43,12 @@ namespace AntShares.Network
             this.localNode = localNode;
             this.tcp = tcp;
             OnConnected();
+        }
+
+        private void CheckMissions()
+        {
+            //TODO: 检查是否存在下载任务并执行
+            //在收到某些特定的包后触发本函数
         }
 
         internal async Task ConnectAsync()
@@ -116,14 +124,30 @@ namespace AntShares.Network
 
         private void OnInvMessageReceived(InvPayload payload)
         {
+            InventoryVector[] vectors;
             lock (LocalNode.KnownHashes)
             {
-                foreach (InventoryVector vector in payload.Inventories)
+                vectors = payload.Inventories.Where(p => !LocalNode.KnownHashes.Contains(p.Hash)).ToArray();
+            }
+            foreach (var group in vectors.GroupBy(p => p.Type))
+            {
+                switch (group.Key)
                 {
-                    if (LocalNode.KnownHashes.Contains(vector.Hash)) continue;
-                    //TODO: 准备下载广播数据
+                    case InventoryType.MSG_TX:
+                        InventoryVector[] tx_vectors;
+                        lock (LocalNode.MemoryPool)
+                        {
+                            tx_vectors = group.Where(p => !LocalNode.MemoryPool.ContainsKey(p.Hash)).ToArray();
+                        }
+                        tx_vectors = tx_vectors.Where(p => !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
+                        missions.UnionWith(tx_vectors);
+                        break;
+                    case InventoryType.MSG_BLOCK:
+                        missions.UnionWith(group.Where(p => !Blockchain.Default.ContainsBlock(p.Hash)));
+                        break;
                 }
             }
+            CheckMissions();
         }
 
         private void OnMessageReceived(Message message)

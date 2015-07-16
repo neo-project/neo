@@ -11,6 +11,7 @@ namespace AntShares.Data
     internal class LBlockchain : Blockchain, IDisposable
     {
         private DB db;
+        private object onblock_sync_obj = new object();
 
         public override bool IsReadOnly
         {
@@ -30,6 +31,22 @@ namespace AntShares.Data
                 db.Put(WriteOptions.Default, SliceBuilder.Begin(DataEntryPrefix.Configuration).Add("version"), 0);
                 db.Put(WriteOptions.Default, SliceBuilder.Begin(DataEntryPrefix.Configuration).Add("initialized"), true);
             }
+        }
+
+        public override bool ContainsBlock(UInt256 hash)
+        {
+            if (base.ContainsBlock(hash)) return true;
+            Slice value;
+            //TODO: 尝试有没有更快的方法找出LevelDB中是否存在某一条记录，而不是尝试读取某一条记录后判断是否成功
+            return db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.Block).Add(hash), out value);
+        }
+
+        public override bool ContainsTransaction(UInt256 hash)
+        {
+            if (base.ContainsTransaction(hash)) return true;
+            Slice value;
+            //TODO: 尝试有没有更快的方法找出LevelDB中是否存在某一条记录，而不是尝试读取某一条记录后判断是否成功
+            return db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(hash), out value);
         }
 
         public void Dispose()
@@ -77,51 +94,55 @@ namespace AntShares.Data
 
         protected override void OnBlock(Block block)
         {
-            Dictionary<UInt256, long> assets = new Dictionary<UInt256, long>();
-            WriteBatch batch = new WriteBatch();
-            batch.Put(SliceBuilder.Begin(DataEntryPrefix.Block).Add(block.Hash), block.Trim());
-            foreach (Transaction tx in block.Transactions)
+            base.OnBlock(block);
+            lock (onblock_sync_obj)
             {
-                batch.Put(SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(tx.Hash), tx.ToArray());
-                if (tx.Type == TransactionType.RegisterTransaction)
+                Dictionary<UInt256, long> assets = new Dictionary<UInt256, long>();
+                WriteBatch batch = new WriteBatch();
+                batch.Put(SliceBuilder.Begin(DataEntryPrefix.Block).Add(block.Hash), block.Trim());
+                foreach (Transaction tx in block.Transactions)
                 {
-                    RegisterTransaction reg_tx = (RegisterTransaction)tx;
-                    batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Register).Add((byte)reg_tx.RegisterType).Add(reg_tx.Hash), reg_tx.ToArray());
-                }
-                else if (tx.Type == TransactionType.IssueTransaction)
-                {
-                    foreach (var asset in tx.Outputs.GroupBy(p => p.AssetId).Where(g => g.All(p => p.Value > 0)).Select(g => new
+                    batch.Put(SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(tx.Hash), tx.ToArray());
+                    if (tx.Type == TransactionType.RegisterTransaction)
                     {
-                        AssetId = g.Key,
-                        Sum = g.Sum(p => p.Value)
-                    }))
+                        RegisterTransaction reg_tx = (RegisterTransaction)tx;
+                        batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Register).Add((byte)reg_tx.RegisterType).Add(reg_tx.Hash), reg_tx.ToArray());
+                    }
+                    else if (tx.Type == TransactionType.IssueTransaction)
                     {
-                        if (assets.ContainsKey(asset.AssetId))
+                        foreach (var asset in tx.Outputs.GroupBy(p => p.AssetId).Where(g => g.All(p => p.Value > 0)).Select(g => new
                         {
-                            assets[asset.AssetId] += asset.Sum;
-                        }
-                        else
+                            AssetId = g.Key,
+                            Sum = g.Sum(p => p.Value)
+                        }))
                         {
-                            assets.Add(asset.AssetId, asset.Sum);
+                            if (assets.ContainsKey(asset.AssetId))
+                            {
+                                assets[asset.AssetId] += asset.Sum;
+                            }
+                            else
+                            {
+                                assets.Add(asset.AssetId, asset.Sum);
+                            }
                         }
                     }
+                    for (ushort index = 0; index < tx.Outputs.Length; index++)
+                    {
+                        batch.Put(SliceBuilder.Begin(DataEntryPrefix.Unspent).Add(tx.Hash).Add(index), tx.Outputs[index].ToArray());
+                    }
                 }
-                for (ushort index = 0; index < tx.Outputs.Length; index++)
+                foreach (TransactionInput input in block.Transactions.SelectMany(p => p.GetAllInputs()))
                 {
-                    batch.Put(SliceBuilder.Begin(DataEntryPrefix.Unspent).Add(tx.Hash).Add(index), tx.Outputs[index].ToArray());
+                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.Unspent).Add(input.PrevTxId).Add(input.PrevIndex));
                 }
+                foreach (var asset in assets)
+                {
+                    Slice amount = 0L;
+                    db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset.Key), out amount);
+                    batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset.Key), amount.ToInt64() + asset.Value);
+                }
+                db.Write(WriteOptions.Default, batch);
             }
-            foreach (TransactionInput input in block.Transactions.SelectMany(p => p.GetAllInputs()))
-            {
-                batch.Delete(SliceBuilder.Begin(DataEntryPrefix.Unspent).Add(input.PrevTxId).Add(input.PrevIndex));
-            }
-            foreach (var asset in assets)
-            {
-                Slice amount = 0L;
-                db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset.Key), out amount);
-                batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset.Key), amount.ToInt64() + asset.Value);
-            }
-            db.Write(WriteOptions.Default, batch);
         }
     }
 }

@@ -71,10 +71,8 @@ namespace AntShares.Core
 
         UInt160[] ISignable.GetScriptHashesForVerifying()
         {
-            Blockchain blockchain = Blockchain.Default;
-            if (blockchain == null) throw new InvalidOperationException();
             HashSet<UInt160> hashes = new HashSet<UInt160>();
-            RegisterTransaction asset = blockchain.GetTransaction(AssetId) as RegisterTransaction;
+            RegisterTransaction asset = Blockchain.Default.GetTransaction(AssetId) as RegisterTransaction;
             if (asset == null) throw new InvalidOperationException();
             if (asset.RegisterType == RegisterType.Share)
             {
@@ -82,7 +80,7 @@ namespace AntShares.Core
             }
             foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
             {
-                Transaction tx = blockchain.GetTransaction(group.Key);
+                Transaction tx = Blockchain.Default.GetTransaction(group.Key);
                 if (tx == null) throw new InvalidOperationException();
                 hashes.UnionWith(group.Select(p => tx.Outputs[p.PrevIndex].ScriptHash));
             }

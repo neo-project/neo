@@ -102,12 +102,10 @@ namespace AntShares.Core
         public virtual UInt160[] GetScriptHashesForVerifying()
         {
             if (Inputs.Length == 0) return new UInt160[0];
-            Blockchain blockchain = Blockchain.Default;
-            if (blockchain == null) throw new InvalidOperationException();
             HashSet<UInt160> hashes = new HashSet<UInt160>();
             foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
             {
-                Transaction tx = blockchain.GetTransaction(group.Key);
+                Transaction tx = Blockchain.Default.GetTransaction(group.Key);
                 if (tx == null) throw new InvalidOperationException();
                 hashes.UnionWith(group.Select(p => tx.Outputs[p.PrevIndex].ScriptHash));
             }
