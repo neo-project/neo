@@ -19,7 +19,13 @@ namespace AntShares.Network
         internal event EventHandler<Block> NewBlock;
         internal event EventHandler<IPEndPoint[]> NewPeers;
 
-        private HashSet<InventoryVector> missions = new HashSet<InventoryVector>();
+        private static readonly TimeSpan OneMinute = TimeSpan.FromMinutes(1);
+
+        private static Dictionary<UInt256, Mission> missions_global = new Dictionary<UInt256, Mission>();
+        private Dictionary<UInt256, Mission> missions = new Dictionary<UInt256, Mission>();
+        private Mission mission_current = null;
+        private DateTime mission_start_time = DateTime.MinValue;
+
         private LocalNode localNode;
         private TcpClient tcp;
         private BinaryReader reader;
@@ -47,8 +53,26 @@ namespace AntShares.Network
 
         private void CheckMissions()
         {
-            //TODO: 检查是否存在下载任务并执行
-            //在收到某些特定的包后触发本函数
+            if (mission_current != null && DateTime.Now - mission_start_time > OneMinute)
+            {
+                missions.Remove(mission_current.Hash);
+                mission_current = null;
+            }
+            if (mission_current != null || missions.Count == 0) return;
+            lock (missions_global)
+            {
+                foreach (UInt256 hash in missions.Keys.ToArray())
+                {
+                    if (!missions_global.ContainsKey(hash))
+                    {
+                        missions.Remove(hash);
+                    }
+                }
+                mission_current = missions.Values.Min();
+                mission_current.LaunchTimes++;
+            }
+            mission_start_time = DateTime.Now;
+            SendMessage("getdata", GetDataPayload.Create(mission_current.Type, mission_current.Hash));
         }
 
         internal async Task ConnectAsync()
@@ -129,6 +153,7 @@ namespace AntShares.Network
             {
                 vectors = payload.Inventories.Where(p => !LocalNode.KnownHashes.Contains(p.Hash)).ToArray();
             }
+            List<InventoryVector> mission_vectors = new List<InventoryVector>();
             foreach (var group in vectors.GroupBy(p => p.Type))
             {
                 switch (group.Key)
@@ -140,14 +165,36 @@ namespace AntShares.Network
                             tx_vectors = group.Where(p => !LocalNode.MemoryPool.ContainsKey(p.Hash)).ToArray();
                         }
                         tx_vectors = tx_vectors.Where(p => !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
-                        missions.UnionWith(tx_vectors);
+                        mission_vectors.AddRange(tx_vectors);
                         break;
                     case InventoryType.MSG_BLOCK:
-                        missions.UnionWith(group.Where(p => !Blockchain.Default.ContainsBlock(p.Hash)));
+                        InventoryVector[] block_vectors = group.Where(p => !Blockchain.Default.ContainsBlock(p.Hash)).ToArray();
+                        mission_vectors.AddRange(block_vectors);
                         break;
                 }
             }
-            CheckMissions();
+            if (mission_vectors.Count > 0)
+            {
+                lock (missions_global)
+                {
+                    foreach (InventoryVector vector in mission_vectors)
+                    {
+                        if (!missions_global.ContainsKey(vector.Hash))
+                        {
+                            missions_global.Add(vector.Hash, new Mission
+                            {
+                                Hash = vector.Hash,
+                                Type = vector.Type,
+                                LaunchTimes = 0
+                            });
+                        }
+                        if (!missions.ContainsKey(vector.Hash))
+                        {
+                            missions.Add(vector.Hash, missions_global[vector.Hash]);
+                        }
+                    }
+                }
+            }
         }
 
         private void OnMessageReceived(Message message)
@@ -178,6 +225,7 @@ namespace AntShares.Network
         {
             while (disposed == 0)
             {
+                CheckMissions();
                 Message message = ReceiveMessage();
                 if (message == null)
                     break;

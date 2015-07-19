@@ -18,7 +18,7 @@ namespace AntShares.IO.Caching
             }
         }
 
-        public int Count
+        public virtual int Count
         {
             get
             {
@@ -39,7 +39,7 @@ namespace AntShares.IO.Caching
             this.max_capacity = max_capacity;
         }
 
-        public void Add(TValue item)
+        public virtual void Add(TValue item)
         {
             TKey key = GetKeyForItem(item);
             if (InnerDictionary.ContainsKey(key))
@@ -60,7 +60,7 @@ namespace AntShares.IO.Caching
             }
         }
 
-        public void Clear()
+        public virtual void Clear()
         {
             foreach (CacheItem<TKey, TValue> item_del in InnerDictionary.Values.ToArray())
             {
@@ -78,7 +78,7 @@ namespace AntShares.IO.Caching
             return Contains(GetKeyForItem(item));
         }
 
-        public void CopyTo(TValue[] array, int arrayIndex)
+        public virtual void CopyTo(TValue[] array, int arrayIndex)
         {
             if (array == null) throw new ArgumentNullException();
             if (arrayIndex < 0) throw new ArgumentOutOfRangeException();
@@ -94,9 +94,19 @@ namespace AntShares.IO.Caching
             Clear();
         }
 
+        public virtual IEnumerator<TValue> GetEnumerator()
+        {
+            return InnerDictionary.Values.Select(p => p.Value).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
+
         protected abstract TKey GetKeyForItem(TValue item);
 
-        public bool Remove(TValue item)
+        public virtual bool Remove(TValue item)
         {
             TKey key = GetKeyForItem(item);
             if (!InnerDictionary.ContainsKey(key)) return false;
@@ -112,16 +122,6 @@ namespace AntShares.IO.Caching
             {
                 disposable.Dispose();
             }
-        }
-
-        public IEnumerator<TValue> GetEnumerator()
-        {
-            return InnerDictionary.Values.Select(p => p.Value).GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return this.GetEnumerator();
         }
     }
 }

@@ -67,6 +67,7 @@
     <Compile Include="IO\Caching\BlockCache.cs" />
     <Compile Include="IO\Caching\Cache.cs" />
     <Compile Include="IO\Caching\CacheItem.cs" />
+    <Compile Include="IO\Caching\ConcurrentCache.cs" />
     <Compile Include="IO\Helper.cs" />
     <Compile Include="IO\ISerializable.cs" />
     <Compile Include="Cryptography\Base58.cs" />
@@ -81,6 +82,7 @@
     <Compile Include="IO\Json\JString.cs" />
     <Compile Include="Network\LocalNode.cs" />
     <Compile Include="Network\Message.cs" />
+    <Compile Include="Network\Mission.cs" />
     <Compile Include="Network\Payloads\AddrPayload.cs" />
     <Compile Include="Network\Payloads\GetDataPayload.cs" />
     <Compile Include="Network\Payloads\InventoryType.cs" />
