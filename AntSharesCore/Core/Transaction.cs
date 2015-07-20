@@ -13,6 +13,7 @@ namespace AntShares.Core
         public readonly TransactionType Type;
         public TransactionInput[] Inputs;
         public TransactionOutput[] Outputs;
+        public byte[][] Scripts;
 
         private UInt256 hash = null;
 
@@ -28,7 +29,17 @@ namespace AntShares.Core
             }
         }
 
-        public byte[][] Scripts { get; set; }
+        byte[][] ISignable.Scripts
+        {
+            get
+            {
+                return this.Scripts;
+            }
+            set
+            {
+                this.Scripts = value;
+            }
+        }
 
         protected Transaction(TransactionType type)
         {
@@ -140,6 +151,11 @@ namespace AntShares.Core
                 writer.Flush();
                 return ms.ToArray();
             }
+        }
+
+        public virtual bool Verify()
+        {
+            return this.VerifySignature();
         }
     }
 }

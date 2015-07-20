@@ -21,5 +21,10 @@ namespace AntShares.Core
         {
             writer.Write(Nonce);
         }
+
+        public override bool Verify()
+        {
+            //TODO: 验证合法性
+        }
     }
 }

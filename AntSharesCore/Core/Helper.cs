@@ -80,7 +80,7 @@ namespace AntShares.Core
             return new UInt160(redeemScript.Sha256().RIPEMD160());
         }
 
-        internal static bool Verify(this ISignable signable)
+        internal static bool VerifySignature(this ISignable signable)
         {
             UInt160[] hashes = signable.GetScriptHashesForVerifying();
             byte[][] scripts = signable.Scripts;

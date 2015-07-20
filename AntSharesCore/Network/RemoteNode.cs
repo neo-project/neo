@@ -18,6 +18,7 @@ namespace AntShares.Network
         public event EventHandler<bool> Disconnected;
         internal event EventHandler<Block> NewBlock;
         internal event EventHandler<IPEndPoint[]> NewPeers;
+        internal event EventHandler<Transaction> NewTransaction;
 
         private static readonly TimeSpan OneMinute = TimeSpan.FromMinutes(1);
 
@@ -146,52 +147,74 @@ namespace AntShares.Network
             SendMessage("addr", payload);
         }
 
+        private void OnGetDataMessageReceived(GetDataPayload payload)
+        {
+            var groups = payload.Inventories.Distinct().ToLookup(p => p.Type);
+            if (groups.Contains(InventoryType.MSG_TX))
+            {
+                HashSet<UInt256> hashes = new HashSet<UInt256>();
+                List<Transaction> transactions = new List<Transaction>();
+                lock (LocalNode.MemoryPool)
+                {
+                    hashes.UnionWith(groups[InventoryType.MSG_TX].Where(p => LocalNode.MemoryPool.ContainsKey(p.Hash)).Select(p => p.Hash));
+                    transactions.AddRange(hashes.Select(p => LocalNode.MemoryPool[p]));
+                }
+                transactions.AddRange(groups[InventoryType.MSG_TX].Where(p => !hashes.Contains(p.Hash)).Select(p => Blockchain.Default.GetTransaction(p.Hash)).Where(p => p != null));
+                foreach (Transaction tx in transactions)
+                {
+                    SendMessage("tx", tx);
+                }
+            }
+            if (groups.Contains(InventoryType.MSG_BLOCK))
+            {
+                Block[] blocks = groups[InventoryType.MSG_BLOCK].Select(p => Blockchain.Default.GetBlock(p.Hash)).Where(p => p != null).ToArray();
+                foreach (Block block in blocks)
+                {
+                    SendMessage("block", block);
+                }
+            }
+        }
+
         private void OnInvMessageReceived(InvPayload payload)
         {
             InventoryVector[] vectors;
             lock (LocalNode.KnownHashes)
             {
-                vectors = payload.Inventories.Where(p => !LocalNode.KnownHashes.Contains(p.Hash)).ToArray();
+                vectors = payload.Inventories.Distinct().Where(p => !LocalNode.KnownHashes.Contains(p.Hash)).ToArray();
             }
-            List<InventoryVector> mission_vectors = new List<InventoryVector>();
-            foreach (var group in vectors.GroupBy(p => p.Type))
+            var groups = vectors.ToLookup(p => p.Type);
+            InventoryVector[] tx_vectors = new InventoryVector[0];
+            if (groups.Contains(InventoryType.MSG_TX))
             {
-                switch (group.Key)
+                lock (LocalNode.MemoryPool)
                 {
-                    case InventoryType.MSG_TX:
-                        InventoryVector[] tx_vectors;
-                        lock (LocalNode.MemoryPool)
-                        {
-                            tx_vectors = group.Where(p => !LocalNode.MemoryPool.ContainsKey(p.Hash)).ToArray();
-                        }
-                        tx_vectors = tx_vectors.Where(p => !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
-                        mission_vectors.AddRange(tx_vectors);
-                        break;
-                    case InventoryType.MSG_BLOCK:
-                        InventoryVector[] block_vectors = group.Where(p => !Blockchain.Default.ContainsBlock(p.Hash)).ToArray();
-                        mission_vectors.AddRange(block_vectors);
-                        break;
+                    tx_vectors = groups[InventoryType.MSG_TX].Where(p => !LocalNode.MemoryPool.ContainsKey(p.Hash)).ToArray();
                 }
+                tx_vectors = tx_vectors.Where(p => !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
             }
-            if (mission_vectors.Count > 0)
+            InventoryVector[] block_vectors = new InventoryVector[0];
+            if (groups.Contains(InventoryType.MSG_BLOCK))
             {
-                lock (missions_global)
+                block_vectors = groups[InventoryType.MSG_BLOCK].Where(p => !Blockchain.Default.ContainsBlock(p.Hash)).ToArray();
+            }
+            vectors = tx_vectors.Concat(block_vectors).ToArray();
+            if (vectors.Length == 0) return;
+            lock (missions_global)
+            {
+                foreach (InventoryVector vector in vectors)
                 {
-                    foreach (InventoryVector vector in mission_vectors)
+                    if (!missions_global.ContainsKey(vector.Hash))
                     {
-                        if (!missions_global.ContainsKey(vector.Hash))
+                        missions_global.Add(vector.Hash, new Mission
                         {
-                            missions_global.Add(vector.Hash, new Mission
-                            {
-                                Hash = vector.Hash,
-                                Type = vector.Type,
-                                LaunchTimes = 0
-                            });
-                        }
-                        if (!missions.ContainsKey(vector.Hash))
-                        {
-                            missions.Add(vector.Hash, missions_global[vector.Hash]);
-                        }
+                            Hash = vector.Hash,
+                            Type = vector.Type,
+                            LaunchTimes = 0
+                        });
+                    }
+                    if (!missions.ContainsKey(vector.Hash))
+                    {
+                        missions.Add(vector.Hash, missions_global[vector.Hash]);
                     }
                 }
             }
@@ -210,14 +233,28 @@ namespace AntShares.Network
                 case "getaddr":
                     OnGetAddrMessageReceived();
                     break;
+                case "getdata":
+                    OnGetDataMessageReceived(message.Payload.AsSerializable<GetDataPayload>());
+                    break;
                 case "inv":
                     OnInvMessageReceived(message.Payload.AsSerializable<InvPayload>());
+                    break;
+                case "tx":
+                    OnTxMessageReceived(Transaction.DeserializeFrom(message.Payload));
                     break;
                 case "verack":
                 case "version":
                 default:
                     Disconnect(true);
                     break;
+            }
+        }
+
+        private void OnTxMessageReceived(Transaction tx)
+        {
+            if (NewTransaction != null)
+            {
+                NewTransaction(this, tx);
             }
         }
 

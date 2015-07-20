@@ -1,12 +1,13 @@
 ﻿using AntShares.IO;
 using AntShares.IO.Caching;
+using AntShares.Network;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace AntShares.Core
 {
-    public class Blockchain
+    public class Blockchain : IDisposable
     {
         //TODO: 备用矿工未来要有5-7个
         public static readonly byte[][] StandbyMiners =
@@ -45,6 +46,11 @@ namespace AntShares.Core
             Blockchain.Default = new Blockchain();
         }
 
+        protected Blockchain()
+        {
+            LocalNode.NewBlock += LocalNode_NewBlock;
+        }
+
         public virtual bool ContainsBlock(UInt256 hash)
         {
             return hash == GenesisBlock.Hash || cache.Contains(hash);
@@ -55,9 +61,26 @@ namespace AntShares.Core
             return hash == AntCoin.Hash || GenesisBlock.Transactions.Any(p => p.Hash == hash);
         }
 
+        public virtual void Dispose()
+        {
+            LocalNode.NewBlock -= LocalNode_NewBlock;
+        }
+
         public virtual IEnumerable<RegisterTransaction> GetAssets()
         {
             return new RegisterTransaction[] { AntShare, AntCoin };
+        }
+
+        public virtual Block GetBlock(UInt256 hash)
+        {
+            if (hash == GenesisBlock.Hash)
+                return GenesisBlock;
+            lock (cache.SyncRoot)
+            {
+                if (cache.Contains(hash))
+                    return cache[hash];
+            }
+            return null;
         }
 
         public virtual long GetQuantityIssued(UInt256 asset_id)
@@ -74,6 +97,11 @@ namespace AntShares.Core
             return GenesisBlock.Transactions.FirstOrDefault(p => p.Hash == hash);
         }
 
+        private void LocalNode_NewBlock(object sender, Block block)
+        {
+            OnBlock(block);
+        }
+
         protected virtual void OnBlock(Block block)
         {
             cache.Add(block);
@@ -81,6 +109,9 @@ namespace AntShares.Core
 
         public static void RegisterBlockchain(Blockchain blockchain)
         {
+            if (blockchain == null) throw new ArgumentNullException();
+            if (Default != null)
+                Default.Dispose();
             Default = blockchain;
         }
     }

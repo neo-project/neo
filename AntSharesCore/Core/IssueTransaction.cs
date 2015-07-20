@@ -35,5 +35,10 @@ namespace AntShares.Core
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
         }
+
+        public override bool Verify()
+        {
+            //TODO: 验证合法性
+        }
     }
 }

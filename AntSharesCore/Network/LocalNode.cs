@@ -16,6 +16,9 @@ namespace AntShares.Network
 {
     public class LocalNode : IDisposable
     {
+        public static event EventHandler<Block> NewBlock;
+        public static event EventHandler<Transaction> NewTransaction;
+
         public const UInt32 PROTOCOL_VERSION = 0;
         private const int CONNECTED_MAX = 100;
         private const int PENDING_MAX = CONNECTED_MAX;
@@ -44,7 +47,6 @@ namespace AntShares.Network
         private TcpListener listener = new TcpListener(IPAddress.Any, DEFAULT_PORT);
         private Worker connectWorker;
         private int started = 0;
-        private int started_sync = 0;
         private int disposed = 0;
 
         public int RemoteNodeCount
@@ -90,7 +92,9 @@ namespace AntShares.Network
                 remoteNode = new RemoteNode(this, remoteEndpoint);
                 pendingPeers.Add(remoteNode);
                 remoteNode.Disconnected += RemoteNode_Disconnected;
+                remoteNode.NewBlock += RemoteNode_NewBlock;
                 remoteNode.NewPeers += RemoteNode_NewPeers;
+                remoteNode.NewTransaction += RemoteNode_NewTransaction;
             }
             await remoteNode.ConnectAsync();
         }
@@ -185,8 +189,29 @@ namespace AntShares.Network
             }
         }
 
+        public async Task<bool> RelayAsync(Block block)
+        {
+            lock (KnownHashes)
+            {
+                KnownHashes.Add(block.Hash);
+            }
+            if (connectedPeers.Count == 0) return false;
+            RemoteNode[] remoteNodes;
+            lock (connectedPeers)
+            {
+                remoteNodes = connectedPeers.Values.ToArray();
+            }
+            if (remoteNodes.Length == 0) return false;
+            await Task.WhenAll(remoteNodes.Select(p => p.RelayAsync(InventoryType.MSG_BLOCK, block.Hash)));
+            return true;
+        }
+
         public async Task<bool> RelayAsync(Transaction tx)
         {
+            lock (KnownHashes)
+            {
+                KnownHashes.Add(tx.Hash);
+            }
             lock (MemoryPool)
             {
                 if (!MemoryPool.ContainsKey(tx.Hash))
@@ -212,7 +237,9 @@ namespace AntShares.Network
         {
             RemoteNode remoteNode = (RemoteNode)sender;
             remoteNode.Disconnected -= RemoteNode_Disconnected;
+            remoteNode.NewBlock -= RemoteNode_NewBlock;
             remoteNode.NewPeers -= RemoteNode_NewPeers;
+            remoteNode.NewTransaction -= RemoteNode_NewTransaction;
             if (error)
             {
                 lock (badPeers)
@@ -232,6 +259,21 @@ namespace AntShares.Network
                     }
                 }
             }
+        }
+
+        private void RemoteNode_NewBlock(object sender, Block block)
+        {
+            lock (LocalNode.KnownHashes)
+            {
+                if (!LocalNode.KnownHashes.Add(block.Hash))
+                    return;
+            }
+            if (Blockchain.Default.ContainsBlock(block.Hash))
+                return;
+            //TODO: 验证合法性
+            if (NewBlock != null)
+                NewBlock(this, block);
+            RelayAsync(block).Void();
         }
 
         private void RemoteNode_NewPeers(object sender, IPEndPoint[] peers)
@@ -255,6 +297,21 @@ namespace AntShares.Network
                     }
                 }
             }
+        }
+
+        private void RemoteNode_NewTransaction(object sender, Transaction tx)
+        {
+            lock (KnownHashes)
+            {
+                if (!KnownHashes.Add(tx.Hash))
+                    return;
+            }
+            if (Blockchain.Default.ContainsTransaction(tx.Hash))
+                return;
+            //TODO: 验证合法性
+            if (NewTransaction != null)
+                NewTransaction(this, tx);
+            RelayAsync(tx).Void();
         }
 
         public static void SaveState(Stream stream)
@@ -291,15 +348,6 @@ namespace AntShares.Network
                     }
                     remoteNode.StartProtocolAsync().Void();
                 }
-            }
-        }
-
-        public async void StartSynchronize()
-        {
-            Start();
-            if (Interlocked.Exchange(ref started_sync, 1) == 0)
-            {
-                //TODO: 开始同步区块链数据
             }
         }
     }

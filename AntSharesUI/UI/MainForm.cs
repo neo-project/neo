@@ -29,7 +29,7 @@ namespace AntShares.UI
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            Program.LocalNode.StartSynchronize();
+            Program.LocalNode.Start();
         }
 
         private void 创建钱包数据库NToolStripMenuItem_Click(object sender, EventArgs e)

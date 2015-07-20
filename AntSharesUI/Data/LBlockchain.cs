@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace AntShares.Data
 {
-    internal class LBlockchain : Blockchain, IDisposable
+    internal class LBlockchain : Blockchain
     {
         private DB db;
         private object onblock_sync_obj = new object();
@@ -49,8 +49,9 @@ namespace AntShares.Data
             return db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(hash), out value);
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
+            base.Dispose();
             if (db != null)
             {
                 db.Dispose();
@@ -68,6 +69,20 @@ namespace AntShares.Data
                     yield return it.Value().ToArray().AsSerializable<RegisterTransaction>();
                 }
             }
+        }
+
+        public override Block GetBlock(UInt256 hash)
+        {
+            Block block = base.GetBlock(hash);
+            if (block == null)
+            {
+                Slice value;
+                if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.Block).Add(hash), out value))
+                {
+                    block = value.ToArray().AsSerializable<Block>();
+                }
+            }
+            return block;
         }
 
         public override long GetQuantityIssued(UInt256 asset_id)

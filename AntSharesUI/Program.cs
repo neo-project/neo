@@ -27,7 +27,7 @@ namespace AntShares
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());
             LocalNode.Dispose();
-            ((IDisposable)Blockchain.Default).Dispose();
+            Blockchain.Default.Dispose();
         }
     }
 }

@@ -36,6 +36,8 @@ namespace AntShares.Core
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             this.RegisterType = (RegisterType)reader.ReadByte();
+            if (!Enum.IsDefined(typeof(RegisterType), RegisterType))
+                throw new FormatException();
             this.RegisterName = reader.ReadVarString();
             this.Amount = reader.ReadInt64();
             if (Amount < -1)
@@ -92,6 +94,11 @@ namespace AntShares.Core
             //如：CNY(由xxx公司发行)
             //用以区分不同主体发行的相同名称的资产
             return GetName();
+        }
+
+        public override bool Verify()
+        {
+            //TODO: 验证合法性
         }
     }
 }

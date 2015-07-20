@@ -9,7 +9,7 @@ namespace AntShares.Core
 {
     public class Order : ISignable
     {
-        public const byte OrderType = 0;
+        public OrderType Type;
         public UInt256 AssetId;
         public UInt256 ValueAssetId;
         public Int64 Amount;
@@ -17,12 +17,24 @@ namespace AntShares.Core
         public UInt160 ScriptHash;
         public UInt160 Agent;
         public TransactionInput[] Inputs;
+        public byte[][] Scripts;
 
-        public byte[][] Scripts { get; set; }
+        byte[][] ISignable.Scripts
+        {
+            get
+            {
+                return this.Scripts;
+            }
+            set
+            {
+                this.Scripts = value;
+            }
+        }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            if (reader.ReadByte() != OrderType)
+            this.Type = (OrderType)reader.ReadByte();
+            if (!Enum.IsDefined(typeof(OrderType), Type))
                 throw new FormatException();
             this.AssetId = reader.ReadSerializable<UInt256>();
             this.ValueAssetId = reader.ReadSerializable<UInt256>();
@@ -39,8 +51,7 @@ namespace AntShares.Core
             using (MemoryStream ms = new MemoryStream(value, false))
             using (BinaryReader reader = new BinaryReader(ms))
             {
-                if (reader.ReadByte() != OrderType)
-                    throw new FormatException();
+                this.Type = (OrderType)reader.ReadByte();
                 this.AssetId = reader.ReadSerializable<UInt256>();
                 this.ValueAssetId = reader.ReadSerializable<UInt256>();
                 this.Amount = reader.ReadInt64();
@@ -56,7 +67,7 @@ namespace AntShares.Core
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms))
             {
-                writer.Write(OrderType);
+                writer.Write((byte)Type);
                 writer.Write(AssetId);
                 writer.Write(ValueAssetId);
                 writer.Write(Amount);
@@ -89,7 +100,7 @@ namespace AntShares.Core
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(OrderType);
+            writer.Write((byte)Type);
             writer.Write(AssetId);
             writer.Write(ValueAssetId);
             writer.Write(Amount);
@@ -105,7 +116,7 @@ namespace AntShares.Core
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms))
             {
-                writer.Write(OrderType);
+                writer.Write((byte)Type);
                 writer.Write(AssetId);
                 writer.Write(ValueAssetId);
                 writer.Write(Amount);
@@ -116,6 +127,12 @@ namespace AntShares.Core
                 writer.Flush();
                 return ms.ToArray();
             }
+        }
+
+        internal bool Verify()
+        {
+            if (!this.VerifySignature()) return false;
+            //TODO: 验证合法性
         }
     }
 }

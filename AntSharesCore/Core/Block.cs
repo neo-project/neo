@@ -45,7 +45,7 @@ namespace AntShares.Core
             }
         }
 
-        public byte[][] Scripts
+        byte[][] ISignable.Scripts
         {
             get
             {
@@ -71,7 +71,7 @@ namespace AntShares.Core
             this.Nonce = reader.ReadUInt32();
             this.Miner = reader.ReadSerializable<UInt160>();
             this.Script = reader.ReadBytes((int)reader.ReadVarInt());
-            if (!this.Verify())
+            if (!this.VerifySignature())
                 throw new FormatException();
             this.Transactions = new Transaction[reader.ReadVarInt()];
             for (int i = 0; i < Transactions.Length; i++)
@@ -181,6 +181,11 @@ namespace AntShares.Core
                 writer.Flush();
                 return ms.ToArray();
             }
+        }
+
+        public bool Verify()
+        {
+            //TODO: 验证合法性
         }
     }
 }

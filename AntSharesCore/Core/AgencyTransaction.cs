@@ -18,6 +18,7 @@ namespace AntShares.Core
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             this.Orders = reader.ReadSerializableArray<Order>();
+            if (Orders.Length < 2) throw new FormatException();
             if (Orders.Select(p => p.Agent).Distinct().Count() != 1)
                 throw new FormatException();
         }
@@ -35,6 +36,15 @@ namespace AntShares.Core
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(Orders);
+        }
+
+        public override bool Verify()
+        {
+            if (!base.Verify()) return false;
+            foreach (Order order in Orders)
+                if (!order.Verify())
+                    return false;
+            //TODO: 验证合法性
         }
     }
 }
