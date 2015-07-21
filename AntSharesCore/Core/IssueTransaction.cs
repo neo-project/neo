@@ -36,9 +36,12 @@ namespace AntShares.Core
         {
         }
 
-        public override bool Verify()
+        internal override bool VerifyBalance()
         {
             //TODO: 验证合法性
+            //1. 输入输出
+            //2. 有没有超发情况
+            //3. 对于货币发行，总和是否为零
         }
     }
 }

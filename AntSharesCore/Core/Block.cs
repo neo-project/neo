@@ -8,12 +8,12 @@ namespace AntShares.Core
 {
     public class Block : ISignable
     {
-        public const UInt32 Version = 0;
+        public const uint Version = 0;
         public UInt256 PrevBlock;
         public UInt256 MerkleRoot;
-        public UInt32 Timestamp;
-        public const UInt32 Bits = 0;
-        public UInt32 Nonce;
+        public uint Timestamp;
+        public const uint Bits = 0;
+        public uint Nonce;
         public UInt160 Miner;
         public byte[] Script;
         public Transaction[] Transactions;
@@ -183,9 +183,24 @@ namespace AntShares.Core
             }
         }
 
-        public bool Verify()
+        public bool Verify(bool completely = false)
         {
-            //TODO: 验证合法性
+            //TODO: 验证PrevBlock和Miner的合法性
+            //有时由于区块链同步问题，暂时无法验证合法性
+            //此时，不应简单的将区块丢弃，而应该先缓存起来，等到合适的时机再次验证
+            if (Transactions.Count(p => p.Type == TransactionType.GenerationTransaction) != 1)
+                return false;
+            if (completely)
+            {
+                GenerationTransaction tx_gen = Transactions.OfType<GenerationTransaction>().First();
+                //TODO: 验证GenerationTransaction的合法性
+                //1. 铸币是否符合规则
+                //2. 手续费是否数量正确
+                foreach (Transaction tx in Transactions)
+                    if (!tx.Verify()) return false;
+            }
+            if (!this.VerifySignature()) return false;
+            return true;
         }
     }
 }

@@ -43,6 +43,8 @@ namespace AntShares.Core
             this.ScriptHash = reader.ReadSerializable<UInt160>();
             this.Agent = reader.ReadSerializable<UInt160>();
             this.Inputs = reader.ReadSerializableArray<TransactionInput>();
+            if (Inputs.Distinct().Count() != Inputs.Length)
+                throw new FormatException();
             this.Scripts = reader.ReadBytesArray();
         }
 

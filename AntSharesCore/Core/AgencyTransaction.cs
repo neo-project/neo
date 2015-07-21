@@ -41,10 +41,18 @@ namespace AntShares.Core
         public override bool Verify()
         {
             if (!base.Verify()) return false;
+            if (Orders.Length < 2) return false;
             foreach (Order order in Orders)
                 if (!order.Verify())
                     return false;
+            return true;
+        }
+
+        internal override bool VerifyBalance()
+        {
             //TODO: 验证合法性
+            //1. 输入输出
+            //2. 成交是否符合每一个订单的要求（价格、数量等）
         }
     }
 }

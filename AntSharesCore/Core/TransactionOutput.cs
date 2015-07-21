@@ -23,10 +23,5 @@ namespace AntShares.Core
             writer.Write(Value);
             writer.Write(ScriptHash);
         }
-
-        internal bool Verify()
-        {
-            //TODO: 验证合法性
-        }
     }
 }

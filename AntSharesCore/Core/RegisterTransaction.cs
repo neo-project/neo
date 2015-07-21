@@ -100,5 +100,12 @@ namespace AntShares.Core
         {
             //TODO: 验证合法性
         }
+
+        internal override bool VerifyBalance()
+        {
+            //TODO: 验证合法性
+            //1. 系统使用费
+            //2. 输入输出
+        }
     }
 }

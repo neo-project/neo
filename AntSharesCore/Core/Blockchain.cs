@@ -31,20 +31,9 @@ namespace AntShares.Core
         //TODO: 是否应该根据内存大小来优化缓存容量？
         private static BlockCache cache = new BlockCache(5760);
 
-        public static Blockchain Default { get; private set; }
+        public static Blockchain Default { get; private set; } = new Blockchain();
 
-        public virtual bool IsReadOnly
-        {
-            get
-            {
-                return true;
-            }
-        }
-
-        static Blockchain()
-        {
-            Blockchain.Default = new Blockchain();
-        }
+        public virtual bool IsReadOnly => true;
 
         protected Blockchain()
         {
@@ -95,6 +84,25 @@ namespace AntShares.Core
             if (hash == AntCoin.Hash)
                 return AntCoin;
             return GenesisBlock.Transactions.FirstOrDefault(p => p.Hash == hash);
+        }
+
+        public virtual TransactionOutput GetUnspent(UInt256 hash, ushort index)
+        {
+            Transaction tx = GenesisBlock.Transactions.FirstOrDefault(p => p.Hash == hash);
+            if (tx == null || tx.Outputs.Length <= index) return null;
+            if (GenesisBlock.Transactions.SelectMany(p => p.GetAllInputs()).Any(p => p.PrevTxId == hash && p.PrevIndex == index))
+                return null;
+            return tx.Outputs[index];
+        }
+
+        public virtual bool IsDoubleSpend(Transaction tx)
+        {
+            TransactionInput[] inputs = tx.GetAllInputs().ToArray();
+            if (inputs.Length == 0) return false;
+            foreach (TransactionInput input in inputs)
+                if (GenesisBlock.Transactions.SelectMany(p => p.GetAllInputs()).Contains(input))
+                    return true;
+            return false;
         }
 
         private void LocalNode_NewBlock(object sender, Block block)

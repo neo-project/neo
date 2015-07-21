@@ -13,13 +13,7 @@ namespace AntShares.Data
         private DB db;
         private object onblock_sync_obj = new object();
 
-        public override bool IsReadOnly
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public override bool IsReadOnly => false;
 
         public LBlockchain()
         {
@@ -105,6 +99,31 @@ namespace AntShares.Data
                 }
             }
             return tx;
+        }
+
+        public override TransactionOutput GetUnspent(UInt256 hash, ushort index)
+        {
+            Slice value;
+            if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.Unspent).Add(hash).Add(index), out value))
+                return null;
+            return value.ToArray().AsSerializable<TransactionOutput>();
+        }
+
+        public override bool IsDoubleSpend(Transaction tx)
+        {
+            TransactionInput[] inputs = tx.GetAllInputs().ToArray();
+            if (inputs.Length == 0) return false;
+            ReadOptions options = new ReadOptions();
+            using (options.Snapshot = db.GetSnapshot())
+            {
+                foreach (TransactionInput input in inputs)
+                {
+                    Slice value;
+                    if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.Unspent).Add(input.PrevTxId).Add(input.PrevIndex), out value))
+                        return true;
+                }
+            }
+            return false;
         }
 
         protected override void OnBlock(Block block)

@@ -39,10 +39,5 @@ namespace AntShares.Core
         {
             writer.Write(Attributes);
         }
-
-        public override bool Verify()
-        {
-            //TODO: 验证合法性
-        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO;
+using AntShares.Network;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -79,6 +80,8 @@ namespace AntShares.Core
         {
             DeserializeExclusiveData(reader);
             this.Inputs = reader.ReadSerializableArray<TransactionInput>();
+            if (GetAllInputs().Distinct().Count() != GetAllInputs().Count())
+                throw new FormatException();
             this.Outputs = reader.ReadSerializableArray<TransactionOutput>();
             this.Scripts = reader.ReadBytesArray();
         }
@@ -155,7 +158,63 @@ namespace AntShares.Core
 
         public virtual bool Verify()
         {
-            return this.VerifySignature();
+            if (GetAllInputs().Distinct().Count() != GetAllInputs().Count())
+                return false;
+            lock (LocalNode.MemoryPool)
+            {
+                if (LocalNode.MemoryPool.Values.AsParallel().SelectMany(p => p.GetAllInputs()).Intersect(GetAllInputs().AsParallel()).Count() > 0)
+                    return false;
+            }
+            if (!VerifyBalance()) return false;
+            if (!this.VerifySignature()) return false;
+            return true;
+        }
+
+        internal virtual bool VerifyBalance()
+        {
+            if (Outputs.Any(p => p.Value <= 0))
+                return false;
+            List<TransactionOutput> unspent_coins = new List<TransactionOutput>();
+            foreach (TransactionInput input in GetAllInputs())
+            {
+                TransactionOutput unspent = Blockchain.Default.GetUnspent(input.PrevTxId, input.PrevIndex);
+                if (unspent == null) return false;
+                unspent_coins.Add(unspent);
+            }
+            var inputs = unspent_coins.GroupBy(p => p.AssetId, (k, g) => new
+            {
+                AssetId = k,
+                Amount = g.Sum(p => p.Value)
+            }).Where(p => p.Amount != 0).ToArray();
+            var outputs = Outputs.GroupBy(p => p.AssetId, (k, g) => new
+            {
+                AssetId = k,
+                Amount = g.Sum(p => p.Value)
+            }).Where(p => p.Amount != 0).ToDictionary(p => p.AssetId);
+            if (inputs.Length < outputs.Count || inputs.Length > outputs.Count + 1)
+                return false;
+            foreach (var input in inputs)
+            {
+                if (outputs.ContainsKey(input.AssetId))
+                {
+                    if (input.AssetId == Blockchain.AntCoin.Hash)
+                    {
+                        if (input.Amount < outputs[input.AssetId].Amount)
+                            return false;
+                    }
+                    else
+                    {
+                        if (input.Amount != outputs[input.AssetId].Amount)
+                            return false;
+                    }
+                }
+                else
+                {
+                    if (input.AssetId != Blockchain.AntCoin.Hash)
+                        return false;
+                }
+            }
+            return true;
         }
     }
 }

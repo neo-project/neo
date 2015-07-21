@@ -1,11 +1,10 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 
 namespace AntShares.Core
 {
     public class GenerationTransaction : Transaction
     {
-        public UInt32 Nonce;
+        public uint Nonce;
 
         public GenerationTransaction()
             : base(TransactionType.GenerationTransaction)
@@ -22,9 +21,9 @@ namespace AntShares.Core
             writer.Write(Nonce);
         }
 
-        public override bool Verify()
+        internal override bool VerifyBalance()
         {
-            //TODO: 验证合法性
+            return true;
         }
     }
 }
