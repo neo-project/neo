@@ -18,11 +18,11 @@ namespace AntShares.UI
             }
         }
 
-        public long Amount
+        public Fixed8 Amount
         {
             get
             {
-                return long.Parse(textBox2.Text);
+                return Fixed8.Parse(textBox2.Text);
             }
             set
             {

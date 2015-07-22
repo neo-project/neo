@@ -25,7 +25,7 @@ namespace AntShares.Core
         internal override bool VerifyBalance()
         {
             if (Inputs.Length != 0) return false;
-            if (Outputs.Any(p => p.AssetId != Blockchain.AntCoin.Hash))
+            if (Outputs.Any(p => p.AssetId != Blockchain.AntCoin.Hash || p.Value <= Fixed8.Zero))
                 return false;
             return true;
         }

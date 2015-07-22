@@ -53,14 +53,6 @@ namespace AntShares.Core
             return new UInt160(pubkey.ToCompressedPublicKey().Sha256().RIPEMD160());
         }
 
-        public static long ToSatoshi(this decimal value)
-        {
-            value *= 100000000;
-            if (value < long.MinValue || value > long.MaxValue)
-                throw new ArgumentOutOfRangeException();
-            return (long)value;
-        }
-
         public static UInt160 ToScriptHash(this string address)
         {
             byte[] data = Base58.Decode(address);

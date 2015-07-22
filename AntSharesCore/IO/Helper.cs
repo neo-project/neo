@@ -26,6 +26,14 @@ namespace AntShares.IO
             return array;
         }
 
+        public static Fixed8 ReadFixed8(this BinaryReader reader)
+        {
+            return new Fixed8
+            {
+                value = reader.ReadInt64()
+            };
+        }
+
         public static string ReadFixedString(this BinaryReader reader, int length)
         {
             byte[] data = reader.ReadBytes(length);
@@ -50,7 +58,7 @@ namespace AntShares.IO
             return array;
         }
 
-        public static UInt64 ReadVarInt(this BinaryReader reader)
+        public static ulong ReadVarInt(this BinaryReader reader)
         {
             byte value = reader.ReadByte();
             if (value == 0xFD)
@@ -77,6 +85,11 @@ namespace AntShares.IO
                 writer.Flush();
                 return ms.ToArray();
             }
+        }
+
+        public static void Write(this BinaryWriter writer, Fixed8 value)
+        {
+            writer.Write(value.value);
         }
 
         public static void Write(this BinaryWriter writer, ISerializable value)
@@ -125,12 +138,12 @@ namespace AntShares.IO
             else if (value <= 0xFFFF)
             {
                 writer.Write((byte)0xFD);
-                writer.Write((UInt16)value);
+                writer.Write((ushort)value);
             }
             else if (value <= 0xFFFFFFFF)
             {
                 writer.Write((byte)0xFE);
-                writer.Write((UInt32)value);
+                writer.Write((uint)value);
             }
             else
             {

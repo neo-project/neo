@@ -38,9 +38,9 @@ namespace AntShares.UI
         {
             RegisterTransaction antshare = new RegisterTransaction
             {
-                RegisterType = RegisterType.AntShare,
-                RegisterName = "[{'lang':'zh-CN','name':'小蚁股'},{'lang':'en','name':'AntShare'}]",
-                Amount = (Int64)numericUpDown1.Value,
+                AssetType = AssetType.AntShare,
+                Name = "[{'lang':'zh-CN','name':'小蚁股'},{'lang':'en','name':'AntShare'}]",
+                Amount = Fixed8.FromDecimal(numericUpDown1.Value),
                 Issuer = textBox1.Text.ToScriptHash(),
                 Admin = textBox2.Text.ToScriptHash(),
                 Inputs = new TransactionInput[0],

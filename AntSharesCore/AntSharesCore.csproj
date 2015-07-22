@@ -50,7 +50,7 @@
     <Compile Include="Core\MultiSigContext.cs" />
     <Compile Include="Core\Order.cs" />
     <Compile Include="Core\RegisterTransaction.cs" />
-    <Compile Include="Core\RegisterType.cs" />
+    <Compile Include="Core\AssetType.cs" />
     <Compile Include="Core\Scripts\ScriptBuilder.cs" />
     <Compile Include="Core\Scripts\ScriptEngine.cs" />
     <Compile Include="Core\Scripts\ScriptOp.cs" />
@@ -65,6 +65,7 @@
     <Compile Include="Core\TransactionType.cs" />
     <Compile Include="Cryptography\Helper.cs" />
     <Compile Include="Cryptography\MerkleTree.cs" />
+    <Compile Include="Fixed8.cs" />
     <Compile Include="IO\Caching\BlockCache.cs" />
     <Compile Include="IO\Caching\Cache.cs" />
     <Compile Include="IO\Caching\CacheItem.cs" />

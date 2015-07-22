@@ -14,13 +14,13 @@ namespace AntShares.Core
         {
             "02c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd0".HexToBytes()
         };
-        public static readonly Block GenesisBlock = "00000000000000000000000000000000000000000000000000000000000000000000000050411a9b63fdee20a4a45bd872085f21d5be335c0f6547f58f0581aea8fb131d0b74a355000000001dac2b7ceea34400951bc0e31a530ce8a8a63485c627114767409e96ff652de30fdf80fae9eebd0dda71cadfbd17657fba1a3ad3e4b68eb6c2ac1c706965df164adae670aeb2ade27b01058f7940faa669dc968abfc85d4ace5c25512102c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd051ae0200000000000000004000455b7b276c616e67273a277a682d434e272c276e616d65273a27e5b08fe89a81e882a1277d2c7b276c616e67273a27656e272c276e616d65273a27416e745368617265277d5d00e1f50500000000eea34400951bc0e31a530ce8a8a63485c6271147eea34400951bc0e31a530ce8a8a63485c627114700000167401b1c1d7beedd74101bd3c8d831d6956e79de55136d085d6103f6685cbe4c36f9db87dfd83017756fdc2c9feda99c2871e8dc787e5b56d47c0fd9d3c53cab755525512102c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd051ae".HexToBytes().AsSerializable<Block>();
+        public static readonly Block GenesisBlock = "00000000000000000000000000000000000000000000000000000000000000000000000029ba35a638459492f5a4361ce3592da35b06478934e6e3e8f0aa15770f63fee91abaaf55000000001dac2b7ceea34400951bc0e31a530ce8a8a63485c62711476740d3f679e56fedccf5f950b3b8bee180c902fecf74141c2527d1ab3b21519253777b2e75c5307809c32b4b161e10ee271baede571822a2d261d280deed65070d2525512102c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd051ae0200000000000000004000455b7b276c616e67273a277a682d434e272c276e616d65273a27e5b08fe89a81e882a1277d2c7b276c616e67273a27656e272c276e616d65273a27416e745368617265277d5d0000c16ff2862300eea34400951bc0e31a530ce8a8a63485c6271147eea34400951bc0e31a530ce8a8a63485c6271147000001674028952df9ca0a4e9198ade8fd8d75c3a383702203a4f2ea8e0e0785006f2525d748d8cd713fa2e53e3f57f9c4939153829846a5288cedaada81db8b7068ab428925512102c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd051ae".HexToBytes().AsSerializable<Block>();
         public static readonly RegisterTransaction AntShare = (RegisterTransaction)GenesisBlock.Transactions[1];
         public static readonly RegisterTransaction AntCoin = new RegisterTransaction
         {
-            RegisterType = RegisterType.AntCoin,
-            RegisterName = "[{'lang':'zh-CN','name':'小蚁币'},{'lang':'en','name':'AntCoin'}]",
-            Amount = (100000000m).ToSatoshi(),
+            AssetType = AssetType.AntCoin,
+            Name = "[{'lang':'zh-CN','name':'小蚁币'},{'lang':'en','name':'AntCoin'}]",
+            Amount = Fixed8.FromDecimal(100000000),
             Issuer = new UInt160(),
             Admin = new UInt160(),
             Inputs = new TransactionInput[0],
@@ -72,10 +72,10 @@ namespace AntShares.Core
             return null;
         }
 
-        public virtual long GetQuantityIssued(UInt256 asset_id)
+        public virtual Fixed8 GetQuantityIssued(UInt256 asset_id)
         {
             RegisterTransaction tx = GetTransaction(asset_id) as RegisterTransaction;
-            if (tx == null || tx.RegisterType == RegisterType.Currency) return 0;
+            if (tx == null || tx.AssetType == AssetType.Currency) return Fixed8.Zero;
             return GenesisBlock.Transactions.OfType<IssueTransaction>().SelectMany(p => p.Outputs).Where(p => p.AssetId == asset_id).Sum(p => p.Value);
         }
 

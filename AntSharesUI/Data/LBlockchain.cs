@@ -79,12 +79,12 @@ namespace AntShares.Data
             return block;
         }
 
-        public override long GetQuantityIssued(UInt256 asset_id)
+        public override Fixed8 GetQuantityIssued(UInt256 asset_id)
         {
             if (asset_id == AntCoin.Hash) throw new ArgumentException();
             Slice quantity = 0L;
             db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset_id), out quantity);
-            return quantity.ToInt64();
+            return new Fixed8(quantity.ToInt64());
         }
 
         public override Transaction GetTransaction(UInt256 hash)
@@ -131,7 +131,7 @@ namespace AntShares.Data
             base.OnBlock(block);
             lock (onblock_sync_obj)
             {
-                Dictionary<UInt256, long> assets = new Dictionary<UInt256, long>();
+                Dictionary<UInt256, Fixed8> assets = new Dictionary<UInt256, Fixed8>();
                 WriteBatch batch = new WriteBatch();
                 batch.Put(SliceBuilder.Begin(DataEntryPrefix.Block).Add(block.Hash), block.Trim());
                 foreach (Transaction tx in block.Transactions)
@@ -140,11 +140,11 @@ namespace AntShares.Data
                     if (tx.Type == TransactionType.RegisterTransaction)
                     {
                         RegisterTransaction reg_tx = (RegisterTransaction)tx;
-                        batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Register).Add((byte)reg_tx.RegisterType).Add(reg_tx.Hash), reg_tx.ToArray());
+                        batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Register).Add((byte)reg_tx.AssetType).Add(reg_tx.Hash), reg_tx.ToArray());
                     }
                     else if (tx.Type == TransactionType.IssueTransaction)
                     {
-                        foreach (var asset in tx.Outputs.GroupBy(p => p.AssetId).Where(g => g.All(p => p.Value > 0)).Select(g => new
+                        foreach (var asset in tx.Outputs.GroupBy(p => p.AssetId).Where(g => g.All(p => p.Value > Fixed8.Zero)).Select(g => new
                         {
                             AssetId = g.Key,
                             Sum = g.Sum(p => p.Value)
@@ -173,7 +173,7 @@ namespace AntShares.Data
                 {
                     Slice amount = 0L;
                     db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset.Key), out amount);
-                    batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset.Key), amount.ToInt64() + asset.Value);
+                    batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset.Key), amount.ToInt64() + asset.Value.GetData());
                 }
                 db.Write(WriteOptions.Default, batch);
             }

@@ -10,8 +10,8 @@ namespace AntShares.Core
 {
     public class RegisterTransaction : Transaction
     {
-        public RegisterType RegisterType;
-        public string RegisterName;
+        public AssetType AssetType;
+        public string Name;
         /// <summary>
         /// 发行总量，共有3种模式：
         /// 1. 限量模式：当Amount为正数时，表示当前资产的最大总量为Amount，且不可修改（股权在未来可能会支持扩股或增发，会考虑需要公司签名或一定比例的股东签名认可）。
@@ -22,13 +22,13 @@ namespace AntShares.Core
         /// 2. 对于货币，只能使用信贷模式；
         /// 3. 对于点券，可以使用任意模式；
         /// </summary>
-        public long Amount;
+        public Fixed8 Amount;
         public UInt160 Issuer;
         public UInt160 Admin;
 
         private Dictionary<CultureInfo, string> _names;
 
-        public override long SystemFee => (10000m).ToSatoshi();
+        public override Fixed8 SystemFee => Fixed8.FromDecimal(10000);
 
         public RegisterTransaction()
             : base(TransactionType.RegisterTransaction)
@@ -37,15 +37,15 @@ namespace AntShares.Core
 
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
-            this.RegisterType = (RegisterType)reader.ReadByte();
-            if (!Enum.IsDefined(typeof(RegisterType), RegisterType))
+            this.AssetType = (AssetType)reader.ReadByte();
+            if (!Enum.IsDefined(typeof(AssetType), AssetType))
                 throw new FormatException();
-            this.RegisterName = reader.ReadVarString();
-            this.Amount = reader.ReadInt64();
-            if (Amount < -1) throw new FormatException();
-            if (RegisterType == RegisterType.Share && Amount <= 0)
+            this.Name = reader.ReadVarString();
+            this.Amount = reader.ReadFixed8();
+            if (Amount < -Fixed8.Satoshi) throw new FormatException();
+            if (AssetType == AssetType.Share && Amount <= Fixed8.Zero)
                 throw new FormatException();
-            if (RegisterType == RegisterType.Currency && Amount != 0)
+            if (AssetType == AssetType.Currency && Amount != Fixed8.Zero)
                 throw new FormatException();
             this.Issuer = reader.ReadSerializable<UInt160>();
             this.Admin = reader.ReadSerializable<UInt160>();
@@ -53,7 +53,7 @@ namespace AntShares.Core
 
         public string GetName(CultureInfo culture = null)
         {
-            if (RegisterType == RegisterType.Share)
+            if (AssetType == AssetType.Share)
             {
                 //TODO: 获取证书上的名称
                 //股权的名称由证书上的公司名称决定，不能自定义
@@ -62,7 +62,7 @@ namespace AntShares.Core
             }
             if (_names == null)
             {
-                _names = ((JArray)JObject.Parse(RegisterName)).ToDictionary(p => CultureInfo.GetCultureInfo(p["lang"].AsString()), p => p["name"].AsString());
+                _names = ((JArray)JObject.Parse(Name)).ToDictionary(p => CultureInfo.GetCultureInfo(p["lang"].AsString()), p => p["name"].AsString());
             }
             if (culture == null) culture = CultureInfo.CurrentCulture;
             if (_names.ContainsKey(culture))
@@ -86,8 +86,8 @@ namespace AntShares.Core
 
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
-            writer.Write((byte)RegisterType);
-            writer.WriteVarString(RegisterName);
+            writer.Write((byte)AssetType);
+            writer.WriteVarString(Name);
             writer.Write(Amount);
             writer.Write(Issuer);
             writer.Write(Admin);

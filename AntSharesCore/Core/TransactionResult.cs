@@ -3,6 +3,6 @@
     internal class TransactionResult
     {
         public UInt256 AssetId;
-        public long Amount;
+        public Fixed8 Amount;
     }
 }

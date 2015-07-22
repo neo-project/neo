@@ -11,7 +11,7 @@ namespace AntShares.UI
         private class IssueListBoxItem
         {
             public UInt160 Account;
-            public long Amount;
+            public Fixed8 Amount;
 
             public override string ToString()
             {

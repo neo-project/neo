@@ -1,6 +1,6 @@
 ﻿namespace AntShares.Core
 {
-    public enum RegisterType : byte
+    public enum AssetType : byte
     {
         AntShare = 0x00,
         AntCoin = 0x01,

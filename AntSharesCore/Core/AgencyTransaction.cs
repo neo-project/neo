@@ -25,7 +25,7 @@ namespace AntShares.Core
                 throw new FormatException();
             if (Orders.Select(p => p.ValueAssetId).Distinct().Count() != 1)
                 throw new FormatException();
-            if (Orders.Count(p => p.Amount > 0) == 0 || Orders.Count(p => p.Amount < 0) == 0)
+            if (Orders.Count(p => p.Amount > Fixed8.Zero) == 0 || Orders.Count(p => p.Amount < Fixed8.Zero) == 0)
                 throw new FormatException();
         }
 
@@ -58,11 +58,47 @@ namespace AntShares.Core
 
         internal override bool VerifyBalance()
         {
-            //TODO: 验证合法性
-            //1. 输入输出
-            //2. 成交是否符合每一个订单的要求（价格、数量等）
-            //3. 所有订单中，最多只能有一个订单未完全成交
-            //4. 每个订单的输入必须包含足额的交易物，且不能包含其它输入
+            if (Outputs.Any(p => p.Value <= Fixed8.Zero))
+                return false;
+            IDictionary<TransactionInput, TransactionOutput> references = GetReferences();
+            IDictionary<UInt256, TransactionResult> results = references.Values.Select(p => new
+            {
+                AssetId = p.AssetId,
+                Value = p.Value
+            }).Concat(Outputs.Select(p => new
+            {
+                AssetId = p.AssetId,
+                Value = -p.Value
+            })).GroupBy(p => p.AssetId, (k, g) => new TransactionResult
+            {
+                AssetId = k,
+                Amount = g.Sum(p => p.Value)
+            }).Where(p => p.Amount != Fixed8.Zero).ToDictionary(p => p.AssetId);
+            if (results.Count > 1) return false;
+            if (results.Count == 1 && !results.ContainsKey(Blockchain.AntCoin.Hash))
+                return false;
+            if (SystemFee > Fixed8.Zero && (results.Count == 0 || results[Blockchain.AntCoin.Hash].Amount < SystemFee))
+                return false;
+            foreach (Order order in Orders)
+            {
+                TransactionOutput[] order_references = order.Inputs.Select(p => references[p]).ToArray();
+                if (order.Amount > Fixed8.Zero)
+                {
+                    if (order_references.Any(p => p.AssetId != order.ValueAssetId))
+                        return false;
+                    if (order_references.Sum(p => p.Value) < Fixed8.Multiply(order.Amount, order.Price))
+                        return false;
+                }
+                else
+                {
+                    if (order_references.Any(p => p.AssetId != order.AssetId))
+                        return false;
+                    if (order_references.Sum(p => p.Value) < order.Amount)
+                        return false;
+                }
+            }
+            //TODO: 所有订单中，最多只能有一个订单未完全成交
+            //TODO: 成交是否符合每一个订单的要求（价格、数量等）
         }
     }
 }

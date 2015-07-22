@@ -18,8 +18,8 @@ namespace AntShares.Core
         /// <summary>
         /// 买入或卖出的数量，正数表示买入，负数表示卖出
         /// </summary>
-        public long Amount;
-        public ulong Price;
+        public Fixed8 Amount;
+        public Fixed8 Price;
         public UInt160 ScriptHash;
         public UInt160 Agent;
         public TransactionInput[] Inputs;
@@ -44,10 +44,12 @@ namespace AntShares.Core
             this.AssetId = reader.ReadSerializable<UInt256>();
             this.ValueAssetId = reader.ReadSerializable<UInt256>();
             if (AssetId == ValueAssetId) throw new FormatException();
-            this.Amount = reader.ReadInt64();
-            if (Amount == 0) throw new FormatException();
-            this.Price = reader.ReadUInt64();
-            if (Price <= 0) throw new FormatException();
+            this.Amount = reader.ReadFixed8();
+            if (Amount == Fixed8.Zero) throw new FormatException();
+            if (Amount.GetData() % 1000 != 0) throw new FormatException(); //订单中交易物的数量最多保留5位小数
+            this.Price = reader.ReadFixed8();
+            if (Price <= Fixed8.Zero) throw new FormatException();
+            if (Price.GetData() % 100000 != 0) throw new FormatException(); //订单中的价格最多保留3位小数
             this.ScriptHash = reader.ReadSerializable<UInt160>();
             this.Agent = reader.ReadSerializable<UInt160>();
             this.Inputs = reader.ReadSerializableArray<TransactionInput>();
@@ -65,8 +67,8 @@ namespace AntShares.Core
                     throw new FormatException();
                 this.AssetId = reader.ReadSerializable<UInt256>();
                 this.ValueAssetId = reader.ReadSerializable<UInt256>();
-                this.Amount = reader.ReadInt64();
-                this.Price = reader.ReadUInt64();
+                this.Amount = reader.ReadFixed8();
+                this.Price = reader.ReadFixed8();
                 this.ScriptHash = reader.ReadSerializable<UInt160>();
                 this.Agent = reader.ReadSerializable<UInt160>();
                 this.Inputs = reader.ReadSerializableArray<TransactionInput>();
@@ -96,7 +98,7 @@ namespace AntShares.Core
             HashSet<UInt160> hashes = new HashSet<UInt160>();
             RegisterTransaction asset = Blockchain.Default.GetTransaction(AssetId) as RegisterTransaction;
             if (asset == null) throw new InvalidOperationException();
-            if (asset.RegisterType == RegisterType.Share)
+            if (asset.AssetType == AssetType.Share)
             {
                 hashes.Add(ScriptHash);
             }

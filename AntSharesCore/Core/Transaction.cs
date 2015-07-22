@@ -42,7 +42,7 @@ namespace AntShares.Core
             }
         }
 
-        public virtual long SystemFee => 0;
+        public virtual Fixed8 SystemFee => Fixed8.Zero;
 
         protected Transaction(TransactionType type)
         {
@@ -115,6 +115,18 @@ namespace AntShares.Core
             }
         }
 
+        internal IDictionary<TransactionInput, TransactionOutput> GetReferences()
+        {
+            Dictionary<TransactionInput, TransactionOutput> references = new Dictionary<TransactionInput, TransactionOutput>();
+            foreach (TransactionInput input in GetAllInputs())
+            {
+                TransactionOutput reference = Blockchain.Default.GetUnspent(input.PrevTxId, input.PrevIndex);
+                if (reference == null) throw new InvalidOperationException();
+                references.Add(input, reference);
+            }
+            return references;
+        }
+
         public virtual UInt160[] GetScriptHashesForVerifying()
         {
             if (Inputs.Length == 0) return new UInt160[0];
@@ -130,14 +142,8 @@ namespace AntShares.Core
 
         internal IDictionary<UInt256, TransactionResult> GetTransactionResults()
         {
-            List<TransactionOutput> unspent_coins = new List<TransactionOutput>();
-            foreach (TransactionInput input in GetAllInputs())
-            {
-                TransactionOutput unspent = Blockchain.Default.GetUnspent(input.PrevTxId, input.PrevIndex);
-                if (unspent == null) throw new InvalidOperationException();
-                unspent_coins.Add(unspent);
-            }
-            return unspent_coins.Select(p => new
+            IDictionary<TransactionInput, TransactionOutput> references = GetReferences();
+            return references.Values.Select(p => new
             {
                 AssetId = p.AssetId,
                 Value = p.Value
@@ -149,7 +155,7 @@ namespace AntShares.Core
             {
                 AssetId = k,
                 Amount = g.Sum(p => p.Value)
-            }).Where(p => p.Amount != 0).ToDictionary(p => p.AssetId);
+            }).Where(p => p.Amount != Fixed8.Zero).ToDictionary(p => p.AssetId);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -198,13 +204,13 @@ namespace AntShares.Core
 
         internal virtual bool VerifyBalance()
         {
-            if (Outputs.Any(p => p.Value <= 0))
+            if (Outputs.Any(p => p.Value <= Fixed8.Zero))
                 return false;
             IDictionary<UInt256, TransactionResult> results = GetTransactionResults();
             if (results.Count > 1) return false;
             if (results.Count == 1 && !results.ContainsKey(Blockchain.AntCoin.Hash))
                 return false;
-            if (SystemFee == 0) return true;
+            if (SystemFee == Fixed8.Zero) return true;
             if (results.Count == 0 || results[Blockchain.AntCoin.Hash].Amount < SystemFee)
                 return false;
             return true;
