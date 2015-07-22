@@ -20,7 +20,7 @@ namespace AntShares.Core
         {
             RegisterType = RegisterType.AntCoin,
             RegisterName = "[{'lang':'zh-CN','name':'小蚁币'},{'lang':'en','name':'AntCoin'}]",
-            Amount = (Int64)(100000000m).ToSatoshi(),
+            Amount = (100000000m).ToSatoshi(),
             Issuer = new UInt160(),
             Admin = new UInt160(),
             Inputs = new TransactionInput[0],

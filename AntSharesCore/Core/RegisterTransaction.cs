@@ -22,11 +22,13 @@ namespace AntShares.Core
         /// 2. 对于货币，只能使用信贷模式；
         /// 3. 对于点券，可以使用任意模式；
         /// </summary>
-        public Int64 Amount;
+        public long Amount;
         public UInt160 Issuer;
         public UInt160 Admin;
 
         private Dictionary<CultureInfo, string> _names;
+
+        public override long SystemFee => (10000m).ToSatoshi();
 
         public RegisterTransaction()
             : base(TransactionType.RegisterTransaction)
@@ -40,7 +42,10 @@ namespace AntShares.Core
                 throw new FormatException();
             this.RegisterName = reader.ReadVarString();
             this.Amount = reader.ReadInt64();
-            if (Amount < -1)
+            if (Amount < -1) throw new FormatException();
+            if (RegisterType == RegisterType.Share && Amount <= 0)
+                throw new FormatException();
+            if (RegisterType == RegisterType.Currency && Amount != 0)
                 throw new FormatException();
             this.Issuer = reader.ReadSerializable<UInt160>();
             this.Admin = reader.ReadSerializable<UInt160>();
@@ -94,18 +99,6 @@ namespace AntShares.Core
             //如：CNY(由xxx公司发行)
             //用以区分不同主体发行的相同名称的资产
             return GetName();
-        }
-
-        public override bool Verify()
-        {
-            //TODO: 验证合法性
-        }
-
-        internal override bool VerifyBalance()
-        {
-            //TODO: 验证合法性
-            //1. 系统使用费
-            //2. 输入输出
         }
     }
 }

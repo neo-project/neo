@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 
 namespace AntShares.Core
 {
@@ -23,6 +24,9 @@ namespace AntShares.Core
 
         internal override bool VerifyBalance()
         {
+            if (Inputs.Length != 0) return false;
+            if (Outputs.Any(p => p.AssetId != Blockchain.AntCoin.Hash))
+                return false;
             return true;
         }
     }

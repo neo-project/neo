@@ -49,7 +49,6 @@
     <Compile Include="Core\IssueTransaction.cs" />
     <Compile Include="Core\MultiSigContext.cs" />
     <Compile Include="Core\Order.cs" />
-    <Compile Include="Core\OrderType.cs" />
     <Compile Include="Core\RegisterTransaction.cs" />
     <Compile Include="Core\RegisterType.cs" />
     <Compile Include="Core\Scripts\ScriptBuilder.cs" />
@@ -62,6 +61,7 @@
     <Compile Include="Core\TransactionAttributeUsage.cs" />
     <Compile Include="Core\TransactionInput.cs" />
     <Compile Include="Core\TransactionOutput.cs" />
+    <Compile Include="Core\TransactionResult.cs" />
     <Compile Include="Core\TransactionType.cs" />
     <Compile Include="Cryptography\Helper.cs" />
     <Compile Include="Cryptography\MerkleTree.cs" />

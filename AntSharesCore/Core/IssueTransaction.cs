@@ -38,10 +38,21 @@ namespace AntShares.Core
 
         internal override bool VerifyBalance()
         {
-            //TODO: 验证合法性
-            //1. 输入输出
-            //2. 有没有超发情况
-            //3. 对于货币发行，总和是否为零
+            IDictionary<UInt256, TransactionResult> results = GetTransactionResults();
+            if (!results.ContainsKey(Blockchain.AntCoin.Hash) || results[Blockchain.AntCoin.Hash].Amount < SystemFee)
+                return false;
+            foreach (TransactionResult result in results.Values.Where(p => p.AssetId != Blockchain.AntCoin.Hash))
+            {
+                if (result.Amount > 0) return false;
+                RegisterTransaction tx = Blockchain.Default.GetTransaction(result.AssetId) as RegisterTransaction;
+                if (tx == null) return false;
+                if (tx.Amount < 0) continue;
+                if (tx.Amount == 0) return false;
+                long quantity_issued = Blockchain.Default.GetQuantityIssued(result.AssetId); //TODO: 已发行量是否应考虑内存池内未被写入区块链的交易，以防止“双重发行”
+                if (tx.Amount - quantity_issued < -result.Amount)
+                    return false;
+            }
+            return true;
         }
     }
 }
