@@ -6,6 +6,18 @@ using System.Linq;
 
 namespace AntShares.Core
 {
+    /// <summary>
+    /// 交易规则：
+    /// 1. 单个交易中，所有订单的代理人必须是同一人；
+    /// 2. 单个交易中，所有订单的交易商品必须完全相同，交易货币也必须完全相同；
+    /// 3. 交易商品不能和交易货币相同；
+    /// 4. 买盘和卖盘两者都至少需要包含一笔订单；
+    /// 5. 交易中不能包含完全未成交的订单，且至多只能包含一笔部分成交的订单；
+    /// 6. 如果存在部分成交的订单，则该订单的价格必须是最差的，即：对于买单，它的价格是最低价格；对于卖单，它的价格是最高价格；
+    /// 7. 对于买单，需以不高于委托方所指定的价格成交；
+    /// 8. 对于卖单，需以不低于委托方所指定的价格成交；
+    /// 9. 交易数量精确到10^-5，交易价格精确到10^-3；
+    /// </summary>
     public class AgencyTransaction : Transaction
     {
         public Order[] Orders;
@@ -56,6 +68,9 @@ namespace AntShares.Core
             return true;
         }
 
+        //TODO: 此处需要较多的测试来证明它的正确性
+        //因为委托交易的验证算法有点太复杂了，
+        //考虑未来是否可以优化这个算法
         internal override bool VerifyBalance()
         {
             if (Outputs.Any(p => p.Value <= Fixed8.Zero))
@@ -79,26 +94,83 @@ namespace AntShares.Core
                 return false;
             if (SystemFee > Fixed8.Zero && (results.Count == 0 || results[Blockchain.AntCoin.Hash].Amount < SystemFee))
                 return false;
-            foreach (Order order in Orders)
+            Order[] orders = Orders; //TODO: 对于每一个非订单输入，要检查是否是上一轮撮合中的部分成交订单，然后加入到本轮的订单列表中
+            foreach (Order order in orders)
             {
-                TransactionOutput[] order_references = order.Inputs.Select(p => references[p]).ToArray();
+                TransactionOutput[] inputs = order.Inputs.Select(p => references[p]).ToArray();
                 if (order.Amount > Fixed8.Zero)
                 {
-                    if (order_references.Any(p => p.AssetId != order.ValueAssetId))
+                    if (inputs.Any(p => p.AssetId != order.ValueAssetId))
                         return false;
-                    if (order_references.Sum(p => p.Value) < Fixed8.Multiply(order.Amount, order.Price))
+                    if (inputs.Sum(p => p.Value) < Fixed8.Multiply(order.Amount, order.Price))
                         return false;
                 }
                 else
                 {
-                    if (order_references.Any(p => p.AssetId != order.AssetId))
+                    if (inputs.Any(p => p.AssetId != order.AssetId))
                         return false;
-                    if (order_references.Sum(p => p.Value) < order.Amount)
+                    if (inputs.Sum(p => p.Value) < order.Amount)
                         return false;
                 }
             }
-            //TODO: 所有订单中，最多只能有一个订单未完全成交
-            //TODO: 成交是否符合每一个订单的要求（价格、数量等）
+            int partially = 0;
+            foreach (var group in orders.GroupBy(p => p.Client))
+            {
+                TransactionOutput[] inputs = group.SelectMany(p => p.Inputs).Select(p => references[p]).ToArray();
+                TransactionOutput[] outputs = Outputs.Where(p => p.ScriptHash == group.Key).ToArray();
+                Fixed8 money_spent = inputs.Where(p => p.AssetId == orders[0].ValueAssetId).Sum(p => p.Value) - outputs.Where(p => p.AssetId == orders[0].ValueAssetId).Sum(p => p.Value);
+                Fixed8 amount_changed = outputs.Where(p => p.AssetId == orders[0].AssetId).Sum(p => p.Value) - inputs.Where(p => p.AssetId == orders[0].AssetId).Sum(p => p.Value);
+                Fixed8 amount_group = group.Sum(p => p.Amount);
+                if (amount_changed == amount_group)
+                {
+                    if (money_spent > group.Sum(p => Fixed8.Multiply(p.Amount, p.Price)))
+                        return false;
+                }
+                else if (++partially > 1)
+                {
+                    return false;
+                }
+                else
+                {
+                    Fixed8 amount_diff = orders.Sum(p => p.Amount);
+                    if (amount_changed != amount_group - amount_diff)
+                        return false;
+                    Fixed8 price_worst;
+                    if (amount_diff > Fixed8.Zero)
+                    {
+                        price_worst = group.Min(p => p.Price);
+                        if (price_worst != orders.Min(p => p.Price))
+                            return false;
+                    }
+                    else
+                    {
+                        price_worst = group.Max(p => p.Price);
+                        if (price_worst != orders.Max(p => p.Price))
+                            return false;
+                    }
+                    Order[] orders_worst = group.Where(p => p.Price == price_worst).ToArray();
+                    Fixed8 amount_worst = orders_worst.Sum(p => p.Amount);
+                    if (amount_worst.Abs() < amount_diff.Abs())
+                        return false;
+                    Order order_combine = new Order
+                    {
+                        AssetId = orders[0].AssetId,
+                        ValueAssetId = orders[0].ValueAssetId,
+                        Amount = amount_worst - amount_diff,
+                        Price = price_worst,
+                        Client = orders[0].Client,
+                        Agent = orders[0].Agent,
+                        Inputs = orders_worst.SelectMany(p => p.Inputs).ToArray()
+                    };
+                    List<Order> orders_new = group.Where(p => p.Price != price_worst).ToList();
+                    if (order_combine.Amount == Fixed8.Zero)
+                        return false;
+                    orders_new.Add(order_combine);
+                    if (money_spent > orders_new.Sum(p => Fixed8.Multiply(p.Amount, p.Price)))
+                        return false;
+                }
+            }
+            return true;
         }
     }
 }

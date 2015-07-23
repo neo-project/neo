@@ -20,7 +20,7 @@ namespace AntShares.Core
         /// </summary>
         public Fixed8 Amount;
         public Fixed8 Price;
-        public UInt160 ScriptHash;
+        public UInt160 Client;
         public UInt160 Agent;
         public TransactionInput[] Inputs;
         public byte[][] Scripts;
@@ -50,7 +50,7 @@ namespace AntShares.Core
             this.Price = reader.ReadFixed8();
             if (Price <= Fixed8.Zero) throw new FormatException();
             if (Price.GetData() % 100000 != 0) throw new FormatException(); //订单中的价格最多保留3位小数
-            this.ScriptHash = reader.ReadSerializable<UInt160>();
+            this.Client = reader.ReadSerializable<UInt160>();
             this.Agent = reader.ReadSerializable<UInt160>();
             this.Inputs = reader.ReadSerializableArray<TransactionInput>();
             if (Inputs.Distinct().Count() != Inputs.Length)
@@ -69,7 +69,7 @@ namespace AntShares.Core
                 this.ValueAssetId = reader.ReadSerializable<UInt256>();
                 this.Amount = reader.ReadFixed8();
                 this.Price = reader.ReadFixed8();
-                this.ScriptHash = reader.ReadSerializable<UInt160>();
+                this.Client = reader.ReadSerializable<UInt160>();
                 this.Agent = reader.ReadSerializable<UInt160>();
                 this.Inputs = reader.ReadSerializableArray<TransactionInput>();
             }
@@ -85,7 +85,7 @@ namespace AntShares.Core
                 writer.Write(ValueAssetId);
                 writer.Write(Amount);
                 writer.Write(Price);
-                writer.Write(ScriptHash);
+                writer.Write(Client);
                 writer.Write(Agent);
                 writer.Write(Inputs);
                 writer.Flush();
@@ -100,7 +100,7 @@ namespace AntShares.Core
             if (asset == null) throw new InvalidOperationException();
             if (asset.AssetType == AssetType.Share)
             {
-                hashes.Add(ScriptHash);
+                hashes.Add(Client);
             }
             foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
             {
@@ -118,7 +118,7 @@ namespace AntShares.Core
             writer.Write(ValueAssetId);
             writer.Write(Amount);
             writer.Write(Price);
-            writer.Write(ScriptHash);
+            writer.Write(Client);
             writer.Write(Agent);
             writer.Write(Inputs);
             writer.Write(Scripts);
@@ -134,7 +134,7 @@ namespace AntShares.Core
                 writer.Write(ValueAssetId);
                 writer.Write(Amount);
                 writer.Write(Price);
-                writer.Write(ScriptHash);
+                writer.Write(Client);
                 writer.Write(Agent);
                 writer.Write(Inputs);
                 writer.Flush();

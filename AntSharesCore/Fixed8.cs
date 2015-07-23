@@ -18,6 +18,15 @@ namespace AntShares
             this.value = data;
         }
 
+        public Fixed8 Abs()
+        {
+            if (value >= 0) return this;
+            return new Fixed8
+            {
+                value = -value
+            };
+        }
+
         public int CompareTo(Fixed8 other)
         {
             return value.CompareTo(other.value);
