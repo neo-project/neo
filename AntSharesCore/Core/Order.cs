@@ -9,19 +9,15 @@ namespace AntShares.Core
 {
     public class Order : ISignable
     {
-        /// <summary>
-        /// 订单类型，目前只支持限价委托单
-        /// </summary>
-        public const byte Type = 0;
         public UInt256 AssetId;
         public UInt256 ValueAssetId;
+        public UInt160 Agent;
         /// <summary>
         /// 买入或卖出的数量，正数表示买入，负数表示卖出
         /// </summary>
         public Fixed8 Amount;
         public Fixed8 Price;
         public UInt160 Client;
-        public UInt160 Agent;
         public TransactionInput[] Inputs;
         public byte[][] Scripts;
 
@@ -39,19 +35,30 @@ namespace AntShares.Core
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            if (reader.ReadByte() != Type)
-                throw new FormatException();
-            this.AssetId = reader.ReadSerializable<UInt256>();
-            this.ValueAssetId = reader.ReadSerializable<UInt256>();
-            if (AssetId == ValueAssetId) throw new FormatException();
+            UInt256 asset_id = reader.ReadSerializable<UInt256>();
+            UInt256 value_asset_id = reader.ReadSerializable<UInt256>();
+            if (asset_id == value_asset_id) throw new FormatException();
+            UInt160 agent = reader.ReadSerializable<UInt160>();
+            DeserializeInternal(reader, asset_id, value_asset_id, agent);
+        }
+
+        internal void DeserializeInTransaction(BinaryReader reader, AgencyTransaction tx)
+        {
+            DeserializeInternal(reader, tx.AssetId, tx.ValueAssetId, tx.Agent);
+        }
+
+        private void DeserializeInternal(BinaryReader reader, UInt256 asset_id, UInt256 value_asset_id, UInt160 agent)
+        {
+            this.AssetId = asset_id;
+            this.ValueAssetId = value_asset_id;
+            this.Agent = agent;
             this.Amount = reader.ReadFixed8();
             if (Amount == Fixed8.Zero) throw new FormatException();
-            if (Amount.GetData() % 1000 != 0) throw new FormatException(); //订单中交易物的数量最多保留5位小数
+            if (Amount.GetData() % 10000 != 0) throw new FormatException();
             this.Price = reader.ReadFixed8();
             if (Price <= Fixed8.Zero) throw new FormatException();
-            if (Price.GetData() % 100000 != 0) throw new FormatException(); //订单中的价格最多保留3位小数
+            if (Price.GetData() % 10000 != 0) throw new FormatException();
             this.Client = reader.ReadSerializable<UInt160>();
-            this.Agent = reader.ReadSerializable<UInt160>();
             this.Inputs = reader.ReadSerializableArray<TransactionInput>();
             if (Inputs.Distinct().Count() != Inputs.Length)
                 throw new FormatException();
@@ -63,14 +70,12 @@ namespace AntShares.Core
             using (MemoryStream ms = new MemoryStream(value, false))
             using (BinaryReader reader = new BinaryReader(ms))
             {
-                if (reader.ReadByte() != Type)
-                    throw new FormatException();
                 this.AssetId = reader.ReadSerializable<UInt256>();
                 this.ValueAssetId = reader.ReadSerializable<UInt256>();
+                this.Agent = reader.ReadSerializable<UInt160>();
                 this.Amount = reader.ReadFixed8();
                 this.Price = reader.ReadFixed8();
                 this.Client = reader.ReadSerializable<UInt160>();
-                this.Agent = reader.ReadSerializable<UInt160>();
                 this.Inputs = reader.ReadSerializableArray<TransactionInput>();
             }
         }
@@ -80,13 +85,12 @@ namespace AntShares.Core
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms))
             {
-                writer.Write(Type);
                 writer.Write(AssetId);
                 writer.Write(ValueAssetId);
+                writer.Write(Agent);
                 writer.Write(Amount);
                 writer.Write(Price);
                 writer.Write(Client);
-                writer.Write(Agent);
                 writer.Write(Inputs);
                 writer.Flush();
                 return ms.ToArray().Sha256();
@@ -113,13 +117,21 @@ namespace AntShares.Core
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(Type);
             writer.Write(AssetId);
             writer.Write(ValueAssetId);
+            writer.Write(Agent);
             writer.Write(Amount);
             writer.Write(Price);
             writer.Write(Client);
-            writer.Write(Agent);
+            writer.Write(Inputs);
+            writer.Write(Scripts);
+        }
+
+        internal void SerializeInTransaction(BinaryWriter writer)
+        {
+            writer.Write(Amount);
+            writer.Write(Price);
+            writer.Write(Client);
             writer.Write(Inputs);
             writer.Write(Scripts);
         }
@@ -129,13 +141,12 @@ namespace AntShares.Core
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms))
             {
-                writer.Write(Type);
                 writer.Write(AssetId);
                 writer.Write(ValueAssetId);
+                writer.Write(Agent);
                 writer.Write(Amount);
                 writer.Write(Price);
                 writer.Write(Client);
-                writer.Write(Agent);
                 writer.Write(Inputs);
                 writer.Flush();
                 return ms.ToArray();

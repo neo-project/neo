@@ -56,6 +56,7 @@
     <Compile Include="Core\Scripts\ScriptOp.cs" />
     <Compile Include="Core\Scripts\Stack.cs" />
     <Compile Include="Core\SignatureContext.cs" />
+    <Compile Include="Core\SplitOrder.cs" />
     <Compile Include="Core\Transaction.cs" />
     <Compile Include="Core\TransactionAttribute.cs" />
     <Compile Include="Core\TransactionAttributeUsage.cs" />

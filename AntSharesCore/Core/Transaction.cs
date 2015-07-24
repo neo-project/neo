@@ -117,32 +117,36 @@ namespace AntShares.Core
 
         internal IDictionary<TransactionInput, TransactionOutput> GetReferences()
         {
+            return GetReferences(GetAllInputs());
+        }
+
+        internal static IDictionary<TransactionInput, TransactionOutput> GetReferences(IEnumerable<TransactionInput> inputs)
+        {
             Dictionary<TransactionInput, TransactionOutput> references = new Dictionary<TransactionInput, TransactionOutput>();
-            foreach (TransactionInput input in GetAllInputs())
+            foreach (var group in inputs.GroupBy(p => p.PrevTxId))
             {
-                TransactionOutput reference = Blockchain.Default.GetUnspent(input.PrevTxId, input.PrevIndex);
-                if (reference == null) throw new InvalidOperationException();
-                references.Add(input, reference);
+                Transaction tx = Blockchain.Default.GetTransaction(group.Key);
+                if (tx == null) throw new InvalidOperationException();
+                foreach (var reference in group.Select(p => new
+                {
+                    Input = p,
+                    Output = tx.Outputs[p.PrevIndex]
+                }))
+                {
+                    references.Add(reference.Input, reference.Output);
+                }
             }
             return references;
         }
 
         public virtual UInt160[] GetScriptHashesForVerifying()
         {
-            if (Inputs.Length == 0) return new UInt160[0];
-            HashSet<UInt160> hashes = new HashSet<UInt160>();
-            foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
-            {
-                Transaction tx = Blockchain.Default.GetTransaction(group.Key);
-                if (tx == null) throw new InvalidOperationException();
-                hashes.UnionWith(group.Select(p => tx.Outputs[p.PrevIndex].ScriptHash));
-            }
-            return hashes.OrderBy(p => p).ToArray();
+            return GetReferences(Inputs).Values.Select(p => p.ScriptHash).Distinct().OrderBy(p => p).ToArray();
         }
 
         internal IDictionary<UInt256, TransactionResult> GetTransactionResults()
         {
-            IDictionary<TransactionInput, TransactionOutput> references = GetReferences();
+            IDictionary<TransactionInput, TransactionOutput> references = GetUnspentReferences();
             return references.Values.Select(p => new
             {
                 AssetId = p.AssetId,
@@ -156,6 +160,18 @@ namespace AntShares.Core
                 AssetId = k,
                 Amount = g.Sum(p => p.Value)
             }).Where(p => p.Amount != Fixed8.Zero).ToDictionary(p => p.AssetId);
+        }
+
+        internal IDictionary<TransactionInput, TransactionOutput> GetUnspentReferences()
+        {
+            Dictionary<TransactionInput, TransactionOutput> references = new Dictionary<TransactionInput, TransactionOutput>();
+            foreach (TransactionInput input in GetAllInputs())
+            {
+                TransactionOutput reference = Blockchain.Default.GetUnspent(input.PrevTxId, input.PrevIndex);
+                if (reference == null) throw new InvalidOperationException();
+                references.Add(input, reference);
+            }
+            return references;
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

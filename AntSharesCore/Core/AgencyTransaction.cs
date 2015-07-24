@@ -16,11 +16,15 @@ namespace AntShares.Core
     /// 6. 如果存在部分成交的订单，则该订单的价格必须是最差的，即：对于买单，它的价格是最低价格；对于卖单，它的价格是最高价格；
     /// 7. 对于买单，需以不高于委托方所指定的价格成交；
     /// 8. 对于卖单，需以不低于委托方所指定的价格成交；
-    /// 9. 交易数量精确到10^-5，交易价格精确到10^-3；
+    /// 9. 交易数量精确到10^-4，交易价格精确到10^-4；
     /// </summary>
     public class AgencyTransaction : Transaction
     {
+        public UInt256 AssetId;
+        public UInt256 ValueAssetId;
+        public UInt160 Agent;
         public Order[] Orders;
+        public SplitOrder SplitOrder;
 
         public AgencyTransaction()
             : base(TransactionType.AgencyTransaction)
@@ -29,16 +33,26 @@ namespace AntShares.Core
 
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
-            this.Orders = reader.ReadSerializableArray<Order>();
-            if (Orders.Length < 2) throw new FormatException();
-            if (Orders.Select(p => p.Agent).Distinct().Count() != 1)
-                throw new FormatException();
-            if (Orders.Select(p => p.AssetId).Distinct().Count() != 1)
-                throw new FormatException();
-            if (Orders.Select(p => p.ValueAssetId).Distinct().Count() != 1)
-                throw new FormatException();
-            if (Orders.Count(p => p.Amount > Fixed8.Zero) == 0 || Orders.Count(p => p.Amount < Fixed8.Zero) == 0)
-                throw new FormatException();
+            this.AssetId = reader.ReadSerializable<UInt256>();
+            this.ValueAssetId = reader.ReadSerializable<UInt256>();
+            if (AssetId == ValueAssetId) throw new FormatException();
+            this.Agent = reader.ReadSerializable<UInt160>();
+            this.Orders = new Order[reader.ReadVarInt()];
+            for (int i = 0; i < Orders.Length; i++)
+            {
+                Orders[i] = new Order();
+                Orders[i].DeserializeInTransaction(reader, this);
+            }
+            ulong count = reader.ReadVarInt();
+            if (count > 1) throw new FormatException();
+            if (count == 0)
+            {
+                this.SplitOrder = null;
+            }
+            else
+            {
+                this.SplitOrder = reader.ReadSerializable<SplitOrder>();
+            }
         }
 
         public override IEnumerable<TransactionInput> GetAllInputs()
@@ -48,15 +62,44 @@ namespace AntShares.Core
 
         public override UInt160[] GetScriptHashesForVerifying()
         {
-            //TODO: 未完全成交订单的输出作为本次输入的，只需代理人签名即可
-            //对于某些交易输入，可能来自于上一次的撮合交易中未完全成交的订单，
-            //这些输入应当由交易的代理人签名，而不是资产所有者签名
-            return base.GetScriptHashesForVerifying().Union(new UInt160[] { Orders[0].Agent }).OrderBy(p => p).ToArray();
+            HashSet<UInt160> hashes = new HashSet<UInt160>();
+            foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
+            {
+                Transaction tx = Blockchain.Default.GetTransaction(group.Key);
+                if (tx == null) throw new InvalidOperationException();
+                AgencyTransaction tx_agency = tx as AgencyTransaction;
+                if (tx_agency?.SplitOrder == null || tx_agency.AssetId != AssetId || tx_agency.ValueAssetId != ValueAssetId || tx_agency.Agent != Agent)
+                {
+                    hashes.UnionWith(group.Select(p => tx.Outputs[p.PrevIndex].ScriptHash));
+                }
+                else
+                {
+                    hashes.UnionWith(group.Select(p => tx.Outputs[p.PrevIndex].ScriptHash).Where(p => p != tx_agency.SplitOrder.Client));
+                }
+            }
+            hashes.Add(Agent);
+            return hashes.OrderBy(p => p).ToArray();
         }
 
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
-            writer.Write(Orders);
+            writer.Write(AssetId);
+            writer.Write(ValueAssetId);
+            writer.Write(Agent);
+            writer.WriteVarInt(Orders.Length);
+            for (int i = 0; i < Orders.Length; i++)
+            {
+                Orders[i].SerializeInTransaction(writer);
+            }
+            if (SplitOrder == null)
+            {
+                writer.WriteVarInt(0);
+            }
+            else
+            {
+                writer.WriteVarInt(1);
+                writer.Write(SplitOrder);
+            }
         }
 
         public override bool Verify()
@@ -75,7 +118,7 @@ namespace AntShares.Core
         {
             if (Outputs.Any(p => p.Value <= Fixed8.Zero))
                 return false;
-            IDictionary<TransactionInput, TransactionOutput> references = GetReferences();
+            IDictionary<TransactionInput, TransactionOutput> references = GetUnspentReferences();
             IDictionary<UInt256, TransactionResult> results = references.Values.Select(p => new
             {
                 AssetId = p.AssetId,
@@ -94,7 +137,45 @@ namespace AntShares.Core
                 return false;
             if (SystemFee > Fixed8.Zero && (results.Count == 0 || results[Blockchain.AntCoin.Hash].Amount < SystemFee))
                 return false;
-            Order[] orders = Orders; //TODO: 对于每一个非订单输入，要检查是否是上一轮撮合中的部分成交订单，然后加入到本轮的订单列表中
+            List<Order> orders = new List<Order>(Orders);
+            foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
+            {
+                Transaction tx = Blockchain.Default.GetTransaction(group.Key);
+                if (tx == null) return false;
+                AgencyTransaction tx_agency = tx as AgencyTransaction;
+                if (tx_agency?.SplitOrder == null || tx_agency.AssetId != AssetId || tx_agency.ValueAssetId != ValueAssetId || tx_agency.Agent != Agent)
+                    continue;
+                var outputs = group.Select(p => new
+                {
+                    Input = p,
+                    Output = tx_agency.Outputs[p.PrevIndex]
+                }).Where(p => p.Output.ScriptHash == tx_agency.SplitOrder.Client).ToDictionary(p => p.Input, p => p.Output);
+                if (outputs.Count == 0) continue;
+                if (outputs.Count != tx_agency.Outputs.Count(p => p.ScriptHash == tx_agency.SplitOrder.Client))
+                    return false;
+                orders.Add(new Order
+                {
+                    AssetId = this.AssetId,
+                    ValueAssetId = this.ValueAssetId,
+                    Agent = this.Agent,
+                    Amount = tx_agency.SplitOrder.Amount,
+                    Price = tx_agency.SplitOrder.Price,
+                    Client = tx_agency.SplitOrder.Client,
+                    Inputs = outputs.Keys.ToArray()
+                });
+            }
+            if (orders.Count < 2) return false;
+            if (orders.Count(p => p.Amount > Fixed8.Zero) == 0 || orders.Count(p => p.Amount < Fixed8.Zero) == 0)
+                return false;
+            Fixed8 amount_unmatched = orders.Sum(p => p.Amount);
+            if (amount_unmatched == Fixed8.Zero)
+            {
+                if (SplitOrder != null) return false;
+            }
+            else
+            {
+                if (SplitOrder?.Amount != amount_unmatched) return false;
+            }
             foreach (Order order in orders)
             {
                 TransactionOutput[] inputs = order.Inputs.Select(p => references[p]).ToArray();
@@ -102,7 +183,7 @@ namespace AntShares.Core
                 {
                     if (inputs.Any(p => p.AssetId != order.ValueAssetId))
                         return false;
-                    if (inputs.Sum(p => p.Value) < Fixed8.Multiply(order.Amount, order.Price))
+                    if (inputs.Sum(p => p.Value) < order.Amount * order.Price)
                         return false;
                 }
                 else
@@ -113,62 +194,40 @@ namespace AntShares.Core
                         return false;
                 }
             }
-            int partially = 0;
+            if (SplitOrder != null)
+            {
+                Fixed8 price_worst = amount_unmatched > Fixed8.Zero ? orders.Min(p => p.Price) : orders.Max(p => p.Price);
+                if (SplitOrder.Price != price_worst) return false;
+                Order[] orders_worst = orders.Where(p => p.Price == price_worst && p.Client == SplitOrder.Client).ToArray();
+                if (orders_worst.Length == 0) return false;
+                Fixed8 amount_worst = orders_worst.Sum(p => p.Amount);
+                if (amount_worst.Abs() < amount_unmatched.Abs()) return false;
+                Order order_combine = new Order
+                {
+                    AssetId = this.AssetId,
+                    ValueAssetId = this.ValueAssetId,
+                    Agent = this.Agent,
+                    Amount = amount_worst - amount_unmatched,
+                    Price = price_worst,
+                    Client = SplitOrder.Client,
+                    Inputs = orders_worst.SelectMany(p => p.Inputs).ToArray()
+                };
+                foreach (Order order_worst in orders_worst)
+                {
+                    orders.Remove(order_worst);
+                }
+                orders.Add(order_combine);
+            }
             foreach (var group in orders.GroupBy(p => p.Client))
             {
                 TransactionOutput[] inputs = group.SelectMany(p => p.Inputs).Select(p => references[p]).ToArray();
                 TransactionOutput[] outputs = Outputs.Where(p => p.ScriptHash == group.Key).ToArray();
-                Fixed8 money_spent = inputs.Where(p => p.AssetId == orders[0].ValueAssetId).Sum(p => p.Value) - outputs.Where(p => p.AssetId == orders[0].ValueAssetId).Sum(p => p.Value);
-                Fixed8 amount_changed = outputs.Where(p => p.AssetId == orders[0].AssetId).Sum(p => p.Value) - inputs.Where(p => p.AssetId == orders[0].AssetId).Sum(p => p.Value);
-                Fixed8 amount_group = group.Sum(p => p.Amount);
-                if (amount_changed == amount_group)
-                {
-                    if (money_spent > group.Sum(p => Fixed8.Multiply(p.Amount, p.Price)))
-                        return false;
-                }
-                else if (++partially > 1)
-                {
+                Fixed8 money_spent = inputs.Where(p => p.AssetId == ValueAssetId).Sum(p => p.Value) - outputs.Where(p => p.AssetId == ValueAssetId).Sum(p => p.Value);
+                Fixed8 amount_changed = outputs.Where(p => p.AssetId == AssetId).Sum(p => p.Value) - inputs.Where(p => p.AssetId == AssetId).Sum(p => p.Value);
+                if (amount_changed != group.Sum(p => p.Amount))
                     return false;
-                }
-                else
-                {
-                    Fixed8 amount_diff = orders.Sum(p => p.Amount);
-                    if (amount_changed != amount_group - amount_diff)
-                        return false;
-                    Fixed8 price_worst;
-                    if (amount_diff > Fixed8.Zero)
-                    {
-                        price_worst = group.Min(p => p.Price);
-                        if (price_worst != orders.Min(p => p.Price))
-                            return false;
-                    }
-                    else
-                    {
-                        price_worst = group.Max(p => p.Price);
-                        if (price_worst != orders.Max(p => p.Price))
-                            return false;
-                    }
-                    Order[] orders_worst = group.Where(p => p.Price == price_worst).ToArray();
-                    Fixed8 amount_worst = orders_worst.Sum(p => p.Amount);
-                    if (amount_worst.Abs() < amount_diff.Abs())
-                        return false;
-                    Order order_combine = new Order
-                    {
-                        AssetId = orders[0].AssetId,
-                        ValueAssetId = orders[0].ValueAssetId,
-                        Amount = amount_worst - amount_diff,
-                        Price = price_worst,
-                        Client = orders[0].Client,
-                        Agent = orders[0].Agent,
-                        Inputs = orders_worst.SelectMany(p => p.Inputs).ToArray()
-                    };
-                    List<Order> orders_new = group.Where(p => p.Price != price_worst).ToList();
-                    if (order_combine.Amount == Fixed8.Zero)
-                        return false;
-                    orders_new.Add(order_combine);
-                    if (money_spent > orders_new.Sum(p => Fixed8.Multiply(p.Amount, p.Price)))
-                        return false;
-                }
+                if (money_spent > group.Sum(p => p.Amount * p.Price))
+                    return false;
             }
             return true;
         }

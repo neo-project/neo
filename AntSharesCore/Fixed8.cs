@@ -2,10 +2,18 @@
 
 namespace AntShares
 {
+    /// <summary>
+    /// 精确到10^-8的64位定点数，将舍入误差降到最低。
+    /// 通过控制乘数的精度，可以完全消除舍入误差。
+    /// </summary>
     public struct Fixed8 : IComparable<Fixed8>, IEquatable<Fixed8>, IFormattable
     {
         private const long D = 100000000;
         internal long value;
+
+        public static readonly Fixed8 MaxValue = new Fixed8 { value = long.MaxValue };
+
+        public static readonly Fixed8 MinValue = new Fixed8 { value = long.MinValue };
 
         public static readonly Fixed8 One = new Fixed8 { value = D };
 
@@ -59,17 +67,6 @@ namespace AntShares
         public override int GetHashCode()
         {
             return value.GetHashCode();
-        }
-
-        public static Fixed8 Multiply(Fixed8 amount, Fixed8 price)
-        {
-            long remainder;
-            amount.value = Math.DivRem(amount.value, 1000, out remainder);
-            if (remainder != 0) throw new ArgumentException();
-            price.value = Math.DivRem(price.value, 100000, out remainder);
-            if (remainder != 0) throw new ArgumentException();
-            amount.value *= price.value;
-            return amount;
         }
 
         public static Fixed8 Parse(string s)
@@ -136,6 +133,33 @@ namespace AntShares
         public static bool operator <=(Fixed8 x, Fixed8 y)
         {
             return x.CompareTo(y) <= 0;
+        }
+
+        public static Fixed8 operator *(Fixed8 x, Fixed8 y)
+        {
+            const ulong QUO = (1ul << 63) / (D >> 1);
+            const ulong REM = (1ul << 63) % (D >> 1);
+            int sign = Math.Sign(x.value) * Math.Sign(y.value);
+            ulong ux = (ulong)Math.Abs(x.value);
+            ulong uy = (ulong)Math.Abs(y.value);
+            ulong xh = ux >> 32;
+            ulong xl = ux & 0x00000000fffffffful;
+            ulong yh = uy >> 32;
+            ulong yl = uy & 0x00000000fffffffful;
+            ulong rh = xh * yh;
+            ulong rm = xh * yl + xl * yh;
+            ulong rl = xl * yl;
+            ulong rmh = rm >> 32;
+            ulong rml = rm << 32;
+            rh += rmh;
+            rl += rml;
+            if (rl < rml)
+                ++rh;
+            if (rh >= D)
+                throw new OverflowException();
+            ulong r = rh * QUO + (rh * REM + rl) / D;
+            x.value = (long)r * sign;
+            return x;
         }
 
         public static Fixed8 operator +(Fixed8 x, Fixed8 y)
