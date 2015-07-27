@@ -38,7 +38,10 @@ namespace AntShares.Core
 
         internal override bool VerifyBalance()
         {
-            IDictionary<UInt256, TransactionResult> results = GetTransactionResults();
+            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.GetQuantityIssued))
+                return false;
+            IReadOnlyDictionary<UInt256, TransactionResult> results = GetTransactionResults();
+            if (results == null) return false;
             if (!results.ContainsKey(Blockchain.AntCoin.Hash) || results[Blockchain.AntCoin.Hash].Amount < SystemFee)
                 return false;
             foreach (TransactionResult result in results.Values.Where(p => p.AssetId != Blockchain.AntCoin.Hash))

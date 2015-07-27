@@ -74,14 +74,19 @@ namespace AntShares
             return Fixed8.FromDecimal(decimal.Parse(s));
         }
 
+        public decimal ToDecimal()
+        {
+            return value / (decimal)D;
+        }
+
         public override string ToString()
         {
-            return (value / (decimal)D).ToString();
+            return ToDecimal().ToString();
         }
 
         public string ToString(string format, IFormatProvider formatProvider)
         {
-            return (value / (decimal)D).ToString(format, formatProvider);
+            return ToDecimal().ToString(format, formatProvider);
         }
 
         public static bool TryParse(string s, out Fixed8 result)

@@ -116,27 +116,7 @@ namespace AntShares.Core
         //考虑未来是否可以优化这个算法
         internal override bool VerifyBalance()
         {
-            if (Outputs.Any(p => p.Value <= Fixed8.Zero))
-                return false;
-            IDictionary<TransactionInput, TransactionOutput> references = GetUnspentReferences();
-            IDictionary<UInt256, TransactionResult> results = references.Values.Select(p => new
-            {
-                AssetId = p.AssetId,
-                Value = p.Value
-            }).Concat(Outputs.Select(p => new
-            {
-                AssetId = p.AssetId,
-                Value = -p.Value
-            })).GroupBy(p => p.AssetId, (k, g) => new TransactionResult
-            {
-                AssetId = k,
-                Amount = g.Sum(p => p.Value)
-            }).Where(p => p.Amount != Fixed8.Zero).ToDictionary(p => p.AssetId);
-            if (results.Count > 1) return false;
-            if (results.Count == 1 && !results.ContainsKey(Blockchain.AntCoin.Hash))
-                return false;
-            if (SystemFee > Fixed8.Zero && (results.Count == 0 || results[Blockchain.AntCoin.Hash].Amount < SystemFee))
-                return false;
+            if (!base.VerifyBalance()) return false;
             List<Order> orders = new List<Order>(Orders);
             foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
             {
@@ -178,7 +158,7 @@ namespace AntShares.Core
             }
             foreach (Order order in orders)
             {
-                TransactionOutput[] inputs = order.Inputs.Select(p => references[p]).ToArray();
+                TransactionOutput[] inputs = order.Inputs.Select(p => References[p]).ToArray();
                 if (order.Amount > Fixed8.Zero)
                 {
                     if (inputs.Any(p => p.AssetId != order.ValueAssetId))
@@ -220,7 +200,7 @@ namespace AntShares.Core
             }
             foreach (var group in orders.GroupBy(p => p.Client))
             {
-                TransactionOutput[] inputs = group.SelectMany(p => p.Inputs).Select(p => references[p]).ToArray();
+                TransactionOutput[] inputs = group.SelectMany(p => p.Inputs).Select(p => References[p]).ToArray();
                 TransactionOutput[] outputs = Outputs.Where(p => p.ScriptHash == group.Key).ToArray();
                 Fixed8 money_spent = inputs.Where(p => p.AssetId == ValueAssetId).Sum(p => p.Value) - outputs.Where(p => p.AssetId == ValueAssetId).Sum(p => p.Value);
                 Fixed8 amount_changed = outputs.Where(p => p.AssetId == AssetId).Sum(p => p.Value) - inputs.Where(p => p.AssetId == AssetId).Sum(p => p.Value);

@@ -16,17 +16,43 @@ namespace AntShares.Core
         public TransactionOutput[] Outputs;
         public byte[][] Scripts;
 
-        private UInt256 hash = null;
-
+        private UInt256 _hash = null;
         public UInt256 Hash
         {
             get
             {
-                if (hash == null)
+                if (_hash == null)
                 {
-                    hash = new UInt256(this.ToArray().Sha256().Sha256());
+                    _hash = new UInt256(this.ToArray().Sha256().Sha256());
                 }
-                return hash;
+                return _hash;
+            }
+        }
+
+        private IReadOnlyDictionary<TransactionInput, TransactionOutput> _references;
+        public IReadOnlyDictionary<TransactionInput, TransactionOutput> References
+        {
+            get
+            {
+                if (_references == null)
+                {
+                    Dictionary<TransactionInput, TransactionOutput> dictionary = new Dictionary<TransactionInput, TransactionOutput>();
+                    foreach (var group in GetAllInputs().GroupBy(p => p.PrevTxId))
+                    {
+                        Transaction tx = Blockchain.Default.GetTransaction(group.Key);
+                        if (tx == null) return null;
+                        foreach (var reference in group.Select(p => new
+                        {
+                            Input = p,
+                            Output = tx.Outputs[p.PrevIndex]
+                        }))
+                        {
+                            dictionary.Add(reference.Input, reference.Output);
+                        }
+                    }
+                    _references = dictionary;
+                }
+                return _references;
             }
         }
 
@@ -115,39 +141,16 @@ namespace AntShares.Core
             }
         }
 
-        internal IDictionary<TransactionInput, TransactionOutput> GetReferences()
-        {
-            return GetReferences(GetAllInputs());
-        }
-
-        internal static IDictionary<TransactionInput, TransactionOutput> GetReferences(IEnumerable<TransactionInput> inputs)
-        {
-            Dictionary<TransactionInput, TransactionOutput> references = new Dictionary<TransactionInput, TransactionOutput>();
-            foreach (var group in inputs.GroupBy(p => p.PrevTxId))
-            {
-                Transaction tx = Blockchain.Default.GetTransaction(group.Key);
-                if (tx == null) throw new InvalidOperationException();
-                foreach (var reference in group.Select(p => new
-                {
-                    Input = p,
-                    Output = tx.Outputs[p.PrevIndex]
-                }))
-                {
-                    references.Add(reference.Input, reference.Output);
-                }
-            }
-            return references;
-        }
-
         public virtual UInt160[] GetScriptHashesForVerifying()
         {
-            return GetReferences(Inputs).Values.Select(p => p.ScriptHash).Distinct().OrderBy(p => p).ToArray();
+            if (References == null) throw new InvalidOperationException();
+            return Inputs.Select(p => References[p].ScriptHash).Distinct().OrderBy(p => p).ToArray();
         }
 
-        internal IDictionary<UInt256, TransactionResult> GetTransactionResults()
+        internal IReadOnlyDictionary<UInt256, TransactionResult> GetTransactionResults()
         {
-            IDictionary<TransactionInput, TransactionOutput> references = GetUnspentReferences();
-            return references.Values.Select(p => new
+            if (References == null) return null;
+            return References.Values.Select(p => new
             {
                 AssetId = p.AssetId,
                 Value = p.Value
@@ -160,18 +163,6 @@ namespace AntShares.Core
                 AssetId = k,
                 Amount = g.Sum(p => p.Value)
             }).Where(p => p.Amount != Fixed8.Zero).ToDictionary(p => p.AssetId);
-        }
-
-        internal IDictionary<TransactionInput, TransactionOutput> GetUnspentReferences()
-        {
-            Dictionary<TransactionInput, TransactionOutput> references = new Dictionary<TransactionInput, TransactionOutput>();
-            foreach (TransactionInput input in GetAllInputs())
-            {
-                TransactionOutput reference = Blockchain.Default.GetUnspent(input.PrevTxId, input.PrevIndex);
-                if (reference == null) throw new InvalidOperationException();
-                references.Add(input, reference);
-            }
-            return references;
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -206,6 +197,8 @@ namespace AntShares.Core
 
         public virtual bool Verify()
         {
+            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.GetUnspent))
+                return false;
             if (GetAllInputs().Distinct().Count() != GetAllInputs().Count())
                 return false;
             lock (LocalNode.MemoryPool)
@@ -213,6 +206,7 @@ namespace AntShares.Core
                 if (LocalNode.MemoryPool.Values.AsParallel().SelectMany(p => p.GetAllInputs()).Intersect(GetAllInputs().AsParallel()).Count() > 0)
                     return false;
             }
+            if (Blockchain.Default.IsDoubleSpend(this)) return false;
             if (!VerifyBalance()) return false;
             if (!this.VerifySignature()) return false;
             return true;
@@ -220,10 +214,9 @@ namespace AntShares.Core
 
         internal virtual bool VerifyBalance()
         {
-            if (Outputs.Any(p => p.Value <= Fixed8.Zero))
-                return false;
-            IDictionary<UInt256, TransactionResult> results = GetTransactionResults();
-            if (results.Count > 1) return false;
+            if (Outputs.Any(p => p.Value <= Fixed8.Zero)) return false;
+            IReadOnlyDictionary<UInt256, TransactionResult> results = GetTransactionResults();
+            if (results == null || results.Count > 1) return false;
             if (results.Count == 1 && !results.ContainsKey(Blockchain.AntCoin.Hash))
                 return false;
             if (SystemFee == Fixed8.Zero) return true;

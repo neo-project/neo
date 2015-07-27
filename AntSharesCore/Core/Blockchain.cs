@@ -31,6 +31,8 @@ namespace AntShares.Core
         //TODO: 是否应该根据内存大小来优化缓存容量？
         private static BlockCache cache = new BlockCache(5760);
 
+        public virtual BlockchainAbility Ability => BlockchainAbility.None;
+
         public static Blockchain Default { get; private set; } = new Blockchain();
 
         public virtual bool IsReadOnly => true;
@@ -57,7 +59,7 @@ namespace AntShares.Core
 
         public virtual IEnumerable<RegisterTransaction> GetAssets()
         {
-            return new RegisterTransaction[] { AntShare, AntCoin };
+            throw new NotSupportedException();
         }
 
         public virtual Block GetBlock(UInt256 hash)
@@ -74,9 +76,7 @@ namespace AntShares.Core
 
         public virtual Fixed8 GetQuantityIssued(UInt256 asset_id)
         {
-            RegisterTransaction tx = GetTransaction(asset_id) as RegisterTransaction;
-            if (tx == null || tx.AssetType == AssetType.Currency) return Fixed8.Zero;
-            return GenesisBlock.Transactions.OfType<IssueTransaction>().SelectMany(p => p.Outputs).Where(p => p.AssetId == asset_id).Sum(p => p.Value);
+            throw new NotSupportedException();
         }
 
         public virtual Transaction GetTransaction(UInt256 hash)
@@ -88,21 +88,17 @@ namespace AntShares.Core
 
         public virtual TransactionOutput GetUnspent(UInt256 hash, ushort index)
         {
-            Transaction tx = GenesisBlock.Transactions.FirstOrDefault(p => p.Hash == hash);
-            if (tx == null || tx.Outputs.Length <= index) return null;
-            if (GenesisBlock.Transactions.SelectMany(p => p.GetAllInputs()).Any(p => p.PrevTxId == hash && p.PrevIndex == index))
-                return null;
-            return tx.Outputs[index];
+            throw new NotSupportedException();
+        }
+
+        public virtual IEnumerable<TransactionOutput> GetUnspentAntShares()
+        {
+            throw new NotSupportedException();
         }
 
         public virtual bool IsDoubleSpend(Transaction tx)
         {
-            TransactionInput[] inputs = tx.GetAllInputs().ToArray();
-            if (inputs.Length == 0) return false;
-            foreach (TransactionInput input in inputs)
-                if (GenesisBlock.Transactions.SelectMany(p => p.GetAllInputs()).Contains(input))
-                    return true;
-            return false;
+            throw new NotSupportedException();
         }
 
         private void LocalNode_NewBlock(object sender, Block block)

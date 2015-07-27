@@ -2,7 +2,6 @@
 using AntShares.IO;
 using AntShares.Properties;
 using LevelDB;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -12,6 +11,8 @@ namespace AntShares.Data
     {
         private DB db;
         private object onblock_sync_obj = new object();
+
+        public override BlockchainAbility Ability => BlockchainAbility.All;
 
         public override bool IsReadOnly => false;
 
@@ -58,7 +59,7 @@ namespace AntShares.Data
             yield return Blockchain.AntCoin;
             using (Iterator it = db.NewIterator(ReadOptions.Default))
             {
-                for (it.Seek(SliceBuilder.Begin(DataEntryPrefix.IX_Register)); it.Valid() && it.Key() < SliceBuilder.Begin(DataEntryPrefix.IX_Register + 1); it.Next())
+                for (it.Seek(SliceBuilder.Begin(DataEntryPrefix.IX_Asset)); it.Valid() && it.Key() < SliceBuilder.Begin(DataEntryPrefix.IX_Asset + 1); it.Next())
                 {
                     yield return it.Value().ToArray().AsSerializable<RegisterTransaction>();
                 }
@@ -81,7 +82,6 @@ namespace AntShares.Data
 
         public override Fixed8 GetQuantityIssued(UInt256 asset_id)
         {
-            if (asset_id == AntCoin.Hash) throw new ArgumentException();
             Slice quantity = 0L;
             db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset_id), out quantity);
             return new Fixed8(quantity.ToInt64());
@@ -107,6 +107,17 @@ namespace AntShares.Data
             if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.Unspent).Add(hash).Add(index), out value))
                 return null;
             return value.ToArray().AsSerializable<TransactionOutput>();
+        }
+
+        public override IEnumerable<TransactionOutput> GetUnspentAntShares()
+        {
+            using (Iterator it = db.NewIterator(ReadOptions.Default))
+            {
+                for (it.Seek(SliceBuilder.Begin(DataEntryPrefix.IX_AntShare)); it.Valid() && it.Key() < SliceBuilder.Begin(DataEntryPrefix.IX_AntShare + 1); it.Next())
+                {
+                    yield return it.Value().ToArray().AsSerializable<TransactionOutput>();
+                }
+            }
         }
 
         public override bool IsDoubleSpend(Transaction tx)
@@ -140,7 +151,7 @@ namespace AntShares.Data
                     if (tx.Type == TransactionType.RegisterTransaction)
                     {
                         RegisterTransaction reg_tx = (RegisterTransaction)tx;
-                        batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Register).Add((byte)reg_tx.AssetType).Add(reg_tx.Hash), reg_tx.ToArray());
+                        batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Asset).Add((byte)reg_tx.AssetType).Add(reg_tx.Hash), reg_tx.ToArray());
                     }
                     else if (tx.Type == TransactionType.IssueTransaction)
                     {
@@ -163,11 +174,26 @@ namespace AntShares.Data
                     for (ushort index = 0; index < tx.Outputs.Length; index++)
                     {
                         batch.Put(SliceBuilder.Begin(DataEntryPrefix.Unspent).Add(tx.Hash).Add(index), tx.Outputs[index].ToArray());
+                        if (tx.Outputs[index].AssetId == AntShare.Hash)
+                        {
+                            batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_AntShare).Add(tx.Hash).Add(index), tx.Outputs[index].ToArray());
+                        }
                     }
                 }
                 foreach (TransactionInput input in block.Transactions.SelectMany(p => p.GetAllInputs()))
                 {
                     batch.Delete(SliceBuilder.Begin(DataEntryPrefix.Unspent).Add(input.PrevTxId).Add(input.PrevIndex));
+                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_AntShare).Add(input.PrevTxId).Add(input.PrevIndex));
+                }
+                //统计AntCoin的发行量
+                {
+                    Fixed8 amount_in = block.Transactions.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
+                    Fixed8 amount_out = block.Transactions.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
+                    if (amount_in != amount_out)
+                    {
+                        Fixed8 quantity = GetQuantityIssued(AntCoin.Hash) - amount_in + amount_out;
+                        assets.Add(AntCoin.Hash, quantity);
+                    }
                 }
                 foreach (var asset in assets)
                 {

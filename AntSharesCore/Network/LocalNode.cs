@@ -270,7 +270,7 @@ namespace AntShares.Network
             }
             if (Blockchain.Default.ContainsBlock(block.Hash))
                 return;
-            //TODO: 验证合法性
+            if (!block.Verify()) return;
             if (NewBlock != null)
                 NewBlock(this, block);
             RelayAsync(block).Void();
@@ -308,7 +308,7 @@ namespace AntShares.Network
             }
             if (Blockchain.Default.ContainsTransaction(tx.Hash))
                 return;
-            //TODO: 验证合法性
+            if (!tx.Verify()) return;
             if (NewTransaction != null)
                 NewTransaction(this, tx);
             RelayAsync(tx).Void();

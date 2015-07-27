@@ -13,7 +13,7 @@ namespace AntShares.Core
         public UInt256 MerkleRoot;
         public uint Timestamp;
         public const uint Bits = 0;
-        public uint Nonce;
+        public ulong Nonce;
         public UInt160 Miner;
         public byte[] Script;
         public Transaction[] Transactions;
@@ -68,7 +68,7 @@ namespace AntShares.Core
             this.Timestamp = reader.ReadUInt32();
             if (reader.ReadUInt32() != Bits)
                 throw new FormatException();
-            this.Nonce = reader.ReadUInt32();
+            this.Nonce = reader.ReadUInt64();
             this.Miner = reader.ReadSerializable<UInt160>();
             this.Script = reader.ReadBytes((int)reader.ReadVarInt());
             if (!this.VerifySignature())
@@ -94,7 +94,7 @@ namespace AntShares.Core
                 this.Timestamp = reader.ReadUInt32();
                 if (reader.ReadUInt32() != Bits)
                     throw new FormatException();
-                this.Nonce = reader.ReadUInt32();
+                this.Nonce = reader.ReadUInt64();
                 this.Miner = reader.ReadSerializable<UInt160>();
                 this.Transactions = new Transaction[reader.ReadVarInt()];
                 for (int i = 0; i < Transactions.Length; i++)
@@ -190,16 +190,41 @@ namespace AntShares.Core
             //此时，不应简单的将区块丢弃，而应该先缓存起来，等到合适的时机再次验证
             if (Transactions.Count(p => p.Type == TransactionType.GenerationTransaction) != 1)
                 return false;
+            if (!this.VerifySignature()) return false;
             if (completely)
             {
-                GenerationTransaction tx_gen = Transactions.OfType<GenerationTransaction>().First();
-                //TODO: 验证GenerationTransaction的合法性
-                //1. 铸币是否符合规则
-                //2. 手续费是否数量正确
+                if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.GetQuantityIssued) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.GetUnspent))
+                    return false;
                 foreach (Transaction tx in Transactions)
                     if (!tx.Verify()) return false;
+                var antshares = Blockchain.Default.GetUnspentAntShares().GroupBy(p => p.ScriptHash, (k, g) => new
+                {
+                    ScriptHash = k,
+                    Amount = g.Sum(p => p.Value)
+                }).OrderBy(p => p.Amount).ThenBy(p => p.ScriptHash).ToArray();
+                Transaction[] transactions = Transactions.Where(p => p.Type != TransactionType.GenerationTransaction).ToArray();
+                Fixed8 amount_in = transactions.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
+                Fixed8 amount_out = transactions.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
+                Fixed8 amount_sysfee = transactions.Sum(p => p.SystemFee);
+                Fixed8 amount_netfee = amount_in - amount_out - amount_sysfee;
+                Fixed8 quantity = Blockchain.Default.GetQuantityIssued(Blockchain.AntCoin.Hash);
+                Fixed8 gen = antshares.Length == 0 ? Fixed8.Zero : Fixed8.FromDecimal((Blockchain.AntCoin.Amount - (quantity - amount_sysfee)).ToDecimal() * 2.4297257e-7m);
+                GenerationTransaction tx_gen = Transactions.OfType<GenerationTransaction>().First();
+                if (tx_gen.Outputs.Sum(p => p.Value) != amount_netfee + gen)
+                    return false;
+                if (antshares.Length > 0)
+                {
+                    ulong n = Nonce % (ulong)antshares.Sum(p => p.Amount).value;
+                    ulong line = 0;
+                    int i = -1;
+                    do
+                    {
+                        line += (ulong)antshares[++i].Amount.value;
+                    } while (line <= n);
+                    if (tx_gen.Outputs.Where(p => p.ScriptHash == antshares[i].ScriptHash).Sum(p => p.Value) < gen)
+                        return false;
+                }
             }
-            if (!this.VerifySignature()) return false;
             return true;
         }
     }
