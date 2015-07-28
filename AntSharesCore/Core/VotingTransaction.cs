@@ -44,5 +44,13 @@ namespace AntShares.Core
             }
             return true;
         }
+
+        internal override bool VerifyBalance()
+        {
+            if (!base.VerifyBalance()) return false;
+            if (Outputs.All(p => p.AssetId != Blockchain.AntShare.Hash))
+                return false;
+            return true;
+        }
     }
 }

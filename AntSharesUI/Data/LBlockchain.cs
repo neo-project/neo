@@ -137,6 +137,17 @@ namespace AntShares.Data
             }
         }
 
+        public override IEnumerable<TransactionInput> GetVotes()
+        {
+            using (Iterator it = db.NewIterator(ReadOptions.Default))
+            {
+                for (it.Seek(SliceBuilder.Begin(DataEntryPrefix.IX_Vote)); it.Valid() && it.Key() < SliceBuilder.Begin(DataEntryPrefix.IX_Vote + 1); it.Next())
+                {
+                    yield return it.Key().ToArray().Skip(1).ToArray().AsSerializable<TransactionInput>();
+                }
+            }
+        }
+
         public override bool IsDoubleSpend(Transaction tx)
         {
             TransactionInput[] inputs = tx.GetAllInputs().ToArray();
@@ -187,6 +198,15 @@ namespace AntShares.Data
                         case TransactionType.EnrollTransaction:
                             batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment).Add(tx.Hash), true);
                             break;
+                        case TransactionType.VotingTransaction:
+                            for (ushort index = 0; index < tx.Outputs.Length; index++)
+                            {
+                                if (tx.Outputs[index].AssetId == AntShare.Hash)
+                                {
+                                    batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Vote).Add(tx.Hash).Add(index), true);
+                                }
+                            }
+                            break;
                         case TransactionType.RegisterTransaction:
                             RegisterTransaction reg_tx = (RegisterTransaction)tx;
                             batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Asset).Add((byte)reg_tx.AssetType).Add(reg_tx.Hash), true);
@@ -206,6 +226,7 @@ namespace AntShares.Data
                     batch.Delete(SliceBuilder.Begin(DataEntryPrefix.Unspent).Add(input.PrevTxId).Add(input.PrevIndex));
                     batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment).Add(input.PrevTxId));
                     batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_AntShare).Add(input.PrevTxId).Add(input.PrevIndex));
+                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Vote).Add(input.PrevTxId).Add(input.PrevIndex));
                 }
                 //统计AntCoin的发行量
                 {

@@ -101,6 +101,11 @@ namespace AntShares.Core
             throw new NotSupportedException();
         }
 
+        public virtual IEnumerable<TransactionInput> GetVotes()
+        {
+            throw new NotSupportedException();
+        }
+
         public virtual bool IsDoubleSpend(Transaction tx)
         {
             throw new NotSupportedException();

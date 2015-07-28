@@ -9,6 +9,7 @@
         IX_Asset = 0x81,
         IX_Enrollment = 0x84,
         IX_AntShare = 0x90,
+        IX_Vote = 0x94,
 
         ST_QuantityIssued = 0xc1,
 
