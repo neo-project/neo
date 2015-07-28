@@ -197,7 +197,7 @@ namespace AntShares.Core
 
         public virtual bool Verify()
         {
-            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.GetUnspent))
+            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
                 return false;
             if (GetAllInputs().Distinct().Count() != GetAllInputs().Count())
                 return false;

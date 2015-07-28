@@ -57,11 +57,14 @@ namespace AntShares.Data
         public override IEnumerable<RegisterTransaction> GetAssets()
         {
             yield return Blockchain.AntCoin;
-            using (Iterator it = db.NewIterator(ReadOptions.Default))
+            ReadOptions options = new ReadOptions();
+            using (options.Snapshot = db.GetSnapshot())
+            using (Iterator it = db.NewIterator(options))
             {
                 for (it.Seek(SliceBuilder.Begin(DataEntryPrefix.IX_Asset)); it.Valid() && it.Key() < SliceBuilder.Begin(DataEntryPrefix.IX_Asset + 1); it.Next())
                 {
-                    yield return it.Value().ToArray().AsSerializable<RegisterTransaction>();
+                    UInt256 hash = new UInt256(it.Key().ToArray().Skip(2).ToArray());
+                    yield return db.Get(options, SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(hash)).ToArray().AsSerializable<RegisterTransaction>();
                 }
             }
         }
@@ -78,6 +81,20 @@ namespace AntShares.Data
                 }
             }
             return block;
+        }
+
+        public override IEnumerable<EnrollmentTransaction> GetEnrollments()
+        {
+            ReadOptions options = new ReadOptions();
+            using (options.Snapshot = db.GetSnapshot())
+            using (Iterator it = db.NewIterator(options))
+            {
+                for (it.Seek(SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment)); it.Valid() && it.Key() < SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment + 1); it.Next())
+                {
+                    UInt256 hash = new UInt256(it.Key().ToArray().Skip(1).ToArray());
+                    yield return db.Get(options, SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(hash)).ToArray().AsSerializable<EnrollmentTransaction>();
+                }
+            }
         }
 
         public override Fixed8 GetQuantityIssued(UInt256 asset_id)
@@ -148,28 +165,32 @@ namespace AntShares.Data
                 foreach (Transaction tx in block.Transactions)
                 {
                     batch.Put(SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(tx.Hash), tx.ToArray());
-                    if (tx.Type == TransactionType.RegisterTransaction)
+                    switch (tx.Type)
                     {
-                        RegisterTransaction reg_tx = (RegisterTransaction)tx;
-                        batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Asset).Add((byte)reg_tx.AssetType).Add(reg_tx.Hash), reg_tx.ToArray());
-                    }
-                    else if (tx.Type == TransactionType.IssueTransaction)
-                    {
-                        foreach (var asset in tx.Outputs.GroupBy(p => p.AssetId).Where(g => g.All(p => p.Value > Fixed8.Zero)).Select(g => new
-                        {
-                            AssetId = g.Key,
-                            Sum = g.Sum(p => p.Value)
-                        }))
-                        {
-                            if (assets.ContainsKey(asset.AssetId))
+                        case TransactionType.IssueTransaction:
+                            foreach (var asset in tx.Outputs.GroupBy(p => p.AssetId).Where(g => g.All(p => p.Value > Fixed8.Zero)).Select(g => new
                             {
-                                assets[asset.AssetId] += asset.Sum;
-                            }
-                            else
+                                AssetId = g.Key,
+                                Sum = g.Sum(p => p.Value)
+                            }))
                             {
-                                assets.Add(asset.AssetId, asset.Sum);
+                                if (assets.ContainsKey(asset.AssetId))
+                                {
+                                    assets[asset.AssetId] += asset.Sum;
+                                }
+                                else
+                                {
+                                    assets.Add(asset.AssetId, asset.Sum);
+                                }
                             }
-                        }
+                            break;
+                        case TransactionType.EnrollTransaction:
+                            batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment).Add(tx.Hash), true);
+                            break;
+                        case TransactionType.RegisterTransaction:
+                            RegisterTransaction reg_tx = (RegisterTransaction)tx;
+                            batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Asset).Add((byte)reg_tx.AssetType).Add(reg_tx.Hash), true);
+                            break;
                     }
                     for (ushort index = 0; index < tx.Outputs.Length; index++)
                     {
@@ -183,6 +204,7 @@ namespace AntShares.Data
                 foreach (TransactionInput input in block.Transactions.SelectMany(p => p.GetAllInputs()))
                 {
                     batch.Delete(SliceBuilder.Begin(DataEntryPrefix.Unspent).Add(input.PrevTxId).Add(input.PrevIndex));
+                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment).Add(input.PrevTxId));
                     batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_AntShare).Add(input.PrevTxId).Add(input.PrevIndex));
                 }
                 //统计AntCoin的发行量

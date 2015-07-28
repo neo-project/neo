@@ -38,7 +38,7 @@ namespace AntShares.Core
 
         internal override bool VerifyBalance()
         {
-            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.GetQuantityIssued))
+            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.Statistics))
                 return false;
             IReadOnlyDictionary<UInt256, TransactionResult> results = GetTransactionResults();
             if (results == null) return false;

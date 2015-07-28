@@ -185,15 +185,15 @@ namespace AntShares.Core
 
         public bool Verify(bool completely = false)
         {
-            //TODO: 验证PrevBlock和Miner的合法性
-            //有时由于区块链同步问题，暂时无法验证合法性
-            //此时，不应简单的将区块丢弃，而应该先缓存起来，等到合适的时机再次验证
             if (Transactions.Count(p => p.Type == TransactionType.GenerationTransaction) != 1)
                 return false;
+            if (!Blockchain.Default.ContainsBlock(PrevBlock))
+                return false;
             if (!this.VerifySignature()) return false;
+            //TODO: 验证Miner的合法性
             if (completely)
             {
-                if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.GetQuantityIssued) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.GetUnspent))
+                if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.Statistics) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
                     return false;
                 foreach (Transaction tx in Transactions)
                     if (!tx.Verify()) return false;

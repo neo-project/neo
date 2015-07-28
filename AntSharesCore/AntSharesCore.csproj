@@ -44,6 +44,7 @@
     <Compile Include="Core\Blockchain.cs" />
     <Compile Include="Core\BlockchainAbility.cs" />
     <Compile Include="Core\ContractTransaction.cs" />
+    <Compile Include="Core\EnrollmentTransaction.cs" />
     <Compile Include="Core\GenerationTransaction.cs" />
     <Compile Include="Core\Helper.cs" />
     <Compile Include="Core\ISignable.cs" />
@@ -65,6 +66,7 @@
     <Compile Include="Core\TransactionOutput.cs" />
     <Compile Include="Core\TransactionResult.cs" />
     <Compile Include="Core\TransactionType.cs" />
+    <Compile Include="Core\VotingTransaction.cs" />
     <Compile Include="Cryptography\Helper.cs" />
     <Compile Include="Cryptography\MerkleTree.cs" />
     <Compile Include="Fixed8.cs" />

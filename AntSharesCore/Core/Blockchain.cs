@@ -74,6 +74,11 @@ namespace AntShares.Core
             return null;
         }
 
+        public virtual IEnumerable<EnrollmentTransaction> GetEnrollments()
+        {
+            throw new NotSupportedException();
+        }
+
         public virtual Fixed8 GetQuantityIssued(UInt256 asset_id)
         {
             throw new NotSupportedException();

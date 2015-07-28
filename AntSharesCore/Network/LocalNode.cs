@@ -270,6 +270,9 @@ namespace AntShares.Network
             }
             if (Blockchain.Default.ContainsBlock(block.Hash))
                 return;
+            //TODO: 缓存暂时无法验证的区块
+            //有时由于区块链同步问题，暂时无法验证合法性
+            //此时，不应简单地将区块丢弃，而应该先缓存起来，等到合适的时机再次验证
             if (!block.Verify()) return;
             if (NewBlock != null)
                 NewBlock(this, block);
