@@ -1,6 +1,8 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO;
+using AntShares.Wallets;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -18,13 +20,12 @@ namespace AntShares.Core
         public byte[] Script;
         public Transaction[] Transactions;
 
-        private UInt256 hash = null;
-
+        private UInt256 _hash = null;
         public UInt256 Hash
         {
             get
             {
-                if (hash == null)
+                if (_hash == null)
                 {
                     using (MemoryStream ms = new MemoryStream())
                     using (BinaryWriter writer = new BinaryWriter(ms))
@@ -38,10 +39,10 @@ namespace AntShares.Core
                         writer.Write(Miner);
                         writer.WriteVarInt(Script.Length); writer.Write(Script);
                         writer.Flush();
-                        hash = new UInt256(ms.ToArray().Sha256().Sha256());
+                        _hash = new UInt256(ms.ToArray().Sha256().Sha256());
                     }
                 }
-                return hash;
+                return _hash;
             }
         }
 
@@ -185,15 +186,42 @@ namespace AntShares.Core
 
         public bool Verify(bool completely = false)
         {
+            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
+                return false;
             if (Transactions.Count(p => p.Type == TransactionType.GenerationTransaction) != 1)
                 return false;
             if (!Blockchain.Default.ContainsBlock(PrevBlock))
                 return false;
             if (!this.VerifySignature()) return false;
-            //TODO: 验证Miner的合法性
+            //TODO: 此处排序可能将耗费大量内存，考虑是否采用其它机制
+            Vote[] votes = Blockchain.Default.GetVotes().OrderBy(p => p.Enrollments.Length).ToArray();
+            int miner_count = (int)votes.WeightedFilter(0.25, 0.75, p => p.Count.GetData(), (p, w) => new
+            {
+                MinerCount = p.Enrollments.Length,
+                Weight = w
+            }).WeightedAverage(p => p.MinerCount, p => p.Weight);
+            miner_count = Math.Max(miner_count, Blockchain.StandbyMiners.Length);
+            Dictionary<ECCPublicKey, Fixed8> miners = new Dictionary<ECCPublicKey, Fixed8>();
+            Dictionary<UInt256, ECCPublicKey> enrollments = Blockchain.Default.GetEnrollments().ToDictionary(p => p.Hash, p => p.PublicKey);
+            foreach (var vote in votes)
+            {
+                foreach (UInt256 hash in vote.Enrollments)
+                {
+                    if (!enrollments.ContainsKey(hash)) continue;
+                    ECCPublicKey pubkey = enrollments[hash];
+                    if (!miners.ContainsKey(pubkey))
+                    {
+                        miners.Add(pubkey, Fixed8.Zero);
+                    }
+                    miners[pubkey] += vote.Count;
+                }
+            }
+            ECCPublicKey[] pubkeys = miners.OrderByDescending(p => p.Value).Select(p => p.Key).Concat(Blockchain.StandbyMiners).Take(miner_count).ToArray();
+            if (Miner != Wallet.CreateRedeemScript((byte)Blockchain.GetMinSignatureCount(miner_count), pubkeys).ToScriptHash())
+                return false;
             if (completely)
             {
-                if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.Statistics) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
+                if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.Statistics))
                     return false;
                 foreach (Transaction tx in Transactions)
                     if (!tx.Verify()) return false;

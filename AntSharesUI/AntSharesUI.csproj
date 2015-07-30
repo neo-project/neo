@@ -73,8 +73,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\DataEntryPrefix.cs" />
+    <Compile Include="Data\Helper.cs" />
     <Compile Include="Data\LBlockchain.cs" />
     <Compile Include="Cryptography\Helper.cs" />
+    <Compile Include="Data\MultiValueDictionary.cs" />
     <Compile Include="Data\SliceBuilder.cs" />
     <Compile Include="UI\IssueDialog.cs">
       <SubType>Form</SubType>

@@ -13,7 +13,7 @@ namespace AntShares.Core
         TransactionIndexes = 0x01,
 
         /// <summary>
-        /// 必须实现的虚函数：GetUnspent, GetUnspentAntShares, GetVotes, IsDoubleSpend
+        /// 必须实现的虚函数：ContainsUnspent, GetUnspent, GetUnspentAntShares, GetVotes, IsDoubleSpend
         /// </summary>
         UnspentIndexes = 0x02,
 

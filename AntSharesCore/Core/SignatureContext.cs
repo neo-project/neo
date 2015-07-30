@@ -1,4 +1,5 @@
-﻿using AntShares.IO.Json;
+﻿using AntShares.Cryptography;
+using AntShares.IO.Json;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -26,7 +27,7 @@ namespace AntShares.Core
             this.signatures = new MultiSigContext[ScriptHashes.Length];
         }
 
-        public bool Add(byte[] redeemScript, UInt160 pubKeyHash, byte[] signature)
+        public bool Add(byte[] redeemScript, ECCPublicKey pubkey, byte[] signature)
         {
             UInt160 scriptHash = redeemScript.ToScriptHash();
             for (int i = 0; i < ScriptHashes.Length; i++)
@@ -35,7 +36,7 @@ namespace AntShares.Core
                 {
                     if (signatures[i] == null)
                         signatures[i] = new MultiSigContext(redeemScript);
-                    return signatures[i].Add(pubKeyHash, signature);
+                    return signatures[i].Add(pubkey, signature);
                 }
             }
             return false;

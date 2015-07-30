@@ -1,5 +1,7 @@
-﻿using AntShares.IO;
+﻿using AntShares.Cryptography;
+using AntShares.IO;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -7,7 +9,7 @@ namespace AntShares.Core
 {
     public class VotingTransaction : Transaction
     {
-        public UInt256[] Votes;
+        public UInt256[] Enrollments;
 
         public override Fixed8 SystemFee => Fixed8.FromDecimal(10);
 
@@ -18,16 +20,16 @@ namespace AntShares.Core
 
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
-            this.Votes = reader.ReadSerializableArray<UInt256>();
-            if (Votes.Length == 0 || Votes.Length > 256)
+            this.Enrollments = reader.ReadSerializableArray<UInt256>();
+            if (Enrollments.Length == 0 || Enrollments.Length > 1024)
                 throw new FormatException();
-            if (Votes.Length != Votes.Distinct().Count())
+            if (Enrollments.Length != Enrollments.Distinct().Count())
                 throw new FormatException();
         }
 
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
-            writer.Write(Votes);
+            writer.Write(Enrollments);
         }
 
         public override bool Verify()
@@ -35,12 +37,14 @@ namespace AntShares.Core
             if (!base.Verify()) return false;
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
                 return false;
-            foreach (UInt256 vote in Votes)
+            HashSet<ECCPublicKey> pubkeys = new HashSet<ECCPublicKey>();
+            foreach (UInt256 vote in Enrollments)
             {
                 EnrollmentTransaction tx = Blockchain.Default.GetTransaction(vote) as EnrollmentTransaction;
                 if (tx == null) return false;
-                if (Blockchain.Default.GetUnspent(vote, 0) == null)
+                if (!Blockchain.Default.ContainsUnspent(vote, 0))
                     return false;
+                if (!pubkeys.Add(tx.PublicKey)) return false;
             }
             return true;
         }

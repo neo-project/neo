@@ -123,5 +123,56 @@ namespace AntShares
         {
             return (UInt32)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
         }
+
+        internal static long WeightedAverage<T>(this IEnumerable<T> source, Func<T, long> valueSelector, Func<T, long> weightSelector)
+        {
+            long sum_weight = 0;
+            long sum_value = 0;
+            foreach (T item in source)
+            {
+                long weight = weightSelector(item);
+                sum_weight += weight;
+                sum_value += valueSelector(item) * weight;
+            }
+            return sum_value / sum_weight;
+        }
+
+        internal static IEnumerable<TResult> WeightedFilter<T, TResult>(this IList<T> source, double start, double end, Func<T, long> weightSelector, Func<T, long, TResult> resultSelector)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (start < 0 || start > 1) throw new ArgumentOutOfRangeException(nameof(start));
+            if (end < start || start + end > 1) throw new ArgumentOutOfRangeException(nameof(end));
+            if (weightSelector == null) throw new ArgumentNullException(nameof(weightSelector));
+            if (resultSelector == null) throw new ArgumentNullException(nameof(resultSelector));
+            if (source.Count == 0 || start == end) yield break;
+            double amount = source.Sum(weightSelector);
+            long sum = 0;
+            double current = 0;
+            foreach (T item in source)
+            {
+                if (current >= end) break;
+                long weight = weightSelector(item);
+                sum += weight;
+                double old = current;
+                current = sum / amount;
+                if (current <= start) continue;
+                if (old < start)
+                {
+                    if (current > end)
+                    {
+                        weight = (long)((end - start) * amount);
+                    }
+                    else
+                    {
+                        weight = (long)((current - start) * amount);
+                    }
+                }
+                else if (current > end)
+                {
+                    weight = (long)((end - old) * amount);
+                }
+                yield return resultSelector(item, weight);
+            }
+        }
     }
 }

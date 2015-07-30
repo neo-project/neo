@@ -24,7 +24,7 @@ namespace AntShares.Wallets
             using (CngKey key = CngKey.Create(CngAlgorithm.ECDsaP256, null, new CngKeyCreationParameters { ExportPolicy = CngExportPolicies.AllowPlaintextArchiving }))
             {
                 byte[] privateKey = key.Export(CngKeyBlobFormat.EccPrivateBlob);
-                byte[] redeemScript = CreateRedeemScript(1, privateKey);
+                byte[] redeemScript = CreateRedeemScript(1, new ECCPublicKey(privateKey));
                 WalletEntry entry = new WalletEntry(redeemScript, privateKey);
                 SaveEntry(entry);
                 Array.Clear(privateKey, 0, privateKey.Length);
@@ -32,8 +32,10 @@ namespace AntShares.Wallets
             }
         }
 
-        public static byte[] CreateRedeemScript(byte m, params byte[][] publicKeys)
+        public static byte[] CreateRedeemScript(byte m, params ECCPublicKey[] publicKeys)
         {
+            //TODO: 考虑如何支持多于16个公钥的多方签名方案
+            //同时还要考虑到与比特币的兼容性
             if (!(1 <= m && m <= publicKeys.Length && publicKeys.Length <= 16))
                 throw new ArgumentException();
             using (ScriptBuilder sb = new ScriptBuilder())
@@ -41,7 +43,7 @@ namespace AntShares.Wallets
                 sb.Add(ScriptOp.OP_1 - 1 + m);
                 for (int i = 0; i < publicKeys.Length; i++)
                 {
-                    sb.Push(publicKeys[i].ToCompressedPublicKey());
+                    sb.Push(publicKeys[i].ToArray());
                 }
                 sb.Add(ScriptOp.OP_1 - 1 + (byte)publicKeys.Length);
                 sb.Add(ScriptOp.OP_CHECKMULTISIG);
@@ -103,7 +105,7 @@ namespace AntShares.Wallets
             byte[] privateKey = new byte[32];
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
             Secp256r1Point p = Secp256r1Curve.G * privateKey;
-            byte[] redeemScript = CreateRedeemScript(1, p.EncodePoint(true));
+            byte[] redeemScript = CreateRedeemScript(1, new ECCPublicKey(p.EncodePoint(true)));
             WalletEntry entry = new WalletEntry(redeemScript, privateKey);
             SaveEntry(entry);
             Array.Clear(privateKey, 0, privateKey.Length);
@@ -156,7 +158,7 @@ namespace AntShares.Wallets
                     {
                         signature = context.Signable.Sign(entry.PrivateKeys[j], entry.PublicKeys[j]);
                     }
-                    fSuccess |= context.Add(entry.RedeemScript, entry.PublicKeys[j].ToPublicKeyHash(), signature);
+                    fSuccess |= context.Add(entry.RedeemScript, new ECCPublicKey(entry.PublicKeys[j]), signature);
                 }
             }
             return fSuccess;

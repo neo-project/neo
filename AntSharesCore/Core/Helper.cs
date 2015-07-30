@@ -27,30 +27,9 @@ namespace AntShares.Core
             return Base58.Encode(data.Concat(data.Sha256().Sha256().Take(4)).ToArray());
         }
 
-        public static byte[] ToCompressedPublicKey(this byte[] pubkey)
+        public static ECCPublicKey ToPublicKey(this byte[] pubkey)
         {
-            switch (pubkey.Length)
-            {
-                case 33:
-                    break;
-                case 64:
-                case 65:
-                case 72:
-                    pubkey = new byte[] { (byte)(pubkey[pubkey.Length - 1] % 2 + 2) }.Concat(pubkey.Skip(pubkey.Length - 64).Take(32)).ToArray();
-                    break;
-                case 96:
-                case 104:
-                    pubkey = new byte[] { (byte)(pubkey[pubkey.Length - 33] % 2 + 2) }.Concat(pubkey.Skip(pubkey.Length - 96).Take(32)).ToArray();
-                    break;
-                default:
-                    throw new FormatException();
-            }
-            return pubkey;
-        }
-
-        public static UInt160 ToPublicKeyHash(this byte[] pubkey)
-        {
-            return new UInt160(pubkey.ToCompressedPublicKey().Sha256().RIPEMD160());
+            return new ECCPublicKey(pubkey);
         }
 
         public static UInt160 ToScriptHash(this string address)
