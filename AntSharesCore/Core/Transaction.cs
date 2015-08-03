@@ -195,34 +195,47 @@ namespace AntShares.Core
             }
         }
 
-        public virtual bool Verify()
+        public virtual VerificationResult Verify()
         {
-            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
-                return false;
-            if (GetAllInputs().Distinct().Count() != GetAllInputs().Count())
-                return false;
+            VerificationResult result = VerificationResult.OK;
             lock (LocalNode.MemoryPool)
             {
                 if (LocalNode.MemoryPool.Values.AsParallel().SelectMany(p => p.GetAllInputs()).Intersect(GetAllInputs().AsParallel()).Count() > 0)
-                    return false;
+                    result |= VerificationResult.DoubleSpent;
             }
-            if (Blockchain.Default.IsDoubleSpend(this)) return false;
-            if (!VerifyBalance()) return false;
-            if (!this.VerifySignature()) return false;
-            return true;
+            if (!result.HasFlag(VerificationResult.DoubleSpent))
+            {
+                if (Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
+                {
+                    if (Blockchain.Default.IsDoubleSpend(this))
+                        result |= VerificationResult.DoubleSpent;
+                }
+                else
+                {
+                    result |= VerificationResult.Incapable;
+                }
+            }
+            result |= VerifyBalance();
+            result |= this.VerifySignature();
+            return result;
         }
 
-        internal virtual bool VerifyBalance()
+        internal virtual VerificationResult VerifyBalance()
         {
-            if (Outputs.Any(p => p.Value <= Fixed8.Zero)) return false;
+            if (Outputs.Any(p => p.Value <= Fixed8.Zero))
+                return VerificationResult.IncorrectFormat;
             IReadOnlyDictionary<UInt256, TransactionResult> results = GetTransactionResults();
-            if (results == null || results.Count > 1) return false;
+            if (results == null)
+                return VerificationResult.LackOfInformation;
+            if (results.Count > 1)
+                return VerificationResult.Imbalanced;
             if (results.Count == 1 && !results.ContainsKey(Blockchain.AntCoin.Hash))
-                return false;
-            if (SystemFee == Fixed8.Zero) return true;
+                return VerificationResult.Imbalanced;
+            if (SystemFee == Fixed8.Zero)
+                return VerificationResult.OK;
             if (results.Count == 0 || results[Blockchain.AntCoin.Hash].Amount < SystemFee)
-                return false;
-            return true;
+                return VerificationResult.Imbalanced;
+            return VerificationResult.OK;
         }
     }
 }

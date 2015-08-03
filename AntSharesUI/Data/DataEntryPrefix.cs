@@ -11,8 +11,8 @@
         IX_AntShare = 0x91,
         IX_Vote = 0x94,
 
+        ST_Height = 0xc0,
         ST_QuantityIssued = 0xc1,
-
         Configuration = 0xf0
     }
 }

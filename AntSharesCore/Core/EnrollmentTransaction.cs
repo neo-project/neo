@@ -45,12 +45,12 @@ namespace AntShares.Core
             writer.Write(PublicKey);
         }
 
-        internal override bool VerifyBalance()
+        public override VerificationResult Verify()
         {
-            if (!base.VerifyBalance()) return false;
-            if (Outputs.All(p => p.AssetId != Blockchain.AntCoin.Hash || p.ScriptHash != Miner))
-                return false;
-            return true;
+            VerificationResult result = base.Verify();
+            if (Outputs.Length == 0 || Outputs[0].AssetId != Blockchain.AntCoin.Hash || Outputs[0].ScriptHash != Miner)
+                result |= VerificationResult.IncorrectFormat;
+            return result;
         }
     }
 }

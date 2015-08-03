@@ -49,22 +49,30 @@ namespace AntShares.Core
             return new UInt160(redeemScript.Sha256().RIPEMD160());
         }
 
-        internal static bool VerifySignature(this ISignable signable)
+        internal static VerificationResult VerifySignature(this ISignable signable)
         {
-            UInt160[] hashes = signable.GetScriptHashesForVerifying();
+            UInt160[] hashes;
+            try
+            {
+                hashes = signable.GetScriptHashesForVerifying();
+            }
+            catch (InvalidOperationException)
+            {
+                return VerificationResult.LackOfInformation;
+            }
             byte[][] scripts = signable.Scripts;
             if (hashes.Length != scripts.Length)
-                return false;
+                return VerificationResult.InvalidSignature;
             for (int i = 0; i < hashes.Length; i++)
             {
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
                     byte[] script = sb.Add(scripts[i]).Add(ScriptOp.OP_DUP).Add(ScriptOp.OP_HASH160).Push(hashes[i]).Add(ScriptOp.OP_EQUALVERIFY).Add(ScriptOp.OP_EVAL).ToArray();
                     if (!ScriptEngine.Execute(script, signable.GetHashForSigning()))
-                        return false;
+                        return VerificationResult.InvalidSignature;
                 }
             }
-            return true;
+            return VerificationResult.OK;
         }
     }
 }

@@ -22,12 +22,19 @@ namespace AntShares.Core
             writer.Write(Nonce);
         }
 
-        internal override bool VerifyBalance()
+        public override VerificationResult Verify()
         {
-            if (Inputs.Length != 0) return false;
+            VerificationResult result = base.Verify();
+            if (Inputs.Length != 0)
+                result |= VerificationResult.IncorrectFormat;
             if (Outputs.Any(p => p.AssetId != Blockchain.AntCoin.Hash || p.Value <= Fixed8.Zero))
-                return false;
-            return true;
+                result |= VerificationResult.IncorrectFormat;
+            return result;
+        }
+
+        internal override VerificationResult VerifyBalance()
+        {
+            return VerificationResult.OK;
         }
     }
 }

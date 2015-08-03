@@ -25,6 +25,12 @@ namespace AntShares.Data
             return this;
         }
 
+        public SliceBuilder Add(uint value)
+        {
+            data.AddRange(BitConverter.GetBytes(value));
+            return this;
+        }
+
         public SliceBuilder Add(IEnumerable<byte> value)
         {
             data.AddRange(value);
@@ -41,6 +47,11 @@ namespace AntShares.Data
         {
             data.AddRange(value.ToArray());
             return this;
+        }
+
+        public static SliceBuilder Begin()
+        {
+            return new SliceBuilder();
         }
 
         public static SliceBuilder Begin(DataEntryPrefix prefix)

@@ -66,6 +66,7 @@
     <Compile Include="Core\TransactionOutput.cs" />
     <Compile Include="Core\TransactionResult.cs" />
     <Compile Include="Core\TransactionType.cs" />
+    <Compile Include="Core\VerificationResult.cs" />
     <Compile Include="Core\Vote.cs" />
     <Compile Include="Core\VotingTransaction.cs" />
     <Compile Include="Cryptography\ECCPublicKey.cs" />

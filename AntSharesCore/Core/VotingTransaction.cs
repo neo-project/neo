@@ -32,29 +32,39 @@ namespace AntShares.Core
             writer.Write(Enrollments);
         }
 
-        public override bool Verify()
+        public override VerificationResult Verify()
         {
-            if (!base.Verify()) return false;
-            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
-                return false;
-            HashSet<ECCPublicKey> pubkeys = new HashSet<ECCPublicKey>();
-            foreach (UInt256 vote in Enrollments)
-            {
-                EnrollmentTransaction tx = Blockchain.Default.GetTransaction(vote) as EnrollmentTransaction;
-                if (tx == null) return false;
-                if (!Blockchain.Default.ContainsUnspent(vote, 0))
-                    return false;
-                if (!pubkeys.Add(tx.PublicKey)) return false;
-            }
-            return true;
-        }
-
-        internal override bool VerifyBalance()
-        {
-            if (!base.VerifyBalance()) return false;
+            VerificationResult result = base.Verify();
             if (Outputs.All(p => p.AssetId != Blockchain.AntShare.Hash))
-                return false;
-            return true;
+                result |= VerificationResult.IncorrectFormat;
+            if (Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
+            {
+                HashSet<ECCPublicKey> pubkeys = new HashSet<ECCPublicKey>();
+                foreach (UInt256 vote in Enrollments)
+                {
+                    EnrollmentTransaction tx = Blockchain.Default.GetTransaction(vote) as EnrollmentTransaction;
+                    if (tx == null)
+                    {
+                        result |= VerificationResult.LackOfInformation;
+                        continue;
+                    }
+                    if (!Blockchain.Default.ContainsUnspent(vote, 0))
+                    {
+                        result |= VerificationResult.IncorrectFormat;
+                        continue;
+                    }
+                    if (!pubkeys.Add(tx.PublicKey))
+                    {
+                        result |= VerificationResult.IncorrectFormat;
+                        continue;
+                    }
+                }
+            }
+            else
+            {
+                result |= VerificationResult.Incapable;
+            }
+            return result;
         }
     }
 }
