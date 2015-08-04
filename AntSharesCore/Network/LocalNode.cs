@@ -273,6 +273,7 @@ namespace AntShares.Network
             VerificationResult vr = block.Verify();
             if ((vr & ~(VerificationResult.Incapable | VerificationResult.LackOfInformation)) > 0)
                 return;
+            //TODO: 把区块中的所有交易从内存池中清除
             if (NewBlock != null)
                 NewBlock(this, block);
             RelayAsync(block).Void();

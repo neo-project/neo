@@ -102,6 +102,9 @@ namespace AntShares.Core
             }
         }
 
+        //TODO: 此处需要较多的测试来证明它的正确性
+        //因为委托交易的验证算法有点太复杂了，
+        //考虑未来是否可以优化这个算法
         public override VerificationResult Verify()
         {
             VerificationResult result = base.Verify();
@@ -111,15 +114,6 @@ namespace AntShares.Core
                 if (result.HasFlag(VerificationResult.InvalidSignature))
                     break;
             }
-            return result;
-        }
-
-        //TODO: 此处需要较多的测试来证明它的正确性
-        //因为委托交易的验证算法有点太复杂了，
-        //考虑未来是否可以优化这个算法
-        internal override VerificationResult VerifyBalance()
-        {
-            VerificationResult result = base.VerifyBalance();
             List<Order> orders = new List<Order>(Orders);
             foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
             {

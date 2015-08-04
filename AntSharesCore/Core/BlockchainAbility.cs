@@ -8,19 +8,24 @@ namespace AntShares.Core
         None = 0,
 
         /// <summary>
+        /// 必须实现的虚函数：GetNextBlock
+        /// </summary>
+        BlockIndexes = 0x01,
+
+        /// <summary>
         /// 必须实现的虚函数：GetAssets, GetEnrollments
         /// </summary>
-        TransactionIndexes = 0x01,
+        TransactionIndexes = 0x02,
 
         /// <summary>
         /// 必须实现的虚函数：ContainsUnspent, GetUnspent, GetUnspentAntShares, GetVotes, IsDoubleSpend
         /// </summary>
-        UnspentIndexes = 0x02,
+        UnspentIndexes = 0x04,
 
         /// <summary>
         /// 必须实现的虚函数：GetQuantityIssued
         /// </summary>
-        Statistics = 0x04,
+        Statistics = 0x08,
 
         All = 0xff
     }

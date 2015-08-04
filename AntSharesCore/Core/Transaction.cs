@@ -111,6 +111,8 @@ namespace AntShares.Core
             if (GetAllInputs().Distinct().Count() != GetAllInputs().Count())
                 throw new FormatException();
             this.Outputs = reader.ReadSerializableArray<TransactionOutput>();
+            if (Outputs.Any(p => p.Value == Fixed8.Zero))
+                throw new FormatException();
             this.Scripts = reader.ReadBytesArray();
         }
 
@@ -165,6 +167,10 @@ namespace AntShares.Core
             }).Where(p => p.Amount != Fixed8.Zero).ToDictionary(p => p.AssetId);
         }
 
+        protected virtual void OnDeserialized()
+        {
+        }
+
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Type);
@@ -215,27 +221,57 @@ namespace AntShares.Core
                     result |= VerificationResult.Incapable;
                 }
             }
-            result |= VerifyBalance();
-            result |= this.VerifySignature();
-            return result;
-        }
-
-        internal virtual VerificationResult VerifyBalance()
-        {
-            if (Outputs.Any(p => p.Value <= Fixed8.Zero))
-                return VerificationResult.IncorrectFormat;
+            foreach (var group in Outputs.Where(p => p.Value < Fixed8.Zero).GroupBy(p => p.AssetId))
+            {
+                if (group.Key == Blockchain.AntCoin.Hash || group.Key == Blockchain.AntShare.Hash)
+                {
+                    result |= VerificationResult.Imbalanced;
+                    break;
+                }
+                RegisterTransaction tx = Blockchain.Default.GetTransaction(group.Key) as RegisterTransaction;
+                if (tx == null)
+                {
+                    result |= VerificationResult.LackOfInformation;
+                    continue;
+                }
+                if (tx.Amount != Fixed8.Zero)
+                {
+                    result |= VerificationResult.Imbalanced;
+                    break;
+                }
+                if (group.Any(p => p.ScriptHash != tx.Issuer && p.ScriptHash != tx.Admin))
+                {
+                    result |= VerificationResult.Imbalanced;
+                    break;
+                }
+            }
             IReadOnlyDictionary<UInt256, TransactionResult> results = GetTransactionResults();
             if (results == null)
-                return VerificationResult.LackOfInformation;
-            if (results.Count > 1)
-                return VerificationResult.Imbalanced;
-            if (results.Count == 1 && !results.ContainsKey(Blockchain.AntCoin.Hash))
-                return VerificationResult.Imbalanced;
-            if (SystemFee == Fixed8.Zero)
-                return VerificationResult.OK;
-            if (results.Count == 0 || results[Blockchain.AntCoin.Hash].Amount < SystemFee)
-                return VerificationResult.Imbalanced;
-            return VerificationResult.OK;
+            {
+                result |= VerificationResult.LackOfInformation;
+            }
+            else
+            {
+                TransactionResult[] results_destroy = results.Values.Where(p => p.Amount > Fixed8.Zero).ToArray();
+                if (results_destroy.Length > 1)
+                    result |= VerificationResult.Imbalanced;
+                else if (results_destroy.Length == 1 && results_destroy[0].AssetId != Blockchain.AntCoin.Hash)
+                    result |= VerificationResult.Imbalanced;
+                else if (SystemFee > Fixed8.Zero && (results_destroy.Length == 0 || results_destroy[0].Amount < SystemFee))
+                    result |= VerificationResult.Imbalanced;
+                TransactionResult[] results_issue = results.Values.Where(p => p.Amount < Fixed8.Zero).ToArray();
+                if (Type == TransactionType.GenerationTransaction)
+                {
+                    if (results_issue.Any(p => p.AssetId != Blockchain.AntCoin.Hash))
+                        result |= VerificationResult.Imbalanced;
+                }
+                else if (Type != TransactionType.IssueTransaction)
+                {
+                    result |= VerificationResult.Imbalanced;
+                }
+            }
+            result |= this.VerifySignature();
+            return result;
         }
     }
 }

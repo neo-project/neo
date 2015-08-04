@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 
 namespace AntShares.Core
@@ -17,24 +18,18 @@ namespace AntShares.Core
             this.Nonce = reader.ReadUInt32();
         }
 
+        protected override void OnDeserialized()
+        {
+            base.OnDeserialized();
+            if (Inputs.Length != 0)
+                throw new FormatException();
+            if (Outputs.Any(p => p.AssetId != Blockchain.AntCoin.Hash || p.Value <= Fixed8.Zero))
+                throw new FormatException();
+        }
+
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(Nonce);
-        }
-
-        public override VerificationResult Verify()
-        {
-            VerificationResult result = base.Verify();
-            if (Inputs.Length != 0)
-                result |= VerificationResult.IncorrectFormat;
-            if (Outputs.Any(p => p.AssetId != Blockchain.AntCoin.Hash || p.Value <= Fixed8.Zero))
-                result |= VerificationResult.IncorrectFormat;
-            return result;
-        }
-
-        internal override VerificationResult VerifyBalance()
-        {
-            return VerificationResult.OK;
         }
     }
 }

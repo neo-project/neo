@@ -5,6 +5,7 @@
         Block = 0x01,
         Transaction = 0x02,
 
+        IX_PrevBlock = 0x80,
         IX_Asset = 0x81,
         IX_Enrollment = 0x84,
         IX_Unspent = 0x90,
@@ -13,6 +14,7 @@
 
         ST_Height = 0xc0,
         ST_QuantityIssued = 0xc1,
+
         Configuration = 0xf0
     }
 }

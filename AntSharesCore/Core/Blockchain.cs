@@ -95,6 +95,11 @@ namespace AntShares.Core
             return miner_count / 2 + 1;
         }
 
+        public virtual Block GetNextBlock(UInt256 hash)
+        {
+            return null;
+        }
+
         public virtual Fixed8 GetQuantityIssued(UInt256 asset_id)
         {
             throw new NotSupportedException();

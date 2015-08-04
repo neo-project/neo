@@ -95,6 +95,32 @@ namespace AntShares.Core
             return Equals(obj as Block);
         }
 
+        public static Block FromTrimmedData(byte[] data, Func<UInt256, Transaction> txSelector)
+        {
+            Block block = new Block();
+            using (MemoryStream ms = new MemoryStream(data, false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                if (reader.ReadUInt32() != Version)
+                    throw new FormatException();
+                block.PrevBlock = reader.ReadSerializable<UInt256>();
+                block.MerkleRoot = reader.ReadSerializable<UInt256>();
+                block.Timestamp = reader.ReadUInt32();
+                if (reader.ReadUInt32() != Bits)
+                    throw new FormatException();
+                block.Nonce = reader.ReadUInt64();
+                block.Miner = reader.ReadSerializable<UInt160>();
+                block.Transactions = new Transaction[reader.ReadVarInt()];
+                for (int i = 0; i < block.Transactions.Length; i++)
+                {
+                    block.Transactions[i] = txSelector(reader.ReadSerializable<UInt256>());
+                }
+                if (MerkleTree.ComputeRoot(block.Transactions.Select(p => p.Hash).ToArray()) != block.MerkleRoot)
+                    throw new FormatException();
+            }
+            return block;
+        }
+
         void ISignable.FromUnsignedArray(byte[] value)
         {
             using (MemoryStream ms = new MemoryStream(value, false))

@@ -58,6 +58,7 @@ namespace AntShares.Data
             Dictionary<UInt256, Fixed8> quantities = new Dictionary<UInt256, Fixed8>();
             WriteBatch batch = new WriteBatch();
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.Block).Add(block.Hash), block.Trim());
+            batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_PrevBlock).Add(block.PrevBlock), block.Hash.ToArray());
             foreach (Transaction tx in block.Transactions)
             {
                 batch.Put(SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(tx.Hash), tx.ToArray());
@@ -241,13 +242,21 @@ namespace AntShares.Data
             Block block = base.GetBlock(hash);
             if (block == null)
             {
-                Slice value;
-                if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.Block).Add(hash), out value))
+                using (Snapshot snapshot = db.GetSnapshot())
                 {
-                    block = value.ToArray().AsSerializable<Block>();
+                    block = GetBlock(hash, snapshot);
                 }
             }
             return block;
+        }
+
+        private Block GetBlock(UInt256 hash, Snapshot snapshot)
+        {
+            ReadOptions options = new ReadOptions { Snapshot = snapshot };
+            Slice value;
+            if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.Block).Add(hash), out value))
+                return null;
+            return Block.FromTrimmedData(value.ToArray(), p => Transaction.DeserializeFrom(db.Get(options, SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(p)).ToArray()));
         }
 
         public override IEnumerable<EnrollmentTransaction> GetEnrollments()
@@ -261,6 +270,19 @@ namespace AntShares.Data
                     UInt256 hash = new UInt256(it.Key().ToArray().Skip(1).Take(32).ToArray());
                     yield return db.Get(options, SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(hash)).ToArray().AsSerializable<EnrollmentTransaction>();
                 }
+            }
+        }
+
+        public override Block GetNextBlock(UInt256 hash)
+        {
+            ReadOptions options = new ReadOptions();
+            using (options.Snapshot = db.GetSnapshot())
+            {
+                Slice value;
+                if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.IX_PrevBlock).Add(hash), out value))
+                    return null;
+                hash = new UInt256(value.ToArray());
+                return GetBlock(hash, options.Snapshot);
             }
         }
 
@@ -373,13 +395,22 @@ namespace AntShares.Data
         {
             while (!disposed)
             {
-                UInt256 hash = new UInt256(db.Get(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_Height)).ToArray().Take(32).ToArray());
                 Block block = null;
-                lock (cache)
+                lock (persistence_sync_obj)
                 {
-                    if (cache.ContainsKey(hash) && cache[hash].Count > 0)
+                    UInt256 hash = new UInt256(db.Get(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_Height)).ToArray().Take(32).ToArray());
+                    lock (cache)
                     {
-                        block = cache[hash].First();
+                        if (cache.ContainsKey(hash) && cache[hash].Count > 0)
+                        {
+                            block = cache[hash].First();
+                        }
+                    }
+                    if (block != null)
+                    {
+                        //TODO: 要考虑到有多个候选区块的情况
+                        //TODO: 要考虑分叉的情况
+                        AddBlockToChain(block);
                     }
                 }
                 if (block == null)
@@ -388,12 +419,9 @@ namespace AntShares.Data
                 }
                 else
                 {
-                    //TODO: 要考虑到有多个候选区块的情况
-                    //TODO: 要考虑分叉的情况
-                    AddBlockToChain(block);
                     lock (cache)
                     {
-                        cache.Remove(hash);
+                        cache.Remove(block.Hash);
                     }
                 }
             }
@@ -417,7 +445,35 @@ namespace AntShares.Data
 
         private void Rollback(UInt256 hash)
         {
-            //TODO: 将区块链的状态回滚到指定位置
+            lock (persistence_sync_obj)
+            {
+                byte[] data = db.Get(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_Height)).ToArray();
+                UInt256 hash_current = new UInt256(data.Take(32).ToArray());
+                if (hash_current == hash) return;
+                uint height = BitConverter.ToUInt32(data, 32);
+                List<Block> blocks = new List<Block>();
+                while (hash_current != hash)
+                {
+                    if (hash_current == GenesisBlock.Hash)
+                        throw new InvalidOperationException();
+                    Block block = GetBlock(hash_current, null);
+                    blocks.Add(block);
+                    hash_current = block.PrevBlock;
+                }
+                WriteBatch batch = new WriteBatch();
+                foreach (Block block in blocks)
+                {
+                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.Block).Add(block.Hash));
+                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_PrevBlock).Add(block.PrevBlock));
+                    foreach (Transaction tx in block.Transactions)
+                    {
+                        batch.Delete(SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(tx.Hash));
+                        //TODO: 回滚期间删除及恢复交易相关数据、索引及统计信息
+                    }
+                }
+                batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_Height), SliceBuilder.Begin().Add(hash_current).Add(height - (uint)blocks.Count));
+                db.Write(WriteOptions.Default, batch);
+            }
         }
     }
 }

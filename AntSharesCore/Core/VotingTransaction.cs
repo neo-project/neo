@@ -27,6 +27,13 @@ namespace AntShares.Core
                 throw new FormatException();
         }
 
+        protected override void OnDeserialized()
+        {
+            base.OnDeserialized();
+            if (Outputs.All(p => p.AssetId != Blockchain.AntShare.Hash))
+                throw new FormatException();
+        }
+
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(Enrollments);
@@ -35,8 +42,6 @@ namespace AntShares.Core
         public override VerificationResult Verify()
         {
             VerificationResult result = base.Verify();
-            if (Outputs.All(p => p.AssetId != Blockchain.AntShare.Hash))
-                result |= VerificationResult.IncorrectFormat;
             if (Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
             {
                 HashSet<ECCPublicKey> pubkeys = new HashSet<ECCPublicKey>();
@@ -51,12 +56,12 @@ namespace AntShares.Core
                     if (!Blockchain.Default.ContainsUnspent(vote, 0))
                     {
                         result |= VerificationResult.IncorrectFormat;
-                        continue;
+                        break;
                     }
                     if (!pubkeys.Add(tx.PublicKey))
                     {
                         result |= VerificationResult.IncorrectFormat;
-                        continue;
+                        break;
                     }
                 }
             }

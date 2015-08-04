@@ -1,6 +1,7 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO;
 using AntShares.Wallets;
+using System;
 using System.IO;
 using System.Linq;
 
@@ -40,17 +41,16 @@ namespace AntShares.Core
             return base.GetScriptHashesForVerifying().Union(new UInt160[] { Miner }).OrderBy(p => p).ToArray();
         }
 
+        protected override void OnDeserialized()
+        {
+            base.OnDeserialized();
+            if (Outputs.Length == 0 || Outputs[0].AssetId != Blockchain.AntCoin.Hash || Outputs[0].ScriptHash != Miner)
+                throw new FormatException();
+        }
+
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(PublicKey);
-        }
-
-        public override VerificationResult Verify()
-        {
-            VerificationResult result = base.Verify();
-            if (Outputs.Length == 0 || Outputs[0].AssetId != Blockchain.AntCoin.Hash || Outputs[0].ScriptHash != Miner)
-                result |= VerificationResult.IncorrectFormat;
-            return result;
         }
     }
 }
