@@ -30,6 +30,12 @@ namespace AntShares.Data
             return true;
         }
 
+        public void AddRange(TKey key, IEnumerable<TValue> items)
+        {
+            EnsureKey(key);
+            this[key].UnionWith(items);
+        }
+
         private void EnsureKey(TKey key)
         {
             if (!ContainsKey(key))

@@ -7,6 +7,8 @@ namespace AntShares.Core
 {
     public class IssueTransaction : Transaction
     {
+        public override Fixed8 SystemFee => Fixed8.FromDecimal(500);
+
         public IssueTransaction()
             : base(TransactionType.IssueTransaction)
         {
@@ -39,7 +41,7 @@ namespace AntShares.Core
         public override VerificationResult Verify()
         {
             VerificationResult result = base.Verify();
-            TransactionResult[] results = GetTransactionResults()?.Values.Where(p => p.Amount < Fixed8.Zero).ToArray();
+            TransactionResult[] results = GetTransactionResults()?.Where(p => p.Amount < Fixed8.Zero).ToArray();
             if (results == null)
             {
                 result |= VerificationResult.LackOfInformation;
