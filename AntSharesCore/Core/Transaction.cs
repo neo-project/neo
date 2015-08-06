@@ -229,6 +229,21 @@ namespace AntShares.Core
                     result |= VerificationResult.Incapable;
                 }
             }
+            if (Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes))
+            {
+                foreach (UInt256 hash in Outputs.Select(p => p.AssetId).Distinct())
+                {
+                    if (!Blockchain.Default.ContainsAsset(hash))
+                    {
+                        result |= VerificationResult.LackOfInformation;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                result |= VerificationResult.Incapable;
+            }
             if (References == null)
             {
                 result |= VerificationResult.LackOfInformation;

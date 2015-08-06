@@ -16,7 +16,7 @@ namespace AntShares
 
         static Program()
         {
-            Blockchain.RegisterBlockchain(new LBlockchain());
+            Blockchain.RegisterBlockchain(new LevelDBBlockchain());
             LocalNode = new LocalNode(Settings.Default.NodePort);
         }
 

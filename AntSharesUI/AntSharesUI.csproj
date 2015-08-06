@@ -74,7 +74,7 @@
   <ItemGroup>
     <Compile Include="Data\DataEntryPrefix.cs" />
     <Compile Include="Data\Helper.cs" />
-    <Compile Include="Data\LBlockchain.cs" />
+    <Compile Include="Data\LevelDBBlockchain.cs" />
     <Compile Include="Cryptography\Helper.cs" />
     <Compile Include="Data\MultiValueDictionary.cs" />
     <Compile Include="Data\SliceBuilder.cs" />
@@ -222,6 +222,7 @@
   <ItemGroup>
     <Service Include="{3259AA49-8AA1-44D3-9025-A0B520596A8C}" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

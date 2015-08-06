@@ -10,11 +10,13 @@ using Transaction = AntShares.Core.Transaction;
 
 namespace AntShares.Data
 {
-    internal class LBlockchain : Blockchain
+    internal class LevelDBBlockchain : Blockchain
     {
         private DB db;
         private Thread thread_persistence;
-        private MultiValueDictionary<UInt256, Block> cache = new MultiValueDictionary<UInt256, Block>();
+        private Dictionary<UInt256, Block> cache = new Dictionary<UInt256, Block>();
+        private UInt256 current_block;
+        private uint current_height;
         private object persistence_sync_obj = new object();
         private bool disposed = false;
 
@@ -22,13 +24,30 @@ namespace AntShares.Data
 
         public override bool IsReadOnly => false;
 
-        public LBlockchain()
+        public LevelDBBlockchain()
         {
-            Slice initialized;
+            Slice value;
             db = DB.Open(Settings.Default.DataDirectoryPath);
-            if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.Configuration).Add("initialized"), out initialized) || !initialized.ToBoolean())
+            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.CFG_Initialized), out value) && value.ToBoolean())
             {
-                Rebuild();
+                value = db.Get(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock));
+                this.current_block = new UInt256(value.ToArray().Take(32).ToArray());
+                this.current_height = BitConverter.ToUInt32(value.ToArray(), 32);
+            }
+            else
+            {
+                WriteBatch batch = new WriteBatch();
+                using (Iterator it = db.NewIterator(ReadOptions.Default))
+                {
+                    for (it.SeekToFirst(); it.Valid(); it.Next())
+                    {
+                        batch.Delete(it.Key());
+                    }
+                }
+                batch.Put(SliceBuilder.Begin(DataEntryPrefix.CFG_Version), 0);
+                db.Write(WriteOptions.Default, batch);
+                AddBlockToChain(GenesisBlock);
+                db.Put(WriteOptions.Default, SliceBuilder.Begin(DataEntryPrefix.CFG_Initialized), true);
             }
             thread_persistence = new Thread(PersistBlocks);
             thread_persistence.Name = "LBlockchain.PersistBlocks";
@@ -57,11 +76,11 @@ namespace AntShares.Data
             });
             Dictionary<UInt256, Fixed8> quantities = new Dictionary<UInt256, Fixed8>();
             WriteBatch batch = new WriteBatch();
-            batch.Put(SliceBuilder.Begin(DataEntryPrefix.Block).Add(block.Hash), block.Trim());
-            batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_PrevBlock).Add(block.PrevBlock), block.Hash.ToArray());
+            batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(block.Hash), block.Trim());
+            batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_PrevBlock).Add(block.PrevBlock).Add(block.Hash), true);
             foreach (Transaction tx in block.Transactions)
             {
-                batch.Put(SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(tx.Hash), tx.ToArray());
+                batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Transaction).Add(tx.Hash), tx.ToArray());
                 switch (tx.Type)
                 {
                     case TransactionType.IssueTransaction:
@@ -96,7 +115,7 @@ namespace AntShares.Data
                     case TransactionType.RegisterTransaction:
                         {
                             RegisterTransaction reg_tx = (RegisterTransaction)tx;
-                            batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Asset).Add((byte)reg_tx.AssetType).Add(reg_tx.Hash), true);
+                            batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Asset).Add(reg_tx.Hash), true);
                         }
                         break;
                 }
@@ -167,17 +186,20 @@ namespace AntShares.Data
             {
                 batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(quantity.Key), (GetQuantityIssued(quantity.Key) + quantity.Value).GetData());
             }
+            current_block = block.Hash;
             if (block.Hash == GenesisBlock.Hash)
-            {
-                batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_Height), SliceBuilder.Begin().Add(block.Hash).Add(0u));
-            }
+                current_height = 0;
             else
-            {
-                byte[] value = db.Get(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_Height)).ToArray();
-                uint height = BitConverter.ToUInt32(value, 32) + 1;
-                batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_Height), SliceBuilder.Begin().Add(block.Hash).Add(height));
-            }
+                current_height++;
+            batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(current_block).Add(current_height));
             db.Write(WriteOptions.Default, batch);
+        }
+
+        public override bool ContainsAsset(UInt256 hash)
+        {
+            if (base.ContainsAsset(hash)) return true;
+            Slice value;
+            return db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Asset).Add(hash), out value);
         }
 
         public override bool ContainsBlock(UInt256 hash)
@@ -188,14 +210,14 @@ namespace AntShares.Data
             //目前只能通过尝试读取某一条记录后判断是否成功，没有其它的好办法
             //对每一条记录添加一个只包含hash的索引记录，应该能提升判断的速度
             //但是这个方法会增加数据库的大小，需要测试一下优劣
-            return db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.Block).Add(hash), out value);
+            return db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash), out value);
         }
 
         public override bool ContainsTransaction(UInt256 hash)
         {
             if (base.ContainsTransaction(hash)) return true;
             Slice value;
-            return db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(hash), out value);
+            return db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.DATA_Transaction).Add(hash), out value);
         }
 
         public override bool ContainsUnspent(UInt256 hash, ushort index)
@@ -220,14 +242,13 @@ namespace AntShares.Data
 
         public override IEnumerable<RegisterTransaction> GetAssets()
         {
-            yield return Blockchain.AntCoin;
+            yield return AntCoin;
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
-            using (Iterator it = db.NewIterator(options))
             {
-                for (it.Seek(SliceBuilder.Begin(DataEntryPrefix.IX_Asset)); it.Valid() && it.Key() < SliceBuilder.Begin(DataEntryPrefix.IX_Asset + 1); it.Next())
+                foreach (Slice key in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_Asset), (k, v) => k))
                 {
-                    UInt256 hash = new UInt256(it.Key().ToArray().Skip(2).ToArray());
+                    UInt256 hash = new UInt256(key.ToArray().Skip(1).ToArray());
                     yield return (RegisterTransaction)GetTransaction(hash, options);
                 }
             }
@@ -246,7 +267,7 @@ namespace AntShares.Data
         private Block GetBlock(UInt256 hash, ReadOptions options)
         {
             Slice value;
-            if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.Block).Add(hash), out value))
+            if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash), out value))
                 return null;
             return Block.FromTrimmedData(value.ToArray(), p => GetTransaction(p, options));
         }
@@ -255,11 +276,10 @@ namespace AntShares.Data
         {
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
-            using (Iterator it = db.NewIterator(options))
             {
-                for (it.Seek(SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment)); it.Valid() && it.Key() < SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment + 1); it.Next())
+                foreach (Slice key in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment), (k, v) => k))
                 {
-                    UInt256 hash = new UInt256(it.Key().ToArray().Skip(1).Take(32).ToArray());
+                    UInt256 hash = new UInt256(key.ToArray().Skip(1).Take(32).ToArray());
                     yield return (EnrollmentTransaction)GetTransaction(hash, options);
                 }
             }
@@ -298,7 +318,7 @@ namespace AntShares.Data
         private Transaction GetTransaction(UInt256 hash, ReadOptions options)
         {
             Slice value;
-            if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(hash), out value))
+            if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Transaction).Add(hash), out value))
                 return null;
             return Transaction.DeserializeFrom(value.ToArray());
         }
@@ -321,12 +341,11 @@ namespace AntShares.Data
         {
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
-            using (Iterator it = db.NewIterator(options))
             {
-                for (it.Seek(SliceBuilder.Begin(DataEntryPrefix.IX_AntShare)); it.Valid() && it.Key() < SliceBuilder.Begin(DataEntryPrefix.IX_AntShare + 1); it.Next())
+                foreach (var kv in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_AntShare), (k, v) => new { Key = k, Value = v }))
                 {
-                    UInt256 hash = new UInt256(it.Key().ToArray().Skip(1).ToArray());
-                    ushort[] indexes = it.Value().ToArray().GetUInt16Array();
+                    UInt256 hash = new UInt256(kv.Key.ToArray().Skip(1).ToArray());
+                    ushort[] indexes = kv.Value.ToArray().GetUInt16Array();
                     Transaction tx = GetTransaction(hash, options);
                     foreach (ushort index in indexes)
                     {
@@ -340,12 +359,11 @@ namespace AntShares.Data
         {
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
-            using (Iterator it = db.NewIterator(options))
             {
-                for (it.Seek(SliceBuilder.Begin(DataEntryPrefix.IX_Vote)); it.Valid() && it.Key() < SliceBuilder.Begin(DataEntryPrefix.IX_Vote + 1); it.Next())
+                foreach (var kv in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_Vote), (k, v) => new { Key = k, Value = v }))
                 {
-                    UInt256 hash = new UInt256(it.Key().ToArray().Skip(1).ToArray());
-                    ushort[] indexes = it.Value().ToArray().GetUInt16Array();
+                    UInt256 hash = new UInt256(kv.Key.ToArray().Skip(1).ToArray());
+                    ushort[] indexes = kv.Value.ToArray().GetUInt16Array();
                     VotingTransaction tx = (VotingTransaction)GetTransaction(hash, options);
                     yield return new Vote
                     {
@@ -381,8 +399,8 @@ namespace AntShares.Data
             base.OnBlock(block);
             lock (cache)
             {
-                //TODO: 需要清理缓存
-                cache.Add(block.PrevBlock, block);
+                if (!cache.ContainsKey(block.PrevBlock))
+                    cache.Add(block.PrevBlock, block);
             }
         }
 
@@ -390,79 +408,63 @@ namespace AntShares.Data
         {
             while (!disposed)
             {
-                Block block = null;
                 lock (persistence_sync_obj)
                 {
-                    UInt256 hash = new UInt256(db.Get(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_Height)).ToArray().Take(32).ToArray());
-                    lock (cache)
+                    while (true)
                     {
-                        if (cache.ContainsKey(hash) && cache[hash].Count > 0)
+                        Block block = null;
+                        lock (cache)
                         {
-                            block = cache[hash].First();
+                            if (cache.ContainsKey(current_block))
+                                block = cache[current_block];
                         }
-                    }
-                    if (block != null)
-                    {
-                        //TODO: 要考虑到有多个候选区块的情况
-                        //TODO: 要考虑分叉的情况
+                        if (block == null) break;
                         AddBlockToChain(block);
                     }
-                }
-                if (block == null)
-                {
-                    Thread.Sleep(TimeSpan.FromSeconds(5));
-                }
-                else
-                {
                     lock (cache)
                     {
-                        cache.Remove(block.Hash);
+                        foreach (UInt256 hash in cache.Keys.Where(p => p != current_block && ContainsBlock(p)).ToArray())
+                        {
+                            cache.Remove(hash);
+                        }
                     }
                 }
-            }
-        }
-
-        private void Rebuild()
-        {
-            WriteBatch batch = new WriteBatch();
-            using (Iterator it = db.NewIterator(ReadOptions.Default))
-            {
-                for (it.SeekToFirst(); it.Valid(); it.Next())
+                if (!disposed)
                 {
-                    batch.Delete(it.Key());
+                    Thread.Sleep(TimeSpan.FromSeconds(3));
                 }
             }
-            batch.Put(SliceBuilder.Begin(DataEntryPrefix.Configuration).Add("version"), 0);
-            db.Write(WriteOptions.Default, batch);
-            AddBlockToChain(GenesisBlock);
-            db.Put(WriteOptions.Default, SliceBuilder.Begin(DataEntryPrefix.Configuration).Add("initialized"), true);
         }
 
+        /// <summary>
+        /// 将区块链的状态回滚到指定的位置
+        /// </summary>
+        /// <param name="hash">
+        /// 要回滚到的区块的散列值
+        /// </param>
         private void Rollback(UInt256 hash)
         {
             lock (persistence_sync_obj)
             {
-                byte[] data = db.Get(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_Height)).ToArray();
-                UInt256 hash_current = new UInt256(data.Take(32).ToArray());
-                if (hash_current == hash) return;
-                uint height = BitConverter.ToUInt32(data, 32);
+                if (hash == current_block) return;
                 List<Block> blocks = new List<Block>();
-                while (hash_current != hash)
+                UInt256 current = current_block;
+                while (current != hash)
                 {
-                    if (hash_current == GenesisBlock.Hash)
+                    if (current == GenesisBlock.Hash)
                         throw new InvalidOperationException();
-                    Block block = GetBlock(hash_current, ReadOptions.Default);
+                    Block block = GetBlock(current, ReadOptions.Default);
                     blocks.Add(block);
-                    hash_current = block.PrevBlock;
+                    current = block.PrevBlock;
                 }
                 WriteBatch batch = new WriteBatch();
                 foreach (Block block in blocks)
                 {
-                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.Block).Add(block.Hash));
-                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_PrevBlock).Add(block.PrevBlock));
+                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(block.Hash));
+                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_PrevBlock).Add(block.PrevBlock).Add(block.Hash));
                     foreach (Transaction tx in block.Transactions)
                     {
-                        batch.Delete(SliceBuilder.Begin(DataEntryPrefix.Transaction).Add(tx.Hash));
+                        batch.Delete(SliceBuilder.Begin(DataEntryPrefix.DATA_Transaction).Add(tx.Hash));
                         batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment).Add(tx.Hash));
                         batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Unspent).Add(tx.Hash));
                         batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_AntShare).Add(tx.Hash));
@@ -470,7 +472,7 @@ namespace AntShares.Data
                         if (tx.Type == TransactionType.RegisterTransaction)
                         {
                             RegisterTransaction reg_tx = (RegisterTransaction)tx;
-                            batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Asset).Add((byte)reg_tx.AssetType).Add(reg_tx.Hash));
+                            batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Asset).Add(reg_tx.Hash));
                         }
                     }
                 }
@@ -529,7 +531,9 @@ namespace AntShares.Data
                 {
                     batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(result.AssetId), (GetQuantityIssued(result.AssetId) - result.Amount).GetData());
                 }
-                batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_Height), SliceBuilder.Begin().Add(hash_current).Add(height - (uint)blocks.Count));
+                current_block = current;
+                current_height -= (uint)blocks.Count;
+                batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(current_block).Add(current_height));
                 db.Write(WriteOptions.Default, batch);
             }
         }

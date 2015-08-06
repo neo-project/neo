@@ -43,6 +43,11 @@ namespace AntShares.Core
             LocalNode.NewBlock += LocalNode_NewBlock;
         }
 
+        public virtual bool ContainsAsset(UInt256 hash)
+        {
+            return hash == AntCoin.Hash || hash == AntShare.Hash;
+        }
+
         public virtual bool ContainsBlock(UInt256 hash)
         {
             return hash == GenesisBlock.Hash || cache.Contains(hash);
