@@ -114,6 +114,12 @@ namespace AntShares.Core
                 if (result.HasFlag(VerificationResult.InvalidSignature))
                     break;
             }
+            RegisterTransaction asset_value = Blockchain.Default.GetTransaction(ValueAssetId) as RegisterTransaction;
+            if (asset_value?.AssetType != AssetType.Currency)
+            {
+                result |= VerificationResult.IncorrectFormat;
+                return result;
+            }
             List<Order> orders = new List<Order>(Orders);
             foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
             {
