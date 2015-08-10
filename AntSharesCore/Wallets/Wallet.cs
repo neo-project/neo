@@ -32,20 +32,18 @@ namespace AntShares.Wallets
             }
         }
 
-        public static byte[] CreateRedeemScript(byte m, params ECCPublicKey[] publicKeys)
+        public static byte[] CreateRedeemScript(int m, params ECCPublicKey[] publicKeys)
         {
-            //TODO: 考虑如何支持多于16个公钥的多方签名方案
-            //同时还要考虑到与比特币的兼容性
-            if (!(1 <= m && m <= publicKeys.Length && publicKeys.Length <= 16))
+            if (!(1 <= m && m <= publicKeys.Length && publicKeys.Length <= 1024))
                 throw new ArgumentException();
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.Add(ScriptOp.OP_1 - 1 + m);
+                sb.Push(m);
                 for (int i = 0; i < publicKeys.Length; i++)
                 {
                     sb.Push(publicKeys[i].ToArray());
                 }
-                sb.Add(ScriptOp.OP_1 - 1 + (byte)publicKeys.Length);
+                sb.Push(publicKeys.Length);
                 sb.Add(ScriptOp.OP_CHECKMULTISIG);
                 return sb.ToArray();
             }

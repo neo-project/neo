@@ -80,11 +80,11 @@ namespace AntShares.IO.Caching
             }
         }
 
-        public override bool Remove(TValue item)
+        public override bool Remove(TKey key)
         {
             lock (SyncRoot)
             {
-                return base.Remove(item);
+                return base.Remove(key);
             }
         }
     }

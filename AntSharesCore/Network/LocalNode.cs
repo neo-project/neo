@@ -1,4 +1,5 @@
 ﻿using AntShares.Core;
+using AntShares.IO.Caching;
 using AntShares.Network.Payloads;
 using AntShares.Threading;
 using System;
@@ -35,7 +36,8 @@ namespace AntShares.Network
             "seed5.antshares.org"
         };
 
-        internal static Dictionary<UInt256, Transaction> MemoryPool = new Dictionary<UInt256, Transaction>();
+        //TODO: 评估缓存大小设为多少比较合适
+        internal static TransactionCache MemoryPool = new TransactionCache(1000);
         internal static HashSet<UInt256> KnownHashes = new HashSet<UInt256>();
 
         private static HashSet<IPEndPoint> unconnectedPeers = new HashSet<IPEndPoint>();
@@ -212,16 +214,7 @@ namespace AntShares.Network
             {
                 KnownHashes.Add(tx.Hash);
             }
-            lock (MemoryPool)
-            {
-                if (!MemoryPool.ContainsKey(tx.Hash))
-                {
-                    //TODO: 清理内存池
-                    //如果交易无效或者已经在区块链中，那么就永远没有机会将它从内存池中移除
-                    //需要有一种机制能够定期从池中将旧的交易清理掉
-                    MemoryPool.Add(tx.Hash, tx);
-                }
-            }
+            MemoryPool.Add(tx);
             if (connectedPeers.Count == 0) return false;
             RemoteNode[] remoteNodes;
             lock (connectedPeers)
@@ -263,9 +256,9 @@ namespace AntShares.Network
 
         private void RemoteNode_NewBlock(object sender, Block block)
         {
-            lock (LocalNode.KnownHashes)
+            lock (KnownHashes)
             {
-                if (!LocalNode.KnownHashes.Add(block.Hash))
+                if (!KnownHashes.Add(block.Hash))
                     return;
             }
             if (Blockchain.Default.ContainsBlock(block.Hash))
@@ -273,7 +266,10 @@ namespace AntShares.Network
             VerificationResult vr = block.Verify();
             if ((vr & ~(VerificationResult.Incapable | VerificationResult.LackOfInformation)) > 0)
                 return;
-            //TODO: 把区块中的所有交易从内存池中清除
+            lock (MemoryPool.SyncRoot)
+            {
+                block.Transactions.ForEach(p => MemoryPool.Remove(p.Hash));
+            }
             if (NewBlock != null)
                 NewBlock(this, block);
             RelayAsync(block).Void();
@@ -312,7 +308,7 @@ namespace AntShares.Network
             if (Blockchain.Default.ContainsTransaction(tx.Hash))
                 return;
             VerificationResult vr = tx.Verify();
-            if ((vr & ~(VerificationResult.Incapable | VerificationResult.LackOfInformation)) > 0)
+            if ((vr & ~VerificationResult.Incapable) > 0)
                 return;
             if (NewTransaction != null)
                 NewTransaction(this, tx);

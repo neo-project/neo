@@ -260,7 +260,7 @@ namespace AntShares.Core
                 }
             }
             ECCPublicKey[] pubkeys = miners.OrderByDescending(p => p.Value).Select(p => p.Key).Concat(Blockchain.StandbyMiners).Take(miner_count).ToArray();
-            if (Miner != Wallet.CreateRedeemScript((byte)Blockchain.GetMinSignatureCount(miner_count), pubkeys).ToScriptHash())
+            if (Miner != Wallet.CreateRedeemScript(Blockchain.GetMinSignatureCount(miner_count), pubkeys).ToScriptHash())
                 result |= VerificationResult.InvalidSignature;
             if (completely)
             {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Numerics;
 
 namespace AntShares.Core.Scripts
 {
@@ -22,6 +23,14 @@ namespace AntShares.Core.Scripts
         public void Dispose()
         {
             ms.Dispose();
+        }
+
+        public ScriptBuilder Push(BigInteger number)
+        {
+            if (number == -1) return Add(ScriptOp.OP_1NEGATE);
+            if (number == 0) return Add(ScriptOp.OP_0);
+            if (number > 0 && number <= 16) return Add(ScriptOp.OP_1 - 1 + (byte)number);
+            return Push(number.ToByteArray());
         }
 
         public ScriptBuilder Push(byte[] data)

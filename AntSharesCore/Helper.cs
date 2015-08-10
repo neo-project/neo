@@ -28,6 +28,12 @@ namespace AntShares
                 : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31)))));
         }
 
+        internal static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
+        {
+            foreach (T item in source)
+                action(item);
+        }
+
         internal static int GetBitLength(this BigInteger i)
         {
             byte[] b = i.ToByteArray();

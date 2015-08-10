@@ -101,17 +101,21 @@ namespace AntShares.IO.Caching
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return this.GetEnumerator();
+            return GetEnumerator();
         }
 
         protected abstract TKey GetKeyForItem(TValue item);
 
-        public virtual bool Remove(TValue item)
+        public virtual bool Remove(TKey key)
         {
-            TKey key = GetKeyForItem(item);
             if (!InnerDictionary.ContainsKey(key)) return false;
             RemoveInternal(InnerDictionary[key]);
             return true;
+        }
+
+        public bool Remove(TValue item)
+        {
+            return Remove(GetKeyForItem(item));
         }
 
         private void RemoveInternal(CacheItem<TKey, TValue> item)

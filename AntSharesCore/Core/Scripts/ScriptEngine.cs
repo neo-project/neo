@@ -10,6 +10,7 @@ namespace AntShares.Core.Scripts
 {
     internal class ScriptEngine
     {
+        private const int MaxOpCount = 1200;
         private Stack stack = new Stack();
         private Stack altStack = new Stack();
         private int nOpCount = 0;
@@ -37,7 +38,7 @@ namespace AntShares.Core.Scripts
 
         private bool ExecuteOp(ScriptOp op, BinaryReader opReader)
         {
-            if (++nOpCount > 200) return false;
+            if (++nOpCount > MaxOpCount) return false;
             int remain = (int)(opReader.BaseStream.Length - opReader.BaseStream.Position);
             switch (op)
             {
@@ -333,17 +334,17 @@ namespace AntShares.Core.Scripts
                 case ScriptOp.OP_CHECKMULTISIGVERIFY:
                     {
                         if (stack.Count < 4) return false;
-                        byte n = (byte)stack.PopBigInteger();
+                        int n = (int)stack.PopBigInteger();
                         if (n < 1) return false;
                         if (stack.Count < n + 2) return false;
                         nOpCount += n;
-                        if (nOpCount > 200) return false;
+                        if (nOpCount > MaxOpCount) return false;
                         byte[][] pubkeys = new byte[n][];
                         for (int i = 0; i < n; i++)
                         {
                             pubkeys[i] = Secp256r1Point.DecodePoint(stack.PopBytes()).EncodePoint(false).Skip(1).ToArray();
                         }
-                        byte m = (byte)stack.PopBigInteger();
+                        int m = (int)stack.PopBigInteger();
                         if (m < 1 || m > n) return false;
                         if (stack.Count < m) return false;
                         List<byte[]> sigs = new List<byte[]>();

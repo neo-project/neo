@@ -416,9 +416,12 @@ namespace AntShares.Data
                         lock (cache)
                         {
                             if (cache.ContainsKey(current_block))
+                            {
                                 block = cache[current_block];
+                                cache.Remove(current_block);
+                            }
                         }
-                        if (block == null) break;
+                        if (block?.Verify() != VerificationResult.OK) break;
                         AddBlockToChain(block);
                     }
                     lock (cache)

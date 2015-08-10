@@ -154,9 +154,9 @@ namespace AntShares.Network
             {
                 HashSet<UInt256> hashes = new HashSet<UInt256>();
                 List<Transaction> transactions = new List<Transaction>();
-                lock (LocalNode.MemoryPool)
+                lock (LocalNode.MemoryPool.SyncRoot)
                 {
-                    hashes.UnionWith(groups[InventoryType.MSG_TX].Where(p => LocalNode.MemoryPool.ContainsKey(p.Hash)).Select(p => p.Hash));
+                    hashes.UnionWith(groups[InventoryType.MSG_TX].Where(p => LocalNode.MemoryPool.Contains(p.Hash)).Select(p => p.Hash));
                     transactions.AddRange(hashes.Select(p => LocalNode.MemoryPool[p]));
                 }
                 transactions.AddRange(groups[InventoryType.MSG_TX].Where(p => !hashes.Contains(p.Hash)).Select(p => Blockchain.Default.GetTransaction(p.Hash)).Where(p => p != null));
@@ -186,9 +186,9 @@ namespace AntShares.Network
             InventoryVector[] tx_vectors = new InventoryVector[0];
             if (groups.Contains(InventoryType.MSG_TX))
             {
-                lock (LocalNode.MemoryPool)
+                lock (LocalNode.MemoryPool.SyncRoot)
                 {
-                    tx_vectors = groups[InventoryType.MSG_TX].Where(p => !LocalNode.MemoryPool.ContainsKey(p.Hash)).ToArray();
+                    tx_vectors = groups[InventoryType.MSG_TX].Where(p => !LocalNode.MemoryPool.Contains(p.Hash)).ToArray();
                 }
                 tx_vectors = tx_vectors.Where(p => !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
             }
