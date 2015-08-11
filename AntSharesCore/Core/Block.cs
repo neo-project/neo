@@ -95,10 +95,10 @@ namespace AntShares.Core
             return Equals(obj as Block);
         }
 
-        public static Block FromTrimmedData(byte[] data, Func<UInt256, Transaction> txSelector)
+        public static Block FromTrimmedData(byte[] data, int index, Func<UInt256, Transaction> txSelector)
         {
             Block block = new Block();
-            using (MemoryStream ms = new MemoryStream(data, false))
+            using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
             using (BinaryReader reader = new BinaryReader(ms))
             {
                 if (reader.ReadUInt32() != Version)

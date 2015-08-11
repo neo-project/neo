@@ -17,7 +17,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;TESTNET</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -94,6 +94,7 @@
     <Compile Include="Network\Message.cs" />
     <Compile Include="Network\Mission.cs" />
     <Compile Include="Network\Payloads\AddrPayload.cs" />
+    <Compile Include="Network\Payloads\GetBlocksPayload.cs" />
     <Compile Include="Network\Payloads\GetDataPayload.cs" />
     <Compile Include="Network\Payloads\InventoryType.cs" />
     <Compile Include="Network\Payloads\InventoryVector.cs" />

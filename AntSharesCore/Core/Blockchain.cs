@@ -33,9 +33,9 @@ namespace AntShares.Core
         private static BlockCache cache = new BlockCache(5760);
 
         public virtual BlockchainAbility Ability => BlockchainAbility.None;
-
+        public virtual UInt256 CurrentBlockHash => GenesisBlock.Hash;
         public static Blockchain Default { get; private set; } = new Blockchain();
-
+        public virtual uint Height => 0;
         public virtual bool IsReadOnly => true;
 
         protected Blockchain()
@@ -88,6 +88,20 @@ namespace AntShares.Core
                     return cache[hash];
             }
             return null;
+        }
+
+        public virtual Block GetBlockAndHeight(UInt256 hash, out uint height)
+        {
+            height = 0;
+            if (hash == GenesisBlock.Hash)
+                return GenesisBlock;
+            return null;
+        }
+
+        public virtual int GetBlockHeight(UInt256 hash)
+        {
+            if (hash == GenesisBlock.Hash) return 0;
+            return -1;
         }
 
         public virtual IEnumerable<EnrollmentTransaction> GetEnrollments()

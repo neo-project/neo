@@ -59,21 +59,31 @@ namespace AntShares.Network
                 missions.Remove(mission_current.Hash);
                 mission_current = null;
             }
-            if (mission_current != null || missions.Count == 0) return;
-            lock (missions_global)
+            if (mission_current != null) return;
+            if (missions.Count == 0)
             {
-                foreach (UInt256 hash in missions.Keys.ToArray())
+                if (!Blockchain.Default.IsReadOnly && Blockchain.Default.Height < Version.StartHeight)
                 {
-                    if (!missions_global.ContainsKey(hash))
-                    {
-                        missions.Remove(hash);
-                    }
+                    SendMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash));
                 }
-                mission_current = missions.Values.Min();
-                mission_current.LaunchTimes++;
             }
-            mission_start_time = DateTime.Now;
-            SendMessage("getdata", GetDataPayload.Create(mission_current.Type, mission_current.Hash));
+            else
+            {
+                lock (missions_global)
+                {
+                    foreach (UInt256 hash in missions.Keys.ToArray())
+                    {
+                        if (!missions_global.ContainsKey(hash))
+                        {
+                            missions.Remove(hash);
+                        }
+                    }
+                    mission_current = missions.Values.Min();
+                    mission_current.LaunchTimes++;
+                }
+                mission_start_time = DateTime.Now;
+                SendMessage("getdata", GetDataPayload.Create(mission_current.Type, mission_current.Hash));
+            }
         }
 
         internal async Task ConnectAsync()
@@ -145,6 +155,20 @@ namespace AntShares.Network
                 payload = AddrPayload.Create(localNode.connectedPeers.Take(10).Select(p => NetworkAddressWithTime.Create(p.Value.RemoteEndpoint, p.Value.Version.Services, p.Value.Version.Timestamp)).ToArray());
             }
             SendMessage("addr", payload);
+        }
+
+        private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
+        {
+            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.BlockIndexes))
+                return;
+            UInt256 hash = payload.HashStart.Select(p =>
+            {
+                uint Height;
+                Block Block = Blockchain.Default.GetBlockAndHeight(p, out Height);
+                return new { Block, Height };
+            }).Where(p => p.Block != null).OrderBy(p => p.Height).Select(p => p.Block.Hash).FirstOrDefault();
+            if (hash == null) return;
+            //TODO: 找到相应的Block并发送inv消息
         }
 
         private void OnGetDataMessageReceived(GetDataPayload payload)
@@ -232,6 +256,9 @@ namespace AntShares.Network
                     break;
                 case "getaddr":
                     OnGetAddrMessageReceived();
+                    break;
+                case "getblocks":
+                    OnGetBlocksMessageReceived(message.Payload.AsSerializable<GetBlocksPayload>());
                     break;
                 case "getdata":
                     OnGetDataMessageReceived(message.Payload.AsSerializable<GetDataPayload>());
@@ -359,7 +386,7 @@ namespace AntShares.Network
 
         internal async Task StartProtocolAsync()
         {
-            if (!await SendMessageAsync("version", VersionPayload.Create(localNode.LocalEndpoint.Port, localNode.UserAgent, 0)))
+            if (!await SendMessageAsync("version", VersionPayload.Create(localNode.LocalEndpoint.Port, localNode.UserAgent, Blockchain.Default.Height)))
                 return;
             Message message = await ReceiveMessageAsync();
             if (message == null)

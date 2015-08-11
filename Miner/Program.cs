@@ -4,6 +4,7 @@
     {
         static void Main(string[] args)
         {
+            new MainService().Run(args);
         }
     }
 }

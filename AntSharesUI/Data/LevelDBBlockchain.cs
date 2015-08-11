@@ -21,7 +21,8 @@ namespace AntShares.Data
         private bool disposed = false;
 
         public override BlockchainAbility Ability => BlockchainAbility.All;
-
+        public override UInt256 CurrentBlockHash => current_block;
+        public override uint Height => current_height;
         public override bool IsReadOnly => false;
 
         public LevelDBBlockchain()
@@ -75,8 +76,9 @@ namespace AntShares.Data
                 return new HashSet<ushort>(value.ToArray().GetUInt16Array());
             });
             Dictionary<UInt256, Fixed8> quantities = new Dictionary<UInt256, Fixed8>();
+            uint height = block.Hash == GenesisBlock.Hash ? 0 : current_height + 1;
             WriteBatch batch = new WriteBatch();
-            batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(block.Hash), block.Trim());
+            batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(block.Hash), SliceBuilder.Begin().Add(height).Add(block.Trim()));
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_PrevBlock).Add(block.PrevBlock).Add(block.Hash), true);
             foreach (Transaction tx in block.Transactions)
             {
@@ -186,13 +188,10 @@ namespace AntShares.Data
             {
                 batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(quantity.Key), (GetQuantityIssued(quantity.Key) + quantity.Value).GetData());
             }
-            current_block = block.Hash;
-            if (block.Hash == GenesisBlock.Hash)
-                current_height = 0;
-            else
-                current_height++;
-            batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(current_block).Add(current_height));
+            batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(block.Hash).Add(height));
             db.Write(WriteOptions.Default, batch);
+            current_block = block.Hash;
+            current_height = height;
         }
 
         public override bool ContainsAsset(UInt256 hash)
@@ -259,17 +258,41 @@ namespace AntShares.Data
             Block block = base.GetBlock(hash);
             if (block == null)
             {
-                block = GetBlock(hash, ReadOptions.Default);
+                uint height;
+                block = GetBlockAndHeight(hash, out height);
             }
             return block;
         }
 
-        private Block GetBlock(UInt256 hash, ReadOptions options)
+        public override Block GetBlockAndHeight(UInt256 hash, out uint height)
+        {
+            Block block = base.GetBlockAndHeight(hash, out height);
+            if (block == null)
+            {
+                block = GetBlockAndHeight(hash, ReadOptions.Default, out height);
+            }
+            return block;
+        }
+
+        private Block GetBlockAndHeight(UInt256 hash, ReadOptions options, out uint height)
         {
             Slice value;
             if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash), out value))
+            {
+                height = 0;
                 return null;
-            return Block.FromTrimmedData(value.ToArray(), p => GetTransaction(p, options));
+            }
+            byte[] data = value.ToArray();
+            height = BitConverter.ToUInt32(data, 0);
+            return Block.FromTrimmedData(data, sizeof(uint), p => GetTransaction(p, options));
+        }
+
+        public override int GetBlockHeight(UInt256 hash)
+        {
+            Slice value;
+            if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash), out value))
+                return -1;
+            return BitConverter.ToInt32(value.ToArray(), 0);
         }
 
         public override IEnumerable<EnrollmentTransaction> GetEnrollments()
@@ -294,7 +317,8 @@ namespace AntShares.Data
                 if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.IX_PrevBlock).Add(hash), out value))
                     return null;
                 hash = new UInt256(value.ToArray());
-                return GetBlock(hash, options);
+                uint height;
+                return GetBlockAndHeight(hash, options, out height);
             }
         }
 
@@ -456,7 +480,8 @@ namespace AntShares.Data
                 {
                     if (current == GenesisBlock.Hash)
                         throw new InvalidOperationException();
-                    Block block = GetBlock(current, ReadOptions.Default);
+                    uint height;
+                    Block block = GetBlockAndHeight(current, ReadOptions.Default, out height);
                     blocks.Add(block);
                     current = block.PrevBlock;
                 }

@@ -8,7 +8,7 @@ namespace AntShares.Core
         None = 0,
 
         /// <summary>
-        /// 必须实现的虚函数：GetNextBlock
+        /// 必须实现的虚函数：GetBlockAndHeight, GetBlockHeight, GetNextBlock
         /// </summary>
         BlockIndexes = 0x01,
 

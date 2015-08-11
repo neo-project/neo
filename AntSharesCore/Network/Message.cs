@@ -8,9 +8,13 @@ namespace AntShares.Network
 {
     internal class Message : ISerializable
     {
-        public const UInt32 Magic = 0x00746e41;
+#if TESTNET
+        public const uint Magic = 0x74746e41;
+#else
+        public const uint Magic = 0x00746e41;
+#endif
         public string Command;
-        public UInt32 Checksum;
+        public uint Checksum;
         public byte[] Payload;
 
         public static Message Create(string command, ISerializable payload = null)
@@ -34,7 +38,7 @@ namespace AntShares.Network
             if (reader.ReadUInt32() != Magic)
                 throw new FormatException();
             this.Command = reader.ReadFixedString(12);
-            UInt32 length = reader.ReadUInt32();
+            uint length = reader.ReadUInt32();
             if (length > 0x02000000)
                 throw new FormatException();
             this.Checksum = reader.ReadUInt32();
