@@ -295,7 +295,7 @@ namespace AntShares.Data
             return BitConverter.ToInt32(value.ToArray(), 0);
         }
 
-        public override IEnumerable<EnrollmentTransaction> GetEnrollments()
+        public override IEnumerable<EnrollmentTransaction> GetEnrollments(IEnumerable<Transaction> others)
         {
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
@@ -303,9 +303,29 @@ namespace AntShares.Data
                 foreach (Slice key in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment), (k, v) => k))
                 {
                     UInt256 hash = new UInt256(key.ToArray().Skip(1).Take(32).ToArray());
+                    if (others.SelectMany(p => p.GetAllInputs()).Any(p => p.PrevTxId == hash && p.PrevIndex == 0))
+                        continue;
                     yield return (EnrollmentTransaction)GetTransaction(hash, options);
                 }
             }
+            foreach (EnrollmentTransaction tx in others.OfType<EnrollmentTransaction>())
+            {
+                yield return tx;
+            }
+        }
+
+        public override BlockHeader GetHeader(UInt256 hash)
+        {
+            BlockHeader header = base.GetBlock(hash)?.Header;
+            if (header == null)
+            {
+                Slice value;
+                if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash), out value))
+                {
+                    header = BlockHeader.FromTrimmedData(value.ToArray(), sizeof(uint));
+                }
+            }
+            return header;
         }
 
         public override Block GetNextBlock(UInt256 hash)
@@ -313,13 +333,23 @@ namespace AntShares.Data
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
-                Slice value;
-                if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.IX_PrevBlock).Add(hash), out value))
-                    return null;
-                hash = new UInt256(value.ToArray());
+                hash = GetNextBlockHash(hash, options);
                 uint height;
                 return GetBlockAndHeight(hash, options, out height);
             }
+        }
+
+        public override UInt256 GetNextBlockHash(UInt256 hash)
+        {
+            return GetNextBlockHash(hash, ReadOptions.Default);
+        }
+
+        private UInt256 GetNextBlockHash(UInt256 hash, ReadOptions options)
+        {
+            Slice value;
+            if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.IX_PrevBlock).Add(hash), out value))
+                return null;
+            return new UInt256(value.ToArray());
         }
 
         public override Fixed8 GetQuantityIssued(UInt256 asset_id)
@@ -379,7 +409,7 @@ namespace AntShares.Data
             }
         }
 
-        public override IEnumerable<Vote> GetVotes()
+        public override IEnumerable<Vote> GetVotes(IEnumerable<Transaction> others)
         {
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
@@ -387,7 +417,8 @@ namespace AntShares.Data
                 foreach (var kv in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_Vote), (k, v) => new { Key = k, Value = v }))
                 {
                     UInt256 hash = new UInt256(kv.Key.ToArray().Skip(1).ToArray());
-                    ushort[] indexes = kv.Value.ToArray().GetUInt16Array();
+                    ushort[] indexes = kv.Value.ToArray().GetUInt16Array().Except(others.SelectMany(p => p.GetAllInputs()).Where(p => p.PrevTxId == hash).Select(p => p.PrevIndex)).ToArray();
+                    if (indexes.Length == 0) continue;
                     VotingTransaction tx = (VotingTransaction)GetTransaction(hash, options);
                     yield return new Vote
                     {
@@ -395,6 +426,14 @@ namespace AntShares.Data
                         Count = indexes.Sum(p => tx.Outputs[p].Value)
                     };
                 }
+            }
+            foreach (VotingTransaction tx in others.OfType<VotingTransaction>())
+            {
+                yield return new Vote
+                {
+                    Enrollments = tx.Enrollments,
+                    Count = tx.Outputs.Where(p => p.AssetId == AntShare.Hash).Sum(p => p.Value)
+                };
             }
         }
 

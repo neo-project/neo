@@ -104,9 +104,19 @@ namespace AntShares.Core
             return -1;
         }
 
-        public virtual IEnumerable<EnrollmentTransaction> GetEnrollments()
+        public IEnumerable<EnrollmentTransaction> GetEnrollments()
+        {
+            return GetEnrollments(Enumerable.Empty<Transaction>());
+        }
+
+        public virtual IEnumerable<EnrollmentTransaction> GetEnrollments(IEnumerable<Transaction> others)
         {
             throw new NotSupportedException();
+        }
+
+        public virtual BlockHeader GetHeader(UInt256 hash)
+        {
+            return GetBlock(hash)?.Header;
         }
 
         public static int GetMinSignatureCount(int miner_count)
@@ -115,6 +125,11 @@ namespace AntShares.Core
         }
 
         public virtual Block GetNextBlock(UInt256 hash)
+        {
+            return null;
+        }
+
+        public virtual UInt256 GetNextBlockHash(UInt256 hash)
         {
             return null;
         }
@@ -141,7 +156,12 @@ namespace AntShares.Core
             throw new NotSupportedException();
         }
 
-        public virtual IEnumerable<Vote> GetVotes()
+        public IEnumerable<Vote> GetVotes()
+        {
+            return GetVotes(Enumerable.Empty<Transaction>());
+        }
+
+        public virtual IEnumerable<Vote> GetVotes(IEnumerable<Transaction> others)
         {
             throw new NotSupportedException();
         }

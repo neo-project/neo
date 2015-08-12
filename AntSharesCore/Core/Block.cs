@@ -16,33 +16,37 @@ namespace AntShares.Core
         public uint Timestamp;
         public const uint Bits = 0;
         public ulong Nonce;
-        public UInt160 Miner;
+        public UInt160 NextMiner;
         public byte[] Script;
         public Transaction[] Transactions;
 
-        private UInt256 _hash = null;
         public UInt256 Hash
         {
             get
             {
-                if (_hash == null)
+                return Header.Hash;
+            }
+        }
+
+        private BlockHeader _header = null;
+        public BlockHeader Header
+        {
+            get
+            {
+                if (_header == null)
                 {
-                    using (MemoryStream ms = new MemoryStream())
-                    using (BinaryWriter writer = new BinaryWriter(ms))
+                    _header = new BlockHeader
                     {
-                        writer.Write(Version);
-                        writer.Write(PrevBlock);
-                        writer.Write(MerkleRoot);
-                        writer.Write(Timestamp);
-                        writer.Write(Bits);
-                        writer.Write(Nonce);
-                        writer.Write(Miner);
-                        writer.WriteVarInt(Script.Length); writer.Write(Script);
-                        writer.Flush();
-                        _hash = new UInt256(ms.ToArray().Sha256().Sha256());
-                    }
+                        PrevBlock = PrevBlock,
+                        MerkleRoot = MerkleRoot,
+                        Timestamp = Timestamp,
+                        Nonce = Nonce,
+                        NextMiner = NextMiner,
+                        Script = Script,
+                        TransactionCount = Transactions.Length
+                    };
                 }
-                return _hash;
+                return _header;
             }
         }
 
@@ -70,10 +74,8 @@ namespace AntShares.Core
             if (reader.ReadUInt32() != Bits)
                 throw new FormatException();
             this.Nonce = reader.ReadUInt64();
-            this.Miner = reader.ReadSerializable<UInt160>();
+            this.NextMiner = reader.ReadSerializable<UInt160>();
             this.Script = reader.ReadBytes((int)reader.ReadVarInt());
-            if (this.VerifySignature() != VerificationResult.OK)
-                throw new FormatException();
             this.Transactions = new Transaction[reader.ReadVarInt()];
             for (int i = 0; i < Transactions.Length; i++)
             {
@@ -109,7 +111,8 @@ namespace AntShares.Core
                 if (reader.ReadUInt32() != Bits)
                     throw new FormatException();
                 block.Nonce = reader.ReadUInt64();
-                block.Miner = reader.ReadSerializable<UInt160>();
+                block.NextMiner = reader.ReadSerializable<UInt160>();
+                block.Script = reader.ReadBytes((int)reader.ReadVarInt());
                 block.Transactions = new Transaction[reader.ReadVarInt()];
                 for (int i = 0; i < block.Transactions.Length; i++)
                 {
@@ -134,7 +137,7 @@ namespace AntShares.Core
                 if (reader.ReadUInt32() != Bits)
                     throw new FormatException();
                 this.Nonce = reader.ReadUInt64();
-                this.Miner = reader.ReadSerializable<UInt160>();
+                this.NextMiner = reader.ReadSerializable<UInt160>();
                 this.Transactions = new Transaction[reader.ReadVarInt()];
                 for (int i = 0; i < Transactions.Length; i++)
                 {
@@ -152,24 +155,12 @@ namespace AntShares.Core
 
         byte[] ISignable.GetHashForSigning()
         {
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            {
-                writer.Write(Version);
-                writer.Write(PrevBlock);
-                writer.Write(MerkleRoot);
-                writer.Write(Timestamp);
-                writer.Write(Bits);
-                writer.Write(Nonce);
-                writer.Write(Miner);
-                writer.Flush();
-                return ms.ToArray().Sha256();
-            }
+            return ((ISignable)Header).GetHashForSigning();
         }
 
         UInt160[] ISignable.GetScriptHashesForVerifying()
         {
-            return new UInt160[] { Miner };
+            return ((ISignable)Header).GetScriptHashesForVerifying();
         }
 
         public void RebuildMerkleRoot()
@@ -185,7 +176,7 @@ namespace AntShares.Core
             writer.Write(Timestamp);
             writer.Write(Bits);
             writer.Write(Nonce);
-            writer.Write(Miner);
+            writer.Write(NextMiner);
             writer.WriteVarInt(Script.Length); writer.Write(Script);
             writer.Write(Transactions);
         }
@@ -201,7 +192,7 @@ namespace AntShares.Core
                 writer.Write(Timestamp);
                 writer.Write(Bits);
                 writer.Write(Nonce);
-                writer.Write(Miner);
+                writer.Write(NextMiner);
                 writer.Write(Transactions);
                 writer.Flush();
                 return ms.ToArray();
@@ -219,7 +210,7 @@ namespace AntShares.Core
                 writer.Write(Timestamp);
                 writer.Write(Bits);
                 writer.Write(Nonce);
-                writer.Write(Miner);
+                writer.Write(NextMiner);
                 writer.WriteVarInt(Script.Length); writer.Write(Script);
                 writer.Write(Transactions.Select(p => p.Hash).ToArray());
                 writer.Flush();
@@ -230,14 +221,16 @@ namespace AntShares.Core
         public VerificationResult Verify(bool completely = false)
         {
             VerificationResult result = VerificationResult.OK;
+            if (Hash == Blockchain.GenesisBlock.Hash) return VerificationResult.OK;
             if (Transactions.Count(p => p.Type == TransactionType.GenerationTransaction) != 1)
                 return VerificationResult.IncorrectFormat;
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
                 return VerificationResult.Incapable;
             if (!Blockchain.Default.ContainsBlock(PrevBlock))
                 return VerificationResult.LackOfInformation;
+            result |= this.VerifySignature();
             //TODO: 此处排序可能将耗费大量内存，考虑是否采用其它机制
-            Vote[] votes = Blockchain.Default.GetVotes().OrderBy(p => p.Enrollments.Length).ToArray();
+            Vote[] votes = Blockchain.Default.GetVotes(Transactions).OrderBy(p => p.Enrollments.Length).ToArray();
             int miner_count = (int)votes.WeightedFilter(0.25, 0.75, p => p.Count.GetData(), (p, w) => new
             {
                 MinerCount = p.Enrollments.Length,
@@ -245,7 +238,7 @@ namespace AntShares.Core
             }).WeightedAverage(p => p.MinerCount, p => p.Weight);
             miner_count = Math.Max(miner_count, Blockchain.StandbyMiners.Length);
             Dictionary<ECCPublicKey, Fixed8> miners = new Dictionary<ECCPublicKey, Fixed8>();
-            Dictionary<UInt256, ECCPublicKey> enrollments = Blockchain.Default.GetEnrollments().ToDictionary(p => p.Hash, p => p.PublicKey);
+            Dictionary<UInt256, ECCPublicKey> enrollments = Blockchain.Default.GetEnrollments(Transactions).ToDictionary(p => p.Hash, p => p.PublicKey);
             foreach (var vote in votes)
             {
                 foreach (UInt256 hash in vote.Enrollments)
@@ -260,8 +253,8 @@ namespace AntShares.Core
                 }
             }
             ECCPublicKey[] pubkeys = miners.OrderByDescending(p => p.Value).Select(p => p.Key).Concat(Blockchain.StandbyMiners).Take(miner_count).ToArray();
-            if (Miner != Wallet.CreateRedeemScript(Blockchain.GetMinSignatureCount(miner_count), pubkeys).ToScriptHash())
-                result |= VerificationResult.InvalidSignature;
+            if (NextMiner != Wallet.CreateRedeemScript(Blockchain.GetMinSignatureCount(miner_count), pubkeys).ToScriptHash())
+                result |= VerificationResult.WrongMiner;
             if (completely)
             {
                 if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.Statistics))

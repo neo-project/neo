@@ -20,11 +20,15 @@ namespace AntShares.Network
         public static event EventHandler<Block> NewBlock;
         public static event EventHandler<Transaction> NewTransaction;
 
-        public const UInt32 PROTOCOL_VERSION = 0;
+        public const uint PROTOCOL_VERSION = 0;
         private const int CONNECTED_MAX = 100;
         private const int PENDING_MAX = CONNECTED_MAX;
         private const int UNCONNECTED_MAX = 5000;
+#if TESTNET
+        public const int DEFAULT_PORT = 20333;
+#else
         public const int DEFAULT_PORT = 10333;
+#endif
 
         //TODO: 需要搭建一批种子节点
         private static readonly string[] SeedList =

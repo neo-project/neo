@@ -43,6 +43,7 @@
     <Compile Include="Core\Block.cs" />
     <Compile Include="Core\Blockchain.cs" />
     <Compile Include="Core\BlockchainAbility.cs" />
+    <Compile Include="Core\BlockHeader.cs" />
     <Compile Include="Core\ContractTransaction.cs" />
     <Compile Include="Core\EnrollmentTransaction.cs" />
     <Compile Include="Core\GenerationTransaction.cs" />
@@ -96,6 +97,7 @@
     <Compile Include="Network\Payloads\AddrPayload.cs" />
     <Compile Include="Network\Payloads\GetBlocksPayload.cs" />
     <Compile Include="Network\Payloads\GetDataPayload.cs" />
+    <Compile Include="Network\Payloads\HeadersPayload.cs" />
     <Compile Include="Network\Payloads\InventoryType.cs" />
     <Compile Include="Network\Payloads\InventoryVector.cs" />
     <Compile Include="Network\Payloads\InvPayload.cs" />

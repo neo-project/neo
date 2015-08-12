@@ -64,6 +64,7 @@ namespace AntShares.Network
             {
                 if (!Blockchain.Default.IsReadOnly && Blockchain.Default.Height < Version.StartHeight)
                 {
+                    //TODO: 改为headers-first模式下载区块链
                     SendMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash));
                 }
             }
@@ -161,14 +162,20 @@ namespace AntShares.Network
         {
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.BlockIndexes))
                 return;
-            UInt256 hash = payload.HashStart.Select(p =>
+            UInt256 hash = payload.HashStart.Select(p => new
             {
-                uint Height;
-                Block Block = Blockchain.Default.GetBlockAndHeight(p, out Height);
-                return new { Block, Height };
-            }).Where(p => p.Block != null).OrderBy(p => p.Height).Select(p => p.Block.Hash).FirstOrDefault();
-            if (hash == null) return;
-            //TODO: 找到相应的Block并发送inv消息
+                Hash = p,
+                Height = Blockchain.Default.GetBlockHeight(p)
+            }).Where(p => p.Height >= 0).OrderBy(p => p.Height).Select(p => p.Hash).FirstOrDefault();
+            if (hash == null || hash == payload.HashStop) return;
+            List<UInt256> hashes = new List<UInt256>();
+            do
+            {
+                hash = Blockchain.Default.GetNextBlockHash(hash);
+                if (hash == null) break;
+                hashes.Add(hash);
+            } while (hash != payload.HashStop && hashes.Count < 500);
+            SendMessage("inv", InvPayload.Create(InventoryType.MSG_BLOCK, hashes.ToArray()));
         }
 
         private void OnGetDataMessageReceived(GetDataPayload payload)
@@ -197,6 +204,26 @@ namespace AntShares.Network
                     SendMessage("block", block);
                 }
             }
+        }
+
+        private void OnGetHeadersMessageReceived(GetBlocksPayload payload)
+        {
+            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.BlockIndexes))
+                return;
+            UInt256 hash = payload.HashStart.Select(p => new
+            {
+                Hash = p,
+                Height = Blockchain.Default.GetBlockHeight(p)
+            }).Where(p => p.Height >= 0).OrderBy(p => p.Height).Select(p => p.Hash).FirstOrDefault();
+            if (hash == null || hash == payload.HashStop) return;
+            List<BlockHeader> headers = new List<BlockHeader>();
+            do
+            {
+                hash = Blockchain.Default.GetNextBlockHash(hash);
+                if (hash == null) break;
+                headers.Add(Blockchain.Default.GetHeader(hash));
+            } while (hash != payload.HashStop && headers.Count < 2000);
+            SendMessage("headers", HeadersPayload.Create(headers));
         }
 
         private void OnInvMessageReceived(InvPayload payload)
@@ -263,11 +290,22 @@ namespace AntShares.Network
                 case "getdata":
                     OnGetDataMessageReceived(message.Payload.AsSerializable<GetDataPayload>());
                     break;
+                case "getheaders":
+                    OnGetHeadersMessageReceived(message.Payload.AsSerializable<GetBlocksPayload>());
+                    break;
                 case "inv":
                     OnInvMessageReceived(message.Payload.AsSerializable<InvPayload>());
                     break;
+                case "ping":
+                    OnPingMessageReceived(message.Payload);
+                    break;
                 case "tx":
                     OnTxMessageReceived(Transaction.DeserializeFrom(message.Payload));
+                    break;
+                case "alert":
+                case "headers":
+                case "pong":
+                    //暂时忽略
                     break;
                 case "verack":
                 case "version":
@@ -275,6 +313,11 @@ namespace AntShares.Network
                     Disconnect(true);
                     break;
             }
+        }
+
+        private void OnPingMessageReceived(byte[] payload)
+        {
+            SendMessage(Message.Create("pong", payload));
         }
 
         private void OnTxMessageReceived(Transaction tx)
@@ -332,11 +375,7 @@ namespace AntShares.Network
 
         internal async Task RelayAsync(InventoryType type, UInt256 hash)
         {
-            await SendMessageAsync("inv", InvPayload.Create(new InventoryVector
-            {
-                Type = type,
-                Hash = hash
-            }));
+            await SendMessageAsync("inv", InvPayload.Create(type, hash));
         }
 
         internal async Task RequestPeersAsync()

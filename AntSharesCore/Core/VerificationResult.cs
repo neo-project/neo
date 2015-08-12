@@ -14,5 +14,6 @@ namespace AntShares.Core
         Overissue = 0x10,
         InvalidSignature = 0x20,
         Imbalanced = 0x40,
+        WrongMiner = 0x80
     }
 }

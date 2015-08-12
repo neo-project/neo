@@ -1,5 +1,6 @@
 ﻿using AntShares.IO;
 using System.IO;
+using System.Linq;
 
 namespace AntShares.Network.Payloads
 {
@@ -7,11 +8,11 @@ namespace AntShares.Network.Payloads
     {
         public InventoryVector[] Inventories;
 
-        public static InvPayload Create(params InventoryVector[] inventories)
+        public static InvPayload Create(InventoryType type, params UInt256[] hashes)
         {
             return new InvPayload
             {
-                Inventories = inventories
+                Inventories = hashes.Select(p => new InventoryVector { Type = type, Hash = p }).ToArray()
             };
         }
 
