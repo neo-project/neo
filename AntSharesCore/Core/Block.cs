@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace AntShares.Core
 {
-    public class Block : IEquatable<Block>, ISignable
+    public class Block : IEquatable<Block>, ISerializable
     {
         public const uint Version = 0;
         public UInt256 PrevBlock;
@@ -47,20 +47,6 @@ namespace AntShares.Core
                     };
                 }
                 return _header;
-            }
-        }
-
-        byte[][] ISignable.Scripts
-        {
-            get
-            {
-                return new byte[][] { Script };
-            }
-            set
-            {
-                if (value.Length != 1)
-                    throw new ArgumentException();
-                Script = value[0];
             }
         }
 
@@ -124,43 +110,9 @@ namespace AntShares.Core
             return block;
         }
 
-        void ISignable.FromUnsignedArray(byte[] value)
-        {
-            using (MemoryStream ms = new MemoryStream(value, false))
-            using (BinaryReader reader = new BinaryReader(ms))
-            {
-                if (reader.ReadUInt32() != Version)
-                    throw new FormatException();
-                this.PrevBlock = reader.ReadSerializable<UInt256>();
-                this.MerkleRoot = reader.ReadSerializable<UInt256>();
-                this.Timestamp = reader.ReadUInt32();
-                if (reader.ReadUInt32() != Bits)
-                    throw new FormatException();
-                this.Nonce = reader.ReadUInt64();
-                this.NextMiner = reader.ReadSerializable<UInt160>();
-                this.Transactions = new Transaction[reader.ReadVarInt()];
-                for (int i = 0; i < Transactions.Length; i++)
-                {
-                    Transactions[i] = Transaction.DeserializeFrom(reader);
-                }
-                if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
-                    throw new FormatException();
-            }
-        }
-
         public override int GetHashCode()
         {
             return Hash.GetHashCode();
-        }
-
-        byte[] ISignable.GetHashForSigning()
-        {
-            return ((ISignable)Header).GetHashForSigning();
-        }
-
-        UInt160[] ISignable.GetScriptHashesForVerifying()
-        {
-            return ((ISignable)Header).GetScriptHashesForVerifying();
         }
 
         public void RebuildMerkleRoot()
@@ -179,24 +131,6 @@ namespace AntShares.Core
             writer.Write(NextMiner);
             writer.WriteVarInt(Script.Length); writer.Write(Script);
             writer.Write(Transactions);
-        }
-
-        byte[] ISignable.ToUnsignedArray()
-        {
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            {
-                writer.Write(Version);
-                writer.Write(PrevBlock);
-                writer.Write(MerkleRoot);
-                writer.Write(Timestamp);
-                writer.Write(Bits);
-                writer.Write(Nonce);
-                writer.Write(NextMiner);
-                writer.Write(Transactions);
-                writer.Flush();
-                return ms.ToArray();
-            }
         }
 
         public byte[] Trim()
@@ -220,15 +154,13 @@ namespace AntShares.Core
 
         public VerificationResult Verify(bool completely = false)
         {
-            VerificationResult result = VerificationResult.OK;
             if (Hash == Blockchain.GenesisBlock.Hash) return VerificationResult.OK;
             if (Transactions.Count(p => p.Type == TransactionType.GenerationTransaction) != 1)
                 return VerificationResult.IncorrectFormat;
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
                 return VerificationResult.Incapable;
-            if (!Blockchain.Default.ContainsBlock(PrevBlock))
-                return VerificationResult.LackOfInformation;
-            result |= this.VerifySignature();
+            VerificationResult result = Header.Verify();
+            if (result != VerificationResult.OK) return result;
             //TODO: 此处排序可能将耗费大量内存，考虑是否采用其它机制
             Vote[] votes = Blockchain.Default.GetVotes(Transactions).OrderBy(p => p.Enrollments.Length).ToArray();
             int miner_count = (int)votes.WeightedFilter(0.25, 0.75, p => p.Count.GetData(), (p, w) => new
@@ -275,7 +207,7 @@ namespace AntShares.Core
                 Fixed8 amount_sysfee = transactions.Sum(p => p.SystemFee);
                 Fixed8 amount_netfee = amount_in - amount_out - amount_sysfee;
                 Fixed8 quantity = Blockchain.Default.GetQuantityIssued(Blockchain.AntCoin.Hash);
-                Fixed8 gen = antshares.Length == 0 ? Fixed8.Zero : Fixed8.FromDecimal((Blockchain.AntCoin.Amount - (quantity - amount_sysfee)).ToDecimal() * 2.4297257e-7m);
+                Fixed8 gen = antshares.Length == 0 ? Fixed8.Zero : Fixed8.FromDecimal((Blockchain.AntCoin.Amount - (quantity - amount_sysfee)).ToDecimal() * Blockchain.GenerationFactor);
                 GenerationTransaction tx_gen = Transactions.OfType<GenerationTransaction>().First();
                 if (tx_gen.Outputs.Sum(p => p.Value) != amount_netfee + gen)
                     result |= VerificationResult.Imbalanced;

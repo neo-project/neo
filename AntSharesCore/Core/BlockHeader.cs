@@ -128,6 +128,8 @@ namespace AntShares.Core
 
         UInt160[] ISignable.GetScriptHashesForVerifying()
         {
+            if (Hash == Blockchain.GenesisBlock.Hash)
+                return new UInt160[] { NextMiner };
             BlockHeader prev_header = Blockchain.Default.GetHeader(PrevBlock);
             if (prev_header == null) throw new InvalidOperationException();
             return new UInt160[] { prev_header.NextMiner };
@@ -162,6 +164,14 @@ namespace AntShares.Core
                 writer.Flush();
                 return ms.ToArray();
             }
+        }
+
+        public VerificationResult Verify()
+        {
+            if (Hash == Blockchain.GenesisBlock.Hash) return VerificationResult.OK;
+            if (!Blockchain.Default.ContainsBlock(PrevBlock))
+                return VerificationResult.LackOfInformation;
+            return this.VerifySignature();
         }
     }
 }

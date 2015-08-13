@@ -38,7 +38,8 @@ namespace AntShares.Data
             else
             {
                 WriteBatch batch = new WriteBatch();
-                using (Iterator it = db.NewIterator(ReadOptions.Default))
+                ReadOptions options = new ReadOptions { FillCache = false };
+                using (Iterator it = db.NewIterator(options))
                 {
                     for (it.SeekToFirst(); it.Valid(); it.Next())
                     {
@@ -144,8 +145,8 @@ namespace AntShares.Data
             }
             //统计AntCoin的发行量
             {
-                Fixed8 amount_in = block.Transactions.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
-                Fixed8 amount_out = block.Transactions.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
+                Fixed8 amount_in = block.Transactions.SelectMany(p => p.References.Values.Where(o => o.AssetId == AntCoin.Hash)).Sum(p => p.Value);
+                Fixed8 amount_out = block.Transactions.SelectMany(p => p.Outputs.Where(o => o.AssetId == AntCoin.Hash)).Sum(p => p.Value);
                 if (amount_in != amount_out)
                 {
                     quantities.Add(AntCoin.Hash, amount_out - amount_in);

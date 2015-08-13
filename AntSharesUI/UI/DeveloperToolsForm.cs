@@ -1,8 +1,10 @@
 ﻿using AntShares.Core;
+using AntShares.Cryptography;
 using AntShares.IO;
 using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows.Forms;
 using Transaction = AntShares.Core.Transaction;
@@ -59,7 +61,7 @@ namespace AntShares.UI
                 Nonce = 2083236893, //向比特币致敬
                 NextMiner = Wallet.CreateRedeemScript(Blockchain.GetMinSignatureCount(Blockchain.StandbyMiners.Length), Blockchain.StandbyMiners).ToScriptHash(),
                 Transactions = new Transaction[]
-                { 
+                {
                     new GenerationTransaction
                     {
                         Nonce = 0,
@@ -71,8 +73,35 @@ namespace AntShares.UI
                 }
             };
             block.RebuildMerkleRoot();
-            SignatureContext context = new SignatureContext(block);
-            InformationBox.Show(context.ToString(), "创世区块签名上下文");
+            SignatureContext context = new SignatureContext(block.Header);
+            InformationBox.Show(context.ToString(), "创世区块头签名上下文");
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            BlockHeader header = textBox4.Text.HexToBytes().AsSerializable<BlockHeader>();
+            Block block = new Block
+            {
+                PrevBlock = header.PrevBlock,
+                MerkleRoot = header.MerkleRoot,
+                Timestamp = header.Timestamp,
+                Nonce = header.Nonce,
+                NextMiner = header.NextMiner,
+                Script = header.Script,
+                Transactions = new Transaction[]
+                {
+                    new GenerationTransaction
+                    {
+                        Nonce = 0,
+                        Inputs = new TransactionInput[0],
+                        Outputs = new TransactionOutput[0],
+                        Scripts = new byte[0][]
+                    },
+                    textBox3.Text.HexToBytes().AsSerializable<RegisterTransaction>()
+                }
+            };
+            Debug.Assert(MerkleTree.ComputeRoot(block.Transactions.Select(p => p.Hash).ToArray()) == block.MerkleRoot);
+            InformationBox.Show(block.ToArray().ToHexString(), "创世区块");
         }
     }
 }
