@@ -55,6 +55,17 @@ namespace AntShares.Network
         private int started = 0;
         private int disposed = 0;
 
+        public bool FullySynchronized
+        {
+            get
+            {
+                lock (connectedPeers)
+                {
+                    return connectedPeers.Count > 0 && connectedPeers.Values.All(p => p.Version.StartHeight <= Blockchain.Default.Height);
+                }
+            }
+        }
+
         public int RemoteNodeCount
         {
             get
@@ -163,10 +174,7 @@ namespace AntShares.Network
                     }
                     lock (connectedPeers)
                     {
-                        foreach (RemoteNode remoteNode in connectedPeers.Values.ToArray())
-                        {
-                            remoteNode.Disconnect(false);
-                        }
+                        Task.WaitAll(connectedPeers.Values.Select(p => Task.Run(() => p.Disconnect(false))).ToArray());
                     }
                 }
             }
@@ -270,12 +278,12 @@ namespace AntShares.Network
             VerificationResult vr = block.Verify();
             if ((vr & ~(VerificationResult.Incapable | VerificationResult.LackOfInformation)) > 0)
                 return;
+            if (NewBlock != null)
+                NewBlock(this, block);
             lock (MemoryPool.SyncRoot)
             {
                 block.Transactions.ForEach(p => MemoryPool.Remove(p.Hash));
             }
-            if (NewBlock != null)
-                NewBlock(this, block);
             RelayAsync(block).Void();
         }
 
@@ -346,7 +354,16 @@ namespace AntShares.Network
                 listener.Start();
                 while (disposed == 0)
                 {
-                    RemoteNode remoteNode = new RemoteNode(this, await listener.AcceptTcpClientAsync());
+                    TcpClient tcp;
+                    try
+                    {
+                        tcp = await listener.AcceptTcpClientAsync();
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        continue;
+                    }
+                    RemoteNode remoteNode = new RemoteNode(this, tcp);
                     lock (pendingPeers)
                     {
                         pendingPeers.Add(remoteNode);

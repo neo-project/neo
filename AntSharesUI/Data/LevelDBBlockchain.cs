@@ -12,6 +12,8 @@ namespace AntShares.Data
 {
     internal class LevelDBBlockchain : Blockchain
     {
+        public event EventHandler PersistCompleted;
+
         private DB db;
         private Thread thread_persistence;
         private Dictionary<UInt256, Block> cache = new Dictionary<UInt256, Block>();
@@ -52,8 +54,9 @@ namespace AntShares.Data
                 db.Put(WriteOptions.Default, SliceBuilder.Begin(DataEntryPrefix.CFG_Initialized), true);
             }
             thread_persistence = new Thread(PersistBlocks);
-            thread_persistence.Name = "LBlockchain.PersistBlocks";
+            thread_persistence.Name = "LevelDBBlockchain.PersistBlocks";
             thread_persistence.Start();
+            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
         }
 
         private void AddBlockToChain(Block block)
@@ -228,10 +231,16 @@ namespace AntShares.Data
             return value.ToArray().GetUInt16Array().Contains(index);
         }
 
+        private void CurrentDomain_ProcessExit(object sender, EventArgs e)
+        {
+            Dispose();
+        }
+
         public override void Dispose()
         {
-            base.Dispose();
             disposed = true;
+            AppDomain.CurrentDomain.ProcessExit -= CurrentDomain_ProcessExit;
+            base.Dispose();
             thread_persistence.Join();
             if (db != null)
             {
@@ -472,6 +481,7 @@ namespace AntShares.Data
         {
             while (!disposed)
             {
+                bool persisted = false;
                 lock (persistence_sync_obj)
                 {
                     while (true)
@@ -487,18 +497,26 @@ namespace AntShares.Data
                         }
                         if (block?.Verify() != VerificationResult.OK) break;
                         AddBlockToChain(block);
+                        persisted = true;
                     }
-                    lock (cache)
+                    if (persisted)
                     {
-                        foreach (UInt256 hash in cache.Keys.Where(p => p != current_block && ContainsBlock(p)).ToArray())
+                        lock (cache)
                         {
-                            cache.Remove(hash);
+                            foreach (UInt256 hash in cache.Keys.Where(p => p != current_block && ContainsBlock(p)).ToArray())
+                            {
+                                cache.Remove(hash);
+                            }
                         }
                     }
                 }
-                if (!disposed)
+                if (PersistCompleted != null && persisted)
                 {
-                    Thread.Sleep(TimeSpan.FromSeconds(3));
+                    PersistCompleted(this, EventArgs.Empty);
+                }
+                for (int i = 0; i < 50 && !disposed; i++)
+                {
+                    Thread.Sleep(100);
                 }
             }
         }
