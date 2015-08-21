@@ -79,6 +79,7 @@
     <Compile Include="Services\ServiceProxy.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Threading\CancellableTask.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
