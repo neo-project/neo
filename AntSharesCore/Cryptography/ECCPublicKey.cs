@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace AntShares.Cryptography
 {
-    public class ECCPublicKey : IEquatable<ECCPublicKey>, ISerializable
+    public class ECCPublicKey : IComparable<ECCPublicKey>, IEquatable<ECCPublicKey>, ISerializable
     {
         private byte[] compressed_key;
 
@@ -32,6 +32,16 @@ namespace AntShares.Cryptography
                     throw new FormatException();
             }
             this.compressed_key = pubkey;
+        }
+
+        public int CompareTo(ECCPublicKey other)
+        {
+            for (int i = 0; i < compressed_key.Length; i++)
+            {
+                int c = compressed_key[i].CompareTo(other.compressed_key);
+                if (c != 0) return c;
+            }
+            return 0;
         }
 
         public void Deserialize(BinaryReader reader)

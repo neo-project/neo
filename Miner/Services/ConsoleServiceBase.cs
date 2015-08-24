@@ -61,6 +61,7 @@ namespace AntShares.Services
                 }
             } while (key.Key != ConsoleKey.Enter);
             Console.WriteLine();
+            securePwd.MakeReadOnly();
             return securePwd;
         }
 

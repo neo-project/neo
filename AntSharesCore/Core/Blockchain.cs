@@ -124,6 +124,41 @@ namespace AntShares.Core
             return GetBlock(hash)?.Header;
         }
 
+        public IEnumerable<ECCPublicKey> GetMiners()
+        {
+            return GetMiners(Enumerable.Empty<Transaction>());
+        }
+
+        public virtual IEnumerable<ECCPublicKey> GetMiners(IEnumerable<Transaction> others)
+        {
+            if (!Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Ability.HasFlag(BlockchainAbility.UnspentIndexes))
+                throw new NotSupportedException();
+            //TODO: 此处排序可能将耗费大量内存，考虑是否采用其它机制
+            Vote[] votes = GetVotes(others).OrderBy(p => p.Enrollments.Length).ToArray();
+            int miner_count = (int)votes.WeightedFilter(0.25, 0.75, p => p.Count.GetData(), (p, w) => new
+            {
+                MinerCount = p.Enrollments.Length,
+                Weight = w
+            }).WeightedAverage(p => p.MinerCount, p => p.Weight);
+            miner_count = Math.Max(miner_count, StandbyMiners.Length);
+            Dictionary<ECCPublicKey, Fixed8> miners = new Dictionary<ECCPublicKey, Fixed8>();
+            Dictionary<UInt256, ECCPublicKey> enrollments = GetEnrollments(others).ToDictionary(p => p.Hash, p => p.PublicKey);
+            foreach (var vote in votes)
+            {
+                foreach (UInt256 hash in vote.Enrollments)
+                {
+                    if (!enrollments.ContainsKey(hash)) continue;
+                    ECCPublicKey pubkey = enrollments[hash];
+                    if (!miners.ContainsKey(pubkey))
+                    {
+                        miners.Add(pubkey, Fixed8.Zero);
+                    }
+                    miners[pubkey] += vote.Count;
+                }
+            }
+            return miners.OrderByDescending(p => p.Value).ThenBy(p => p.Key).Select(p => p.Key).Concat(StandbyMiners).Take(miner_count);
+        }
+
         public static int GetMinSignatureCount(int miner_count)
         {
             return miner_count / 2 + 1;

@@ -2,7 +2,6 @@
 using AntShares.IO;
 using AntShares.Wallets;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -161,31 +160,8 @@ namespace AntShares.Core
                 return VerificationResult.Incapable;
             VerificationResult result = Header.Verify();
             if (result != VerificationResult.OK) return result;
-            //TODO: 此处排序可能将耗费大量内存，考虑是否采用其它机制
-            Vote[] votes = Blockchain.Default.GetVotes(Transactions).OrderBy(p => p.Enrollments.Length).ToArray();
-            int miner_count = (int)votes.WeightedFilter(0.25, 0.75, p => p.Count.GetData(), (p, w) => new
-            {
-                MinerCount = p.Enrollments.Length,
-                Weight = w
-            }).WeightedAverage(p => p.MinerCount, p => p.Weight);
-            miner_count = Math.Max(miner_count, Blockchain.StandbyMiners.Length);
-            Dictionary<ECCPublicKey, Fixed8> miners = new Dictionary<ECCPublicKey, Fixed8>();
-            Dictionary<UInt256, ECCPublicKey> enrollments = Blockchain.Default.GetEnrollments(Transactions).ToDictionary(p => p.Hash, p => p.PublicKey);
-            foreach (var vote in votes)
-            {
-                foreach (UInt256 hash in vote.Enrollments)
-                {
-                    if (!enrollments.ContainsKey(hash)) continue;
-                    ECCPublicKey pubkey = enrollments[hash];
-                    if (!miners.ContainsKey(pubkey))
-                    {
-                        miners.Add(pubkey, Fixed8.Zero);
-                    }
-                    miners[pubkey] += vote.Count;
-                }
-            }
-            ECCPublicKey[] pubkeys = miners.OrderByDescending(p => p.Value).Select(p => p.Key).Concat(Blockchain.StandbyMiners).Take(miner_count).ToArray();
-            if (NextMiner != Wallet.CreateRedeemScript(Blockchain.GetMinSignatureCount(miner_count), pubkeys).ToScriptHash())
+            ECCPublicKey[] pubkeys = Blockchain.Default.GetMiners(Transactions).ToArray();
+            if (NextMiner != Wallet.CreateRedeemScript(Blockchain.GetMinSignatureCount(pubkeys.Length), pubkeys).ToScriptHash())
                 result |= VerificationResult.WrongMiner;
             if (completely)
             {

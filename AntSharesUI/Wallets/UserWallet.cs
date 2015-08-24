@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 
@@ -10,7 +9,6 @@ namespace AntShares.Wallets
 {
     internal class UserWallet : Wallet
     {
-        private static readonly string TemplatePath = Path.Combine(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, "Data", "wt.mdf");
         private string connectionString;
 
         private UserWallet(string connectionString, byte[] masterKey)

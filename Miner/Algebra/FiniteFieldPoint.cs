@@ -1,5 +1,7 @@
-﻿using System;
+﻿using AntShares.IO;
+using System;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -10,16 +12,52 @@ namespace AntShares.Algebra
     /// <summary>
     /// Represents a single 2D point using finite field polynomials.
     /// </summary>
-    public class FiniteFieldPoint
+    public class FiniteFieldPoint : ISerializable
     {
+        public FiniteFieldPolynomial X { get; private set; }
+        public FiniteFieldPolynomial Y { get; private set; }
+
         public FiniteFieldPoint(FiniteFieldPolynomial x, FiniteFieldPolynomial y)
         {
             X = x;
             Y = y;
         }
 
-        public FiniteFieldPolynomial X { get; private set; }
-        public FiniteFieldPolynomial Y { get; private set; }
+        public void Deserialize(BinaryReader reader)
+        {
+            int x = (int)reader.ReadVarInt();
+            int expectedByteCount = (int)reader.ReadVarInt();
+            byte[] y = reader.ReadBytes(expectedByteCount);
+            IrreduciblePolynomial irp = new IrreduciblePolynomial(expectedByteCount * 8);
+            this.X = new FiniteFieldPolynomial(irp, x);
+            this.Y = new FiniteFieldPolynomial(irp, y.ToBigIntegerFromBigEndianUnsignedBytes());
+        }
+
+        public static FiniteFieldPoint Parse(string s)
+        {
+            FiniteFieldPoint result;
+            if (!TryParse(s, out result))
+            {
+                throw new ArgumentException();
+            }
+
+            return result;
+        }
+
+        public void Serialize(BinaryWriter writer)
+        {
+            int expectedByteCount = Y.PrimePolynomial.SizeInBytes;
+            byte[] pointBytes = Y.PolynomialValue.ToUnsignedBigEndianBytes();
+            writer.WriteVarInt((long)X.PolynomialValue);
+            writer.WriteVarInt(expectedByteCount);
+            writer.Write(new byte[expectedByteCount - pointBytes.Length]);
+            writer.Write(pointBytes);
+        }
+
+        public override string ToString()
+        {
+            return ToString((int)X.PolynomialValue);
+        }
 
         public string ToString(int totalPoints)
         {
@@ -40,39 +78,17 @@ namespace AntShares.Algebra
             var pointBytes = Y.PolynomialValue.ToUnsignedBigEndianBytes();
 
             // Occasionally, the value won't fill all bytes, so we need to prefix with 0's as needed
-            var prefixedPointBytes = Enumerable.Range(0, expectedByteCount - pointBytes.Length).Select(ix => (byte)0).Concat(pointBytes);
+            var prefixedPointBytes = Enumerable.Repeat((byte)0, expectedByteCount - pointBytes.Length).Concat(pointBytes);
 
             // To hex string on its own just wasn't working right
             string shareValue = String.Join("", prefixedPointBytes.Select(b => b.ToString("x2")));
             return shareNumber + "-" + shareValue;
         }
 
-        public override string ToString()
-        {
-            return ToString((int)X.PolynomialValue);
-        }
-
-        internal const string RegexPattern = @"(?<x>[0-9]+)-(?<y>[0-9a-fA-F]+)";
-
-        public static FiniteFieldPoint Parse(string s)
-        {
-            FiniteFieldPoint result;
-            if (!TryParse(s, out result))
-            {
-                throw new ArgumentException();
-            }
-
-            return result;
-        }
-
         public static bool TryParse(string s, out FiniteFieldPoint result)
         {
-            var match = Regex.Match(s, RegexPattern);
-            return TryParse(match, out result);
-        }
+            var match = Regex.Match(s, @"(?<x>[0-9]+)-(?<y>[0-9a-fA-F]+)");
 
-        internal static bool TryParse(Match match, out FiniteFieldPoint result)
-        {
             if (!match.Success)
             {
                 result = null;
@@ -83,12 +99,6 @@ namespace AntShares.Algebra
             {
                 var xString = match.Groups["x"].Value.ToLowerInvariant();
                 var yString = match.Groups["y"].Value.ToLowerInvariant();
-
-                // get rid of any initial 0's
-                while (xString.StartsWith("0", StringComparison.Ordinal))
-                {
-                    xString = xString.Substring(1);
-                }
 
                 // Each hex letter makes up 4 bits, so to get the degree in bits
                 // we multiply by 4

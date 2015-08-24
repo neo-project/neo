@@ -1,4 +1,6 @@
-﻿namespace AntShares
+﻿using AntShares.Miner;
+
+namespace AntShares
 {
     static class Program
     {
