@@ -26,8 +26,6 @@ namespace AntShares.Core
         public UInt160 Issuer;
         public UInt160 Admin;
 
-        private Dictionary<CultureInfo, string> _names;
-
         public override Fixed8 SystemFee => Fixed8.FromDecimal(10000);
 
         public RegisterTransaction()
@@ -41,7 +39,7 @@ namespace AntShares.Core
             if (!Enum.IsDefined(typeof(AssetType), AssetType))
                 throw new FormatException();
             this.Name = reader.ReadVarString();
-            this.Amount = reader.ReadFixed8();
+            this.Amount = reader.ReadSerializable<Fixed8>();
             if (Amount < -Fixed8.Satoshi) throw new FormatException();
             if (AssetType == AssetType.Share && Amount <= Fixed8.Zero)
                 throw new FormatException();
@@ -51,6 +49,8 @@ namespace AntShares.Core
             this.Admin = reader.ReadSerializable<UInt160>();
         }
 
+        [NonSerialized]
+        private Dictionary<CultureInfo, string> _names;
         public string GetName(CultureInfo culture = null)
         {
             if (AssetType == AssetType.Share)

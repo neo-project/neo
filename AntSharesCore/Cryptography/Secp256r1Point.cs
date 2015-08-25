@@ -1,11 +1,13 @@
-﻿using System;
+﻿using AntShares.IO;
+using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 
 namespace AntShares.Cryptography
 {
-    public class Secp256r1Point
+    public class Secp256r1Point : IComparable<Secp256r1Point>, IEquatable<Secp256r1Point>, ISerializable
     {
         private readonly Secp256r1Element x, y;
 
@@ -20,6 +22,14 @@ namespace AntShares.Cryptography
                 throw new ArgumentException("Exactly one of the field elements is null");
             this.x = x;
             this.y = y;
+        }
+
+        public int CompareTo(Secp256r1Point other)
+        {
+            if (ReferenceEquals(this, other)) return 0;
+            int result = x.CompareTo(other.x);
+            if (result != 0) return result;
+            return y.CompareTo(other.y);
         }
 
         public static Secp256r1Point DecodePoint(byte[] encoded)
@@ -87,6 +97,17 @@ namespace AntShares.Cryptography
             return new Secp256r1Point(x, beta);
         }
 
+        void ISerializable.Deserialize(BinaryReader reader)
+        {
+            throw new NotSupportedException();
+        }
+
+        public static Secp256r1Point DeserializeFrom(BinaryReader reader)
+        {
+            int expectedLength = (Secp256r1Curve.Q.GetBitLength() + 7) / 8;
+            return DecodePoint(reader.ReadBytes(expectedLength + 1));
+        }
+
         public byte[] EncodePoint(bool commpressed)
         {
             byte[] data;
@@ -104,6 +125,41 @@ namespace AntShares.Cryptography
             Buffer.BlockCopy(xBytes, 0, data, 33 - xBytes.Length, xBytes.Length);
             data[0] = commpressed ? y.Value.IsEven ? (byte)0x02 : (byte)0x03 : (byte)0x04;
             return data;
+        }
+
+        public bool Equals(Secp256r1Point other)
+        {
+            if (ReferenceEquals(this, other)) return true;
+            if (ReferenceEquals(null, other)) return false;
+            return x.Equals(other.x) && y.Equals(other.y);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as Secp256r1Point);
+        }
+
+        public static Secp256r1Point FromBytes(byte[] pubkey)
+        {
+            switch (pubkey.Length)
+            {
+                case 33:
+                case 65:
+                    return DecodePoint(pubkey);
+                case 64:
+                case 72:
+                    return DecodePoint(new byte[] { 0x04 }.Concat(pubkey.Skip(pubkey.Length - 64)).ToArray());
+                case 96:
+                case 104:
+                    return DecodePoint(new byte[] { 0x04 }.Concat(pubkey.Skip(pubkey.Length - 96).Take(64)).ToArray());
+                default:
+                    throw new FormatException();
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return x.GetHashCode() + y.GetHashCode();
         }
 
         public byte[] GetXComponent()
@@ -213,6 +269,16 @@ namespace AntShares.Cryptography
             }
 
             return q;
+        }
+
+        void ISerializable.Serialize(BinaryWriter writer)
+        {
+            writer.Write(EncodePoint(true));
+        }
+
+        public override string ToString()
+        {
+            return EncodePoint(true).ToHexString();
         }
 
         private Secp256r1Point Twice()

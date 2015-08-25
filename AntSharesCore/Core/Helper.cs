@@ -27,11 +27,6 @@ namespace AntShares.Core
             return Base58.Encode(data.Concat(data.Sha256().Sha256().Take(4)).ToArray());
         }
 
-        public static ECCPublicKey ToPublicKey(this byte[] pubkey)
-        {
-            return new ECCPublicKey(pubkey);
-        }
-
         public static UInt160 ToScriptHash(this string address)
         {
             byte[] data = Base58.Decode(address);

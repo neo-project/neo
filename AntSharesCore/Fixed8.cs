@@ -1,4 +1,6 @@
-﻿using System;
+﻿using AntShares.IO;
+using System;
+using System.IO;
 
 namespace AntShares
 {
@@ -6,7 +8,7 @@ namespace AntShares
     /// 精确到10^-8的64位定点数，将舍入误差降到最低。
     /// 通过控制乘数的精度，可以完全消除舍入误差。
     /// </summary>
-    public struct Fixed8 : IComparable<Fixed8>, IEquatable<Fixed8>, IFormattable
+    public struct Fixed8 : IComparable<Fixed8>, IEquatable<Fixed8>, IFormattable, ISerializable
     {
         private const long D = 100000000;
         internal long value;
@@ -38,6 +40,11 @@ namespace AntShares
         public int CompareTo(Fixed8 other)
         {
             return value.CompareTo(other.value);
+        }
+
+        void ISerializable.Deserialize(BinaryReader reader)
+        {
+            this.value = reader.ReadInt64();
         }
 
         public bool Equals(Fixed8 other)
@@ -72,6 +79,11 @@ namespace AntShares
         public static Fixed8 Parse(string s)
         {
             return Fixed8.FromDecimal(decimal.Parse(s));
+        }
+
+        void ISerializable.Serialize(BinaryWriter writer)
+        {
+            writer.Write(value);
         }
 
         public decimal ToDecimal()

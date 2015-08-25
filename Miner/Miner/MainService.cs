@@ -1,5 +1,4 @@
 ﻿using AntShares.Core;
-using AntShares.Cryptography;
 using AntShares.Data;
 using AntShares.Network;
 using AntShares.Services;
@@ -9,6 +8,7 @@ using System;
 using System.Linq;
 using System.Security;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace AntShares.Miner
 {
@@ -31,19 +31,18 @@ namespace AntShares.Miner
             }
         }
 
-        private void Mine(CancellationToken token)
+        private async Task Mine(CancellationToken token)
         {
-            ECCPublicKey[] miners = blockchain.GetMiners().ToArray();
-            int index = Array.IndexOf(miners, wallet.PublicKey);
-            if (index < 0) return;
+            BlockConsensusContext context = BlockConsensusContext.Create(wallet.PublicKey);
+            token.ThrowIfCancellationRequested();
+            BlockConsensusRequest request = context.CreateRequest(wallet);
             token.ThrowIfCancellationRequested();
 
             //TODO: 挖矿
-            //1. 基于本地区块链的当前区块开始构造共识数据；
-            //2. 将共识数据广播到矿工网络；
-            //3. 组合所有其它矿工的共识数据；
-            //4. 签名并广播；
-            //5. 广播最终共识后的区块；
+            //1. 将共识数据广播到矿工网络；
+            //2. 组合所有其它矿工的共识数据；
+            //3. 签名并广播；
+            //4. 广播最终共识后的区块；
         }
 
         protected override bool OnCommand(string[] args)

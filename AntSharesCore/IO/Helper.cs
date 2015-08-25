@@ -26,14 +26,6 @@ namespace AntShares.IO
             return array;
         }
 
-        public static Fixed8 ReadFixed8(this BinaryReader reader)
-        {
-            return new Fixed8
-            {
-                value = reader.ReadInt64()
-            };
-        }
-
         public static string ReadFixedString(this BinaryReader reader, int length)
         {
             byte[] data = reader.ReadBytes(length);
@@ -85,11 +77,6 @@ namespace AntShares.IO
                 writer.Flush();
                 return ms.ToArray();
             }
-        }
-
-        public static void Write(this BinaryWriter writer, Fixed8 value)
-        {
-            writer.Write(value.value);
         }
 
         public static void Write(this BinaryWriter writer, ISerializable value)

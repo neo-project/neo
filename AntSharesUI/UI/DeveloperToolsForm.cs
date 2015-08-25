@@ -56,7 +56,7 @@ namespace AntShares.UI
         {
             Block block = new Block
             {
-                PrevBlock = new UInt256(),
+                PrevBlock = UInt256.Zero,
                 Timestamp = DateTime.Now.ToTimestamp(),
                 Nonce = 2083236893, //向比特币致敬
                 NextMiner = Wallet.CreateRedeemScript(Blockchain.GetMinSignatureCount(Blockchain.StandbyMiners.Length), Blockchain.StandbyMiners).ToScriptHash(),

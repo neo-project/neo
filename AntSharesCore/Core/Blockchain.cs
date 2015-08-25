@@ -16,9 +16,9 @@ namespace AntShares.Core
         private const double R_Final = 0.3;
         public static readonly decimal GenerationFactor = 1 - (decimal)Math.Pow(R_Final / R_Init, 1.0 / BlocksPerYear);
         //TODO: 备用矿工未来要有5-7个
-        public static readonly ECCPublicKey[] StandbyMiners =
+        public static readonly Secp256r1Point[] StandbyMiners =
         {
-            "02c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd0".HexToBytes().ToPublicKey()
+            Secp256r1Point.DecodePoint("02c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd0".HexToBytes())
         };
         public static readonly Block GenesisBlock = "000000000000000000000000000000000000000000000000000000000000000000000000e7b746f8496dd080ca30c40186fddfe30c7d61209842197eef11fee0852cc25c375ecc55000000001dac2b7c00000000eea34400951bc0e31a530ce8a8a63485c6271147674065e19b1bd7f90c1fb26182bce24f0c840235f647efd83647988661736500546a89bb710d832bf487a26c1053c8ccb6b6fb30be9d57ccb39bd7fb098f6e1d593025512102c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd051ae0200000000000000004000455b7b276c616e67273a277a682d434e272c276e616d65273a27e5b08fe89a81e882a1277d2c7b276c616e67273a27656e272c276e616d65273a27416e745368617265277d5d0000c16ff2862300eea34400951bc0e31a530ce8a8a63485c6271147eea34400951bc0e31a530ce8a8a63485c62711470000016740da12d7b9a3f66d3a27a160e73ffd3fdbd712eedc3262913ec93944f874ef823d2ab972ac06616c0481afd1eb9fecc379b4030c3212641f035d8ed4095ea7476a25512102c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd051ae".HexToBytes().AsSerializable<Block>();
         public static readonly RegisterTransaction AntShare = (RegisterTransaction)GenesisBlock.Transactions[1];
@@ -124,12 +124,12 @@ namespace AntShares.Core
             return GetBlock(hash)?.Header;
         }
 
-        public IEnumerable<ECCPublicKey> GetMiners()
+        public IEnumerable<Secp256r1Point> GetMiners()
         {
             return GetMiners(Enumerable.Empty<Transaction>());
         }
 
-        public virtual IEnumerable<ECCPublicKey> GetMiners(IEnumerable<Transaction> others)
+        public virtual IEnumerable<Secp256r1Point> GetMiners(IEnumerable<Transaction> others)
         {
             if (!Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Ability.HasFlag(BlockchainAbility.UnspentIndexes))
                 throw new NotSupportedException();
@@ -141,14 +141,14 @@ namespace AntShares.Core
                 Weight = w
             }).WeightedAverage(p => p.MinerCount, p => p.Weight);
             miner_count = Math.Max(miner_count, StandbyMiners.Length);
-            Dictionary<ECCPublicKey, Fixed8> miners = new Dictionary<ECCPublicKey, Fixed8>();
-            Dictionary<UInt256, ECCPublicKey> enrollments = GetEnrollments(others).ToDictionary(p => p.Hash, p => p.PublicKey);
+            Dictionary<Secp256r1Point, Fixed8> miners = new Dictionary<Secp256r1Point, Fixed8>();
+            Dictionary<UInt256, Secp256r1Point> enrollments = GetEnrollments(others).ToDictionary(p => p.Hash, p => p.PublicKey);
             foreach (var vote in votes)
             {
                 foreach (UInt256 hash in vote.Enrollments)
                 {
                     if (!enrollments.ContainsKey(hash)) continue;
-                    ECCPublicKey pubkey = enrollments[hash];
+                    Secp256r1Point pubkey = enrollments[hash];
                     if (!miners.ContainsKey(pubkey))
                     {
                         miners.Add(pubkey, Fixed8.Zero);

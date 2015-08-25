@@ -44,7 +44,7 @@ namespace AntShares.Core
             VerificationResult result = base.Verify();
             if (Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
             {
-                HashSet<ECCPublicKey> pubkeys = new HashSet<ECCPublicKey>();
+                HashSet<Secp256r1Point> pubkeys = new HashSet<Secp256r1Point>();
                 foreach (UInt256 vote in Enrollments)
                 {
                     EnrollmentTransaction tx = Blockchain.Default.GetTransaction(vote) as EnrollmentTransaction;

@@ -5,7 +5,7 @@ using System.Numerics;
 
 namespace AntShares.Cryptography
 {
-    internal class Secp256r1Element : IEquatable<Secp256r1Element>
+    internal class Secp256r1Element : IComparable<Secp256r1Element>, IEquatable<Secp256r1Element>
     {
         internal readonly BigInteger Value;
 
@@ -14,6 +14,12 @@ namespace AntShares.Cryptography
             if (value >= Secp256r1Curve.Q)
                 throw new ArgumentException("x value too large in field element");
             this.Value = value;
+        }
+
+        public int CompareTo(Secp256r1Element other)
+        {
+            if (ReferenceEquals(this, other)) return 0;
+            return Value.CompareTo(other.Value);
         }
 
         public override bool Equals(object obj)

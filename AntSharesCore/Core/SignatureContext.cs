@@ -27,7 +27,7 @@ namespace AntShares.Core
             this.signatures = new MultiSigContext[ScriptHashes.Length];
         }
 
-        public bool Add(byte[] redeemScript, ECCPublicKey pubkey, byte[] signature)
+        public bool Add(byte[] redeemScript, Secp256r1Point pubkey, byte[] signature)
         {
             UInt160 scriptHash = redeemScript.ToScriptHash();
             for (int i = 0; i < ScriptHashes.Length; i++)

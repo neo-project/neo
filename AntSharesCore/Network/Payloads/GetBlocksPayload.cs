@@ -13,7 +13,7 @@ namespace AntShares.Network.Payloads
             return new GetBlocksPayload
             {
                 HashStart = hash_start,
-                HashStop = new UInt256()
+                HashStop = UInt256.Zero
             };
         }
 

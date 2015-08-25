@@ -17,6 +17,7 @@ namespace AntShares.Core
         public byte[] Script;
         public int TransactionCount;
 
+        [NonSerialized]
         private UInt256 _hash = null;
         public UInt256 Hash
         {
@@ -24,13 +25,7 @@ namespace AntShares.Core
             {
                 if (_hash == null)
                 {
-                    using (MemoryStream ms = new MemoryStream())
-                    using (BinaryWriter writer = new BinaryWriter(ms))
-                    {
-                        writer.Write(this);
-                        writer.Flush();
-                        _hash = new UInt256(ms.ToArray().Sha256().Sha256());
-                    }
+                    _hash = new UInt256(this.ToArray().Sha256().Sha256());
                 }
                 return _hash;
             }
@@ -128,7 +123,7 @@ namespace AntShares.Core
 
         UInt160[] ISignable.GetScriptHashesForVerifying()
         {
-            if (Hash == Blockchain.GenesisBlock.Hash)
+            if (PrevBlock == UInt256.Zero)
                 return new UInt160[] { NextMiner };
             BlockHeader prev_header = Blockchain.Default.GetHeader(PrevBlock);
             if (prev_header == null) throw new InvalidOperationException();

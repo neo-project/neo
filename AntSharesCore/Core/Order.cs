@@ -52,10 +52,10 @@ namespace AntShares.Core
             this.AssetId = asset_id;
             this.ValueAssetId = value_asset_id;
             this.Agent = agent;
-            this.Amount = reader.ReadFixed8();
+            this.Amount = reader.ReadSerializable<Fixed8>();
             if (Amount == Fixed8.Zero) throw new FormatException();
             if (Amount.GetData() % 10000 != 0) throw new FormatException();
-            this.Price = reader.ReadFixed8();
+            this.Price = reader.ReadSerializable<Fixed8>();
             if (Price <= Fixed8.Zero) throw new FormatException();
             if (Price.GetData() % 10000 != 0) throw new FormatException();
             this.Client = reader.ReadSerializable<UInt160>();
@@ -73,8 +73,8 @@ namespace AntShares.Core
                 this.AssetId = reader.ReadSerializable<UInt256>();
                 this.ValueAssetId = reader.ReadSerializable<UInt256>();
                 this.Agent = reader.ReadSerializable<UInt160>();
-                this.Amount = reader.ReadFixed8();
-                this.Price = reader.ReadFixed8();
+                this.Amount = reader.ReadSerializable<Fixed8>();
+                this.Price = reader.ReadSerializable<Fixed8>();
                 this.Client = reader.ReadSerializable<UInt160>();
                 this.Inputs = reader.ReadSerializableArray<TransactionInput>();
             }

@@ -27,6 +27,7 @@ namespace AntShares.Core
             }
         }
 
+        [NonSerialized]
         private BlockHeader _header = null;
         public BlockHeader Header
         {
@@ -160,7 +161,7 @@ namespace AntShares.Core
                 return VerificationResult.Incapable;
             VerificationResult result = Header.Verify();
             if (result != VerificationResult.OK) return result;
-            ECCPublicKey[] pubkeys = Blockchain.Default.GetMiners(Transactions).ToArray();
+            Secp256r1Point[] pubkeys = Blockchain.Default.GetMiners(Transactions).ToArray();
             if (NextMiner != Wallet.CreateRedeemScript(Blockchain.GetMinSignatureCount(pubkeys.Length), pubkeys).ToScriptHash())
                 result |= VerificationResult.WrongMiner;
             if (completely)

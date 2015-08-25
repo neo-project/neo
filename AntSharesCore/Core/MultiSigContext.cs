@@ -12,7 +12,7 @@ namespace AntShares.Core
         internal byte[][] signatures;
 
         private byte m;
-        private ECCPublicKey[] pubkeys;
+        private Secp256r1Point[] pubkeys;
 
         public bool Completed
         {
@@ -37,12 +37,12 @@ namespace AntShares.Core
             this.m = (byte)(redeemScript[i++] - 0x50);
             if (m < 1)
                 throw new FormatException();
-            List<ECCPublicKey> pubkeys = new List<ECCPublicKey>();
+            List<Secp256r1Point> pubkeys = new List<Secp256r1Point>();
             while (redeemScript[i] == 33)
             {
                 byte[] pubkey = new byte[redeemScript[i]];
                 Buffer.BlockCopy(redeemScript, i + 1, pubkey, 0, redeemScript[i]);
-                pubkeys.Add(new ECCPublicKey(pubkey));
+                pubkeys.Add(Secp256r1Point.DecodePoint(pubkey));
                 i += redeemScript[i] + 1;
             }
             if (pubkeys.Count != redeemScript[i] - 0x50 || pubkeys.Count < m)
@@ -51,7 +51,7 @@ namespace AntShares.Core
             this.signatures = new byte[pubkeys.Count][];
         }
 
-        public bool Add(ECCPublicKey pubkey, byte[] signature)
+        public bool Add(Secp256r1Point pubkey, byte[] signature)
         {
             if (signature.Length != 64)
                 throw new ArgumentException();

@@ -16,6 +16,7 @@ namespace AntShares.Core
         public TransactionOutput[] Outputs;
         public byte[][] Scripts;
 
+        [NonSerialized]
         private UInt256 _hash = null;
         public UInt256 Hash
         {
@@ -29,6 +30,7 @@ namespace AntShares.Core
             }
         }
 
+        [NonSerialized]
         private IReadOnlyDictionary<TransactionInput, TransactionOutput> _references;
         public IReadOnlyDictionary<TransactionInput, TransactionOutput> References
         {
@@ -212,7 +214,7 @@ namespace AntShares.Core
         public virtual VerificationResult Verify()
         {
             VerificationResult result = VerificationResult.OK;
-            if (LocalNode.MemoryPool.AsParallel().SelectMany(p => p.GetAllInputs()).Intersect(GetAllInputs().AsParallel()).Count() > 0)
+            if (LocalNode.GetMemoryPool().SelectMany(p => p.GetAllInputs()).Intersect(GetAllInputs()).Count() > 0)
                 result |= VerificationResult.DoubleSpent;
             if (!result.HasFlag(VerificationResult.DoubleSpent))
             {

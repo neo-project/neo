@@ -180,6 +180,11 @@ namespace AntShares.Network
             }
         }
 
+        public static IEnumerable<Transaction> GetMemoryPool()
+        {
+            return MemoryPool;
+        }
+
         public RemoteNode[] GetRemoteNodes()
         {
             lock (connectedPeers)

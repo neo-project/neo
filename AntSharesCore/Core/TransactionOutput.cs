@@ -19,7 +19,7 @@ namespace AntShares.Core
         void ISerializable.Deserialize(BinaryReader reader)
         {
             this.AssetId = reader.ReadSerializable<UInt256>();
-            this.Value = reader.ReadFixed8();
+            this.Value = reader.ReadSerializable<Fixed8>();
             this.ScriptHash = reader.ReadSerializable<UInt160>();
         }
 
