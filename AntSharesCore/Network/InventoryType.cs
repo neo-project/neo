@@ -1,4 +1,4 @@
-﻿namespace AntShares.Network.Payloads
+﻿namespace AntShares.Network
 {
     public enum InventoryType : uint
     {

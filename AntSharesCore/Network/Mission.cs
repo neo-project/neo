@@ -1,5 +1,4 @@
-﻿using AntShares.Network.Payloads;
-using System;
+﻿using System;
 
 namespace AntShares.Network
 {

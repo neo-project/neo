@@ -1,7 +1,6 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO;
 using AntShares.Network;
-using AntShares.Network.Payloads;
 using AntShares.Wallets;
 using System;
 using System.IO;

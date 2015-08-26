@@ -1,7 +1,6 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO;
 using AntShares.Network;
-using AntShares.Network.Payloads;
 using System.Collections.Generic;
 using System.IO;
 

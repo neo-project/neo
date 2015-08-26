@@ -1,6 +1,5 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO;
-using AntShares.Network.Payloads;
 using System.IO;
 
 namespace AntShares.Network
