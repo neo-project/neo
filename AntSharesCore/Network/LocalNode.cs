@@ -1,6 +1,6 @@
 ﻿using AntShares.Core;
+using AntShares.IO;
 using AntShares.IO.Caching;
-using AntShares.Network.Payloads;
 using AntShares.Threading;
 using System;
 using System.Collections.Generic;
@@ -40,8 +40,7 @@ namespace AntShares.Network
             "seed5.antshares.org"
         };
 
-        //TODO: 评估缓存大小设为多少比较合适
-        internal static TransactionCache MemoryPool = new TransactionCache(1000);
+        internal static InventoryCache<Inventory> RelayCache = new InventoryCache<Inventory>(1000);
         internal static HashSet<UInt256> KnownHashes = new HashSet<UInt256>();
 
         private static HashSet<IPEndPoint> unconnectedPeers = new HashSet<IPEndPoint>();
@@ -180,11 +179,6 @@ namespace AntShares.Network
             }
         }
 
-        public static IEnumerable<Transaction> GetMemoryPool()
-        {
-            return MemoryPool;
-        }
-
         public RemoteNode[] GetRemoteNodes()
         {
             lock (connectedPeers)
@@ -208,38 +202,22 @@ namespace AntShares.Network
             }
         }
 
-        public async Task<bool> RelayAsync(Block block)
+        public async Task<bool> RelayAsync(Inventory data)
         {
+            if (connectedPeers.Count == 0) return false;
             lock (KnownHashes)
             {
-                KnownHashes.Add(block.Hash);
+                KnownHashes.Add(data.Hash);
             }
-            if (connectedPeers.Count == 0) return false;
+            RelayCache.Add(data);
             RemoteNode[] remoteNodes;
             lock (connectedPeers)
             {
+                if (connectedPeers.Count == 0) return false;
                 remoteNodes = connectedPeers.Values.ToArray();
             }
             if (remoteNodes.Length == 0) return false;
-            await Task.WhenAll(remoteNodes.Select(p => p.RelayAsync(InventoryType.MSG_BLOCK, block.Hash)));
-            return true;
-        }
-
-        public async Task<bool> RelayAsync(Transaction tx)
-        {
-            lock (KnownHashes)
-            {
-                KnownHashes.Add(tx.Hash);
-            }
-            MemoryPool.Add(tx);
-            if (connectedPeers.Count == 0) return false;
-            RemoteNode[] remoteNodes;
-            lock (connectedPeers)
-            {
-                remoteNodes = connectedPeers.Values.ToArray();
-            }
-            if (remoteNodes.Length == 0) return false;
-            await Task.WhenAll(remoteNodes.Select(p => p.RelayAsync(InventoryType.MSG_TX, tx.Hash)));
+            await Task.WhenAny(remoteNodes.Select(p => p.RelayAsync(data)));
             return true;
         }
 
@@ -285,10 +263,6 @@ namespace AntShares.Network
                 return;
             if (NewBlock != null)
                 NewBlock(this, block);
-            lock (MemoryPool.SyncRoot)
-            {
-                block.Transactions.ForEach(p => MemoryPool.Remove(p.Hash));
-            }
             RelayAsync(block).Void();
         }
 

@@ -175,33 +175,39 @@ namespace AntShares.Network
                 if (hash == null) break;
                 hashes.Add(hash);
             } while (hash != payload.HashStop && hashes.Count < 500);
-            SendMessage("inv", InvPayload.Create(InventoryType.MSG_BLOCK, hashes.ToArray()));
+            SendMessage("inv", InvPayload.Create(InventoryType.Block, hashes.ToArray()));
         }
 
         private void OnGetDataMessageReceived(GetDataPayload payload)
         {
-            var groups = payload.Inventories.Distinct().ToLookup(p => p.Type);
-            if (groups.Contains(InventoryType.MSG_TX))
+            foreach (InventoryVector vector in payload.Inventories.Distinct())
             {
-                HashSet<UInt256> hashes = new HashSet<UInt256>();
-                List<Transaction> transactions = new List<Transaction>();
-                lock (LocalNode.MemoryPool.SyncRoot)
+                Inventory data;
+                if (LocalNode.RelayCache.TryGet(vector.Hash, out data))
                 {
-                    hashes.UnionWith(groups[InventoryType.MSG_TX].Where(p => LocalNode.MemoryPool.Contains(p.Hash)).Select(p => p.Hash));
-                    transactions.AddRange(hashes.Select(p => LocalNode.MemoryPool[p]));
+                    SendMessage(vector.Type.GetCommandName(), data);
+                    continue;
                 }
-                transactions.AddRange(groups[InventoryType.MSG_TX].Where(p => !hashes.Contains(p.Hash)).Select(p => Blockchain.Default.GetTransaction(p.Hash)).Where(p => p != null));
-                foreach (Transaction tx in transactions)
+                switch (vector.Type)
                 {
-                    SendMessage("tx", tx);
-                }
-            }
-            if (groups.Contains(InventoryType.MSG_BLOCK))
-            {
-                Block[] blocks = groups[InventoryType.MSG_BLOCK].Select(p => Blockchain.Default.GetBlock(p.Hash)).Where(p => p != null).ToArray();
-                foreach (Block block in blocks)
-                {
-                    SendMessage("block", block);
+                    case InventoryType.Block:
+                        {
+                            Block block = Blockchain.Default.GetBlock(vector.Hash);
+                            if (block != null)
+                            {
+                                SendMessage("block", block);
+                            }
+                        }
+                        break;
+                    case InventoryType.TX:
+                        {
+                            Transaction tx = Blockchain.Default.GetTransaction(vector.Hash);
+                            if (tx != null)
+                            {
+                                SendMessage("tx", tx);
+                            }
+                        }
+                        break;
                 }
             }
         }
@@ -233,22 +239,7 @@ namespace AntShares.Network
             {
                 vectors = payload.Inventories.Distinct().Where(p => !LocalNode.KnownHashes.Contains(p.Hash)).ToArray();
             }
-            var groups = vectors.ToLookup(p => p.Type);
-            InventoryVector[] tx_vectors = new InventoryVector[0];
-            if (groups.Contains(InventoryType.MSG_TX))
-            {
-                lock (LocalNode.MemoryPool.SyncRoot)
-                {
-                    tx_vectors = groups[InventoryType.MSG_TX].Where(p => !LocalNode.MemoryPool.Contains(p.Hash)).ToArray();
-                }
-                tx_vectors = tx_vectors.Where(p => !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
-            }
-            InventoryVector[] block_vectors = new InventoryVector[0];
-            if (groups.Contains(InventoryType.MSG_BLOCK))
-            {
-                block_vectors = groups[InventoryType.MSG_BLOCK].Where(p => !Blockchain.Default.ContainsBlock(p.Hash)).ToArray();
-            }
-            vectors = tx_vectors.Concat(block_vectors).ToArray();
+            vectors = vectors.Where(p => (p.Type == InventoryType.TX && !Blockchain.Default.ContainsTransaction(p.Hash)) || (p.Type == InventoryType.Block && !Blockchain.Default.ContainsBlock(p.Hash))).ToArray();
             if (vectors.Length == 0) return;
             lock (missions_global)
             {
@@ -373,9 +364,9 @@ namespace AntShares.Network
             });
         }
 
-        internal async Task RelayAsync(InventoryType type, UInt256 hash)
+        internal async Task RelayAsync(Inventory data)
         {
-            await SendMessageAsync("inv", InvPayload.Create(type, hash));
+            await SendMessageAsync("inv", InvPayload.Create(data.InventoryType, data.Hash));
         }
 
         internal async Task RequestPeersAsync()

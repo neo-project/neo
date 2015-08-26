@@ -2,7 +2,7 @@
 
 namespace AntShares.IO.Caching
 {
-    internal abstract class ConcurrentCache<TKey, TValue> : Cache<TKey, TValue>
+    public abstract class ConcurrentCache<TKey, TValue> : Cache<TKey, TValue>
     {
         public override TValue this[TKey key]
         {
@@ -86,6 +86,20 @@ namespace AntShares.IO.Caching
             {
                 return base.Remove(key);
             }
+        }
+
+        public virtual bool TryGet(TKey key, out TValue item)
+        {
+            lock (SyncRoot)
+            {
+                if (base.Contains(key))
+                {
+                    item = base[key];
+                    return true;
+                }
+            }
+            item = default(TValue);
+            return false;
         }
     }
 }

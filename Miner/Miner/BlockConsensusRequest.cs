@@ -1,29 +1,24 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO;
-using System;
+using AntShares.Network;
+using AntShares.Network.Payloads;
 using System.Collections.Generic;
 using System.IO;
 
 namespace AntShares.Miner
 {
-    internal class BlockConsensusRequest : ISerializable
+    internal class BlockConsensusRequest : Inventory
     {
         public UInt256 PrevHash;
         public Dictionary<Secp256r1Point, byte[]> NoncePieces;
         public UInt256 NonceHash;
         public UInt256[] TransactionHashes;
 
-        [NonSerialized]
-        private UInt256 _hash = null;
-        public UInt256 Hash
+        public override InventoryType InventoryType
         {
             get
             {
-                if (_hash == null)
-                {
-                    _hash = new UInt256(this.ToArray().Sha256().Sha256());
-                }
-                return _hash;
+                return InventoryType.ConsensusRequest;
             }
         }
 
@@ -32,7 +27,7 @@ namespace AntShares.Miner
             this.NoncePieces = new Dictionary<Secp256r1Point, byte[]>();
         }
 
-        public void Deserialize(BinaryReader reader)
+        public override void Deserialize(BinaryReader reader)
         {
             this.PrevHash = reader.ReadSerializable<UInt256>();
             this.NoncePieces.Clear();
@@ -47,7 +42,7 @@ namespace AntShares.Miner
             this.TransactionHashes = reader.ReadSerializableArray<UInt256>();
         }
 
-        public void Serialize(BinaryWriter writer)
+        public override void Serialize(BinaryWriter writer)
         {
             writer.Write(PrevHash);
             writer.WriteVarInt(NoncePieces.Count);

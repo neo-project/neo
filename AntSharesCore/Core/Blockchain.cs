@@ -34,8 +34,8 @@ namespace AntShares.Core
             Scripts = new byte[0][]
         };
 
-        //TODO: 是否应该根据内存大小来优化缓存容量？
-        private static BlockCache cache = new BlockCache(5760);
+        //TODO: 评估一个记账周期内，最多可容纳多少交易比较合适
+        public static InventoryCache<Transaction> MemoryPool = new InventoryCache<Transaction>(1000);
 
         public virtual BlockchainAbility Ability => BlockchainAbility.None;
         public virtual UInt256 CurrentBlockHash => GenesisBlock.Hash;
@@ -48,6 +48,14 @@ namespace AntShares.Core
             LocalNode.NewBlock += LocalNode_NewBlock;
         }
 
+        protected void ClearMemoryPool(Block block)
+        {
+            lock (MemoryPool.SyncRoot)
+            {
+                block.Transactions.ForEach(p => MemoryPool.Remove(p.Hash));
+            }
+        }
+
         public virtual bool ContainsAsset(UInt256 hash)
         {
             return hash == AntCoin.Hash || hash == AntShare.Hash;
@@ -55,12 +63,12 @@ namespace AntShares.Core
 
         public virtual bool ContainsBlock(UInt256 hash)
         {
-            return hash == GenesisBlock.Hash || cache.Contains(hash);
+            return hash == GenesisBlock.Hash;
         }
 
         public virtual bool ContainsTransaction(UInt256 hash)
         {
-            return hash == AntCoin.Hash || GenesisBlock.Transactions.Any(p => p.Hash == hash);
+            return hash == AntCoin.Hash || GenesisBlock.Transactions.Any(p => p.Hash == hash) || MemoryPool.Contains(hash);
         }
 
         public bool ContainsUnspent(TransactionInput input)
@@ -87,11 +95,6 @@ namespace AntShares.Core
         {
             if (hash == GenesisBlock.Hash)
                 return GenesisBlock;
-            lock (cache.SyncRoot)
-            {
-                if (cache.Contains(hash))
-                    return cache[hash];
-            }
             return null;
         }
 
@@ -183,6 +186,9 @@ namespace AntShares.Core
         {
             if (hash == AntCoin.Hash)
                 return AntCoin;
+            Transaction tx;
+            if (MemoryPool.TryGet(hash, out tx))
+                return tx;
             return GenesisBlock.Transactions.FirstOrDefault(p => p.Hash == hash);
         }
 
@@ -218,7 +224,7 @@ namespace AntShares.Core
 
         protected virtual void OnBlock(Block block)
         {
-            cache.Add(block);
+            ClearMemoryPool(block);
         }
 
         public static void RegisterBlockchain(Blockchain blockchain)

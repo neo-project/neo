@@ -48,6 +48,7 @@
     <Compile Include="Core\EnrollmentTransaction.cs" />
     <Compile Include="Core\GenerationTransaction.cs" />
     <Compile Include="Core\Helper.cs" />
+    <Compile Include="Network\Inventory.cs" />
     <Compile Include="Core\ISignable.cs" />
     <Compile Include="Core\IssueTransaction.cs" />
     <Compile Include="Core\MultiSigContext.cs" />
@@ -73,11 +74,10 @@
     <Compile Include="Cryptography\Helper.cs" />
     <Compile Include="Cryptography\MerkleTree.cs" />
     <Compile Include="Fixed8.cs" />
-    <Compile Include="IO\Caching\BlockCache.cs" />
+    <Compile Include="IO\Caching\InventoryCache.cs" />
     <Compile Include="IO\Caching\Cache.cs" />
     <Compile Include="IO\Caching\CacheItem.cs" />
     <Compile Include="IO\Caching\ConcurrentCache.cs" />
-    <Compile Include="IO\Caching\TransactionCache.cs" />
     <Compile Include="IO\Helper.cs" />
     <Compile Include="IO\ISerializable.cs" />
     <Compile Include="Cryptography\Base58.cs" />
@@ -97,7 +97,8 @@
     <Compile Include="Network\Payloads\GetBlocksPayload.cs" />
     <Compile Include="Network\Payloads\GetDataPayload.cs" />
     <Compile Include="Network\Payloads\HeadersPayload.cs" />
-    <Compile Include="Network\Payloads\InventoryType.cs" />
+    <Compile Include="Network\Payloads\Helper.cs" />
+    <Compile Include="Network\InventoryType.cs" />
     <Compile Include="Network\Payloads\InventoryVector.cs" />
     <Compile Include="Network\Payloads\InvPayload.cs" />
     <Compile Include="Network\Payloads\NetworkAddressWithTime.cs" />

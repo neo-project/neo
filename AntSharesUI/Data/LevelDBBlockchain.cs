@@ -196,6 +196,7 @@ namespace AntShares.Data
             db.Write(WriteOptions.Default, batch);
             current_block = block.Hash;
             current_height = height;
+            ClearMemoryPool(block);
         }
 
         public override bool ContainsAsset(UInt256 hash)
@@ -469,7 +470,6 @@ namespace AntShares.Data
 
         protected override void OnBlock(Block block)
         {
-            base.OnBlock(block);
             lock (cache)
             {
                 if (!cache.ContainsKey(block.PrevBlock))

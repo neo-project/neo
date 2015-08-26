@@ -2,21 +2,24 @@
 
 namespace AntShares.IO.Caching
 {
-    internal class CacheItem<TKey, TValue>
+    partial class Cache<TKey, TValue>
     {
-        public TKey Key;
-        public TValue Value;
-        public DateTime LastUpdate;
-
-        public CacheItem(TKey key, TValue value)
+        protected class CacheItem
         {
-            this.Key = key;
-            this.Value = value;
-        }
+            public TKey Key;
+            public TValue Value;
+            public DateTime LastUpdate;
 
-        public void Update()
-        {
-            LastUpdate = DateTime.Now;
+            public CacheItem(TKey key, TValue value)
+            {
+                this.Key = key;
+                this.Value = value;
+            }
+
+            public void Update()
+            {
+                LastUpdate = DateTime.Now;
+            }
         }
     }
 }

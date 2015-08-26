@@ -1,5 +1,7 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO;
+using AntShares.Network;
+using AntShares.Network.Payloads;
 using AntShares.Wallets;
 using System;
 using System.IO;
@@ -7,7 +9,7 @@ using System.Linq;
 
 namespace AntShares.Core
 {
-    public class Block : IEquatable<Block>, ISerializable
+    public class Block : Inventory, IEquatable<Block>
     {
         public const uint Version = 0;
         public UInt256 PrevBlock;
@@ -18,14 +20,6 @@ namespace AntShares.Core
         public UInt160 NextMiner;
         public byte[] Script;
         public Transaction[] Transactions;
-
-        public UInt256 Hash
-        {
-            get
-            {
-                return Header.Hash;
-            }
-        }
 
         [NonSerialized]
         private BlockHeader _header = null;
@@ -50,7 +44,15 @@ namespace AntShares.Core
             }
         }
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        public override InventoryType InventoryType
+        {
+            get
+            {
+                return InventoryType.Block;
+            }
+        }
+
+        public override void Deserialize(BinaryReader reader)
         {
             if (reader.ReadUInt32() != Version)
                 throw new FormatException();
@@ -110,6 +112,11 @@ namespace AntShares.Core
             return block;
         }
 
+        protected override UInt256 GetHash()
+        {
+            return Header.Hash;
+        }
+
         public override int GetHashCode()
         {
             return Hash.GetHashCode();
@@ -120,7 +127,7 @@ namespace AntShares.Core
             MerkleRoot = MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray());
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
+        public override void Serialize(BinaryWriter writer)
         {
             writer.Write(Version);
             writer.Write(PrevBlock);

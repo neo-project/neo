@@ -1,6 +1,7 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO;
 using AntShares.Network;
+using AntShares.Network.Payloads;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,24 +10,18 @@ using System.Text;
 
 namespace AntShares.Core
 {
-    public abstract class Transaction : ISignable
+    public abstract class Transaction : Inventory, ISignable
     {
         public readonly TransactionType Type;
         public TransactionInput[] Inputs;
         public TransactionOutput[] Outputs;
         public byte[][] Scripts;
 
-        [NonSerialized]
-        private UInt256 _hash = null;
-        public UInt256 Hash
+        public override InventoryType InventoryType
         {
             get
             {
-                if (_hash == null)
-                {
-                    _hash = new UInt256(this.ToArray().Sha256().Sha256());
-                }
-                return _hash;
+                return InventoryType.TX;
             }
         }
 
@@ -77,7 +72,7 @@ namespace AntShares.Core
             this.Type = type;
         }
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        public override void Deserialize(BinaryReader reader)
         {
             if ((TransactionType)reader.ReadByte() != Type)
                 throw new FormatException();
@@ -181,7 +176,7 @@ namespace AntShares.Core
         {
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
+        public override void Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Type);
             SerializeExclusiveData(writer);
@@ -214,7 +209,7 @@ namespace AntShares.Core
         public virtual VerificationResult Verify()
         {
             VerificationResult result = VerificationResult.OK;
-            if (LocalNode.GetMemoryPool().SelectMany(p => p.GetAllInputs()).Intersect(GetAllInputs()).Count() > 0)
+            if (Blockchain.MemoryPool.SelectMany(p => p.GetAllInputs()).Intersect(GetAllInputs()).Count() > 0)
                 result |= VerificationResult.DoubleSpent;
             if (!result.HasFlag(VerificationResult.DoubleSpent))
             {

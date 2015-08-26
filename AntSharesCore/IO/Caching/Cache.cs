@@ -5,9 +5,9 @@ using System.Linq;
 
 namespace AntShares.IO.Caching
 {
-    internal abstract class Cache<TKey, TValue> : ICollection<TValue>, IDisposable
+    public abstract partial class Cache<TKey, TValue> : ICollection<TValue>, IDisposable
     {
-        protected Dictionary<TKey, CacheItem<TKey, TValue>> InnerDictionary = new Dictionary<TKey, CacheItem<TKey, TValue>>();
+        protected Dictionary<TKey, CacheItem> InnerDictionary = new Dictionary<TKey, CacheItem>();
         private int max_capacity;
 
         public virtual TValue this[TKey key]
@@ -51,18 +51,18 @@ namespace AntShares.IO.Caching
                 if (InnerDictionary.Count >= max_capacity)
                 {
                     //TODO: 对PLINQ查询进行性能测试，以便确定此处使用何种算法更优（并行或串行）
-                    foreach (CacheItem<TKey, TValue> item_del in InnerDictionary.Values.AsParallel().OrderBy(p => p.LastUpdate).Take(InnerDictionary.Count - max_capacity + 1))
+                    foreach (CacheItem item_del in InnerDictionary.Values.AsParallel().OrderBy(p => p.LastUpdate).Take(InnerDictionary.Count - max_capacity + 1))
                     {
                         RemoveInternal(item_del);
                     }
                 }
-                InnerDictionary.Add(key, new CacheItem<TKey, TValue>(key, item));
+                InnerDictionary.Add(key, new CacheItem(key, item));
             }
         }
 
         public virtual void Clear()
         {
-            foreach (CacheItem<TKey, TValue> item_del in InnerDictionary.Values.ToArray())
+            foreach (CacheItem item_del in InnerDictionary.Values.ToArray())
             {
                 RemoveInternal(item_del);
             }
@@ -118,7 +118,7 @@ namespace AntShares.IO.Caching
             return Remove(GetKeyForItem(item));
         }
 
-        private void RemoveInternal(CacheItem<TKey, TValue> item)
+        private void RemoveInternal(CacheItem item)
         {
             InnerDictionary.Remove(item.Key);
             IDisposable disposable = item.Value as IDisposable;
