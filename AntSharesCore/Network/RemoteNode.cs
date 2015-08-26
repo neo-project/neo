@@ -183,7 +183,7 @@ namespace AntShares.Network
             foreach (InventoryVector vector in payload.Inventories.Distinct())
             {
                 Inventory data;
-                if (LocalNode.RelayCache.TryGet(vector.Hash, out data))
+                if (localNode.RelayCache.TryGet(vector.Hash, out data))
                 {
                     SendMessage(vector.Type.GetCommandName(), data);
                     continue;

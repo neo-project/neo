@@ -14,7 +14,6 @@ namespace AntShares.Miner
 {
     internal class MainService : ConsoleServiceBase
     {
-        private LevelDBBlockchain blockchain;
         private LocalNode localnode;
         private MinerWallet wallet;
         private CancellableTask task;
@@ -22,7 +21,7 @@ namespace AntShares.Miner
         protected override string Prompt => "ant";
         public override string ServiceName => "AntSharesMiner";
 
-        private void Blockchain_PersistCompleted(object sender, EventArgs e)
+        private void Blockchain_PersistCompleted(object sender, Block block)
         {
             if (task != null)
             {
@@ -95,20 +94,19 @@ namespace AntShares.Miner
 
         protected internal override void OnStart()
         {
-            blockchain = new LevelDBBlockchain();
-            blockchain.PersistCompleted += Blockchain_PersistCompleted;
-            Blockchain.RegisterBlockchain(blockchain);
+            Blockchain.RegisterBlockchain(new LevelDBBlockchain());
+            Blockchain.Default.PersistCompleted += Blockchain_PersistCompleted;
             localnode = new LocalNode();
             localnode.Start();
         }
 
         protected internal override void OnStop()
         {
-            blockchain.PersistCompleted -= Blockchain_PersistCompleted;
+            Blockchain.Default.PersistCompleted -= Blockchain_PersistCompleted;
             task.Cancel();
             task.Wait();
             localnode.Dispose();
-            blockchain.Dispose();
+            Blockchain.Default.Dispose();
         }
     }
 }

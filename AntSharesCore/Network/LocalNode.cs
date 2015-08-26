@@ -40,7 +40,7 @@ namespace AntShares.Network
             "seed5.antshares.org"
         };
 
-        internal static InventoryCache<Inventory> RelayCache = new InventoryCache<Inventory>(1000);
+        internal RelayCache RelayCache = new RelayCache(100);
         internal static HashSet<UInt256> KnownHashes = new HashSet<UInt256>();
 
         private static HashSet<IPEndPoint> unconnectedPeers = new HashSet<IPEndPoint>();
@@ -204,12 +204,18 @@ namespace AntShares.Network
 
         public async Task<bool> RelayAsync(Inventory data)
         {
-            if (connectedPeers.Count == 0) return false;
+            bool unknown;
             lock (KnownHashes)
             {
-                KnownHashes.Add(data.Hash);
+                unknown = KnownHashes.Add(data.Hash);
             }
-            RelayCache.Add(data);
+            if (data.InventoryType == InventoryType.TX && unknown)
+            {
+                Transaction tx = (Transaction)data;
+                if (!Blockchain.Default.ContainsTransaction(tx.Hash) && tx.Verify() == VerificationResult.OK && NewTransaction != null)
+                    NewTransaction(this, tx);
+            }
+            if (connectedPeers.Count == 0) return false;
             RemoteNode[] remoteNodes;
             lock (connectedPeers)
             {
@@ -217,6 +223,7 @@ namespace AntShares.Network
                 remoteNodes = connectedPeers.Values.ToArray();
             }
             if (remoteNodes.Length == 0) return false;
+            RelayCache.Add(data);
             await Task.WhenAny(remoteNodes.Select(p => p.RelayAsync(data)));
             return true;
         }
@@ -301,7 +308,7 @@ namespace AntShares.Network
             VerificationResult vr = tx.Verify();
             if ((vr & ~VerificationResult.Incapable) > 0)
                 return;
-            if (NewTransaction != null)
+            if (vr == VerificationResult.OK && NewTransaction != null)
                 NewTransaction(this, tx);
             RelayAsync(tx).Void();
         }

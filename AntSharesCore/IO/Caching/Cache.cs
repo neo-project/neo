@@ -5,24 +5,48 @@ using System.Linq;
 
 namespace AntShares.IO.Caching
 {
-    public abstract partial class Cache<TKey, TValue> : ICollection<TValue>, IDisposable
+    internal abstract class Cache<TKey, TValue> : ICollection<TValue>, IDisposable
     {
-        protected Dictionary<TKey, CacheItem> InnerDictionary = new Dictionary<TKey, CacheItem>();
-        private int max_capacity;
-
-        public virtual TValue this[TKey key]
+        protected class CacheItem
         {
-            get
+            public TKey Key;
+            public TValue Value;
+            public DateTime Time;
+
+            public CacheItem(TKey key, TValue value)
             {
-                return InnerDictionary[key].Value;
+                this.Key = key;
+                this.Value = value;
+                this.Time = DateTime.Now;
             }
         }
 
-        public virtual int Count
+        public readonly object SyncRoot = new object();
+        protected readonly Dictionary<TKey, CacheItem> InnerDictionary = new Dictionary<TKey, CacheItem>();
+        private readonly int max_capacity;
+
+        public TValue this[TKey key]
         {
             get
             {
-                return InnerDictionary.Count;
+                lock (SyncRoot)
+                {
+                    if (!InnerDictionary.ContainsKey(key)) throw new KeyNotFoundException();
+                    CacheItem item = InnerDictionary[key];
+                    OnAccess(item);
+                    return item.Value;
+                }
+            }
+        }
+
+        public int Count
+        {
+            get
+            {
+                lock (SyncRoot)
+                {
+                    return InnerDictionary.Count;
+                }
             }
         }
 
@@ -39,38 +63,49 @@ namespace AntShares.IO.Caching
             this.max_capacity = max_capacity;
         }
 
-        public virtual void Add(TValue item)
+        public void Add(TValue item)
         {
             TKey key = GetKeyForItem(item);
-            if (InnerDictionary.ContainsKey(key))
+            lock (SyncRoot)
             {
-                InnerDictionary[key].Update();
-            }
-            else
-            {
-                if (InnerDictionary.Count >= max_capacity)
+                if (InnerDictionary.ContainsKey(key))
                 {
-                    //TODO: 对PLINQ查询进行性能测试，以便确定此处使用何种算法更优（并行或串行）
-                    foreach (CacheItem item_del in InnerDictionary.Values.AsParallel().OrderBy(p => p.LastUpdate).Take(InnerDictionary.Count - max_capacity + 1))
-                    {
-                        RemoveInternal(item_del);
-                    }
+                    OnAccess(InnerDictionary[key]);
                 }
-                InnerDictionary.Add(key, new CacheItem(key, item));
+                else
+                {
+                    if (InnerDictionary.Count >= max_capacity)
+                    {
+                        //TODO: 对PLINQ查询进行性能测试，以便确定此处使用何种算法更优（并行或串行）
+                        foreach (CacheItem item_del in InnerDictionary.Values.AsParallel().OrderBy(p => p.Time).Take(InnerDictionary.Count - max_capacity + 1))
+                        {
+                            RemoveInternal(item_del);
+                        }
+                    }
+                    InnerDictionary.Add(key, new CacheItem(key, item));
+                }
             }
         }
 
-        public virtual void Clear()
+        public void Clear()
         {
-            foreach (CacheItem item_del in InnerDictionary.Values.ToArray())
+            lock (SyncRoot)
             {
-                RemoveInternal(item_del);
+                foreach (CacheItem item_del in InnerDictionary.Values.ToArray())
+                {
+                    RemoveInternal(item_del);
+                }
             }
         }
 
-        public virtual bool Contains(TKey key)
+        public bool Contains(TKey key)
         {
-            return InnerDictionary.ContainsKey(key);
+            lock (SyncRoot)
+            {
+                if (!InnerDictionary.ContainsKey(key)) return false;
+                OnAccess(InnerDictionary[key]);
+                return true;
+            }
         }
 
         public bool Contains(TValue item)
@@ -78,12 +113,12 @@ namespace AntShares.IO.Caching
             return Contains(GetKeyForItem(item));
         }
 
-        public virtual void CopyTo(TValue[] array, int arrayIndex)
+        public void CopyTo(TValue[] array, int arrayIndex)
         {
             if (array == null) throw new ArgumentNullException();
             if (arrayIndex < 0) throw new ArgumentOutOfRangeException();
             if (arrayIndex + InnerDictionary.Count > array.Length) throw new ArgumentException();
-            foreach (TValue item in InnerDictionary.Values.Select(p => p.Value))
+            foreach (TValue item in this)
             {
                 array[arrayIndex++] = item;
             }
@@ -94,9 +129,15 @@ namespace AntShares.IO.Caching
             Clear();
         }
 
-        public virtual IEnumerator<TValue> GetEnumerator()
+        public IEnumerator<TValue> GetEnumerator()
         {
-            return InnerDictionary.Values.Select(p => p.Value).GetEnumerator();
+            lock (SyncRoot)
+            {
+                foreach (TValue item in InnerDictionary.Values.Select(p => p.Value))
+                {
+                    yield return item;
+                }
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -106,12 +147,17 @@ namespace AntShares.IO.Caching
 
         protected abstract TKey GetKeyForItem(TValue item);
 
-        public virtual bool Remove(TKey key)
+        public bool Remove(TKey key)
         {
-            if (!InnerDictionary.ContainsKey(key)) return false;
-            RemoveInternal(InnerDictionary[key]);
-            return true;
+            lock (SyncRoot)
+            {
+                if (!InnerDictionary.ContainsKey(key)) return false;
+                RemoveInternal(InnerDictionary[key]);
+                return true;
+            }
         }
+
+        protected abstract void OnAccess(CacheItem item);
 
         public bool Remove(TValue item)
         {
@@ -126,6 +172,21 @@ namespace AntShares.IO.Caching
             {
                 disposable.Dispose();
             }
+        }
+
+        public bool TryGet(TKey key, out TValue item)
+        {
+            lock (SyncRoot)
+            {
+                if (InnerDictionary.ContainsKey(key))
+                {
+                    OnAccess(InnerDictionary[key]);
+                    item = InnerDictionary[key].Value;
+                    return true;
+                }
+            }
+            item = default(TValue);
+            return false;
         }
     }
 }

@@ -17,7 +17,7 @@ namespace AntShares.Miner
         {
             get
             {
-                return InventoryType.ConsensusRequest;
+                return InventoryType.ConsensusReq;
             }
         }
 

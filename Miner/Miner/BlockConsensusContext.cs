@@ -41,7 +41,7 @@ namespace AntShares.Miner
             if (!context.Miners.Contains(my_pubkey)) return null;
             context.Nonces.Add(my_pubkey, new UInt256(nonce));
             context.NonceHashes.Add(my_pubkey, new UInt256(nonce.Sha256()));
-            context.TransactionHashes.AddRange(Blockchain.MemoryPool.Select(p => p.Hash));
+            context.TransactionHashes.AddRange(Blockchain.Default.GetMemoryPool().Select(p => p.Hash));
             return context;
         }
 

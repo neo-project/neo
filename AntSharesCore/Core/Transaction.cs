@@ -208,19 +208,14 @@ namespace AntShares.Core
         public virtual VerificationResult Verify()
         {
             VerificationResult result = VerificationResult.OK;
-            if (Blockchain.MemoryPool.SelectMany(p => p.GetAllInputs()).Intersect(GetAllInputs()).Count() > 0)
-                result |= VerificationResult.DoubleSpent;
-            if (!result.HasFlag(VerificationResult.DoubleSpent))
+            if (Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
             {
-                if (Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
-                {
-                    if (Blockchain.Default.IsDoubleSpend(this))
-                        result |= VerificationResult.DoubleSpent;
-                }
-                else
-                {
-                    result |= VerificationResult.Incapable;
-                }
+                if (Blockchain.Default.IsDoubleSpend(this))
+                    result |= VerificationResult.DoubleSpent;
+            }
+            else
+            {
+                result |= VerificationResult.Incapable;
             }
             if (Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes))
             {

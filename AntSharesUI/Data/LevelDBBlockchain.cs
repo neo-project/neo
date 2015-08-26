@@ -12,8 +12,6 @@ namespace AntShares.Data
 {
     internal class LevelDBBlockchain : Blockchain
     {
-        public event EventHandler PersistCompleted;
-
         private DB db;
         private Thread thread_persistence;
         private Dictionary<UInt256, Block> cache = new Dictionary<UInt256, Block>();
@@ -196,7 +194,6 @@ namespace AntShares.Data
             db.Write(WriteOptions.Default, batch);
             current_block = block.Hash;
             current_height = height;
-            ClearMemoryPool(block);
         }
 
         public override bool ContainsAsset(UInt256 hash)
@@ -226,6 +223,7 @@ namespace AntShares.Data
 
         public override bool ContainsUnspent(UInt256 hash, ushort index)
         {
+            if (base.ContainsUnspent(hash, index)) return true;
             Slice value;
             if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Unspent).Add(hash), out value))
                 return false;
@@ -390,6 +388,8 @@ namespace AntShares.Data
 
         public override TransactionOutput GetUnspent(UInt256 hash, ushort index)
         {
+            TransactionOutput unspent = base.GetUnspent(hash, index);
+            if (unspent != null) return unspent;
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
@@ -452,6 +452,8 @@ namespace AntShares.Data
         {
             TransactionInput[] inputs = tx.GetAllInputs().ToArray();
             if (inputs.Length == 0) return false;
+            if (MemoryPool.Values.SelectMany(p => p.GetAllInputs()).Intersect(inputs).Count() > 0)
+                return true;
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
@@ -497,6 +499,7 @@ namespace AntShares.Data
                         }
                         if (block?.Verify() != VerificationResult.OK) break;
                         AddBlockToChain(block);
+                        RaisePersistCompleted(block);
                         persisted = true;
                     }
                     if (persisted)
@@ -509,10 +512,6 @@ namespace AntShares.Data
                             }
                         }
                     }
-                }
-                if (PersistCompleted != null && persisted)
-                {
-                    PersistCompleted(this, EventArgs.Empty);
                 }
                 for (int i = 0; i < 50 && !disposed; i++)
                 {

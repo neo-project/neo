@@ -1,8 +1,8 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO;
-using AntShares.IO.Caching;
 using AntShares.Network;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,6 +10,8 @@ namespace AntShares.Core
 {
     public class Blockchain : IDisposable
     {
+        public event EventHandler<Block> PersistCompleted;
+
         public const int SecondsPerBlock = 15;
         private const int BlocksPerYear = 365 * 24 * 60 * 60 / SecondsPerBlock;
         private const double R_Init = 0.5;
@@ -34,8 +36,7 @@ namespace AntShares.Core
             Scripts = new byte[0][]
         };
 
-        //TODO: 评估一个记账周期内，最多可容纳多少交易比较合适
-        public static InventoryCache<Transaction> MemoryPool = new InventoryCache<Transaction>(1000);
+        protected readonly ConcurrentDictionary<UInt256, Transaction> MemoryPool = new ConcurrentDictionary<UInt256, Transaction>();
 
         public virtual BlockchainAbility Ability => BlockchainAbility.None;
         public virtual UInt256 CurrentBlockHash => GenesisBlock.Hash;
@@ -46,14 +47,7 @@ namespace AntShares.Core
         protected Blockchain()
         {
             LocalNode.NewBlock += LocalNode_NewBlock;
-        }
-
-        protected void ClearMemoryPool(Block block)
-        {
-            lock (MemoryPool.SyncRoot)
-            {
-                block.Transactions.ForEach(p => MemoryPool.Remove(p.Hash));
-            }
+            LocalNode.NewTransaction += LocalNode_NewTransaction;
         }
 
         public virtual bool ContainsAsset(UInt256 hash)
@@ -68,7 +62,7 @@ namespace AntShares.Core
 
         public virtual bool ContainsTransaction(UInt256 hash)
         {
-            return hash == AntCoin.Hash || GenesisBlock.Transactions.Any(p => p.Hash == hash) || MemoryPool.Contains(hash);
+            return hash == AntCoin.Hash || GenesisBlock.Transactions.Any(p => p.Hash == hash) || MemoryPool.ContainsKey(hash);
         }
 
         public bool ContainsUnspent(TransactionInput input)
@@ -78,12 +72,16 @@ namespace AntShares.Core
 
         public virtual bool ContainsUnspent(UInt256 hash, ushort index)
         {
-            throw new NotSupportedException();
+            Transaction tx;
+            if (!MemoryPool.TryGetValue(hash, out tx))
+                return false;
+            return index < tx.Outputs.Length;
         }
 
         public virtual void Dispose()
         {
             LocalNode.NewBlock -= LocalNode_NewBlock;
+            LocalNode.NewTransaction -= LocalNode_NewTransaction;
         }
 
         public virtual IEnumerable<RegisterTransaction> GetAssets()
@@ -125,6 +123,11 @@ namespace AntShares.Core
         public virtual BlockHeader GetHeader(UInt256 hash)
         {
             return GetBlock(hash)?.Header;
+        }
+
+        public IEnumerable<Transaction> GetMemoryPool()
+        {
+            return MemoryPool.Values;
         }
 
         public IEnumerable<Secp256r1Point> GetMiners()
@@ -187,14 +190,17 @@ namespace AntShares.Core
             if (hash == AntCoin.Hash)
                 return AntCoin;
             Transaction tx;
-            if (MemoryPool.TryGet(hash, out tx))
+            if (MemoryPool.TryGetValue(hash, out tx))
                 return tx;
             return GenesisBlock.Transactions.FirstOrDefault(p => p.Hash == hash);
         }
 
         public virtual TransactionOutput GetUnspent(UInt256 hash, ushort index)
         {
-            throw new NotSupportedException();
+            Transaction tx;
+            if (!MemoryPool.TryGetValue(hash, out tx) || index >= tx.Outputs.Length)
+                return null;
+            return tx.Outputs[index];
         }
 
         public virtual IEnumerable<TransactionOutput> GetUnspentAntShares()
@@ -222,9 +228,26 @@ namespace AntShares.Core
             OnBlock(block);
         }
 
+        private void LocalNode_NewTransaction(object sender, Transaction tx)
+        {
+            MemoryPool.TryAdd(tx.Hash, tx);
+        }
+
         protected virtual void OnBlock(Block block)
         {
-            ClearMemoryPool(block);
+        }
+
+        protected void RaisePersistCompleted(Block block)
+        {
+            foreach (Transaction tx in block.Transactions)
+            {
+                Transaction ignore;
+                MemoryPool.TryRemove(tx.Hash, out ignore);
+            }
+            if (PersistCompleted != null)
+            {
+                PersistCompleted(this, block);
+            }
         }
 
         public static void RegisterBlockchain(Blockchain blockchain)

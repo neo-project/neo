@@ -48,6 +48,8 @@
     <Compile Include="Core\EnrollmentTransaction.cs" />
     <Compile Include="Core\GenerationTransaction.cs" />
     <Compile Include="Core\Helper.cs" />
+    <Compile Include="IO\Caching\Cache.cs" />
+    <Compile Include="IO\Caching\FIFOCache.cs" />
     <Compile Include="Network\Inventory.cs" />
     <Compile Include="Core\ISignable.cs" />
     <Compile Include="Core\IssueTransaction.cs" />
@@ -74,10 +76,8 @@
     <Compile Include="Cryptography\Helper.cs" />
     <Compile Include="Cryptography\MerkleTree.cs" />
     <Compile Include="Fixed8.cs" />
-    <Compile Include="IO\Caching\InventoryCache.cs" />
-    <Compile Include="IO\Caching\Cache.cs" />
-    <Compile Include="IO\Caching\CacheItem.cs" />
-    <Compile Include="IO\Caching\ConcurrentCache.cs" />
+    <Compile Include="IO\Caching\RelayCache.cs" />
+    <Compile Include="IO\Caching\LRUCache.cs" />
     <Compile Include="IO\Helper.cs" />
     <Compile Include="IO\ISerializable.cs" />
     <Compile Include="Cryptography\Base58.cs" />
