@@ -110,7 +110,7 @@ namespace AntShares.Core
             VerificationResult result = base.Verify();
             foreach (Order order in Orders)
             {
-                result |= order.VerifySignature();
+                result |= order.Verify();
                 if (result.HasFlag(VerificationResult.InvalidSignature))
                     break;
             }

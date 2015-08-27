@@ -1,4 +1,5 @@
 ﻿using AntShares.IO;
+
 namespace AntShares.Core
 {
     public interface ISignable : ISerializable
@@ -9,5 +10,6 @@ namespace AntShares.Core
         byte[] GetHashForSigning();
         UInt160[] GetScriptHashesForVerifying();
         byte[] ToUnsignedArray();
+        VerificationResult Verify();
     }
 }

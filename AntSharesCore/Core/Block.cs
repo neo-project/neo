@@ -158,11 +158,17 @@ namespace AntShares.Core
             }
         }
 
-        public VerificationResult Verify(bool completely = false)
+        public override VerificationResult Verify()
         {
-            if (Hash == Blockchain.GenesisBlock.Hash) return VerificationResult.OK;
+            return Verify(false);
+        }
+
+        public VerificationResult Verify(bool completely)
+        {
+            if (Hash == Blockchain.GenesisBlock.Hash) return VerificationResult.AlreadyInBlockchain;
             if (Transactions.Count(p => p.Type == TransactionType.GenerationTransaction) != 1)
                 return VerificationResult.IncorrectFormat;
+            if (Blockchain.Default.ContainsBlock(Hash)) return VerificationResult.AlreadyInBlockchain;
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
                 return VerificationResult.Incapable;
             VerificationResult result = Header.Verify();

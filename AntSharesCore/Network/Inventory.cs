@@ -1,4 +1,5 @@
-﻿using AntShares.Cryptography;
+﻿using AntShares.Core;
+using AntShares.Cryptography;
 using AntShares.IO;
 using System.IO;
 
@@ -30,5 +31,7 @@ namespace AntShares.Network
         }
 
         public abstract void Serialize(BinaryWriter writer);
+
+        public abstract VerificationResult Verify();
     }
 }

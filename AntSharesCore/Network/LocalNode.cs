@@ -18,12 +18,13 @@ namespace AntShares.Network
     public class LocalNode : IDisposable
     {
         public static event EventHandler<Block> NewBlock;
+        public static event EventHandler<Inventory> NewInventory;
         public static event EventHandler<Transaction> NewTransaction;
 
         public const uint PROTOCOL_VERSION = 0;
-        private const int CONNECTED_MAX = 100;
+        private const int CONNECTED_MAX = 10;
         private const int PENDING_MAX = CONNECTED_MAX;
-        private const int UNCONNECTED_MAX = 5000;
+        private const int UNCONNECTED_MAX = 100;
 #if TESTNET
         public const int DEFAULT_PORT = 20333;
 #else
@@ -80,7 +81,7 @@ namespace AntShares.Network
             if (port == 0)
                 port = DEFAULT_PORT;
             this.LocalEndpoint = new IPEndPoint(Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork), port);
-            this.connectWorker = new Worker(string.Format("ConnectToPeersLoop@{0}", LocalEndpoint), ConnectToPeersLoop, true, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+            this.connectWorker = new Worker(ConnectToPeersLoop, TimeSpan.FromSeconds(5));
             this.UserAgent = string.Format("/AntSharesCore:{0}/", Assembly.GetExecutingAssembly().GetName().Version.ToString(3));
         }
 
@@ -108,9 +109,8 @@ namespace AntShares.Network
                 remoteNode = new RemoteNode(this, remoteEndpoint);
                 pendingPeers.Add(remoteNode);
                 remoteNode.Disconnected += RemoteNode_Disconnected;
-                remoteNode.NewBlock += RemoteNode_NewBlock;
+                remoteNode.NewInventory += RemoteNode_NewInventory;
                 remoteNode.NewPeers += RemoteNode_NewPeers;
-                remoteNode.NewTransaction += RemoteNode_NewTransaction;
             }
             await remoteNode.ConnectAsync();
         }
@@ -232,9 +232,8 @@ namespace AntShares.Network
         {
             RemoteNode remoteNode = (RemoteNode)sender;
             remoteNode.Disconnected -= RemoteNode_Disconnected;
-            remoteNode.NewBlock -= RemoteNode_NewBlock;
+            remoteNode.NewInventory -= RemoteNode_NewInventory;
             remoteNode.NewPeers -= RemoteNode_NewPeers;
-            remoteNode.NewTransaction -= RemoteNode_NewTransaction;
             if (error)
             {
                 lock (badPeers)
@@ -256,21 +255,31 @@ namespace AntShares.Network
             }
         }
 
-        private void RemoteNode_NewBlock(object sender, Block block)
+        private void RemoteNode_NewInventory(object sender, Inventory inventory)
         {
             lock (KnownHashes)
             {
-                if (!KnownHashes.Add(block.Hash))
+                if (!KnownHashes.Add(inventory.Hash))
                     return;
             }
-            if (Blockchain.Default.ContainsBlock(block.Hash))
-                return;
-            VerificationResult vr = block.Verify();
+            VerificationResult vr = inventory.Verify();
             if ((vr & ~(VerificationResult.Incapable | VerificationResult.LackOfInformation)) > 0)
                 return;
-            if (NewBlock != null)
-                NewBlock(this, block);
-            RelayAsync(block).Void();
+            if (inventory.InventoryType == InventoryType.TX && vr.HasFlag(VerificationResult.LackOfInformation))
+                return;
+            RelayAsync(inventory).Void();
+            if (NewInventory != null)
+            {
+                NewInventory(this, inventory);
+            }
+            if (inventory.InventoryType == InventoryType.Block && NewBlock != null)
+            {
+                NewBlock(this, (Block)inventory);
+            }
+            if (inventory.InventoryType == InventoryType.TX && NewTransaction != null && vr == VerificationResult.OK)
+            {
+                NewTransaction(this, (Transaction)inventory);
+            }
         }
 
         private void RemoteNode_NewPeers(object sender, IPEndPoint[] peers)
@@ -294,23 +303,6 @@ namespace AntShares.Network
                     }
                 }
             }
-        }
-
-        private void RemoteNode_NewTransaction(object sender, Transaction tx)
-        {
-            lock (KnownHashes)
-            {
-                if (!KnownHashes.Add(tx.Hash))
-                    return;
-            }
-            if (Blockchain.Default.ContainsTransaction(tx.Hash))
-                return;
-            VerificationResult vr = tx.Verify();
-            if ((vr & ~VerificationResult.Incapable) > 0)
-                return;
-            if (vr == VerificationResult.OK && NewTransaction != null)
-                NewTransaction(this, tx);
-            RelayAsync(tx).Void();
         }
 
         public static void SaveState(Stream stream)
@@ -356,6 +348,14 @@ namespace AntShares.Network
                     }
                     remoteNode.StartProtocolAsync().Void();
                 }
+            }
+        }
+
+        public async Task WaitForNodesAsync(int count = 1)
+        {
+            while (connectedPeers.Count < count)
+            {
+                await connectWorker.WaitAsync();
             }
         }
     }

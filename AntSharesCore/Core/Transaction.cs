@@ -205,8 +205,9 @@ namespace AntShares.Core
             }
         }
 
-        public virtual VerificationResult Verify()
+        public override VerificationResult Verify()
         {
+            if (Blockchain.Default.ContainsTransaction(Hash)) return VerificationResult.AlreadyInBlockchain;
             VerificationResult result = VerificationResult.OK;
             if (Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
             {

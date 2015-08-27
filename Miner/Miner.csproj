@@ -69,7 +69,6 @@
     <Compile Include="Cryptography\SecretSharing.cs" />
     <Compile Include="Cryptography\SplitSecret.cs" />
     <Compile Include="Miner\BlockConsensusContext.cs" />
-    <Compile Include="Miner\BlockConsensusRequest.cs" />
     <Compile Include="Miner\MainService.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -82,7 +81,6 @@
     <Compile Include="Services\ServiceProxy.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Threading\CancellableTask.cs" />
     <Compile Include="Wallets\Helper.cs" />
     <Compile Include="Wallets\MinerWallet.cs" />
   </ItemGroup>

@@ -1,5 +1,6 @@
 ﻿using AntShares.Core;
 using AntShares.IO;
+using AntShares.Miner;
 using AntShares.Network.Payloads;
 using System;
 using System.Collections.Generic;
@@ -16,9 +17,8 @@ namespace AntShares.Network
     public class RemoteNode : IDisposable
     {
         public event EventHandler<bool> Disconnected;
-        internal event EventHandler<Block> NewBlock;
+        internal event EventHandler<Inventory> NewInventory;
         internal event EventHandler<IPEndPoint[]> NewPeers;
-        internal event EventHandler<Transaction> NewTransaction;
 
         private static readonly TimeSpan OneMinute = TimeSpan.FromMinutes(1);
 
@@ -133,14 +133,6 @@ namespace AntShares.Network
             }
         }
 
-        private void OnBlockMessageReceived(Block block)
-        {
-            if (NewBlock != null)
-            {
-                NewBlock(this, block);
-            }
-        }
-
         private void OnConnected()
         {
             reader = new BinaryReader(tcp.GetStream(), Encoding.UTF8, true);
@@ -234,16 +226,18 @@ namespace AntShares.Network
 
         private void OnInvMessageReceived(InvPayload payload)
         {
-            InventoryVector[] vectors;
+            IEnumerable<InventoryVector> vectors = payload.Inventories.Distinct().Where(p => Enum.IsDefined(typeof(InventoryType), p.Type));
             lock (LocalNode.KnownHashes)
             {
-                vectors = payload.Inventories.Distinct().Where(p => !LocalNode.KnownHashes.Contains(p.Hash)).ToArray();
+                vectors = vectors.Where(p => !LocalNode.KnownHashes.Contains(p.Hash)).ToArray();
             }
-            vectors = vectors.Where(p => (p.Type == InventoryType.TX && !Blockchain.Default.ContainsTransaction(p.Hash)) || (p.Type == InventoryType.Block && !Blockchain.Default.ContainsBlock(p.Hash))).ToArray();
-            if (vectors.Length == 0) return;
+            vectors = vectors.Where(p => p.Type != InventoryType.TX || !Blockchain.Default.ContainsTransaction(p.Hash));
+            vectors = vectors.Where(p => p.Type != InventoryType.Block || !Blockchain.Default.ContainsBlock(p.Hash));
+            InventoryVector[] vectors_list = vectors.ToArray();
+            if (vectors_list.Length == 0) return;
             lock (missions_global)
             {
-                foreach (InventoryVector vector in vectors)
+                foreach (InventoryVector vector in vectors_list)
                 {
                     if (!missions_global.ContainsKey(vector.Hash))
                     {
@@ -270,7 +264,10 @@ namespace AntShares.Network
                     OnAddrMessageReceived(message.Payload.AsSerializable<AddrPayload>());
                     break;
                 case "block":
-                    OnBlockMessageReceived(message.Payload.AsSerializable<Block>());
+                    OnNewInventory(message.Payload.AsSerializable<Block>());
+                    break;
+                case "consensusreq":
+                    OnNewInventory(message.Payload.AsSerializable<BlockConsensusRequest>());
                     break;
                 case "getaddr":
                     OnGetAddrMessageReceived();
@@ -291,7 +288,7 @@ namespace AntShares.Network
                     OnPingMessageReceived(message.Payload);
                     break;
                 case "tx":
-                    OnTxMessageReceived(Transaction.DeserializeFrom(message.Payload));
+                    OnNewInventory(Transaction.DeserializeFrom(message.Payload));
                     break;
                 case "alert":
                 case "headers":
@@ -306,17 +303,17 @@ namespace AntShares.Network
             }
         }
 
+        private void OnNewInventory(Inventory inventory)
+        {
+            if (NewInventory != null)
+            {
+                NewInventory(this, inventory);
+            }
+        }
+
         private void OnPingMessageReceived(byte[] payload)
         {
             SendMessage(Message.Create("pong", payload));
-        }
-
-        private void OnTxMessageReceived(Transaction tx)
-        {
-            if (NewTransaction != null)
-            {
-                NewTransaction(this, tx);
-            }
         }
 
         private void ReceiveLoop()

@@ -106,12 +106,15 @@ namespace AntShares.IO
         public static void WriteFixedString(this BinaryWriter writer, string value, int length)
         {
             if (value == null)
-                throw new ArgumentNullException();
-            if (value.Length < length)
-                value = value.PadRight(length, '\0');
-            if (value.Length != length)
+                throw new ArgumentNullException(nameof(value));
+            if (value.Length > length)
                 throw new ArgumentException();
-            writer.Write(Encoding.UTF8.GetBytes(value));
+            byte[] bytes = Encoding.UTF8.GetBytes(value);
+            if (bytes.Length > length)
+                throw new ArgumentException();
+            writer.Write(bytes);
+            if (bytes.Length < length)
+                writer.Write(new byte[length - bytes.Length]);
         }
 
         public static void WriteVarInt(this BinaryWriter writer, long value)

@@ -2,46 +2,31 @@
 using AntShares.Data;
 using AntShares.Network;
 using AntShares.Services;
-using AntShares.Threading;
 using AntShares.Wallets;
 using System;
 using System.Linq;
 using System.Security;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace AntShares.Miner
 {
+    //TODO: 挖矿
+    //1. 组合所有其它矿工的共识数据；
+    //2. 签名并广播；
+    //3. 广播最终共识后的区块；
     internal class MainService : ConsoleServiceBase
     {
         private LocalNode localnode;
         private MinerWallet wallet;
-        private CancellableTask task;
+        private BlockConsensusContext context;
 
         protected override string Prompt => "ant";
         public override string ServiceName => "AntSharesMiner";
 
-        private void Blockchain_PersistCompleted(object sender, Block block)
+        private async void Blockchain_PersistCompleted(object sender, Block block)
         {
-            if (task != null)
-            {
-                task.Cancel();
-                task.Run();
-            }
-        }
-
-        private async Task Mine(CancellationToken token)
-        {
-            BlockConsensusContext context = BlockConsensusContext.Create(wallet.PublicKey);
-            token.ThrowIfCancellationRequested();
-            BlockConsensusRequest request = context.CreateRequest(wallet);
-            token.ThrowIfCancellationRequested();
-
-            //TODO: 挖矿
-            //1. 将共识数据广播到矿工网络；
-            //2. 组合所有其它矿工的共识数据；
-            //3. 签名并广播；
-            //4. 广播最终共识后的区块；
+            context.Reset();
+            await SendConsensusRequestAsync();
         }
 
         protected override bool OnCommand(string[] args)
@@ -71,7 +56,7 @@ namespace AntShares.Miner
         //TODO: 目前没有想到其它安全的方法来保存密码
         //所以只能暂时手动输入，但如此一来就不能以服务的方式启动了
         //未来再想想其它办法，比如采用智能卡之类的
-        private void OnOpenWalletCommand(string path)
+        private async void OnOpenWalletCommand(string path)
         {
             SecureString password = ReadSecureString("password");
             if (password.Length == 0)
@@ -88,8 +73,9 @@ namespace AntShares.Miner
                 Console.WriteLine($"failed to open file \"{path}\"");
                 return;
             }
-            task = new CancellableTask(Mine);
-            task.Run();
+            await localnode.WaitForNodesAsync();
+            context = new BlockConsensusContext(wallet.PublicKey);
+            await SendConsensusRequestAsync();
         }
 
         protected internal override void OnStart()
@@ -103,10 +89,15 @@ namespace AntShares.Miner
         protected internal override void OnStop()
         {
             Blockchain.Default.PersistCompleted -= Blockchain_PersistCompleted;
-            task.Cancel();
-            task.Wait();
             localnode.Dispose();
             Blockchain.Default.Dispose();
+        }
+
+        private async Task SendConsensusRequestAsync()
+        {
+            if (!context.Valid) return;
+            BlockConsensusRequest request = context.CreateRequest(wallet);
+            await localnode.RelayAsync(request);
         }
     }
 }

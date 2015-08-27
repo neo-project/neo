@@ -152,5 +152,10 @@ namespace AntShares.Core
                 return ms.ToArray();
             }
         }
+
+        public VerificationResult Verify()
+        {
+            return this.VerifySignature();
+        }
     }
 }
