@@ -12,10 +12,12 @@ namespace AntShares.Wallets
     public abstract class Wallet
     {
         private byte[] masterKey;
+        private byte[] iv;
 
-        protected Wallet(byte[] masterKey)
+        protected Wallet(byte[] masterKey, byte[] iv)
         {
             this.masterKey = masterKey;
+            this.iv = iv;
             ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
         }
 
@@ -60,8 +62,6 @@ namespace AntShares.Wallets
             if (redeemScript == null || encryptedPrivateKey == null) return null;
             if ((redeemScript.Length - 3) % 34 != 0 || encryptedPrivateKey.Length % 96 != 0) throw new IOException();
             ProtectedMemory.Unprotect(masterKey, MemoryProtectionScope.SameProcess);
-            byte[] iv = new byte[16];
-            Buffer.BlockCopy(masterKey, 0, iv, 0, iv.Length);
             byte[] decryptedPrivateKey;
             using (AesManaged aes = new AesManaged())
             {
@@ -71,7 +71,6 @@ namespace AntShares.Wallets
                     decryptedPrivateKey = decryptor.TransformFinalBlock(encryptedPrivateKey, 0, encryptedPrivateKey.Length);
                 }
             }
-            Array.Clear(iv, 0, iv.Length);
             ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
             byte[][] privateKeys = new byte[encryptedPrivateKey.Length / 96][];
             for (int i = 0; i < privateKeys.Length; i++)
@@ -124,8 +123,6 @@ namespace AntShares.Wallets
                 }
             }
             ProtectedMemory.Unprotect(masterKey, MemoryProtectionScope.SameProcess);
-            byte[] iv = new byte[16];
-            Buffer.BlockCopy(masterKey, 0, iv, 0, iv.Length);
             byte[] encryptedPrivateKey;
             using (AesManaged aes = new AesManaged())
             {
@@ -135,7 +132,6 @@ namespace AntShares.Wallets
                     encryptedPrivateKey = encryptor.TransformFinalBlock(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
                 }
             }
-            Array.Clear(iv, 0, iv.Length);
             ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
             Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
             SaveEncryptedEntry(entry.ScriptHash, entry.RedeemScript, encryptedPrivateKey);

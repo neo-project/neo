@@ -11,8 +11,8 @@ namespace AntShares.Wallets
     {
         private string connectionString;
 
-        private UserWallet(string connectionString, byte[] masterKey)
-            : base(masterKey)
+        private UserWallet(string connectionString, byte[] masterKey, byte[] iv)
+            : base(masterKey, iv)
         {
             this.connectionString = connectionString;
         }
@@ -28,8 +28,10 @@ namespace AntShares.Wallets
             {
                 byte[] passwordKey = password.ToAesKey();
                 byte[] masterKey = new byte[32];
+                byte[] iv = new byte[16];
                 rng.GetNonZeroBytes(masterKey);
-                masterKey.AesEncrypt(passwordKey);
+                rng.GetNonZeroBytes(iv);
+                masterKey.AesEncrypt(passwordKey, iv);
                 Array.Clear(passwordKey, 0, passwordKey.Length);
                 ctx.Database.Delete();
                 ctx.Database.Create();
@@ -37,6 +39,11 @@ namespace AntShares.Wallets
                 {
                     Name = Key.MasterKey,
                     Value = masterKey
+                });
+                ctx.Keys.Add(new Key
+                {
+                    Name = Key.IV,
+                    Value = iv
                 });
                 ctx.SaveChanges();
             }
@@ -99,12 +106,12 @@ namespace AntShares.Wallets
             string connectionString = sb.ToString();
             using (WalletDataContext ctx = new WalletDataContext(connectionString))
             {
-                Key key = ctx.Keys.FirstOrDefault(p => p.Name == Key.MasterKey);
-                byte[] masterKey = key.Value;
+                byte[] masterKey = ctx.Keys.First(p => p.Name == Key.MasterKey).Value;
                 byte[] passwordKey = password.ToAesKey();
-                masterKey.AesDecrypt(passwordKey);
+                byte[] iv = ctx.Keys.First(p => p.Name == Key.IV).Value;
+                masterKey.AesDecrypt(passwordKey, iv);
                 Array.Clear(passwordKey, 0, passwordKey.Length);
-                return new UserWallet(connectionString, masterKey);
+                return new UserWallet(connectionString, masterKey, iv);
             }
         }
 

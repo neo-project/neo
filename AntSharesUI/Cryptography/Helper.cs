@@ -6,12 +6,10 @@ namespace AntShares.Cryptography
 {
     internal static class Helper
     {
-        public static void AesDecrypt(this byte[] data, byte[] key)
+        public static void AesDecrypt(this byte[] data, byte[] key, byte[] iv)
         {
-            if (data == null || key == null) throw new ArgumentNullException();
-            if (data.Length % 16 != 0 || key.Length != 32) throw new ArgumentException();
-            byte[] iv = new byte[16];
-            Buffer.BlockCopy(key, 0, iv, 0, 16);
+            if (data == null || key == null || iv == null) throw new ArgumentNullException();
+            if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
             byte[] buffer;
             using (AesManaged aes = new AesManaged())
             {
@@ -26,12 +24,10 @@ namespace AntShares.Cryptography
             Array.Clear(buffer, 0, buffer.Length);
         }
 
-        public static void AesEncrypt(this byte[] data, byte[] key)
+        public static void AesEncrypt(this byte[] data, byte[] key, byte[] iv)
         {
-            if (data == null || key == null) throw new ArgumentNullException();
-            if (data.Length % 16 != 0 || key.Length != 32) throw new ArgumentException();
-            byte[] iv = new byte[16];
-            Buffer.BlockCopy(key, 0, iv, 0, 16);
+            if (data == null || key == null || iv == null) throw new ArgumentNullException();
+            if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
             byte[] buffer;
             using (AesManaged aes = new AesManaged())
             {

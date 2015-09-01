@@ -7,11 +7,12 @@ namespace AntShares.Wallets
     internal class Key
     {
         public const string MasterKey = "MasterKey";
+        public const string IV = "IV";
 
         [Column(TypeName = "VarChar"), Key, MaxLength(20)]
         public string Name { get; set; }
 
-        [Column(TypeName = "Binary"), MaxLength(32), Required]
+        [Column(TypeName = "VarBinary"), MaxLength(32), Required]
         public byte[] Value { get; set; }
     }
 }

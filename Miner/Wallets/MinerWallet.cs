@@ -44,9 +44,15 @@ namespace AntShares.Wallets
 
         public static MinerWallet Open(string path, SecureString password)
         {
-            byte[] data = File.ReadAllBytes(path);
+            byte[] data;
+            byte[] iv = new byte[16];
+            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                fs.Read(iv, 0, iv.Length);
+                data = new byte[fs.Length - iv.Length];
+                fs.Read(data, 0, data.Length);
+            }
             byte[] masterKey = password.ToArray().Sha256().Sha256();
-            byte[] iv = masterKey.Take(16).ToArray();
             using (AesManaged aes = new AesManaged())
             using (ICryptoTransform decryptor = aes.CreateDecryptor(masterKey, iv))
             {
@@ -57,8 +63,12 @@ namespace AntShares.Wallets
         private void Save(string path, SecureString password)
         {
             byte[] masterKey = password.ToArray().Sha256().Sha256();
-            byte[] iv = masterKey.Take(16).ToArray();
+            byte[] iv = new byte[16];
             byte[] data;
+            using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
+            {
+                rng.GetNonZeroBytes(iv);
+            }
             using (AesManaged aes = new AesManaged())
             using (ICryptoTransform encryptor = aes.CreateEncryptor(masterKey, iv))
             {
@@ -66,7 +76,11 @@ namespace AntShares.Wallets
                 data = encryptor.TransformFinalBlock(key_exported, 0, key_exported.Length);
                 ProtectedMemory.Protect(key_exported, MemoryProtectionScope.SameProcess);
             }
-            File.WriteAllBytes(path, data);
+            using (FileStream fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                fs.Write(iv, 0, iv.Length);
+                fs.Write(data, 0, data.Length);
+            }
         }
 
         public bool Sign(SignatureContext context, byte[] redeemScript)
