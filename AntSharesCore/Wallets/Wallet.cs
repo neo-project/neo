@@ -26,28 +26,11 @@ namespace AntShares.Wallets
             using (CngKey key = CngKey.Create(CngAlgorithm.ECDsaP256, null, new CngKeyCreationParameters { ExportPolicy = CngExportPolicies.AllowPlaintextArchiving }))
             {
                 byte[] privateKey = key.Export(CngKeyBlobFormat.EccPrivateBlob);
-                byte[] redeemScript = CreateRedeemScript(1, Secp256r1Point.FromBytes(privateKey));
+                byte[] redeemScript = ScriptBuilder.CreateRedeemScript(1, Secp256r1Point.FromBytes(privateKey));
                 WalletEntry entry = new WalletEntry(redeemScript, privateKey);
                 SaveEntry(entry);
                 Array.Clear(privateKey, 0, privateKey.Length);
                 return entry;
-            }
-        }
-
-        public static byte[] CreateRedeemScript(int m, params Secp256r1Point[] publicKeys)
-        {
-            if (!(1 <= m && m <= publicKeys.Length && publicKeys.Length <= 1024))
-                throw new ArgumentException();
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.Push(m);
-                for (int i = 0; i < publicKeys.Length; i++)
-                {
-                    sb.Push(publicKeys[i].EncodePoint(true));
-                }
-                sb.Push(publicKeys.Length);
-                sb.Add(ScriptOp.OP_CHECKMULTISIG);
-                return sb.ToArray();
             }
         }
 
@@ -101,7 +84,7 @@ namespace AntShares.Wallets
                 throw new FormatException();
             byte[] privateKey = new byte[32];
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
-            byte[] redeemScript = CreateRedeemScript(1, Secp256r1Curve.G * privateKey);
+            byte[] redeemScript = ScriptBuilder.CreateRedeemScript(1, Secp256r1Curve.G * privateKey);
             WalletEntry entry = new WalletEntry(redeemScript, privateKey);
             SaveEntry(entry);
             Array.Clear(privateKey, 0, privateKey.Length);

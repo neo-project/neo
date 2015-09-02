@@ -1,7 +1,7 @@
 ﻿using AntShares.Core;
+using AntShares.Core.Scripts;
 using AntShares.Cryptography;
 using AntShares.IO;
-using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -59,7 +59,7 @@ namespace AntShares.UI
                 PrevBlock = UInt256.Zero,
                 Timestamp = DateTime.Now.ToTimestamp(),
                 Nonce = 2083236893, //向比特币致敬
-                NextMiner = Wallet.CreateRedeemScript(Blockchain.GetMinSignatureCount(Blockchain.StandbyMiners.Length), Blockchain.StandbyMiners).ToScriptHash(),
+                NextMiner = ScriptBuilder.CreateRedeemScript(Blockchain.GetMinSignatureCount(Blockchain.StandbyMiners.Length), Blockchain.StandbyMiners).ToScriptHash(),
                 Transactions = new Transaction[]
                 {
                     new GenerationTransaction

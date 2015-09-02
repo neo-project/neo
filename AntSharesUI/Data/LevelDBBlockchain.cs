@@ -498,8 +498,11 @@ namespace AntShares.Data
                             }
                         }
                         if (block?.Verify() != VerificationResult.OK) break;
-                        AddBlockToChain(block);
-                        RaisePersistCompleted(block);
+                        lock (SyncRoot)
+                        {
+                            AddBlockToChain(block);
+                            RaisePersistCompleted(block);
+                        }
                         persisted = true;
                     }
                     if (persisted)

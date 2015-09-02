@@ -43,6 +43,7 @@ namespace AntShares.Miner
                     request = new BlockConsensusRequest
                     {
                         PrevHash = PrevHash,
+                        Miner = my_pubkey,
                         NonceHash = NonceHashes[my_pubkey],
                         TransactionHashes = TransactionHashes.ToArray()
                     };

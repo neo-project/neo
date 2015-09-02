@@ -85,15 +85,20 @@ namespace AntShares.Wallets
 
         public bool Sign(SignatureContext context, byte[] redeemScript)
         {
+            return context.Add(redeemScript, PublicKey, Sign(context.Signable));
+        }
+
+        public byte[] Sign(ISignable signable)
+        {
             byte[] signature;
             ProtectedMemory.Unprotect(key_exported, MemoryProtectionScope.SameProcess);
             using (CngKey key = CngKey.Import(key_exported, CngKeyBlobFormat.EccPrivateBlob))
             using (ECDsaCng ecdsa = new ECDsaCng(key))
             {
-                signature = ecdsa.SignHash(context.Signable.GetHashForSigning());
+                signature = ecdsa.SignHash(signable.GetHashForSigning());
             }
             ProtectedMemory.Protect(key_exported, MemoryProtectionScope.SameProcess);
-            return context.Add(redeemScript, PublicKey, signature);
+            return signature;
         }
     }
 }

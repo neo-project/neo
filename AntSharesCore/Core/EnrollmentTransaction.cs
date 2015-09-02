@@ -1,6 +1,6 @@
-﻿using AntShares.Cryptography;
+﻿using AntShares.Core.Scripts;
+using AntShares.Cryptography;
 using AntShares.IO;
-using AntShares.Wallets;
 using System;
 using System.IO;
 using System.Linq;
@@ -19,7 +19,7 @@ namespace AntShares.Core
             {
                 if (_miner == null)
                 {
-                    _miner = Wallet.CreateRedeemScript(1, PublicKey).ToScriptHash();
+                    _miner = ScriptBuilder.CreateRedeemScript(1, PublicKey).ToScriptHash();
                 }
                 return _miner;
             }

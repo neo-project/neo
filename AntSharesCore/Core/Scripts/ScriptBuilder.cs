@@ -1,10 +1,11 @@
-﻿using System;
+﻿using AntShares.Cryptography;
+using System;
 using System.IO;
 using System.Numerics;
 
 namespace AntShares.Core.Scripts
 {
-    internal class ScriptBuilder : IDisposable
+    public class ScriptBuilder : IDisposable
     {
         private MemoryStream ms = new MemoryStream();
 
@@ -18,6 +19,23 @@ namespace AntShares.Core.Scripts
         {
             ms.Write(script, 0, script.Length);
             return this;
+        }
+
+        public static byte[] CreateRedeemScript(int m, params Secp256r1Point[] publicKeys)
+        {
+            if (!(1 <= m && m <= publicKeys.Length && publicKeys.Length <= 1024))
+                throw new ArgumentException();
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.Push(m);
+                for (int i = 0; i < publicKeys.Length; i++)
+                {
+                    sb.Push(publicKeys[i].EncodePoint(true));
+                }
+                sb.Push(publicKeys.Length);
+                sb.Add(ScriptOp.OP_CHECKMULTISIG);
+                return sb.ToArray();
+            }
         }
 
         public void Dispose()

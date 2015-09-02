@@ -1,7 +1,7 @@
-﻿using AntShares.Cryptography;
+﻿using AntShares.Core.Scripts;
+using AntShares.Cryptography;
 using AntShares.IO;
 using AntShares.Network;
-using AntShares.Wallets;
 using System;
 using System.IO;
 using System.Linq;
@@ -174,7 +174,7 @@ namespace AntShares.Core
             VerificationResult result = Header.Verify();
             if (result != VerificationResult.OK) return result;
             Secp256r1Point[] pubkeys = Blockchain.Default.GetMiners(Transactions).ToArray();
-            if (NextMiner != Wallet.CreateRedeemScript(Blockchain.GetMinSignatureCount(pubkeys.Length), pubkeys).ToScriptHash())
+            if (NextMiner != ScriptBuilder.CreateRedeemScript(Blockchain.GetMinSignatureCount(pubkeys.Length), pubkeys).ToScriptHash())
                 result |= VerificationResult.WrongMiner;
             if (completely)
             {

@@ -35,8 +35,8 @@ namespace AntShares.Core
             Outputs = new TransactionOutput[0],
             Scripts = new byte[0][]
         };
-
         protected readonly ConcurrentDictionary<UInt256, Transaction> MemoryPool = new ConcurrentDictionary<UInt256, Transaction>();
+        protected readonly object SyncRoot = new object();
 
         public virtual BlockchainAbility Ability => BlockchainAbility.None;
         public virtual UInt256 CurrentBlockHash => GenesisBlock.Hash;
@@ -130,9 +130,17 @@ namespace AntShares.Core
             return MemoryPool.Values;
         }
 
+        private Secp256r1Point[] _miners = null;
         public IEnumerable<Secp256r1Point> GetMiners()
         {
-            return GetMiners(Enumerable.Empty<Transaction>());
+            lock (SyncRoot)
+            {
+                if (_miners == null)
+                {
+                    _miners = GetMiners(Enumerable.Empty<Transaction>()).ToArray();
+                }
+                return _miners;
+            }
         }
 
         public virtual IEnumerable<Secp256r1Point> GetMiners(IEnumerable<Transaction> others)
@@ -239,6 +247,7 @@ namespace AntShares.Core
 
         protected void RaisePersistCompleted(Block block)
         {
+            _miners = null;
             foreach (Transaction tx in block.Transactions)
             {
                 Transaction ignore;
