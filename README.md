@@ -3,6 +3,7 @@
 小蚁白皮书v1.0
 
 PDF版：https://www.antshares.com/Home/Download?filename=%e5%b0%8f%e8%9a%81%e7%99%bd%e7%9a%ae%e4%b9%a6+1.0.pdf
+
 在线阅读：https://www.antshares.com/Files/%e5%b0%8f%e8%9a%81%e7%99%bd%e7%9a%ae%e4%b9%a6%201.0.htm
 
 论坛：http://8btc.com/antshares
