@@ -10,10 +10,6 @@ using System.Threading.Tasks;
 
 namespace AntShares.Miner
 {
-    //TODO: 挖矿
-    //1. 组合所有其它矿工的共识数据；
-    //2. 签名并广播；
-    //3. 广播最终共识后的区块；
     internal class MainService : ConsoleServiceBase
     {
         private LocalNode localnode;
@@ -27,6 +23,15 @@ namespace AntShares.Miner
         {
             context.Reset();
             await SendConsensusRequestAsync();
+        }
+
+        private void LocalNode_NewInventory(object sender, Inventory inventory)
+        {
+            if (inventory.InventoryType != InventoryType.ConsRequest)
+                return;
+            BlockConsensusRequest request = (BlockConsensusRequest)inventory;
+            if (request.Verify() != VerificationResult.OK) return;
+            context.AddRequest(request, wallet);
         }
 
         protected override bool OnCommand(string[] args)
@@ -82,12 +87,14 @@ namespace AntShares.Miner
         {
             Blockchain.RegisterBlockchain(new LevelDBBlockchain());
             Blockchain.Default.PersistCompleted += Blockchain_PersistCompleted;
+            LocalNode.NewInventory += LocalNode_NewInventory;
             localnode = new LocalNode();
             localnode.Start();
         }
 
         protected internal override void OnStop()
         {
+            LocalNode.NewInventory -= LocalNode_NewInventory;
             Blockchain.Default.PersistCompleted -= Blockchain_PersistCompleted;
             localnode.Dispose();
             Blockchain.Default.Dispose();

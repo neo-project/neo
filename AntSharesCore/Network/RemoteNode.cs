@@ -266,8 +266,11 @@ namespace AntShares.Network
                 case "block":
                     OnNewInventory(message.Payload.AsSerializable<Block>());
                     break;
-                case "consensusreq":
+                case "consrequest":
                     OnNewInventory(message.Payload.AsSerializable<BlockConsensusRequest>());
+                    break;
+                case "consresponse":
+                    OnNewInventory(message.Payload.AsSerializable<BlockConsensusResponse>());
                     break;
                 case "getaddr":
                     OnGetAddrMessageReceived();

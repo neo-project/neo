@@ -25,12 +25,36 @@ namespace AntShares.Algebra
 
         public void Deserialize(BinaryReader reader)
         {
-            int x = (int)reader.ReadVarInt();
+            FiniteFieldPolynomial x, y;
+            DeserializeFrom(reader, out x, out y);
+            this.X = x;
+            this.Y = y;
+        }
+
+        public static FiniteFieldPoint DeserializeFrom(BinaryReader reader)
+        {
+            FiniteFieldPolynomial x, y;
+            DeserializeFrom(reader, out x, out y);
+            return new FiniteFieldPoint(x, y);
+        }
+
+        public static FiniteFieldPoint DeserializeFrom(byte[] value)
+        {
+            using (MemoryStream ms = new MemoryStream(value, false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                return DeserializeFrom(reader);
+            }
+        }
+
+        private static void DeserializeFrom(BinaryReader reader, out FiniteFieldPolynomial x, out FiniteFieldPolynomial y)
+        {
+            int x_i = (int)reader.ReadVarInt();
             int expectedByteCount = (int)reader.ReadVarInt();
-            byte[] y = reader.ReadBytes(expectedByteCount);
+            byte[] y_b = reader.ReadBytes(expectedByteCount);
             IrreduciblePolynomial irp = new IrreduciblePolynomial(expectedByteCount * 8);
-            this.X = new FiniteFieldPolynomial(irp, x);
-            this.Y = new FiniteFieldPolynomial(irp, y.ToBigIntegerFromBigEndianUnsignedBytes());
+            x = new FiniteFieldPolynomial(irp, x_i);
+            y = new FiniteFieldPolynomial(irp, y_b.ToBigIntegerFromBigEndianUnsignedBytes());
         }
 
         public static FiniteFieldPoint Parse(string s)

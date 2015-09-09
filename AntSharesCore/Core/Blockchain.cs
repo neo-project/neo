@@ -131,7 +131,7 @@ namespace AntShares.Core
         }
 
         private Secp256r1Point[] _miners = null;
-        public IEnumerable<Secp256r1Point> GetMiners()
+        public Secp256r1Point[] GetMiners()
         {
             lock (SyncRoot)
             {

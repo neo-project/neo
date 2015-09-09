@@ -6,6 +6,7 @@ using AntShares.Network;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace AntShares.Miner
 {
@@ -13,7 +14,8 @@ namespace AntShares.Miner
     {
         public UInt256 PrevHash;
         public Secp256r1Point Miner;
-        public Dictionary<Secp256r1Point, byte[]> NoncePieces;
+        public byte[] IV;
+        public Dictionary<Secp256r1Point, byte[]> NoncePieces = new Dictionary<Secp256r1Point, byte[]>();
         public UInt256 NonceHash;
         public UInt256[] TransactionHashes;
         public byte[] Script;
@@ -22,7 +24,7 @@ namespace AntShares.Miner
         {
             get
             {
-                return InventoryType.ConsensusReq;
+                return InventoryType.ConsRequest;
             }
         }
 
@@ -40,15 +42,11 @@ namespace AntShares.Miner
             }
         }
 
-        public BlockConsensusRequest()
-        {
-            this.NoncePieces = new Dictionary<Secp256r1Point, byte[]>();
-        }
-
         public override void Deserialize(BinaryReader reader)
         {
             this.PrevHash = reader.ReadSerializable<UInt256>();
             this.Miner = Secp256r1Point.DeserializeFrom(reader);
+            this.IV = reader.ReadBytes(16);
             this.NoncePieces.Clear();
             int count = (int)reader.ReadVarInt();
             for (int i = 0; i < count; i++)
@@ -70,6 +68,7 @@ namespace AntShares.Miner
             {
                 this.PrevHash = reader.ReadSerializable<UInt256>();
                 this.Miner = Secp256r1Point.DeserializeFrom(reader);
+                this.IV = reader.ReadBytes(16);
                 this.NoncePieces.Clear();
                 int count = (int)reader.ReadVarInt();
                 for (int i = 0; i < count; i++)
@@ -91,12 +90,12 @@ namespace AntShares.Miner
             {
                 writer.Write(PrevHash);
                 writer.Write(Miner);
+                writer.Write(IV);
                 writer.WriteVarInt(NoncePieces.Count);
                 foreach (var pair in NoncePieces)
                 {
                     writer.Write(pair.Key);
-                    writer.WriteVarInt(pair.Value.Length);
-                    writer.Write(pair.Value);
+                    writer.WriteVarInt(pair.Value.Length); writer.Write(pair.Value);
                 }
                 writer.Write(NonceHash);
                 writer.Write(TransactionHashes);
@@ -114,12 +113,12 @@ namespace AntShares.Miner
         {
             writer.Write(PrevHash);
             writer.Write(Miner);
+            writer.Write(IV);
             writer.WriteVarInt(NoncePieces.Count);
             foreach (var pair in NoncePieces)
             {
                 writer.Write(pair.Key);
-                writer.WriteVarInt(pair.Value.Length);
-                writer.Write(pair.Value);
+                writer.WriteVarInt(pair.Value.Length); writer.Write(pair.Value);
             }
             writer.Write(NonceHash);
             writer.Write(TransactionHashes);
@@ -133,12 +132,12 @@ namespace AntShares.Miner
             {
                 writer.Write(PrevHash);
                 writer.Write(Miner);
+                writer.Write(IV);
                 writer.WriteVarInt(NoncePieces.Count);
                 foreach (var pair in NoncePieces)
                 {
                     writer.Write(pair.Key);
-                    writer.WriteVarInt(pair.Value.Length);
-                    writer.Write(pair.Value);
+                    writer.WriteVarInt(pair.Value.Length); writer.Write(pair.Value);
                 }
                 writer.Write(NonceHash);
                 writer.Write(TransactionHashes);
@@ -159,6 +158,8 @@ namespace AntShares.Miner
             if (!miners.Contains(Miner))
                 return VerificationResult.WrongMiner;
             if (NoncePieces.Count != miners.Count - 1)
+                return VerificationResult.IncorrectFormat;
+            if (!NoncePieces.Keys.Concat(new[] { Miner }).OrderBy(p => p).SequenceEqual(miners.OrderBy(p => p)))
                 return VerificationResult.IncorrectFormat;
             return this.VerifySignature();
         }

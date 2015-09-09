@@ -81,6 +81,7 @@
     <Compile Include="Services\ServiceProxy.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Threading\TimeoutAction.cs" />
     <Compile Include="Wallets\Helper.cs" />
     <Compile Include="Wallets\MinerWallet.cs" />
   </ItemGroup>
@@ -98,6 +99,7 @@
       <Name>AntSharesCore</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

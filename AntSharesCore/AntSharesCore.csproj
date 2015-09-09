@@ -51,6 +51,7 @@
     <Compile Include="IO\Caching\Cache.cs" />
     <Compile Include="IO\Caching\FIFOCache.cs" />
     <Compile Include="Miner\BlockConsensusRequest.cs" />
+    <Compile Include="Miner\BlockConsensusResponse.cs" />
     <Compile Include="Network\Inventory.cs" />
     <Compile Include="Core\ISignable.cs" />
     <Compile Include="Core\IssueTransaction.cs" />
