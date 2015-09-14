@@ -1,8 +1,10 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO.Json;
 using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 
 namespace AntShares.Core
 {
@@ -54,7 +56,11 @@ namespace AntShares.Core
             JObject json = JObject.Parse(value);
             string typename = string.Format("{0}.{1}", typeof(SignatureContext).Namespace, json["type"].AsString());
             ISignable signable = Assembly.GetExecutingAssembly().CreateInstance(typename) as ISignable;
-            signable.FromUnsignedArray(json["hex"].AsString().HexToBytes());
+            using (MemoryStream ms = new MemoryStream(json["hex"].AsString().HexToBytes(), false))
+            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            {
+                signable.DeserializeUnsigned(reader);
+            }
             SignatureContext context = new SignatureContext(signable);
             JArray multisignatures = (JArray)json["multi_signatures"];
             for (int i = 0; i < multisignatures.Count; i++)
@@ -79,7 +85,13 @@ namespace AntShares.Core
         {
             JObject json = new JObject();
             json["type"] = Signable.GetType().Name;
-            json["hex"] = Signable.ToUnsignedArray().ToHexString();
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            {
+                Signable.SerializeUnsigned(writer);
+                writer.Flush();
+                json["hex"] = ms.ToArray().ToHexString();
+            }
             JArray multisignatures = new JArray();
             for (int i = 0; i < signatures.Length; i++)
             {

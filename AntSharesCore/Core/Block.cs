@@ -36,7 +36,6 @@ namespace AntShares.Core
                         Nonce = Nonce,
                         NextMiner = NextMiner,
                         Script = Script,
-                        TransactionCount = Transactions.Length
                     };
                 }
                 return _header;

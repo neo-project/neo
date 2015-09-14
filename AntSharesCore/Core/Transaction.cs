@@ -1,5 +1,4 @@
-﻿using AntShares.Cryptography;
-using AntShares.IO;
+﻿using AntShares.IO;
 using AntShares.Network;
 using System;
 using System.Collections.Generic;
@@ -73,9 +72,8 @@ namespace AntShares.Core
 
         public override void Deserialize(BinaryReader reader)
         {
-            if ((TransactionType)reader.ReadByte() != Type)
-                throw new FormatException();
-            DeserializeWithoutType(reader);
+            ((ISignable)this).DeserializeUnsigned(reader);
+            this.Scripts = reader.ReadBytesArray();
         }
 
         protected abstract void DeserializeExclusiveData(BinaryReader reader);
@@ -96,11 +94,19 @@ namespace AntShares.Core
             Transaction transaction = typeof(Transaction).Assembly.CreateInstance(typeName) as Transaction;
             if (transaction == null)
                 throw new FormatException();
-            transaction.DeserializeWithoutType(reader);
+            transaction.DeserializeUnsignedWithoutType(reader);
+            transaction.Scripts = reader.ReadBytesArray();
             return transaction;
         }
 
-        private void DeserializeWithoutType(BinaryReader reader)
+        void ISignable.DeserializeUnsigned(BinaryReader reader)
+        {
+            if ((TransactionType)reader.ReadByte() != Type)
+                throw new FormatException();
+            DeserializeUnsignedWithoutType(reader);
+        }
+
+        private void DeserializeUnsignedWithoutType(BinaryReader reader)
         {
             DeserializeExclusiveData(reader);
             this.Inputs = reader.ReadSerializableArray<TransactionInput>();
@@ -109,34 +115,11 @@ namespace AntShares.Core
             this.Outputs = reader.ReadSerializableArray<TransactionOutput>();
             if (Outputs.Any(p => p.Value == Fixed8.Zero))
                 throw new FormatException();
-            this.Scripts = reader.ReadBytesArray();
         }
 
-        void ISignable.FromUnsignedArray(byte[] value)
+        public virtual IEnumerable<TransactionInput> GetAllInputs()
         {
-            using (MemoryStream ms = new MemoryStream(value, false))
-            using (BinaryReader reader = new BinaryReader(ms))
-            {
-                if ((TransactionType)reader.ReadByte() != Type)
-                    throw new FormatException();
-                DeserializeExclusiveData(reader);
-                this.Inputs = reader.ReadSerializableArray<TransactionInput>();
-                this.Outputs = reader.ReadSerializableArray<TransactionOutput>();
-            }
-        }
-
-        byte[] ISignable.GetHashForSigning()
-        {
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            {
-                writer.Write((byte)Type);
-                SerializeExclusiveData(writer);
-                writer.Write(Inputs);
-                writer.Write(Outputs);
-                writer.Flush();
-                return ms.ToArray().Sha256();
-            }
+            return Inputs;
         }
 
         public virtual UInt160[] GetScriptHashesForVerifying()
@@ -177,32 +160,18 @@ namespace AntShares.Core
 
         public override void Serialize(BinaryWriter writer)
         {
-            writer.Write((byte)Type);
-            SerializeExclusiveData(writer);
-            writer.Write(Inputs);
-            writer.Write(Outputs);
+            ((ISignable)this).SerializeUnsigned(writer);
             writer.Write(Scripts);
-        }
-
-        public virtual IEnumerable<TransactionInput> GetAllInputs()
-        {
-            return Inputs;
         }
 
         protected abstract void SerializeExclusiveData(BinaryWriter writer);
 
-        byte[] ISignable.ToUnsignedArray()
+        void ISignable.SerializeUnsigned(BinaryWriter writer)
         {
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            {
-                writer.Write((byte)Type);
-                SerializeExclusiveData(writer);
-                writer.Write(Inputs);
-                writer.Write(Outputs);
-                writer.Flush();
-                return ms.ToArray();
-            }
+            writer.Write((byte)Type);
+            SerializeExclusiveData(writer);
+            writer.Write(Inputs);
+            writer.Write(Outputs);
         }
 
         public override VerificationResult Verify()

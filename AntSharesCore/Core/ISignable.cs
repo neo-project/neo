@@ -1,4 +1,5 @@
 ﻿using AntShares.IO;
+using System.IO;
 
 namespace AntShares.Core
 {
@@ -6,10 +7,8 @@ namespace AntShares.Core
     {
         byte[][] Scripts { get; set; }
 
-        void FromUnsignedArray(byte[] value);
-        byte[] GetHashForSigning();
+        void DeserializeUnsigned(BinaryReader reader);
         UInt160[] GetScriptHashesForVerifying();
-        byte[] ToUnsignedArray();
-        VerificationResult Verify();
+        void SerializeUnsigned(BinaryWriter writer);
     }
 }
