@@ -15,7 +15,6 @@ namespace AntShares.Core
         public ulong Nonce;
         public UInt160 NextMiner;
         public byte[] Script;
-        public int TransactionCount;
 
         [NonSerialized]
         private UInt256 _hash = null;
@@ -47,6 +46,12 @@ namespace AntShares.Core
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
+            ((ISignable)this).DeserializeUnsigned(reader);
+            this.Script = reader.ReadBytes((int)reader.ReadVarInt());
+        }
+
+        void ISignable.DeserializeUnsigned(BinaryReader reader)
+        {
             if (reader.ReadUInt32() != Version)
                 throw new FormatException();
             this.PrevBlock = reader.ReadSerializable<UInt256>();
@@ -56,8 +61,6 @@ namespace AntShares.Core
                 throw new FormatException();
             this.Nonce = reader.ReadUInt64();
             this.NextMiner = reader.ReadSerializable<UInt160>();
-            this.Script = reader.ReadBytes((int)reader.ReadVarInt());
-            this.TransactionCount = (int)reader.ReadVarInt();
         }
 
         public bool Equals(BlockHeader other)
@@ -81,44 +84,9 @@ namespace AntShares.Core
             }
         }
 
-        void ISignable.FromUnsignedArray(byte[] value)
-        {
-            using (MemoryStream ms = new MemoryStream(value, false))
-            using (BinaryReader reader = new BinaryReader(ms))
-            {
-                if (reader.ReadUInt32() != Version)
-                    throw new FormatException();
-                this.PrevBlock = reader.ReadSerializable<UInt256>();
-                this.MerkleRoot = reader.ReadSerializable<UInt256>();
-                this.Timestamp = reader.ReadUInt32();
-                if (reader.ReadUInt32() != Bits)
-                    throw new FormatException();
-                this.Nonce = reader.ReadUInt64();
-                this.NextMiner = reader.ReadSerializable<UInt160>();
-                this.TransactionCount = (int)reader.ReadVarInt();
-            }
-        }
-
         public override int GetHashCode()
         {
             return Hash.GetHashCode();
-        }
-
-        byte[] ISignable.GetHashForSigning()
-        {
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            {
-                writer.Write(Version);
-                writer.Write(PrevBlock);
-                writer.Write(MerkleRoot);
-                writer.Write(Timestamp);
-                writer.Write(Bits);
-                writer.Write(Nonce);
-                writer.Write(NextMiner);
-                writer.Flush();
-                return ms.ToArray().Sha256();
-            }
         }
 
         UInt160[] ISignable.GetScriptHashesForVerifying()
@@ -132,6 +100,12 @@ namespace AntShares.Core
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
+            ((ISignable)this).SerializeUnsigned(writer);
+            writer.WriteVarInt(Script.Length); writer.Write(Script);
+        }
+
+        void ISignable.SerializeUnsigned(BinaryWriter writer)
+        {
             writer.Write(Version);
             writer.Write(PrevBlock);
             writer.Write(MerkleRoot);
@@ -139,26 +113,6 @@ namespace AntShares.Core
             writer.Write(Bits);
             writer.Write(Nonce);
             writer.Write(NextMiner);
-            writer.WriteVarInt(Script.Length); writer.Write(Script);
-            writer.WriteVarInt(TransactionCount);
-        }
-
-        byte[] ISignable.ToUnsignedArray()
-        {
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            {
-                writer.Write(Version);
-                writer.Write(PrevBlock);
-                writer.Write(MerkleRoot);
-                writer.Write(Timestamp);
-                writer.Write(Bits);
-                writer.Write(Nonce);
-                writer.Write(NextMiner);
-                writer.Write(TransactionCount);
-                writer.Flush();
-                return ms.ToArray();
-            }
         }
 
         public VerificationResult Verify()

@@ -1,14 +1,27 @@
 ﻿using AntShares.Core.Scripts;
 using AntShares.Cryptography;
 using System;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace AntShares.Core
 {
     public static class Helper
     {
         private const byte CoinVersion = 0x17;
+
+        public static byte[] GetHashForSigning(this ISignable signable)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            {
+                signable.SerializeUnsigned(writer);
+                writer.Flush();
+                return ms.ToArray().Sha256();
+            }
+        }
 
         internal static byte[] Sign(this ISignable signable, byte[] prikey, byte[] pubkey)
         {

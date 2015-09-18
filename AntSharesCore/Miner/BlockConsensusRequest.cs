@@ -44,6 +44,12 @@ namespace AntShares.Miner
 
         public override void Deserialize(BinaryReader reader)
         {
+            ((ISignable)this).DeserializeUnsigned(reader);
+            this.Script = reader.ReadBytes((int)reader.ReadVarInt());
+        }
+
+        void ISignable.DeserializeUnsigned(BinaryReader reader)
+        {
             this.PrevHash = reader.ReadSerializable<UInt256>();
             this.Miner = Secp256r1Point.DeserializeFrom(reader);
             this.IV = reader.ReadBytes(16);
@@ -58,50 +64,6 @@ namespace AntShares.Miner
             }
             this.NonceHash = reader.ReadSerializable<UInt256>();
             this.TransactionHashes = reader.ReadSerializableArray<UInt256>();
-            this.Script = reader.ReadBytes((int)reader.ReadVarInt());
-        }
-
-        void ISignable.FromUnsignedArray(byte[] value)
-        {
-            using (MemoryStream ms = new MemoryStream(value, false))
-            using (BinaryReader reader = new BinaryReader(ms))
-            {
-                this.PrevHash = reader.ReadSerializable<UInt256>();
-                this.Miner = Secp256r1Point.DeserializeFrom(reader);
-                this.IV = reader.ReadBytes(16);
-                this.NoncePieces.Clear();
-                int count = (int)reader.ReadVarInt();
-                for (int i = 0; i < count; i++)
-                {
-                    Secp256r1Point key = Secp256r1Point.DeserializeFrom(reader);
-                    if (key == Miner) throw new FormatException();
-                    value = reader.ReadBytes((int)reader.ReadVarInt());
-                    NoncePieces.Add(key, value);
-                }
-                this.NonceHash = reader.ReadSerializable<UInt256>();
-                this.TransactionHashes = reader.ReadSerializableArray<UInt256>();
-            }
-        }
-
-        byte[] ISignable.GetHashForSigning()
-        {
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            {
-                writer.Write(PrevHash);
-                writer.Write(Miner);
-                writer.Write(IV);
-                writer.WriteVarInt(NoncePieces.Count);
-                foreach (var pair in NoncePieces)
-                {
-                    writer.Write(pair.Key);
-                    writer.WriteVarInt(pair.Value.Length); writer.Write(pair.Value);
-                }
-                writer.Write(NonceHash);
-                writer.Write(TransactionHashes);
-                writer.Flush();
-                return ms.ToArray().Sha256();
-            }
         }
 
         UInt160[] ISignable.GetScriptHashesForVerifying()
@@ -110,6 +72,12 @@ namespace AntShares.Miner
         }
 
         public override void Serialize(BinaryWriter writer)
+        {
+            ((ISignable)this).SerializeUnsigned(writer);
+            writer.WriteVarInt(Script.Length); writer.Write(Script);
+        }
+
+        void ISignable.SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write(PrevHash);
             writer.Write(Miner);
@@ -122,28 +90,6 @@ namespace AntShares.Miner
             }
             writer.Write(NonceHash);
             writer.Write(TransactionHashes);
-            writer.WriteVarInt(Script.Length); writer.Write(Script);
-        }
-
-        byte[] ISignable.ToUnsignedArray()
-        {
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            {
-                writer.Write(PrevHash);
-                writer.Write(Miner);
-                writer.Write(IV);
-                writer.WriteVarInt(NoncePieces.Count);
-                foreach (var pair in NoncePieces)
-                {
-                    writer.Write(pair.Key);
-                    writer.WriteVarInt(pair.Value.Length); writer.Write(pair.Value);
-                }
-                writer.Write(NonceHash);
-                writer.Write(TransactionHashes);
-                writer.Flush();
-                return ms.ToArray();
-            }
         }
 
         public override VerificationResult Verify()
