@@ -181,13 +181,13 @@ namespace AntShares
 
         public static Fixed8 operator +(Fixed8 x, Fixed8 y)
         {
-            x.value += y.value;
+            x.value = checked(x.value + y.value);
             return x;
         }
 
         public static Fixed8 operator -(Fixed8 x, Fixed8 y)
         {
-            x.value -= y.value;
+            x.value = checked(x.value - y.value);
             return x;
         }
 

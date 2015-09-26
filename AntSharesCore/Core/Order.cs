@@ -79,7 +79,7 @@ namespace AntShares.Core
             {
                 hashes.Add(Client);
             }
-            foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
+            foreach (var group in Inputs.GroupBy(p => p.PrevHash))
             {
                 Transaction tx = Blockchain.Default.GetTransaction(group.Key);
                 if (tx == null) throw new InvalidOperationException();

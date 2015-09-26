@@ -63,7 +63,7 @@ namespace AntShares.Core
         public override UInt160[] GetScriptHashesForVerifying()
         {
             HashSet<UInt160> hashes = new HashSet<UInt160>();
-            foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
+            foreach (var group in Inputs.GroupBy(p => p.PrevHash))
             {
                 Transaction tx = Blockchain.Default.GetTransaction(group.Key);
                 if (tx == null) throw new InvalidOperationException();
@@ -121,7 +121,7 @@ namespace AntShares.Core
                 return result;
             }
             List<Order> orders = new List<Order>(Orders);
-            foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
+            foreach (var group in Inputs.GroupBy(p => p.PrevHash))
             {
                 Transaction tx = Blockchain.Default.GetTransaction(group.Key);
                 if (tx == null)

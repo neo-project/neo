@@ -138,11 +138,11 @@ namespace AntShares.Data
             {
                 if (input.PrevIndex == 0)
                 {
-                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment).Add(input.PrevTxId));
+                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment).Add(input.PrevHash));
                 }
-                unspents.Remove(input.PrevTxId, input.PrevIndex);
-                unspent_antshares.Remove(input.PrevTxId, input.PrevIndex);
-                unspent_votes.Remove(input.PrevTxId, input.PrevIndex);
+                unspents.Remove(input.PrevHash, input.PrevIndex);
+                unspent_antshares.Remove(input.PrevHash, input.PrevIndex);
+                unspent_votes.Remove(input.PrevHash, input.PrevIndex);
             }
             //统计AntCoin的发行量
             {
@@ -312,7 +312,7 @@ namespace AntShares.Data
                 foreach (Slice key in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment), (k, v) => k))
                 {
                     UInt256 hash = new UInt256(key.ToArray().Skip(1).Take(32).ToArray());
-                    if (others.SelectMany(p => p.GetAllInputs()).Any(p => p.PrevTxId == hash && p.PrevIndex == 0))
+                    if (others.SelectMany(p => p.GetAllInputs()).Any(p => p.PrevHash == hash && p.PrevIndex == 0))
                         continue;
                     yield return (EnrollmentTransaction)GetTransaction(hash, options);
                 }
@@ -428,7 +428,7 @@ namespace AntShares.Data
                 foreach (var kv in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_Vote), (k, v) => new { Key = k, Value = v }))
                 {
                     UInt256 hash = new UInt256(kv.Key.ToArray().Skip(1).ToArray());
-                    ushort[] indexes = kv.Value.ToArray().GetUInt16Array().Except(others.SelectMany(p => p.GetAllInputs()).Where(p => p.PrevTxId == hash).Select(p => p.PrevIndex)).ToArray();
+                    ushort[] indexes = kv.Value.ToArray().GetUInt16Array().Except(others.SelectMany(p => p.GetAllInputs()).Where(p => p.PrevHash == hash).Select(p => p.PrevIndex)).ToArray();
                     if (indexes.Length == 0) continue;
                     VotingTransaction tx = (VotingTransaction)GetTransaction(hash, options);
                     yield return new Vote
@@ -457,7 +457,7 @@ namespace AntShares.Data
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
-                foreach (var group in inputs.GroupBy(p => p.PrevTxId))
+                foreach (var group in inputs.GroupBy(p => p.PrevHash))
                 {
                     Slice value;
                     if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.IX_Unspent).Add(group.Key), out value))
@@ -565,7 +565,7 @@ namespace AntShares.Data
                     }
                 }
                 HashSet<UInt256> tx_hashes = new HashSet<UInt256>(blocks.SelectMany(p => p.Transactions).Select(p => p.Hash));
-                foreach (var group in blocks.SelectMany(p => p.Transactions).SelectMany(p => p.GetAllInputs()).GroupBy(p => p.PrevTxId).Where(g => !tx_hashes.Contains(g.Key)))
+                foreach (var group in blocks.SelectMany(p => p.Transactions).SelectMany(p => p.GetAllInputs()).GroupBy(p => p.PrevHash).Where(g => !tx_hashes.Contains(g.Key)))
                 {
                     Transaction tx = GetTransaction(group.Key, ReadOptions.Default);
                     Slice value = new byte[0];

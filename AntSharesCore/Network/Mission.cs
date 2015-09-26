@@ -1,16 +1,9 @@
-﻿using System;
-
-namespace AntShares.Network
+﻿namespace AntShares.Network
 {
-    internal class Mission : IComparable<Mission>
+    internal class Mission
     {
         public UInt256 Hash;
         public InventoryType Type;
         public int LaunchTimes;
-
-        public int CompareTo(Mission other)
-        {
-            return this.LaunchTimes.CompareTo(other.LaunchTimes);
-        }
     }
 }

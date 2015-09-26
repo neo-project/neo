@@ -85,10 +85,15 @@ namespace AntShares
 
         public static Fixed8 Sum(this IEnumerable<Fixed8> source)
         {
-            return new Fixed8
+            long sum = 0;
+            checked
             {
-                value = source.Sum(p => p.value)
-            };
+                foreach (Fixed8 item in source)
+                {
+                    sum += item.value;
+                }
+            }
+            return new Fixed8(sum);
         }
 
         public static Fixed8 Sum<TSource>(this IEnumerable<TSource> source, Func<TSource, Fixed8> selector)

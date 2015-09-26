@@ -2,7 +2,7 @@
 using AntShares.IO;
 using System;
 using System.IO;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace AntShares.Network
 {
@@ -24,13 +24,12 @@ namespace AntShares.Network
 
         public static Message Create(string command, byte[] payload)
         {
-            Message message = new Message
+            return new Message
             {
                 Command = command,
+                Checksum = payload.Checksum(),
                 Payload = payload
             };
-            message.Checksum = message.Payload.Checksum();
-            return message;
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
@@ -47,9 +46,25 @@ namespace AntShares.Network
                 throw new FormatException();
         }
 
-        public BinaryReader OpenReader()
+        public static async Task<Message> DeserializeFromStreamAsync(Stream stream)
         {
-            return new BinaryReader(new MemoryStream(Payload, false), Encoding.UTF8);
+            byte[] buffer = new byte[sizeof(uint) + 12 + sizeof(uint) + sizeof(uint)];
+            await stream.ReadAsync(buffer, 0, buffer.Length);
+            Message message = new Message();
+            using (MemoryStream ms = new MemoryStream(buffer, false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                if (reader.ReadUInt32() != Magic)
+                    throw new FormatException();
+                message.Command = reader.ReadFixedString(12);
+                uint length = reader.ReadUInt32();
+                if (length > 0x02000000)
+                    throw new FormatException();
+                message.Checksum = reader.ReadUInt32();
+                message.Payload = new byte[length];
+            }
+            await stream.ReadAsync(message.Payload, 0, message.Payload.Length);
+            return message;
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

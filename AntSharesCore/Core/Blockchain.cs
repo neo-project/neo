@@ -67,7 +67,7 @@ namespace AntShares.Core
 
         public bool ContainsUnspent(TransactionInput input)
         {
-            return ContainsUnspent(input.PrevTxId, input.PrevIndex);
+            return ContainsUnspent(input.PrevHash, input.PrevIndex);
         }
 
         public virtual bool ContainsUnspent(UInt256 hash, ushort index)

@@ -8,7 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,8 +28,6 @@ namespace AntShares.Network
 
         private LocalNode localNode;
         private TcpClient tcp;
-        private BinaryReader reader;
-        private BinaryWriter writer;
         private bool connected = false;
         private int disposed = 0;
 
@@ -49,10 +46,10 @@ namespace AntShares.Network
         {
             this.localNode = localNode;
             this.tcp = tcp;
-            OnConnected();
+            connected = true;
         }
 
-        private void CheckMissions()
+        private async Task CheckMissionsAsync()
         {
             if (mission_current != null && DateTime.Now - mission_start_time > OneMinute)
             {
@@ -65,7 +62,7 @@ namespace AntShares.Network
                 if (!Blockchain.Default.IsReadOnly && Blockchain.Default.Height < Version.StartHeight)
                 {
                     //TODO: 改为headers-first模式下载区块链
-                    SendMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash));
+                    await SendMessageAsync("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash));
                 }
             }
             else
@@ -79,38 +76,43 @@ namespace AntShares.Network
                             missions.Remove(hash);
                         }
                     }
-                    mission_current = missions.Values.Min();
+                    mission_current = missions.Values.OrderBy(p => p.LaunchTimes).First();
                     mission_current.LaunchTimes++;
                 }
                 mission_start_time = DateTime.Now;
-                SendMessage("getdata", GetDataPayload.Create(mission_current.Type, mission_current.Hash));
+                await SendMessageAsync("getdata", GetDataPayload.Create(mission_current.Type, mission_current.Hash));
             }
         }
 
         internal async Task ConnectAsync()
         {
+            IPAddress address = RemoteEndpoint.Address;
+            if (address.IsIPv4MappedToIPv6)
+            {
+                address = address.MapToIPv4();
+            }
             try
             {
-                await tcp.ConnectAsync(RemoteEndpoint.Address, RemoteEndpoint.Port);
+                await tcp.ConnectAsync(address, RemoteEndpoint.Port);
+            }
+            catch (NotSupportedException)
+            {
+                Disconnect(true);
+                return;
             }
             catch (SocketException)
             {
                 Disconnect(true);
                 return;
             }
-            OnConnected();
-            await StartProtocolAsync();
+            connected = true;
+            StartProtocol();
         }
 
         public void Disconnect(bool error)
         {
             if (Interlocked.Exchange(ref disposed, 1) == 0)
             {
-                if (reader != null)
-                    reader.Close();
-                if (writer != null)
-                    lock (writer)
-                        writer.Close();
                 tcp.Close();
                 if (Disconnected != null)
                 {
@@ -133,24 +135,17 @@ namespace AntShares.Network
             }
         }
 
-        private void OnConnected()
-        {
-            reader = new BinaryReader(tcp.GetStream(), Encoding.UTF8, true);
-            writer = new BinaryWriter(tcp.GetStream(), Encoding.UTF8, true);
-            connected = true;
-        }
-
-        private void OnGetAddrMessageReceived()
+        private async Task OnGetAddrMessageReceivedAsync()
         {
             AddrPayload payload;
             lock (localNode.connectedPeers)
             {
                 payload = AddrPayload.Create(localNode.connectedPeers.Take(10).Select(p => NetworkAddressWithTime.Create(p.Value.RemoteEndpoint, p.Value.Version.Services, p.Value.Version.Timestamp)).ToArray());
             }
-            SendMessage("addr", payload);
+            await SendMessageAsync("addr", payload);
         }
 
-        private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
+        private async Task OnGetBlocksMessageReceivedAsync(GetBlocksPayload payload)
         {
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.BlockIndexes))
                 return;
@@ -167,17 +162,17 @@ namespace AntShares.Network
                 if (hash == null) break;
                 hashes.Add(hash);
             } while (hash != payload.HashStop && hashes.Count < 500);
-            SendMessage("inv", InvPayload.Create(InventoryType.Block, hashes.ToArray()));
+            await SendMessageAsync("inv", InvPayload.Create(InventoryType.Block, hashes.ToArray()));
         }
 
-        private void OnGetDataMessageReceived(GetDataPayload payload)
+        private async Task OnGetDataMessageReceivedAsync(GetDataPayload payload)
         {
             foreach (InventoryVector vector in payload.Inventories.Distinct())
             {
                 Inventory data;
                 if (localNode.RelayCache.TryGet(vector.Hash, out data))
                 {
-                    SendMessage(vector.Type.GetCommandName(), data);
+                    await SendMessageAsync(vector.Type.GetCommandName(), data);
                     continue;
                 }
                 switch (vector.Type)
@@ -187,7 +182,7 @@ namespace AntShares.Network
                             Block block = Blockchain.Default.GetBlock(vector.Hash);
                             if (block != null)
                             {
-                                SendMessage("block", block);
+                                await SendMessageAsync("block", block);
                             }
                         }
                         break;
@@ -196,7 +191,7 @@ namespace AntShares.Network
                             Transaction tx = Blockchain.Default.GetTransaction(vector.Hash);
                             if (tx != null)
                             {
-                                SendMessage("tx", tx);
+                                await SendMessageAsync("tx", tx);
                             }
                         }
                         break;
@@ -204,7 +199,7 @@ namespace AntShares.Network
             }
         }
 
-        private void OnGetHeadersMessageReceived(GetBlocksPayload payload)
+        private async Task OnGetHeadersMessageReceivedAsync(GetBlocksPayload payload)
         {
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.BlockIndexes))
                 return;
@@ -221,7 +216,7 @@ namespace AntShares.Network
                 if (hash == null) break;
                 headers.Add(Blockchain.Default.GetHeader(hash));
             } while (hash != payload.HashStop && headers.Count < 2000);
-            SendMessage("headers", HeadersPayload.Create(headers));
+            await SendMessageAsync("headers", HeadersPayload.Create(headers));
         }
 
         private void OnInvMessageReceived(InvPayload payload)
@@ -256,7 +251,7 @@ namespace AntShares.Network
             }
         }
 
-        private void OnMessageReceived(Message message)
+        private async Task OnMessageReceivedAsync(Message message)
         {
             switch (message.Command)
             {
@@ -273,22 +268,22 @@ namespace AntShares.Network
                     OnNewInventory(message.Payload.AsSerializable<BlockConsensusResponse>());
                     break;
                 case "getaddr":
-                    OnGetAddrMessageReceived();
+                    await OnGetAddrMessageReceivedAsync();
                     break;
                 case "getblocks":
-                    OnGetBlocksMessageReceived(message.Payload.AsSerializable<GetBlocksPayload>());
+                    await OnGetBlocksMessageReceivedAsync(message.Payload.AsSerializable<GetBlocksPayload>());
                     break;
                 case "getdata":
-                    OnGetDataMessageReceived(message.Payload.AsSerializable<GetDataPayload>());
+                    await OnGetDataMessageReceivedAsync(message.Payload.AsSerializable<GetDataPayload>());
                     break;
                 case "getheaders":
-                    OnGetHeadersMessageReceived(message.Payload.AsSerializable<GetBlocksPayload>());
+                    await OnGetHeadersMessageReceivedAsync(message.Payload.AsSerializable<GetBlocksPayload>());
                     break;
                 case "inv":
                     OnInvMessageReceived(message.Payload.AsSerializable<InvPayload>());
                     break;
                 case "ping":
-                    OnPingMessageReceived(message.Payload);
+                    await OnPingMessageReceivedAsync(message.Payload);
                     break;
                 case "tx":
                     OnNewInventory(Transaction.DeserializeFrom(message.Payload));
@@ -314,37 +309,18 @@ namespace AntShares.Network
             }
         }
 
-        private void OnPingMessageReceived(byte[] payload)
+        private async Task OnPingMessageReceivedAsync(byte[] payload)
         {
-            SendMessage(Message.Create("pong", payload));
+            await SendMessageAsync(Message.Create("pong", payload));
         }
 
-        private void ReceiveLoop()
-        {
-            while (disposed == 0)
-            {
-                CheckMissions();
-                Message message = ReceiveMessage();
-                if (message == null)
-                    break;
-                try
-                {
-                    OnMessageReceived(message);
-                }
-                catch (FormatException)
-                {
-                    Disconnect(true);
-                    break;
-                }
-            }
-        }
-
-        private Message ReceiveMessage()
+        private async Task<Message> ReceiveMessageAsync()
         {
             try
             {
-                return reader.ReadSerializable<Message>();
+                return await Message.DeserializeFromStreamAsync(tcp.GetStream());
             }
+            catch (ObjectDisposedException) { }
             catch (FormatException)
             {
                 Disconnect(true);
@@ -354,14 +330,6 @@ namespace AntShares.Network
                 Disconnect(true);
             }
             return null;
-        }
-
-        private async Task<Message> ReceiveMessageAsync()
-        {
-            return await Task.Run(() =>
-            {
-                return ReceiveMessage();
-            });
         }
 
         internal async Task RelayAsync(Inventory data)
@@ -374,18 +342,16 @@ namespace AntShares.Network
             await SendMessageAsync("getaddr");
         }
 
-        private bool SendMessage(Message message)
+        private async Task<bool> SendMessageAsync(Message message)
         {
             if (!connected)
                 throw new InvalidOperationException();
             if (disposed > 0)
                 return false;
+            byte[] buffer = message.ToArray();
             try
             {
-                lock (writer)
-                {
-                    writer.Write(message);
-                }
+                await tcp.GetStream().WriteAsync(buffer, 0, buffer.Length);
                 return true;
             }
             catch (ObjectDisposedException) { }
@@ -396,25 +362,12 @@ namespace AntShares.Network
             return false;
         }
 
-        private bool SendMessage(string command, ISerializable payload = null)
-        {
-            return SendMessage(Message.Create(command, payload));
-        }
-
-        private async Task<bool> SendMessageAsync(Message message)
-        {
-            return await Task.Run(() =>
-            {
-                return SendMessage(message);
-            });
-        }
-
         private async Task<bool> SendMessageAsync(string command, ISerializable payload = null)
         {
             return await SendMessageAsync(Message.Create(command, payload));
         }
 
-        internal async Task StartProtocolAsync()
+        internal async void StartProtocol()
         {
             if (!await SendMessageAsync("version", VersionPayload.Create(localNode.LocalEndpoint.Port, localNode.UserAgent, Blockchain.Default.Height)))
                 return;
@@ -477,9 +430,21 @@ namespace AntShares.Network
                 }
                 localNode.pendingPeers.Remove(this);
             }
-            Thread thread = new Thread(ReceiveLoop);
-            thread.Name = string.Format("ReceiveLoop@{0}", RemoteEndpoint);
-            thread.Start();
+            while (disposed == 0)
+            {
+                await CheckMissionsAsync();
+                message = await ReceiveMessageAsync();
+                if (message == null) break;
+                try
+                {
+                    await OnMessageReceivedAsync(message);
+                }
+                catch (FormatException)
+                {
+                    Disconnect(true);
+                    break;
+                }
+            }
         }
     }
 }

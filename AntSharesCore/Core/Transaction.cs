@@ -32,7 +32,7 @@ namespace AntShares.Core
                 if (_references == null)
                 {
                     Dictionary<TransactionInput, TransactionOutput> dictionary = new Dictionary<TransactionInput, TransactionOutput>();
-                    foreach (var group in GetAllInputs().GroupBy(p => p.PrevTxId))
+                    foreach (var group in GetAllInputs().GroupBy(p => p.PrevHash))
                     {
                         Transaction tx = Blockchain.Default.GetTransaction(group.Key);
                         if (tx == null) return null;

@@ -50,7 +50,7 @@ namespace AntShares.Network
         internal Dictionary<IPEndPoint, RemoteNode> connectedPeers = new Dictionary<IPEndPoint, RemoteNode>();
 
         internal readonly IPEndPoint LocalEndpoint;
-        private TcpListener listener = new TcpListener(IPAddress.Any, DEFAULT_PORT);
+        private TcpListener listener;
         private Worker connectWorker;
         private int started = 0;
         private int disposed = 0;
@@ -76,11 +76,10 @@ namespace AntShares.Network
 
         public string UserAgent { get; set; }
 
-        public LocalNode(int port = 0)
+        public LocalNode(int port = DEFAULT_PORT)
         {
-            if (port == 0)
-                port = DEFAULT_PORT;
             this.LocalEndpoint = new IPEndPoint(Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork), port);
+            this.listener = new TcpListener(IPAddress.Any, port);
             this.connectWorker = new Worker(ConnectToPeersLoop, TimeSpan.FromSeconds(5));
             this.UserAgent = string.Format("/AntSharesCore:{0}/", Assembly.GetExecutingAssembly().GetName().Version.ToString(3));
         }
@@ -126,10 +125,12 @@ namespace AntShares.Network
                 Task[] tasks;
                 if (unconnectedCount > 0)
                 {
+                    IPEndPoint[] endpoints;
                     lock (unconnectedPeers)
                     {
-                        tasks = unconnectedPeers.Take(maxConnections - (connectedCount + pendingCount)).Select(p => ConnectToPeerAsync(p)).ToArray();
+                        endpoints = unconnectedPeers.Take(maxConnections - (connectedCount + pendingCount)).ToArray();
                     }
+                    tasks = endpoints.Select(p => ConnectToPeerAsync(p)).ToArray();
                 }
                 else if (connectedCount > 0)
                 {
@@ -142,11 +143,7 @@ namespace AntShares.Network
                 {
                     tasks = SeedList.Select(p => ConnectToPeerAsync(p)).ToArray();
                 }
-                try
-                {
-                    Task.WaitAll(tasks.ToArray());
-                }
-                catch (AggregateException) { };
+                Task.WaitAll(tasks.ToArray());
             }
         }
 
@@ -346,7 +343,7 @@ namespace AntShares.Network
                     {
                         pendingPeers.Add(remoteNode);
                     }
-                    remoteNode.StartProtocolAsync().Void();
+                    remoteNode.StartProtocol();
                 }
             }
         }
