@@ -78,7 +78,7 @@ namespace AntShares.Miner
                 Console.WriteLine($"failed to open file \"{path}\"");
                 return;
             }
-            await localnode.WaitForNodesAsync();
+            //TODO: 等待连接到其它节点
             context = new BlockConsensusContext(wallet.PublicKey);
             await SendConsensusRequestAsync();
         }

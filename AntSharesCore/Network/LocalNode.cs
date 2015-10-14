@@ -51,7 +51,7 @@ namespace AntShares.Network
 
         internal readonly IPEndPoint LocalEndpoint;
         private TcpListener listener;
-        private Worker connectWorker;
+        private Thread connectThread;
         private int started = 0;
         private int disposed = 0;
 
@@ -80,7 +80,11 @@ namespace AntShares.Network
         {
             this.LocalEndpoint = new IPEndPoint(Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork), port);
             this.listener = new TcpListener(IPAddress.Any, port);
-            this.connectWorker = new Worker(ConnectToPeersLoop, TimeSpan.FromSeconds(5));
+            this.connectThread = new Thread(ConnectToPeersLoop)
+            {
+                IsBackground = true,
+                Name = "LocalNode.ConnectToPeersLoop"
+            };
             this.UserAgent = string.Format("/AntSharesCore:{0}/", Assembly.GetExecutingAssembly().GetName().Version.ToString(3));
         }
 
@@ -114,36 +118,43 @@ namespace AntShares.Network
             await remoteNode.ConnectAsync();
         }
 
-        private void ConnectToPeersLoop(CancellationToken cancel)
+        private void ConnectToPeersLoop()
         {
-            int connectedCount = connectedPeers.Count;
-            int pendingCount = pendingPeers.Count;
-            int unconnectedCount = unconnectedPeers.Count;
-            int maxConnections = Math.Max(CONNECTED_MAX + 20, PENDING_MAX);
-            if (connectedCount < CONNECTED_MAX && pendingCount < PENDING_MAX && (connectedCount + pendingCount) < maxConnections)
+            while (disposed == 0)
             {
-                Task[] tasks;
-                if (unconnectedCount > 0)
+                int connectedCount = connectedPeers.Count;
+                int pendingCount = pendingPeers.Count;
+                int unconnectedCount = unconnectedPeers.Count;
+                int maxConnections = Math.Max(CONNECTED_MAX + CONNECTED_MAX / 5, PENDING_MAX);
+                if (connectedCount < CONNECTED_MAX && pendingCount < PENDING_MAX && (connectedCount + pendingCount) < maxConnections)
                 {
-                    IPEndPoint[] endpoints;
-                    lock (unconnectedPeers)
+                    Task[] tasks;
+                    if (unconnectedCount > 0)
                     {
-                        endpoints = unconnectedPeers.Take(maxConnections - (connectedCount + pendingCount)).ToArray();
+                        IPEndPoint[] endpoints;
+                        lock (unconnectedPeers)
+                        {
+                            endpoints = unconnectedPeers.Take(maxConnections - (connectedCount + pendingCount)).ToArray();
+                        }
+                        tasks = endpoints.Select(p => ConnectToPeerAsync(p)).ToArray();
                     }
-                    tasks = endpoints.Select(p => ConnectToPeerAsync(p)).ToArray();
-                }
-                else if (connectedCount > 0)
-                {
-                    lock (connectedPeers)
+                    else if (connectedCount > 0)
                     {
-                        tasks = connectedPeers.Values.Select(p => p.RequestPeersAsync()).ToArray();
+                        lock (connectedPeers)
+                        {
+                            tasks = connectedPeers.Values.Select(p => p.RequestPeersAsync()).ToArray();
+                        }
                     }
+                    else
+                    {
+                        tasks = SeedList.Select(p => ConnectToPeerAsync(p)).ToArray();
+                    }
+                    Task.WaitAll(tasks);
                 }
-                else
+                for (int i = 0; i < 50 && disposed == 0; i++)
                 {
-                    tasks = SeedList.Select(p => ConnectToPeerAsync(p)).ToArray();
+                    Thread.Sleep(100);
                 }
-                Task.WaitAll(tasks.ToArray());
             }
         }
 
@@ -154,10 +165,7 @@ namespace AntShares.Network
                 if (started > 0)
                 {
                     listener.Stop();
-                }
-                connectWorker.Dispose();
-                if (started > 0)
-                {
+                    connectThread.Join();
                     lock (unconnectedPeers)
                     {
                         if (unconnectedPeers.Count < UNCONNECTED_MAX)
@@ -168,10 +176,12 @@ namespace AntShares.Network
                             }
                         }
                     }
+                    RemoteNode[] nodes;
                     lock (connectedPeers)
                     {
-                        Task.WaitAll(connectedPeers.Values.Select(p => Task.Run(() => p.Disconnect(false))).ToArray());
+                        nodes = connectedPeers.Values.ToArray();
                     }
+                    Task.WaitAll(nodes.Select(p => Task.Run(() => p.Disconnect(false))).ToArray());
                 }
             }
         }
@@ -309,13 +319,12 @@ namespace AntShares.Network
             {
                 peers = unconnectedPeers.Take(UNCONNECTED_MAX).ToArray();
             }
-            if (peers.Length == 0) return;
             using (BinaryWriter writer = new BinaryWriter(stream, Encoding.ASCII, true))
             {
                 writer.Write(peers.Length);
                 foreach (IPEndPoint endpoint in peers)
                 {
-                    writer.Write(endpoint.Address.GetAddressBytes().Take(4).ToArray());
+                    writer.Write(endpoint.Address.MapToIPv4().GetAddressBytes());
                     writer.Write((ushort)endpoint.Port);
                 }
             }
@@ -325,7 +334,7 @@ namespace AntShares.Network
         {
             if (Interlocked.Exchange(ref started, 1) == 0)
             {
-                connectWorker.Start();
+                connectThread.Start();
                 listener.Start();
                 while (disposed == 0)
                 {
@@ -345,14 +354,6 @@ namespace AntShares.Network
                     }
                     remoteNode.StartProtocol();
                 }
-            }
-        }
-
-        public async Task WaitForNodesAsync(int count = 1)
-        {
-            while (connectedPeers.Count < count)
-            {
-                await connectWorker.WaitAsync();
             }
         }
     }
