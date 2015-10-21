@@ -8,67 +8,92 @@ using System.Linq;
 
 namespace AntShares.Core
 {
-    public class Block : Inventory, IEquatable<Block>
+    public class Block : Inventory, IEquatable<Block>, ISignable
     {
         public const uint Version = 0;
         public UInt256 PrevBlock;
         public UInt256 MerkleRoot;
         public uint Timestamp;
-        public const uint Bits = 0;
+        public uint Height;
         public ulong Nonce;
         public UInt160 NextMiner;
-        public byte[] Script;
+        public Script Script;
         public Transaction[] Transactions;
 
         [NonSerialized]
-        private BlockHeader _header = null;
-        public BlockHeader Header
+        private Block _header = null;
+        public Block Header
         {
             get
             {
+                if (IsHeader) return this;
                 if (_header == null)
                 {
-                    _header = new BlockHeader
+                    _header = new Block
                     {
                         PrevBlock = PrevBlock,
                         MerkleRoot = MerkleRoot,
                         Timestamp = Timestamp,
+                        Height = Height,
                         Nonce = Nonce,
                         NextMiner = NextMiner,
                         Script = Script,
+                        Transactions = { }
                     };
                 }
                 return _header;
             }
         }
 
-        public override InventoryType InventoryType
+        public override InventoryType InventoryType => InventoryType.Block;
+
+
+        Script[] ISignable.Scripts
         {
             get
             {
-                return InventoryType.Block;
+                return new[] { Script };
+            }
+            set
+            {
+                if (value.Length != 1) throw new ArgumentException();
+                Script = value[0];
             }
         }
+
+        public bool IsHeader => Transactions.Length == 0;
 
         public override void Deserialize(BinaryReader reader)
         {
             if (reader.ReadUInt32() != Version)
                 throw new FormatException();
-            this.PrevBlock = reader.ReadSerializable<UInt256>();
-            this.MerkleRoot = reader.ReadSerializable<UInt256>();
-            this.Timestamp = reader.ReadUInt32();
-            if (reader.ReadUInt32() != Bits)
-                throw new FormatException();
-            this.Nonce = reader.ReadUInt64();
-            this.NextMiner = reader.ReadSerializable<UInt160>();
-            this.Script = reader.ReadBytes((int)reader.ReadVarInt());
-            this.Transactions = new Transaction[reader.ReadVarInt()];
+            PrevBlock = reader.ReadSerializable<UInt256>();
+            MerkleRoot = reader.ReadSerializable<UInt256>();
+            Timestamp = reader.ReadUInt32();
+            Height = reader.ReadUInt32();
+            Nonce = reader.ReadUInt64();
+            NextMiner = reader.ReadSerializable<UInt160>();
+            Script = reader.ReadSerializable<Script>();
+            Transactions = new Transaction[reader.ReadVarInt()];
             for (int i = 0; i < Transactions.Length; i++)
             {
                 Transactions[i] = Transaction.DeserializeFrom(reader);
             }
-            if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
+            if (Transactions.Length > 0 && MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
                 throw new FormatException();
+        }
+
+        void ISignable.DeserializeUnsigned(BinaryReader reader)
+        {
+            if (reader.ReadUInt32() != Version)
+                throw new FormatException();
+            PrevBlock = reader.ReadSerializable<UInt256>();
+            MerkleRoot = reader.ReadSerializable<UInt256>();
+            Timestamp = reader.ReadUInt32();
+            Height = reader.ReadUInt32();
+            Nonce = reader.ReadUInt64();
+            NextMiner = reader.ReadSerializable<UInt160>();
+            Transactions = new Transaction[0];
         }
 
         public bool Equals(Block other)
@@ -83,7 +108,7 @@ namespace AntShares.Core
             return Equals(obj as Block);
         }
 
-        public static Block FromTrimmedData(byte[] data, int index, Func<UInt256, Transaction> txSelector)
+        public static Block FromTrimmedData(byte[] data, int index, Func<UInt256, Transaction> txSelector = null)
         {
             Block block = new Block();
             using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
@@ -94,30 +119,55 @@ namespace AntShares.Core
                 block.PrevBlock = reader.ReadSerializable<UInt256>();
                 block.MerkleRoot = reader.ReadSerializable<UInt256>();
                 block.Timestamp = reader.ReadUInt32();
-                if (reader.ReadUInt32() != Bits)
-                    throw new FormatException();
+                block.Height = reader.ReadUInt32();
                 block.Nonce = reader.ReadUInt64();
                 block.NextMiner = reader.ReadSerializable<UInt160>();
-                block.Script = reader.ReadBytes((int)reader.ReadVarInt());
-                block.Transactions = new Transaction[reader.ReadVarInt()];
-                for (int i = 0; i < block.Transactions.Length; i++)
+                block.Script = reader.ReadSerializable<Script>();
+                if (txSelector == null)
                 {
-                    block.Transactions[i] = txSelector(reader.ReadSerializable<UInt256>());
+                    block.Transactions = new Transaction[0];
                 }
-                if (MerkleTree.ComputeRoot(block.Transactions.Select(p => p.Hash).ToArray()) != block.MerkleRoot)
-                    throw new FormatException();
+                else
+                {
+                    block.Transactions = new Transaction[reader.ReadVarInt()];
+                    for (int i = 0; i < block.Transactions.Length; i++)
+                    {
+                        block.Transactions[i] = txSelector(reader.ReadSerializable<UInt256>());
+                    }
+                }
             }
             return block;
-        }
-
-        protected override UInt256 GetHash()
-        {
-            return Header.Hash;
         }
 
         public override int GetHashCode()
         {
             return Hash.GetHashCode();
+        }
+
+        protected override byte[] GetHashData()
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms))
+            {
+                writer.Write(Version);
+                writer.Write(PrevBlock);
+                writer.Write(MerkleRoot);
+                writer.Write(Timestamp);
+                writer.Write(Height);
+                writer.Write(Nonce);
+                writer.Write(NextMiner);
+                writer.Write(Script);
+                return ms.ToArray();
+            }
+        }
+
+        UInt160[] ISignable.GetScriptHashesForVerifying()
+        {
+            if (PrevBlock == UInt256.Zero)
+                return new UInt160[] { NextMiner };
+            Block prev_header = Blockchain.Default.GetHeader(PrevBlock);
+            if (prev_header == null) throw new InvalidOperationException();
+            return new UInt160[] { prev_header.NextMiner };
         }
 
         public void RebuildMerkleRoot()
@@ -131,11 +181,22 @@ namespace AntShares.Core
             writer.Write(PrevBlock);
             writer.Write(MerkleRoot);
             writer.Write(Timestamp);
-            writer.Write(Bits);
+            writer.Write(Height);
             writer.Write(Nonce);
             writer.Write(NextMiner);
-            writer.WriteVarInt(Script.Length); writer.Write(Script);
+            writer.Write(Script);
             writer.Write(Transactions);
+        }
+
+        void ISignable.SerializeUnsigned(BinaryWriter writer)
+        {
+            writer.Write(Version);
+            writer.Write(PrevBlock);
+            writer.Write(MerkleRoot);
+            writer.Write(Timestamp);
+            writer.Write(Height);
+            writer.Write(Nonce);
+            writer.Write(NextMiner);
         }
 
         public byte[] Trim()
@@ -147,10 +208,10 @@ namespace AntShares.Core
                 writer.Write(PrevBlock);
                 writer.Write(MerkleRoot);
                 writer.Write(Timestamp);
-                writer.Write(Bits);
+                writer.Write(Height);
                 writer.Write(Nonce);
                 writer.Write(NextMiner);
-                writer.WriteVarInt(Script.Length); writer.Write(Script);
+                writer.Write(Script);
                 writer.Write(Transactions.Select(p => p.Hash).ToArray());
                 writer.Flush();
                 return ms.ToArray();
@@ -170,10 +231,13 @@ namespace AntShares.Core
             if (Blockchain.Default.ContainsBlock(Hash)) return VerificationResult.AlreadyInBlockchain;
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
                 return VerificationResult.Incapable;
-            VerificationResult result = Header.Verify();
+            int prev_height = Blockchain.Default.GetBlockHeight(PrevBlock);
+            if (prev_height == -1) return VerificationResult.LackOfInformation;
+            if (prev_height + 1 != Height) return VerificationResult.IncorrectFormat;
+            VerificationResult result = this.VerifySignature();
             if (result != VerificationResult.OK) return result;
             Secp256r1Point[] pubkeys = Blockchain.Default.GetMiners(Transactions).ToArray();
-            if (NextMiner != ScriptBuilder.CreateRedeemScript(Blockchain.GetMinSignatureCount(pubkeys.Length), pubkeys).ToScriptHash())
+            if (NextMiner != ScriptBuilder.CreateMultiSigRedeemScript(Blockchain.GetMinSignatureCount(pubkeys.Length), pubkeys).ToScriptHash())
                 result |= VerificationResult.WrongMiner;
             if (completely)
             {

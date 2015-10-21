@@ -8,9 +8,9 @@ namespace AntShares.Network.Payloads
 {
     internal class HeadersPayload : ISerializable
     {
-        public BlockHeader[] Headers;
+        public Block[] Headers;
 
-        public static HeadersPayload Create(IEnumerable<BlockHeader> headers)
+        public static HeadersPayload Create(IEnumerable<Block> headers)
         {
             return new HeadersPayload
             {
@@ -20,7 +20,7 @@ namespace AntShares.Network.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            this.Headers = reader.ReadSerializableArray<BlockHeader>();
+            Headers = reader.ReadSerializableArray<Block>();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

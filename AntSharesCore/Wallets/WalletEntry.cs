@@ -1,4 +1,5 @@
 ﻿using AntShares.Core;
+using AntShares.Core.Scripts;
 using AntShares.Cryptography;
 using System;
 using System.Linq;

@@ -104,7 +104,8 @@ namespace AntShares.Miner
         {
             if (!context.Valid) return;
             BlockConsensusRequest request = context.CreateRequest(wallet);
-            request.Script = wallet.Sign(request);
+            //TODO: 签名
+            //request.Script = wallet.Sign(request);
             await localnode.RelayAsync(request);
         }
     }

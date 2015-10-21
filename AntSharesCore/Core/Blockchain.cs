@@ -2,13 +2,12 @@
 using AntShares.IO;
 using AntShares.Network;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace AntShares.Core
 {
-    public class Blockchain : IDisposable
+    public abstract class Blockchain : IDisposable
     {
         public event EventHandler<Block> PersistCompleted;
 
@@ -33,22 +32,17 @@ namespace AntShares.Core
             Admin = new UInt160(),
             Inputs = new TransactionInput[0],
             Outputs = new TransactionOutput[0],
-            Scripts = new byte[0][]
+            Scripts = { }
         };
-        protected readonly ConcurrentDictionary<UInt256, Transaction> MemoryPool = new ConcurrentDictionary<UInt256, Transaction>();
-        protected readonly object SyncRoot = new object();
+        protected static readonly Dictionary<UInt256, Transaction> MemoryPool = new Dictionary<UInt256, Transaction>();
 
-        public virtual BlockchainAbility Ability => BlockchainAbility.None;
-        public virtual UInt256 CurrentBlockHash => GenesisBlock.Hash;
-        public static Blockchain Default { get; private set; } = new Blockchain();
-        public virtual uint Height => 0;
-        public virtual bool IsReadOnly => true;
-
-        protected Blockchain()
-        {
-            LocalNode.NewBlock += LocalNode_NewBlock;
-            LocalNode.NewTransaction += LocalNode_NewTransaction;
-        }
+        public abstract BlockchainAbility Ability { get; }
+        public abstract UInt256 CurrentBlockHash { get; }
+        public virtual UInt256 CurrentHeaderHash => CurrentBlockHash;
+        public static Blockchain Default { get; private set; } = null;
+        public virtual uint HeaderHeight => Height;
+        public abstract uint Height { get; }
+        public abstract bool IsReadOnly { get; }
 
         public virtual bool ContainsAsset(UInt256 hash)
         {
@@ -120,7 +114,7 @@ namespace AntShares.Core
             throw new NotSupportedException();
         }
 
-        public virtual BlockHeader GetHeader(UInt256 hash)
+        public virtual Block GetHeader(UInt256 hash)
         {
             return GetBlock(hash)?.Header;
         }
@@ -130,16 +124,16 @@ namespace AntShares.Core
             return MemoryPool.Values;
         }
 
-        private Secp256r1Point[] _miners = null;
+        private List<Secp256r1Point> _miners = new List<Secp256r1Point>();
         public Secp256r1Point[] GetMiners()
         {
-            lock (SyncRoot)
+            lock (_miners)
             {
-                if (_miners == null)
+                if (_miners.Count == 0)
                 {
-                    _miners = GetMiners(Enumerable.Empty<Transaction>()).ToArray();
+                    _miners.AddRange(GetMiners(Enumerable.Empty<Transaction>()));
                 }
-                return _miners;
+                return _miners.ToArray();
             }
         }
 
@@ -238,7 +232,7 @@ namespace AntShares.Core
 
         private void LocalNode_NewTransaction(object sender, Transaction tx)
         {
-            MemoryPool.TryAdd(tx.Hash, tx);
+            MemoryPool.Add(tx.Hash, tx);
         }
 
         protected virtual void OnBlock(Block block)
@@ -247,11 +241,13 @@ namespace AntShares.Core
 
         protected void RaisePersistCompleted(Block block)
         {
-            _miners = null;
+            lock (_miners)
+            {
+                _miners.Clear();
+            }
             foreach (Transaction tx in block.Transactions)
             {
-                Transaction ignore;
-                MemoryPool.TryRemove(tx.Hash, out ignore);
+                MemoryPool.Remove(tx.Hash);
             }
             if (PersistCompleted != null)
             {

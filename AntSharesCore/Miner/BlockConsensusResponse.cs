@@ -15,20 +15,19 @@ namespace AntShares.Miner
         public Secp256r1Point Miner;
         public Dictionary<Secp256r1Point, byte[]> NoncePieces = new Dictionary<Secp256r1Point, byte[]>();
         public UInt256 MerkleRoot;
-        public byte[] Script;
+        public Script Script;
 
         public override InventoryType InventoryType => InventoryType.ConsResponse;
 
-        byte[][] ISignable.Scripts
+        Script[] ISignable.Scripts
         {
             get
             {
-                return new byte[][] { Script };
+                return new[] { Script };
             }
             set
             {
-                if (value.Length != 1)
-                    throw new ArgumentException();
+                if (value.Length != 1) throw new ArgumentException();
                 Script = value[0];
             }
         }
@@ -36,14 +35,14 @@ namespace AntShares.Miner
         public override void Deserialize(BinaryReader reader)
         {
             ((ISignable)this).DeserializeUnsigned(reader);
-            this.Script = reader.ReadBytes((int)reader.ReadVarInt());
+            Script = reader.ReadSerializable<Script>();
         }
 
         void ISignable.DeserializeUnsigned(BinaryReader reader)
         {
-            this.PrevHash = reader.ReadSerializable<UInt256>();
-            this.Miner = Secp256r1Point.DeserializeFrom(reader);
-            this.NoncePieces.Clear();
+            PrevHash = reader.ReadSerializable<UInt256>();
+            Miner = Secp256r1Point.DeserializeFrom(reader);
+            NoncePieces.Clear();
             int count = (int)reader.ReadVarInt();
             for (int i = 0; i < count; i++)
             {
@@ -51,18 +50,18 @@ namespace AntShares.Miner
                 byte[] value = reader.ReadBytes((int)reader.ReadVarInt());
                 NoncePieces.Add(key, value);
             }
-            this.MerkleRoot = reader.ReadSerializable<UInt256>();
+            MerkleRoot = reader.ReadSerializable<UInt256>();
         }
 
         UInt160[] ISignable.GetScriptHashesForVerifying()
         {
-            return new UInt160[] { ScriptBuilder.CreateRedeemScript(1, Miner).ToScriptHash() };
+            return new UInt160[] { ScriptBuilder.CreateMultiSigRedeemScript(1, Miner).ToScriptHash() };
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             ((ISignable)this).SerializeUnsigned(writer);
-            writer.WriteVarInt(Script.Length); writer.Write(Script);
+            writer.Write(Script);
         }
 
         void ISignable.SerializeUnsigned(BinaryWriter writer)

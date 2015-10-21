@@ -1,4 +1,5 @@
-﻿using AntShares.IO;
+﻿using AntShares.Core.Scripts;
+using AntShares.IO;
 using AntShares.Network;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ namespace AntShares.Core
         public readonly TransactionType Type;
         public TransactionInput[] Inputs;
         public TransactionOutput[] Outputs;
-        public byte[][] Scripts;
+        public Script[] Scripts;
 
         public override InventoryType InventoryType
         {
@@ -51,15 +52,15 @@ namespace AntShares.Core
             }
         }
 
-        byte[][] ISignable.Scripts
+        Script[] ISignable.Scripts
         {
             get
             {
-                return this.Scripts;
+                return Scripts;
             }
             set
             {
-                this.Scripts = value;
+                Scripts = value;
             }
         }
 
@@ -73,7 +74,7 @@ namespace AntShares.Core
         public override void Deserialize(BinaryReader reader)
         {
             ((ISignable)this).DeserializeUnsigned(reader);
-            this.Scripts = reader.ReadBytesArray();
+            Scripts = reader.ReadSerializableArray<Script>();
         }
 
         protected abstract void DeserializeExclusiveData(BinaryReader reader);
@@ -95,7 +96,7 @@ namespace AntShares.Core
             if (transaction == null)
                 throw new FormatException();
             transaction.DeserializeUnsignedWithoutType(reader);
-            transaction.Scripts = reader.ReadBytesArray();
+            transaction.Scripts = reader.ReadSerializableArray<Script>();
             return transaction;
         }
 

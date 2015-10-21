@@ -68,10 +68,9 @@ namespace AntShares.Core
             return false;
         }
 
-        public byte[] GetScript()
+        public Script GetScript()
         {
-            if (!Completed)
-                throw new InvalidOperationException();
+            if (!Completed) throw new InvalidOperationException();
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 for (int i = 0; i < signatures.Length; i++)
@@ -81,7 +80,11 @@ namespace AntShares.Core
                         sb.Push(signatures[i]);
                     }
                 }
-                return sb.Push(redeemScript).ToArray();
+                return new Script
+                {
+                    StackScript = sb.ToArray(),
+                    RedeemScript = redeemScript
+                };
             }
         }
     }

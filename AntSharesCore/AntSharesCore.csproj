@@ -43,11 +43,12 @@
     <Compile Include="Core\Block.cs" />
     <Compile Include="Core\Blockchain.cs" />
     <Compile Include="Core\BlockchainAbility.cs" />
-    <Compile Include="Core\BlockHeader.cs" />
     <Compile Include="Core\ContractTransaction.cs" />
     <Compile Include="Core\EnrollmentTransaction.cs" />
     <Compile Include="Core\GenerationTransaction.cs" />
     <Compile Include="Core\Helper.cs" />
+    <Compile Include="Core\Scripts\Helper.cs" />
+    <Compile Include="Core\Scripts\Script.cs" />
     <Compile Include="IO\Caching\Cache.cs" />
     <Compile Include="IO\Caching\FIFOCache.cs" />
     <Compile Include="Miner\BlockConsensusRequest.cs" />

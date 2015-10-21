@@ -52,11 +52,6 @@ namespace AntShares.Core
             return new UInt160(data.Skip(1).Take(20).ToArray());
         }
 
-        public static UInt160 ToScriptHash(this byte[] redeemScript)
-        {
-            return new UInt160(redeemScript.Sha256().RIPEMD160());
-        }
-
         internal static VerificationResult VerifySignature(this ISignable signable)
         {
             UInt160[] hashes;
@@ -68,17 +63,13 @@ namespace AntShares.Core
             {
                 return VerificationResult.LackOfInformation;
             }
-            byte[][] scripts = signable.Scripts;
-            if (hashes.Length != scripts.Length)
+            if (hashes.Length != signable.Scripts.Length)
                 return VerificationResult.InvalidSignature;
             for (int i = 0; i < hashes.Length; i++)
             {
-                using (ScriptBuilder sb = new ScriptBuilder())
-                {
-                    byte[] script = sb.Add(scripts[i]).Add(ScriptOp.OP_DUP).Add(ScriptOp.OP_HASH160).Push(hashes[i]).Add(ScriptOp.OP_EQUALVERIFY).Add(ScriptOp.OP_EVAL).ToArray();
-                    if (!ScriptEngine.Execute(script, signable.GetHashForSigning()))
-                        return VerificationResult.InvalidSignature;
-                }
+                if (hashes[i] != signable.Scripts[i].RedeemScript.ToScriptHash()) return VerificationResult.InvalidSignature;
+                ScriptEngine engine = new ScriptEngine(signable.Scripts[i], signable.GetHashForSigning());
+                if (!engine.Execute()) return VerificationResult.InvalidSignature;
             }
             return VerificationResult.OK;
         }

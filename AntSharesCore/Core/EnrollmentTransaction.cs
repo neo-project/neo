@@ -19,7 +19,7 @@ namespace AntShares.Core
             {
                 if (_miner == null)
                 {
-                    _miner = ScriptBuilder.CreateRedeemScript(1, PublicKey).ToScriptHash();
+                    _miner = ScriptBuilder.CreateMultiSigRedeemScript(1, PublicKey).ToScriptHash();
                 }
                 return _miner;
             }

@@ -117,38 +117,15 @@
 
         // Crypto
         OP_RIPEMD160 = 0xA6, // The input is hashed using RIPEMD-160.
-        //OP_SHA1 = 0xA7, // The input is hashed using SHA-1.
+        OP_SHA1 = 0xA7, // The input is hashed using SHA-1.
         OP_SHA256 = 0xA8, // The input is hashed using SHA-256.
         OP_HASH160 = 0xA9, // The input is hashed twice: first with SHA-256 and then with RIPEMD-160.
         OP_HASH256 = 0xAA, // The input is hashed two times with SHA-256.
         //OP_CODESEPARATOR = 0xAB, // All of the signature checking words will only match signatures to the data after the most recently-executed OP_CODESEPARATOR.
-        //OP_CHECKSIG = 0xAC, // The entire transaction's outputs, inputs, and script (from the most recently-executed OP_CODESEPARATOR to the end) are hashed. The signature used by OP_CHECKSIG must be a valid signature for this hash and public key. If it is, 1 is returned, 0 otherwise.
-        //OP_CHECKSIGVERIFY = 0xAD, // Same as OP_CHECKSIG, but OP_VERIFY is executed afterward.
+        OP_CHECKSIG = 0xAC, // The entire transaction's outputs, inputs, and script (from the most recently-executed OP_CODESEPARATOR to the end) are hashed. The signature used by OP_CHECKSIG must be a valid signature for this hash and public key. If it is, 1 is returned, 0 otherwise.
+        OP_CHECKSIGVERIFY = 0xAD, // Same as OP_CHECKSIG, but OP_VERIFY is executed afterward.
         OP_CHECKMULTISIG = 0xAE, // For each signature and public key pair, OP_CHECKSIG is executed. If more public keys than signatures are listed, some key/sig pairs can fail. All signatures need to match a public key. If all signatures are valid, 1 is returned, 0 otherwise. Due to a bug, one extra unused value is removed from the stack.
         OP_CHECKMULTISIGVERIFY = 0xAF, // Same as OP_CHECKMULTISIG, but OP_VERIFY is executed afterward.
-
-
-        // Reserved words
-        // Any opcode not assigned is also reserved. Using an unassigned opcode makes the transaction invalid.
         OP_EVAL = 0xB0, // see BIP12
-        //OP_NOP2 = 0xB1, // The word is ignored.
-        //OP_NOP3 = 0xB2, // The word is ignored.
-        //OP_NOP4 = 0xB3, // The word is ignored.
-        //OP_NOP5 = 0xB4, // The word is ignored.
-        //OP_NOP6 = 0xB5, // The word is ignored.
-        //OP_NOP7 = 0xB6, // The word is ignored.
-        //OP_NOP8 = 0xB7, // The word is ignored.
-        //OP_NOP9 = 0xB8, // The word is ignored.
-        //OP_NOP10 = 0xB9, // The word is ignored.
-
-
-        // Pseudo-words
-        // These words are used internally for assisting with transaction matching. They are invalid if used in actual scripts.
-        //OP_SMALLDATA = 0xf9,
-        //OP_SMALLINTEGER = 0xfa,
-        //OP_PUBKEYS = 0xfb,
-        //OP_PUBKEYHASH = 0xFD, // Represents a public key hashed with OP_HASH160.
-        //OP_PUBKEY = 0xFE, // Represents a public key compatible with OP_CHECKSIG.
-        //OP_INVALIDOPCODE = 0xFF, // Matches any opcode that is not yet assigned.
     }
 }

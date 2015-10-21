@@ -323,15 +323,15 @@ namespace AntShares.Data
             }
         }
 
-        public override BlockHeader GetHeader(UInt256 hash)
+        public override Block GetHeader(UInt256 hash)
         {
-            BlockHeader header = base.GetBlock(hash)?.Header;
+            Block header = base.GetBlock(hash)?.Header;
             if (header == null)
             {
                 Slice value;
                 if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash), out value))
                 {
-                    header = BlockHeader.FromTrimmedData(value.ToArray(), sizeof(uint));
+                    header = Block.FromTrimmedData(value.ToArray(), sizeof(uint));
                 }
             }
             return header;
@@ -498,11 +498,8 @@ namespace AntShares.Data
                             }
                         }
                         if (block?.Verify() != VerificationResult.OK) break;
-                        lock (SyncRoot)
-                        {
-                            AddBlockToChain(block);
-                            RaisePersistCompleted(block);
-                        }
+                        AddBlockToChain(block);
+                        RaisePersistCompleted(block);
                         persisted = true;
                     }
                     if (persisted)

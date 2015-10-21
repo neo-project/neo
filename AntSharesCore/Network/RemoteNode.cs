@@ -209,7 +209,7 @@ namespace AntShares.Network
                 Height = Blockchain.Default.GetBlockHeight(p)
             }).Where(p => p.Height >= 0).OrderBy(p => p.Height).Select(p => p.Hash).FirstOrDefault();
             if (hash == null || hash == payload.HashStop) return;
-            List<BlockHeader> headers = new List<BlockHeader>();
+            List<Block> headers = new List<Block>();
             do
             {
                 hash = Blockchain.Default.GetNextBlockHash(hash);

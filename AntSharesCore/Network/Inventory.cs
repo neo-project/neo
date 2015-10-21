@@ -15,7 +15,7 @@ namespace AntShares.Network
             {
                 if (_hash == null)
                 {
-                    _hash = GetHash();
+                    _hash = new UInt256(GetHashData().Sha256().Sha256());
                 }
                 return _hash;
             }
@@ -25,9 +25,9 @@ namespace AntShares.Network
 
         public abstract void Deserialize(BinaryReader reader);
 
-        protected virtual UInt256 GetHash()
+        protected virtual byte[] GetHashData()
         {
-            return new UInt256(this.ToArray().Sha256().Sha256());
+            return this.ToArray();
         }
 
         public abstract void Serialize(BinaryWriter writer);

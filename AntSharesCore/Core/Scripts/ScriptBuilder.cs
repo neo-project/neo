@@ -21,7 +21,7 @@ namespace AntShares.Core.Scripts
             return this;
         }
 
-        public static byte[] CreateRedeemScript(int m, params Secp256r1Point[] publicKeys)
+        public static byte[] CreateMultiSigRedeemScript(int m, params Secp256r1Point[] publicKeys)
         {
             if (!(1 <= m && m <= publicKeys.Length && publicKeys.Length <= 1024))
                 throw new ArgumentException();
@@ -69,13 +69,13 @@ namespace AntShares.Core.Scripts
             else if (data.Length < 0x10000)
             {
                 Add(ScriptOp.OP_PUSHDATA2);
-                ms.Write(BitConverter.GetBytes((UInt16)data.Length), 0, 2);
+                ms.Write(BitConverter.GetBytes((ushort)data.Length), 0, 2);
                 ms.Write(data, 0, data.Length);
             }
             else if (data.LongLength < 0x100000000L)
             {
                 Add(ScriptOp.OP_PUSHDATA4);
-                ms.Write(BitConverter.GetBytes((UInt32)data.Length), 0, 4);
+                ms.Write(BitConverter.GetBytes((uint)data.Length), 0, 4);
                 ms.Write(data, 0, data.Length);
             }
             else

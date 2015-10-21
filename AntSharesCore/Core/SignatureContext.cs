@@ -1,4 +1,5 @@
-﻿using AntShares.Cryptography;
+﻿using AntShares.Core.Scripts;
+using AntShares.Cryptography;
 using AntShares.IO.Json;
 using System;
 using System.IO;
@@ -44,7 +45,7 @@ namespace AntShares.Core
             return false;
         }
 
-        public byte[][] GetScripts()
+        public Script[] GetScripts()
         {
             if (!Completed)
                 throw new InvalidOperationException();
