@@ -1,5 +1,5 @@
 ﻿using AntShares.Core;
-using AntShares.Data;
+using AntShares.Implementations.Blockchains.LevelDB;
 using AntShares.Network;
 using AntShares.Properties;
 using AntShares.UI;
@@ -16,7 +16,7 @@ namespace AntShares
 
         static Program()
         {
-            Blockchain.RegisterBlockchain(new LevelDBBlockchain());
+            Blockchain.RegisterBlockchain(new LevelDBBlockchain(Settings.Default.DataDirectoryPath));
             LocalNode = new LocalNode(Settings.Default.NodePort);
         }
 

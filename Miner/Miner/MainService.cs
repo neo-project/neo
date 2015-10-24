@@ -1,6 +1,7 @@
 ﻿using AntShares.Core;
-using AntShares.Data;
+using AntShares.Implementations.Blockchains.LevelDB;
 using AntShares.Network;
+using AntShares.Properties;
 using AntShares.Services;
 using AntShares.Wallets;
 using System;
@@ -30,7 +31,7 @@ namespace AntShares.Miner
             if (inventory.InventoryType != InventoryType.ConsRequest)
                 return;
             BlockConsensusRequest request = (BlockConsensusRequest)inventory;
-            if (request.Verify() != VerificationResult.OK) return;
+            if (!request.Verify()) return;
             context.AddRequest(request, wallet);
         }
 
@@ -85,7 +86,7 @@ namespace AntShares.Miner
 
         protected internal override void OnStart()
         {
-            Blockchain.RegisterBlockchain(new LevelDBBlockchain());
+            Blockchain.RegisterBlockchain(new LevelDBBlockchain(Settings.Default.DataDirectoryPath));
             Blockchain.Default.PersistCompleted += Blockchain_PersistCompleted;
             LocalNode.NewInventory += LocalNode_NewInventory;
             localnode = new LocalNode();

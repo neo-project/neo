@@ -77,19 +77,15 @@ namespace AntShares.Miner
             writer.Write(MerkleRoot);
         }
 
-        public override VerificationResult Verify()
+        public override bool Verify()
         {
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
-                return VerificationResult.Incapable;
-            if (!Blockchain.Default.ContainsBlock(PrevHash))
-                return VerificationResult.LackOfInformation;
+                return false;
             if (PrevHash != Blockchain.Default.CurrentBlockHash)
-                return VerificationResult.AlreadyInBlockchain;
+                return false;
             HashSet<Secp256r1Point> miners = new HashSet<Secp256r1Point>(Blockchain.Default.GetMiners());
-            if (!miners.Contains(Miner))
-                return VerificationResult.WrongMiner;
-            if (NoncePieces.Count > miners.Count)
-                return VerificationResult.IncorrectFormat;
+            if (!miners.Contains(Miner)) return false;
+            if (NoncePieces.Count > miners.Count) return false;
             return this.VerifySignature();
         }
     }

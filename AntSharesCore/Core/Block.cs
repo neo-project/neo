@@ -79,8 +79,13 @@ namespace AntShares.Core
             {
                 Transactions[i] = Transaction.DeserializeFrom(reader);
             }
-            if (Transactions.Length > 0 && MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
-                throw new FormatException();
+            if (Transactions.Length > 0)
+            {
+                if (Transactions[0].Type != TransactionType.GenerationTransaction || Transactions.Skip(1).Any(p => p.Type == TransactionType.GenerationTransaction))
+                    throw new FormatException();
+                if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
+                    throw new FormatException();
+            }
         }
 
         void ISignable.DeserializeUnsigned(BinaryReader reader)
@@ -218,36 +223,30 @@ namespace AntShares.Core
             }
         }
 
-        public override VerificationResult Verify()
+        public override bool Verify()
         {
             return Verify(false);
         }
 
-        public VerificationResult Verify(bool completely)
+        public bool Verify(bool completely)
         {
-            if (Hash == Blockchain.GenesisBlock.Hash) return VerificationResult.AlreadyInBlockchain;
-            if (Transactions.Count(p => p.Type == TransactionType.GenerationTransaction) != 1)
-                return VerificationResult.IncorrectFormat;
-            if (Blockchain.Default.ContainsBlock(Hash)) return VerificationResult.AlreadyInBlockchain;
+            if (Hash == Blockchain.GenesisBlock.Hash) return true;
+            if (Blockchain.Default.ContainsBlock(Hash)) return true;
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
-                return VerificationResult.Incapable;
-            int prev_height = Blockchain.Default.GetBlockHeight(PrevBlock);
-            if (prev_height == -1) return VerificationResult.LackOfInformation;
-            if (prev_height + 1 != Height) return VerificationResult.IncorrectFormat;
-            VerificationResult result = this.VerifySignature();
-            if (result != VerificationResult.OK) return result;
+                return false;
+            Block prev_header = Blockchain.Default.GetHeader(PrevBlock);
+            if (prev_header == null) return false;
+            if (prev_header.Height + 1 != Height) return false;
+            if (!this.VerifySignature()) return false;
             Secp256r1Point[] pubkeys = Blockchain.Default.GetMiners(Transactions).ToArray();
             if (NextMiner != ScriptBuilder.CreateMultiSigRedeemScript(Blockchain.GetMinSignatureCount(pubkeys.Length), pubkeys).ToScriptHash())
-                result |= VerificationResult.WrongMiner;
+                return false;
             if (completely)
             {
                 if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.Statistics))
-                {
-                    result |= VerificationResult.Incapable;
-                    return result;
-                }
+                    return false;
                 foreach (Transaction tx in Transactions)
-                    result |= tx.Verify();
+                    if (!tx.Verify()) return false;
                 var antshares = Blockchain.Default.GetUnspentAntShares().GroupBy(p => p.ScriptHash, (k, g) => new
                 {
                     ScriptHash = k,
@@ -262,7 +261,7 @@ namespace AntShares.Core
                 Fixed8 gen = antshares.Length == 0 ? Fixed8.Zero : Fixed8.FromDecimal((Blockchain.AntCoin.Amount - (quantity - amount_sysfee)).ToDecimal() * Blockchain.GenerationFactor);
                 GenerationTransaction tx_gen = Transactions.OfType<GenerationTransaction>().First();
                 if (tx_gen.Outputs.Sum(p => p.Value) != amount_netfee + gen)
-                    result |= VerificationResult.Imbalanced;
+                    return false;
                 if (antshares.Length > 0)
                 {
                     ulong n = Nonce % (ulong)antshares.Sum(p => p.Amount).value;
@@ -273,10 +272,10 @@ namespace AntShares.Core
                         line += (ulong)antshares[++i].Amount.value;
                     } while (line <= n);
                     if (tx_gen.Outputs.Where(p => p.ScriptHash == antshares[i].ScriptHash).Sum(p => p.Value) < gen)
-                        result |= VerificationResult.Imbalanced;
+                        return false;
                 }
             }
-            return result;
+            return true;
         }
     }
 }

@@ -91,21 +91,17 @@ namespace AntShares.Miner
             writer.Write(TransactionHashes);
         }
 
-        public override VerificationResult Verify()
+        public override bool Verify()
         {
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
-                return VerificationResult.Incapable;
-            if (!Blockchain.Default.ContainsBlock(PrevHash))
-                return VerificationResult.LackOfInformation;
+                return false;
             if (PrevHash != Blockchain.Default.CurrentBlockHash)
-                return VerificationResult.AlreadyInBlockchain;
+                return false;
             HashSet<Secp256r1Point> miners = new HashSet<Secp256r1Point>(Blockchain.Default.GetMiners());
-            if (!miners.Contains(Miner))
-                return VerificationResult.WrongMiner;
-            if (NoncePieces.Count != miners.Count - 1)
-                return VerificationResult.IncorrectFormat;
+            if (!miners.Contains(Miner)) return false;
+            if (NoncePieces.Count != miners.Count - 1) return false;
             if (!NoncePieces.Keys.Concat(new[] { Miner }).OrderBy(p => p).SequenceEqual(miners.OrderBy(p => p)))
-                return VerificationResult.IncorrectFormat;
+                return false;
             return this.VerifySignature();
         }
     }

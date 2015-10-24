@@ -1,6 +1,5 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO;
-using AntShares.Network;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,6 +43,22 @@ namespace AntShares.Core
         public abstract uint Height { get; }
         public abstract bool IsReadOnly { get; }
 
+        protected internal abstract bool AddBlock(Block block);
+
+        protected internal abstract void AddHeaders(IEnumerable<Block> headers);
+
+        internal bool AddTransaction(Transaction tx)
+        {
+            lock (MemoryPool)
+            {
+                if (ContainsTransaction(tx.Hash)) return false;
+                if (IsDoubleSpend(tx)) return false;
+                if (!tx.Verify()) return false;
+                MemoryPool.Add(tx.Hash, tx);
+                return true;
+            }
+        }
+
         public virtual bool ContainsAsset(UInt256 hash)
         {
             return hash == AntCoin.Hash || hash == AntShare.Hash;
@@ -72,15 +87,14 @@ namespace AntShares.Core
             return index < tx.Outputs.Length;
         }
 
-        public virtual void Dispose()
-        {
-            LocalNode.NewBlock -= LocalNode_NewBlock;
-            LocalNode.NewTransaction -= LocalNode_NewTransaction;
-        }
+        public abstract void Dispose();
 
-        public virtual IEnumerable<RegisterTransaction> GetAssets()
+        public abstract IEnumerable<RegisterTransaction> GetAssets();
+
+        public virtual Block GetBlock(uint height)
         {
-            throw new NotSupportedException();
+            if (height == 0) return GenesisBlock;
+            return null;
         }
 
         public virtual Block GetBlock(UInt256 hash)
@@ -90,34 +104,19 @@ namespace AntShares.Core
             return null;
         }
 
-        public virtual Block GetBlockAndHeight(UInt256 hash, out uint height)
-        {
-            height = 0;
-            if (hash == GenesisBlock.Hash)
-                return GenesisBlock;
-            return null;
-        }
-
-        public virtual int GetBlockHeight(UInt256 hash)
-        {
-            if (hash == GenesisBlock.Hash) return 0;
-            return -1;
-        }
-
         public IEnumerable<EnrollmentTransaction> GetEnrollments()
         {
             return GetEnrollments(Enumerable.Empty<Transaction>());
         }
 
-        public virtual IEnumerable<EnrollmentTransaction> GetEnrollments(IEnumerable<Transaction> others)
-        {
-            throw new NotSupportedException();
-        }
+        public abstract IEnumerable<EnrollmentTransaction> GetEnrollments(IEnumerable<Transaction> others);
 
         public virtual Block GetHeader(UInt256 hash)
         {
             return GetBlock(hash)?.Header;
         }
+
+        public abstract UInt256[] GetLeafHeaderHashes();
 
         public IEnumerable<Transaction> GetMemoryPool()
         {
@@ -172,20 +171,11 @@ namespace AntShares.Core
             return miner_count / 2 + 1;
         }
 
-        public virtual Block GetNextBlock(UInt256 hash)
-        {
-            return null;
-        }
+        public abstract Block GetNextBlock(UInt256 hash);
 
-        public virtual UInt256 GetNextBlockHash(UInt256 hash)
-        {
-            return null;
-        }
+        public abstract UInt256 GetNextBlockHash(UInt256 hash);
 
-        public virtual Fixed8 GetQuantityIssued(UInt256 asset_id)
-        {
-            throw new NotSupportedException();
-        }
+        public abstract Fixed8 GetQuantityIssued(UInt256 asset_id);
 
         public virtual Transaction GetTransaction(UInt256 hash)
         {
@@ -205,54 +195,31 @@ namespace AntShares.Core
             return tx.Outputs[index];
         }
 
-        public virtual IEnumerable<TransactionOutput> GetUnspentAntShares()
-        {
-            throw new NotSupportedException();
-        }
+        public abstract IEnumerable<TransactionOutput> GetUnspentAntShares();
 
         public IEnumerable<Vote> GetVotes()
         {
             return GetVotes(Enumerable.Empty<Transaction>());
         }
 
-        public virtual IEnumerable<Vote> GetVotes(IEnumerable<Transaction> others)
-        {
-            throw new NotSupportedException();
-        }
+        public abstract IEnumerable<Vote> GetVotes(IEnumerable<Transaction> others);
 
-        public virtual bool IsDoubleSpend(Transaction tx)
-        {
-            throw new NotSupportedException();
-        }
+        public abstract bool IsDoubleSpend(Transaction tx);
 
-        private void LocalNode_NewBlock(object sender, Block block)
-        {
-            OnBlock(block);
-        }
-
-        private void LocalNode_NewTransaction(object sender, Transaction tx)
-        {
-            MemoryPool.Add(tx.Hash, tx);
-        }
-
-        protected virtual void OnBlock(Block block)
-        {
-        }
-
-        protected void RaisePersistCompleted(Block block)
+        protected void OnPersistCompleted(Block block)
         {
             lock (_miners)
             {
                 _miners.Clear();
             }
-            foreach (Transaction tx in block.Transactions)
+            lock (MemoryPool)
             {
-                MemoryPool.Remove(tx.Hash);
+                foreach (Transaction tx in block.Transactions)
+                {
+                    MemoryPool.Remove(tx.Hash);
+                }
             }
-            if (PersistCompleted != null)
-            {
-                PersistCompleted(this, block);
-            }
+            if (PersistCompleted != null) PersistCompleted(this, block);
         }
 
         public static void RegisterBlockchain(Blockchain blockchain)

@@ -219,7 +219,7 @@ namespace AntShares.Network
             if (data.InventoryType == InventoryType.TX && unknown)
             {
                 Transaction tx = (Transaction)data;
-                if (!Blockchain.Default.ContainsTransaction(tx.Hash) && tx.Verify() == VerificationResult.OK && NewTransaction != null)
+                if (!Blockchain.Default.ContainsTransaction(tx.Hash) && tx.Verify() && NewTransaction != null)
                     NewTransaction(this, tx);
             }
             if (connectedPeers.Count == 0) return false;
@@ -269,11 +269,7 @@ namespace AntShares.Network
                 if (!KnownHashes.Add(inventory.Hash))
                     return;
             }
-            VerificationResult vr = inventory.Verify();
-            if ((vr & ~(VerificationResult.Incapable | VerificationResult.LackOfInformation)) > 0)
-                return;
-            if (inventory.InventoryType == InventoryType.TX && vr.HasFlag(VerificationResult.LackOfInformation))
-                return;
+            if (!inventory.Verify()) return;
             RelayAsync(inventory).Void();
             if (NewInventory != null)
             {
@@ -283,7 +279,7 @@ namespace AntShares.Network
             {
                 NewBlock(this, (Block)inventory);
             }
-            if (inventory.InventoryType == InventoryType.TX && NewTransaction != null && vr == VerificationResult.OK)
+            if (inventory.InventoryType == InventoryType.TX && NewTransaction != null)
             {
                 NewTransaction(this, (Transaction)inventory);
             }

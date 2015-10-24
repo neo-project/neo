@@ -34,10 +34,6 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LevelDB.Net, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\LevelDB.Net.1.1.1\lib\net40\LevelDB.Net.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
@@ -45,21 +41,6 @@
     <Reference Include="System.ServiceProcess" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\AntSharesUI\Data\DataEntryPrefix.cs">
-      <Link>Data\DataEntryPrefix.cs</Link>
-    </Compile>
-    <Compile Include="..\AntSharesUI\Data\Helper.cs">
-      <Link>Data\Helper.cs</Link>
-    </Compile>
-    <Compile Include="..\AntSharesUI\Data\LevelDBBlockchain.cs">
-      <Link>Data\LevelDBBlockchain.cs</Link>
-    </Compile>
-    <Compile Include="..\AntSharesUI\Data\MultiValueDictionary.cs">
-      <Link>Data\MultiValueDictionary.cs</Link>
-    </Compile>
-    <Compile Include="..\AntSharesUI\Data\SliceBuilder.cs">
-      <Link>Data\SliceBuilder.cs</Link>
-    </Compile>
     <Compile Include="BigIntegerExtensions.cs" />
     <Compile Include="Algebra\FiniteFieldPoint.cs" />
     <Compile Include="Algebra\FiniteFieldPolynomial.cs" />
@@ -87,7 +68,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

@@ -149,11 +149,7 @@ namespace AntShares.Network
         {
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.BlockIndexes))
                 return;
-            UInt256 hash = payload.HashStart.Select(p => new
-            {
-                Hash = p,
-                Height = Blockchain.Default.GetBlockHeight(p)
-            }).Where(p => p.Height >= 0).OrderBy(p => p.Height).Select(p => p.Hash).FirstOrDefault();
+            UInt256 hash = payload.HashStart.Select(p => Blockchain.Default.GetHeader(p)).Where(p => p != null).OrderBy(p => p.Height).Select(p => p.Hash).FirstOrDefault();
             if (hash == null || hash == payload.HashStop) return;
             List<UInt256> hashes = new List<UInt256>();
             do
@@ -203,11 +199,7 @@ namespace AntShares.Network
         {
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.BlockIndexes))
                 return;
-            UInt256 hash = payload.HashStart.Select(p => new
-            {
-                Hash = p,
-                Height = Blockchain.Default.GetBlockHeight(p)
-            }).Where(p => p.Height >= 0).OrderBy(p => p.Height).Select(p => p.Hash).FirstOrDefault();
+            UInt256 hash = payload.HashStart.Select(p => Blockchain.Default.GetHeader(p)).Where(p => p != null).OrderBy(p => p.Height).Select(p => p.Hash).FirstOrDefault();
             if (hash == null || hash == payload.HashStop) return;
             List<Block> headers = new List<Block>();
             do
