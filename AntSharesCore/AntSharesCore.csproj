@@ -51,6 +51,7 @@
     <Compile Include="Core\Helper.cs" />
     <Compile Include="Core\Scripts\Helper.cs" />
     <Compile Include="Core\Scripts\Script.cs" />
+    <Compile Include="Core\Scripts\ScriptAPI.cs" />
     <Compile Include="Cryptography\ECC\ECDsa.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\DataEntryPrefix.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\Helper.cs" />

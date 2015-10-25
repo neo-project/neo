@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
+using BooleanStack = System.Collections.Generic.Stack<bool>;
 
 namespace AntShares.Core.Scripts
 {
@@ -13,17 +14,35 @@ namespace AntShares.Core.Scripts
     {
         private const int MAXSTEPS = 1200;
 
-        private Script script;
-        private byte[] hash;
+        private readonly Script script;
+        private readonly byte[] hash;
 
-        private Stack stack = new Stack();
-        private Stack altStack = new Stack();
+        private readonly Stack stack = new Stack();
+        private readonly Stack altStack = new Stack();
+        private readonly BooleanStack vfExec = new BooleanStack();
         private int nOpCount = 0;
 
         public ScriptEngine(Script script, byte[] hash)
         {
             this.script = script;
             this.hash = hash;
+        }
+
+        private bool CallAPI(ScriptAPI code)
+        {
+            switch (code)
+            {
+                case ScriptAPI.API_BLOCKHEIGHT:
+                    if (Blockchain.Default == null) return false;
+                    stack.Push(Blockchain.Default.Height);
+                    break;
+                case ScriptAPI.API_TIME:
+                    stack.Push(DateTime.Now.ToTimestamp());
+                    break;
+                default:
+                    return false;
+            }
+            return true;
         }
 
         public bool Execute()
@@ -35,6 +54,9 @@ namespace AntShares.Core.Scripts
 
         private bool ExecuteOp(ScriptOp opcode, BinaryReader opReader)
         {
+            bool fExec = vfExec.All(p => p);
+            if (!fExec && (opcode < ScriptOp.OP_IF || opcode > ScriptOp.OP_ENDIF))
+                return true;
             if (opcode > ScriptOp.OP_16 && ++nOpCount > MAXSTEPS) return false;
             int remain = (int)(opReader.BaseStream.Length - opReader.BaseStream.Position);
             if (opcode >= ScriptOp.OP_PUSHBYTES1 && opcode <= ScriptOp.OP_PUSHBYTES75)
@@ -96,6 +118,31 @@ namespace AntShares.Core.Scripts
                 // Control
                 case ScriptOp.OP_NOP:
                     break;
+                case ScriptOp.OP_CALL:
+                    if (remain < 1) return false;
+                    return CallAPI((ScriptAPI)opReader.ReadByte());
+                case ScriptOp.OP_IF:
+                case ScriptOp.OP_NOTIF:
+                    {
+                        bool fValue = false;
+                        if (fExec)
+                        {
+                            if (stack.Count < 1) return false;
+                            fValue = stack.PopBool();
+                            if (opcode == ScriptOp.OP_NOTIF)
+                                fValue = !fValue;
+                        }
+                        vfExec.Push(fValue);
+                    }
+                    break;
+                case ScriptOp.OP_ELSE:
+                    if (vfExec.Count == 0) return false;
+                    vfExec.Push(!vfExec.Pop());
+                    break;
+                case ScriptOp.OP_ENDIF:
+                    if (vfExec.Count == 0) return false;
+                    vfExec.Pop();
+                    break;
                 case ScriptOp.OP_VERIFY:
                     if (stack.Count < 1) return false;
                     if (stack.PeekBool())
@@ -123,37 +170,68 @@ namespace AntShares.Core.Scripts
                 case ScriptOp.OP_2DUP:
                     {
                         if (stack.Count < 2) return false;
-                        byte[] x1 = stack.PopBytes();
-                        byte[] x2 = stack.PeekBytes();
-                        stack.Push(x1);
+                        byte[] x2 = stack.PopBytes();
+                        byte[] x1 = stack.PeekBytes();
                         stack.Push(x2);
                         stack.Push(x1);
+                        stack.Push(x2);
                     }
                     break;
                 case ScriptOp.OP_3DUP:
                     {
                         if (stack.Count < 3) return false;
-                        byte[] x1 = stack.PopBytes();
+                        byte[] x3 = stack.PopBytes();
                         byte[] x2 = stack.PopBytes();
-                        byte[] x3 = stack.PeekBytes();
+                        byte[] x1 = stack.PeekBytes();
                         stack.Push(x2);
-                        stack.Push(x1);
                         stack.Push(x3);
-                        stack.Push(x2);
                         stack.Push(x1);
+                        stack.Push(x2);
+                        stack.Push(x3);
+                    }
+                    break;
+                case ScriptOp.OP_2OVER:
+                    {
+                        if (stack.Count < 4) return false;
+                        byte[] x4 = stack.PopBytes();
+                        byte[] x3 = stack.PopBytes();
+                        byte[] x2 = stack.PopBytes();
+                        byte[] x1 = stack.PeekBytes();
+                        stack.Push(x2);
+                        stack.Push(x3);
+                        stack.Push(x4);
+                        stack.Push(x1);
+                        stack.Push(x2);
+                    }
+                    break;
+                case ScriptOp.OP_2ROT:
+                    {
+                        if (stack.Count < 6) return false;
+                        byte[] x6 = stack.PopBytes();
+                        byte[] x5 = stack.PopBytes();
+                        byte[] x4 = stack.PopBytes();
+                        byte[] x3 = stack.PopBytes();
+                        byte[] x2 = stack.PopBytes();
+                        byte[] x1 = stack.PopBytes();
+                        stack.Push(x3);
+                        stack.Push(x4);
+                        stack.Push(x5);
+                        stack.Push(x6);
+                        stack.Push(x1);
+                        stack.Push(x2);
                     }
                     break;
                 case ScriptOp.OP_2SWAP:
                     {
                         if (stack.Count < 4) return false;
-                        byte[] x1 = stack.PopBytes();
-                        byte[] x2 = stack.PopBytes();
-                        byte[] x3 = stack.PopBytes();
                         byte[] x4 = stack.PopBytes();
-                        stack.Push(x2);
-                        stack.Push(x1);
-                        stack.Push(x4);
+                        byte[] x3 = stack.PopBytes();
+                        byte[] x2 = stack.PopBytes();
+                        byte[] x1 = stack.PopBytes();
                         stack.Push(x3);
+                        stack.Push(x4);
+                        stack.Push(x1);
+                        stack.Push(x2);
                     }
                     break;
                 case ScriptOp.OP_IFDUP:
@@ -172,13 +250,120 @@ namespace AntShares.Core.Scripts
                     if (stack.Count < 1) return false;
                     stack.Push(stack.PeekBytes());
                     break;
+                case ScriptOp.OP_NIP:
+                    {
+                        if (stack.Count < 2) return false;
+                        byte[] x2 = stack.PopBytes();
+                        stack.PopBytes();
+                        stack.Push(x2);
+                    }
+                    break;
+                case ScriptOp.OP_OVER:
+                    {
+                        if (stack.Count < 2) return false;
+                        byte[] x2 = stack.PopBytes();
+                        byte[] x1 = stack.PeekBytes();
+                        stack.Push(x2);
+                        stack.Push(x1);
+                    }
+                    break;
+                case ScriptOp.OP_PICK:
+                    {
+                        if (stack.Count < 2) return false;
+                        int n = (int)stack.PopBigInteger();
+                        if (n < 0) return false;
+                        if (stack.Count < n + 1) return false;
+                        byte[][] buffer = new byte[n][];
+                        for (int i = 0; i < n; i++)
+                            buffer[i] = stack.PopBytes();
+                        byte[] xn = stack.PeekBytes();
+                        for (int i = n - 1; i >= 0; i--)
+                            stack.Push(buffer[i]);
+                        stack.Push(xn);
+                    }
+                    break;
+                case ScriptOp.OP_ROLL:
+                    {
+                        if (stack.Count < 2) return false;
+                        int n = (int)stack.PopBigInteger();
+                        if (n < 0) return false;
+                        if (n == 0) return true;
+                        if (stack.Count < n + 1) return false;
+                        byte[][] buffer = new byte[n][];
+                        for (int i = 0; i < n; i++)
+                            buffer[i] = stack.PopBytes();
+                        byte[] xn = stack.PopBytes();
+                        for (int i = n - 1; i >= 0; i--)
+                            stack.Push(buffer[i]);
+                        stack.Push(xn);
+                    }
+                    break;
+                case ScriptOp.OP_ROT:
+                    {
+                        if (stack.Count < 3) return false;
+                        byte[] x3 = stack.PopBytes();
+                        byte[] x2 = stack.PopBytes();
+                        byte[] x1 = stack.PopBytes();
+                        stack.Push(x2);
+                        stack.Push(x3);
+                        stack.Push(x1);
+                    }
+                    break;
                 case ScriptOp.OP_SWAP:
                     {
                         if (stack.Count < 2) return false;
-                        byte[] x1 = stack.PopBytes();
                         byte[] x2 = stack.PopBytes();
+                        byte[] x1 = stack.PopBytes();
+                        stack.Push(x2);
+                        stack.Push(x1);
+                    }
+                    break;
+                case ScriptOp.OP_TUCK:
+                    {
+                        if (stack.Count < 2) return false;
+                        byte[] x2 = stack.PopBytes();
+                        byte[] x1 = stack.PopBytes();
+                        stack.Push(x2);
                         stack.Push(x1);
                         stack.Push(x2);
+                    }
+                    break;
+                case ScriptOp.OP_CAT:
+                    {
+                        if (stack.Count < 2) return false;
+                        byte[] x2 = stack.PopBytes();
+                        byte[] x1 = stack.PopBytes();
+                        stack.Push(x1.Concat(x2).ToArray());
+                    }
+                    break;
+                case ScriptOp.OP_SUBSTR:
+                    {
+                        if (stack.Count < 3) return false;
+                        int count = (int)stack.PopBigInteger();
+                        if (count < 0) return false;
+                        int index = (int)stack.PopBigInteger();
+                        if (index < 0) return false;
+                        byte[] str = stack.PopBytes();
+                        stack.Push(str.Skip(index).Take(count).ToArray());
+                    }
+                    break;
+                case ScriptOp.OP_LEFT:
+                    {
+                        if (stack.Count < 2) return false;
+                        int count = (int)stack.PopBigInteger();
+                        if (count < 0) return false;
+                        byte[] str = stack.PopBytes();
+                        stack.Push(str.Take(count).ToArray());
+                    }
+                    break;
+                case ScriptOp.OP_RIGHT:
+                    {
+                        if (stack.Count < 2) return false;
+                        int count = (int)stack.PopBigInteger();
+                        if (count < 0) return false;
+                        byte[] str = stack.PopBytes();
+                        if (count > str.Length) return false;
+                        stack.Push(str.Skip(str.Length - count).ToArray());
                     }
                     break;
                 case ScriptOp.OP_SIZE:
@@ -187,6 +372,34 @@ namespace AntShares.Core.Scripts
                     break;
 
                 // Bitwise logic
+                case ScriptOp.OP_INVERT:
+                    if (stack.Count < 1) return false;
+                    stack.Push(~stack.PopBigInteger());
+                    break;
+                case ScriptOp.OP_AND:
+                    {
+                        if (stack.Count < 2) return false;
+                        BigInteger b = stack.PopBigInteger();
+                        BigInteger a = stack.PopBigInteger();
+                        stack.Push(a & b);
+                    }
+                    break;
+                case ScriptOp.OP_OR:
+                    {
+                        if (stack.Count < 2) return false;
+                        BigInteger b = stack.PopBigInteger();
+                        BigInteger a = stack.PopBigInteger();
+                        stack.Push(a | b);
+                    }
+                    break;
+                case ScriptOp.OP_XOR:
+                    {
+                        if (stack.Count < 2) return false;
+                        BigInteger b = stack.PopBigInteger();
+                        BigInteger a = stack.PopBigInteger();
+                        stack.Push(a ^ b);
+                    }
+                    break;
                 case ScriptOp.OP_EQUAL:
                 case ScriptOp.OP_EQUALVERIFY:
                     if (stack.Count < 2) return false;
@@ -198,19 +411,19 @@ namespace AntShares.Core.Scripts
                 // Numeric
                 case ScriptOp.OP_1ADD:
                     if (stack.Count < 1) return false;
-                    stack.Push((int)stack.PopBigInteger() + 1);
+                    stack.Push(stack.PopBigInteger() + BigInteger.One);
                     break;
                 case ScriptOp.OP_1SUB:
                     if (stack.Count < 1) return false;
-                    stack.Push((int)stack.PopBigInteger() - 1);
+                    stack.Push(stack.PopBigInteger() - BigInteger.One);
                     break;
                 case ScriptOp.OP_2MUL:
                     if (stack.Count < 1) return false;
-                    stack.Push((int)stack.PopBigInteger() * 2);
+                    stack.Push(stack.PopBigInteger() * 2);
                     break;
                 case ScriptOp.OP_2DIV:
                     if (stack.Count < 1) return false;
-                    stack.Push((int)stack.PopBigInteger() / 2);
+                    stack.Push(stack.PopBigInteger() / 2);
                     break;
                 case ScriptOp.OP_NEGATE:
                     if (stack.Count < 1) return false;
@@ -230,34 +443,50 @@ namespace AntShares.Core.Scripts
                     break;
                 case ScriptOp.OP_ADD:
                     if (stack.Count < 2) return false;
-                    stack.Push((int)stack.PopBigInteger() + (int)stack.PopBigInteger());
+                    stack.Push(stack.PopBigInteger() + stack.PopBigInteger());
                     break;
                 case ScriptOp.OP_SUB:
                     {
                         if (stack.Count < 2) return false;
-                        int b = (int)stack.PopBigInteger();
-                        int a = (int)stack.PopBigInteger();
+                        BigInteger b = stack.PopBigInteger();
+                        BigInteger a = stack.PopBigInteger();
                         stack.Push(a - b);
                     }
                     break;
                 case ScriptOp.OP_MUL:
                     if (stack.Count < 2) return false;
-                    stack.Push((int)stack.PopBigInteger() * (int)stack.PopBigInteger());
+                    stack.Push(stack.PopBigInteger() * stack.PopBigInteger());
                     break;
                 case ScriptOp.OP_DIV:
                     {
                         if (stack.Count < 2) return false;
-                        int b = (int)stack.PopBigInteger();
-                        int a = (int)stack.PopBigInteger();
+                        BigInteger b = stack.PopBigInteger();
+                        BigInteger a = stack.PopBigInteger();
                         stack.Push(a / b);
                     }
                     break;
                 case ScriptOp.OP_MOD:
                     {
                         if (stack.Count < 2) return false;
-                        int b = (int)stack.PopBigInteger();
-                        int a = (int)stack.PopBigInteger();
+                        BigInteger b = stack.PopBigInteger();
+                        BigInteger a = stack.PopBigInteger();
                         stack.Push(a % b);
+                    }
+                    break;
+                case ScriptOp.OP_LSHIFT:
+                    {
+                        if (stack.Count < 2) return false;
+                        int b = (int)stack.PopBigInteger();
+                        BigInteger a = stack.PopBigInteger();
+                        stack.Push(a << b);
+                    }
+                    break;
+                case ScriptOp.OP_RSHIFT:
+                    {
+                        if (stack.Count < 2) return false;
+                        int b = (int)stack.PopBigInteger();
+                        BigInteger a = stack.PopBigInteger();
+                        stack.Push(a >> b);
                     }
                     break;
                 case ScriptOp.OP_BOOLAND:
@@ -282,32 +511,32 @@ namespace AntShares.Core.Scripts
                 case ScriptOp.OP_LESSTHAN:
                     {
                         if (stack.Count < 2) return false;
-                        int b = (int)stack.PopBigInteger();
-                        int a = (int)stack.PopBigInteger();
+                        BigInteger b = stack.PopBigInteger();
+                        BigInteger a = stack.PopBigInteger();
                         stack.Push(a < b);
                     }
                     break;
                 case ScriptOp.OP_GREATERTHAN:
                     {
                         if (stack.Count < 2) return false;
-                        int b = (int)stack.PopBigInteger();
-                        int a = (int)stack.PopBigInteger();
+                        BigInteger b = stack.PopBigInteger();
+                        BigInteger a = stack.PopBigInteger();
                         stack.Push(a > b);
                     }
                     break;
                 case ScriptOp.OP_LESSTHANOREQUAL:
                     {
                         if (stack.Count < 2) return false;
-                        int b = (int)stack.PopBigInteger();
-                        int a = (int)stack.PopBigInteger();
+                        BigInteger b = stack.PopBigInteger();
+                        BigInteger a = stack.PopBigInteger();
                         stack.Push(a <= b);
                     }
                     break;
                 case ScriptOp.OP_GREATERTHANOREQUAL:
                     {
                         if (stack.Count < 2) return false;
-                        int b = (int)stack.PopBigInteger();
-                        int a = (int)stack.PopBigInteger();
+                        BigInteger b = stack.PopBigInteger();
+                        BigInteger a = stack.PopBigInteger();
                         stack.Push(a >= b);
                     }
                     break;
@@ -405,11 +634,11 @@ namespace AntShares.Core.Scripts
                     }
                     break;
 
-                case ScriptOp.OP_EVAL:
-                    if (stack.Count < 1) return false;
-                    if (!ExecuteScript(stack.PopBytes(), false))
-                        return false;
-                    break;
+                //case ScriptOp.OP_EVAL:
+                //    if (stack.Count < 1) return false;
+                //    if (!ExecuteScript(stack.PopBytes(), false))
+                //        return false;
+                //    break;
 
                 default:
                     return false;

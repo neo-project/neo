@@ -33,13 +33,13 @@
 
         // Flow control
         OP_NOP = 0x61, // Does nothing.
-        //OP_VER = 0x62, // Transaction is invalid unless occuring in an unexecuted OP_IF branch
-        //OP_IF = 0x63, // If the top stack value is not 0, the statements are executed. The top stack value is removed.
-        //OP_NOTIF = 0x64, // If the top stack value is 0, the statements are executed. The top stack value is removed.
+        OP_CALL = 0x62, // Call antshares API. Not available in bitcoin.
+        OP_IF = 0x63, // If the top stack value is not 0, the statements are executed. The top stack value is removed.
+        OP_NOTIF = 0x64, // If the top stack value is 0, the statements are executed. The top stack value is removed.
         //OP_VERIF = 0x65, // Transaction is invalid even when occuring in an unexecuted OP_IF branch
         //OP_VERNOTIF = 0x66, // Transaction is invalid even when occuring in an unexecuted OP_IF branch
-        //OP_ELSE = 0x67, // If the preceding OP_IF or OP_NOTIF or OP_ELSE was not executed then these statements are and if the preceding OP_IF or OP_NOTIF or OP_ELSE was executed then these statements are not.
-        //OP_ENDIF = 0x68, // Ends an if/else block.
+        OP_ELSE = 0x67, // If the preceding OP_IF or OP_NOTIF or OP_ELSE was not executed then these statements are and if the preceding OP_IF or OP_NOTIF or OP_ELSE was executed then these statements are not.
+        OP_ENDIF = 0x68, // Ends an if/else block.
         OP_VERIFY = 0x69, // Marks transaction as invalid if top stack value is not true. True is removed, but false is not.
         OP_RETURN = 0x6A, // Marks transaction as invalid.
 
@@ -50,35 +50,35 @@
         OP_2DROP = 0x6D, // Removes the top two stack items.
         OP_2DUP = 0x6E, // Duplicates the top two stack items.
         OP_3DUP = 0x6F, // Duplicates the top three stack items.
-        //OP_2OVER = 0x70, // Copies the pair of items two spaces back in the stack to the front.
-        //OP_2ROT = 0x71, // The fifth and sixth items back are moved to the top of the stack.
+        OP_2OVER = 0x70, // Copies the pair of items two spaces back in the stack to the front.
+        OP_2ROT = 0x71, // The fifth and sixth items back are moved to the top of the stack.
         OP_2SWAP = 0x72, // Swaps the top two pairs of items.
         OP_IFDUP = 0x73, // If the top stack value is not 0, duplicate it.
         OP_DEPTH = 0x74, // Puts the number of stack items onto the stack.
         OP_DROP = 0x75, // Removes the top stack item.
         OP_DUP = 0x76, // Duplicates the top stack item.
-        //OP_NIP = 0x77, // Removes the second-to-top stack item.
-        //OP_OVER = 0x78, // Copies the second-to-top stack item to the top.
-        //OP_PICK = 0x79, // The item n back in the stack is copied to the top.
-        //OP_ROLL = 0x7A, // The item n back in the stack is moved to the top.
-        //OP_ROT = 0x7B, // The top three items on the stack are rotated to the left.
+        OP_NIP = 0x77, // Removes the second-to-top stack item.
+        OP_OVER = 0x78, // Copies the second-to-top stack item to the top.
+        OP_PICK = 0x79, // The item n back in the stack is copied to the top.
+        OP_ROLL = 0x7A, // The item n back in the stack is moved to the top.
+        OP_ROT = 0x7B, // The top three items on the stack are rotated to the left.
         OP_SWAP = 0x7C, // The top two items on the stack are swapped.
-        //OP_TUCK = 0x7D, // The item at the top of the stack is copied and inserted before the second-to-top item.
+        OP_TUCK = 0x7D, // The item at the top of the stack is copied and inserted before the second-to-top item.
 
 
         // Splice
-        //OP_CAT = 0x7E, // Concatenates two strings. Currently disabled.
-        //OP_SUBSTR = 0x7F, // Returns a section of a string. Currently disabled.
-        //OP_LEFT = 0x80, // Keeps only characters left of the specified point in a string. Currently disabled.
-        //OP_RIGHT = 0x81, // Keeps only characters right of the specified point in a string. Currently disabled.
+        OP_CAT = 0x7E, // Concatenates two strings.
+        OP_SUBSTR = 0x7F, // Returns a section of a string.
+        OP_LEFT = 0x80, // Keeps only characters left of the specified point in a string.
+        OP_RIGHT = 0x81, // Keeps only characters right of the specified point in a string.
         OP_SIZE = 0x82, // Returns the length of the input string.
 
 
         // Bitwise logic
-        //OP_INVERT = 0x83, // Flips all of the bits in the input. Currently disabled.
-        //OP_AND = 0x84, // Boolean and between each bit in the inputs. Currently disabled.
-        //OP_OR = 0x85, // Boolean or between each bit in the inputs. Currently disabled.
-        //OP_XOR = 0x86, // Boolean exclusive or between each bit in the inputs. Currently disabled.
+        OP_INVERT = 0x83, // Flips all of the bits in the input.
+        OP_AND = 0x84, // Boolean and between each bit in the inputs.
+        OP_OR = 0x85, // Boolean or between each bit in the inputs.
+        OP_XOR = 0x86, // Boolean exclusive or between each bit in the inputs.
         OP_EQUAL = 0x87, // Returns 1 if the inputs are exactly equal, 0 otherwise.
         OP_EQUALVERIFY = 0x88, // Same as OP_EQUAL, but runs OP_VERIFY afterward.
         //OP_RESERVED1 = 0x89, // Transaction is invalid unless occuring in an unexecuted OP_IF branch
@@ -99,8 +99,8 @@
         OP_MUL = 0x95, // a is multiplied by b.
         OP_DIV = 0x96, // a is divided by b.
         OP_MOD = 0x97, // Returns the remainder after dividing a by b.
-        //OP_LSHIFT = 0x98, // Shifts a left b bits, preserving sign. Currently disabled.
-        //OP_RSHIFT = 0x99, // Shifts a right b bits, preserving sign. Currently disabled.
+        OP_LSHIFT = 0x98, // Shifts a left b bits, preserving sign.
+        OP_RSHIFT = 0x99, // Shifts a right b bits, preserving sign.
         OP_BOOLAND = 0x9A, // If both a and b are not 0, the output is 1. Otherwise 0.
         OP_BOOLOR = 0x9B, // If a or b is not 0, the output is 1. Otherwise 0.
         OP_NUMEQUAL = 0x9C, // Returns 1 if the numbers are equal, 0 otherwise.
@@ -126,6 +126,8 @@
         OP_CHECKSIGVERIFY = 0xAD, // Same as OP_CHECKSIG, but OP_VERIFY is executed afterward.
         OP_CHECKMULTISIG = 0xAE, // For each signature and public key pair, OP_CHECKSIG is executed. If more public keys than signatures are listed, some key/sig pairs can fail. All signatures need to match a public key. If all signatures are valid, 1 is returned, 0 otherwise. Due to a bug, one extra unused value is removed from the stack.
         OP_CHECKMULTISIGVERIFY = 0xAF, // Same as OP_CHECKMULTISIG, but OP_VERIFY is executed afterward.
-        OP_EVAL = 0xB0, // see BIP12
+
+
+        //OP_EVAL = 0xB0, // see BIP12. Currently disabled.
     }
 }
