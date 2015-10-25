@@ -1,4 +1,4 @@
-﻿using AntShares.Core;
+﻿using AntShares.Wallets;
 using System;
 using System.Windows.Forms;
 
@@ -10,11 +10,11 @@ namespace AntShares.UI
         {
             get
             {
-                return textBox1.Text.ToScriptHash();
+                return Wallet.ToScriptHash(textBox1.Text);
             }
             set
             {
-                textBox1.Text = value.ToAddress();
+                textBox1.Text = Wallet.ToAddress(value);
             }
         }
 
@@ -44,7 +44,7 @@ namespace AntShares.UI
             }
             try
             {
-                textBox1.Text.ToScriptHash();
+                Wallet.ToScriptHash(textBox1.Text);
             }
             catch (FormatException)
             {

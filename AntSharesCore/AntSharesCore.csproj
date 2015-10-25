@@ -51,6 +51,7 @@
     <Compile Include="Core\Helper.cs" />
     <Compile Include="Core\Scripts\Helper.cs" />
     <Compile Include="Core\Scripts\Script.cs" />
+    <Compile Include="Cryptography\ECC\ECDsa.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\DataEntryPrefix.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\Helper.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\LevelDBBlockchain.cs" />
@@ -92,9 +93,9 @@
     <Compile Include="IO\Helper.cs" />
     <Compile Include="IO\ISerializable.cs" />
     <Compile Include="Cryptography\Base58.cs" />
-    <Compile Include="Cryptography\Secp256r1Curve.cs" />
-    <Compile Include="Cryptography\Secp256r1Element.cs" />
-    <Compile Include="Cryptography\Secp256r1Point.cs" />
+    <Compile Include="Cryptography\ECC\ECCurve.cs" />
+    <Compile Include="Cryptography\ECC\ECFieldElement.cs" />
+    <Compile Include="Cryptography\ECC\ECPoint.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="IO\Json\JArray.cs" />
     <Compile Include="IO\Json\JBoolean.cs" />
@@ -103,7 +104,6 @@
     <Compile Include="IO\Json\JString.cs" />
     <Compile Include="Network\LocalNode.cs" />
     <Compile Include="Network\Message.cs" />
-    <Compile Include="Network\Mission.cs" />
     <Compile Include="Network\Payloads\AddrPayload.cs" />
     <Compile Include="Network\Payloads\GetBlocksPayload.cs" />
     <Compile Include="Network\Payloads\GetDataPayload.cs" />
@@ -120,7 +120,7 @@
     <Compile Include="UInt160.cs" />
     <Compile Include="UInt256.cs" />
     <Compile Include="UIntBase.cs" />
-    <Compile Include="Wallets\ProtectionContext.cs" />
+    <Compile Include="Cryptography\ProtectedMemoryContext.cs" />
     <Compile Include="Wallets\Wallet.cs" />
     <Compile Include="Wallets\WalletEntry.cs" />
   </ItemGroup>

@@ -1,4 +1,4 @@
-﻿using AntShares.Cryptography;
+﻿using AntShares.Cryptography.ECC;
 using System;
 using System.IO;
 using System.Numerics;
@@ -21,7 +21,7 @@ namespace AntShares.Core.Scripts
             return this;
         }
 
-        public static byte[] CreateMultiSigRedeemScript(int m, params Secp256r1Point[] publicKeys)
+        public static byte[] CreateMultiSigRedeemScript(int m, params ECPoint[] publicKeys)
         {
             if (!(1 <= m && m <= publicKeys.Length && publicKeys.Length <= 1024))
                 throw new ArgumentException();

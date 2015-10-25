@@ -2,6 +2,7 @@
 using AntShares.IO;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AntShares.Network
@@ -46,10 +47,10 @@ namespace AntShares.Network
                 throw new FormatException();
         }
 
-        public static async Task<Message> DeserializeFromStreamAsync(Stream stream)
+        public static async Task<Message> DeserializeFromStreamAsync(Stream stream, CancellationToken cancellationToken)
         {
             byte[] buffer = new byte[sizeof(uint) + 12 + sizeof(uint) + sizeof(uint)];
-            await ReadAsync(stream, buffer, 0, buffer.Length);
+            await ReadAsync(stream, buffer, 0, buffer.Length, cancellationToken);
             Message message = new Message();
             using (MemoryStream ms = new MemoryStream(buffer, false))
             using (BinaryReader reader = new BinaryReader(ms))
@@ -63,7 +64,7 @@ namespace AntShares.Network
                 message.Checksum = reader.ReadUInt32();
                 message.Payload = new byte[length];
             }
-            await ReadAsync(stream, message.Payload, 0, message.Payload.Length);
+            await ReadAsync(stream, message.Payload, 0, message.Payload.Length, cancellationToken);
             if (GetChecksum(message.Payload) != message.Checksum)
                 throw new FormatException();
             return message;
@@ -74,11 +75,11 @@ namespace AntShares.Network
             return BitConverter.ToUInt32(value.Sha256().Sha256(), 0);
         }
 
-        private static async Task ReadAsync(Stream stream, byte[] buffer, int offset, int count)
+        private static async Task ReadAsync(Stream stream, byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             while (count > 0)
             {
-                int total = await stream.ReadAsync(buffer, offset, count);
+                int total = await stream.ReadAsync(buffer, offset, count, cancellationToken);
                 if (total == 0) throw new IOException();
                 offset += total;
                 count -= total;

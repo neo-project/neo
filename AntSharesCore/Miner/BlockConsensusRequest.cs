@@ -1,6 +1,6 @@
 ﻿using AntShares.Core;
 using AntShares.Core.Scripts;
-using AntShares.Cryptography;
+using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using AntShares.Network;
 using System;
@@ -13,9 +13,9 @@ namespace AntShares.Miner
     public class BlockConsensusRequest : Inventory, ISignable
     {
         public UInt256 PrevHash;
-        public Secp256r1Point Miner;
+        public ECPoint Miner;
         public byte[] IV;
-        public Dictionary<Secp256r1Point, byte[]> NoncePieces = new Dictionary<Secp256r1Point, byte[]>();
+        public Dictionary<ECPoint, byte[]> NoncePieces = new Dictionary<ECPoint, byte[]>();
         public UInt256 NonceHash;
         public UInt256[] TransactionHashes;
         public Script Script;
@@ -50,13 +50,13 @@ namespace AntShares.Miner
         void ISignable.DeserializeUnsigned(BinaryReader reader)
         {
             PrevHash = reader.ReadSerializable<UInt256>();
-            Miner = Secp256r1Point.DeserializeFrom(reader);
+            Miner = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
             IV = reader.ReadBytes(16);
             NoncePieces.Clear();
             int count = (int)reader.ReadVarInt();
             for (int i = 0; i < count; i++)
             {
-                Secp256r1Point key = Secp256r1Point.DeserializeFrom(reader);
+                ECPoint key = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
                 if (key == Miner) throw new FormatException();
                 byte[] value = reader.ReadBytes((int)reader.ReadVarInt());
                 NoncePieces.Add(key, value);
@@ -97,7 +97,7 @@ namespace AntShares.Miner
                 return false;
             if (PrevHash != Blockchain.Default.CurrentBlockHash)
                 return false;
-            HashSet<Secp256r1Point> miners = new HashSet<Secp256r1Point>(Blockchain.Default.GetMiners());
+            HashSet<ECPoint> miners = new HashSet<ECPoint>(Blockchain.Default.GetMiners());
             if (!miners.Contains(Miner)) return false;
             if (NoncePieces.Count != miners.Count - 1) return false;
             if (!NoncePieces.Keys.Concat(new[] { Miner }).OrderBy(p => p).SequenceEqual(miners.OrderBy(p => p)))

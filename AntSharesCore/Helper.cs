@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace AntShares
@@ -68,6 +69,23 @@ namespace AntShares
             return x;
         }
 
+        internal static BigInteger ModInverse(this BigInteger a, BigInteger n)
+        {
+            BigInteger i = n, v = 0, d = 1;
+            while (a > 0)
+            {
+                BigInteger t = i / a, x = a;
+                a = i % x;
+                i = x;
+                x = d;
+                d = v - t * x;
+                v = x;
+            }
+            v %= n;
+            if (v < 0) v = (v + n) % n;
+            return v;
+        }
+
         internal static BigInteger NextBigInteger(this Random rand, int sizeInBits)
         {
             if (sizeInBits < 0)
@@ -76,6 +94,21 @@ namespace AntShares
                 return 0;
             byte[] b = new byte[sizeInBits / 8 + 1];
             rand.NextBytes(b);
+            if (sizeInBits % 8 == 0)
+                b[b.Length - 1] = 0;
+            else
+                b[b.Length - 1] &= (byte)((1 << sizeInBits % 8) - 1);
+            return new BigInteger(b);
+        }
+
+        internal static BigInteger NextBigInteger(this RNGCryptoServiceProvider rng, int sizeInBits)
+        {
+            if (sizeInBits < 0)
+                throw new ArgumentException("sizeInBits must be non-negative");
+            if (sizeInBits == 0)
+                return 0;
+            byte[] b = new byte[sizeInBits / 8 + 1];
+            rng.GetNonZeroBytes(b);
             if (sizeInBits % 8 == 0)
                 b[b.Length - 1] = 0;
             else
@@ -103,15 +136,15 @@ namespace AntShares
 
         internal static bool TestBit(this BigInteger i, int index)
         {
-            return (i.ToByteArray()[index / 8] & 1 << index % 8) > 0;
+            return (i & (BigInteger.One << index)) > BigInteger.Zero;
         }
 
-        public static DateTime ToDateTime(this UInt32 timestamp)
+        public static DateTime ToDateTime(this uint timestamp)
         {
             return unixEpoch.AddSeconds(timestamp).ToLocalTime();
         }
 
-        public static DateTime ToDateTime(this UInt64 timestamp)
+        public static DateTime ToDateTime(this ulong timestamp)
         {
             return unixEpoch.AddSeconds(timestamp).ToLocalTime();
         }
@@ -124,9 +157,9 @@ namespace AntShares
             return sb.ToString();
         }
 
-        public static UInt32 ToTimestamp(this DateTime time)
+        public static uint ToTimestamp(this DateTime time)
         {
-            return (UInt32)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
+            return (uint)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
         }
 
         internal static long WeightedAverage<T>(this IEnumerable<T> source, Func<T, long> valueSelector, Func<T, long> weightSelector)

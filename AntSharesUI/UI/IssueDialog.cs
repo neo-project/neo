@@ -1,4 +1,5 @@
 ﻿using AntShares.Core;
+using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +16,7 @@ namespace AntShares.UI
 
             public override string ToString()
             {
-                return string.Format("{0}\t{1}", Account.ToAddress(), Amount);
+                return string.Format("{0}\t{1}", Wallet.ToAddress(Account), Amount);
             }
         }
 
@@ -67,8 +68,8 @@ namespace AntShares.UI
             }
             else
             {
-                textBox1.Text = tx.Issuer.ToAddress();
-                textBox2.Text = tx.Admin.ToAddress();
+                textBox1.Text = Wallet.ToAddress(tx.Issuer);
+                textBox2.Text = Wallet.ToAddress(tx.Admin);
                 textBox3.Text = tx.Amount.ToString();
                 textBox4.Text = Blockchain.Default.GetQuantityIssued(tx.Hash).ToString();
                 groupBox3.Enabled = true;

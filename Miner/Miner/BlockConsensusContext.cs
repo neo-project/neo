@@ -1,6 +1,7 @@
 ﻿using AntShares.Algebra;
 using AntShares.Core;
 using AntShares.Cryptography;
+using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using AntShares.Threading;
 using AntShares.Wallets;
@@ -14,20 +15,20 @@ namespace AntShares.Miner
     internal class BlockConsensusContext
     {
         public UInt256 PrevHash;
-        public Secp256r1Point[] Miners;
-        public readonly Dictionary<Secp256r1Point, UInt256> Nonces = new Dictionary<Secp256r1Point, UInt256>();
-        public readonly Dictionary<Secp256r1Point, UInt256> NonceHashes = new Dictionary<Secp256r1Point, UInt256>();
-        public readonly Dictionary<Secp256r1Point, List<FiniteFieldPoint>> NoncePieces = new Dictionary<Secp256r1Point, List<FiniteFieldPoint>>();
+        public ECPoint[] Miners;
+        public readonly Dictionary<ECPoint, UInt256> Nonces = new Dictionary<ECPoint, UInt256>();
+        public readonly Dictionary<ECPoint, UInt256> NonceHashes = new Dictionary<ECPoint, UInt256>();
+        public readonly Dictionary<ECPoint, List<FiniteFieldPoint>> NoncePieces = new Dictionary<ECPoint, List<FiniteFieldPoint>>();
         public readonly HashSet<UInt256> TransactionHashes = new HashSet<UInt256>();
 
         public readonly object SyncRoot = new object();
-        private readonly Secp256r1Point my_pubkey;
+        private readonly ECPoint my_pubkey;
         private readonly TimeoutAction action_request;
         private int index_me = -1;
 
         public bool Valid => index_me >= 0;
 
-        public BlockConsensusContext(Secp256r1Point my_pubkey)
+        public BlockConsensusContext(ECPoint my_pubkey)
         {
             this.my_pubkey = my_pubkey;
             Reset();

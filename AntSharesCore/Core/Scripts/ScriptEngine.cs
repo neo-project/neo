@@ -1,4 +1,5 @@
 ﻿using AntShares.Cryptography;
+using AntShares.Cryptography.ECC;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -436,7 +437,7 @@ namespace AntShares.Core.Scripts
             const int ECDSA_PUBLIC_P256_MAGIC = 0x31534345;
             try
             {
-                pubkey = Secp256r1Point.DecodePoint(pubkey).EncodePoint(false).Skip(1).ToArray();
+                pubkey = ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1).EncodePoint(false).Skip(1).ToArray();
             }
             catch
             {

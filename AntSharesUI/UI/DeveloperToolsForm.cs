@@ -2,6 +2,7 @@
 using AntShares.Core.Scripts;
 using AntShares.Cryptography;
 using AntShares.IO;
+using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -43,8 +44,8 @@ namespace AntShares.UI
                 AssetType = AssetType.AntShare,
                 Name = "[{'lang':'zh-CN','name':'小蚁股'},{'lang':'en','name':'AntShare'}]",
                 Amount = Fixed8.FromDecimal(numericUpDown1.Value),
-                Issuer = textBox1.Text.ToScriptHash(),
-                Admin = textBox2.Text.ToScriptHash(),
+                Issuer = Wallet.ToScriptHash(textBox1.Text),
+                Admin = Wallet.ToScriptHash(textBox2.Text),
                 Inputs = new TransactionInput[0],
                 Outputs = new TransactionOutput[0]
             };

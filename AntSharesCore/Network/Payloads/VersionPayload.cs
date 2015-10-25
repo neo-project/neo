@@ -6,21 +6,21 @@ namespace AntShares.Network.Payloads
 {
     public class VersionPayload : ISerializable
     {
-        public UInt32 Version;
-        public UInt64 Services;
-        public UInt32 Timestamp;
-        public UInt16 Port;
+        public uint Version;
+        public ulong Services;
+        public uint Timestamp;
+        public ushort Port;
         public string UserAgent;
-        public UInt32 StartHeight;
+        public uint StartHeight;
 
-        public static VersionPayload Create(int port, string userAgent, UInt32 start_height)
+        public static VersionPayload Create(int port, string userAgent, uint start_height)
         {
             return new VersionPayload
             {
                 Version = LocalNode.PROTOCOL_VERSION,
-                Services = 1,
+                Services = NetworkAddressWithTime.NODE_NETWORK,
                 Timestamp = DateTime.Now.ToTimestamp(),
-                Port = (UInt16)port,
+                Port = (ushort)port,
                 UserAgent = userAgent,
                 StartHeight = start_height
             };

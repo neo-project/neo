@@ -1,6 +1,7 @@
 ﻿using AntShares.Core;
 using AntShares.Core.Scripts;
 using AntShares.Cryptography;
+using AntShares.Cryptography.ECC;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,6 +12,8 @@ namespace AntShares.Wallets
 {
     public abstract class Wallet
     {
+        public const byte CoinVersion = 0x17;
+
         private byte[] masterKey;
         private byte[] iv;
 
@@ -26,7 +29,7 @@ namespace AntShares.Wallets
             using (CngKey key = CngKey.Create(CngAlgorithm.ECDsaP256, null, new CngKeyCreationParameters { ExportPolicy = CngExportPolicies.AllowPlaintextArchiving }))
             {
                 byte[] privateKey = key.Export(CngKeyBlobFormat.EccPrivateBlob);
-                byte[] redeemScript = ScriptBuilder.CreateMultiSigRedeemScript(1, Secp256r1Point.FromBytes(privateKey));
+                byte[] redeemScript = ScriptBuilder.CreateMultiSigRedeemScript(1, ECPoint.FromBytes(privateKey, ECCurve.Secp256r1));
                 WalletEntry entry = new WalletEntry(redeemScript, privateKey);
                 SaveEntry(entry);
                 Array.Clear(privateKey, 0, privateKey.Length);
@@ -84,7 +87,7 @@ namespace AntShares.Wallets
                 throw new FormatException();
             byte[] privateKey = new byte[32];
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
-            byte[] redeemScript = ScriptBuilder.CreateMultiSigRedeemScript(1, Secp256r1Curve.G * privateKey);
+            byte[] redeemScript = ScriptBuilder.CreateMultiSigRedeemScript(1, ECCurve.Secp256r1.G * privateKey);
             WalletEntry entry = new WalletEntry(redeemScript, privateKey);
             SaveEntry(entry);
             Array.Clear(privateKey, 0, privateKey.Length);
@@ -134,10 +137,28 @@ namespace AntShares.Wallets
                     {
                         signature = context.Signable.Sign(entry.PrivateKeys[j], entry.PublicKeys[j]);
                     }
-                    fSuccess |= context.Add(entry.RedeemScript, Secp256r1Point.FromBytes(entry.PublicKeys[j]), signature);
+                    fSuccess |= context.Add(entry.RedeemScript, ECPoint.FromBytes(entry.PublicKeys[j], ECCurve.Secp256r1), signature);
                 }
             }
             return fSuccess;
+        }
+
+        public static string ToAddress(UInt160 hash)
+        {
+            byte[] data = new byte[] { CoinVersion }.Concat(hash.ToArray()).ToArray();
+            return Base58.Encode(data.Concat(data.Sha256().Sha256().Take(4)).ToArray());
+        }
+
+        public static UInt160 ToScriptHash(string address)
+        {
+            byte[] data = Base58.Decode(address);
+            if (data.Length != 25)
+                throw new FormatException();
+            if (data[0] != CoinVersion)
+                throw new FormatException();
+            if (!data.Take(21).Sha256().Sha256().Take(4).SequenceEqual(data.Skip(21)))
+                throw new FormatException();
+            return new UInt160(data.Skip(1).Take(20).ToArray());
         }
     }
 }

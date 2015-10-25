@@ -1,5 +1,5 @@
 ﻿using AntShares.Core.Scripts;
-using AntShares.Cryptography;
+using AntShares.Cryptography.ECC;
 using AntShares.IO.Json;
 using System;
 using System.IO;
@@ -30,7 +30,7 @@ namespace AntShares.Core
             this.signatures = new MultiSigContext[ScriptHashes.Length];
         }
 
-        public bool Add(byte[] redeemScript, Secp256r1Point pubkey, byte[] signature)
+        public bool Add(byte[] redeemScript, ECPoint pubkey, byte[] signature)
         {
             UInt160 scriptHash = redeemScript.ToScriptHash();
             for (int i = 0; i < ScriptHashes.Length; i++)

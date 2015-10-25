@@ -16,13 +16,7 @@ namespace AntShares.Core
         public TransactionOutput[] Outputs;
         public Script[] Scripts;
 
-        public override InventoryType InventoryType
-        {
-            get
-            {
-                return InventoryType.TX;
-            }
-        }
+        public override InventoryType InventoryType => InventoryType.TX;
 
         [NonSerialized]
         private IReadOnlyDictionary<TransactionInput, TransactionOutput> _references;
@@ -110,10 +104,13 @@ namespace AntShares.Core
         private void DeserializeUnsignedWithoutType(BinaryReader reader)
         {
             DeserializeExclusiveData(reader);
-            this.Inputs = reader.ReadSerializableArray<TransactionInput>();
-            if (GetAllInputs().Distinct().Count() != GetAllInputs().Count())
-                throw new FormatException();
-            this.Outputs = reader.ReadSerializableArray<TransactionOutput>();
+            Inputs = reader.ReadSerializableArray<TransactionInput>();
+            TransactionInput[] inputs = GetAllInputs().ToArray();
+            for (int i = 1; i < inputs.Length; i++)
+                for (int j = 0; j < i; j++)
+                    if (inputs[i].PrevHash == inputs[j].PrevHash && inputs[i].PrevIndex == inputs[j].PrevIndex)
+                        throw new FormatException();
+            Outputs = reader.ReadSerializableArray<TransactionOutput>();
             if (Outputs.Any(p => p.Value == Fixed8.Zero))
                 throw new FormatException();
         }

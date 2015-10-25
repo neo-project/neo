@@ -1,4 +1,4 @@
-﻿using AntShares.Cryptography;
+﻿using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using System;
 using System.Collections.Generic;
@@ -44,7 +44,7 @@ namespace AntShares.Core
             if (!base.Verify()) return false;
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
                 return false;
-            HashSet<Secp256r1Point> pubkeys = new HashSet<Secp256r1Point>();
+            HashSet<ECPoint> pubkeys = new HashSet<ECPoint>();
             foreach (UInt256 vote in Enrollments)
             {
                 EnrollmentTransaction tx = Blockchain.Default.GetTransaction(vote) as EnrollmentTransaction;

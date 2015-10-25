@@ -1,5 +1,6 @@
 ﻿using AntShares.Core;
 using AntShares.Cryptography;
+using AntShares.Cryptography.ECC;
 using System;
 using System.IO;
 using System.Linq;
@@ -11,12 +12,12 @@ namespace AntShares.Wallets
     internal class MinerWallet
     {
         private readonly byte[] key_exported;
-        public readonly Secp256r1Point PublicKey;
+        public readonly ECPoint PublicKey;
 
         private MinerWallet(byte[] key_exported)
         {
             this.key_exported = key_exported;
-            this.PublicKey = Secp256r1Point.FromBytes(key_exported);
+            this.PublicKey = ECPoint.FromBytes(key_exported, ECCurve.Secp256r1);
             ProtectedMemory.Protect(key_exported, MemoryProtectionScope.SameProcess);
         }
 
@@ -31,7 +32,7 @@ namespace AntShares.Wallets
             return wallet;
         }
 
-        public byte[] GetAesKey(Secp256r1Point pubkey)
+        public byte[] GetAesKey(ECPoint pubkey)
         {
             byte[] prikey = new byte[32];
             ProtectedMemory.Unprotect(key_exported, MemoryProtectionScope.SameProcess);

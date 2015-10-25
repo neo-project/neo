@@ -23,7 +23,7 @@ namespace AntShares.UI
             listView1.Items.Clear();
             if (Program.CurrentWallet != null)
             {
-                listView1.Items.AddRange(Program.CurrentWallet.GetAddresses().Select(p => new ListViewItem(new string[] { p.ToAddress() })).ToArray());
+                listView1.Items.AddRange(Program.CurrentWallet.GetAddresses().Select(p => new ListViewItem(new string[] { Wallet.ToAddress(p) })).ToArray());
             }
         }
 
@@ -105,7 +105,7 @@ namespace AntShares.UI
 
         private void 显示详情DToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            WalletEntry entry = Program.CurrentWallet.GetEntry(listView1.SelectedItems[0].Text.ToScriptHash());
+            WalletEntry entry = Program.CurrentWallet.GetEntry(Wallet.ToScriptHash(listView1.SelectedItems[0].Text));
             using (AccountDetailsDialog dialog = new AccountDetailsDialog(entry))
             {
                 dialog.ShowDialog();

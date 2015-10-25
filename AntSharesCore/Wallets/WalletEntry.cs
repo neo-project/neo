@@ -1,6 +1,7 @@
 ﻿using AntShares.Core;
 using AntShares.Core.Scripts;
 using AntShares.Cryptography;
+using AntShares.Cryptography.ECC;
 using System;
 using System.Linq;
 using System.Security.Cryptography;
@@ -42,7 +43,7 @@ namespace AntShares.Wallets
                 Buffer.BlockCopy(privateKeys[i], privateKeys[i].Length - 32, PrivateKeys[i], 0, 32);
                 if (privateKeys[i].Length == 32)
                 {
-                    Secp256r1Point p = Secp256r1Curve.G * privateKeys[i];
+                    ECPoint p = ECCurve.Secp256r1.G * privateKeys[i];
                     PublicKeys[i] = p.EncodePoint(false).Skip(1).ToArray();
                 }
                 else
@@ -61,7 +62,7 @@ namespace AntShares.Wallets
 
         public IDisposable Decrypt(int index)
         {
-            return new ProtectionContext(PrivateKeys[index]);
+            return new ProtectedMemoryContext(PrivateKeys[index], MemoryProtectionScope.SameProcess);
         }
 
         public bool Equals(WalletEntry other)
