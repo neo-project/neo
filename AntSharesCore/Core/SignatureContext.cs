@@ -2,6 +2,7 @@
 using AntShares.Cryptography.ECC;
 using AntShares.IO.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -13,13 +14,14 @@ namespace AntShares.Core
     {
         public readonly ISignable Signable;
         public readonly UInt160[] ScriptHashes;
-        private MultiSigContext[] signatures;
+        private readonly byte[][] redeemScripts;
+        private readonly Dictionary<ECPoint, byte[]>[] signatures;
 
         public bool Completed
         {
             get
             {
-                return signatures.All(p => p != null && p.Completed);
+                return signatures.All(p => p != null);
             }
         }
 
@@ -27,7 +29,8 @@ namespace AntShares.Core
         {
             this.Signable = signable;
             this.ScriptHashes = signable.GetScriptHashesForVerifying();
-            this.signatures = new MultiSigContext[ScriptHashes.Length];
+            this.redeemScripts = new byte[ScriptHashes.Length][];
+            this.signatures = new Dictionary<ECPoint, byte[]>[ScriptHashes.Length];
         }
 
         public bool Add(byte[] redeemScript, ECPoint pubkey, byte[] signature)
@@ -37,9 +40,15 @@ namespace AntShares.Core
             {
                 if (ScriptHashes[i] == scriptHash)
                 {
+                    if (redeemScripts[i] == null)
+                        redeemScripts[i] = redeemScript;
                     if (signatures[i] == null)
-                        signatures[i] = new MultiSigContext(redeemScript);
-                    return signatures[i].Add(pubkey, signature);
+                        signatures[i] = new Dictionary<ECPoint, byte[]>();
+                    if (signatures[i].ContainsKey(pubkey))
+                        signatures[i][pubkey] = signature;
+                    else
+                        signatures[i].Add(pubkey, signature);
+                    return true;
                 }
             }
             return false;
@@ -47,9 +56,24 @@ namespace AntShares.Core
 
         public Script[] GetScripts()
         {
-            if (!Completed)
-                throw new InvalidOperationException();
-            return signatures.Select(p => p.GetScript()).ToArray();
+            if (!Completed) throw new InvalidOperationException();
+            Script[] scripts = new Script[signatures.Length];
+            for (int i = 0; i < scripts.Length; i++)
+            {
+                using (ScriptBuilder sb = new ScriptBuilder())
+                {
+                    foreach (byte[] signature in signatures[i].OrderBy(p => p.Key).Select(p => p.Value))
+                    {
+                        sb.Push(signature);
+                    }
+                    scripts[i] = new Script
+                    {
+                        StackScript = sb.ToArray(),
+                        RedeemScript = redeemScripts[i]
+                    };
+                }
+            }
+            return scripts;
         }
 
         public static SignatureContext Parse(string value)
@@ -63,19 +87,19 @@ namespace AntShares.Core
                 signable.DeserializeUnsigned(reader);
             }
             SignatureContext context = new SignatureContext(signable);
-            JArray multisignatures = (JArray)json["multi_signatures"];
-            for (int i = 0; i < multisignatures.Count; i++)
+            JArray scripts = (JArray)json["scripts"];
+            for (int i = 0; i < scripts.Count; i++)
             {
-                if (multisignatures[i] != null)
+                if (scripts[i] != null)
                 {
-                    context.signatures[i] = new MultiSigContext(multisignatures[i]["redeem_script"].AsString().HexToBytes());
-                    JArray sigs = (JArray)multisignatures[i]["signatures"];
+                    context.redeemScripts[i] = scripts[i]["redeem_script"].AsString().HexToBytes();
+                    context.signatures[i] = new Dictionary<ECPoint, byte[]>();
+                    JArray sigs = (JArray)scripts[i]["signatures"];
                     for (int j = 0; j < sigs.Count; j++)
                     {
-                        if (sigs[j] != null)
-                        {
-                            context.signatures[i].signatures[j] = sigs[j].AsString().HexToBytes();
-                        }
+                        ECPoint pubkey = ECPoint.DecodePoint(sigs[j]["pubkey"].AsString().HexToBytes(), ECCurve.Secp256r1);
+                        byte[] signature = sigs[j]["signature"].AsString().HexToBytes();
+                        context.signatures[i].Add(pubkey, signature);
                     }
                 }
             }
@@ -93,33 +117,29 @@ namespace AntShares.Core
                 writer.Flush();
                 json["hex"] = ms.ToArray().ToHexString();
             }
-            JArray multisignatures = new JArray();
+            JArray scripts = new JArray();
             for (int i = 0; i < signatures.Length; i++)
             {
                 if (signatures[i] == null)
                 {
-                    multisignatures.Add(null);
+                    scripts.Add(null);
                 }
                 else
                 {
-                    multisignatures.Add(new JObject());
-                    multisignatures[i]["redeem_script"] = signatures[i].redeemScript.ToHexString();
+                    scripts.Add(new JObject());
+                    scripts[i]["redeem_script"] = redeemScripts[i].ToHexString();
                     JArray sigs = new JArray();
-                    for (int j = 0; j < signatures[i].signatures.Length; j++)
+                    foreach (var pair in signatures[i])
                     {
-                        if (signatures[i].signatures[j] == null)
-                        {
-                            sigs.Add(null);
-                        }
-                        else
-                        {
-                            sigs.Add(signatures[i].signatures[j].ToHexString());
-                        }
+                        JObject signature = new JObject();
+                        signature["pubkey"] = pair.Key.EncodePoint(true).ToHexString();
+                        signature["signature"] = pair.Value.ToHexString();
+                        sigs.Add(signature);
                     }
-                    multisignatures[i]["signatures"] = sigs;
+                    scripts[i]["signatures"] = sigs;
                 }
             }
-            json["multi_signatures"] = multisignatures;
+            json["scripts"] = scripts;
             return json.ToString();
         }
     }

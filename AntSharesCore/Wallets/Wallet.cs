@@ -29,7 +29,7 @@ namespace AntShares.Wallets
             using (CngKey key = CngKey.Create(CngAlgorithm.ECDsaP256, null, new CngKeyCreationParameters { ExportPolicy = CngExportPolicies.AllowPlaintextArchiving }))
             {
                 byte[] privateKey = key.Export(CngKeyBlobFormat.EccPrivateBlob);
-                byte[] redeemScript = ScriptBuilder.CreateMultiSigRedeemScript(1, ECPoint.FromBytes(privateKey, ECCurve.Secp256r1));
+                byte[] redeemScript = ScriptBuilder.CreateSignatureRedeemScript(ECPoint.FromBytes(privateKey, ECCurve.Secp256r1));
                 WalletEntry entry = new WalletEntry(redeemScript, privateKey);
                 SaveEntry(entry);
                 Array.Clear(privateKey, 0, privateKey.Length);
@@ -46,7 +46,7 @@ namespace AntShares.Wallets
             byte[] redeemScript, encryptedPrivateKey;
             GetEncryptedEntry(scriptHash, out redeemScript, out encryptedPrivateKey);
             if (redeemScript == null || encryptedPrivateKey == null) return null;
-            if ((redeemScript.Length - 3) % 34 != 0 || encryptedPrivateKey.Length % 96 != 0) throw new IOException();
+            if (encryptedPrivateKey.Length != 96) throw new IOException();
             ProtectedMemory.Unprotect(masterKey, MemoryProtectionScope.SameProcess);
             byte[] decryptedPrivateKey;
             using (AesManaged aes = new AesManaged())
@@ -58,18 +58,8 @@ namespace AntShares.Wallets
                 }
             }
             ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
-            byte[][] privateKeys = new byte[encryptedPrivateKey.Length / 96][];
-            for (int i = 0; i < privateKeys.Length; i++)
-            {
-                privateKeys[i] = new byte[96];
-                Buffer.BlockCopy(decryptedPrivateKey, i * 96, privateKeys[i], 0, 96);
-            }
-            WalletEntry entry = new WalletEntry(redeemScript, privateKeys);
+            WalletEntry entry = new WalletEntry(redeemScript, decryptedPrivateKey);
             Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
-            for (int i = 0; i < privateKeys.Length; i++)
-            {
-                Array.Clear(privateKeys[i], 0, privateKeys[i].Length);
-            }
             return entry;
         }
 
@@ -99,14 +89,11 @@ namespace AntShares.Wallets
 
         private void SaveEntry(WalletEntry entry)
         {
-            byte[] decryptedPrivateKey = new byte[entry.PrivateKeys.Length * 96];
-            for (int i = 0; i < entry.PrivateKeys.Length; i++)
+            byte[] decryptedPrivateKey = new byte[96];
+            Buffer.BlockCopy(entry.PublicKey, 0, decryptedPrivateKey, 0, 64);
+            using (entry.Decrypt())
             {
-                Buffer.BlockCopy(entry.PublicKeys[i], 0, decryptedPrivateKey, i * 96, 64);
-                using (entry.Decrypt(i))
-                {
-                    Buffer.BlockCopy(entry.PrivateKeys[i], 0, decryptedPrivateKey, i * 96 + 64, 32);
-                }
+                Buffer.BlockCopy(entry.PrivateKey, 0, decryptedPrivateKey, 64, 32);
             }
             ProtectedMemory.Unprotect(masterKey, MemoryProtectionScope.SameProcess);
             byte[] encryptedPrivateKey;
@@ -130,15 +117,12 @@ namespace AntShares.Wallets
             {
                 WalletEntry entry = GetEntry(context.ScriptHashes[i]);
                 if (entry == null) continue;
-                for (int j = 0; j < entry.PrivateKeys.Length; j++)
+                byte[] signature;
+                using (entry.Decrypt())
                 {
-                    byte[] signature;
-                    using (entry.Decrypt(j))
-                    {
-                        signature = context.Signable.Sign(entry.PrivateKeys[j], entry.PublicKeys[j]);
-                    }
-                    fSuccess |= context.Add(entry.RedeemScript, ECPoint.FromBytes(entry.PublicKeys[j], ECCurve.Secp256r1), signature);
+                    signature = context.Signable.Sign(entry.PrivateKey, entry.PublicKey);
                 }
+                fSuccess |= context.Add(entry.RedeemScript, ECPoint.FromBytes(entry.PublicKey, ECCurve.Secp256r1), signature);
             }
             return fSuccess;
         }

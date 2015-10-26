@@ -101,7 +101,7 @@ namespace AntShares.Wallets
         {
             SqlConnectionStringBuilder sb = new SqlConnectionStringBuilder();
             sb.AttachDBFilename = path;
-            sb.DataSource = @"(LocalDB)\v11.0";
+            sb.DataSource = @"(LocalDB)\MSSQLLocalDB";
             sb.IntegratedSecurity = true;
             string connectionString = sb.ToString();
             using (WalletDataContext ctx = new WalletDataContext(connectionString))

@@ -1,6 +1,7 @@
 ﻿using AntShares.Cryptography.ECC;
 using System;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 
 namespace AntShares.Core.Scripts
@@ -28,12 +29,22 @@ namespace AntShares.Core.Scripts
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.Push(m);
-                for (int i = 0; i < publicKeys.Length; i++)
+                foreach (ECPoint publicKey in publicKeys.OrderBy(p => p))
                 {
-                    sb.Push(publicKeys[i].EncodePoint(true));
+                    sb.Push(publicKey.EncodePoint(true));
                 }
                 sb.Push(publicKeys.Length);
                 sb.Add(ScriptOp.OP_CHECKMULTISIG);
+                return sb.ToArray();
+            }
+        }
+
+        public static byte[] CreateSignatureRedeemScript(ECPoint publicKey)
+        {
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.Push(publicKey.EncodePoint(true));
+                sb.Add(ScriptOp.OP_CHECKSIG);
                 return sb.ToArray();
             }
         }

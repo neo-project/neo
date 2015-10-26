@@ -89,7 +89,7 @@ namespace AntShares.UI
 
         private void 官网WToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start("https://weangel.com/AntShares");
+            Process.Start("https://www.antshares.com/");
         }
 
         private void 开发人员工具TToolStripMenuItem_Click(object sender, EventArgs e)
