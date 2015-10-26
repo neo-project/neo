@@ -29,7 +29,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
         public override uint HeaderHeight => header_chain.Nodes[current_header_hash].Height;
         public override uint Height => current_block_height;
         public override bool IsReadOnly => false;
-        public bool VerifyBlocks { get; set; } = false;
+        public bool VerifyBlocks { get; set; } = true;
 
         public LevelDBBlockchain(string path)
         {
