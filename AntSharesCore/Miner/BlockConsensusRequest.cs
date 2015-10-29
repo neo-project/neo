@@ -3,6 +3,7 @@ using AntShares.Core.Scripts;
 using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using AntShares.Network;
+using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -67,7 +68,7 @@ namespace AntShares.Miner
 
         UInt160[] ISignable.GetScriptHashesForVerifying()
         {
-            return new UInt160[] { ScriptBuilder.CreateMultiSigRedeemScript(1, Miner).ToScriptHash() };
+            return new UInt160[] { Contract.CreateSignatureContract(Miner).ScriptHash };
         }
 
         public override void Serialize(BinaryWriter writer)

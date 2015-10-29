@@ -1,9 +1,11 @@
 ﻿using AntShares.Cryptography;
+using AntShares.Data;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Security.Cryptography;
+using DbAccount = AntShares.Data.Account;
 
 namespace AntShares.Wallets
 {
@@ -48,19 +50,58 @@ namespace AntShares.Wallets
                 ctx.SaveChanges();
             }
             UserWallet wallet = OpenDatabase(path, password);
-            wallet.CreateEntry();
+            wallet.CreateAccount();
             return wallet;
         }
 
-        protected override void DeleteEntry(UInt160 scriptHash)
+        protected override void DeleteAccount(UInt160 publicKeyHash)
         {
             using (WalletDataContext ctx = new WalletDataContext(connectionString))
             {
-                Account account = ctx.Accounts.FirstOrDefault(p => p.ScriptHash == scriptHash.ToArray());
+                DbAccount account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == publicKeyHash.ToArray());
                 if (account != null)
                 {
+                    ctx.Contracts.RemoveRange(ctx.Contracts.Where(p => p.PublicKeyHash == publicKeyHash.ToArray()));
                     ctx.Accounts.Remove(account);
                     ctx.SaveChanges();
+                }
+            }
+        }
+
+        public override Account GetAccount(UInt160 publicKeyHash)
+        {
+            using (WalletDataContext ctx = new WalletDataContext(connectionString))
+            {
+                return GetAccountInternal(ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == publicKeyHash.ToArray())?.PrivateKeyEncrypted);
+            }
+        }
+
+        public override Account GetAccountByScriptHash(UInt160 scriptHash)
+        {
+            using (WalletDataContext ctx = new WalletDataContext(connectionString))
+            {
+                byte[] publicKeyHash = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == scriptHash.ToArray())?.PublicKeyHash;
+                if (publicKeyHash == null) return null;
+                return GetAccountInternal(ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == publicKeyHash)?.PrivateKeyEncrypted);
+            }
+        }
+
+        private Account GetAccountInternal(byte[] encryptedPrivateKey)
+        {
+            if (encryptedPrivateKey?.Length != 96) return null;
+            byte[] decryptedPrivateKey = DecryptPrivateKey(encryptedPrivateKey);
+            Account account = new Account(decryptedPrivateKey);
+            Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
+            return account;
+        }
+
+        public override IEnumerable<Account> GetAccounts()
+        {
+            using (WalletDataContext ctx = new WalletDataContext(connectionString))
+            {
+                foreach (byte[] encryptedPrivateKey in ctx.Accounts.Select(p => p.PrivateKeyEncrypted))
+                {
+                    yield return GetAccountInternal(encryptedPrivateKey);
                 }
             }
         }
@@ -69,31 +110,31 @@ namespace AntShares.Wallets
         {
             using (WalletDataContext ctx = new WalletDataContext(connectionString))
             {
-                return ctx.Accounts.Select(p => p.ScriptHash).ToArray().Select(p => new UInt160(p));
+                foreach (byte[] scriptHash in ctx.Contracts.Select(p => p.ScriptHash))
+                {
+                    yield return new UInt160(scriptHash);
+                }
             }
         }
 
-        protected override void GetEncryptedEntry(UInt160 scriptHash, out byte[] redeemScript, out byte[] encryptedPrivateKey)
+        public override Contract GetContract(UInt160 scriptHash)
         {
             using (WalletDataContext ctx = new WalletDataContext(connectionString))
             {
-                //Account account = ctx.Accounts.FirstOrDefault(p => p.ScriptHash == scriptHash.ToArray());
-                //It throws a NotSupportedException:
-                //LINQ to Entities does not recognize the method 'Byte[] ToArray()' method, and this method cannot be translated into a store expression.
-                //I don't know why.
-                //So,
-                byte[] temp = scriptHash.ToArray();
-                Account account = ctx.Accounts.FirstOrDefault(p => p.ScriptHash == temp);
-                //It works!
+                byte[] redeemScript = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == scriptHash.ToArray())?.RedeemScript;
+                if (redeemScript == null) return null;
+                return new Contract(redeemScript);
+            }
+        }
 
-                if (account == null)
+        public override IEnumerable<Contract> GetContracts()
+        {
+            using (WalletDataContext ctx = new WalletDataContext(connectionString))
+            {
+                foreach (byte[] redeemScript in ctx.Contracts.Select(p => p.RedeemScript))
                 {
-                    redeemScript = null;
-                    encryptedPrivateKey = null;
-                    return;
+                    yield return new Contract(redeemScript);
                 }
-                redeemScript = account.RedeemScript;
-                encryptedPrivateKey = account.PrivateKeyEncrypted;
             }
         }
 
@@ -124,25 +165,30 @@ namespace AntShares.Wallets
             throw new NotImplementedException();
         }
 
-        protected override void SaveEncryptedEntry(UInt160 scriptHash, byte[] redeemScript, byte[] encryptedPrivateKey)
+        protected override void SaveAccount(Account account)
         {
+            byte[] decryptedPrivateKey = new byte[96];
+            Buffer.BlockCopy(account.PublicKey, 0, decryptedPrivateKey, 0, 64);
+            using (account.Decrypt())
+            {
+                Buffer.BlockCopy(account.PrivateKey, 0, decryptedPrivateKey, 64, 32);
+            }
+            byte[] encryptedPrivateKey = EncryptPrivateKey(decryptedPrivateKey);
+            Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
             using (WalletDataContext ctx = new WalletDataContext(connectionString))
             {
-                byte[] scriptHashBytes = scriptHash.ToArray();
-                Account account = ctx.Accounts.FirstOrDefault(p => p.ScriptHash == scriptHashBytes);
-                if (account == null)
+                DbAccount db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.PublicKeyHash.ToArray());
+                if (db_account == null)
                 {
-                    account = ctx.Accounts.Add(new Account
+                    db_account = ctx.Accounts.Add(new DbAccount
                     {
-                        ScriptHash = scriptHash.ToArray(),
-                        RedeemScript = redeemScript,
-                        PrivateKeyEncrypted = encryptedPrivateKey
+                        PrivateKeyEncrypted = encryptedPrivateKey,
+                        PublicKeyHash = account.PublicKeyHash.ToArray()
                     });
                 }
                 else
                 {
-                    account.RedeemScript = redeemScript;
-                    account.PrivateKeyEncrypted = encryptedPrivateKey;
+                    db_account.PrivateKeyEncrypted = encryptedPrivateKey;
                 }
                 ctx.SaveChanges();
             }

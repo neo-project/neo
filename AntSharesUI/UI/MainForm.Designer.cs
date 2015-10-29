@@ -40,6 +40,7 @@
             this.交易TToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.签名SToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
+            this.资产分发IToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.帮助HToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.查看帮助VToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.官网WToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -50,9 +51,7 @@
             this.listView1 = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.显示详情DToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.复制到剪贴板CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.资产分发IToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -135,14 +134,21 @@
             // 签名SToolStripMenuItem
             // 
             this.签名SToolStripMenuItem.Name = "签名SToolStripMenuItem";
-            this.签名SToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.签名SToolStripMenuItem.Size = new System.Drawing.Size(145, 22);
             this.签名SToolStripMenuItem.Text = "签名(&S)...";
             this.签名SToolStripMenuItem.Click += new System.EventHandler(this.签名SToolStripMenuItem_Click);
             // 
             // toolStripSeparator5
             // 
             this.toolStripSeparator5.Name = "toolStripSeparator5";
-            this.toolStripSeparator5.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator5.Size = new System.Drawing.Size(142, 6);
+            // 
+            // 资产分发IToolStripMenuItem
+            // 
+            this.资产分发IToolStripMenuItem.Name = "资产分发IToolStripMenuItem";
+            this.资产分发IToolStripMenuItem.Size = new System.Drawing.Size(145, 22);
+            this.资产分发IToolStripMenuItem.Text = "资产分发(&I)...";
+            this.资产分发IToolStripMenuItem.Click += new System.EventHandler(this.资产分发IToolStripMenuItem_Click);
             // 
             // 帮助HToolStripMenuItem
             // 
@@ -218,18 +224,10 @@
             // contextMenuStrip1
             // 
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.显示详情DToolStripMenuItem,
             this.复制到剪贴板CToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
             this.contextMenuStrip1.Size = new System.Drawing.Size(165, 48);
             this.contextMenuStrip1.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip1_Opening);
-            // 
-            // 显示详情DToolStripMenuItem
-            // 
-            this.显示详情DToolStripMenuItem.Name = "显示详情DToolStripMenuItem";
-            this.显示详情DToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
-            this.显示详情DToolStripMenuItem.Text = "显示详情(&D)...";
-            this.显示详情DToolStripMenuItem.Click += new System.EventHandler(this.显示详情DToolStripMenuItem_Click);
             // 
             // 复制到剪贴板CToolStripMenuItem
             // 
@@ -237,13 +235,6 @@
             this.复制到剪贴板CToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
             this.复制到剪贴板CToolStripMenuItem.Text = "复制到剪贴板(&C)";
             this.复制到剪贴板CToolStripMenuItem.Click += new System.EventHandler(this.复制到剪贴板CToolStripMenuItem_Click);
-            // 
-            // 资产分发IToolStripMenuItem
-            // 
-            this.资产分发IToolStripMenuItem.Name = "资产分发IToolStripMenuItem";
-            this.资产分发IToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.资产分发IToolStripMenuItem.Text = "资产分发(&I)...";
-            this.资产分发IToolStripMenuItem.Click += new System.EventHandler(this.资产分发IToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -290,7 +281,6 @@
         private System.Windows.Forms.ToolStripMenuItem 签名SToolStripMenuItem;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem 复制到剪贴板CToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem 显示详情DToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
         private System.Windows.Forms.ToolStripMenuItem 资产分发IToolStripMenuItem;
     }

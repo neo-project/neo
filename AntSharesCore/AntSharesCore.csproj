@@ -121,8 +121,9 @@
     <Compile Include="UInt256.cs" />
     <Compile Include="UIntBase.cs" />
     <Compile Include="Cryptography\ProtectedMemoryContext.cs" />
+    <Compile Include="Wallets\Contract.cs" />
     <Compile Include="Wallets\Wallet.cs" />
-    <Compile Include="Wallets\WalletEntry.cs" />
+    <Compile Include="Wallets\Account.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">

@@ -1,7 +1,5 @@
-﻿using AntShares.Cryptography.ECC;
-using System;
+﻿using System;
 using System.IO;
-using System.Linq;
 using System.Numerics;
 
 namespace AntShares.Core.Scripts
@@ -20,33 +18,6 @@ namespace AntShares.Core.Scripts
         {
             ms.Write(script, 0, script.Length);
             return this;
-        }
-
-        public static byte[] CreateMultiSigRedeemScript(int m, params ECPoint[] publicKeys)
-        {
-            if (!(1 <= m && m <= publicKeys.Length && publicKeys.Length <= 1024))
-                throw new ArgumentException();
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.Push(m);
-                foreach (ECPoint publicKey in publicKeys.OrderBy(p => p))
-                {
-                    sb.Push(publicKey.EncodePoint(true));
-                }
-                sb.Push(publicKeys.Length);
-                sb.Add(ScriptOp.OP_CHECKMULTISIG);
-                return sb.ToArray();
-            }
-        }
-
-        public static byte[] CreateSignatureRedeemScript(ECPoint publicKey)
-        {
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.Push(publicKey.EncodePoint(true));
-                sb.Add(ScriptOp.OP_CHECKSIG);
-                return sb.ToArray();
-            }
         }
 
         public void Dispose()
