@@ -100,8 +100,8 @@
             // 
             // openFileDialog1
             // 
-            this.openFileDialog1.DefaultExt = "mdf";
-            this.openFileDialog1.Filter = "钱包数据库|*.mdf";
+            this.openFileDialog1.DefaultExt = "db3";
+            this.openFileDialog1.Filter = "钱包数据库|*.db3";
             // 
             // OpenWalletDialog
             // 

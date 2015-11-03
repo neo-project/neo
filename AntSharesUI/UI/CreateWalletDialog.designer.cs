@@ -120,8 +120,8 @@
             // 
             // saveFileDialog1
             // 
-            this.saveFileDialog1.DefaultExt = "mdf";
-            this.saveFileDialog1.Filter = "钱包数据库|*.mdf";
+            this.saveFileDialog1.DefaultExt = "db3";
+            this.saveFileDialog1.Filter = "钱包数据库|*.db3";
             // 
             // CreateWalletDialog
             // 

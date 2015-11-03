@@ -1,4 +1,5 @@
 ﻿using AntShares.Core;
+using AntShares.Implementations.Wallets.EntityFramework;
 using AntShares.IO;
 using AntShares.Wallets;
 using System;

@@ -7,9 +7,9 @@ namespace AntShares.Cryptography.ECC
 {
     public class ECDsa
     {
-        private byte[] privateKey;
-        private ECPoint publicKey;
-        private ECCurve curve;
+        private readonly byte[] privateKey;
+        private readonly ECPoint publicKey;
+        private readonly ECCurve curve;
 
         public ECDsa(byte[] privateKey, ECCurve curve)
             : this(curve.G * privateKey)
@@ -58,6 +58,10 @@ namespace AntShares.Cryptography.ECC
                     }
                     while (r.Sign == 0);
                     s = (k.ModInverse(curve.N) * (e + d * r)).Mod(curve.N);
+                    if (s > curve.N / 2)
+                    {
+                        s = curve.N - s;
+                    }
                 }
                 while (s.Sign == 0);
             }

@@ -1,6 +1,5 @@
 ﻿using AntShares.Core;
 using AntShares.Cryptography;
-using AntShares.Cryptography.ECC;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -123,9 +122,9 @@ namespace AntShares.Wallets
                 byte[] signature;
                 using (account.Decrypt())
                 {
-                    signature = context.Signable.Sign(account.PrivateKey, account.PublicKey);
+                    signature = context.Signable.Sign(account.PrivateKey, account.PublicKey.EncodePoint(false).Skip(1).ToArray());
                 }
-                fSuccess |= context.Add(contract.RedeemScript, ECPoint.FromBytes(account.PublicKey, ECCurve.Secp256r1), signature);
+                fSuccess |= context.Add(contract.RedeemScript, account.PublicKey, signature);
             }
             return fSuccess;
         }

@@ -164,16 +164,6 @@ namespace AntShares.Cryptography.ECC
             return X.GetHashCode() + Y.GetHashCode();
         }
 
-        public byte[] GetXComponent()
-        {
-            return X.ToByteArray();
-        }
-
-        public byte[] GetYComponent()
-        {
-            return Y.ToByteArray();
-        }
-
         internal static ECPoint Multiply(ECPoint p, BigInteger k)
         {
             // floor(log2(k))
