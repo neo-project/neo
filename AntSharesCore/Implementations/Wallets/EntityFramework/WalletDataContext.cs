@@ -40,19 +40,20 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             modelBuilder.Entity<Contract>().Property(p => p.PublicKeyHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
             modelBuilder.Entity<Key>().HasKey(p => p.Name);
             modelBuilder.Entity<Key>().Property(p => p.Name).HasColumnType("VarChar").HasMaxLength(20).IsRequired();
-            modelBuilder.Entity<Key>().Property(p => p.Value).HasColumnType("VarBinary").HasMaxLength(32).IsRequired();
+            modelBuilder.Entity<Key>().Property(p => p.Value).HasColumnType("VarBinary").IsRequired();
             modelBuilder.Entity<Transaction>().HasKey(p => p.Hash);
             modelBuilder.Entity<Transaction>().Index(p => p.Type);
             modelBuilder.Entity<Transaction>().Property(p => p.Hash).HasColumnType("Binary").HasMaxLength(32).IsRequired();
             modelBuilder.Entity<Transaction>().Property(p => p.Type).IsRequired();
             modelBuilder.Entity<Transaction>().Property(p => p.RawData).HasColumnType("VarBinary").IsRequired();
-            modelBuilder.Entity<UnspentCoin>().ToTable("Unspent").Ignore(p => p.Index).HasKey(p => new { p.TxId, p._Index });
+            modelBuilder.Entity<UnspentCoin>().ToTable("Unspent").HasKey(p => new { p.TxId, p.Index });
             modelBuilder.Entity<UnspentCoin>().Index(p => p.AssetId);
             modelBuilder.Entity<UnspentCoin>().Index(p => p.ScriptHash);
             modelBuilder.Entity<UnspentCoin>().Property(p => p.TxId).HasColumnType("Binary").HasMaxLength(32).IsRequired();
-            modelBuilder.Entity<UnspentCoin>().Property(p => p._Index).HasColumnName("Index").IsRequired();
+            modelBuilder.Entity<UnspentCoin>().Property(p => p.Index).IsRequired();
             modelBuilder.Entity<UnspentCoin>().Property(p => p.AssetId).HasColumnType("Binary").HasMaxLength(32).IsRequired();
             modelBuilder.Entity<UnspentCoin>().Property(p => p.ScriptHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
+            modelBuilder.Entity<UnspentCoin>().Property(p => p.IsChange).IsRequired();
         }
     }
 }

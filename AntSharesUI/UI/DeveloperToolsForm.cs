@@ -1,4 +1,5 @@
 ﻿using AntShares.Core;
+using AntShares.Core.Scripts;
 using AntShares.Cryptography;
 using AntShares.IO;
 using AntShares.Wallets;
@@ -60,7 +61,7 @@ namespace AntShares.UI
                 Timestamp = DateTime.Now.ToTimestamp(),
                 Height = 0,
                 Nonce = 2083236893, //向比特币致敬
-                NextMiner = Contract.CreateMultiSigContract(Blockchain.GetMinSignatureCount(Blockchain.StandbyMiners.Length), Blockchain.StandbyMiners).ScriptHash,
+                NextMiner = Contract.CreateMultiSigRedeemScript(Blockchain.GetMinSignatureCount(Blockchain.StandbyMiners.Length), Blockchain.StandbyMiners).ToScriptHash(),
                 Transactions = new Transaction[]
                 {
                     new GenerationTransaction

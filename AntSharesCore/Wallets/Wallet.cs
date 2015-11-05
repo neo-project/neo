@@ -11,14 +11,67 @@ namespace AntShares.Wallets
     {
         public const byte CoinVersion = 0x17;
 
-        private byte[] masterKey;
-        private byte[] iv;
+        private readonly string path;
+        private readonly byte[] iv;
+        private readonly byte[] masterKey;
+        private readonly Dictionary<UInt160, Account> accounts;
+        private readonly Dictionary<UInt160, Contract> contracts;
+        private readonly HashSet<UnspentCoin> unspent_coins;
+        private readonly HashSet<UnspentCoin> change_coins;
+        private uint current_height;
 
-        protected Wallet(byte[] masterKey, byte[] iv)
+        protected string DbPath => path;
+        protected uint WalletHeight => current_height;
+
+        protected Wallet(string path, string password, bool create)
         {
-            this.masterKey = masterKey;
-            this.iv = iv;
+            this.path = path;
+            byte[] passwordKey = password.ToAesKey();
+            if (create)
+            {
+                this.iv = new byte[16];
+                this.masterKey = new byte[32];
+                this.accounts = new Dictionary<UInt160, Account>();
+                this.contracts = new Dictionary<UInt160, Contract>();
+                this.unspent_coins = new HashSet<UnspentCoin>();
+                this.change_coins = new HashSet<UnspentCoin>();
+                this.current_height = Blockchain.Default?.HeaderHeight + 1 ?? 0;
+                using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
+                {
+                    rng.GetNonZeroBytes(iv);
+                    rng.GetNonZeroBytes(masterKey);
+                }
+                SaveStoredData("IV", iv);
+                SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
+                SaveStoredData("Height", BitConverter.GetBytes(current_height));
+            }
+            else
+            {
+                this.iv = LoadStoredData("IV");
+                this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
+                this.accounts = LoadAccounts().ToDictionary(p => p.PublicKeyHash);
+                this.contracts = LoadContracts().ToDictionary(p => p.ScriptHash);
+                this.unspent_coins = new HashSet<UnspentCoin>(LoadUnspentCoins(false));
+                this.change_coins = new HashSet<UnspentCoin>(LoadUnspentCoins(true));
+                this.current_height = BitConverter.ToUInt32(LoadStoredData("Height"), 0);
+            }
+            Array.Clear(passwordKey, 0, passwordKey.Length);
             ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
+        }
+
+        public void ChangePassword(string password)
+        {
+            byte[] passwordKey = password.ToAesKey();
+            ProtectedMemory.Unprotect(masterKey, MemoryProtectionScope.SameProcess);
+            try
+            {
+                SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
+            }
+            finally
+            {
+                Array.Clear(passwordKey, 0, passwordKey.Length);
+                ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
+            }
         }
 
         public Account CreateAccount()
@@ -27,8 +80,9 @@ namespace AntShares.Wallets
             {
                 byte[] privateKey = key.Export(CngKeyBlobFormat.EccPrivateBlob);
                 Account account = new Account(privateKey);
-                SaveAccount(account);
                 Array.Clear(privateKey, 0, privateKey.Length);
+                accounts.Add(account.PublicKeyHash, account);
+                OnCreateAccount(account);
                 return account;
             }
         }
@@ -40,36 +94,20 @@ namespace AntShares.Wallets
             ProtectedMemory.Unprotect(masterKey, MemoryProtectionScope.SameProcess);
             try
             {
-                using (AesManaged aes = new AesManaged())
-                {
-                    aes.Padding = PaddingMode.None;
-                    using (ICryptoTransform decryptor = aes.CreateDecryptor(masterKey, iv))
-                    {
-                        return decryptor.TransformFinalBlock(encryptedPrivateKey, 0, encryptedPrivateKey.Length);
-                    }
-                }
+                return encryptedPrivateKey.AesDecrypt(masterKey, iv);
             }
             finally
             {
                 ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
             }
         }
-
-        protected abstract void DeleteAccount(UInt160 publicKeyHash);
 
         protected byte[] EncryptPrivateKey(byte[] decryptedPrivateKey)
         {
             ProtectedMemory.Unprotect(masterKey, MemoryProtectionScope.SameProcess);
             try
             {
-                using (AesManaged aes = new AesManaged())
-                {
-                    aes.Padding = PaddingMode.None;
-                    using (ICryptoTransform encryptor = aes.CreateEncryptor(masterKey, iv))
-                    {
-                        return encryptor.TransformFinalBlock(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
-                    }
-                }
+                return decryptedPrivateKey.AesEncrypt(masterKey, iv);
             }
             finally
             {
@@ -77,22 +115,39 @@ namespace AntShares.Wallets
             }
         }
 
-        public abstract Account GetAccount(UInt160 publicKeyHash);
+        public Account GetAccount(UInt160 publicKeyHash)
+        {
+            return accounts[publicKeyHash];
+        }
 
-        public abstract Account GetAccountByScriptHash(UInt160 scriptHash);
+        public Account GetAccountByScriptHash(UInt160 scriptHash)
+        {
+            return accounts[contracts[scriptHash].PublicKeyHash];
+        }
 
-        public abstract IEnumerable<Account> GetAccounts();
+        public IEnumerable<Account> GetAccounts()
+        {
+            return accounts.Values;
+        }
 
-        public abstract IEnumerable<UInt160> GetAddresses();
+        public IEnumerable<UInt160> GetAddresses()
+        {
+            return contracts.Keys;
+        }
 
-        public abstract Contract GetContract(UInt160 scriptHash);
+        public Contract GetContract(UInt160 scriptHash)
+        {
+            return contracts[scriptHash];
+        }
 
-        public abstract IEnumerable<Contract> GetContracts();
+        public IEnumerable<Contract> GetContracts()
+        {
+            return contracts.Values;
+        }
 
         public Account Import(string wif)
         {
-            if (wif == null)
-                throw new ArgumentNullException();
+            if (wif == null) throw new ArgumentNullException();
             byte[] data = Base58.Decode(wif);
             if (data.Length != 38 || data[0] != 0x80 || data[33] != 0x01)
                 throw new FormatException();
@@ -101,14 +156,27 @@ namespace AntShares.Wallets
                 throw new FormatException();
             byte[] privateKey = new byte[32];
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
-            Account account = new Account(privateKey);
-            SaveAccount(account);
-            Array.Clear(privateKey, 0, privateKey.Length);
             Array.Clear(data, 0, data.Length);
+            Account account = new Account(privateKey);
+            Array.Clear(privateKey, 0, privateKey.Length);
+            accounts.Add(account.PublicKeyHash, account);
+            OnCreateAccount(account);
             return account;
         }
 
-        protected abstract void SaveAccount(Account account);
+        protected abstract IEnumerable<Account> LoadAccounts();
+
+        protected abstract IEnumerable<Contract> LoadContracts();
+
+        protected abstract byte[] LoadStoredData(string name);
+
+        protected abstract IEnumerable<UnspentCoin> LoadUnspentCoins(bool is_change);
+
+        protected abstract void OnCreateAccount(Account account);
+
+        protected abstract void OnDeleteAccount(UInt160 publicKeyHash);
+
+        protected abstract void SaveStoredData(string name, byte[] value);
 
         public bool Sign(SignatureContext context)
         {

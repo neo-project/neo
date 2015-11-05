@@ -2,160 +2,83 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using WAccount = AntShares.Wallets.Account;
 using WContract = AntShares.Wallets.Contract;
+using WUnspentCoin = AntShares.Wallets.UnspentCoin;
 
 namespace AntShares.Implementations.Wallets.EntityFramework
 {
     public class UserWallet : Wallet
     {
-        private string path;
-
-        private UserWallet(string path, byte[] masterKey, byte[] iv)
-            : base(masterKey, iv)
+        private UserWallet(string path, string password, bool create)
+            : base(path, password, create)
         {
-            this.path = path;
         }
 
         public static UserWallet CreateDatabase(string path, string password)
         {
             using (WalletDataContext ctx = new WalletDataContext(path))
-            using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
             {
-                byte[] passwordKey = password.ToAesKey();
-                byte[] masterKey = new byte[32];
-                byte[] iv = new byte[16];
-                rng.GetNonZeroBytes(masterKey);
-                rng.GetNonZeroBytes(iv);
-                masterKey.AesEncrypt(passwordKey, iv);
-                Array.Clear(passwordKey, 0, passwordKey.Length);
                 ctx.Database.EnsureDeleted();
                 ctx.Database.EnsureCreated();
-                ctx.Keys.Add(new Key
-                {
-                    Name = Key.MasterKey,
-                    Value = masterKey
-                });
-                ctx.Keys.Add(new Key
-                {
-                    Name = Key.IV,
-                    Value = iv
-                });
-                ctx.SaveChanges();
             }
-            UserWallet wallet = OpenDatabase(path, password);
+            UserWallet wallet = new UserWallet(path, password, true);
             wallet.CreateAccount();
             return wallet;
         }
 
-        protected override void DeleteAccount(UInt160 publicKeyHash)
+        protected override IEnumerable<WAccount> LoadAccounts()
         {
-            using (WalletDataContext ctx = new WalletDataContext(path))
-            {
-                Account account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == publicKeyHash.ToArray());
-                if (account != null)
-                {
-                    ctx.Contracts.RemoveRange(ctx.Contracts.Where(p => p.PublicKeyHash == publicKeyHash.ToArray()));
-                    ctx.Accounts.Remove(account);
-                    ctx.SaveChanges();
-                }
-            }
-        }
-
-        public override WAccount GetAccount(UInt160 publicKeyHash)
-        {
-            using (WalletDataContext ctx = new WalletDataContext(path))
-            {
-                return GetAccountInternal(ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == publicKeyHash.ToArray())?.PrivateKeyEncrypted);
-            }
-        }
-
-        public override WAccount GetAccountByScriptHash(UInt160 scriptHash)
-        {
-            using (WalletDataContext ctx = new WalletDataContext(path))
-            {
-                byte[] publicKeyHash = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == scriptHash.ToArray())?.PublicKeyHash;
-                if (publicKeyHash == null) return null;
-                return GetAccountInternal(ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == publicKeyHash)?.PrivateKeyEncrypted);
-            }
-        }
-
-        private WAccount GetAccountInternal(byte[] encryptedPrivateKey)
-        {
-            if (encryptedPrivateKey?.Length != 96) return null;
-            byte[] decryptedPrivateKey = DecryptPrivateKey(encryptedPrivateKey);
-            WAccount account = new WAccount(decryptedPrivateKey);
-            Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
-            return account;
-        }
-
-        public override IEnumerable<WAccount> GetAccounts()
-        {
-            using (WalletDataContext ctx = new WalletDataContext(path))
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
                 foreach (byte[] encryptedPrivateKey in ctx.Accounts.Select(p => p.PrivateKeyEncrypted))
                 {
-                    yield return GetAccountInternal(encryptedPrivateKey);
+                    byte[] decryptedPrivateKey = DecryptPrivateKey(encryptedPrivateKey);
+                    WAccount account = new WAccount(decryptedPrivateKey);
+                    Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
+                    yield return account;
                 }
             }
         }
 
-        public override IEnumerable<UInt160> GetAddresses()
+        protected override IEnumerable<WContract> LoadContracts()
         {
-            using (WalletDataContext ctx = new WalletDataContext(path))
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
-                foreach (byte[] scriptHash in ctx.Contracts.Select(p => p.ScriptHash))
+                foreach (Contract contract in ctx.Contracts)
                 {
-                    yield return new UInt160(scriptHash);
+                    yield return new WContract(contract.RedeemScript, new UInt160(contract.PublicKeyHash));
                 }
             }
         }
 
-        public override WContract GetContract(UInt160 scriptHash)
+        protected override byte[] LoadStoredData(string name)
         {
-            using (WalletDataContext ctx = new WalletDataContext(path))
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
-                byte[] redeemScript = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == scriptHash.ToArray())?.RedeemScript;
-                if (redeemScript == null) return null;
-                return new WContract(redeemScript);
+                return ctx.Keys.FirstOrDefault(p => p.Name == name).Value;
             }
         }
 
-        public override IEnumerable<WContract> GetContracts()
+        protected override IEnumerable<WUnspentCoin> LoadUnspentCoins(bool is_change)
         {
-            using (WalletDataContext ctx = new WalletDataContext(path))
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
-                foreach (byte[] redeemScript in ctx.Contracts.Select(p => p.RedeemScript))
+                foreach (UnspentCoin coin in ctx.UnspentCoins.Where(p => p.IsChange == is_change))
                 {
-                    yield return new WContract(redeemScript);
+                    yield return new WUnspentCoin
+                    {
+                        TxId = new UInt256(coin.TxId),
+                        Index = coin.Index,
+                        AssetId = new UInt256(coin.AssetId),
+                        Value = new Fixed8(coin.Value),
+                        ScriptHash = new UInt160(coin.ScriptHash)
+                    };
                 }
             }
         }
 
-        public static UserWallet OpenDatabase(string path, string password)
-        {
-            using (WalletDataContext ctx = new WalletDataContext(path))
-            {
-                byte[] masterKey = ctx.Keys.First(p => p.Name == Key.MasterKey).Value;
-                byte[] passwordKey = password.ToAesKey();
-                byte[] iv = ctx.Keys.First(p => p.Name == Key.IV).Value;
-                masterKey.AesDecrypt(passwordKey, iv);
-                Array.Clear(passwordKey, 0, passwordKey.Length);
-                return new UserWallet(path, masterKey, iv);
-            }
-        }
-
-        public void Rebuild()
-        {
-            //TODO: 重建钱包数据库中的交易数据
-            //1. 清空所有交易数据；
-            //2. 穷举所有的Unspent，找出钱包账户所持有的那部分；
-            //3. 写入数据库；
-            throw new NotImplementedException();
-        }
-
-        protected override void SaveAccount(WAccount account)
+        protected override void OnCreateAccount(WAccount account)
         {
             byte[] decryptedPrivateKey = new byte[96];
             Buffer.BlockCopy(account.PublicKey.EncodePoint(false), 1, decryptedPrivateKey, 0, 64);
@@ -165,7 +88,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             }
             byte[] encryptedPrivateKey = EncryptPrivateKey(decryptedPrivateKey);
             Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
-            using (WalletDataContext ctx = new WalletDataContext(path))
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
                 Account db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.PublicKeyHash.ToArray());
                 if (db_account == null)
@@ -179,6 +102,55 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                 else
                 {
                     db_account.PrivateKeyEncrypted = encryptedPrivateKey;
+                }
+                ctx.SaveChanges();
+            }
+        }
+
+        protected override void OnDeleteAccount(UInt160 publicKeyHash)
+        {
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
+            {
+                Account account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == publicKeyHash.ToArray());
+                if (account != null)
+                {
+                    ctx.Contracts.RemoveRange(ctx.Contracts.Where(p => p.PublicKeyHash == publicKeyHash.ToArray()));
+                    ctx.Accounts.Remove(account);
+                    ctx.SaveChanges();
+                }
+            }
+        }
+
+        public static UserWallet OpenDatabase(string path, string password)
+        {
+            return new UserWallet(path, password, false);
+        }
+
+        public void Rebuild()
+        {
+            //TODO: 重建钱包数据库中的交易数据
+            //1. 清空所有交易数据；
+            //2. 穷举所有的Unspent，找出钱包账户所持有的那部分；
+            //3. 写入数据库；
+            throw new NotImplementedException();
+        }
+
+        protected override void SaveStoredData(string name, byte[] value)
+        {
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
+            {
+                Key key = ctx.Keys.FirstOrDefault(p => p.Name == name);
+                if (key == null)
+                {
+                    key = ctx.Keys.Add(new Key
+                    {
+                        Name = name,
+                        Value = value
+                    }).Entity;
+                }
+                else
+                {
+                    key.Value = value;
                 }
                 ctx.SaveChanges();
             }

@@ -241,7 +241,7 @@ namespace AntShares.Core
             if (prev_header.Height + 1 != Height) return false;
             if (!this.VerifySignature()) return false;
             ECPoint[] pubkeys = Blockchain.Default.GetMiners(Transactions).ToArray();
-            if (NextMiner != Contract.CreateMultiSigContract(Blockchain.GetMinSignatureCount(pubkeys.Length), pubkeys).ScriptHash)
+            if (NextMiner != Contract.CreateMultiSigRedeemScript(Blockchain.GetMinSignatureCount(pubkeys.Length), pubkeys).ToScriptHash())
                 return false;
             if (completely)
             {

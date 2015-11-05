@@ -138,7 +138,6 @@
     <Compile Include="Implementations\Blockchains\LevelDB\SliceBuilder.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\Account.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\Contract.cs" />
-    <Compile Include="Implementations\Wallets\EntityFramework\Helper.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\Key.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\Transaction.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\UnspentCoin.cs" />
@@ -208,6 +207,7 @@
     <Compile Include="UIntBase.cs" />
     <Compile Include="Cryptography\ProtectedMemoryContext.cs" />
     <Compile Include="Wallets\Contract.cs" />
+    <Compile Include="Wallets\UnspentCoin.cs" />
     <Compile Include="Wallets\Wallet.cs" />
     <Compile Include="Wallets\Account.cs" />
   </ItemGroup>
