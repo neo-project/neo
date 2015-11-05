@@ -1,6 +1,6 @@
-﻿using AntShares.Core.Scripts;
-using AntShares.Cryptography;
+﻿using AntShares.Cryptography.ECC;
 using AntShares.IO;
+using AntShares.Wallets;
 using System;
 using System.IO;
 using System.Linq;
@@ -9,7 +9,7 @@ namespace AntShares.Core
 {
     public class EnrollmentTransaction : Transaction
     {
-        public Secp256r1Point PublicKey;
+        public ECPoint PublicKey;
 
         [NonSerialized]
         private UInt160 _miner = null;
@@ -19,7 +19,7 @@ namespace AntShares.Core
             {
                 if (_miner == null)
                 {
-                    _miner = ScriptBuilder.CreateRedeemScript(1, PublicKey).ToScriptHash();
+                    _miner = Contract.CreateSignatureContract(PublicKey).ScriptHash;
                 }
                 return _miner;
             }
@@ -34,7 +34,7 @@ namespace AntShares.Core
 
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
-            this.PublicKey = Secp256r1Point.DeserializeFrom(reader);
+            PublicKey = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
         }
 
         public override UInt160[] GetScriptHashesForVerifying()

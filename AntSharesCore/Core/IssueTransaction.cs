@@ -38,44 +38,23 @@ namespace AntShares.Core
         {
         }
 
-        public override VerificationResult Verify()
+        public override bool Verify()
         {
-            VerificationResult result = base.Verify();
+            if (!base.Verify()) return false;
             TransactionResult[] results = GetTransactionResults()?.Where(p => p.Amount < Fixed8.Zero).ToArray();
-            if (results == null)
+            if (results == null) return false;
+            foreach (TransactionResult r in results)
             {
-                result |= VerificationResult.LackOfInformation;
+                RegisterTransaction tx = Blockchain.Default.GetTransaction(r.AssetId) as RegisterTransaction;
+                if (tx == null) return false;
+                if (tx.Amount < Fixed8.Zero) continue;
+                if (tx.Amount == Fixed8.Zero) return false;
+                if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.Statistics))
+                    return false;
+                Fixed8 quantity_issued = Blockchain.Default.GetQuantityIssued(r.AssetId); //TODO: 已发行量是否应考虑内存池内未被写入区块链的交易，以防止“双重发行”
+                if (tx.Amount - quantity_issued < -r.Amount) return false;
             }
-            else
-            {
-                foreach (TransactionResult r in results)
-                {
-                    RegisterTransaction tx = Blockchain.Default.GetTransaction(r.AssetId) as RegisterTransaction;
-                    if (tx == null)
-                    {
-                        result |= VerificationResult.LackOfInformation;
-                        continue;
-                    }
-                    if (tx.Amount < Fixed8.Zero) continue;
-                    if (tx.Amount == Fixed8.Zero)
-                    {
-                        result |= VerificationResult.Imbalanced;
-                        break;
-                    }
-                    if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.Statistics))
-                    {
-                        result |= VerificationResult.Incapable;
-                        break;
-                    }
-                    Fixed8 quantity_issued = Blockchain.Default.GetQuantityIssued(r.AssetId); //TODO: 已发行量是否应考虑内存池内未被写入区块链的交易，以防止“双重发行”
-                    if (tx.Amount - quantity_issued < -r.Amount)
-                    {
-                        result |= VerificationResult.Overissue;
-                        break;
-                    }
-                }
-            }
-            return result;
+            return true;
         }
     }
 }

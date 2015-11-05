@@ -1,8 +1,9 @@
 ﻿using AntShares.Core;
 using AntShares.Core.Scripts;
-using AntShares.Cryptography;
+using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using AntShares.Network;
+using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,12 +14,12 @@ namespace AntShares.Miner
     public class BlockConsensusRequest : Inventory, ISignable
     {
         public UInt256 PrevHash;
-        public Secp256r1Point Miner;
+        public ECPoint Miner;
         public byte[] IV;
-        public Dictionary<Secp256r1Point, byte[]> NoncePieces = new Dictionary<Secp256r1Point, byte[]>();
+        public Dictionary<ECPoint, byte[]> NoncePieces = new Dictionary<ECPoint, byte[]>();
         public UInt256 NonceHash;
         public UInt256[] TransactionHashes;
-        public byte[] Script;
+        public Script Script;
 
         public override InventoryType InventoryType
         {
@@ -28,16 +29,15 @@ namespace AntShares.Miner
             }
         }
 
-        byte[][] ISignable.Scripts
+        Script[] ISignable.Scripts
         {
             get
             {
-                return new byte[][] { Script };
+                return new[] { Script };
             }
             set
             {
-                if (value.Length != 1)
-                    throw new ArgumentException();
+                if (value.Length != 1) throw new ArgumentException();
                 Script = value[0];
             }
         }
@@ -45,36 +45,36 @@ namespace AntShares.Miner
         public override void Deserialize(BinaryReader reader)
         {
             ((ISignable)this).DeserializeUnsigned(reader);
-            this.Script = reader.ReadBytes((int)reader.ReadVarInt());
+            Script = reader.ReadSerializable<Script>();
         }
 
         void ISignable.DeserializeUnsigned(BinaryReader reader)
         {
-            this.PrevHash = reader.ReadSerializable<UInt256>();
-            this.Miner = Secp256r1Point.DeserializeFrom(reader);
-            this.IV = reader.ReadBytes(16);
-            this.NoncePieces.Clear();
+            PrevHash = reader.ReadSerializable<UInt256>();
+            Miner = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
+            IV = reader.ReadBytes(16);
+            NoncePieces.Clear();
             int count = (int)reader.ReadVarInt();
             for (int i = 0; i < count; i++)
             {
-                Secp256r1Point key = Secp256r1Point.DeserializeFrom(reader);
+                ECPoint key = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
                 if (key == Miner) throw new FormatException();
                 byte[] value = reader.ReadBytes((int)reader.ReadVarInt());
                 NoncePieces.Add(key, value);
             }
-            this.NonceHash = reader.ReadSerializable<UInt256>();
-            this.TransactionHashes = reader.ReadSerializableArray<UInt256>();
+            NonceHash = reader.ReadSerializable<UInt256>();
+            TransactionHashes = reader.ReadSerializableArray<UInt256>();
         }
 
         UInt160[] ISignable.GetScriptHashesForVerifying()
         {
-            return new UInt160[] { ScriptBuilder.CreateRedeemScript(1, Miner).ToScriptHash() };
+            return new UInt160[] { Contract.CreateSignatureContract(Miner).ScriptHash };
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             ((ISignable)this).SerializeUnsigned(writer);
-            writer.WriteVarInt(Script.Length); writer.Write(Script);
+            writer.Write(Script);
         }
 
         void ISignable.SerializeUnsigned(BinaryWriter writer)
@@ -92,21 +92,17 @@ namespace AntShares.Miner
             writer.Write(TransactionHashes);
         }
 
-        public override VerificationResult Verify()
+        public override bool Verify()
         {
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
-                return VerificationResult.Incapable;
-            if (!Blockchain.Default.ContainsBlock(PrevHash))
-                return VerificationResult.LackOfInformation;
+                return false;
             if (PrevHash != Blockchain.Default.CurrentBlockHash)
-                return VerificationResult.AlreadyInBlockchain;
-            HashSet<Secp256r1Point> miners = new HashSet<Secp256r1Point>(Blockchain.Default.GetMiners());
-            if (!miners.Contains(Miner))
-                return VerificationResult.WrongMiner;
-            if (NoncePieces.Count != miners.Count - 1)
-                return VerificationResult.IncorrectFormat;
+                return false;
+            HashSet<ECPoint> miners = new HashSet<ECPoint>(Blockchain.Default.GetMiners());
+            if (!miners.Contains(Miner)) return false;
+            if (NoncePieces.Count != miners.Count - 1) return false;
             if (!NoncePieces.Keys.Concat(new[] { Miner }).OrderBy(p => p).SequenceEqual(miners.OrderBy(p => p)))
-                return VerificationResult.IncorrectFormat;
+                return false;
             return this.VerifySignature();
         }
     }

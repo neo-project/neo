@@ -1,4 +1,5 @@
 ﻿using AntShares.Core;
+using AntShares.Implementations.Wallets.EntityFramework;
 using AntShares.IO;
 using AntShares.Wallets;
 using System;
@@ -23,7 +24,7 @@ namespace AntShares.UI
             listView1.Items.Clear();
             if (Program.CurrentWallet != null)
             {
-                listView1.Items.AddRange(Program.CurrentWallet.GetAddresses().Select(p => new ListViewItem(new string[] { p.ToAddress() })).ToArray());
+                listView1.Items.AddRange(Program.CurrentWallet.GetAddresses().Select(p => new ListViewItem(new string[] { Wallet.ToAddress(p) })).ToArray());
             }
         }
 
@@ -89,7 +90,7 @@ namespace AntShares.UI
 
         private void 官网WToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start("https://weangel.com/AntShares");
+            Process.Start("https://www.antshares.com/");
         }
 
         private void 开发人员工具TToolStripMenuItem_Click(object sender, EventArgs e)
@@ -99,17 +100,7 @@ namespace AntShares.UI
 
         private void contextMenuStrip1_Opening(object sender, CancelEventArgs e)
         {
-            显示详情DToolStripMenuItem.Enabled = listView1.SelectedIndices.Count == 1;
             复制到剪贴板CToolStripMenuItem.Enabled = listView1.SelectedIndices.Count == 1;
-        }
-
-        private void 显示详情DToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            WalletEntry entry = Program.CurrentWallet.GetEntry(listView1.SelectedItems[0].Text.ToScriptHash());
-            using (AccountDetailsDialog dialog = new AccountDetailsDialog(entry))
-            {
-                dialog.ShowDialog();
-            }
         }
 
         private void 复制到剪贴板CToolStripMenuItem_Click(object sender, EventArgs e)

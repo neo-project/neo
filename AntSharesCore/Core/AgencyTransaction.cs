@@ -63,7 +63,7 @@ namespace AntShares.Core
         public override UInt160[] GetScriptHashesForVerifying()
         {
             HashSet<UInt160> hashes = new HashSet<UInt160>();
-            foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
+            foreach (var group in Inputs.GroupBy(p => p.PrevHash))
             {
                 Transaction tx = Blockchain.Default.GetTransaction(group.Key);
                 if (tx == null) throw new InvalidOperationException();
@@ -105,30 +105,20 @@ namespace AntShares.Core
         //TODO: 此处需要较多的测试来证明它的正确性
         //因为委托交易的验证算法有点太复杂了，
         //考虑未来是否可以优化这个算法
-        public override VerificationResult Verify()
+        public override bool Verify()
         {
-            VerificationResult result = base.Verify();
+            if (!base.Verify()) return false;
             foreach (Order order in Orders)
-            {
-                result |= order.VerifySignature();
-                if (result.HasFlag(VerificationResult.InvalidSignature))
-                    break;
-            }
+                if (!order.VerifySignature())
+                    return false;
             RegisterTransaction asset_value = Blockchain.Default.GetTransaction(ValueAssetId) as RegisterTransaction;
             if (asset_value?.AssetType != AssetType.Currency)
-            {
-                result |= VerificationResult.IncorrectFormat;
-                return result;
-            }
+                return false;
             List<Order> orders = new List<Order>(Orders);
-            foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
+            foreach (var group in Inputs.GroupBy(p => p.PrevHash))
             {
                 Transaction tx = Blockchain.Default.GetTransaction(group.Key);
-                if (tx == null)
-                {
-                    result |= VerificationResult.LackOfInformation;
-                    return result;
-                }
+                if (tx == null) return false;
                 AgencyTransaction tx_agency = tx as AgencyTransaction;
                 if (tx_agency?.SplitOrder == null || tx_agency.AssetId != AssetId || tx_agency.ValueAssetId != ValueAssetId || tx_agency.Agent != Agent)
                     continue;
@@ -139,10 +129,7 @@ namespace AntShares.Core
                 }).Where(p => p.Output.ScriptHash == tx_agency.SplitOrder.Client).ToDictionary(p => p.Input, p => p.Output);
                 if (outputs.Count == 0) continue;
                 if (outputs.Count != tx_agency.Outputs.Count(p => p.ScriptHash == tx_agency.SplitOrder.Client))
-                {
-                    result |= VerificationResult.IncorrectFormat;
-                    return result;
-                }
+                    return false;
                 orders.Add(new Order
                 {
                     AssetId = this.AssetId,
@@ -154,83 +141,40 @@ namespace AntShares.Core
                     Inputs = outputs.Keys.ToArray()
                 });
             }
-            if (orders.Count < 2)
-            {
-                result |= VerificationResult.IncorrectFormat;
-                return result;
-            }
+            if (orders.Count < 2) return false;
             if (orders.Count(p => p.Amount > Fixed8.Zero) == 0 || orders.Count(p => p.Amount < Fixed8.Zero) == 0)
-            {
-                result |= VerificationResult.IncorrectFormat;
-                return result;
-            }
+                return false;
             Fixed8 amount_unmatched = orders.Sum(p => p.Amount);
             if (amount_unmatched == Fixed8.Zero)
             {
-                if (SplitOrder != null)
-                {
-                    result |= VerificationResult.IncorrectFormat;
-                    return result;
-                }
+                if (SplitOrder != null) return false;
             }
             else
             {
-                if (SplitOrder?.Amount != amount_unmatched)
-                {
-                    result |= VerificationResult.IncorrectFormat;
-                    return result;
-                }
+                if (SplitOrder?.Amount != amount_unmatched) return false;
             }
             foreach (Order order in orders)
             {
                 TransactionOutput[] inputs = order.Inputs.Select(p => References[p]).ToArray();
                 if (order.Amount > Fixed8.Zero)
                 {
-                    if (inputs.Any(p => p.AssetId != order.ValueAssetId))
-                    {
-                        result |= VerificationResult.IncorrectFormat;
-                        return result;
-                    }
-                    if (inputs.Sum(p => p.Value) < order.Amount * order.Price)
-                    {
-                        result |= VerificationResult.Imbalanced;
-                        return result;
-                    }
+                    if (inputs.Any(p => p.AssetId != order.ValueAssetId)) return false;
+                    if (inputs.Sum(p => p.Value) < order.Amount * order.Price) return false;
                 }
                 else
                 {
-                    if (inputs.Any(p => p.AssetId != order.AssetId))
-                    {
-                        result |= VerificationResult.IncorrectFormat;
-                        return result;
-                    }
-                    if (inputs.Sum(p => p.Value) < order.Amount)
-                    {
-                        result |= VerificationResult.Imbalanced;
-                        return result;
-                    }
+                    if (inputs.Any(p => p.AssetId != order.AssetId)) return false;
+                    if (inputs.Sum(p => p.Value) < order.Amount) return false;
                 }
             }
             if (SplitOrder != null)
             {
                 Fixed8 price_worst = amount_unmatched > Fixed8.Zero ? orders.Min(p => p.Price) : orders.Max(p => p.Price);
-                if (SplitOrder.Price != price_worst)
-                {
-                    result |= VerificationResult.IncorrectFormat;
-                    return result;
-                }
+                if (SplitOrder.Price != price_worst) return false;
                 Order[] orders_worst = orders.Where(p => p.Price == price_worst && p.Client == SplitOrder.Client).ToArray();
-                if (orders_worst.Length == 0)
-                {
-                    result |= VerificationResult.IncorrectFormat;
-                    return result;
-                }
+                if (orders_worst.Length == 0) return false;
                 Fixed8 amount_worst = orders_worst.Sum(p => p.Amount);
-                if (amount_worst.Abs() < amount_unmatched.Abs())
-                {
-                    result |= VerificationResult.IncorrectFormat;
-                    return result;
-                }
+                if (amount_worst.Abs() < amount_unmatched.Abs()) return false;
                 Order order_combine = new Order
                 {
                     AssetId = this.AssetId,
@@ -253,18 +197,10 @@ namespace AntShares.Core
                 TransactionOutput[] outputs = Outputs.Where(p => p.ScriptHash == group.Key).ToArray();
                 Fixed8 money_spent = inputs.Where(p => p.AssetId == ValueAssetId).Sum(p => p.Value) - outputs.Where(p => p.AssetId == ValueAssetId).Sum(p => p.Value);
                 Fixed8 amount_changed = outputs.Where(p => p.AssetId == AssetId).Sum(p => p.Value) - inputs.Where(p => p.AssetId == AssetId).Sum(p => p.Value);
-                if (amount_changed != group.Sum(p => p.Amount))
-                {
-                    result |= VerificationResult.Imbalanced;
-                    break;
-                }
-                if (money_spent > group.Sum(p => p.Amount * p.Price))
-                {
-                    result |= VerificationResult.Imbalanced;
-                    break;
-                }
+                if (amount_changed != group.Sum(p => p.Amount)) return false;
+                if (money_spent > group.Sum(p => p.Amount * p.Price)) return false;
             }
-            return result;
+            return true;
         }
     }
 }

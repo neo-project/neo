@@ -44,7 +44,7 @@ namespace AntShares
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            this.value = reader.ReadInt64();
+            value = reader.ReadInt64();
         }
 
         public bool Equals(Fixed8 other)
@@ -78,7 +78,7 @@ namespace AntShares
 
         public static Fixed8 Parse(string s)
         {
-            return Fixed8.FromDecimal(decimal.Parse(s));
+            return FromDecimal(decimal.Parse(s));
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -179,15 +179,21 @@ namespace AntShares
             return x;
         }
 
+        public static Fixed8 operator /(Fixed8 x, long y)
+        {
+            x.value /= y;
+            return x;
+        }
+
         public static Fixed8 operator +(Fixed8 x, Fixed8 y)
         {
-            x.value += y.value;
+            x.value = checked(x.value + y.value);
             return x;
         }
 
         public static Fixed8 operator -(Fixed8 x, Fixed8 y)
         {
-            x.value -= y.value;
+            x.value = checked(x.value - y.value);
             return x;
         }
 

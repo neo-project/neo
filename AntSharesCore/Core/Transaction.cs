@@ -1,4 +1,5 @@
-﻿using AntShares.IO;
+﻿using AntShares.Core.Scripts;
+using AntShares.IO;
 using AntShares.Network;
 using System;
 using System.Collections.Generic;
@@ -13,15 +14,9 @@ namespace AntShares.Core
         public readonly TransactionType Type;
         public TransactionInput[] Inputs;
         public TransactionOutput[] Outputs;
-        public byte[][] Scripts;
+        public Script[] Scripts;
 
-        public override InventoryType InventoryType
-        {
-            get
-            {
-                return InventoryType.TX;
-            }
-        }
+        public override InventoryType InventoryType => InventoryType.TX;
 
         [NonSerialized]
         private IReadOnlyDictionary<TransactionInput, TransactionOutput> _references;
@@ -32,7 +27,7 @@ namespace AntShares.Core
                 if (_references == null)
                 {
                     Dictionary<TransactionInput, TransactionOutput> dictionary = new Dictionary<TransactionInput, TransactionOutput>();
-                    foreach (var group in GetAllInputs().GroupBy(p => p.PrevTxId))
+                    foreach (var group in GetAllInputs().GroupBy(p => p.PrevHash))
                     {
                         Transaction tx = Blockchain.Default.GetTransaction(group.Key);
                         if (tx == null) return null;
@@ -51,15 +46,15 @@ namespace AntShares.Core
             }
         }
 
-        byte[][] ISignable.Scripts
+        Script[] ISignable.Scripts
         {
             get
             {
-                return this.Scripts;
+                return Scripts;
             }
             set
             {
-                this.Scripts = value;
+                Scripts = value;
             }
         }
 
@@ -73,7 +68,7 @@ namespace AntShares.Core
         public override void Deserialize(BinaryReader reader)
         {
             ((ISignable)this).DeserializeUnsigned(reader);
-            this.Scripts = reader.ReadBytesArray();
+            Scripts = reader.ReadSerializableArray<Script>();
         }
 
         protected abstract void DeserializeExclusiveData(BinaryReader reader);
@@ -95,7 +90,7 @@ namespace AntShares.Core
             if (transaction == null)
                 throw new FormatException();
             transaction.DeserializeUnsignedWithoutType(reader);
-            transaction.Scripts = reader.ReadBytesArray();
+            transaction.Scripts = reader.ReadSerializableArray<Script>();
             return transaction;
         }
 
@@ -109,10 +104,13 @@ namespace AntShares.Core
         private void DeserializeUnsignedWithoutType(BinaryReader reader)
         {
             DeserializeExclusiveData(reader);
-            this.Inputs = reader.ReadSerializableArray<TransactionInput>();
-            if (GetAllInputs().Distinct().Count() != GetAllInputs().Count())
-                throw new FormatException();
-            this.Outputs = reader.ReadSerializableArray<TransactionOutput>();
+            Inputs = reader.ReadSerializableArray<TransactionInput>();
+            TransactionInput[] inputs = GetAllInputs().ToArray();
+            for (int i = 1; i < inputs.Length; i++)
+                for (int j = 0; j < i; j++)
+                    if (inputs[i].PrevHash == inputs[j].PrevHash && inputs[i].PrevIndex == inputs[j].PrevIndex)
+                        throw new FormatException();
+            Outputs = reader.ReadSerializableArray<TransactionOutput>();
             if (Outputs.Any(p => p.Value == Fixed8.Zero))
                 throw new FormatException();
         }
@@ -174,90 +172,47 @@ namespace AntShares.Core
             writer.Write(Outputs);
         }
 
-        public override VerificationResult Verify()
+        public override bool Verify()
         {
-            if (Blockchain.Default.ContainsTransaction(Hash)) return VerificationResult.AlreadyInBlockchain;
-            VerificationResult result = VerificationResult.OK;
-            if (Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
+            if (Blockchain.Default.ContainsTransaction(Hash)) return true;
+            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes))
+                return false;
+            if (Blockchain.Default.IsDoubleSpend(this))
+                return false;
+            foreach (UInt256 hash in Outputs.Select(p => p.AssetId).Distinct())
+                if (!Blockchain.Default.ContainsAsset(hash))
+                    return false;
+            if (References == null) return false;
+            foreach (var group in Outputs.Where(p => p.Value < Fixed8.Zero).GroupBy(p => p.AssetId))
             {
-                if (Blockchain.Default.IsDoubleSpend(this))
-                    result |= VerificationResult.DoubleSpent;
+                if (group.Key == Blockchain.AntCoin.Hash || group.Key == Blockchain.AntShare.Hash)
+                    return false;
+                RegisterTransaction tx = Blockchain.Default.GetTransaction(group.Key) as RegisterTransaction;
+                if (tx == null) return false;
+                if (tx.Amount != Fixed8.Zero) return false;
+                if (group.Any(p => p.ScriptHash != tx.Issuer)) return false;
+                if (Type != TransactionType.IssueTransaction && References.Values.Where(p => p.AssetId == group.Key && p.Value < Fixed8.Zero).Sum(p => p.Value) > group.Sum(p => p.Value))
+                    return false;
             }
-            else
+            TransactionResult[] results = GetTransactionResults().ToArray();
+            TransactionResult[] results_destroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
+            if (results_destroy.Length > 1) return false;
+            if (results_destroy.Length == 1 && results_destroy[0].AssetId != Blockchain.AntCoin.Hash)
+                return false;
+            if (SystemFee > Fixed8.Zero && (results_destroy.Length == 0 || results_destroy[0].Amount < SystemFee))
+                return false;
+            TransactionResult[] results_issue = results.Where(p => p.Amount < Fixed8.Zero).ToArray();
+            if (Type == TransactionType.GenerationTransaction)
             {
-                result |= VerificationResult.Incapable;
+                if (results_issue.Any(p => p.AssetId != Blockchain.AntCoin.Hash))
+                    return false;
             }
-            if (Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes))
+            else if (Type != TransactionType.IssueTransaction)
             {
-                foreach (UInt256 hash in Outputs.Select(p => p.AssetId).Distinct())
-                {
-                    if (!Blockchain.Default.ContainsAsset(hash))
-                    {
-                        result |= VerificationResult.LackOfInformation;
-                        break;
-                    }
-                }
+                if (results_issue.Length > 0)
+                    return false;
             }
-            else
-            {
-                result |= VerificationResult.Incapable;
-            }
-            if (References == null)
-            {
-                result |= VerificationResult.LackOfInformation;
-            }
-            else
-            {
-                foreach (var group in Outputs.Where(p => p.Value < Fixed8.Zero).GroupBy(p => p.AssetId))
-                {
-                    if (group.Key == Blockchain.AntCoin.Hash || group.Key == Blockchain.AntShare.Hash)
-                    {
-                        result |= VerificationResult.Imbalanced;
-                        break;
-                    }
-                    RegisterTransaction tx = Blockchain.Default.GetTransaction(group.Key) as RegisterTransaction;
-                    if (tx == null)
-                    {
-                        result |= VerificationResult.LackOfInformation;
-                        continue;
-                    }
-                    if (tx.Amount != Fixed8.Zero)
-                    {
-                        result |= VerificationResult.Imbalanced;
-                        break;
-                    }
-                    if (group.Any(p => p.ScriptHash != tx.Issuer))
-                    {
-                        result |= VerificationResult.Imbalanced;
-                        break;
-                    }
-                    if (Type != TransactionType.IssueTransaction && References.Values.Where(p => p.AssetId == group.Key && p.Value < Fixed8.Zero).Sum(p => p.Value) > group.Sum(p => p.Value))
-                    {
-                        result |= VerificationResult.Imbalanced;
-                        break;
-                    }
-                }
-                TransactionResult[] results = GetTransactionResults().ToArray();
-                TransactionResult[] results_destroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
-                if (results_destroy.Length > 1)
-                    result |= VerificationResult.Imbalanced;
-                else if (results_destroy.Length == 1 && results_destroy[0].AssetId != Blockchain.AntCoin.Hash)
-                    result |= VerificationResult.Imbalanced;
-                else if (SystemFee > Fixed8.Zero && (results_destroy.Length == 0 || results_destroy[0].Amount < SystemFee))
-                    result |= VerificationResult.Imbalanced;
-                TransactionResult[] results_issue = results.Where(p => p.Amount < Fixed8.Zero).ToArray();
-                if (Type == TransactionType.GenerationTransaction)
-                {
-                    if (results_issue.Any(p => p.AssetId != Blockchain.AntCoin.Hash))
-                        result |= VerificationResult.Imbalanced;
-                }
-                else if (Type != TransactionType.IssueTransaction)
-                {
-                    result |= VerificationResult.Imbalanced;
-                }
-            }
-            result |= this.VerifySignature();
-            return result;
+            return this.VerifySignature();
         }
     }
 }

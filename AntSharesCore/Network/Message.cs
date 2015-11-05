@@ -2,7 +2,8 @@
 using AntShares.IO;
 using System;
 using System.IO;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace AntShares.Network
 {
@@ -24,13 +25,12 @@ namespace AntShares.Network
 
         public static Message Create(string command, byte[] payload)
         {
-            Message message = new Message
+            return new Message
             {
                 Command = command,
+                Checksum = GetChecksum(payload),
                 Payload = payload
             };
-            message.Checksum = message.Payload.Checksum();
-            return message;
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
@@ -43,13 +43,47 @@ namespace AntShares.Network
                 throw new FormatException();
             this.Checksum = reader.ReadUInt32();
             this.Payload = reader.ReadBytes((int)length);
-            if (Payload.Checksum() != Checksum)
+            if (GetChecksum(Payload) != Checksum)
                 throw new FormatException();
         }
 
-        public BinaryReader OpenReader()
+        public static async Task<Message> DeserializeFromStreamAsync(Stream stream, CancellationToken cancellationToken)
         {
-            return new BinaryReader(new MemoryStream(Payload, false), Encoding.UTF8);
+            byte[] buffer = new byte[sizeof(uint) + 12 + sizeof(uint) + sizeof(uint)];
+            await ReadAsync(stream, buffer, 0, buffer.Length, cancellationToken);
+            Message message = new Message();
+            using (MemoryStream ms = new MemoryStream(buffer, false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                if (reader.ReadUInt32() != Magic)
+                    throw new FormatException();
+                message.Command = reader.ReadFixedString(12);
+                uint length = reader.ReadUInt32();
+                if (length > 0x02000000)
+                    throw new FormatException();
+                message.Checksum = reader.ReadUInt32();
+                message.Payload = new byte[length];
+            }
+            await ReadAsync(stream, message.Payload, 0, message.Payload.Length, cancellationToken);
+            if (GetChecksum(message.Payload) != message.Checksum)
+                throw new FormatException();
+            return message;
+        }
+
+        private static uint GetChecksum(byte[] value)
+        {
+            return BitConverter.ToUInt32(value.Sha256().Sha256(), 0);
+        }
+
+        private static async Task ReadAsync(Stream stream, byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            while (count > 0)
+            {
+                int total = await stream.ReadAsync(buffer, offset, count, cancellationToken);
+                if (total == 0) throw new IOException();
+                offset += total;
+                count -= total;
+            }
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

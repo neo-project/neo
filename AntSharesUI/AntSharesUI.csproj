@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>AntShares</RootNamespace>
     <AssemblyName>AntSharesUI</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <PublishUrl>发布\</PublishUrl>
@@ -27,6 +27,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>AntShares.Program</StartupObject>
@@ -49,35 +50,11 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="LevelDB.Net, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\LevelDB.Net.1.1.1\lib\net40\LevelDB.Net.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Data.Linq" />
     <Reference Include="System.Drawing" />
-    <Reference Include="System.Security" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Data\DataEntryPrefix.cs" />
-    <Compile Include="Data\Helper.cs" />
-    <Compile Include="Data\LevelDBBlockchain.cs" />
-    <Compile Include="Cryptography\Helper.cs" />
-    <Compile Include="Data\MultiValueDictionary.cs" />
-    <Compile Include="Data\SliceBuilder.cs" />
     <Compile Include="UI\IssueDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -90,20 +67,16 @@
     <Compile Include="UI\PayToDialog.Designer.cs">
       <DependentUpon>PayToDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="Wallets\Account.cs" />
-    <Compile Include="Wallets\Key.cs" />
-    <Compile Include="Wallets\Transaction.cs" />
-    <Compile Include="Wallets\UnspentCoin.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="UI\AccountDetailsDialog.cs">
+    <Compile Include="UI\ContractDetailsDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="UI\AccountDetailsDialog.Designer.cs">
-      <DependentUpon>AccountDetailsDialog.cs</DependentUpon>
+    <Compile Include="UI\ContractDetailsDialog.Designer.cs">
+      <DependentUpon>ContractDetailsDialog.cs</DependentUpon>
     </Compile>
     <Compile Include="UI\CreateWalletDialog.cs">
       <SubType>Form</SubType>
@@ -144,10 +117,8 @@
     <Compile Include="UI\SigningDialog.Designer.cs">
       <DependentUpon>SigningDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="Wallets\UserWallet.cs" />
-    <Compile Include="Wallets\WalletDataContext.cs" />
-    <EmbeddedResource Include="UI\AccountDetailsDialog.resx">
-      <DependentUpon>AccountDetailsDialog.cs</DependentUpon>
+    <EmbeddedResource Include="UI\ContractDetailsDialog.resx">
+      <DependentUpon>ContractDetailsDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\DeveloperToolsForm.resx">
       <DependentUpon>DeveloperToolsForm.cs</DependentUpon>
@@ -173,19 +144,6 @@
     <EmbeddedResource Include="UI\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -195,12 +153,6 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\AntSharesCore\AntSharesCore.csproj">
-      <Project>{bcd6b896-6cd0-4601-aa13-5672a15e0cad}</Project>
-      <Name>AntSharesCore</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5.2">
@@ -222,7 +174,12 @@
   <ItemGroup>
     <Service Include="{3259AA49-8AA1-44D3-9025-A0B520596A8C}" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\AntSharesCore\AntSharesCore.csproj">
+      <Project>{bcd6b896-6cd0-4601-aa13-5672a15e0cad}</Project>
+      <Name>AntSharesCore</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

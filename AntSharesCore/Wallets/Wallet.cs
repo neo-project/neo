@@ -1,9 +1,7 @@
 ﻿using AntShares.Core;
-using AntShares.Core.Scripts;
 using AntShares.Cryptography;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 
@@ -11,6 +9,8 @@ namespace AntShares.Wallets
 {
     public abstract class Wallet
     {
+        public const byte CoinVersion = 0x17;
+
         private byte[] masterKey;
         private byte[] iv;
 
@@ -21,58 +21,75 @@ namespace AntShares.Wallets
             ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
         }
 
-        public WalletEntry CreateEntry()
+        public Account CreateAccount()
         {
             using (CngKey key = CngKey.Create(CngAlgorithm.ECDsaP256, null, new CngKeyCreationParameters { ExportPolicy = CngExportPolicies.AllowPlaintextArchiving }))
             {
                 byte[] privateKey = key.Export(CngKeyBlobFormat.EccPrivateBlob);
-                byte[] redeemScript = ScriptBuilder.CreateRedeemScript(1, Secp256r1Point.FromBytes(privateKey));
-                WalletEntry entry = new WalletEntry(redeemScript, privateKey);
-                SaveEntry(entry);
+                Account account = new Account(privateKey);
+                SaveAccount(account);
                 Array.Clear(privateKey, 0, privateKey.Length);
-                return entry;
+                return account;
             }
         }
 
-        protected abstract void DeleteEntry(UInt160 scriptHash);
-
-        protected abstract void GetEncryptedEntry(UInt160 scriptHash, out byte[] redeemScript, out byte[] encryptedPrivateKey);
-
-        public WalletEntry GetEntry(UInt160 scriptHash)
+        protected byte[] DecryptPrivateKey(byte[] encryptedPrivateKey)
         {
-            byte[] redeemScript, encryptedPrivateKey;
-            GetEncryptedEntry(scriptHash, out redeemScript, out encryptedPrivateKey);
-            if (redeemScript == null || encryptedPrivateKey == null) return null;
-            if ((redeemScript.Length - 3) % 34 != 0 || encryptedPrivateKey.Length % 96 != 0) throw new IOException();
+            if (encryptedPrivateKey == null) throw new ArgumentNullException(nameof(encryptedPrivateKey));
+            if (encryptedPrivateKey.Length != 96) throw new ArgumentException();
             ProtectedMemory.Unprotect(masterKey, MemoryProtectionScope.SameProcess);
-            byte[] decryptedPrivateKey;
-            using (AesManaged aes = new AesManaged())
+            try
             {
-                aes.Padding = PaddingMode.None;
-                using (ICryptoTransform decryptor = aes.CreateDecryptor(masterKey, iv))
+                using (AesManaged aes = new AesManaged())
                 {
-                    decryptedPrivateKey = decryptor.TransformFinalBlock(encryptedPrivateKey, 0, encryptedPrivateKey.Length);
+                    aes.Padding = PaddingMode.None;
+                    using (ICryptoTransform decryptor = aes.CreateDecryptor(masterKey, iv))
+                    {
+                        return decryptor.TransformFinalBlock(encryptedPrivateKey, 0, encryptedPrivateKey.Length);
+                    }
                 }
             }
-            ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
-            byte[][] privateKeys = new byte[encryptedPrivateKey.Length / 96][];
-            for (int i = 0; i < privateKeys.Length; i++)
+            finally
             {
-                privateKeys[i] = new byte[96];
-                Buffer.BlockCopy(decryptedPrivateKey, i * 96, privateKeys[i], 0, 96);
+                ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
             }
-            WalletEntry entry = new WalletEntry(redeemScript, privateKeys);
-            Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
-            for (int i = 0; i < privateKeys.Length; i++)
-            {
-                Array.Clear(privateKeys[i], 0, privateKeys[i].Length);
-            }
-            return entry;
         }
+
+        protected abstract void DeleteAccount(UInt160 publicKeyHash);
+
+        protected byte[] EncryptPrivateKey(byte[] decryptedPrivateKey)
+        {
+            ProtectedMemory.Unprotect(masterKey, MemoryProtectionScope.SameProcess);
+            try
+            {
+                using (AesManaged aes = new AesManaged())
+                {
+                    aes.Padding = PaddingMode.None;
+                    using (ICryptoTransform encryptor = aes.CreateEncryptor(masterKey, iv))
+                    {
+                        return encryptor.TransformFinalBlock(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
+                    }
+                }
+            }
+            finally
+            {
+                ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
+            }
+        }
+
+        public abstract Account GetAccount(UInt160 publicKeyHash);
+
+        public abstract Account GetAccountByScriptHash(UInt160 scriptHash);
+
+        public abstract IEnumerable<Account> GetAccounts();
 
         public abstract IEnumerable<UInt160> GetAddresses();
 
-        public WalletEntry Import(string wif)
+        public abstract Contract GetContract(UInt160 scriptHash);
+
+        public abstract IEnumerable<Contract> GetContracts();
+
+        public Account Import(string wif)
         {
             if (wif == null)
                 throw new ArgumentNullException();
@@ -84,60 +101,50 @@ namespace AntShares.Wallets
                 throw new FormatException();
             byte[] privateKey = new byte[32];
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
-            byte[] redeemScript = ScriptBuilder.CreateRedeemScript(1, Secp256r1Curve.G * privateKey);
-            WalletEntry entry = new WalletEntry(redeemScript, privateKey);
-            SaveEntry(entry);
+            Account account = new Account(privateKey);
+            SaveAccount(account);
             Array.Clear(privateKey, 0, privateKey.Length);
             Array.Clear(data, 0, data.Length);
-            return entry;
+            return account;
         }
 
-        protected abstract void SaveEncryptedEntry(UInt160 scriptHash, byte[] redeemScript, byte[] encryptedPrivateKey);
-
-        private void SaveEntry(WalletEntry entry)
-        {
-            byte[] decryptedPrivateKey = new byte[entry.PrivateKeys.Length * 96];
-            for (int i = 0; i < entry.PrivateKeys.Length; i++)
-            {
-                Buffer.BlockCopy(entry.PublicKeys[i], 0, decryptedPrivateKey, i * 96, 64);
-                using (entry.Decrypt(i))
-                {
-                    Buffer.BlockCopy(entry.PrivateKeys[i], 0, decryptedPrivateKey, i * 96 + 64, 32);
-                }
-            }
-            ProtectedMemory.Unprotect(masterKey, MemoryProtectionScope.SameProcess);
-            byte[] encryptedPrivateKey;
-            using (AesManaged aes = new AesManaged())
-            {
-                aes.Padding = PaddingMode.None;
-                using (ICryptoTransform encryptor = aes.CreateEncryptor(masterKey, iv))
-                {
-                    encryptedPrivateKey = encryptor.TransformFinalBlock(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
-                }
-            }
-            ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
-            Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
-            SaveEncryptedEntry(entry.ScriptHash, entry.RedeemScript, encryptedPrivateKey);
-        }
+        protected abstract void SaveAccount(Account account);
 
         public bool Sign(SignatureContext context)
         {
             bool fSuccess = false;
-            for (int i = 0; i < context.ScriptHashes.Length; i++)
+            foreach (UInt160 scriptHash in context.ScriptHashes)
             {
-                WalletEntry entry = GetEntry(context.ScriptHashes[i]);
-                if (entry == null) continue;
-                for (int j = 0; j < entry.PrivateKeys.Length; j++)
+                Contract contract = GetContract(scriptHash);
+                if (contract == null) continue;
+                Account account = GetAccountByScriptHash(scriptHash);
+                if (account == null) continue;
+                byte[] signature;
+                using (account.Decrypt())
                 {
-                    byte[] signature;
-                    using (entry.Decrypt(j))
-                    {
-                        signature = context.Signable.Sign(entry.PrivateKeys[j], entry.PublicKeys[j]);
-                    }
-                    fSuccess |= context.Add(entry.RedeemScript, Secp256r1Point.FromBytes(entry.PublicKeys[j]), signature);
+                    signature = context.Signable.Sign(account.PrivateKey, account.PublicKey.EncodePoint(false).Skip(1).ToArray());
                 }
+                fSuccess |= context.Add(contract.RedeemScript, account.PublicKey, signature);
             }
             return fSuccess;
+        }
+
+        public static string ToAddress(UInt160 scriptHash)
+        {
+            byte[] data = new byte[] { CoinVersion }.Concat(scriptHash.ToArray()).ToArray();
+            return Base58.Encode(data.Concat(data.Sha256().Sha256().Take(4)).ToArray());
+        }
+
+        public static UInt160 ToScriptHash(string address)
+        {
+            byte[] data = Base58.Decode(address);
+            if (data.Length != 25)
+                throw new FormatException();
+            if (data[0] != CoinVersion)
+                throw new FormatException();
+            if (!data.Take(21).Sha256().Sha256().Take(4).SequenceEqual(data.Skip(21)))
+                throw new FormatException();
+            return new UInt160(data.Skip(1).Take(20).ToArray());
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using AntShares.IO;
+﻿using AntShares.Core.Scripts;
+using AntShares.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,30 +19,30 @@ namespace AntShares.Core
         public Fixed8 Price;
         public UInt160 Client;
         public TransactionInput[] Inputs;
-        public byte[][] Scripts;
+        public Script[] Scripts;
 
-        byte[][] ISignable.Scripts
+        Script[] ISignable.Scripts
         {
             get
             {
-                return this.Scripts;
+                return Scripts;
             }
             set
             {
-                this.Scripts = value;
+                Scripts = value;
             }
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
             ((ISignable)this).DeserializeUnsigned(reader);
-            this.Scripts = reader.ReadBytesArray();
+            Scripts = reader.ReadSerializableArray<Script>();
         }
 
         internal void DeserializeInTransaction(BinaryReader reader, AgencyTransaction tx)
         {
             DeserializeUnsignedInternal(reader, tx.AssetId, tx.ValueAssetId, tx.Agent);
-            this.Scripts = reader.ReadBytesArray();
+            Scripts = reader.ReadSerializableArray<Script>();
         }
 
         void ISignable.DeserializeUnsigned(BinaryReader reader)
@@ -55,17 +56,17 @@ namespace AntShares.Core
 
         private void DeserializeUnsignedInternal(BinaryReader reader, UInt256 asset_id, UInt256 value_asset_id, UInt160 agent)
         {
-            this.AssetId = asset_id;
-            this.ValueAssetId = value_asset_id;
-            this.Agent = agent;
-            this.Amount = reader.ReadSerializable<Fixed8>();
+            AssetId = asset_id;
+            ValueAssetId = value_asset_id;
+            Agent = agent;
+            Amount = reader.ReadSerializable<Fixed8>();
             if (Amount == Fixed8.Zero) throw new FormatException();
             if (Amount.GetData() % 10000 != 0) throw new FormatException();
-            this.Price = reader.ReadSerializable<Fixed8>();
+            Price = reader.ReadSerializable<Fixed8>();
             if (Price <= Fixed8.Zero) throw new FormatException();
             if (Price.GetData() % 10000 != 0) throw new FormatException();
-            this.Client = reader.ReadSerializable<UInt160>();
-            this.Inputs = reader.ReadSerializableArray<TransactionInput>();
+            Client = reader.ReadSerializable<UInt160>();
+            Inputs = reader.ReadSerializableArray<TransactionInput>();
             if (Inputs.Distinct().Count() != Inputs.Length)
                 throw new FormatException();
         }
@@ -79,7 +80,7 @@ namespace AntShares.Core
             {
                 hashes.Add(Client);
             }
-            foreach (var group in Inputs.GroupBy(p => p.PrevTxId))
+            foreach (var group in Inputs.GroupBy(p => p.PrevHash))
             {
                 Transaction tx = Blockchain.Default.GetTransaction(group.Key);
                 if (tx == null) throw new InvalidOperationException();

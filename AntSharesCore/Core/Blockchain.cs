@@ -1,14 +1,12 @@
-﻿using AntShares.Cryptography;
+﻿using AntShares.Cryptography.ECC;
 using AntShares.IO;
-using AntShares.Network;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace AntShares.Core
 {
-    public class Blockchain : IDisposable
+    public abstract class Blockchain : IDisposable
     {
         public event EventHandler<Block> PersistCompleted;
 
@@ -18,11 +16,11 @@ namespace AntShares.Core
         private const double R_Final = 0.3;
         public static readonly decimal GenerationFactor = 1 - (decimal)Math.Pow(R_Final / R_Init, 1.0 / BlocksPerYear);
         //TODO: 备用矿工未来要有5-7个
-        public static readonly Secp256r1Point[] StandbyMiners =
+        public static readonly ECPoint[] StandbyMiners =
         {
-            Secp256r1Point.DecodePoint("02c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd0".HexToBytes())
+            ECPoint.DecodePoint("02c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd0".HexToBytes(), ECCurve.Secp256r1)
         };
-        public static readonly Block GenesisBlock = "000000000000000000000000000000000000000000000000000000000000000000000000e7b746f8496dd080ca30c40186fddfe30c7d61209842197eef11fee0852cc25c375ecc55000000001dac2b7c00000000eea34400951bc0e31a530ce8a8a63485c6271147674065e19b1bd7f90c1fb26182bce24f0c840235f647efd83647988661736500546a89bb710d832bf487a26c1053c8ccb6b6fb30be9d57ccb39bd7fb098f6e1d593025512102c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd051ae0200000000000000004000455b7b276c616e67273a277a682d434e272c276e616d65273a27e5b08fe89a81e882a1277d2c7b276c616e67273a27656e272c276e616d65273a27416e745368617265277d5d0000c16ff2862300eea34400951bc0e31a530ce8a8a63485c6271147eea34400951bc0e31a530ce8a8a63485c62711470000016740da12d7b9a3f66d3a27a160e73ffd3fdbd712eedc3262913ec93944f874ef823d2ab972ac06616c0481afd1eb9fecc379b4030c3212641f035d8ed4095ea7476a25512102c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd051ae".HexToBytes().AsSerializable<Block>();
+        public static readonly Block GenesisBlock = "00000000000000000000000000000000000000000000000000000000000000000000000069ffd4815d08ece5435a64070dff19caefac89795236f7638e3f3290d9e5f9f0375ecc55000000001dac2b7c00000000eea34400951bc0e31a530ce8a8a63485c6271147414065e19b1bd7f90c1fb26182bce24f0c840235f647efd83647988661736500546a89bb710d832bf487a26c1053c8ccb6b6fb30be9d57ccb39bd7fb098f6e1d593025512102c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd051ae0200000000000000004000455b7b276c616e67273a277a682d434e272c276e616d65273a27e5b08fe89a81e882a1277d2c7b276c616e67273a27656e272c276e616d65273a27416e745368617265277d5d0000c16ff2862300eea34400951bc0e31a530ce8a8a63485c6271147eea34400951bc0e31a530ce8a8a63485c62711470000014140da12d7b9a3f66d3a27a160e73ffd3fdbd712eedc3262913ec93944f874ef823d2ab972ac06616c0481afd1eb9fecc379b4030c3212641f035d8ed4095ea7476a25512102c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd051ae".HexToBytes().AsSerializable<Block>();
         public static readonly RegisterTransaction AntShare = (RegisterTransaction)GenesisBlock.Transactions[1];
         public static readonly RegisterTransaction AntCoin = new RegisterTransaction
         {
@@ -33,21 +31,32 @@ namespace AntShares.Core
             Admin = new UInt160(),
             Inputs = new TransactionInput[0],
             Outputs = new TransactionOutput[0],
-            Scripts = new byte[0][]
+            Scripts = { }
         };
-        protected readonly ConcurrentDictionary<UInt256, Transaction> MemoryPool = new ConcurrentDictionary<UInt256, Transaction>();
-        protected readonly object SyncRoot = new object();
+        protected static readonly Dictionary<UInt256, Transaction> MemoryPool = new Dictionary<UInt256, Transaction>();
 
-        public virtual BlockchainAbility Ability => BlockchainAbility.None;
-        public virtual UInt256 CurrentBlockHash => GenesisBlock.Hash;
-        public static Blockchain Default { get; private set; } = new Blockchain();
-        public virtual uint Height => 0;
-        public virtual bool IsReadOnly => true;
+        public abstract BlockchainAbility Ability { get; }
+        public abstract UInt256 CurrentBlockHash { get; }
+        public virtual UInt256 CurrentHeaderHash => CurrentBlockHash;
+        public static Blockchain Default { get; private set; } = null;
+        public virtual uint HeaderHeight => Height;
+        public abstract uint Height { get; }
+        public abstract bool IsReadOnly { get; }
 
-        protected Blockchain()
+        protected internal abstract bool AddBlock(Block block);
+
+        protected internal abstract void AddHeaders(IEnumerable<Block> headers);
+
+        internal bool AddTransaction(Transaction tx)
         {
-            LocalNode.NewBlock += LocalNode_NewBlock;
-            LocalNode.NewTransaction += LocalNode_NewTransaction;
+            lock (MemoryPool)
+            {
+                if (ContainsTransaction(tx.Hash)) return false;
+                if (IsDoubleSpend(tx)) return false;
+                if (!tx.Verify()) return false;
+                MemoryPool.Add(tx.Hash, tx);
+                return true;
+            }
         }
 
         public virtual bool ContainsAsset(UInt256 hash)
@@ -67,7 +76,7 @@ namespace AntShares.Core
 
         public bool ContainsUnspent(TransactionInput input)
         {
-            return ContainsUnspent(input.PrevTxId, input.PrevIndex);
+            return ContainsUnspent(input.PrevHash, input.PrevIndex);
         }
 
         public virtual bool ContainsUnspent(UInt256 hash, ushort index)
@@ -78,15 +87,14 @@ namespace AntShares.Core
             return index < tx.Outputs.Length;
         }
 
-        public virtual void Dispose()
-        {
-            LocalNode.NewBlock -= LocalNode_NewBlock;
-            LocalNode.NewTransaction -= LocalNode_NewTransaction;
-        }
+        public abstract void Dispose();
 
-        public virtual IEnumerable<RegisterTransaction> GetAssets()
+        public abstract IEnumerable<RegisterTransaction> GetAssets();
+
+        public virtual Block GetBlock(uint height)
         {
-            throw new NotSupportedException();
+            if (height == 0) return GenesisBlock;
+            return null;
         }
 
         public virtual Block GetBlock(UInt256 hash)
@@ -96,54 +104,39 @@ namespace AntShares.Core
             return null;
         }
 
-        public virtual Block GetBlockAndHeight(UInt256 hash, out uint height)
-        {
-            height = 0;
-            if (hash == GenesisBlock.Hash)
-                return GenesisBlock;
-            return null;
-        }
-
-        public virtual int GetBlockHeight(UInt256 hash)
-        {
-            if (hash == GenesisBlock.Hash) return 0;
-            return -1;
-        }
-
         public IEnumerable<EnrollmentTransaction> GetEnrollments()
         {
             return GetEnrollments(Enumerable.Empty<Transaction>());
         }
 
-        public virtual IEnumerable<EnrollmentTransaction> GetEnrollments(IEnumerable<Transaction> others)
-        {
-            throw new NotSupportedException();
-        }
+        public abstract IEnumerable<EnrollmentTransaction> GetEnrollments(IEnumerable<Transaction> others);
 
-        public virtual BlockHeader GetHeader(UInt256 hash)
+        public virtual Block GetHeader(UInt256 hash)
         {
             return GetBlock(hash)?.Header;
         }
+
+        public abstract UInt256[] GetLeafHeaderHashes();
 
         public IEnumerable<Transaction> GetMemoryPool()
         {
             return MemoryPool.Values;
         }
 
-        private Secp256r1Point[] _miners = null;
-        public Secp256r1Point[] GetMiners()
+        private List<ECPoint> _miners = new List<ECPoint>();
+        public ECPoint[] GetMiners()
         {
-            lock (SyncRoot)
+            lock (_miners)
             {
-                if (_miners == null)
+                if (_miners.Count == 0)
                 {
-                    _miners = GetMiners(Enumerable.Empty<Transaction>()).ToArray();
+                    _miners.AddRange(GetMiners(Enumerable.Empty<Transaction>()));
                 }
-                return _miners;
+                return _miners.ToArray();
             }
         }
 
-        public virtual IEnumerable<Secp256r1Point> GetMiners(IEnumerable<Transaction> others)
+        public virtual IEnumerable<ECPoint> GetMiners(IEnumerable<Transaction> others)
         {
             if (!Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Ability.HasFlag(BlockchainAbility.UnspentIndexes))
                 throw new NotSupportedException();
@@ -155,14 +148,14 @@ namespace AntShares.Core
                 Weight = w
             }).WeightedAverage(p => p.MinerCount, p => p.Weight);
             miner_count = Math.Max(miner_count, StandbyMiners.Length);
-            Dictionary<Secp256r1Point, Fixed8> miners = new Dictionary<Secp256r1Point, Fixed8>();
-            Dictionary<UInt256, Secp256r1Point> enrollments = GetEnrollments(others).ToDictionary(p => p.Hash, p => p.PublicKey);
+            Dictionary<ECPoint, Fixed8> miners = new Dictionary<ECPoint, Fixed8>();
+            Dictionary<UInt256, ECPoint> enrollments = GetEnrollments(others).ToDictionary(p => p.Hash, p => p.PublicKey);
             foreach (var vote in votes)
             {
                 foreach (UInt256 hash in vote.Enrollments)
                 {
                     if (!enrollments.ContainsKey(hash)) continue;
-                    Secp256r1Point pubkey = enrollments[hash];
+                    ECPoint pubkey = enrollments[hash];
                     if (!miners.ContainsKey(pubkey))
                     {
                         miners.Add(pubkey, Fixed8.Zero);
@@ -178,20 +171,11 @@ namespace AntShares.Core
             return miner_count / 2 + 1;
         }
 
-        public virtual Block GetNextBlock(UInt256 hash)
-        {
-            return null;
-        }
+        public abstract Block GetNextBlock(UInt256 hash);
 
-        public virtual UInt256 GetNextBlockHash(UInt256 hash)
-        {
-            return null;
-        }
+        public abstract UInt256 GetNextBlockHash(UInt256 hash);
 
-        public virtual Fixed8 GetQuantityIssued(UInt256 asset_id)
-        {
-            throw new NotSupportedException();
-        }
+        public abstract Fixed8 GetQuantityIssued(UInt256 asset_id);
 
         public virtual Transaction GetTransaction(UInt256 hash)
         {
@@ -211,52 +195,31 @@ namespace AntShares.Core
             return tx.Outputs[index];
         }
 
-        public virtual IEnumerable<TransactionOutput> GetUnspentAntShares()
-        {
-            throw new NotSupportedException();
-        }
+        public abstract IEnumerable<TransactionOutput> GetUnspentAntShares();
 
         public IEnumerable<Vote> GetVotes()
         {
             return GetVotes(Enumerable.Empty<Transaction>());
         }
 
-        public virtual IEnumerable<Vote> GetVotes(IEnumerable<Transaction> others)
-        {
-            throw new NotSupportedException();
-        }
+        public abstract IEnumerable<Vote> GetVotes(IEnumerable<Transaction> others);
 
-        public virtual bool IsDoubleSpend(Transaction tx)
-        {
-            throw new NotSupportedException();
-        }
+        public abstract bool IsDoubleSpend(Transaction tx);
 
-        private void LocalNode_NewBlock(object sender, Block block)
+        protected void OnPersistCompleted(Block block)
         {
-            OnBlock(block);
-        }
-
-        private void LocalNode_NewTransaction(object sender, Transaction tx)
-        {
-            MemoryPool.TryAdd(tx.Hash, tx);
-        }
-
-        protected virtual void OnBlock(Block block)
-        {
-        }
-
-        protected void RaisePersistCompleted(Block block)
-        {
-            _miners = null;
-            foreach (Transaction tx in block.Transactions)
+            lock (_miners)
             {
-                Transaction ignore;
-                MemoryPool.TryRemove(tx.Hash, out ignore);
+                _miners.Clear();
             }
-            if (PersistCompleted != null)
+            lock (MemoryPool)
             {
-                PersistCompleted(this, block);
+                foreach (Transaction tx in block.Transactions)
+                {
+                    MemoryPool.Remove(tx.Hash);
+                }
             }
+            if (PersistCompleted != null) PersistCompleted(this, block);
         }
 
         public static void RegisterBlockchain(Blockchain blockchain)

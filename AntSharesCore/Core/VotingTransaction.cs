@@ -1,4 +1,4 @@
-﻿using AntShares.Cryptography;
+﻿using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using System;
 using System.Collections.Generic;
@@ -39,37 +39,20 @@ namespace AntShares.Core
             writer.Write(Enrollments);
         }
 
-        public override VerificationResult Verify()
+        public override bool Verify()
         {
-            VerificationResult result = base.Verify();
-            if (Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
+            if (!base.Verify()) return false;
+            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
+                return false;
+            HashSet<ECPoint> pubkeys = new HashSet<ECPoint>();
+            foreach (UInt256 vote in Enrollments)
             {
-                HashSet<Secp256r1Point> pubkeys = new HashSet<Secp256r1Point>();
-                foreach (UInt256 vote in Enrollments)
-                {
-                    EnrollmentTransaction tx = Blockchain.Default.GetTransaction(vote) as EnrollmentTransaction;
-                    if (tx == null)
-                    {
-                        result |= VerificationResult.LackOfInformation;
-                        continue;
-                    }
-                    if (!Blockchain.Default.ContainsUnspent(vote, 0))
-                    {
-                        result |= VerificationResult.IncorrectFormat;
-                        break;
-                    }
-                    if (!pubkeys.Add(tx.PublicKey))
-                    {
-                        result |= VerificationResult.IncorrectFormat;
-                        break;
-                    }
-                }
+                EnrollmentTransaction tx = Blockchain.Default.GetTransaction(vote) as EnrollmentTransaction;
+                if (tx == null) return false;
+                if (!Blockchain.Default.ContainsUnspent(vote, 0)) return false;
+                if (!pubkeys.Add(tx.PublicKey)) return false;
             }
-            else
-            {
-                result |= VerificationResult.Incapable;
-            }
-            return result;
+            return true;
         }
     }
 }

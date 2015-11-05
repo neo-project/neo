@@ -8,49 +8,37 @@ namespace AntShares.Network.Payloads
 {
     internal class NetworkAddressWithTime : ISerializable
     {
-        public UInt32 Timestamp;
-        public UInt64 Services;
-        public byte[] Address;
-        public UInt16 Port;
+        public const ulong NODE_NETWORK = 1;
 
-        public static NetworkAddressWithTime Create(IPEndPoint endpoint, UInt64 services, UInt32 timestamp)
+        public uint Timestamp;
+        public ulong Services;
+        public IPEndPoint EndPoint;
+
+        public static NetworkAddressWithTime Create(IPEndPoint endpoint, ulong services, uint timestamp)
         {
             return new NetworkAddressWithTime
             {
                 Timestamp = timestamp,
                 Services = services,
-                Address = endpoint.Address.MapToIPv6().GetAddressBytes(),
-                Port = (UInt16)endpoint.Port
+                EndPoint = endpoint
             };
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            this.Timestamp = reader.ReadUInt32();
-            this.Services = reader.ReadUInt64();
-            this.Address = reader.ReadBytes(16);
-            this.Port = reader.ReadUInt16();
-        }
-
-        public IPAddress GetIPAddress()
-        {
-            IPAddress ip = new IPAddress(Address);
-            if (ip.IsIPv4MappedToIPv6)
-                ip = new IPAddress(Address.Skip(12).ToArray());
-            return ip;
-        }
-
-        public IPEndPoint GetIPEndPoint()
-        {
-            return new IPEndPoint(GetIPAddress(), Port);
+            Timestamp = reader.ReadUInt32();
+            Services = reader.ReadUInt64();
+            IPAddress address = new IPAddress(reader.ReadBytes(16));
+            ushort port = BitConverter.ToUInt16(reader.ReadBytes(2).Reverse().ToArray(), 0);
+            EndPoint = new IPEndPoint(address, port);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(Timestamp);
             writer.Write(Services);
-            writer.Write(Address);
-            writer.Write(Port);
+            writer.Write(EndPoint.Address.GetAddressBytes());
+            writer.Write(BitConverter.GetBytes((ushort)EndPoint.Port).Reverse().ToArray());
         }
     }
 }

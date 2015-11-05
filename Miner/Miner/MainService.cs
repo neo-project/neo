@@ -1,6 +1,7 @@
 ﻿using AntShares.Core;
-using AntShares.Data;
+using AntShares.Implementations.Blockchains.LevelDB;
 using AntShares.Network;
+using AntShares.Properties;
 using AntShares.Services;
 using AntShares.Wallets;
 using System;
@@ -30,7 +31,7 @@ namespace AntShares.Miner
             if (inventory.InventoryType != InventoryType.ConsRequest)
                 return;
             BlockConsensusRequest request = (BlockConsensusRequest)inventory;
-            if (request.Verify() != VerificationResult.OK) return;
+            if (!request.Verify()) return;
             context.AddRequest(request, wallet);
         }
 
@@ -78,14 +79,14 @@ namespace AntShares.Miner
                 Console.WriteLine($"failed to open file \"{path}\"");
                 return;
             }
-            await localnode.WaitForNodesAsync();
+            //TODO: 等待连接到其它节点
             context = new BlockConsensusContext(wallet.PublicKey);
             await SendConsensusRequestAsync();
         }
 
         protected internal override void OnStart()
         {
-            Blockchain.RegisterBlockchain(new LevelDBBlockchain());
+            Blockchain.RegisterBlockchain(new LevelDBBlockchain(Settings.Default.DataDirectoryPath));
             Blockchain.Default.PersistCompleted += Blockchain_PersistCompleted;
             LocalNode.NewInventory += LocalNode_NewInventory;
             localnode = new LocalNode();
@@ -104,7 +105,8 @@ namespace AntShares.Miner
         {
             if (!context.Valid) return;
             BlockConsensusRequest request = context.CreateRequest(wallet);
-            request.Script = wallet.Sign(request);
+            //TODO: 签名
+            //request.Script = wallet.Sign(request);
             await localnode.RelayAsync(request);
         }
     }
