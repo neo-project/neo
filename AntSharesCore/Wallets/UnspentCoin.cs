@@ -1,4 +1,5 @@
-﻿using AntShares.IO;
+﻿using AntShares.Core;
+using AntShares.IO;
 using System;
 using System.IO;
 
@@ -6,8 +7,7 @@ namespace AntShares.Wallets
 {
     public class UnspentCoin : IEquatable<UnspentCoin>, ISerializable
     {
-        public UInt256 TxId;
-        public ushort Index;
+        public TransactionInput Input;
         public UInt256 AssetId;
         public Fixed8 Value;
         public UInt160 ScriptHash;
@@ -27,8 +27,7 @@ namespace AntShares.Wallets
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            TxId = reader.ReadSerializable<UInt256>();
-            Index = reader.ReadUInt16();
+            Input = reader.ReadSerializable<TransactionInput>();
             AssetId = reader.ReadSerializable<UInt256>();
             Value = reader.ReadSerializable<Fixed8>();
             ScriptHash = reader.ReadSerializable<UInt160>();
@@ -38,7 +37,7 @@ namespace AntShares.Wallets
         {
             if (ReferenceEquals(this, other)) return true;
             if (ReferenceEquals(null, other)) return false;
-            return Index == other.Index && TxId == other.TxId;
+            return Input.Equals(other.Input);
         }
 
         public override bool Equals(object obj)
@@ -48,13 +47,12 @@ namespace AntShares.Wallets
 
         public override int GetHashCode()
         {
-            return TxId.GetHashCode() + Index.GetHashCode();
+            return Input.GetHashCode();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(TxId);
-            writer.Write(Index);
+            writer.Write(Input);
             writer.Write(AssetId);
             writer.Write(Value);
             writer.Write(ScriptHash);

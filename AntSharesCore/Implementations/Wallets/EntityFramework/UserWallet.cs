@@ -1,10 +1,11 @@
-﻿using AntShares.Wallets;
+﻿using AntShares.Core;
+using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using WAccount = AntShares.Wallets.Account;
-using WContract = AntShares.Wallets.Contract;
-using WUnspentCoin = AntShares.Wallets.UnspentCoin;
+using WalletAccount = AntShares.Wallets.Account;
+using WalletContract = AntShares.Wallets.Contract;
+using WalletUnspentCoin = AntShares.Wallets.UnspentCoin;
 
 namespace AntShares.Implementations.Wallets.EntityFramework
 {
@@ -27,27 +28,27 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             return wallet;
         }
 
-        protected override IEnumerable<WAccount> LoadAccounts()
+        protected override IEnumerable<WalletAccount> LoadAccounts()
         {
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
                 foreach (byte[] encryptedPrivateKey in ctx.Accounts.Select(p => p.PrivateKeyEncrypted))
                 {
                     byte[] decryptedPrivateKey = DecryptPrivateKey(encryptedPrivateKey);
-                    WAccount account = new WAccount(decryptedPrivateKey);
+                    WalletAccount account = new WalletAccount(decryptedPrivateKey);
                     Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
                     yield return account;
                 }
             }
         }
 
-        protected override IEnumerable<WContract> LoadContracts()
+        protected override IEnumerable<WalletContract> LoadContracts()
         {
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
                 foreach (Contract contract in ctx.Contracts)
                 {
-                    yield return new WContract(contract.RedeemScript, new UInt160(contract.PublicKeyHash));
+                    yield return new WalletContract(contract.RedeemScript, new UInt160(contract.PublicKeyHash));
                 }
             }
         }
@@ -60,16 +61,19 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             }
         }
 
-        protected override IEnumerable<WUnspentCoin> LoadUnspentCoins(bool is_change)
+        protected override IEnumerable<WalletUnspentCoin> LoadUnspentCoins(bool is_change)
         {
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
                 foreach (UnspentCoin coin in ctx.UnspentCoins.Where(p => p.IsChange == is_change))
                 {
-                    yield return new WUnspentCoin
+                    yield return new WalletUnspentCoin
                     {
-                        TxId = new UInt256(coin.TxId),
-                        Index = coin.Index,
+                        Input = new TransactionInput
+                        {
+                            PrevHash = new UInt256(coin.TxId),
+                            PrevIndex = coin.Index
+                        },
                         AssetId = new UInt256(coin.AssetId),
                         Value = new Fixed8(coin.Value),
                         ScriptHash = new UInt160(coin.ScriptHash)
@@ -78,7 +82,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             }
         }
 
-        protected override void OnCreateAccount(WAccount account)
+        protected override void OnCreateAccount(WalletAccount account)
         {
             byte[] decryptedPrivateKey = new byte[96];
             Buffer.BlockCopy(account.PublicKey.EncodePoint(false), 1, decryptedPrivateKey, 0, 64);
@@ -118,6 +122,40 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                     ctx.Accounts.Remove(account);
                     ctx.SaveChanges();
                 }
+            }
+        }
+
+        protected override void OnProcessNewBlock(IEnumerable<TransactionInput> spent, IEnumerable<WalletUnspentCoin> unspent)
+        {
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
+            {
+                foreach (TransactionInput input in spent)
+                {
+                    UnspentCoin unspent_coin = ctx.UnspentCoins.FirstOrDefault(p => p.TxId == input.PrevHash.ToArray() && p.Index == input.PrevIndex);
+                    if (unspent_coin != null)
+                        ctx.UnspentCoins.Remove(unspent_coin);
+                }
+                foreach (WalletUnspentCoin coin in unspent)
+                {
+                    UnspentCoin unspent_coin = ctx.UnspentCoins.FirstOrDefault(p => p.TxId == coin.Input.PrevHash.ToArray() && p.Index == coin.Input.PrevIndex);
+                    if (unspent_coin == null)
+                    {
+                        unspent_coin = ctx.UnspentCoins.Add(new UnspentCoin
+                        {
+                            TxId = coin.Input.PrevHash.ToArray(),
+                            Index = coin.Input.PrevIndex,
+                            AssetId = coin.AssetId.ToArray(),
+                            Value = coin.Value.GetData(),
+                            ScriptHash = coin.ScriptHash.ToArray(),
+                            IsChange = false
+                        }).Entity;
+                    }
+                    else
+                    {
+                        unspent_coin.IsChange = false;
+                    }
+                }
+                ctx.SaveChanges();
             }
         }
 

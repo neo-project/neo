@@ -4,10 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Threading;
 
 namespace AntShares.Wallets
 {
-    public abstract class Wallet
+    public abstract class Wallet : IDisposable
     {
         public const byte CoinVersion = 0x17;
 
@@ -16,9 +17,12 @@ namespace AntShares.Wallets
         private readonly byte[] masterKey;
         private readonly Dictionary<UInt160, Account> accounts;
         private readonly Dictionary<UInt160, Contract> contracts;
-        private readonly HashSet<UnspentCoin> unspent_coins;
-        private readonly HashSet<UnspentCoin> change_coins;
+        private readonly Dictionary<TransactionInput, UnspentCoin> unspent_coins;
+        private readonly Dictionary<TransactionInput, UnspentCoin> change_coins;
         private uint current_height;
+
+        private readonly Thread thread;
+        private bool isrunning = true;
 
         protected string DbPath => path;
         protected uint WalletHeight => current_height;
@@ -33,8 +37,8 @@ namespace AntShares.Wallets
                 this.masterKey = new byte[32];
                 this.accounts = new Dictionary<UInt160, Account>();
                 this.contracts = new Dictionary<UInt160, Contract>();
-                this.unspent_coins = new HashSet<UnspentCoin>();
-                this.change_coins = new HashSet<UnspentCoin>();
+                this.unspent_coins = new Dictionary<TransactionInput, UnspentCoin>();
+                this.change_coins = new Dictionary<TransactionInput, UnspentCoin>();
                 this.current_height = Blockchain.Default?.HeaderHeight + 1 ?? 0;
                 using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
                 {
@@ -51,12 +55,16 @@ namespace AntShares.Wallets
                 this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
                 this.accounts = LoadAccounts().ToDictionary(p => p.PublicKeyHash);
                 this.contracts = LoadContracts().ToDictionary(p => p.ScriptHash);
-                this.unspent_coins = new HashSet<UnspentCoin>(LoadUnspentCoins(false));
-                this.change_coins = new HashSet<UnspentCoin>(LoadUnspentCoins(true));
+                this.unspent_coins = LoadUnspentCoins(false).ToDictionary(p => p.Input);
+                this.change_coins = LoadUnspentCoins(true).ToDictionary(p => p.Input);
                 this.current_height = BitConverter.ToUInt32(LoadStoredData("Height"), 0);
             }
             Array.Clear(passwordKey, 0, passwordKey.Length);
             ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
+            this.thread = new Thread(ProcessBlocks);
+            this.thread.IsBackground = true;
+            this.thread.Name = "Wallet.ProcessBlocks";
+            this.thread.Start();
         }
 
         public void ChangePassword(string password)
@@ -102,6 +110,12 @@ namespace AntShares.Wallets
             }
         }
 
+        public virtual void Dispose()
+        {
+            isrunning = false;
+            thread.Join();
+        }
+
         protected byte[] EncryptPrivateKey(byte[] decryptedPrivateKey)
         {
             ProtectedMemory.Unprotect(masterKey, MemoryProtectionScope.SameProcess);
@@ -115,13 +129,37 @@ namespace AntShares.Wallets
             }
         }
 
+        public IEnumerable<UnspentCoin> FindUnspentCoins()
+        {
+            return unspent_coins.Values;
+        }
+
+        public UnspentCoin[] FindUnspentCoins(Fixed8 amount)
+        {
+            UnspentCoin coin = unspent_coins.Values.FirstOrDefault(p => p.Value == amount);
+            if (coin != null) return new[] { coin };
+            coin = unspent_coins.Values.OrderBy(p => p.Value).FirstOrDefault(p => p.Value > amount);
+            if (coin != null) return new[] { coin };
+            Fixed8 sum = unspent_coins.Values.Sum(p => p.Value);
+            if (sum < amount) return null;
+            if (sum == amount) return unspent_coins.Values.ToArray();
+            return unspent_coins.Values.OrderByDescending(p => p.Value).TakeWhile(p =>
+            {
+                if (amount == Fixed8.Zero) return false;
+                amount -= Fixed8.Min(amount, p.Value);
+                return true;
+            }).ToArray();
+        }
+
         public Account GetAccount(UInt160 publicKeyHash)
         {
+            if (!accounts.ContainsKey(publicKeyHash)) return null;
             return accounts[publicKeyHash];
         }
 
         public Account GetAccountByScriptHash(UInt160 scriptHash)
         {
+            if (!contracts.ContainsKey(scriptHash)) return null;
             return accounts[contracts[scriptHash].PublicKeyHash];
         }
 
@@ -135,8 +173,19 @@ namespace AntShares.Wallets
             return contracts.Keys;
         }
 
+        public Fixed8 GetAvailable()
+        {
+            return unspent_coins.Values.Sum(p => p.Value);
+        }
+
+        public Fixed8 GetBalance()
+        {
+            return unspent_coins.Values.Sum(p => p.Value) + change_coins.Values.Sum(p => p.Value);
+        }
+
         public Contract GetContract(UInt160 scriptHash)
         {
+            if (!contracts.ContainsKey(scriptHash)) return null;
             return contracts[scriptHash];
         }
 
@@ -175,6 +224,75 @@ namespace AntShares.Wallets
         protected abstract void OnCreateAccount(Account account);
 
         protected abstract void OnDeleteAccount(UInt160 publicKeyHash);
+
+        protected abstract void OnProcessNewBlock(IEnumerable<TransactionInput> spent, IEnumerable<UnspentCoin> unspent);
+
+        private void ProcessBlocks()
+        {
+            while (isrunning)
+            {
+                while (current_height <= Blockchain.Default?.Height && isrunning)
+                {
+                    Block block = Blockchain.Default.GetBlock(current_height);
+                    if (block != null) ProcessNewBlock(block);
+                }
+                for (int i = 0; i < 20 && isrunning; i++)
+                {
+                    Thread.Sleep(100);
+                }
+            }
+        }
+
+        private void ProcessNewBlock(Block block)
+        {
+            List<TransactionInput> spent = new List<TransactionInput>();
+            Dictionary<TransactionInput, UnspentCoin> unspent = new Dictionary<TransactionInput, UnspentCoin>();
+            foreach (Transaction tx in block.Transactions)
+            {
+                for (ushort index = 0; index < tx.Outputs.Length; index++)
+                {
+                    TransactionOutput output = tx.Outputs[index];
+                    if (contracts.ContainsKey(output.ScriptHash))
+                    {
+                        UnspentCoin coin = new UnspentCoin
+                        {
+                            Input = new TransactionInput
+                            {
+                                PrevHash = tx.Hash,
+                                PrevIndex = index
+                            },
+                            AssetId = output.AssetId,
+                            Value = output.Value,
+                            ScriptHash = output.ScriptHash
+                        };
+                        unspent.Add(coin.Input, coin);
+                    }
+                }
+            }
+            foreach (TransactionInput input in block.Transactions.SelectMany(p => p.GetAllInputs()))
+            {
+                if (unspent.ContainsKey(input))
+                {
+                    unspent.Remove(input);
+                }
+                else
+                {
+                    spent.Add(input);
+                }
+            }
+            foreach (TransactionInput input in spent)
+            {
+                unspent_coins.Remove(input);
+                change_coins.Remove(input);
+            }
+            foreach (var coin in unspent)
+            {
+                change_coins.Remove(coin.Key);
+                unspent_coins.Add(coin.Key, coin.Value);
+            }
+            current_height++;
+            OnProcessNewBlock(spent, unspent.Values);
+        }
 
         protected abstract void SaveStoredData(string name, byte[] value);
 
