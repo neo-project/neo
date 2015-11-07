@@ -25,6 +25,7 @@ namespace AntShares
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            WindowsFormsSynchronizationContext.AutoInstall = false;
             Application.Run(new MainForm());
             LocalNode.Dispose();
             Blockchain.Default.Dispose();

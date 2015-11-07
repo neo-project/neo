@@ -25,7 +25,7 @@ namespace AntShares.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute(".\\Data")]
+        [global::System.Configuration.DefaultSettingValueAttribute(".\\Chain")]
         public string DataDirectoryPath {
             get {
                 return ((string)(this["DataDirectoryPath"]));

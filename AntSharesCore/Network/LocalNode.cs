@@ -88,6 +88,7 @@ namespace AntShares.Network
 
         public async Task ConnectToPeerAsync(IPEndPoint remoteEndpoint)
         {
+            if (remoteEndpoint.Equals(LocalEndpoint)) return;
             RemoteNode remoteNode;
             lock (unconnectedPeers)
             {

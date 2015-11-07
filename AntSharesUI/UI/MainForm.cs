@@ -33,6 +33,12 @@ namespace AntShares.UI
             Program.LocalNode.Start();
         }
 
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            lbl_height.Text = $"{Blockchain.Default.Height}/{Blockchain.Default.HeaderHeight}";
+            lbl_count_node.Text = Program.LocalNode.RemoteNodeCount.ToString();
+        }
+
         private void 创建钱包数据库NToolStripMenuItem_Click(object sender, EventArgs e)
         {
             using (CreateWalletDialog dialog = new CreateWalletDialog())
