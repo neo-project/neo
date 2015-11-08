@@ -351,7 +351,7 @@ namespace AntShares.Network
 
         internal async void StartProtocol()
         {
-            if (!await SendMessageAsync("version", VersionPayload.Create(localNode.LocalEndpoint.Port, localNode.UserAgent, Blockchain.Default.Height)))
+            if (!await SendMessageAsync("version", VersionPayload.Create(localNode.LocalEndpoint?.Port ?? 0, localNode.UserAgent, Blockchain.Default?.Height ?? 0)))
                 return;
             Message message = await ReceiveMessageAsync(TimeSpan.FromSeconds(30));
             if (message == null)
@@ -407,7 +407,7 @@ namespace AntShares.Network
                 }
                 localNode.pendingPeers.Remove(this);
             }
-            if (Blockchain.Default.HeaderHeight < Version.StartHeight)
+            if (Blockchain.Default?.HeaderHeight < Version.StartHeight)
             {
                 HashSet<UInt256> hashes = new HashSet<UInt256>(Blockchain.Default.GetLeafHeaderHashes());
                 hashes.UnionWith(hashes.Select(p => Blockchain.Default.GetHeader(p).PrevBlock).ToArray());

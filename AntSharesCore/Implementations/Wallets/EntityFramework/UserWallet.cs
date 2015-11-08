@@ -16,6 +16,37 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         {
         }
 
+        public override void AddContract(WalletContract contract)
+        {
+            base.AddContract(contract);
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
+            {
+                Contract db_contract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == contract.ScriptHash.ToArray());
+                if (db_contract == null)
+                {
+                    db_contract = ctx.Contracts.Add(new Contract
+                    {
+                        RedeemScript = contract.RedeemScript,
+                        ScriptHash = contract.ScriptHash.ToArray(),
+                        PublicKeyHash = contract.PublicKeyHash.ToArray()
+                    }).Entity;
+                }
+                else
+                {
+                    db_contract.PublicKeyHash = contract.PublicKeyHash.ToArray();
+                }
+                ctx.SaveChanges();
+            }
+        }
+
+        public override WalletAccount CreateAccount()
+        {
+            WalletAccount account = base.CreateAccount();
+            OnCreateAccount(account);
+            AddContract(WalletContract.CreateSignatureContract(account.PublicKey));
+            return account;
+        }
+
         public static UserWallet CreateDatabase(string path, string password)
         {
             using (WalletDataContext ctx = new WalletDataContext(path))
@@ -26,6 +57,32 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             UserWallet wallet = new UserWallet(path, password, true);
             wallet.CreateAccount();
             return wallet;
+        }
+
+        public override bool DeleteAccount(UInt160 publicKeyHash)
+        {
+            bool flag = base.DeleteAccount(publicKeyHash);
+            if (flag)
+            {
+                using (WalletDataContext ctx = new WalletDataContext(DbPath))
+                {
+                    Account account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == publicKeyHash.ToArray());
+                    if (account != null)
+                    {
+                        ctx.Contracts.RemoveRange(ctx.Contracts.Where(p => p.PublicKeyHash == publicKeyHash.ToArray()));
+                        ctx.Accounts.Remove(account);
+                        ctx.SaveChanges();
+                    }
+                }
+            }
+            return flag;
+        }
+
+        public override WalletAccount Import(string wif)
+        {
+            WalletAccount account = base.Import(wif);
+            OnCreateAccount(account);
+            return account;
         }
 
         protected override IEnumerable<WalletAccount> LoadAccounts()
@@ -82,7 +139,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             }
         }
 
-        protected override void OnCreateAccount(WalletAccount account)
+        private void OnCreateAccount(WalletAccount account)
         {
             byte[] decryptedPrivateKey = new byte[96];
             Buffer.BlockCopy(account.PublicKey.EncodePoint(false), 1, decryptedPrivateKey, 0, 64);
@@ -108,20 +165,6 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                     db_account.PrivateKeyEncrypted = encryptedPrivateKey;
                 }
                 ctx.SaveChanges();
-            }
-        }
-
-        protected override void OnDeleteAccount(UInt160 publicKeyHash)
-        {
-            using (WalletDataContext ctx = new WalletDataContext(DbPath))
-            {
-                Account account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == publicKeyHash.ToArray());
-                if (account != null)
-                {
-                    ctx.Contracts.RemoveRange(ctx.Contracts.Where(p => p.PublicKeyHash == publicKeyHash.ToArray()));
-                    ctx.Accounts.Remove(account);
-                    ctx.SaveChanges();
-                }
             }
         }
 

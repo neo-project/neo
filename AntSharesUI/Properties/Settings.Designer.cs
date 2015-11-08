@@ -34,7 +34,7 @@ namespace AntShares.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("10333")]
+        [global::System.Configuration.DefaultSettingValueAttribute("20333")]
         public ushort NodePort {
             get {
                 return ((ushort)(this["NodePort"]));

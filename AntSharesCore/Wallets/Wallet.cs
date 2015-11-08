@@ -67,6 +67,13 @@ namespace AntShares.Wallets
             this.thread.Start();
         }
 
+        public virtual void AddContract(Contract contract)
+        {
+            if (!accounts.ContainsKey(contract.PublicKeyHash))
+                throw new InvalidOperationException();
+            contracts.Add(contract.ScriptHash, contract);
+        }
+
         public void ChangePassword(string password)
         {
             byte[] passwordKey = password.ToAesKey();
@@ -82,7 +89,7 @@ namespace AntShares.Wallets
             }
         }
 
-        public Account CreateAccount()
+        public virtual Account CreateAccount()
         {
             using (CngKey key = CngKey.Create(CngAlgorithm.ECDsaP256, null, new CngKeyCreationParameters { ExportPolicy = CngExportPolicies.AllowPlaintextArchiving }))
             {
@@ -90,7 +97,6 @@ namespace AntShares.Wallets
                 Account account = new Account(privateKey);
                 Array.Clear(privateKey, 0, privateKey.Length);
                 accounts.Add(account.PublicKeyHash, account);
-                OnCreateAccount(account);
                 return account;
             }
         }
@@ -108,6 +114,15 @@ namespace AntShares.Wallets
             {
                 ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
             }
+        }
+
+        public virtual bool DeleteAccount(UInt160 publicKeyHash)
+        {
+            foreach (Contract contract in contracts.Values.Where(p => p.PublicKeyHash == publicKeyHash).ToArray())
+            {
+                contracts.Remove(contract.ScriptHash);
+            }
+            return accounts.Remove(publicKeyHash);
         }
 
         public virtual void Dispose()
@@ -194,7 +209,7 @@ namespace AntShares.Wallets
             return contracts.Values;
         }
 
-        public Account Import(string wif)
+        public virtual Account Import(string wif)
         {
             if (wif == null) throw new ArgumentNullException();
             byte[] data = Base58.Decode(wif);
@@ -209,7 +224,6 @@ namespace AntShares.Wallets
             Account account = new Account(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
             accounts.Add(account.PublicKeyHash, account);
-            OnCreateAccount(account);
             return account;
         }
 
@@ -220,10 +234,6 @@ namespace AntShares.Wallets
         protected abstract byte[] LoadStoredData(string name);
 
         protected abstract IEnumerable<UnspentCoin> LoadUnspentCoins(bool is_change);
-
-        protected abstract void OnCreateAccount(Account account);
-
-        protected abstract void OnDeleteAccount(UInt160 publicKeyHash);
 
         protected abstract void OnProcessNewBlock(IEnumerable<TransactionInput> spent, IEnumerable<UnspentCoin> unspent);
 

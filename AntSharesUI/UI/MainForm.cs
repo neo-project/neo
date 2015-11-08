@@ -1,11 +1,13 @@
 ﻿using AntShares.Core;
 using AntShares.Implementations.Wallets.EntityFramework;
 using AntShares.IO;
+using AntShares.Properties;
 using AntShares.Wallets;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Windows.Forms;
 
 namespace AntShares.UI
@@ -30,7 +32,7 @@ namespace AntShares.UI
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            Program.LocalNode.Start();
+            Program.LocalNode.Start(Settings.Default.NodePort);
         }
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -102,6 +104,11 @@ namespace AntShares.UI
         private void 开发人员工具TToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Helper.Show<DeveloperToolsForm>();
+        }
+
+        private void 关于AntSharesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show($"小蚁(AntShares) 版本：{Assembly.GetExecutingAssembly().GetName().Version}", "关于");
         }
 
         private void contextMenuStrip1_Opening(object sender, CancelEventArgs e)

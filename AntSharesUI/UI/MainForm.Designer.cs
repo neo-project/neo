@@ -206,6 +206,7 @@
             this.关于AntSharesToolStripMenuItem.Name = "关于AntSharesToolStripMenuItem";
             this.关于AntSharesToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
             this.关于AntSharesToolStripMenuItem.Text = "关于&AntShares";
+            this.关于AntSharesToolStripMenuItem.Click += new System.EventHandler(this.关于AntSharesToolStripMenuItem_Click);
             // 
             // listView1
             // 

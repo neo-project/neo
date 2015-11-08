@@ -6,7 +6,7 @@
       <Value Profile="(Default)">.\Chain</Value>
     </Setting>
     <Setting Name="NodePort" Type="System.UInt16" Scope="Application">
-      <Value Profile="(Default)">10333</Value>
+      <Value Profile="(Default)">20333</Value>
     </Setting>
   </Settings>
 </SettingsFile>
