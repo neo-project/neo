@@ -23,10 +23,12 @@ namespace AntShares.UI
         {
             修改密码CToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             交易TToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            创建新地址NToolStripMenuItem.Enabled = true;
+            导入私钥IToolStripMenuItem.Enabled = true;
             listView1.Items.Clear();
             if (Program.CurrentWallet != null)
             {
-                listView1.Items.AddRange(Program.CurrentWallet.GetAddresses().Select(p => new ListViewItem(new string[] { Wallet.ToAddress(p) })).ToArray());
+                listView1.Items.AddRange(Program.CurrentWallet.GetAddresses().Select(p => new ListViewItem(new[] { Wallet.ToAddress(p), "" }) { Name = Wallet.ToAddress(p) }).ToArray());
             }
         }
 
@@ -64,6 +66,11 @@ namespace AntShares.UI
         private void 修改密码CToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //弹出对话框，验证原密码，保存新密码
+        }
+
+        private void 退出XToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Close();
         }
 
         private void 签名SToolStripMenuItem_Click(object sender, EventArgs e)
@@ -113,12 +120,65 @@ namespace AntShares.UI
 
         private void contextMenuStrip1_Opening(object sender, CancelEventArgs e)
         {
+            删除DToolStripMenuItem.Enabled = listView1.SelectedIndices.Count > 0;
+            查看私钥VToolStripMenuItem.Enabled = listView1.SelectedIndices.Count == 1;
             复制到剪贴板CToolStripMenuItem.Enabled = listView1.SelectedIndices.Count == 1;
+        }
+
+        private void 创建新地址NToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            listView1.SelectedIndices.Clear();
+            Account account = Program.CurrentWallet.CreateAccount();
+            foreach (Contract contract in Program.CurrentWallet.GetContracts(account.PublicKeyHash))
+            {
+                listView1.Items.Add(new ListViewItem(new[] { contract.Address, "" }) { Name = contract.Address });
+                listView1.Items[contract.Address].Selected = true;
+            }
+        }
+
+        private void 导入私钥IToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (ImportPrivateKeyDialog dialog = new ImportPrivateKeyDialog())
+            {
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                listView1.SelectedIndices.Clear();
+                Account account = Program.CurrentWallet.Import(dialog.WIF);
+                foreach (Contract contract in Program.CurrentWallet.GetContracts(account.PublicKeyHash))
+                {
+                    listView1.Items.Add(new ListViewItem(new[] { contract.Address, "" }) { Name = contract.Address });
+                    listView1.Items[contract.Address].Selected = true;
+                }
+            }
+        }
+
+        private void 查看私钥VToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            UInt160 scriptHash = Wallet.ToScriptHash(listView1.SelectedItems[0].Text);
+            Account account = Program.CurrentWallet.GetAccountByScriptHash(scriptHash);
+            using (ViewPrivateKeyDialog dialog = new ViewPrivateKeyDialog(account, scriptHash))
+            {
+                dialog.ShowDialog();
+            }
         }
 
         private void 复制到剪贴板CToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Clipboard.SetText(listView1.SelectedItems[0].Text);
+        }
+
+        private void 删除DToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show("删除地址后，这些地址中的资产将永久性地丢失，确认要继续吗？", "删除地址确认", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+                return;
+            string[] addresses = listView1.SelectedItems.OfType<ListViewItem>().Select(p => p.Name).ToArray();
+            foreach (string address in addresses)
+            {
+                listView1.Items.RemoveByKey(address);
+                UInt160 scriptHash = Wallet.ToScriptHash(address);
+                Account account = Program.CurrentWallet.GetAccountByScriptHash(scriptHash);
+                if (account == null) continue;
+                Program.CurrentWallet.DeleteAccount(account.PublicKeyHash);
+            }
         }
     }
 }

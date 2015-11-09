@@ -1,0 +1,19 @@
+﻿using AntShares.Wallets;
+using System.Windows.Forms;
+
+namespace AntShares.UI
+{
+    internal partial class ViewPrivateKeyDialog : Form
+    {
+        public ViewPrivateKeyDialog(Account account, UInt160 scriptHash)
+        {
+            InitializeComponent();
+            textBox3.Text = Wallet.ToAddress(scriptHash);
+            using (account.Decrypt())
+            {
+                textBox1.Text = account.PrivateKey.ToHexString();
+            }
+            textBox2.Text = account.Export();
+        }
+    }
+}

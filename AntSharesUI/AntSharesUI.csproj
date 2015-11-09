@@ -57,6 +57,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="UI\ImportPrivateKeyDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\ImportPrivateKeyDialog.designer.cs">
+      <DependentUpon>ImportPrivateKeyDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\IssueDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -125,11 +131,20 @@
     <Compile Include="UI\UpdateDialog.Designer.cs">
       <DependentUpon>UpdateDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\ViewPrivateKeyDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\ViewPrivateKeyDialog.designer.cs">
+      <DependentUpon>ViewPrivateKeyDialog.cs</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="UI\ContractDetailsDialog.resx">
       <DependentUpon>ContractDetailsDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\DeveloperToolsForm.resx">
       <DependentUpon>DeveloperToolsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ImportPrivateKeyDialog.resx">
+      <DependentUpon>ImportPrivateKeyDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\InformationBox.resx">
       <DependentUpon>InformationBox.cs</DependentUpon>
@@ -154,6 +169,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\UpdateDialog.resx">
       <DependentUpon>UpdateDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ViewPrivateKeyDialog.resx">
+      <DependentUpon>ViewPrivateKeyDialog.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

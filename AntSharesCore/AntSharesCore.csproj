@@ -117,6 +117,7 @@
     <Reference Include="System.Security" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\AgencyTransaction.cs" />
@@ -200,6 +201,7 @@
     <Compile Include="Network\Payloads\NetworkAddressWithTime.cs" />
     <Compile Include="Network\Payloads\VersionPayload.cs" />
     <Compile Include="Network\RemoteNode.cs" />
+    <Compile Include="Network\UPnP.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Threading\Helper.cs" />
     <Compile Include="UInt160.cs" />
@@ -216,7 +218,6 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

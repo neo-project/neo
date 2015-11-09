@@ -48,11 +48,13 @@ namespace AntShares.Wallets
                 SaveStoredData("IV", iv);
                 SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
                 SaveStoredData("Height", BitConverter.GetBytes(current_height));
+                ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
             }
             else
             {
                 this.iv = LoadStoredData("IV");
                 this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
+                ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
                 this.accounts = LoadAccounts().ToDictionary(p => p.PublicKeyHash);
                 this.contracts = LoadContracts().ToDictionary(p => p.ScriptHash);
                 this.unspent_coins = LoadUnspentCoins(false).ToDictionary(p => p.Input);
@@ -60,7 +62,6 @@ namespace AntShares.Wallets
                 this.current_height = BitConverter.ToUInt32(LoadStoredData("Height"), 0);
             }
             Array.Clear(passwordKey, 0, passwordKey.Length);
-            ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
             this.thread = new Thread(ProcessBlocks);
             this.thread.IsBackground = true;
             this.thread.Name = "Wallet.ProcessBlocks";
@@ -77,15 +78,16 @@ namespace AntShares.Wallets
         public void ChangePassword(string password)
         {
             byte[] passwordKey = password.ToAesKey();
-            ProtectedMemory.Unprotect(masterKey, MemoryProtectionScope.SameProcess);
-            try
+            using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
             {
-                SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
-            }
-            finally
-            {
-                Array.Clear(passwordKey, 0, passwordKey.Length);
-                ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
+                try
+                {
+                    SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
+                }
+                finally
+                {
+                    Array.Clear(passwordKey, 0, passwordKey.Length);
+                }
             }
         }
 
@@ -105,14 +107,9 @@ namespace AntShares.Wallets
         {
             if (encryptedPrivateKey == null) throw new ArgumentNullException(nameof(encryptedPrivateKey));
             if (encryptedPrivateKey.Length != 96) throw new ArgumentException();
-            ProtectedMemory.Unprotect(masterKey, MemoryProtectionScope.SameProcess);
-            try
+            using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
             {
                 return encryptedPrivateKey.AesDecrypt(masterKey, iv);
-            }
-            finally
-            {
-                ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
             }
         }
 
@@ -133,14 +130,9 @@ namespace AntShares.Wallets
 
         protected byte[] EncryptPrivateKey(byte[] decryptedPrivateKey)
         {
-            ProtectedMemory.Unprotect(masterKey, MemoryProtectionScope.SameProcess);
-            try
+            using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
             {
                 return decryptedPrivateKey.AesEncrypt(masterKey, iv);
-            }
-            finally
-            {
-                ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
             }
         }
 
@@ -209,7 +201,12 @@ namespace AntShares.Wallets
             return contracts.Values;
         }
 
-        public virtual Account Import(string wif)
+        public IEnumerable<Contract> GetContracts(UInt160 publicKeyHash)
+        {
+            return contracts.Values.Where(p => p.PublicKeyHash.Equals(publicKeyHash));
+        }
+
+        public static byte[] GetPrivateKeyFromWIF(string wif)
         {
             if (wif == null) throw new ArgumentNullException();
             byte[] data = Base58.Decode(wif);
@@ -221,6 +218,12 @@ namespace AntShares.Wallets
             byte[] privateKey = new byte[32];
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
             Array.Clear(data, 0, data.Length);
+            return privateKey;
+        }
+
+        public virtual Account Import(string wif)
+        {
+            byte[] privateKey = GetPrivateKeyFromWIF(wif);
             Account account = new Account(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
             accounts.Add(account.PublicKeyHash, account);

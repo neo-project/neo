@@ -239,6 +239,7 @@ namespace AntShares.Core
             Block prev_header = Blockchain.Default.GetHeader(PrevBlock);
             if (prev_header == null) return false;
             if (prev_header.Height + 1 != Height) return false;
+            if (prev_header.Timestamp >= Timestamp) return false;
             if (!this.VerifySignature()) return false;
             ECPoint[] pubkeys = Blockchain.Default.GetMiners(Transactions).ToArray();
             if (NextMiner != Contract.CreateMultiSigRedeemScript(Blockchain.GetMinSignatureCount(pubkeys.Length), pubkeys).ToScriptHash())

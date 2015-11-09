@@ -21,7 +21,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             base.AddContract(contract);
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
-                Contract db_contract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == contract.ScriptHash.ToArray());
+                Contract db_contract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash.SequenceEqual(contract.ScriptHash.ToArray()));
                 if (db_contract == null)
                 {
                     db_contract = ctx.Contracts.Add(new Contract
@@ -66,10 +66,9 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             {
                 using (WalletDataContext ctx = new WalletDataContext(DbPath))
                 {
-                    Account account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == publicKeyHash.ToArray());
+                    Account account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash.SequenceEqual(publicKeyHash.ToArray()));
                     if (account != null)
                     {
-                        ctx.Contracts.RemoveRange(ctx.Contracts.Where(p => p.PublicKeyHash == publicKeyHash.ToArray()));
                         ctx.Accounts.Remove(account);
                         ctx.SaveChanges();
                     }
@@ -82,6 +81,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         {
             WalletAccount account = base.Import(wif);
             OnCreateAccount(account);
+            AddContract(WalletContract.CreateSignatureContract(account.PublicKey));
             return account;
         }
 
@@ -151,7 +151,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
-                Account db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.PublicKeyHash.ToArray());
+                Account db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash.SequenceEqual(account.PublicKeyHash.ToArray()));
                 if (db_account == null)
                 {
                     db_account = ctx.Accounts.Add(new Account
@@ -174,13 +174,13 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             {
                 foreach (TransactionInput input in spent)
                 {
-                    UnspentCoin unspent_coin = ctx.UnspentCoins.FirstOrDefault(p => p.TxId == input.PrevHash.ToArray() && p.Index == input.PrevIndex);
+                    UnspentCoin unspent_coin = ctx.UnspentCoins.FirstOrDefault(p => p.TxId.SequenceEqual(input.PrevHash.ToArray()) && p.Index == input.PrevIndex);
                     if (unspent_coin != null)
                         ctx.UnspentCoins.Remove(unspent_coin);
                 }
                 foreach (WalletUnspentCoin coin in unspent)
                 {
-                    UnspentCoin unspent_coin = ctx.UnspentCoins.FirstOrDefault(p => p.TxId == coin.Input.PrevHash.ToArray() && p.Index == coin.Input.PrevIndex);
+                    UnspentCoin unspent_coin = ctx.UnspentCoins.FirstOrDefault(p => p.TxId.SequenceEqual(coin.Input.PrevHash.ToArray()) && p.Index == coin.Input.PrevIndex);
                     if (unspent_coin == null)
                     {
                         unspent_coin = ctx.UnspentCoins.Add(new UnspentCoin
