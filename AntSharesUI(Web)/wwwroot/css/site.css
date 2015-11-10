@@ -1,34 +1,22 @@
-﻿body {
-    padding-top: 50px;
-    padding-bottom: 20px;
-}
+﻿
+.body-content { padding-left: 15px; padding-right: 15px; }
 
-/* Wrapping element */
-/* Set some basic padding to keep content from hitting the edges */
-.body-content {
-    padding-left: 15px;
-    padding-right: 15px;
-}
+input, select, textarea { max-width: 280px; }
 
-/* Set widths on the form inputs since otherwise they're 100% wide */
-input,
-select,
-textarea {
-    max-width: 280px;
-}
+.carousel-caption { z-index: 10 !important; }
 
-/* Carousel */
-.carousel-caption {
-    z-index: 10 !important;
-}
-
-    .carousel-caption p {
-        font-size: 20px;
-        line-height: 1.4;
-    }
+.carousel-caption p { font-size: 20px; line-height: 1.4; }
 
 @media (min-width: 768px) {
-    .carousel-caption {
-        z-index: 10 !important;
-    }
+    .carousel-caption { z-index: 10 !important; }
 }
+
+@font-face { font-family: 'iconfont'; src: url('../fonts/iconfont.eot'); /* IE9*/ src: url('../fonts/iconfont.eot?#iefix') format('../fonts/embedded-opentype'), /* IE6-IE8 */ url('../fonts/iconfont.woff') format('woff'), /* chrome、firefox */ url('../fonts/iconfont.ttf') format('truetype'), /* chrome、firefox、opera、Safari, Android, iOS 4.2+*/ url('../fonts/iconfont.svg#iconfont') format('svg'); /* iOS 4.1- */ }
+
+.iconfont { font-family: "iconfont" !important; font-size: 16px; font-style: normal; -webkit-font-smoothing: antialiased; -webkit-text-stroke-width: 0.2px; -moz-osx-font-smoothing: grayscale; }
+
+* { box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; }
+
+body { background: #f0f0f0; }
+
+a { outline: none; }
