@@ -6239,7 +6239,7 @@ body.modal-open,
 
 @media screen and (max-width: 400px) {
   @-ms-viewport {
-    width: 320px;
+    width: 400px;
   }
 }
 

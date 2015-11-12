@@ -15,8 +15,8 @@
         <link rel="stylesheet" href="~/css/site.css" />
         <link href="~/css/material.min.css" rel="stylesheet" />
         <link href="~/css/roboto.min.css" rel="stylesheet" />
-        <link href="~/css/ripples.min.css" rel="stylesheet" />
-        <link href="~/css/jquery.mmenu.widescreen.css" media="all and (min-width: 768px)" rel="stylesheet" />
+        <link href="~/css/ripples.min.css" rel="stylesheet" />        
+        @*<link href="~/css/jquery.mmenu.widescreen.css" media="all and (min-width: 900px)" rel="stylesheet" />*@
     </environment>
     <environment names="Staging,Production">
         <link rel="stylesheet" href="https://ajax.aspnetcdn.com/ajax/bootstrap/3.0.0/css/bootstrap.min.css"
@@ -40,7 +40,7 @@
     <div id="page">
         <div class="header">
             <a href="#menu"></a>
-            Demo
+            小蚁-AntShares
         </div>
         <div class="content">
             <p>
@@ -50,25 +50,30 @@
             <p>For more demos, a tutorial, documentation and support, please visit <a href="http://mmenu.frebsite.nl" target="_blank">mmenu.frebsite.nl</a></p>
             @RenderBody();
         </div>
-        <nav id="menu">
+        <nav id="menu" class="mm-theme-dark">
+            <a class="my-title">小蚁-AntShares</a>
             <ul>
-                <li><a href="#">Home</a></li>
+                <li class="withripple"><a href="#"><i class="iconfont">&#xe600;</i>个人中心</a></li>
+                <li class="withripple"><a href="#"><i class="iconfont">&#xe604;</i>交易</a></li>
+                <li class="withripple"><a href="#"><i class="iconfont">&#xe603;</i>签名</a></li>
                 <li>
-                    <a href="#about">About us</a>
+                    <a class="withripple" href="#about/history"><i class="iconfont">&#xe602;</i>钱包</a>
                     <ul>
-                        <li><a href="#about/history">History</a></li>
-                        <li>
-                            <a href="#about/team">The team</a>
-                            <ul>
-                                <li><a href="#about/team/management">Management</a></li>
-                                <li><a href="#about/team/sales">Sales</a></li>
-                                <li><a href="#about/team/development">Development</a></li>
-                            </ul>
-                        </li>
-                        <li><a href="#about/address">Our address</a></li>
+                        <li class="withripple"><a href="#">账户管理</a></li>
+                        <li class="withripple"><a href="#">协议管理</a></li>
+                        <li class="withripple"><a href="#">地址管理</a></li>
+                        <li class="withripple"><a href="#">证书管理</a></li>
                     </ul>
                 </li>
-                <li><a href="#contact">Contact</a></li>
+                <li class="withripple"><a href="#contact"><i class="iconfont">&#xe600;</i>联系人</a></li>
+                <li>
+                    <a class="withripple" href="#about/history"><i class="iconfont">&#xe601;</i>系统设置</a>
+                    <ul>
+                        <li class="withripple"><a href="#">通知设置</a></li>
+                    </ul>
+                </li>
+                <li class="withripple"><a href="#contact"><i class="iconfont">&#xe607;</i>帮助</a></li>
+                <li class="withripple"><a href="#contact"><i class="iconfont">&#xe605;</i>关于</a></li>
             </ul>
         </nav>
     </div>
@@ -114,12 +119,19 @@
             $('nav#menu').mmenu({
                 searchfield: true,
                 counters: true,
-                extensions: ["pagedim-black", "pageshadow", "widescreen"]
-            },{
-                vertical: "Vertical"
+                extensions: ["pagedim-black", "pageshadow", "widescreen"],
+                slidingSubmenus: false,
+                navbar: {
+                    add: true,
+                    title: "小蚁-AntShares"
+                }
             });
             $.material.init()
         });
+
+
+        $('nav#menu').jqueryAccordionMenu();
+
     </script>
 </body>
 </html>
