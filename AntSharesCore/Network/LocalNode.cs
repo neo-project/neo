@@ -46,8 +46,8 @@ namespace AntShares.Network
         internal readonly HashSet<RemoteNode> pendingPeers = new HashSet<RemoteNode>();
         internal readonly Dictionary<IPEndPoint, RemoteNode> connectedPeers = new Dictionary<IPEndPoint, RemoteNode>();
 
-        internal readonly IPEndPoint LocalEndpoint;
-        private readonly TcpListener listener;
+        internal IPEndPoint LocalEndpoint;
+        private TcpListener listener;
         private Thread connectThread;
         private int started = 0;
         private int disposed = 0;
@@ -55,13 +55,11 @@ namespace AntShares.Network
         public bool GlobalMissionsEnabled { get; set; } = true;
         public int RemoteNodeCount => connectedPeers.Count;
         public bool ServiceEnabled { get; set; } = true;
+        public bool UpnpEnabled { get; set; } = false;
         public string UserAgent { get; set; }
 
-        public LocalNode(int port = DEFAULT_PORT)
+        public LocalNode()
         {
-            IPAddress ip = Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork).MapToIPv6();
-            this.LocalEndpoint = new IPEndPoint(ip, port);
-            this.listener = new TcpListener(IPAddress.Any, port);
             this.connectThread = new Thread(ConnectToPeersLoop)
             {
                 IsBackground = true,
@@ -81,13 +79,14 @@ namespace AntShares.Network
             {
                 return;
             }
-            IPAddress ipAddress = entry.AddressList.FirstOrDefault()?.MapToIPv6();
+            IPAddress ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo)?.MapToIPv6();
             if (ipAddress == null) return;
             await ConnectToPeerAsync(new IPEndPoint(ipAddress, DEFAULT_PORT));
         }
 
         public async Task ConnectToPeerAsync(IPEndPoint remoteEndpoint)
         {
+            if (remoteEndpoint.Equals(LocalEndpoint)) return;
             RemoteNode remoteNode;
             lock (unconnectedPeers)
             {
@@ -156,7 +155,7 @@ namespace AntShares.Network
             {
                 if (started > 0)
                 {
-                    listener.Stop();
+                    if (listener != null) listener.Stop();
                     connectThread.Join();
                     lock (unconnectedPeers)
                     {
@@ -184,6 +183,14 @@ namespace AntShares.Network
             {
                 return connectedPeers.Values.ToArray();
             }
+        }
+
+        private static bool IsIntranetAddress(IPAddress address)
+        {
+            byte[] data = address.GetAddressBytes();
+            Array.Reverse(data);
+            uint value = BitConverter.ToUInt32(data, 0);
+            return (value & 0xff000000) == 0x0a000000 || (value & 0xfff00000) == 0xac100000 || (value & 0xffff0000) == 0xc0a80000;
         }
 
         public static void LoadState(Stream stream)
@@ -267,7 +274,8 @@ namespace AntShares.Network
                     {
                         unconnectedPeers.Remove(remoteNode.RemoteEndpoint);
                         pendingPeers.Remove(remoteNode);
-                        connectedPeers.Remove(remoteNode.RemoteEndpoint);
+                        if (remoteNode.RemoteEndpoint != null)
+                            connectedPeers.Remove(remoteNode.RemoteEndpoint);
                     }
                 }
             }
@@ -323,12 +331,33 @@ namespace AntShares.Network
             }
         }
 
-        public async void Start()
+        public async void Start(int port = DEFAULT_PORT)
         {
             if (Interlocked.Exchange(ref started, 1) == 0)
             {
+                IPHostEntry localhost = await Dns.GetHostEntryAsync(Dns.GetHostName());
+                IPAddress address = localhost.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(p) && !IsIntranetAddress(p));
+                if (address == null && UpnpEnabled && UPnP.Discover())
+                {
+                    address = UPnP.GetExternalIP();
+                    try
+                    {
+                        UPnP.ForwardPort(port, ProtocolType.Tcp, "AntShares");
+                    }
+                    catch { }
+                }
+                if (address != null)
+                {
+                    listener = new TcpListener(IPAddress.Any, port);
+                    try
+                    {
+                        listener.Start();
+                        LocalEndpoint = new IPEndPoint(address.MapToIPv6(), port);
+                    }
+                    catch (SocketException) { }
+                }
                 connectThread.Start();
-                listener.Start();
+                if (LocalEndpoint == null) return;
                 while (disposed == 0)
                 {
                     TcpClient tcp;
@@ -345,6 +374,10 @@ namespace AntShares.Network
                     {
                         pendingPeers.Add(remoteNode);
                     }
+                    remoteNode.Disconnected += RemoteNode_Disconnected;
+                    remoteNode.PeersReceived += RemoteNode_PeersReceived;
+                    remoteNode.BlockReceived += RemoteNode_BlockReceived;
+                    remoteNode.TransactionReceived += RemoteNode_TransactionReceived;
                     remoteNode.StartProtocol();
                 }
             }

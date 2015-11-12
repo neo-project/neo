@@ -76,6 +76,26 @@ namespace AntShares
             return value.GetHashCode();
         }
 
+        public static Fixed8 Max(Fixed8 first, params Fixed8[] others)
+        {
+            foreach (Fixed8 other in others)
+            {
+                if (first.CompareTo(other) < 0)
+                    first = other;
+            }
+            return first;
+        }
+
+        public static Fixed8 Min(Fixed8 first, params Fixed8[] others)
+        {
+            foreach (Fixed8 other in others)
+            {
+                if (first.CompareTo(other) > 0)
+                    first = other;
+            }
+            return first;
+        }
+
         public static Fixed8 Parse(string s)
         {
             return FromDecimal(decimal.Parse(s));

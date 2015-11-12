@@ -11,8 +11,8 @@ namespace AntShares.Core
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            this.PrevHash = reader.ReadSerializable<UInt256>();
-            this.PrevIndex = reader.ReadUInt16();
+            PrevHash = reader.ReadSerializable<UInt256>();
+            PrevIndex = reader.ReadUInt16();
         }
 
         public bool Equals(TransactionInput other)
@@ -32,7 +32,7 @@ namespace AntShares.Core
 
         public override int GetHashCode()
         {
-            return BitConverter.ToInt32(PrevHash.ToArray(), 0) + PrevIndex;
+            return PrevHash.GetHashCode() + PrevIndex.GetHashCode();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

@@ -126,7 +126,7 @@ namespace AntShares.Services
             while (running)
             {
                 Console.Write($"{Prompt}>");
-                string line = Console.ReadLine().Trim().ToLower();
+                string line = Console.ReadLine().Trim();
                 string[] args = line.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 if (args.Length == 0)
                     continue;

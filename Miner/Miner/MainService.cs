@@ -41,6 +41,8 @@ namespace AntShares.Miner
             {
                 case "open":
                     return OnOpenCommand(args.Skip(1).ToArray());
+                case "show":
+                    return OnShowCommand(args);
                 default:
                     return base.OnCommand(args);
             }
@@ -62,7 +64,7 @@ namespace AntShares.Miner
         //TODO: 目前没有想到其它安全的方法来保存密码
         //所以只能暂时手动输入，但如此一来就不能以服务的方式启动了
         //未来再想想其它办法，比如采用智能卡之类的
-        private async void OnOpenWalletCommand(string path)
+        private /*async*/ void OnOpenWalletCommand(string path)
         {
             SecureString password = ReadSecureString("password");
             if (password.Length == 0)
@@ -81,22 +83,39 @@ namespace AntShares.Miner
             }
             //TODO: 等待连接到其它节点
             context = new BlockConsensusContext(wallet.PublicKey);
-            await SendConsensusRequestAsync();
+            //await SendConsensusRequestAsync();
+        }
+
+        private bool OnShowCommand(string[] args)
+        {
+            switch (args[1].ToLower())
+            {
+                case "state":
+                    return OnShowStateCommand(args);
+                default:
+                    return base.OnCommand(args);
+            }
+        }
+
+        private bool OnShowStateCommand(string[] args)
+        {
+            Console.WriteLine($"Height: {Blockchain.Default.Height}/{Blockchain.Default.HeaderHeight}, Nodes: {localnode.RemoteNodeCount}");
+            return true;
         }
 
         protected internal override void OnStart()
         {
             Blockchain.RegisterBlockchain(new LevelDBBlockchain(Settings.Default.DataDirectoryPath));
-            Blockchain.Default.PersistCompleted += Blockchain_PersistCompleted;
-            LocalNode.NewInventory += LocalNode_NewInventory;
+            //Blockchain.Default.PersistCompleted += Blockchain_PersistCompleted;
+            //LocalNode.NewInventory += LocalNode_NewInventory;
             localnode = new LocalNode();
             localnode.Start();
         }
 
         protected internal override void OnStop()
         {
-            LocalNode.NewInventory -= LocalNode_NewInventory;
-            Blockchain.Default.PersistCompleted -= Blockchain_PersistCompleted;
+            //LocalNode.NewInventory -= LocalNode_NewInventory;
+            //Blockchain.Default.PersistCompleted -= Blockchain_PersistCompleted;
             localnode.Dispose();
             Blockchain.Default.Dispose();
         }

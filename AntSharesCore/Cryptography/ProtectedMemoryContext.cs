@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 
 namespace AntShares.Cryptography
 {
     internal class ProtectedMemoryContext : IDisposable
     {
+        private static Dictionary<byte[], byte> counts = new Dictionary<byte[], byte>();
         private byte[] memory;
         private MemoryProtectionScope scope;
 
@@ -12,12 +14,24 @@ namespace AntShares.Cryptography
         {
             this.memory = memory;
             this.scope = scope;
-            ProtectedMemory.Unprotect(memory, scope);
+            if (counts.ContainsKey(memory))
+            {
+                counts[memory]++;
+            }
+            else
+            {
+                counts.Add(memory, 1);
+                ProtectedMemory.Unprotect(memory, scope);
+            }
         }
 
         void IDisposable.Dispose()
         {
-            ProtectedMemory.Protect(memory, scope);
+            if (--counts[memory] == 0)
+            {
+                counts.Remove(memory);
+                ProtectedMemory.Protect(memory, scope);
+            }
         }
     }
 }

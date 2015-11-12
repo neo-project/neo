@@ -117,6 +117,7 @@
     <Reference Include="System.Security" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\AgencyTransaction.cs" />
@@ -138,7 +139,6 @@
     <Compile Include="Implementations\Blockchains\LevelDB\SliceBuilder.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\Account.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\Contract.cs" />
-    <Compile Include="Implementations\Wallets\EntityFramework\Helper.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\Key.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\Transaction.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\UnspentCoin.cs" />
@@ -201,6 +201,7 @@
     <Compile Include="Network\Payloads\NetworkAddressWithTime.cs" />
     <Compile Include="Network\Payloads\VersionPayload.cs" />
     <Compile Include="Network\RemoteNode.cs" />
+    <Compile Include="Network\UPnP.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Threading\Helper.cs" />
     <Compile Include="UInt160.cs" />
@@ -208,6 +209,7 @@
     <Compile Include="UIntBase.cs" />
     <Compile Include="Cryptography\ProtectedMemoryContext.cs" />
     <Compile Include="Wallets\Contract.cs" />
+    <Compile Include="Wallets\UnspentCoin.cs" />
     <Compile Include="Wallets\Wallet.cs" />
     <Compile Include="Wallets\Account.cs" />
   </ItemGroup>
@@ -216,7 +218,6 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

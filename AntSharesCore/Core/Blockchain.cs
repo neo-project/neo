@@ -222,12 +222,12 @@ namespace AntShares.Core
             if (PersistCompleted != null) PersistCompleted(this, block);
         }
 
-        public static void RegisterBlockchain(Blockchain blockchain)
+        public static Blockchain RegisterBlockchain(Blockchain blockchain)
         {
             if (blockchain == null) throw new ArgumentNullException();
-            if (Default != null)
-                Default.Dispose();
+            if (Default != null) Default.Dispose();
             Default = blockchain;
+            return blockchain;
         }
     }
 }
