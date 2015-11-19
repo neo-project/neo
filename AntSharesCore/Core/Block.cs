@@ -1,9 +1,7 @@
 ﻿using AntShares.Core.Scripts;
 using AntShares.Cryptography;
-using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using AntShares.Network;
-using AntShares.Wallets;
 using System;
 using System.IO;
 using System.Linq;
@@ -241,8 +239,7 @@ namespace AntShares.Core
             if (prev_header.Height + 1 != Height) return false;
             if (prev_header.Timestamp >= Timestamp) return false;
             if (!this.VerifySignature()) return false;
-            ECPoint[] pubkeys = Blockchain.Default.GetMiners(Transactions).ToArray();
-            if (NextMiner != Contract.CreateMultiSigRedeemScript(Blockchain.GetMinSignatureCount(pubkeys.Length), pubkeys).ToScriptHash())
+            if (NextMiner != Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(Transactions).ToArray()))
                 return false;
             if (completely)
             {

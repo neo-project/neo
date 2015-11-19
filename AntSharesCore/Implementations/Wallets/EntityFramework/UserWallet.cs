@@ -3,6 +3,7 @@ using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using WalletAccount = AntShares.Wallets.Account;
 using WalletContract = AntShares.Wallets.Contract;
 using WalletUnspentCoin = AntShares.Wallets.UnspentCoin;
@@ -11,7 +12,12 @@ namespace AntShares.Implementations.Wallets.EntityFramework
 {
     public class UserWallet : Wallet
     {
-        private UserWallet(string path, string password, bool create)
+        protected UserWallet(string path, string password, bool create)
+            : base(path, password, create)
+        {
+        }
+
+        protected UserWallet(string path, SecureString password, bool create)
             : base(path, password, create)
         {
         }
@@ -39,24 +45,28 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             }
         }
 
+        protected override void BuildDatabase()
+        {
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
+            {
+                ctx.Database.EnsureDeleted();
+                ctx.Database.EnsureCreated();
+            }
+        }
+
+        public static UserWallet Create(string path, string password)
+        {
+            UserWallet wallet = new UserWallet(path, password, true);
+            wallet.CreateAccount();
+            return wallet;
+        }
+
         public override WalletAccount CreateAccount()
         {
             WalletAccount account = base.CreateAccount();
             OnCreateAccount(account);
             AddContract(WalletContract.CreateSignatureContract(account.PublicKey));
             return account;
-        }
-
-        public static UserWallet CreateDatabase(string path, string password)
-        {
-            using (WalletDataContext ctx = new WalletDataContext(path))
-            {
-                ctx.Database.EnsureDeleted();
-                ctx.Database.EnsureCreated();
-            }
-            UserWallet wallet = new UserWallet(path, password, true);
-            wallet.CreateAccount();
-            return wallet;
         }
 
         public override bool DeleteAccount(UInt160 publicKeyHash)
@@ -202,18 +212,9 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             }
         }
 
-        public static UserWallet OpenDatabase(string path, string password)
+        public static UserWallet Open(string path, string password)
         {
             return new UserWallet(path, password, false);
-        }
-
-        public void Rebuild()
-        {
-            //TODO: 重建钱包数据库中的交易数据
-            //1. 清空所有交易数据；
-            //2. 穷举所有的Unspent，找出钱包账户所持有的那部分；
-            //3. 写入数据库；
-            throw new NotImplementedException();
         }
 
         protected override void SaveStoredData(string name, byte[] value)

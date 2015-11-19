@@ -1,12 +1,16 @@
 ﻿using AntShares.Core;
+using AntShares.Cryptography.ECC;
 using AntShares.Implementations.Blockchains.LevelDB;
 using AntShares.Network;
 using AntShares.Properties;
 using AntShares.Services;
 using AntShares.Wallets;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security;
+using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AntShares.Miner
@@ -15,25 +19,11 @@ namespace AntShares.Miner
     {
         private LocalNode localnode;
         private MinerWallet wallet;
-        private BlockConsensusContext context;
+        private CancellationTokenSource source = new CancellationTokenSource();
+        private bool stopped = false;
 
         protected override string Prompt => "ant";
         public override string ServiceName => "AntSharesMiner";
-
-        private async void Blockchain_PersistCompleted(object sender, Block block)
-        {
-            context.Reset();
-            await SendConsensusRequestAsync();
-        }
-
-        private void LocalNode_NewInventory(object sender, Inventory inventory)
-        {
-            if (inventory.InventoryType != InventoryType.ConsRequest)
-                return;
-            BlockConsensusRequest request = (BlockConsensusRequest)inventory;
-            if (!request.Verify()) return;
-            context.AddRequest(request, wallet);
-        }
 
         protected override bool OnCommand(string[] args)
         {
@@ -81,9 +71,6 @@ namespace AntShares.Miner
                 Console.WriteLine($"failed to open file \"{path}\"");
                 return;
             }
-            //TODO: 等待连接到其它节点
-            context = new BlockConsensusContext(wallet.PublicKey);
-            //await SendConsensusRequestAsync();
         }
 
         private bool OnShowCommand(string[] args)
@@ -106,27 +93,79 @@ namespace AntShares.Miner
         protected internal override void OnStart()
         {
             Blockchain.RegisterBlockchain(new LevelDBBlockchain(Settings.Default.DataDirectoryPath));
-            //Blockchain.Default.PersistCompleted += Blockchain_PersistCompleted;
-            //LocalNode.NewInventory += LocalNode_NewInventory;
             localnode = new LocalNode();
             localnode.Start();
+            StartMine(source.Token);
         }
 
         protected internal override void OnStop()
         {
-            //LocalNode.NewInventory -= LocalNode_NewInventory;
-            //Blockchain.Default.PersistCompleted -= Blockchain_PersistCompleted;
+            source.Cancel();
+            while (!stopped)
+            {
+                Thread.Sleep(100);
+            }
             localnode.Dispose();
             Blockchain.Default.Dispose();
         }
 
-        private async Task SendConsensusRequestAsync()
+        private async void StartMine(CancellationToken token)
         {
-            if (!context.Valid) return;
-            BlockConsensusRequest request = context.CreateRequest(wallet);
-            //TODO: 签名
-            //request.Script = wallet.Sign(request);
-            await localnode.RelayAsync(request);
+            while (wallet == null && !token.IsCancellationRequested)
+            {
+                await Task.Delay(100);
+            }
+            while (!token.IsCancellationRequested)
+            {
+                HashSet<ECPoint> miners = new HashSet<ECPoint>(Blockchain.Default.GetMiners());
+                bool is_miner = false;
+                foreach (Account account in wallet.GetAccounts())
+                {
+                    if (miners.Contains(account.PublicKey))
+                    {
+                        is_miner = true;
+                        break;
+                    }
+                }
+                if (!is_miner)
+                {
+                    try
+                    {
+                        await Task.Delay(Blockchain.TimePerBlock, token);
+                    }
+                    catch (TaskCanceledException) { }
+                    continue;
+                }
+                Block header = Blockchain.Default.GetHeader(Blockchain.Default.CurrentBlockHash);
+                if (header == null) continue;
+                try
+                {
+                    await Task.Delay(header.Timestamp.ToDateTime() + Blockchain.TimePerBlock - DateTime.Now, token);
+                }
+                catch (TaskCanceledException) { }
+                if (token.IsCancellationRequested) break;
+                byte[] nonce = new byte[sizeof(ulong)];
+                using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
+                {
+                    rng.GetBytes(nonce);
+                }
+                Transaction[] transactions = Blockchain.Default.GetMemoryPool().ToArray();
+                Block block = new Block
+                {
+                    PrevBlock = header.Hash,
+                    Timestamp = DateTime.Now.ToTimestamp(),
+                    Height = header.Height + 1,
+                    Nonce = BitConverter.ToUInt64(nonce, 0),
+                    NextMiner = Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(transactions).ToArray()),
+                    Transactions = transactions
+                };
+                block.RebuildMerkleRoot();
+                SignatureContext context = new SignatureContext(block);
+                wallet.Sign(context);
+                block.Script = context.GetScripts()[0];
+                await localnode.RelayAsync(block);
+            }
+            stopped = true;
         }
     }
 }

@@ -3,6 +3,7 @@ using AntShares.Cryptography;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using System.Security.Cryptography;
 using System.Threading;
 
@@ -27,10 +28,9 @@ namespace AntShares.Wallets
         protected string DbPath => path;
         protected uint WalletHeight => current_height;
 
-        protected Wallet(string path, string password, bool create)
+        private Wallet(string path, byte[] passwordKey, bool create)
         {
             this.path = path;
-            byte[] passwordKey = password.ToAesKey();
             if (create)
             {
                 this.iv = new byte[16];
@@ -45,6 +45,7 @@ namespace AntShares.Wallets
                     rng.GetNonZeroBytes(iv);
                     rng.GetNonZeroBytes(masterKey);
                 }
+                BuildDatabase();
                 SaveStoredData("IV", iv);
                 SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
                 SaveStoredData("Height", BitConverter.GetBytes(current_height));
@@ -68,11 +69,25 @@ namespace AntShares.Wallets
             this.thread.Start();
         }
 
+        protected Wallet(string path, string password, bool create)
+            : this(path, password.ToAesKey(), create)
+        {
+        }
+
+        protected Wallet(string path, SecureString password, bool create)
+            : this(path, password.ToAesKey(), create)
+        {
+        }
+
         public virtual void AddContract(Contract contract)
         {
             if (!accounts.ContainsKey(contract.PublicKeyHash))
                 throw new InvalidOperationException();
             contracts.Add(contract.ScriptHash, contract);
+        }
+
+        protected virtual void BuildDatabase()
+        {
         }
 
         public void ChangePassword(string password)
@@ -305,6 +320,15 @@ namespace AntShares.Wallets
             }
             current_height++;
             OnProcessNewBlock(spent, unspent.Values);
+        }
+
+        public void Rebuild()
+        {
+            //TODO: 重建钱包数据库中的交易数据
+            //1. 清空所有交易数据；
+            //2. 穷举所有的Unspent，找出钱包账户所持有的那部分；
+            //3. 写入数据库；
+            throw new NotImplementedException();
         }
 
         protected abstract void SaveStoredData(string name, byte[] value);

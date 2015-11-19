@@ -48,7 +48,7 @@ namespace AntShares.UI
             using (CreateWalletDialog dialog = new CreateWalletDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                Program.CurrentWallet = UserWallet.CreateDatabase(dialog.WalletPath, dialog.Password);
+                Program.CurrentWallet = UserWallet.Create(dialog.WalletPath, dialog.Password);
             }
             OnWalletChanged();
         }
@@ -58,7 +58,7 @@ namespace AntShares.UI
             using (OpenWalletDialog dialog = new OpenWalletDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                Program.CurrentWallet = UserWallet.OpenDatabase(dialog.WalletPath, dialog.Password);
+                Program.CurrentWallet = UserWallet.Open(dialog.WalletPath, dialog.Password);
             }
             OnWalletChanged();
         }

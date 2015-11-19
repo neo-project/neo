@@ -1,5 +1,7 @@
-﻿using AntShares.Cryptography.ECC;
+﻿using AntShares.Core.Scripts;
+using AntShares.Cryptography.ECC;
 using AntShares.IO;
+using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +17,7 @@ namespace AntShares.Core
         private const double R_Init = 0.5;
         private const double R_Final = 0.3;
         public static readonly decimal GenerationFactor = 1 - (decimal)Math.Pow(R_Final / R_Init, 1.0 / BlocksPerYear);
+        public static readonly TimeSpan TimePerBlock = TimeSpan.FromSeconds(SecondsPerBlock);
         //TODO: 备用矿工未来要有5-7个
         public static readonly ECPoint[] StandbyMiners =
         {
@@ -123,6 +126,11 @@ namespace AntShares.Core
             return MemoryPool.Values;
         }
 
+        public static UInt160 GetMinerAddress(ECPoint[] miners)
+        {
+            return Contract.CreateMultiSigRedeemScript(miners.Length / 2 + 1, miners).ToScriptHash();
+        }
+
         private List<ECPoint> _miners = new List<ECPoint>();
         public ECPoint[] GetMiners()
         {
@@ -164,11 +172,6 @@ namespace AntShares.Core
                 }
             }
             return miners.OrderByDescending(p => p.Value).ThenBy(p => p.Key).Select(p => p.Key).Concat(StandbyMiners).Take(miner_count);
-        }
-
-        public static int GetMinSignatureCount(int miner_count)
-        {
-            return miner_count / 2 + 1;
         }
 
         public abstract Block GetNextBlock(UInt256 hash);
