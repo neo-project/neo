@@ -1,4 +1,5 @@
 ﻿using AntShares.Core;
+using AntShares.Core.Scripts;
 using AntShares.Cryptography;
 using AntShares.IO;
 using AntShares.Wallets;
@@ -68,7 +69,7 @@ namespace AntShares.UI
                         Nonce = 0,
                         Inputs = new TransactionInput[0],
                         Outputs = new TransactionOutput[0],
-                        Scripts = { }
+                        Scripts = new Script[0]
                     },
                     textBox3.Text.HexToBytes().AsSerializable<RegisterTransaction>()
                 }
@@ -88,7 +89,7 @@ namespace AntShares.UI
                     Nonce = 0,
                     Inputs = new TransactionInput[0],
                     Outputs = new TransactionOutput[0],
-                    Scripts = { }
+                    Scripts = new Script[0]
                 },
                 textBox3.Text.HexToBytes().AsSerializable<RegisterTransaction>()
             };

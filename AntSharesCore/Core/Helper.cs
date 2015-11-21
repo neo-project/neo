@@ -1,5 +1,6 @@
 ﻿using AntShares.Core.Scripts;
 using AntShares.Cryptography;
+using AntShares.Wallets;
 using System;
 using System.IO;
 using System.Linq;
@@ -29,6 +30,14 @@ namespace AntShares.Core
             using (ECDsaCng ecdsa = new ECDsaCng(key))
             {
                 return ecdsa.SignHash(signable.GetHashForSigning());
+            }
+        }
+
+        public static byte[] Sign(this ISignable signable, Account account)
+        {
+            using (account.Decrypt())
+            {
+                return signable.Sign(account.PrivateKey, account.PublicKey.EncodePoint(false).Skip(1).ToArray());
             }
         }
 

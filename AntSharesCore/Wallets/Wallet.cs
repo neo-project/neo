@@ -342,11 +342,7 @@ namespace AntShares.Wallets
                 if (contract == null) continue;
                 Account account = GetAccountByScriptHash(scriptHash);
                 if (account == null) continue;
-                byte[] signature;
-                using (account.Decrypt())
-                {
-                    signature = context.Signable.Sign(account.PrivateKey, account.PublicKey.EncodePoint(false).Skip(1).ToArray());
-                }
+                byte[] signature = context.Signable.Sign(account);
                 fSuccess |= context.Add(contract.RedeemScript, account.PublicKey, signature);
             }
             return fSuccess;

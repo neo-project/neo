@@ -1,4 +1,5 @@
 ﻿using AntShares.Core;
+using AntShares.Core.Scripts;
 using AntShares.Cryptography.ECC;
 using AntShares.Implementations.Blockchains.LevelDB;
 using AntShares.Network;
@@ -25,12 +26,64 @@ namespace AntShares.Miner
         protected override string Prompt => "ant";
         public override string ServiceName => "AntSharesMiner";
 
+        private GenerationTransaction CreateGenerationTransaction(IEnumerable<Transaction> transactions, ulong nonce)
+        {
+            var antshares = Blockchain.Default.GetUnspentAntShares().GroupBy(p => p.ScriptHash, (k, g) => new
+            {
+                ScriptHash = k,
+                Amount = g.Sum(p => p.Value)
+            }).OrderBy(p => p.Amount).ThenBy(p => p.ScriptHash).ToArray();
+            Fixed8 amount_in = transactions.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
+            Fixed8 amount_out = transactions.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
+            Fixed8 amount_sysfee = transactions.Sum(p => p.SystemFee);
+            Fixed8 quantity = Blockchain.Default.GetQuantityIssued(Blockchain.AntCoin.Hash);
+            List<TransactionOutput> outputs = new List<TransactionOutput>
+            {
+                new TransactionOutput
+                {
+                    AssetId = Blockchain.AntCoin.Hash,
+                    Value = amount_in - amount_out - amount_sysfee,
+                    ScriptHash = wallet.GetContracts().First().ScriptHash
+                }
+            };
+            if (antshares.Length > 0)
+            {
+                ulong n = nonce % (ulong)antshares.Sum(p => p.Amount).GetData();
+                ulong line = 0;
+                int i = -1;
+                do
+                {
+                    line += (ulong)antshares[++i].Amount.GetData();
+                } while (line <= n);
+                outputs.Add(new TransactionOutput
+                {
+                    AssetId = Blockchain.AntCoin.Hash,
+                    Value = Fixed8.FromDecimal((Blockchain.AntCoin.Amount - (quantity - amount_sysfee)).ToDecimal() * Blockchain.GenerationFactor),
+                    ScriptHash = antshares[i].ScriptHash
+                });
+            }
+            return new GenerationTransaction
+            {
+                Nonce = (uint)(nonce % (uint.MaxValue + 1ul)),
+                Inputs = new TransactionInput[0],
+                Outputs = outputs.GroupBy(p => p.ScriptHash, (k, g) => new TransactionOutput
+                {
+                    AssetId = Blockchain.AntCoin.Hash,
+                    Value = g.Sum(p => p.Value),
+                    ScriptHash = k
+                }).Where(p => p.Value != Fixed8.Zero).ToArray(),
+                Scripts = new Script[0]
+            };
+        }
+
         protected override bool OnCommand(string[] args)
         {
             switch (args[0].ToLower())
             {
+                case "create":
+                    return OnCreateCommand(args);
                 case "open":
-                    return OnOpenCommand(args.Skip(1).ToArray());
+                    return OnOpenCommand(args);
                 case "show":
                     return OnShowCommand(args);
                 default:
@@ -38,39 +91,79 @@ namespace AntShares.Miner
             }
         }
 
-        private bool OnOpenCommand(string[] args)
+        private bool OnCreateCommand(string[] args)
         {
-            if (args.Length >= 2 && string.Equals(args[0], "wallet", StringComparison.OrdinalIgnoreCase))
+            switch (args[1].ToLower())
             {
-                OnOpenWalletCommand(args.Skip(1).First());
+                case "wallet":
+                    return OnCreateWalletCommand(args);
+                default:
+                    return base.OnCommand(args);
             }
-            else
+        }
+
+        private bool OnCreateWalletCommand(string[] args)
+        {
+            if (args.Length < 3)
             {
-                Console.WriteLine("usage:\n\tOPEN WALLET <path>\n");
+                Console.WriteLine("error");
+                return true;
+            }
+            using (SecureString password = ReadSecureString("password"))
+            using (SecureString password2 = ReadSecureString("password"))
+            {
+                if (!password.CompareTo(password2))
+                {
+                    Console.WriteLine("error");
+                    return true;
+                }
+                wallet = MinerWallet.Create(args[2], password);
+                foreach (Account account in wallet.GetAccounts())
+                {
+                    Console.WriteLine(account.PublicKey.EncodePoint(true).ToHexString());
+                }
             }
             return true;
+        }
+
+        private bool OnOpenCommand(string[] args)
+        {
+            switch (args[1].ToLower())
+            {
+                case "wallet":
+                    return OnOpenWalletCommand(args);
+                default:
+                    return base.OnCommand(args);
+            }
         }
 
         //TODO: 目前没有想到其它安全的方法来保存密码
         //所以只能暂时手动输入，但如此一来就不能以服务的方式启动了
         //未来再想想其它办法，比如采用智能卡之类的
-        private /*async*/ void OnOpenWalletCommand(string path)
+        private bool OnOpenWalletCommand(string[] args)
         {
-            SecureString password = ReadSecureString("password");
-            if (password.Length == 0)
+            if (args.Length < 3)
             {
-                Console.WriteLine("cancelled");
-                return;
+                Console.WriteLine("error");
+                return true;
             }
-            try
+            using (SecureString password = ReadSecureString("password"))
             {
-                wallet = MinerWallet.Open(path, password);
+                if (password.Length == 0)
+                {
+                    Console.WriteLine("cancelled");
+                    return true;
+                }
+                try
+                {
+                    wallet = MinerWallet.Open(args[2], password);
+                }
+                catch
+                {
+                    Console.WriteLine($"failed to open file \"{args[2]}\"");
+                }
             }
-            catch
-            {
-                Console.WriteLine($"failed to open file \"{path}\"");
-                return;
-            }
+            return true;
         }
 
         private bool OnShowCommand(string[] args)
@@ -117,7 +210,7 @@ namespace AntShares.Miner
             }
             while (!token.IsCancellationRequested)
             {
-                HashSet<ECPoint> miners = new HashSet<ECPoint>(Blockchain.Default.GetMiners());
+                ECPoint[] miners = Blockchain.Default.GetMiners();
                 bool is_miner = false;
                 foreach (Account account in wallet.GetAccounts())
                 {
@@ -138,31 +231,35 @@ namespace AntShares.Miner
                 }
                 Block header = Blockchain.Default.GetHeader(Blockchain.Default.CurrentBlockHash);
                 if (header == null) continue;
-                try
+                TimeSpan timespan = header.Timestamp.ToDateTime() + Blockchain.TimePerBlock - DateTime.Now;
+                if (timespan > TimeSpan.Zero)
                 {
-                    await Task.Delay(header.Timestamp.ToDateTime() + Blockchain.TimePerBlock - DateTime.Now, token);
+                    try
+                    {
+                        await Task.Delay(timespan, token);
+                    }
+                    catch (TaskCanceledException) { }
+                    if (token.IsCancellationRequested) break;
                 }
-                catch (TaskCanceledException) { }
-                if (token.IsCancellationRequested) break;
-                byte[] nonce = new byte[sizeof(ulong)];
+                byte[] nonce_data = new byte[sizeof(ulong)];
                 using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
                 {
-                    rng.GetBytes(nonce);
+                    rng.GetBytes(nonce_data);
                 }
-                Transaction[] transactions = Blockchain.Default.GetMemoryPool().ToArray();
+                ulong nonce = BitConverter.ToUInt64(nonce_data, 0);
+                List<Transaction> transactions = Blockchain.Default.GetMemoryPool().ToList();
+                transactions.Insert(0, CreateGenerationTransaction(transactions, nonce));
                 Block block = new Block
                 {
                     PrevBlock = header.Hash,
                     Timestamp = DateTime.Now.ToTimestamp(),
                     Height = header.Height + 1,
-                    Nonce = BitConverter.ToUInt64(nonce, 0),
+                    Nonce = nonce,
                     NextMiner = Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(transactions).ToArray()),
-                    Transactions = transactions
+                    Transactions = transactions.ToArray()
                 };
                 block.RebuildMerkleRoot();
-                SignatureContext context = new SignatureContext(block);
-                wallet.Sign(context);
-                block.Script = context.GetScripts()[0];
+                wallet.Sign(block, miners);
                 await localnode.RelayAsync(block);
             }
             stopped = true;

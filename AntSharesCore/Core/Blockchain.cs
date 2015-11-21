@@ -21,9 +21,13 @@ namespace AntShares.Core
         //TODO: 备用矿工未来要有5-7个
         public static readonly ECPoint[] StandbyMiners =
         {
-            ECPoint.DecodePoint("02c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd0".HexToBytes(), ECCurve.Secp256r1)
+            ECPoint.DecodePoint("0327da12b5c40200e9f65569476bbff2218da4f32548ff43b6387ec1416a231ee8".HexToBytes(), ECCurve.Secp256r1),
+            ECPoint.DecodePoint("026ce35b29147ad09e4afe4ec4a7319095f08198fa8babbe3c56e970b143528d22".HexToBytes(), ECCurve.Secp256r1),
+            ECPoint.DecodePoint("0209e7fd41dfb5c2f8dc72eb30358ac100ea8c72da18847befe06eade68cebfcb9".HexToBytes(), ECCurve.Secp256r1),
+            ECPoint.DecodePoint("039dafd8571a641058ccc832c5e2111ea39b09c0bde36050914384f7a48bce9bf9".HexToBytes(), ECCurve.Secp256r1),
+            ECPoint.DecodePoint("038dddc06ce687677a53d54f096d2591ba2302068cf123c1f2d75c2dddc5425579".HexToBytes(), ECCurve.Secp256r1),
         };
-        public static readonly Block GenesisBlock = "00000000000000000000000000000000000000000000000000000000000000000000000069ffd4815d08ece5435a64070dff19caefac89795236f7638e3f3290d9e5f9f0375ecc55000000001dac2b7c00000000eea34400951bc0e31a530ce8a8a63485c6271147414065e19b1bd7f90c1fb26182bce24f0c840235f647efd83647988661736500546a89bb710d832bf487a26c1053c8ccb6b6fb30be9d57ccb39bd7fb098f6e1d593025512102c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd051ae0200000000000000004000455b7b276c616e67273a277a682d434e272c276e616d65273a27e5b08fe89a81e882a1277d2c7b276c616e67273a27656e272c276e616d65273a27416e745368617265277d5d0000c16ff2862300eea34400951bc0e31a530ce8a8a63485c6271147eea34400951bc0e31a530ce8a8a63485c62711470000014140da12d7b9a3f66d3a27a160e73ffd3fdbd712eedc3262913ec93944f874ef823d2ab972ac06616c0481afd1eb9fecc379b4030c3212641f035d8ed4095ea7476a25512102c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd051ae".HexToBytes().AsSerializable<Block>();
+        public static readonly Block GenesisBlock = "00000000000000000000000000000000000000000000000000000000000000000000000069ffd4815d08ece5435a64070dff19caefac89795236f7638e3f3290d9e5f9f0375ecc55000000001dac2b7c00000000d5b21f2e11a9795a22a482f342f53634b5a8cf3a414065e19b1bd7f90c1fb26182bce24f0c840235f647efd83647988661736500546a89bb710d832bf487a26c1053c8ccb6b6fb30be9d57ccb39bd7fb098f6e1d593025512102c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd051ae0200000000000000004000455b7b276c616e67273a277a682d434e272c276e616d65273a27e5b08fe89a81e882a1277d2c7b276c616e67273a27656e272c276e616d65273a27416e745368617265277d5d0000c16ff2862300eea34400951bc0e31a530ce8a8a63485c6271147eea34400951bc0e31a530ce8a8a63485c62711470000014140da12d7b9a3f66d3a27a160e73ffd3fdbd712eedc3262913ec93944f874ef823d2ab972ac06616c0481afd1eb9fecc379b4030c3212641f035d8ed4095ea7476a25512102c4a2fd44a0d80d84ea3258eaf7c3c2c9f5d22369dbbe5dafdcf4ead89f7fbdd051ae".HexToBytes().AsSerializable<Block>();
         public static readonly RegisterTransaction AntShare = (RegisterTransaction)GenesisBlock.Transactions[1];
         public static readonly RegisterTransaction AntCoin = new RegisterTransaction
         {
@@ -34,7 +38,7 @@ namespace AntShares.Core
             Admin = new UInt160(),
             Inputs = new TransactionInput[0],
             Outputs = new TransactionOutput[0],
-            Scripts = { }
+            Scripts = new Script[0]
         };
         protected static readonly Dictionary<UInt256, Transaction> MemoryPool = new Dictionary<UInt256, Transaction>();
 

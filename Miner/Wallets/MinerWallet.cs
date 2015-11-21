@@ -1,4 +1,6 @@
 ﻿using AntShares.Core;
+using AntShares.Core.Scripts;
+using AntShares.Cryptography.ECC;
 using AntShares.Implementations.Wallets.EntityFramework;
 using System.Security;
 
@@ -8,10 +10,6 @@ namespace AntShares.Wallets
     {
         private MinerWallet(string path, SecureString password, bool create)
             : base(path, password, create)
-        {
-        }
-
-        public override void AddContract(Contract contract)
         {
         }
 
@@ -28,6 +26,21 @@ namespace AntShares.Wallets
         public static MinerWallet Open(string path, SecureString password)
         {
             return new MinerWallet(path, password, false);
+        }
+
+        public void Sign(Block block, ECPoint[] miners)
+        {
+            SignatureContext context = new SignatureContext(block);
+            byte[] redeemScript = Contract.CreateMultiSigRedeemScript(miners.Length / 2 + 1, miners);
+            foreach (ECPoint pubKey in miners)
+            {
+                UInt160 publicKeyHash = pubKey.EncodePoint(true).ToScriptHash();
+                Account account = GetAccount(publicKeyHash);
+                if (account == null) continue;
+                byte[] signature = block.Sign(account);
+                context.Add(redeemScript, account.PublicKey, signature);
+            }
+            block.Script = context.GetScripts()[0];
         }
     }
 }
