@@ -172,6 +172,7 @@ namespace AntShares
                 sum_weight += weight;
                 sum_value += valueSelector(item) * weight;
             }
+            if (sum_value == 0) return 0;
             return sum_value / sum_weight;
         }
 

@@ -61,7 +61,7 @@ namespace AntShares.UI
                 Timestamp = DateTime.Now.ToTimestamp(),
                 Height = 0,
                 Nonce = 2083236893, //向比特币致敬
-                NextMiner = Contract.CreateMultiSigRedeemScript(Blockchain.GetMinSignatureCount(Blockchain.StandbyMiners.Length), Blockchain.StandbyMiners).ToScriptHash(),
+                NextMiner = Blockchain.GetMinerAddress(Blockchain.StandbyMiners),
                 Transactions = new Transaction[]
                 {
                     new GenerationTransaction
@@ -69,7 +69,7 @@ namespace AntShares.UI
                         Nonce = 0,
                         Inputs = new TransactionInput[0],
                         Outputs = new TransactionOutput[0],
-                        Scripts = { }
+                        Scripts = new Script[0]
                     },
                     textBox3.Text.HexToBytes().AsSerializable<RegisterTransaction>()
                 }
@@ -89,7 +89,7 @@ namespace AntShares.UI
                     Nonce = 0,
                     Inputs = new TransactionInput[0],
                     Outputs = new TransactionOutput[0],
-                    Scripts = { }
+                    Scripts = new Script[0]
                 },
                 textBox3.Text.HexToBytes().AsSerializable<RegisterTransaction>()
             };

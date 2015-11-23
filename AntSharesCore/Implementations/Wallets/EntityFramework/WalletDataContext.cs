@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Entity;
+using Microsoft.Data.Entity.Metadata;
 using Microsoft.Data.Sqlite;
 
 namespace AntShares.Implementations.Wallets.EntityFramework
@@ -33,8 +34,8 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             modelBuilder.Entity<Account>().Property(p => p.PrivateKeyEncrypted).HasColumnType("VarBinary").HasMaxLength(96).IsRequired();
             modelBuilder.Entity<Account>().Property(p => p.PublicKeyHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
             modelBuilder.Entity<Contract>().HasKey(p => p.ScriptHash);
-            modelBuilder.Entity<Contract>().Index(p => p.PublicKeyHash);
-            modelBuilder.Entity<Contract>().HasOne(p => p.Account).WithMany().ForeignKey(p => p.PublicKeyHash).WillCascadeOnDelete();
+            modelBuilder.Entity<Contract>().HasIndex(p => p.PublicKeyHash);
+            modelBuilder.Entity<Contract>().HasOne(p => p.Account).WithMany().HasForeignKey(p => p.PublicKeyHash).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<Contract>().Property(p => p.RedeemScript).HasColumnType("VarBinary").HasMaxLength(1024).IsRequired();
             modelBuilder.Entity<Contract>().Property(p => p.ScriptHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
             modelBuilder.Entity<Contract>().Property(p => p.PublicKeyHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
@@ -42,13 +43,13 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             modelBuilder.Entity<Key>().Property(p => p.Name).HasColumnType("VarChar").HasMaxLength(20).IsRequired();
             modelBuilder.Entity<Key>().Property(p => p.Value).HasColumnType("VarBinary").IsRequired();
             modelBuilder.Entity<Transaction>().HasKey(p => p.Hash);
-            modelBuilder.Entity<Transaction>().Index(p => p.Type);
+            modelBuilder.Entity<Transaction>().HasIndex(p => p.Type);
             modelBuilder.Entity<Transaction>().Property(p => p.Hash).HasColumnType("Binary").HasMaxLength(32).IsRequired();
             modelBuilder.Entity<Transaction>().Property(p => p.Type).IsRequired();
             modelBuilder.Entity<Transaction>().Property(p => p.RawData).HasColumnType("VarBinary").IsRequired();
             modelBuilder.Entity<UnspentCoin>().ToTable("Unspent").HasKey(p => new { p.TxId, p.Index });
-            modelBuilder.Entity<UnspentCoin>().Index(p => p.AssetId);
-            modelBuilder.Entity<UnspentCoin>().Index(p => p.ScriptHash);
+            modelBuilder.Entity<UnspentCoin>().HasIndex(p => p.AssetId);
+            modelBuilder.Entity<UnspentCoin>().HasIndex(p => p.ScriptHash);
             modelBuilder.Entity<UnspentCoin>().Property(p => p.TxId).HasColumnType("Binary").HasMaxLength(32).IsRequired();
             modelBuilder.Entity<UnspentCoin>().Property(p => p.Index).IsRequired();
             modelBuilder.Entity<UnspentCoin>().Property(p => p.AssetId).HasColumnType("Binary").HasMaxLength(32).IsRequired();
