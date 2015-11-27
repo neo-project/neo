@@ -57,6 +57,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="UI\AddContractDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\AddContractDialog.Designer.cs">
+      <DependentUpon>AddContractDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\ImportPrivateKeyDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -125,6 +131,13 @@
     <Compile Include="UI\SigningDialog.Designer.cs">
       <DependentUpon>SigningDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\TransferDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\TransferDialog.Designer.cs">
+      <DependentUpon>TransferDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\TxOutListBoxItem.cs" />
     <Compile Include="UI\UpdateDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -137,6 +150,9 @@
     <Compile Include="UI\ViewPrivateKeyDialog.designer.cs">
       <DependentUpon>ViewPrivateKeyDialog.cs</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="UI\AddContractDialog.resx">
+      <DependentUpon>AddContractDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\ContractDetailsDialog.resx">
       <DependentUpon>ContractDetailsDialog.cs</DependentUpon>
     </EmbeddedResource>
@@ -166,6 +182,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\TransferDialog.resx">
+      <DependentUpon>TransferDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\UpdateDialog.resx">
       <DependentUpon>UpdateDialog.cs</DependentUpon>

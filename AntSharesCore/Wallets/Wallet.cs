@@ -11,6 +11,8 @@ namespace AntShares.Wallets
 {
     public abstract class Wallet : IDisposable
     {
+        public event EventHandler BalanceChanged;
+
         public const byte CoinVersion = 0x17;
 
         private readonly string path;
@@ -81,9 +83,15 @@ namespace AntShares.Wallets
 
         public virtual void AddContract(Contract contract)
         {
-            if (!accounts.ContainsKey(contract.PublicKeyHash))
-                throw new InvalidOperationException();
-            contracts.Add(contract.ScriptHash, contract);
+            lock (accounts)
+            {
+                if (!accounts.ContainsKey(contract.PublicKeyHash))
+                    throw new InvalidOperationException();
+                lock (contracts)
+                {
+                    contracts.Add(contract.ScriptHash, contract);
+                }
+            }
         }
 
         protected virtual void BuildDatabase()
@@ -106,16 +114,28 @@ namespace AntShares.Wallets
             }
         }
 
+        public bool ContainsAddress(UInt160 scriptHash)
+        {
+            lock (contracts)
+            {
+                return contracts.ContainsKey(scriptHash);
+            }
+        }
+
         public virtual Account CreateAccount()
         {
+            byte[] privateKey;
             using (CngKey key = CngKey.Create(CngAlgorithm.ECDsaP256, null, new CngKeyCreationParameters { ExportPolicy = CngExportPolicies.AllowPlaintextArchiving }))
             {
-                byte[] privateKey = key.Export(CngKeyBlobFormat.EccPrivateBlob);
-                Account account = new Account(privateKey);
-                Array.Clear(privateKey, 0, privateKey.Length);
-                accounts.Add(account.PublicKeyHash, account);
-                return account;
+                privateKey = key.Export(CngKeyBlobFormat.EccPrivateBlob);
             }
+            Account account = new Account(privateKey);
+            Array.Clear(privateKey, 0, privateKey.Length);
+            lock (accounts)
+            {
+                accounts.Add(account.PublicKeyHash, account);
+            }
+            return account;
         }
 
         protected byte[] DecryptPrivateKey(byte[] encryptedPrivateKey)
@@ -130,11 +150,25 @@ namespace AntShares.Wallets
 
         public virtual bool DeleteAccount(UInt160 publicKeyHash)
         {
-            foreach (Contract contract in contracts.Values.Where(p => p.PublicKeyHash == publicKeyHash).ToArray())
+            lock (accounts)
             {
-                contracts.Remove(contract.ScriptHash);
+                lock (contracts)
+                {
+                    foreach (Contract contract in contracts.Values.Where(p => p.PublicKeyHash == publicKeyHash).ToArray())
+                    {
+                        contracts.Remove(contract.ScriptHash);
+                    }
+                }
+                return accounts.Remove(publicKeyHash);
             }
-            return accounts.Remove(publicKeyHash);
+        }
+
+        public virtual bool DeleteContract(UInt160 scriptHash)
+        {
+            lock (contracts)
+            {
+                return contracts.Remove(scriptHash);
+            }
         }
 
         public virtual void Dispose()
@@ -153,72 +187,131 @@ namespace AntShares.Wallets
 
         public IEnumerable<UnspentCoin> FindUnspentCoins()
         {
-            return unspent_coins.Values;
+            lock (unspent_coins)
+            {
+                foreach (var pair in unspent_coins)
+                {
+                    yield return pair.Value;
+                }
+            }
         }
 
-        public UnspentCoin[] FindUnspentCoins(Fixed8 amount)
+        public UnspentCoin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount)
         {
-            UnspentCoin coin = unspent_coins.Values.FirstOrDefault(p => p.Value == amount);
-            if (coin != null) return new[] { coin };
-            coin = unspent_coins.Values.OrderBy(p => p.Value).FirstOrDefault(p => p.Value > amount);
-            if (coin != null) return new[] { coin };
-            Fixed8 sum = unspent_coins.Values.Sum(p => p.Value);
-            if (sum < amount) return null;
-            if (sum == amount) return unspent_coins.Values.ToArray();
-            return unspent_coins.Values.OrderByDescending(p => p.Value).TakeWhile(p =>
+            lock (unspent_coins)
             {
-                if (amount == Fixed8.Zero) return false;
-                amount -= Fixed8.Min(amount, p.Value);
-                return true;
-            }).ToArray();
+                IEnumerable<UnspentCoin> unspents = unspent_coins.Values.Where(p => p.AssetId == asset_id);
+                UnspentCoin coin = unspents.FirstOrDefault(p => p.Value == amount);
+                if (coin != null) return new[] { coin };
+                coin = unspents.OrderBy(p => p.Value).FirstOrDefault(p => p.Value > amount);
+                if (coin != null) return new[] { coin };
+                Fixed8 sum = unspents.Sum(p => p.Value);
+                if (sum < amount) return null;
+                if (sum == amount) return unspents.ToArray();
+                return unspents.OrderByDescending(p => p.Value).TakeWhile(p =>
+                {
+                    if (amount == Fixed8.Zero) return false;
+                    amount -= Fixed8.Min(amount, p.Value);
+                    return true;
+                }).ToArray();
+            }
         }
 
         public Account GetAccount(UInt160 publicKeyHash)
         {
-            if (!accounts.ContainsKey(publicKeyHash)) return null;
-            return accounts[publicKeyHash];
+            lock (accounts)
+            {
+                if (!accounts.ContainsKey(publicKeyHash)) return null;
+                return accounts[publicKeyHash];
+            }
         }
 
         public Account GetAccountByScriptHash(UInt160 scriptHash)
         {
-            if (!contracts.ContainsKey(scriptHash)) return null;
-            return accounts[contracts[scriptHash].PublicKeyHash];
+            lock (accounts)
+                lock (contracts)
+                {
+                    if (!contracts.ContainsKey(scriptHash)) return null;
+                    return accounts[contracts[scriptHash].PublicKeyHash];
+                }
         }
 
         public IEnumerable<Account> GetAccounts()
         {
-            return accounts.Values;
+            lock (accounts)
+            {
+                foreach (var pair in accounts)
+                {
+                    yield return pair.Value;
+                }
+            }
         }
 
         public IEnumerable<UInt160> GetAddresses()
         {
-            return contracts.Keys;
+            lock (contracts)
+            {
+                foreach (var pair in contracts)
+                {
+                    yield return pair.Key;
+                }
+            }
         }
 
-        public Fixed8 GetAvailable()
+        public Fixed8 GetAvailable(UInt256 asset_id)
         {
-            return unspent_coins.Values.Sum(p => p.Value);
+            lock (unspent_coins)
+            {
+                return unspent_coins.Values.Where(p => p.AssetId == asset_id).Sum(p => p.Value);
+            }
         }
 
-        public Fixed8 GetBalance()
+        public Fixed8 GetBalance(UInt256 asset_id)
         {
-            return unspent_coins.Values.Sum(p => p.Value) + change_coins.Values.Sum(p => p.Value);
+            lock (unspent_coins)
+                lock (change_coins)
+                {
+                    return unspent_coins.Values.Where(p => p.AssetId == asset_id).Sum(p => p.Value) + change_coins.Values.Where(p => p.AssetId == asset_id).Sum(p => p.Value);
+                }
+        }
+
+        protected virtual UInt160 GetChangeAddress()
+        {
+            lock (contracts)
+            {
+                return contracts.Keys.FirstOrDefault();
+            }
         }
 
         public Contract GetContract(UInt160 scriptHash)
         {
-            if (!contracts.ContainsKey(scriptHash)) return null;
-            return contracts[scriptHash];
+            lock (contracts)
+            {
+                if (!contracts.ContainsKey(scriptHash)) return null;
+                return contracts[scriptHash];
+            }
         }
 
         public IEnumerable<Contract> GetContracts()
         {
-            return contracts.Values;
+            lock (contracts)
+            {
+                foreach (var pair in contracts)
+                {
+                    yield return pair.Value;
+                }
+            }
         }
 
         public IEnumerable<Contract> GetContracts(UInt160 publicKeyHash)
         {
-            return contracts.Values.Where(p => p.PublicKeyHash.Equals(publicKeyHash));
+            lock (contracts)
+            {
+                foreach (Contract contract in contracts.Values.Where(p => p.PublicKeyHash.Equals(publicKeyHash)))
+                {
+                    yield return contract;
+                }
+            }
         }
 
         public static byte[] GetPrivateKeyFromWIF(string wif)
@@ -241,7 +334,10 @@ namespace AntShares.Wallets
             byte[] privateKey = GetPrivateKeyFromWIF(wif);
             Account account = new Account(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
-            accounts.Add(account.PublicKeyHash, account);
+            lock (accounts)
+            {
+                accounts.Add(account.PublicKeyHash, account);
+            }
             return account;
         }
 
@@ -252,6 +348,62 @@ namespace AntShares.Wallets
         protected abstract byte[] LoadStoredData(string name);
 
         protected abstract IEnumerable<UnspentCoin> LoadUnspentCoins(bool is_change);
+
+        public SignatureContext MakeTransaction(TransactionOutput[] outputs, Fixed8 fee)
+        {
+            var pay_total = outputs.GroupBy(p => p.AssetId, (k, g) => new
+            {
+                AssetId = k,
+                Value = g.Sum(p => p.Value)
+            }).ToDictionary(p => p.AssetId);
+            if (pay_total.ContainsKey(Blockchain.AntCoin.Hash))
+            {
+                pay_total[Blockchain.AntCoin.Hash] = new
+                {
+                    AssetId = Blockchain.AntCoin.Hash,
+                    Value = pay_total[Blockchain.AntCoin.Hash].Value + fee
+                };
+            }
+            else
+            {
+                pay_total.Add(Blockchain.AntCoin.Hash, new
+                {
+                    AssetId = Blockchain.AntCoin.Hash,
+                    Value = fee
+                });
+            }
+            var coins = pay_total.Select(p => new
+            {
+                AssetId = p.Key,
+                Unspents = FindUnspentCoins(p.Key, p.Value.Value)
+            }).ToDictionary(p => p.AssetId);
+            if (coins.Any(p => p.Value.Unspents == null)) return null;
+            var input_sum = coins.Values.ToDictionary(p => p.AssetId, p => new
+            {
+                AssetId = p.AssetId,
+                Value = p.Unspents.Sum(q => q.Value)
+            });
+            UInt160 change_address = GetChangeAddress();
+            List<TransactionOutput> outputs_new = new List<TransactionOutput>(outputs);
+            foreach (UInt256 asset_id in input_sum.Keys)
+            {
+                if (input_sum[asset_id].Value > pay_total[asset_id].Value)
+                {
+                    outputs_new.Add(new TransactionOutput
+                    {
+                        AssetId = asset_id,
+                        Value = input_sum[asset_id].Value - pay_total[asset_id].Value,
+                        ScriptHash = change_address
+                    });
+                }
+            }
+            return new SignatureContext(new ContractTransaction
+            {
+                Attributes = new TransactionAttribute[0],
+                Inputs = coins.Values.SelectMany(p => p.Unspents).Select(p => p.Input).ToArray(),
+                Outputs = outputs_new.ToArray()
+            });
+        }
 
         protected abstract void OnProcessNewBlock(IEnumerable<TransactionInput> spent, IEnumerable<UnspentCoin> unspent);
 
@@ -275,25 +427,28 @@ namespace AntShares.Wallets
         {
             List<TransactionInput> spent = new List<TransactionInput>();
             Dictionary<TransactionInput, UnspentCoin> unspent = new Dictionary<TransactionInput, UnspentCoin>();
-            foreach (Transaction tx in block.Transactions)
+            lock (contracts)
             {
-                for (ushort index = 0; index < tx.Outputs.Length; index++)
+                foreach (Transaction tx in block.Transactions)
                 {
-                    TransactionOutput output = tx.Outputs[index];
-                    if (contracts.ContainsKey(output.ScriptHash))
+                    for (ushort index = 0; index < tx.Outputs.Length; index++)
                     {
-                        UnspentCoin coin = new UnspentCoin
+                        TransactionOutput output = tx.Outputs[index];
+                        if (contracts.ContainsKey(output.ScriptHash))
                         {
-                            Input = new TransactionInput
+                            UnspentCoin coin = new UnspentCoin
                             {
-                                PrevHash = tx.Hash,
-                                PrevIndex = index
-                            },
-                            AssetId = output.AssetId,
-                            Value = output.Value,
-                            ScriptHash = output.ScriptHash
-                        };
-                        unspent.Add(coin.Input, coin);
+                                Input = new TransactionInput
+                                {
+                                    PrevHash = tx.Hash,
+                                    PrevIndex = index
+                                },
+                                AssetId = output.AssetId,
+                                Value = output.Value,
+                                ScriptHash = output.ScriptHash
+                            };
+                            unspent.Add(coin.Input, coin);
+                        }
                     }
                 }
             }
@@ -308,18 +463,26 @@ namespace AntShares.Wallets
                     spent.Add(input);
                 }
             }
-            foreach (TransactionInput input in spent)
-            {
-                unspent_coins.Remove(input);
-                change_coins.Remove(input);
-            }
-            foreach (var coin in unspent)
-            {
-                change_coins.Remove(coin.Key);
-                unspent_coins.Add(coin.Key, coin.Value);
-            }
+            lock (unspent_coins)
+                lock (change_coins)
+                {
+                    foreach (TransactionInput input in spent)
+                    {
+                        unspent_coins.Remove(input);
+                        change_coins.Remove(input);
+                    }
+                    foreach (var coin in unspent)
+                    {
+                        change_coins.Remove(coin.Key);
+                        unspent_coins.Add(coin.Key, coin.Value);
+                    }
+                }
             current_height++;
-            OnProcessNewBlock(spent, unspent.Values);
+            if (spent.Count > 0 || unspent.Count > 0)
+            {
+                OnProcessNewBlock(spent, unspent.Values);
+                if (BalanceChanged != null) BalanceChanged(this, EventArgs.Empty);
+            }
         }
 
         public void Rebuild()

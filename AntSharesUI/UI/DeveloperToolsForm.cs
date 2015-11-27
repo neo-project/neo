@@ -1,7 +1,9 @@
 ﻿using AntShares.Core;
 using AntShares.Core.Scripts;
 using AntShares.Cryptography;
+using AntShares.Cryptography.ECC;
 using AntShares.IO;
+using AntShares.Network;
 using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
@@ -35,6 +37,61 @@ namespace AntShares.UI
                     this.KeyDown -= DeveloperToolsForm_KeyDown;
                 }
             }
+        }
+
+        private void numericUpDown2_ValueChanged(object sender, EventArgs e)
+        {
+            button6.Enabled = numericUpDown2.Value > 0;
+        }
+
+        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            button5.Enabled = listBox1.SelectedIndices.Count > 0;
+        }
+
+        private void textBox5_TextChanged(object sender, EventArgs e)
+        {
+            button4.Enabled = textBox5.TextLength > 0;
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            listBox1.Items.Add(textBox5.Text);
+            textBox5.Clear();
+            numericUpDown2.Maximum = listBox1.Items.Count;
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            listBox1.Items.RemoveAt(listBox1.SelectedIndex);
+            numericUpDown2.Maximum = listBox1.Items.Count;
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            byte[] redeemScript = Contract.CreateMultiSigRedeemScript((int)numericUpDown2.Value, listBox1.Items.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray());
+            textBox6.Text = Wallet.ToAddress(redeemScript.ToScriptHash()).ToString();
+            textBox7.Text = redeemScript.ToHexString();
+        }
+
+        private void textBox8_TextChanged(object sender, EventArgs e)
+        {
+            button7.Enabled = textBox8.TextLength > 0;
+            button8.Enabled = textBox8.TextLength > 0;
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            SignatureContext context = SignatureContext.Parse(textBox8.Text);
+            context.Signable.Scripts = context.GetScripts();
+            InformationBox.Show(context.Signable.ToArray().ToHexString());
+        }
+
+        private async void button8_Click(object sender, EventArgs e)
+        {
+            SignatureContext context = SignatureContext.Parse(textBox8.Text);
+            context.Signable.Scripts = context.GetScripts();
+            await Program.LocalNode.RelayAsync((Inventory)context.Signable);
         }
 
         private void button1_Click(object sender, EventArgs e)

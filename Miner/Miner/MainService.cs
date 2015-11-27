@@ -261,6 +261,10 @@ namespace AntShares.Miner
                 block.RebuildMerkleRoot();
                 wallet.Sign(block, miners);
                 await localnode.RelayAsync(block);
+                while (Blockchain.Default.CurrentBlockHash != block.Hash && !token.IsCancellationRequested)
+                {
+                    await Task.Delay(100, token);
+                }
             }
             stopped = true;
         }

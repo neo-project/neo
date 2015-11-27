@@ -116,7 +116,10 @@ namespace AntShares.IO.Json
             sb.Append('[');
             foreach (JObject item in items)
             {
-                sb.Append(item);
+                if (item == null)
+                    sb.Append("null");
+                else
+                    sb.Append(item);
                 sb.Append(',');
             }
             if (items.Count == 0)

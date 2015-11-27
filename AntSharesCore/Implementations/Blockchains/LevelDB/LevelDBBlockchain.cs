@@ -614,7 +614,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                         block_cache.Remove(hash);
                     }
                 }
-                for (int i = 0; i < 50 && !disposed; i++)
+                for (int i = 0; i < 10 && !disposed; i++)
                 {
                     Thread.Sleep(100);
                 }
