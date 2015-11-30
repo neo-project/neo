@@ -417,7 +417,7 @@ namespace AntShares.Network
             {
                 if (Blockchain.Default != null && !Blockchain.Default.IsReadOnly)
                 {
-                    if (missions.Count == 0 && Blockchain.Default.Height < Blockchain.Default.HeaderHeight)
+                    if (missions.Count == 0 && Blockchain.Default.Height < Version.StartHeight)
                     {
                         if (!await SendMessageAsync("getblocks", GetBlocksPayload.Create(new[] { Blockchain.Default.CurrentBlockHash })))
                             break;

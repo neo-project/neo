@@ -87,6 +87,24 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             return flag;
         }
 
+        public override bool DeleteContract(UInt160 scriptHash)
+        {
+            bool flag = base.DeleteContract(scriptHash);
+            if (flag)
+            {
+                using (WalletDataContext ctx = new WalletDataContext(DbPath))
+                {
+                    Contract contract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash.SequenceEqual(scriptHash.ToArray()));
+                    if (contract != null)
+                    {
+                        ctx.Contracts.Remove(contract);
+                        ctx.SaveChanges();
+                    }
+                }
+            }
+            return flag;
+        }
+
         public override WalletAccount Import(string wif)
         {
             WalletAccount account = base.Import(wif);
@@ -208,6 +226,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                         unspent_coin.IsChange = false;
                     }
                 }
+                ctx.Keys.First(p => p.Name == "Height").Value = BitConverter.GetBytes(WalletHeight);
                 ctx.SaveChanges();
             }
         }

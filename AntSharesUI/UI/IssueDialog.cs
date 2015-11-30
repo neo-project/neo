@@ -1,7 +1,6 @@
 ﻿using AntShares.Core;
 using AntShares.Wallets;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -9,44 +8,32 @@ namespace AntShares.UI
 {
     internal partial class IssueDialog : Form
     {
-        private class IssueListBoxItem
-        {
-            public UInt160 Account;
-            public Fixed8 Amount;
-
-            public override string ToString()
-            {
-                return string.Format("{0}\t{1}", Wallet.ToAddress(Account), Amount);
-            }
-        }
-
         public IssueDialog()
         {
             InitializeComponent();
         }
 
-        public IssueTransaction GetTransaction()
+        public SignatureContext GetTransaction()
         {
             RegisterTransaction tx = comboBox1.SelectedItem as RegisterTransaction;
             if (tx == null) return null;
-            return new IssueTransaction
+            return new SignatureContext(new IssueTransaction
             {
                 Inputs = new TransactionInput[0], //TODO: 从区块链或钱包中找出负资产，并合并到交易中
-                Outputs = listBox1.Items.OfType<IssueListBoxItem>().GroupBy(p => p.Account).Select(g => new TransactionOutput
+                Outputs = listBox1.Items.OfType<TxOutListBoxItem>().GroupBy(p => p.Account).Select(g => new TransactionOutput
                 {
                     AssetId = tx.Hash,
-                    ScriptHash = g.Key,
-                    Value = g.Sum(p => p.Amount)
+                    Value = g.Sum(p => p.Amount),
+                    ScriptHash = g.Key
                 }).ToArray()
-            };
+            });
         }
 
         private void IssueDialog_Load(object sender, EventArgs e)
         {
-            HashSet<UInt160> addresses = new HashSet<UInt160>(Program.CurrentWallet.GetAddresses());
             foreach (RegisterTransaction tx in Blockchain.Default.GetAssets())
             {
-                if (addresses.Contains(tx.Admin))
+                if (Program.CurrentWallet.ContainsAddress(tx.Admin))
                 {
                     comboBox1.Items.Add(tx);
                 }
@@ -85,9 +72,8 @@ namespace AntShares.UI
         {
             using (PayToDialog dialog = new PayToDialog())
             {
-                if (dialog.ShowDialog() != DialogResult.OK)
-                    return;
-                listBox1.Items.Add(new IssueListBoxItem
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                listBox1.Items.Add(new TxOutListBoxItem
                 {
                     Account = dialog.Account,
                     Amount = dialog.Amount

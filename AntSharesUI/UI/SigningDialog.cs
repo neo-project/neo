@@ -1,5 +1,4 @@
 ﻿using AntShares.Core;
-using AntShares.IO;
 using System;
 using System.Windows.Forms;
 
@@ -25,17 +24,7 @@ namespace AntShares.UI
                 MessageBox.Show("没有足够的私钥对数据进行签名。");
                 return;
             }
-            if (context.Completed)
-            {
-                context.Signable.Scripts = context.GetScripts();
-                textBox2.Text = context.Signable.ToArray().ToHexString();
-                MessageBox.Show("签名完成，该对象的签名信息已经完整，可以广播。");
-            }
-            else
-            {
-                textBox2.Text = context.ToString();
-                MessageBox.Show("签名完成，但该对象的签名信息还不完整。");
-            }
+            textBox2.Text = context.ToString();
         }
 
         private void button2_Click(object sender, EventArgs e)

@@ -9,6 +9,7 @@ namespace AntShares.UI
         {
             InitializeComponent();
             textBox3.Text = Wallet.ToAddress(scriptHash);
+            textBox4.Text = account.PublicKey.EncodePoint(true).ToHexString();
             using (account.Decrypt())
             {
                 textBox1.Text = account.PrivateKey.ToHexString();

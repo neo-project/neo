@@ -16,7 +16,7 @@ namespace AntShares.Core
         public TransactionOutput[] Outputs;
         public Script[] Scripts;
 
-        public override InventoryType InventoryType => InventoryType.TX;
+        public sealed override InventoryType InventoryType => InventoryType.TX;
 
         [NonSerialized]
         private IReadOnlyDictionary<TransactionInput, TransactionOutput> _references;

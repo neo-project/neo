@@ -17,14 +17,6 @@ namespace AntShares.Core
         private readonly byte[][] redeemScripts;
         private readonly Dictionary<ECPoint, byte[]>[] signatures;
 
-        public bool Completed
-        {
-            get
-            {
-                return signatures.All(p => p != null);
-            }
-        }
-
         public SignatureContext(ISignable signable)
         {
             this.Signable = signable;
@@ -56,7 +48,7 @@ namespace AntShares.Core
 
         public Script[] GetScripts()
         {
-            if (!Completed) throw new InvalidOperationException();
+            if (signatures.Any(p => p == null)) throw new InvalidOperationException();
             Script[] scripts = new Script[signatures.Length];
             for (int i = 0; i < scripts.Length; i++)
             {
