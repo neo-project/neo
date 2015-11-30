@@ -7,7 +7,7 @@
 
 a, a:focus, a:active { outline: none !important; }
 
-body { background-color: #f0f0f0; height:100% }
+body { height:100%; font-family:"微软雅黑 light" !important }
 
 .mm-navbar > .mm-title { font-size: 16px; }
 
@@ -20,6 +20,7 @@ body { background-color: #f0f0f0; height:100% }
     .mm-menu.mm-offcanvas { display:block }
     .header a { display: none; }
     .mm-menu.mm-offcanvas:not(.mm-opened) + .mm-page { margin-left:300px }
+    .header { border-left:1px solid white }
 }
 
 /*设置侧边栏边框样式*/
@@ -30,24 +31,15 @@ body { background-color: #f0f0f0; height:100% }
 .mm-listview > li:hover .mm-listview > li:hover .mm-listview > li:hover a { padding-left: 5px; }
 .mm-listview > li .mm-next, .mm-listview > li .mm-next::before { border-color: rgba(0, 0, 0, 0.1); }
 
-nav > a.my-title { text-align:left; height:40px; display:block; line-height:40px; text-decoration:none; color:rgba(255, 255, 255, 0.8); font-size:18px; border-bottom-color:rgba(0, 0, 0, 0.15); padding-left: 53px }
+/*nav > a.my-title { text-align:left; height:40px; display:block; line-height:40px; text-decoration:none; color:rgba(255, 255, 255, 0.8); font-size:18px; border-bottom-color:rgba(0, 0, 0, 0.15); border-bottom:1px solid rgba(0, 0, 0, 0.15); padding-left: 53px }*/
 
 .mm-menu.mm-offcanvas { display:block; transition:margin-left .4s ease }
 
 .mm-slideout{ height:100%; transition:transform .4s ease, margin-left .4s ease }
 
-/*@media only screen and (max-width : 768px) {
-    .mm-menu.mm-offcanvas:not(.mm-opened) {transition:none }
-}
-@media only screen and (max-width : 899px) {
-    .mm-menu.mm-offcanvas:not(.mm-opened) { margin-left:-300px }
-    .mm-menu.mm-offcanvas.mm-opened { transition:none }
-}
-@media only screen and (min-width : 900px) {
-    .mm-menu.mm-offcanvas { margin-left:0 }
-}*/
+.mm-menu.mm-theme-dark { background:-webkit-linear-gradient(120deg, #251f40, #713e5c); background: linear-gradient(120deg, #251f40, #713e5c); }
+.header { background:gray; font-size: 16px; font-weight: bold; color: #fff; line-height: 40px; -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; width: 100%; height: 40px; padding: 0 50px; }
 
-/*@media only screen and (max-width : 480px) {
-    nav > a.my-title { display:none }
-}*/
+.mm-panels, .mm-panels > .mm-panel { background:none }
+
 .mm-menu > .mm-panels { top:40px }
