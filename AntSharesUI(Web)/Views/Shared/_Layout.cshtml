@@ -13,10 +13,9 @@
         <link href="~/css/font-awesome.css" rel="stylesheet" />
         <link href="~/css/jquery.mmenu.all.css" rel="stylesheet" />
         <link rel="stylesheet" href="~/css/site.css" />
-        <link href="~/css/material.min.css" rel="stylesheet" />
-        <link href="~/css/roboto.min.css" rel="stylesheet" />
+        @*<link href="~/css/material.min.css" rel="stylesheet" />*@
+        @*<link href="~/css/roboto.min.css" rel="stylesheet" />*@
         <link href="~/css/ripples.min.css" rel="stylesheet" />        
-        @*<link href="~/css/jquery.mmenu.widescreen.css" media="all and (min-width: 900px)" rel="stylesheet" />*@
     </environment>
     <environment names="Staging,Production">
         <link rel="stylesheet" href="https://ajax.aspnetcdn.com/ajax/bootstrap/3.0.0/css/bootstrap.min.css"
@@ -30,8 +29,8 @@
         <link href="~/css/font-awesome.css" rel="stylesheet" />
         <link href="~/css/jquery.mmenu.all.css" rel="stylesheet" />
         <link rel="stylesheet" href="~/css/site.css" />
-        <link href="~/css/material.min.css" rel="stylesheet" />
-        <link href="~/css/roboto.min.css" rel="stylesheet" />
+        @*<link href="~/css/material.min.css" rel="stylesheet" />*@
+        @*<link href="~/css/roboto.min.css" rel="stylesheet" />*@
         <link href="~/css/ripples.min.css" rel="stylesheet" />
     </environment>
 </head>
@@ -43,19 +42,14 @@
             小蚁-AntShares
         </div>
         <div class="content">
-            <p>
-                <strong>This is a demo.</strong><br />
-                Click the menu icon to open the menu.
-            </p>
-            <p>For more demos, a tutorial, documentation and support, please visit <a href="http://mmenu.frebsite.nl" target="_blank">mmenu.frebsite.nl</a></p>
-            @RenderBody();
+            @RenderBody()
         </div>
         <nav id="menu" class="mm-theme-dark">
             <ul>
                 <li>
                     <a class="withripple" href="#about/history"><i class="iconfont">&#xe602;</i>钱包</a>
                     <ul>
-                        <li class="withripple"><a href="#">创建钱包</a></li>
+                        <li class="withripple"><a href="~/Home/CreateWallet">创建钱包</a></li>
                         <li class="withripple"><a href="#">打开钱包</a></li>
                         <li class="withripple"><a href="#">修改密码</a></li>
                     </ul>
