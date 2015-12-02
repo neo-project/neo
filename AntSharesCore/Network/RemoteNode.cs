@@ -33,12 +33,13 @@ namespace AntShares.Network
 
         internal VersionPayload Version { get; private set; }
         public IPEndPoint RemoteEndpoint { get; private set; }
+        public IPEndPoint ListenerEndpoint { get; private set; }
 
         internal RemoteNode(LocalNode localNode, IPEndPoint remoteEndpoint)
         {
             this.localNode = localNode;
             this.tcp = new TcpClient(remoteEndpoint.Address.IsIPv4MappedToIPv6 ? AddressFamily.InterNetwork : remoteEndpoint.AddressFamily);
-            this.RemoteEndpoint = remoteEndpoint;
+            this.ListenerEndpoint = remoteEndpoint;
         }
 
         internal RemoteNode(LocalNode localNode, TcpClient tcp)
@@ -50,12 +51,12 @@ namespace AntShares.Network
 
         internal async Task ConnectAsync()
         {
-            IPAddress address = RemoteEndpoint.Address;
+            IPAddress address = ListenerEndpoint.Address;
             if (address.IsIPv4MappedToIPv6)
                 address = address.MapToIPv4();
             try
             {
-                await tcp.ConnectAsync(address, RemoteEndpoint.Port);
+                await tcp.ConnectAsync(address, ListenerEndpoint.Port);
             }
             catch (SocketException)
             {
@@ -101,6 +102,21 @@ namespace AntShares.Network
 
         private void OnConnected()
         {
+            IPEndPoint remoteEndpoint = (IPEndPoint)tcp.Client.RemoteEndPoint;
+            remoteEndpoint = new IPEndPoint(remoteEndpoint.Address.MapToIPv6(), remoteEndpoint.Port);
+            lock (localNode.pendingPeers)
+                lock (localNode.connectedPeers)
+                {
+                    if (localNode.pendingPeers.All(p => p.RemoteEndpoint != remoteEndpoint) && !localNode.connectedPeers.ContainsKey(remoteEndpoint))
+                    {
+                        RemoteEndpoint = remoteEndpoint;
+                    }
+                }
+            if (RemoteEndpoint == null)
+            {
+                Disconnect(false);
+                return;
+            }
             stream = tcp.GetStream();
             connected = true;
         }
@@ -111,7 +127,7 @@ namespace AntShares.Network
             AddrPayload payload;
             lock (localNode.connectedPeers)
             {
-                payload = AddrPayload.Create(localNode.connectedPeers.Take(10).Select(p => NetworkAddressWithTime.Create(p.Value.RemoteEndpoint, p.Value.Version.Services, p.Value.Version.Timestamp)).ToArray());
+                payload = AddrPayload.Create(localNode.connectedPeers.Values.Where(p => p.ListenerEndpoint != null).Take(100).Select(p => NetworkAddressWithTime.Create(p.ListenerEndpoint, p.Version.Services, p.Version.Timestamp)).ToArray());
             }
             await SendMessageAsync("addr", payload);
         }
@@ -370,25 +386,18 @@ namespace AntShares.Network
                 Disconnect(true);
                 return;
             }
-            if (RemoteEndpoint == null)
+            if (ListenerEndpoint != null)
             {
-                IPAddress ip = ((IPEndPoint)tcp.Client.RemoteEndPoint).Address.MapToIPv6();
-                IPEndPoint remoteEndpoint = new IPEndPoint(ip, Version.Port);
-                lock (localNode.pendingPeers)
+                if (ListenerEndpoint.Port != Version.Port)
                 {
-                    lock (localNode.connectedPeers)
-                    {
-                        if (localNode.pendingPeers.All(p => p.RemoteEndpoint != remoteEndpoint) && !localNode.connectedPeers.ContainsKey(remoteEndpoint))
-                        {
-                            RemoteEndpoint = remoteEndpoint;
-                        }
-                    }
-                }
-                if (RemoteEndpoint == null)
-                {
-                    Disconnect(false);
+                    Disconnect(true);
                     return;
                 }
+            }
+            else if (Version.Port > 0)
+            {
+                IPAddress ip = ((IPEndPoint)tcp.Client.RemoteEndPoint).Address.MapToIPv6();
+                ListenerEndpoint = new IPEndPoint(ip, Version.Port);
             }
             if (!await SendMessageAsync("verack"))
                 return;

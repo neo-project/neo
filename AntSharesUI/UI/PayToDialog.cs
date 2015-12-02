@@ -51,8 +51,8 @@ namespace AntShares.UI
                 button1.Enabled = false;
                 return;
             }
-            long amount;
-            if (!long.TryParse(textBox2.Text, out amount))
+            Fixed8 amount;
+            if (!Fixed8.TryParse(textBox2.Text, out amount))
             {
                 button1.Enabled = false;
                 return;

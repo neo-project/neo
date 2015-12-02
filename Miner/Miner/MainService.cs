@@ -170,11 +170,23 @@ namespace AntShares.Miner
         {
             switch (args[1].ToLower())
             {
+                case "node":
+                    return OnShowNodeCommand(args);
                 case "state":
                     return OnShowStateCommand(args);
                 default:
                     return base.OnCommand(args);
             }
+        }
+
+        private bool OnShowNodeCommand(string[] args)
+        {
+            RemoteNode[] nodes = localnode.GetRemoteNodes();
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                Console.WriteLine($"{nodes[i].RemoteEndpoint.Address} port:{nodes[i].RemoteEndpoint.Port} listen:{nodes[i].ListenerEndpoint?.Port ?? 0} [{i + 1}/{nodes.Length}]");
+            }
+            return true;
         }
 
         private bool OnShowStateCommand(string[] args)

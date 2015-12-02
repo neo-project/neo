@@ -259,11 +259,11 @@ namespace AntShares.Network
             remoteNode.PeersReceived -= RemoteNode_PeersReceived;
             remoteNode.BlockReceived -= RemoteNode_BlockReceived;
             remoteNode.TransactionReceived -= RemoteNode_TransactionReceived;
-            if (error)
+            if (error && remoteNode.ListenerEndpoint != null)
             {
                 lock (badPeers)
                 {
-                    badPeers.Add(remoteNode.RemoteEndpoint);
+                    badPeers.Add(remoteNode.ListenerEndpoint);
                 }
             }
             lock (unconnectedPeers)
@@ -295,7 +295,7 @@ namespace AntShares.Network
                             {
                                 unconnectedPeers.UnionWith(peers);
                                 unconnectedPeers.ExceptWith(badPeers);
-                                unconnectedPeers.ExceptWith(pendingPeers.Select(p => p.RemoteEndpoint));
+                                unconnectedPeers.ExceptWith(pendingPeers.Select(p => p.ListenerEndpoint));
                                 unconnectedPeers.ExceptWith(connectedPeers.Keys);
                             }
                         }

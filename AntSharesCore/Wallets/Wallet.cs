@@ -30,6 +30,7 @@ namespace AntShares.Wallets
         protected string DbPath => path;
         protected uint WalletHeight => current_height;
 
+        //TODO: 需要有密码错误的检测
         private Wallet(string path, byte[] passwordKey, bool create)
         {
             this.path = path;
