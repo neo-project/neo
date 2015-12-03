@@ -39,6 +39,8 @@ namespace AntShares.Core
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Usage);
+            if (Usage >= TransactionAttributeUsage.Remark)
+                writer.Write((byte)Data.Length);
             writer.Write(Data);
         }
     }

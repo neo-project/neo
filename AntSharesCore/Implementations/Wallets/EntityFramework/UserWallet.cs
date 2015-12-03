@@ -142,7 +142,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         {
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
-                return ctx.Keys.FirstOrDefault(p => p.Name == name).Value;
+                return ctx.Keys.FirstOrDefault(p => p.Name == name)?.Value;
             }
         }
 

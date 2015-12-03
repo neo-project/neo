@@ -18,7 +18,6 @@ namespace AntShares.Core
         private const double R_Final = 0.3;
         public static readonly decimal GenerationFactor = 1 - (decimal)Math.Pow(R_Final / R_Init, 1.0 / BlocksPerYear);
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromSeconds(SecondsPerBlock);
-        //TODO: 备用矿工未来要有5-7个
         public static readonly ECPoint[] StandbyMiners =
         {
             ECPoint.DecodePoint("0327da12b5c40200e9f65569476bbff2218da4f32548ff43b6387ec1416a231ee8".HexToBytes(), ECCurve.Secp256r1),

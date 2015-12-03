@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Windows.Forms;
 
 namespace AntShares.UI
@@ -99,7 +100,17 @@ namespace AntShares.UI
             using (OpenWalletDialog dialog = new OpenWalletDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                ChangeWallet(UserWallet.Open(dialog.WalletPath, dialog.Password));
+                UserWallet wallet;
+                try
+                {
+                    wallet = UserWallet.Open(dialog.WalletPath, dialog.Password);
+                }
+                catch (CryptographicException)
+                {
+                    MessageBox.Show("密码错误！");
+                    return;
+                }
+                ChangeWallet(wallet);
             }
         }
 
@@ -236,6 +247,7 @@ namespace AntShares.UI
                 UInt160 scriptHash = Wallet.ToScriptHash(address);
                 Program.CurrentWallet.DeleteContract(scriptHash);
             }
+            OnBalanceChanged();
         }
     }
 }

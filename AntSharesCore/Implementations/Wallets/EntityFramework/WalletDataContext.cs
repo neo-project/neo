@@ -50,6 +50,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             modelBuilder.Entity<UnspentCoin>().ToTable("Unspent").HasKey(p => new { p.TxId, p.Index });
             modelBuilder.Entity<UnspentCoin>().HasIndex(p => p.AssetId);
             modelBuilder.Entity<UnspentCoin>().HasIndex(p => p.ScriptHash);
+            modelBuilder.Entity<UnspentCoin>().HasOne(p => p.Contract).WithMany().HasForeignKey(p => p.ScriptHash).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<UnspentCoin>().Property(p => p.TxId).HasColumnType("Binary").HasMaxLength(32).IsRequired();
             modelBuilder.Entity<UnspentCoin>().Property(p => p.Index).IsRequired();
             modelBuilder.Entity<UnspentCoin>().Property(p => p.AssetId).HasColumnType("Binary").HasMaxLength(32).IsRequired();

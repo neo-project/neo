@@ -30,7 +30,6 @@ namespace AntShares.Wallets
         protected string DbPath => path;
         protected uint WalletHeight => current_height;
 
-        //TODO: 需要有密码错误的检测
         private Wallet(string path, byte[] passwordKey, bool create)
         {
             this.path = path;
@@ -49,6 +48,7 @@ namespace AntShares.Wallets
                     rng.GetNonZeroBytes(masterKey);
                 }
                 BuildDatabase();
+                SaveStoredData("PasswordHash", passwordKey.Sha256());
                 SaveStoredData("IV", iv);
                 SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
                 SaveStoredData("Height", BitConverter.GetBytes(current_height));
@@ -56,6 +56,9 @@ namespace AntShares.Wallets
             }
             else
             {
+                byte[] passwordHash = LoadStoredData("PasswordHash");
+                if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Sha256()))
+                    throw new CryptographicException();
                 this.iv = LoadStoredData("IV");
                 this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
                 ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
@@ -157,7 +160,7 @@ namespace AntShares.Wallets
                 {
                     foreach (Contract contract in contracts.Values.Where(p => p.PublicKeyHash == publicKeyHash).ToArray())
                     {
-                        contracts.Remove(contract.ScriptHash);
+                        DeleteContract(contract.ScriptHash);
                     }
                 }
                 return accounts.Remove(publicKeyHash);
@@ -167,9 +170,19 @@ namespace AntShares.Wallets
         public virtual bool DeleteContract(UInt160 scriptHash)
         {
             lock (contracts)
-            {
-                return contracts.Remove(scriptHash);
-            }
+                lock (unspent_coins)
+                    lock (change_coins)
+                    {
+                        foreach (TransactionInput key in unspent_coins.Where(p => p.Value.ScriptHash == scriptHash).Select(p => p.Key).ToArray())
+                        {
+                            unspent_coins.Remove(key);
+                        }
+                        foreach (TransactionInput key in change_coins.Where(p => p.Value.ScriptHash == scriptHash).Select(p => p.Key).ToArray())
+                        {
+                            change_coins.Remove(key);
+                        }
+                        return contracts.Remove(scriptHash);
+                    }
         }
 
         public virtual void Dispose()

@@ -8,5 +8,6 @@
         public long Value { get; set; }
         public byte[] ScriptHash { get; set; }
         public bool IsChange { get; set; }
+        public Contract Contract { get; set; }
     }
 }
