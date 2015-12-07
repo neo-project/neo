@@ -19,7 +19,7 @@ namespace AntShares.UI
             if (tx == null) return null;
             return new SignatureContext(new IssueTransaction
             {
-                Inputs = new TransactionInput[0], //TODO: 从区块链或钱包中找出负资产，并合并到交易中
+                Inputs = new TransactionInput[0],
                 Outputs = listBox1.Items.OfType<TxOutListBoxItem>().GroupBy(p => p.Account).Select(g => new TransactionOutput
                 {
                     AssetId = tx.Hash,

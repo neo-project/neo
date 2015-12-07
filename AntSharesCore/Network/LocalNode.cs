@@ -346,7 +346,7 @@ namespace AntShares.Network
                     }
                     catch { }
                 }
-                if (address != null)
+                if (address != null && !IsIntranetAddress(address))
                 {
                     listener = new TcpListener(IPAddress.Any, port);
                     try

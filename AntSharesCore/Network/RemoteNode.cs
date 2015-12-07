@@ -347,13 +347,18 @@ namespace AntShares.Network
             if (disposed > 0)
                 return false;
             byte[] buffer = message.ToArray();
+            CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             try
             {
-                await stream.WriteAsync(buffer, 0, buffer.Length);
+                await stream.WriteAsync(buffer, 0, buffer.Length, source.Token);
                 return true;
             }
             catch (ObjectDisposedException) { }
             catch (IOException)
+            {
+                Disconnect(true);
+            }
+            catch (TaskCanceledException)
             {
                 Disconnect(true);
             }

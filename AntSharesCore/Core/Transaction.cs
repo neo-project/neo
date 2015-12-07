@@ -111,8 +111,6 @@ namespace AntShares.Core
                     if (inputs[i].PrevHash == inputs[j].PrevHash && inputs[i].PrevIndex == inputs[j].PrevIndex)
                         throw new FormatException();
             Outputs = reader.ReadSerializableArray<TransactionOutput>();
-            if (Outputs.Any(p => p.Value == Fixed8.Zero))
-                throw new FormatException();
         }
 
         public virtual IEnumerable<TransactionInput> GetAllInputs()
@@ -123,15 +121,7 @@ namespace AntShares.Core
         public virtual UInt160[] GetScriptHashesForVerifying()
         {
             if (References == null) throw new InvalidOperationException();
-            TransactionOutput[] inputs = Inputs.Select(p => References[p]).ToArray();
-            HashSet<UInt160> hashes = new HashSet<UInt160>(inputs.Where(p => p.Value > Fixed8.Zero).Select(p => p.ScriptHash));
-            foreach (UInt256 asset_id in inputs.Where(p => p.Value < Fixed8.Zero).Select(p => p.AssetId).Distinct())
-            {
-                RegisterTransaction tx = Blockchain.Default.GetTransaction(asset_id) as RegisterTransaction;
-                if (tx == null) throw new InvalidOperationException();
-                hashes.Add(tx.Admin);
-            }
-            return hashes.OrderBy(p => p).ToArray();
+            return Inputs.Select(p => References[p].ScriptHash).OrderBy(p => p).ToArray();
         }
 
         public IEnumerable<TransactionResult> GetTransactionResults()
@@ -182,19 +172,8 @@ namespace AntShares.Core
             foreach (UInt256 hash in Outputs.Select(p => p.AssetId).Distinct())
                 if (!Blockchain.Default.ContainsAsset(hash))
                     return false;
-            if (References == null) return false;
-            foreach (var group in Outputs.Where(p => p.Value < Fixed8.Zero).GroupBy(p => p.AssetId))
-            {
-                if (group.Key == Blockchain.AntCoin.Hash || group.Key == Blockchain.AntShare.Hash)
-                    return false;
-                RegisterTransaction tx = Blockchain.Default.GetTransaction(group.Key) as RegisterTransaction;
-                if (tx == null) return false;
-                if (tx.Amount != Fixed8.Zero) return false;
-                if (group.Any(p => p.ScriptHash != tx.Issuer)) return false;
-                if (Type != TransactionType.IssueTransaction && References.Values.Where(p => p.AssetId == group.Key && p.Value < Fixed8.Zero).Sum(p => p.Value) > group.Sum(p => p.Value))
-                    return false;
-            }
-            TransactionResult[] results = GetTransactionResults().ToArray();
+            TransactionResult[] results = GetTransactionResults()?.ToArray();
+            if (results == null) return false;
             TransactionResult[] results_destroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
             if (results_destroy.Length > 1) return false;
             if (results_destroy.Length == 1 && results_destroy[0].AssetId != Blockchain.AntCoin.Hash)

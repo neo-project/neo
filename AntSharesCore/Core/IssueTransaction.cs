@@ -48,7 +48,6 @@ namespace AntShares.Core
                 RegisterTransaction tx = Blockchain.Default.GetTransaction(r.AssetId) as RegisterTransaction;
                 if (tx == null) return false;
                 if (tx.Amount < Fixed8.Zero) continue;
-                if (tx.Amount == Fixed8.Zero) return false;
                 if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.Statistics))
                     return false;
                 Fixed8 quantity_issued = Blockchain.Default.GetQuantityIssued(r.AssetId); //TODO: 已发行量是否应考虑内存池内未被写入区块链的交易，以防止“双重发行”
