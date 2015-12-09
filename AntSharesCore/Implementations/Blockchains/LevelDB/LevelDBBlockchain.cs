@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 
 namespace AntShares.Implementations.Blockchains.LevelDB
@@ -34,9 +35,10 @@ namespace AntShares.Implementations.Blockchains.LevelDB
         public LevelDBBlockchain(string path)
         {
             header_index.Add(GenesisBlock.Hash);
+            Version version;
             Slice value;
             db = DB.Open(path);
-            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.CFG_Initialized), out value) && value.ToBoolean())
+            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.CFG_Version), out value) && Version.TryParse(value.ToString(), out version) && version >= Version.Parse("0.3"))
             {
                 ReadOptions options = new ReadOptions { FillCache = false };
                 value = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock));
@@ -101,10 +103,9 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                         batch.Delete(it.Key());
                     }
                 }
-                batch.Put(SliceBuilder.Begin(DataEntryPrefix.CFG_Version), 0);
                 db.Write(WriteOptions.Default, batch);
                 Persist(GenesisBlock);
-                db.Put(WriteOptions.Default, SliceBuilder.Begin(DataEntryPrefix.CFG_Initialized), true);
+                db.Put(WriteOptions.Default, SliceBuilder.Begin(DataEntryPrefix.CFG_Version), Assembly.GetExecutingAssembly().GetName().Version.ToString());
             }
             thread_persistence = new Thread(PersistBlocks);
             thread_persistence.Name = "LevelDBBlockchain.PersistBlocks";
@@ -192,7 +193,8 @@ namespace AntShares.Implementations.Blockchains.LevelDB
         {
             disposed = true;
             AppDomain.CurrentDomain.ProcessExit -= CurrentDomain_ProcessExit;
-            thread_persistence.Join();
+            if (!thread_persistence.ThreadState.HasFlag(ThreadState.Unstarted))
+                thread_persistence.Join();
             if (db != null)
             {
                 db.Dispose();

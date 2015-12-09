@@ -69,9 +69,21 @@ namespace AntShares.UI
 
         private void button6_Click(object sender, EventArgs e)
         {
-            byte[] redeemScript = Contract.CreateMultiSigRedeemScript((int)numericUpDown2.Value, listBox1.Items.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray());
-            textBox6.Text = Wallet.ToAddress(redeemScript.ToScriptHash()).ToString();
-            textBox7.Text = redeemScript.ToHexString();
+            if (Program.CurrentWallet == null) return;
+            ECPoint[] publicKeys = listBox1.Items.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+            foreach (ECPoint publicKey in publicKeys)
+            {
+                Account account = Program.CurrentWallet.GetAccount(publicKey.EncodePoint(true).ToScriptHash());
+                if (account != null)
+                {
+                    MultiSigContract contract = MultiSigContract.Create(account.PublicKeyHash, (int)numericUpDown2.Value, publicKeys);
+                    Program.CurrentWallet.AddContract(contract);
+                    Program.MainForm.ContractListView.SelectedIndices.Clear();
+                    Program.MainForm.ContractListView.Items.Add(new ListViewItem(new[] { contract.Address, "" }) { Name = contract.Address });
+                    Program.MainForm.ContractListView.Items[contract.Address].Selected = true;
+                    break;
+                }
+            }
         }
 
         private void textBox8_TextChanged(object sender, EventArgs e)
@@ -84,14 +96,16 @@ namespace AntShares.UI
         {
             SignatureContext context = SignatureContext.Parse(textBox8.Text);
             context.Signable.Scripts = context.GetScripts();
-            InformationBox.Show(context.Signable.ToArray().ToHexString());
+            InformationBox.Show(context.Signable.ToArray().ToHexString(), "原始数据：");
         }
 
         private async void button8_Click(object sender, EventArgs e)
         {
             SignatureContext context = SignatureContext.Parse(textBox8.Text);
             context.Signable.Scripts = context.GetScripts();
-            await Program.LocalNode.RelayAsync((Inventory)context.Signable);
+            Inventory inventory = (Inventory)context.Signable;
+            await Program.LocalNode.RelayAsync(inventory);
+            InformationBox.Show(inventory.Hash.ToString(), "数据广播成功，这是广播数据的散列值：", "广播成功");
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -99,7 +113,11 @@ namespace AntShares.UI
             RegisterTransaction antshare = new RegisterTransaction
             {
                 AssetType = AssetType.AntShare,
+#if TESTNET
+                Name = "[{'lang':'zh-CN','name':'小蚁股(测试)'},{'lang':'en','name':'AntShare(TestNet)'}]",
+#else
                 Name = "[{'lang':'zh-CN','name':'小蚁股'},{'lang':'en','name':'AntShare'}]",
+#endif
                 Amount = Fixed8.FromDecimal(numericUpDown1.Value),
                 Issuer = Wallet.ToScriptHash(textBox1.Text),
                 Admin = Wallet.ToScriptHash(textBox2.Text),
@@ -107,7 +125,7 @@ namespace AntShares.UI
                 Outputs = new TransactionOutput[0]
             };
             SignatureContext context = new SignatureContext(antshare);
-            InformationBox.Show(context.ToString(), "小蚁股签名上下文");
+            InformationBox.Show(context.ToString(), "小蚁股签名上下文：");
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -133,7 +151,7 @@ namespace AntShares.UI
             };
             block.RebuildMerkleRoot();
             SignatureContext context = new SignatureContext(block.Header);
-            InformationBox.Show(context.ToString(), "创世区块头签名上下文");
+            InformationBox.Show(context.ToString(), "创世区块头签名上下文：");
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -151,7 +169,7 @@ namespace AntShares.UI
                 textBox3.Text.HexToBytes().AsSerializable<RegisterTransaction>()
             };
             Debug.Assert(MerkleTree.ComputeRoot(block.Transactions.Select(p => p.Hash).ToArray()) == block.MerkleRoot);
-            InformationBox.Show(block.ToArray().ToHexString(), "创世区块");
+            InformationBox.Show(block.ToArray().ToHexString(), "创世区块：");
         }
     }
 }

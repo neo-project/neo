@@ -49,6 +49,7 @@ namespace AntShares.Network
         internal IPEndPoint LocalEndpoint;
         private TcpListener listener;
         private Thread connectThread;
+        private Thread listenerThread;
         private int started = 0;
         private int disposed = 0;
 
@@ -65,7 +66,42 @@ namespace AntShares.Network
                 IsBackground = true,
                 Name = "LocalNode.ConnectToPeersLoop"
             };
+            this.listenerThread = new Thread(AcceptPeersLoop)
+            {
+                IsBackground = true,
+                Name = "LocalNode.AcceptPeersLoop"
+            };
             this.UserAgent = string.Format("/AntSharesCore:{0}/", Assembly.GetExecutingAssembly().GetName().Version.ToString(3));
+        }
+
+        private void AcceptPeersLoop()
+        {
+            while (disposed == 0)
+            {
+                TcpClient tcp;
+                try
+                {
+                    tcp = listener.AcceptTcpClient();
+                }
+                catch (ObjectDisposedException)
+                {
+                    break;
+                }
+                catch (SocketException)
+                {
+                    break;
+                }
+                RemoteNode remoteNode = new RemoteNode(this, tcp);
+                lock (pendingPeers)
+                {
+                    pendingPeers.Add(remoteNode);
+                }
+                remoteNode.Disconnected += RemoteNode_Disconnected;
+                remoteNode.PeersReceived += RemoteNode_PeersReceived;
+                remoteNode.BlockReceived += RemoteNode_BlockReceived;
+                remoteNode.TransactionReceived += RemoteNode_TransactionReceived;
+                remoteNode.StartProtocol();
+            }
         }
 
         public async Task ConnectToPeerAsync(string hostNameOrAddress)
@@ -133,7 +169,7 @@ namespace AntShares.Network
                     {
                         lock (connectedPeers)
                         {
-                            tasks = connectedPeers.Values.ToArray().Select(p => p.RequestPeersAsync()).ToArray();
+                            tasks = connectedPeers.Values.ToArray().Select(p => Task.Run(new Action(p.RequestPeers))).ToArray();
                         }
                     }
                     else
@@ -156,7 +192,8 @@ namespace AntShares.Network
                 if (started > 0)
                 {
                     if (listener != null) listener.Stop();
-                    connectThread.Join();
+                    if (!connectThread.ThreadState.HasFlag(ThreadState.Unstarted)) connectThread.Join();
+                    if (!listenerThread.ThreadState.HasFlag(ThreadState.Unstarted)) listenerThread.Join();
                     lock (unconnectedPeers)
                     {
                         if (unconnectedPeers.Count < UNCONNECTED_MAX)
@@ -239,7 +276,7 @@ namespace AntShares.Network
             }
             if (remoteNodes.Length == 0) return false;
             RelayCache.Add(data);
-            await Task.WhenAny(remoteNodes.Select(p => p.RelayAsync(data)));
+            await Task.WhenAll(remoteNodes.Select(p => Task.Run(() => p.Relay(data))));
             return true;
         }
 
@@ -331,11 +368,11 @@ namespace AntShares.Network
             }
         }
 
-        public async void Start(int port = DEFAULT_PORT)
+        public void Start(int port = DEFAULT_PORT)
         {
             if (Interlocked.Exchange(ref started, 1) == 0)
             {
-                IPHostEntry localhost = await Dns.GetHostEntryAsync(Dns.GetHostName());
+                IPHostEntry localhost = Dns.GetHostEntry(Dns.GetHostName());
                 IPAddress address = localhost.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(p) && !IsIntranetAddress(p));
                 if (address == null && UpnpEnabled && UPnP.Discover())
                 {
@@ -358,28 +395,7 @@ namespace AntShares.Network
                 }
                 connectThread.Start();
                 if (LocalEndpoint == null) return;
-                while (disposed == 0)
-                {
-                    TcpClient tcp;
-                    try
-                    {
-                        tcp = await listener.AcceptTcpClientAsync();
-                    }
-                    catch (ObjectDisposedException)
-                    {
-                        continue;
-                    }
-                    RemoteNode remoteNode = new RemoteNode(this, tcp);
-                    lock (pendingPeers)
-                    {
-                        pendingPeers.Add(remoteNode);
-                    }
-                    remoteNode.Disconnected += RemoteNode_Disconnected;
-                    remoteNode.PeersReceived += RemoteNode_PeersReceived;
-                    remoteNode.BlockReceived += RemoteNode_BlockReceived;
-                    remoteNode.TransactionReceived += RemoteNode_TransactionReceived;
-                    remoteNode.StartProtocol();
-                }
+                listenerThread.Start();
             }
         }
     }

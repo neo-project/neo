@@ -1,15 +1,15 @@
 ﻿using AntShares.Core.Scripts;
 using AntShares.Cryptography.ECC;
+using AntShares.IO;
 using System;
-using System.Linq;
+using System.IO;
 
 namespace AntShares.Wallets
 {
-    public class Contract : IEquatable<Contract>
+    public abstract class Contract : IEquatable<Contract>, ISerializable
     {
-        public readonly byte[] RedeemScript;
-        public readonly UInt160 ScriptHash;
-        public readonly UInt160 PublicKeyHash;
+        public byte[] RedeemScript;
+        public UInt160 PublicKeyHash;
 
         private string _address;
         public string Address
@@ -24,46 +24,20 @@ namespace AntShares.Wallets
             }
         }
 
-        public Contract(byte[] redeemScript, UInt160 publicKeyHash)
+        private UInt160 _scriptHash;
+        public UInt160 ScriptHash
         {
-            this.RedeemScript = redeemScript;
-            this.ScriptHash = redeemScript.ToScriptHash();
-            this.PublicKeyHash = publicKeyHash;
-        }
-
-        public static Contract CreateMultiSigContract(UInt160 publicKeyHash, int m, params ECPoint[] publicKeys)
-        {
-            return new Contract(CreateMultiSigRedeemScript(m, publicKeys), publicKeyHash);
-        }
-
-        public static byte[] CreateMultiSigRedeemScript(int m, params ECPoint[] publicKeys)
-        {
-            if (!(1 <= m && m <= publicKeys.Length && publicKeys.Length <= 1024))
-                throw new ArgumentException();
-            using (ScriptBuilder sb = new ScriptBuilder())
+            get
             {
-                sb.Push(m);
-                foreach (ECPoint publicKey in publicKeys.OrderBy(p => p))
+                if (_scriptHash == null)
                 {
-                    sb.Push(publicKey.EncodePoint(true));
+                    _scriptHash = RedeemScript.ToScriptHash();
                 }
-                sb.Push(publicKeys.Length);
-                sb.Add(ScriptOp.OP_CHECKMULTISIG);
-                return sb.ToArray();
+                return _scriptHash;
             }
         }
 
-        public static Contract CreateSignatureContract(ECPoint publicKey)
-        {
-            byte[] pubKeyData = publicKey.EncodePoint(true);
-            UInt160 publicKeyHash = pubKeyData.ToScriptHash();
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.Push(pubKeyData);
-                sb.Add(ScriptOp.OP_CHECKSIG);
-                return new Contract(sb.ToArray(), publicKeyHash);
-            }
-        }
+        public abstract void Deserialize(BinaryReader reader);
 
         public bool Equals(Contract other)
         {
@@ -81,6 +55,10 @@ namespace AntShares.Wallets
         {
             return ScriptHash.GetHashCode();
         }
+
+        public abstract bool IsCompleted(ECPoint[] publicKeys);
+
+        public abstract void Serialize(BinaryWriter writer);
 
         public override string ToString()
         {

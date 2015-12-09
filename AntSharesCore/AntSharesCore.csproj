@@ -221,6 +221,8 @@
     <Compile Include="UIntBase.cs" />
     <Compile Include="Cryptography\ProtectedMemoryContext.cs" />
     <Compile Include="Wallets\Contract.cs" />
+    <Compile Include="Wallets\MultiSigContract.cs" />
+    <Compile Include="Wallets\SignatureContract.cs" />
     <Compile Include="Wallets\UnspentCoin.cs" />
     <Compile Include="Wallets\Wallet.cs" />
     <Compile Include="Wallets\Account.cs" />

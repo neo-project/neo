@@ -31,14 +31,14 @@ namespace AntShares.Wallets
         public void Sign(Block block, ECPoint[] miners)
         {
             SignatureContext context = new SignatureContext(block);
-            byte[] redeemScript = Contract.CreateMultiSigRedeemScript(miners.Length / 2 + 1, miners);
+            Contract contract = MultiSigContract.Create(null, miners.Length / 2 + 1, miners);
             foreach (ECPoint pubKey in miners)
             {
                 UInt160 publicKeyHash = pubKey.EncodePoint(true).ToScriptHash();
                 Account account = GetAccount(publicKeyHash);
                 if (account == null) continue;
                 byte[] signature = block.Sign(account);
-                context.Add(redeemScript, account.PublicKey, signature);
+                context.Add(contract, account.PublicKey, signature);
             }
             block.Script = context.GetScripts()[0];
         }

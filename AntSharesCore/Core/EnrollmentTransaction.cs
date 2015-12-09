@@ -19,7 +19,7 @@ namespace AntShares.Core
             {
                 if (_miner == null)
                 {
-                    _miner = Contract.CreateSignatureContract(PublicKey).ScriptHash;
+                    _miner = SignatureContract.Create(PublicKey).ScriptHash;
                 }
                 return _miner;
             }

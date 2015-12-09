@@ -68,7 +68,7 @@ namespace AntShares.Miner
 
         UInt160[] ISignable.GetScriptHashesForVerifying()
         {
-            return new UInt160[] { Contract.CreateSignatureContract(Miner).ScriptHash };
+            return new UInt160[] { SignatureContract.Create(Miner).ScriptHash };
         }
 
         public override void Serialize(BinaryWriter writer)

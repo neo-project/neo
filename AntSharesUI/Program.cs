@@ -16,6 +16,7 @@ namespace AntShares
     {
         public static LocalNode LocalNode;
         public static UserWallet CurrentWallet;
+        public static MainForm MainForm;
 
         private static bool CheckVersion()
         {
@@ -53,13 +54,12 @@ namespace AntShares
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            WindowsFormsSynchronizationContext.AutoInstall = false;
             if (!CheckVersion()) return;
             using (Blockchain.RegisterBlockchain(new LevelDBBlockchain(Settings.Default.DataDirectoryPath)))
             using (LocalNode = new LocalNode())
             {
                 LocalNode.UpnpEnabled = true;
-                Application.Run(new MainForm());
+                Application.Run(MainForm = new MainForm());
             }
         }
     }

@@ -16,6 +16,19 @@ namespace AntShares.IO
             }
         }
 
+        public static ISerializable AsSerializable(this byte[] value, Type type)
+        {
+            if (!typeof(ISerializable).IsAssignableFrom(type))
+                throw new InvalidCastException();
+            ISerializable serializable = (ISerializable)Activator.CreateInstance(type);
+            using (MemoryStream ms = new MemoryStream(value, false))
+            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            {
+                serializable.Deserialize(reader);
+            }
+            return serializable;
+        }
+
         public static byte[][] ReadBytesArray(this BinaryReader reader)
         {
             byte[][] array = new byte[reader.ReadVarInt()][];

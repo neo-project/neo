@@ -9,11 +9,15 @@ namespace AntShares.UI
             InitializeComponent();
         }
 
-        public static DialogResult Show(string text, string title = null)
+        public static DialogResult Show(string text, string message = null, string title = null)
         {
             using (InformationBox box = new InformationBox())
             {
                 box.textBox1.Text = text;
+                if (message != null)
+                {
+                    box.label1.Text = message;
+                }
                 if (title != null)
                 {
                     box.Text = title;

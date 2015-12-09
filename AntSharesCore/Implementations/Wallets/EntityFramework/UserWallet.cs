@@ -1,4 +1,5 @@
 ﻿using AntShares.Core;
+using AntShares.IO;
 using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
@@ -32,7 +33,8 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                 {
                     db_contract = ctx.Contracts.Add(new Contract
                     {
-                        RedeemScript = contract.RedeemScript,
+                        Type = contract.GetType().ToString(),
+                        RawData = contract.ToArray(),
                         ScriptHash = contract.ScriptHash.ToArray(),
                         PublicKeyHash = contract.PublicKeyHash.ToArray()
                     }).Entity;
@@ -65,7 +67,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         {
             WalletAccount account = base.CreateAccount();
             OnCreateAccount(account);
-            AddContract(WalletContract.CreateSignatureContract(account.PublicKey));
+            AddContract(SignatureContract.Create(account.PublicKey));
             return account;
         }
 
@@ -105,11 +107,16 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             return flag;
         }
 
+        public override WalletUnspentCoin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount)
+        {
+            return FindUnspentCoins(FindUnspentCoins().Where(p => GetContract(p.ScriptHash) is SignatureContract), asset_id, amount) ?? base.FindUnspentCoins(asset_id, amount);
+        }
+
         public override WalletAccount Import(string wif)
         {
             WalletAccount account = base.Import(wif);
             OnCreateAccount(account);
-            AddContract(WalletContract.CreateSignatureContract(account.PublicKey));
+            AddContract(SignatureContract.Create(account.PublicKey));
             return account;
         }
 
@@ -133,7 +140,9 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             {
                 foreach (Contract contract in ctx.Contracts)
                 {
-                    yield return new WalletContract(contract.RedeemScript, new UInt160(contract.PublicKeyHash));
+                    Type type = Type.GetType(contract.Type, false);
+                    if (type == null || !typeof(WalletContract).IsAssignableFrom(type)) continue;
+                    yield return (WalletContract)contract.RawData.AsSerializable(type);
                 }
             }
         }

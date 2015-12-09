@@ -1,6 +1,7 @@
 ﻿using AntShares.Core.Scripts;
 using AntShares.Cryptography.ECC;
 using AntShares.IO.Json;
+using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,6 +17,15 @@ namespace AntShares.Core
         public readonly UInt160[] ScriptHashes;
         private readonly byte[][] redeemScripts;
         private readonly Dictionary<ECPoint, byte[]>[] signatures;
+        private readonly bool[] completed;
+
+        public bool Completed
+        {
+            get
+            {
+                return completed.All(p => p);
+            }
+        }
 
         public SignatureContext(ISignable signable)
         {
@@ -23,32 +33,45 @@ namespace AntShares.Core
             this.ScriptHashes = signable.GetScriptHashesForVerifying();
             this.redeemScripts = new byte[ScriptHashes.Length][];
             this.signatures = new Dictionary<ECPoint, byte[]>[ScriptHashes.Length];
+            this.completed = new bool[ScriptHashes.Length];
         }
 
-        public bool Add(byte[] redeemScript, ECPoint pubkey, byte[] signature)
+        public bool Add(Contract contract, ECPoint pubkey, byte[] signature)
         {
-            UInt160 scriptHash = redeemScript.ToScriptHash();
             for (int i = 0; i < ScriptHashes.Length; i++)
             {
-                if (ScriptHashes[i] == scriptHash)
+                if (ScriptHashes[i] == contract.ScriptHash)
                 {
                     if (redeemScripts[i] == null)
-                        redeemScripts[i] = redeemScript;
+                        redeemScripts[i] = contract.RedeemScript;
                     if (signatures[i] == null)
                         signatures[i] = new Dictionary<ECPoint, byte[]>();
                     if (signatures[i].ContainsKey(pubkey))
                         signatures[i][pubkey] = signature;
                     else
                         signatures[i].Add(pubkey, signature);
+                    Check(contract);
                     return true;
                 }
             }
             return false;
         }
 
+        public void Check(Contract contract)
+        {
+            for (int i = 0; i < ScriptHashes.Length; i++)
+            {
+                if (ScriptHashes[i] == contract.ScriptHash)
+                {
+                    completed[i] = contract.IsCompleted(signatures[i].Keys.ToArray());
+                    break;
+                }
+            }
+        }
+
         public Script[] GetScripts()
         {
-            if (signatures.Any(p => p == null)) throw new InvalidOperationException();
+            if (!Completed) throw new InvalidOperationException();
             Script[] scripts = new Script[signatures.Length];
             for (int i = 0; i < scripts.Length; i++)
             {
@@ -93,6 +116,7 @@ namespace AntShares.Core
                         byte[] signature = sigs[j]["signature"].AsString().HexToBytes();
                         context.signatures[i].Add(pubkey, signature);
                     }
+                    context.completed[i] = scripts[i]["completed"].AsBoolean();
                 }
             }
             return context;
@@ -129,6 +153,7 @@ namespace AntShares.Core
                         sigs.Add(signature);
                     }
                     scripts[i]["signatures"] = sigs;
+                    scripts[i]["completed"] = completed[i];
                 }
             }
             json["scripts"] = scripts;

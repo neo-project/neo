@@ -56,10 +56,5 @@
         /// 数据库版本
         /// </summary>
         CFG_Version = 0xf0,
-
-        /// <summary>
-        /// 数据库是否初始化
-        /// </summary>
-        CFG_Initialized = 0xf1,
     }
 }

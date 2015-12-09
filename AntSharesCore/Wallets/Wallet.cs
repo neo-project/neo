@@ -188,7 +188,7 @@ namespace AntShares.Wallets
         public virtual void Dispose()
         {
             isrunning = false;
-            thread.Join();
+            if (!thread.ThreadState.HasFlag(ThreadState.Unstarted)) thread.Join();
         }
 
         protected byte[] EncryptPrivateKey(byte[] decryptedPrivateKey)
@@ -210,25 +210,30 @@ namespace AntShares.Wallets
             }
         }
 
-        public UnspentCoin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount)
+        public virtual UnspentCoin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount)
         {
             lock (unspent_coins)
             {
-                IEnumerable<UnspentCoin> unspents = unspent_coins.Values.Where(p => p.AssetId == asset_id);
-                UnspentCoin coin = unspents.FirstOrDefault(p => p.Value == amount);
-                if (coin != null) return new[] { coin };
-                coin = unspents.OrderBy(p => p.Value).FirstOrDefault(p => p.Value > amount);
-                if (coin != null) return new[] { coin };
-                Fixed8 sum = unspents.Sum(p => p.Value);
-                if (sum < amount) return null;
-                if (sum == amount) return unspents.ToArray();
-                return unspents.OrderByDescending(p => p.Value).TakeWhile(p =>
-                {
-                    if (amount == Fixed8.Zero) return false;
-                    amount -= Fixed8.Min(amount, p.Value);
-                    return true;
-                }).ToArray();
+                return FindUnspentCoins(unspent_coins.Values, asset_id, amount);
             }
+        }
+
+        protected static UnspentCoin[] FindUnspentCoins(IEnumerable<UnspentCoin> unspents, UInt256 asset_id, Fixed8 amount)
+        {
+            unspents = unspents.Where(p => p.AssetId == asset_id);
+            UnspentCoin coin = unspents.FirstOrDefault(p => p.Value == amount);
+            if (coin != null) return new[] { coin };
+            coin = unspents.OrderBy(p => p.Value).FirstOrDefault(p => p.Value > amount);
+            if (coin != null) return new[] { coin };
+            Fixed8 sum = unspents.Sum(p => p.Value);
+            if (sum < amount) return null;
+            if (sum == amount) return unspents.ToArray();
+            return unspents.OrderByDescending(p => p.Value).TakeWhile(p =>
+            {
+                if (amount == Fixed8.Zero) return false;
+                amount -= Fixed8.Min(amount, p.Value);
+                return true;
+            }).ToArray();
         }
 
         public Account GetAccount(UInt160 publicKeyHash)
@@ -520,7 +525,7 @@ namespace AntShares.Wallets
                 Account account = GetAccountByScriptHash(scriptHash);
                 if (account == null) continue;
                 byte[] signature = context.Signable.Sign(account);
-                fSuccess |= context.Add(contract.RedeemScript, account.PublicKey, signature);
+                fSuccess |= context.Add(contract, account.PublicKey, signature);
             }
             return fSuccess;
         }
