@@ -14,11 +14,6 @@ namespace AntSharesUI_Web_.Controllers
             return View();
         }
 
-        public IActionResult CreateWallet()
-        {
-            return View();
-        }
-
         [HttpPost]
         public IActionResult textAction(string name)
         {
