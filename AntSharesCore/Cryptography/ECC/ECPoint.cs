@@ -112,6 +112,7 @@ namespace AntShares.Cryptography.ECC
 
         public byte[] EncodePoint(bool commpressed)
         {
+            if (IsInfinity) return new byte[1];
             byte[] data;
             if (commpressed)
             {
@@ -261,6 +262,11 @@ namespace AntShares.Cryptography.ECC
             }
 
             return q;
+        }
+
+        public static ECPoint Parse(string value, ECCurve curve)
+        {
+            return DecodePoint(value.HexToBytes(), curve);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

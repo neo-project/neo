@@ -63,6 +63,18 @@
     <Compile Include="UI\AddContractDialog.Designer.cs">
       <DependentUpon>AddContractDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\AssetRegisterDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\AssetRegisterDialog.Designer.cs">
+      <DependentUpon>AssetRegisterDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\CreateMultiSigContractDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\CreateMultiSigContractDialog.Designer.cs">
+      <DependentUpon>CreateMultiSigContractDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\ImportPrivateKeyDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -153,8 +165,14 @@
     <EmbeddedResource Include="UI\AddContractDialog.resx">
       <DependentUpon>AddContractDialog.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\AssetRegisterDialog.resx">
+      <DependentUpon>AssetRegisterDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\ContractDetailsDialog.resx">
       <DependentUpon>ContractDetailsDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\CreateMultiSigContractDialog.resx">
+      <DependentUpon>CreateMultiSigContractDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\DeveloperToolsForm.resx">
       <DependentUpon>DeveloperToolsForm.cs</DependentUpon>

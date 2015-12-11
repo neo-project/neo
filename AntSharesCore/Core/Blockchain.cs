@@ -37,7 +37,7 @@ namespace AntShares.Core
             Name = "[{'lang':'zh-CN','name':'小蚁币'},{'lang':'en','name':'AntCoin'}]",
 #endif
             Amount = Fixed8.FromDecimal(100000000),
-            Issuer = new UInt160(),
+            Issuer = ECCurve.Secp256r1.Infinity,
             Admin = new UInt160(),
             Inputs = new TransactionInput[0],
             Outputs = new TransactionOutput[0],

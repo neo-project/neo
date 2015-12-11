@@ -55,7 +55,7 @@ namespace AntShares.UI
             }
             else
             {
-                textBox1.Text = Wallet.ToAddress(tx.Issuer);
+                textBox1.Text = tx.Issuer.ToString();
                 textBox2.Text = Wallet.ToAddress(tx.Admin);
                 textBox3.Text = tx.Amount.ToString();
                 textBox4.Text = Blockchain.Default.GetQuantityIssued(tx.Hash).ToString();

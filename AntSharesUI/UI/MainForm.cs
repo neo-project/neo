@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace AntShares.UI
@@ -18,6 +19,14 @@ namespace AntShares.UI
         public MainForm()
         {
             InitializeComponent();
+        }
+
+        private void AddContractToListView(Contract contract, bool selected = false)
+        {
+            ContractListView.Items.Add(new ListViewItem(new[] { contract.Address, contract.GetType().ToString() })
+            {
+                Name = contract.Address
+            }).Selected = selected;
         }
 
         private void ChangeWallet(UserWallet wallet)
@@ -34,14 +43,31 @@ namespace AntShares.UI
             }
             修改密码CToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             交易TToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            高级AToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             创建新地址NToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             导入私钥IToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            创建智能合约SToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             ContractListView.Items.Clear();
             if (Program.CurrentWallet != null)
             {
-                ContractListView.Items.AddRange(Program.CurrentWallet.GetAddresses().Select(p => new ListViewItem(new[] { Wallet.ToAddress(p), "" }) { Name = Wallet.ToAddress(p) }).ToArray());
+                foreach (Contract contract in Program.CurrentWallet.GetContracts())
+                {
+                    AddContractToListView(contract);
+                }
             }
             OnBalanceChanged();
+        }
+
+        private void CurrentWallet_BalanceChanged(object sender, EventArgs e)
+        {
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action(OnBalanceChanged));
+            }
+            else
+            {
+                OnBalanceChanged();
+            }
         }
 
         private void OnBalanceChanged()
@@ -58,15 +84,18 @@ namespace AntShares.UI
             }
         }
 
-        private void CurrentWallet_BalanceChanged(object sender, EventArgs e)
+        private async Task ShowInformationAsync(SignatureContext context)
         {
-            if (InvokeRequired)
+            if (context.Completed)
             {
-                BeginInvoke(new Action(OnBalanceChanged));
+                context.Signable.Scripts = context.GetScripts();
+                Transaction tx = (Transaction)context.Signable;
+                await Program.LocalNode.RelayAsync(tx);
+                InformationBox.Show(tx.Hash.ToString(), "交易已发送，这是交易编号(TXID)：", "交易成功");
             }
             else
             {
-                OnBalanceChanged();
+                InformationBox.Show(context.ToString(), "交易构造完成，但没有足够的签名：", "签名不完整");
             }
         }
 
@@ -124,14 +153,6 @@ namespace AntShares.UI
             Close();
         }
 
-        private void 签名SToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            using (SigningDialog dialog = new SigningDialog())
-            {
-                dialog.ShowDialog();
-            }
-        }
-
         private async void 转账TToolStripMenuItem_Click(object sender, EventArgs e)
         {
             using (TransferDialog dialog = new TransferDialog())
@@ -140,21 +161,24 @@ namespace AntShares.UI
                 SignatureContext context = dialog.GetTransaction();
                 if (context == null) return;
                 Program.CurrentWallet.Sign(context);
-                if (context.Completed)
-                {
-                    context.Signable.Scripts = context.GetScripts();
-                    Transaction tx = (Transaction)context.Signable;
-                    await Program.LocalNode.RelayAsync(tx);
-                    InformationBox.Show(tx.Hash.ToString(), "交易已发送，这是交易编号(TXID)：", "转账成功");
-                }
-                else
-                {
-                    InformationBox.Show(context.ToString(), "交易构造完成，但没有足够的签名：");
-                }
+                await ShowInformationAsync(context);
             }
         }
 
-        private void 资产分发IToolStripMenuItem_Click(object sender, EventArgs e)
+        private void 签名SToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (SigningDialog dialog = new SigningDialog())
+            {
+                dialog.ShowDialog();
+            }
+        }
+
+        private void 注册资产RToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private async void 资产分发IToolStripMenuItem_Click(object sender, EventArgs e)
         {
             using (IssueDialog dialog = new IssueDialog())
             {
@@ -162,7 +186,7 @@ namespace AntShares.UI
                 SignatureContext context = dialog.GetTransaction();
                 if (context == null) return;
                 Program.CurrentWallet.Sign(context);
-                InformationBox.Show(context.ToString(), "交易构造完成：");
+                await ShowInformationAsync(context);
             }
         }
 
@@ -194,8 +218,7 @@ namespace AntShares.UI
             Account account = Program.CurrentWallet.CreateAccount();
             foreach (Contract contract in Program.CurrentWallet.GetContracts(account.PublicKeyHash))
             {
-                ContractListView.Items.Add(new ListViewItem(new[] { contract.Address, "" }) { Name = contract.Address });
-                ContractListView.Items[contract.Address].Selected = true;
+                AddContractToListView(contract, true);
             }
         }
 
@@ -208,9 +231,25 @@ namespace AntShares.UI
                 Account account = Program.CurrentWallet.Import(dialog.WIF);
                 foreach (Contract contract in Program.CurrentWallet.GetContracts(account.PublicKeyHash))
                 {
-                    ContractListView.Items.Add(new ListViewItem(new[] { contract.Address, "" }) { Name = contract.Address });
-                    ContractListView.Items[contract.Address].Selected = true;
+                    AddContractToListView(contract, true);
                 }
+            }
+        }
+
+        private void 多方签名MToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (CreateMultiSigContractDialog dialog = new CreateMultiSigContractDialog())
+            {
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                MultiSigContract contract = dialog.GetContract();
+                if (contract == null)
+                {
+                    MessageBox.Show("无法添加智能合约，因为当前钱包中不包含签署该合约的私钥。");
+                    return;
+                }
+                Program.CurrentWallet.AddContract(contract);
+                ContractListView.SelectedIndices.Clear();
+                AddContractToListView(contract, true);
             }
         }
 

@@ -1,5 +1,8 @@
-﻿using AntShares.IO;
+﻿using AntShares.Core.Scripts;
+using AntShares.Cryptography.ECC;
+using AntShares.IO;
 using AntShares.IO.Json;
+using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -22,7 +25,7 @@ namespace AntShares.Core
         /// 3. 对于点券，可以使用任意模式；
         /// </summary>
         public Fixed8 Amount;
-        public UInt160 Issuer;
+        public ECPoint Issuer;
         public UInt160 Admin;
 
         public override Fixed8 SystemFee => Fixed8.FromDecimal(10000);
@@ -44,7 +47,7 @@ namespace AntShares.Core
                 throw new FormatException();
             if (AssetType == AssetType.Currency && Amount != -Fixed8.Satoshi)
                 throw new FormatException();
-            this.Issuer = reader.ReadSerializable<UInt160>();
+            this.Issuer = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
             this.Admin = reader.ReadSerializable<UInt160>();
         }
 
@@ -80,7 +83,8 @@ namespace AntShares.Core
 
         public override UInt160[] GetScriptHashesForVerifying()
         {
-            return base.GetScriptHashesForVerifying().Union(new UInt160[] { Issuer, Admin }).OrderBy(p => p).ToArray();
+            UInt160 issuer = SignatureContract.CreateSignatureRedeemScript(Issuer).ToScriptHash();
+            return base.GetScriptHashesForVerifying().Union(new UInt160[] { issuer, Admin }).OrderBy(p => p).ToArray();
         }
 
         protected override void SerializeExclusiveData(BinaryWriter writer)
