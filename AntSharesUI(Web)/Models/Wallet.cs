@@ -22,6 +22,15 @@ namespace AntSharesUI_Web_.Models
         [Display(Name = "钱包确认密码")]
         [Compare("Password", ErrorMessage = "密码和确认密码不匹配。")]
         public string ConfirmPassword { get; set; }
-        
+
+        [Required(ErrorMessage = "必须填写新密码")]
+        [Display(Name = "钱包新密码")]
+        public string NewPassword { get; set; }
+
+        [Required(ErrorMessage = "必须填写新确认密码")]
+        [Display(Name = "钱包新确认密码")]
+        [Compare("NewPassword", ErrorMessage = "密码和确认密码不匹配。")]
+        public string NewConfirmPassword { get; set; }
+
     }
 }

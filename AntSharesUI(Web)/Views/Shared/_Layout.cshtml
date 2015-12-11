@@ -4,17 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - AntSharesUI_Web_</title>
-
+    <meta @ViewData["meta"] />
     <environment names="Development">
         <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
         <link rel="stylesheet" href="~/lib/bootstrap-touch-carousel/dist/css/bootstrap-touch-carousel.css" />
-        <link href="~/css/demo.css" rel="stylesheet" />
         <link href="~/css/jquery-accordion-menu.css" rel="stylesheet" />
         <link href="~/css/font-awesome.css" rel="stylesheet" />
         <link href="~/css/jquery.mmenu.all.css" rel="stylesheet" />
         <link rel="stylesheet" href="~/css/site.css" />
-        @*<link href="~/css/material.min.css" rel="stylesheet" />*@
-        @*<link href="~/css/roboto.min.css" rel="stylesheet" />*@
+        <link href="~/css/fileinput.min.css" rel="stylesheet" />
         <link href="~/css/ripples.min.css" rel="stylesheet" />        
     </environment>
     <environment names="Staging,Production">
@@ -29,20 +27,24 @@
         <link href="~/css/font-awesome.css" rel="stylesheet" />
         <link href="~/css/jquery.mmenu.all.css" rel="stylesheet" />
         <link rel="stylesheet" href="~/css/site.css" />
-        @*<link href="~/css/material.min.css" rel="stylesheet" />*@
-        @*<link href="~/css/roboto.min.css" rel="stylesheet" />*@
+        <link href="~/css/fileinput.min.css" rel="stylesheet" />
         <link href="~/css/ripples.min.css" rel="stylesheet" />
     </environment>
 </head>
 
 <body>
     <div id="page">
-        <div class="header">
-            <a href="#menu"></a>
-            小蚁-AntShares
-        </div>
         <div class="content">
-            @RenderBody()
+            <div class="header">
+                <a href="#menu"></a>
+                小蚁-AntShares
+            </div>
+            <div class="padding50">
+                @RenderBody()
+            </div>
+            <footer>
+                高度：65536/65536 连接数：7
+            </footer>
         </div>
         <nav id="menu" class="mm-theme-dark">
             <ul>
@@ -51,14 +53,14 @@
                     <ul>
                         <li class="withripple"><a href="~/Wallet/Create">创建钱包</a></li>
                         <li class="withripple"><a href="~/Wallet/Open">打开钱包</a></li>
-                        <li class="withripple"><a href="#">修改密码</a></li>
+                        <li class="withripple"><a href="~/Wallet/ChangePassword">修改密码</a></li>
                     </ul>
                 </li>
                 <li>
-                    <a class="withripple" href="#about/history"><i class="iconfont">&#xe600;</i>账户</a>
+                    <a class="withripple" href="#about/history"><i class="iconfont">&#xe600;</i>个人中心</a>
                     <ul>
-                        <li class="withripple"><a href="#">账户管理</a></li>
-                        <li class="withripple"><a href="#">合约管理</a></li>
+                        <li class="withripple"><a href="~/Cert/Index">证书管理</a></li>
+                        <li class="withripple"><a href="#">协议管理</a></li>
                     </ul>
                 </li>
                 <li>
@@ -104,9 +106,9 @@
                 <li>
                     <a class="withripple" href="#about/history"><i class="iconfont">&#xe607;</i>帮助</a>
                     <ul>
-                        <li class="withripple"><a asp-action="Contact"><i class="iconfont">&#xe605;</i>帮助</a></li>
-                        <li class="withripple"><a asp-action="Contact"><i class="iconfont">&#xe605;</i>官网</a></li>
-                        <li class="withripple"><a asp-action="Contact"><i class="iconfont">&#xe605;</i>关于</a></li>
+                        <li class="withripple"><a asp-action="Contact">帮助</a></li>
+                        <li class="withripple"><a target="_blank" href="https://www.antshares.com">官网</a></li>
+                        <li class="withripple"><a asp-action="Contact">关于</a></li>
                     </ul>
                 </li>              
             </ul>
@@ -123,6 +125,8 @@
         <script src="~/js/jquery.mmenu.min.all.js"></script>
         <script src="~/js/ripples.min.js"></script>
         <script src="~/js/material.min.js"></script>
+        <script src="~/js/fileinput.min.js"></script>
+        <script src="~/js/fileinput_locale_zh.js.js"></script>
     </environment>
     <environment names="Staging,Production">
         <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.1.4.min.js"
@@ -145,6 +149,8 @@
         <script src="~/js/jquery.mmenu.min.all.js"></script>
         <script src="~/js/material.min.js"></script>
         <script src="~/js/ripples.min.js"></script>
+        <script src="~/js/fileinput.min.js"></script>
+        <script src="~/js/fileinput_locale_zh.js.js"></script>
     </environment>
 
     @RenderSection("scripts", required: false)
