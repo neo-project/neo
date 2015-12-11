@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"]</title>
+    <title>@ViewData["Title"] - AntSharesUI_Web_</title>
     <meta @ViewData["meta"] />
     <environment names="Development">
         <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
@@ -33,7 +33,90 @@
 </head>
 
 <body>
-    @RenderBody()
+    <div id="page">
+        <div class="content">
+            <div class="header">
+                <a href="#menu"></a>
+                小蚁-AntShares
+            </div>
+            <div class="padding50">
+                @RenderBody()
+            </div>
+            <footer>
+                高度：65536/65536 连接数：7
+            </footer>
+        </div>
+        <nav id="menu" class="mm-theme-dark">
+            <ul>
+                <li>
+                    <span class="withripple"><i class="iconfont">&#xe602;</i>钱包</span>
+                    <ul>
+                        <li class="withripple"><a href="~/Wallet/Create">创建钱包</a></li>
+                        <li class="withripple"><a href="~/Wallet/Open">打开钱包</a></li>
+                        <li class="withripple"><a href="~/Wallet">我的钱包</a></li>
+                        <li class="withripple"><a href="~/Wallet/ChangePassword">修改密码</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <span class="withripple"><i class="iconfont">&#xe600;</i>个人中心</span>
+                    <ul>
+                        <li class="withripple"><a href="~/Personal/Cert">证书管理</a></li>
+                        <li class="withripple"><a href="#">协议管理</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <span class="withripple"><i class="iconfont">&#xe604;</i>资产</span>
+                    <ul>
+                        <li class="withripple"><a href="#">我的资产</a></li>
+                        <li class="withripple"><a href="#">资产转让</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <span class="withripple"><i class="iconfont">&#xe600;</i>联系人</span>
+                    <ul>
+                        <li class="withripple"><a href="#">所有联系人</a></li>
+                        <li class="withripple"><a href="#">添加联系人</a></li>
+                        <li class="withripple"><a href="#">修改联系人</a></li>
+                        <li class="withripple"><a href="#">删除联系人</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <span class="withripple"><i class="iconfont">&#xe60a;</i>小蚁区块链</span>
+                    <ul>
+                        <li class="withripple"><a href="#">区块查询</a></li>
+                        <li class="withripple"><a href="#">交易查询</a></li>
+                        <li class="withripple"><a href="#">地址查询</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <span class="withripple"><i class="iconfont">&#xe609;</i>高级功能</span>
+                    <ul>
+                        <li class="withripple"><a href="#">签名</a></li>
+                        <li class="withripple"><a href="#">发行资产</a></li>
+                        <li class="withripple"><a href="#">资产分配</a></li>
+                        <li class="withripple"><a href="#">开发人员工具</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <span class="withripple"><i class="iconfont">&#xe601;</i>系统设置</span>
+                    <ul>
+                        <li class="withripple"><a href="#">常规设置</a></li>
+                        <li class="withripple"><a href="#">检查更新</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <span class="withripple"><i class="iconfont">&#xe607;</i>帮助</span>
+                    <ul>
+                        <li class="withripple"><a asp-action="Contact">帮助</a></li>
+                        <li class="withripple"><a target="_blank" href="https://www.antshares.com">官网</a></li>
+                        <li class="withripple"><a asp-action="Contact">关于</a></li>
+                    </ul>
+                </li>              
+            </ul>
+        </nav>
+    </div>
+
+
     <environment names="Development">
         <script src="~/lib/jquery/dist/jquery.js"></script>
         <script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>

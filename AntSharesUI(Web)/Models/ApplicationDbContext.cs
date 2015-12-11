@@ -18,6 +18,6 @@ namespace AntSharesUI_Web_.Models
             // Add your customizations after calling base.OnModelCreating(builder);
         }
         public DbSet<Wallet> Wallet { get; set; }
-        public DbSet<Cert> Cert { get; set; }
+        public DbSet<Personal> Cert { get; set; }
     }
 }

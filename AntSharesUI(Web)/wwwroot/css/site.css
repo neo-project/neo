@@ -12,6 +12,11 @@ nav:not(.mm-menu) { display: none; }
 
 a, a:focus, a:active { outline: none !important; }
 
+.frame-body { width:100%; height:100%; border:none; padding:0 50px }
+
+fieldset { border:none }
+
+/*.mm-panel.mm-vertical { margin-right: -15px; padding-right: 35px; }*/
 
 .header.mm-slideout { position: fixed; top: 0; left: 0; }
 .header a { background: center center no-repeat transparent; background-image: url( data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAADhJREFUeNpi/P//PwOtARMDHQBdLGFBYtMq3BiHT3DRPU4YR4NrNAmPJuHRJDyahEeT8Ii3BCDAAF0WBj5Er5idAAAAAElFTkSuQmCC ); display: block; width: 40px; height: 40px; position: absolute; top: 0; left: 10px; }
@@ -42,10 +47,10 @@ a, a:focus, a:active { outline: none !important; }
 /*设置侧边栏边框样式*/
 .mm-listview > li:not(.mm-divider)::after { left: 0; }
 .mm-listview > li:hover { border-left: 5px solid #0cf; }
-.mm-listview > li:hover a { padding-left: 15px; }
-.mm-listview > li:hover .mm-listview > li:hover a { padding-left: 10px; }
-.mm-listview > li:hover .mm-listview > li:hover .mm-listview > li:hover a { padding-left: 5px; }
+.mm-listview > li:hover span, .mm-listview > li:hover a { padding-left: 15px; }
+.mm-listview > li:hover .mm-listview li:hover a { padding-left: 10px; }
 .mm-listview > li .mm-next, .mm-listview > li .mm-next::before { border-color: rgba(0, 0, 0, 0.1); }
+.mm-listview > li > a { background-color:inherit !important }
 
 .mm-menu.mm-offcanvas { display:block; transition:margin-left .4s ease }
 
@@ -68,5 +73,3 @@ button.btn, button.btn:focus { outline:none }
 .nomargin { margin:0 !important }
 
 a.btn, a.btn:active, a.btn:hover { text-decoration:none; color:white }
-
-.padding50 { padding:0 50px }

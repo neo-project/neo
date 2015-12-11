@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace AntSharesUI_Web_.Models
 {
-    public class Cert
+    public class Personal
     {
         public int Id { get; set; }
     }
