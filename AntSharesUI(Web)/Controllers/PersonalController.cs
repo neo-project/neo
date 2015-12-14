@@ -9,19 +9,13 @@ namespace AntSharesUI_Web_.Controllers
     public class PersonalController : Controller
     {
 
-        // GET: Index
-        public IActionResult Index()
-        {
-            return View();
-        }
-
-        // GET: Cert
+        // GET: Personal/Cert
         public IActionResult Cert()
         {
             return View();
         }
 
-        // GET: Protocal
+        // GET: Personal/Protocal
         public IActionResult Protocal()
         {
             return View();

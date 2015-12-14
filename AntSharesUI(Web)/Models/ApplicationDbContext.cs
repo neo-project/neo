@@ -19,5 +19,6 @@ namespace AntSharesUI_Web_.Models
         }
         public DbSet<Wallet> Wallet { get; set; }
         public DbSet<Personal> Cert { get; set; }
+        public DbSet<Asset> Asset { get; set; }
     }
 }

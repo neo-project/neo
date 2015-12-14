@@ -34,9 +34,11 @@
     <script>
         //初始化fileinput控件
         //http://plugins.krajee.com/file-input
+        //http://www.cnblogs.com/wuhuacong/p/4774396.html
         $("#wallet_file").fileinput({
                 language: 'zh', //设置语言
                 allowedFileExtensions: ['db3'],//接收的文件后缀
+                showUpload: true,
                 previewFileIcon: "<i class='glyphicon glyphicon-king'></i>",
                 showUpload: false
             });

@@ -17,7 +17,7 @@ namespace AntSharesUI_Web_.Controllers
         }
 
         // GET: Wallet
-        public IActionResult Index()
+        public IActionResult MyWallet()
         {
             ViewBag.Addresses = new string[] { "AbcdXweW6trsVwcBSUYrK69u4cBhDg4ZJF", "ANttyFkVZxGh93TmjgkiFe1TgS3csGfhJD", "ANT7ciAPanUuKHSvUoQZd2TXkKTFfCwrj5" };
             return View();
