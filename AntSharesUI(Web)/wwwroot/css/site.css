@@ -12,9 +12,11 @@ nav:not(.mm-menu) { display: none; }
 
 a, a:focus, a:active { outline: none !important; }
 
-.frame-body { width:100%; height:100%; border:none; padding:0 50px }
+.frame-body { width:100%; height:100%; border:none; padding:50px 50px 30px; margin-top:-50px }
 
-fieldset { border:none }
+.frame-body html, .frame-body body { height:auto !important }
+
+fieldset { border:none; overflow:hidden }
 
 /*.mm-panel.mm-vertical { margin-right: -15px; padding-right: 35px; }*/
 
@@ -73,3 +75,5 @@ button.btn, button.btn:focus { outline:none }
 .nomargin { margin:0 !important }
 
 a.btn, a.btn:active, a.btn:hover { text-decoration:none; color:white }
+
+.page-header { border-bottom: 1px solid #eee; padding: 40px 0 9px; margin: 0 0 20px; cursor:default }

@@ -5,33 +5,36 @@
 
 <div id="page">
     <div class="content">
+        @* 标题栏 *@
         <div class="header">
             <a target="frame_body" href="#menu"></a>
             小蚁-AntShares
         </div>
-        <iframe src="~/Wallet/Open" name="frame_body" class="frame-body">
-            hello
+        @* 主面板 *@
+        <iframe src="Wallet/Open" name="frame_body" class="frame-body">   
         </iframe>
+        @* 状态栏 *@
         <footer>
             高度：65536/65536 连接数：7
         </footer>
     </div>
+    @* 导航栏 *@
     <nav id="menu" class="mm-theme-dark">
         <ul>
             <li>
                 <span class="withripple"><i class="iconfont">&#xe602;</i>钱包</span>
                 <ul>
-                    <li class="withripple"><a target="frame_body" href="~/Wallet/Create">创建钱包</a></li>
-                    <li class="withripple"><a target="frame_body" href="~/Wallet/Open">打开钱包</a></li>
-                    <li class="withripple"><a target="frame_body" href="~/Wallet">我的钱包</a></li>
-                    <li class="withripple"><a target="frame_body" href="~/Wallet/ChangePassword">修改密码</a></li>
+                    <li class="withripple"><a target="frame_body" href="Wallet/Create">创建钱包</a></li>
+                    <li class="withripple"><a target="frame_body" href="Wallet/Open">打开钱包</a></li>
+                    <li class="withripple"><a target="frame_body" href="Wallet">我的钱包</a></li>
+                    <li class="withripple"><a target="frame_body" href="Wallet/ChangePassword">修改密码</a></li>
                 </ul>
             </li>
             <li>
                 <span class="withripple"><i class="iconfont">&#xe600;</i>个人中心</span>
                 <ul>
-                    <li class="withripple"><a target="frame_body" href="~/Personal/Cert">证书管理</a></li>
-                    <li class="withripple"><a target="frame_body" href="#">协议管理</a></li>
+                    <li class="withripple"><a target="frame_body" href="Personal/Cert">证书管理</a></li>
+                    <li class="withripple"><a target="frame_body" href="Personal/Protocal">协议管理</a></li>
                 </ul>
             </li>
             <li>
@@ -39,6 +42,7 @@
                 <ul>
                     <li class="withripple"><a target="frame_body" href="#">我的资产</a></li>
                     <li class="withripple"><a target="frame_body" href="#">资产转让</a></li>
+                    <li class="withripple"><a target="frame_body" href="#">交易记录</a></li>
                 </ul>
             </li>
             <li>
@@ -85,4 +89,35 @@
         </ul>
     </nav>
 </div>
+
+@section Scripts {
+    <script>
+        $(function ()
+        {
+            var slidingSubmenus = false;
+            if (slidingSubmenus) {
+                $(".my-title").remove();
+
+            }
+            $('nav#menu').mmenu({
+                searchfield: true,
+                counters: true,
+                extensions: ["pagedim-black", "widescreen"],
+                slidingSubmenus: slidingSubmenus,
+                navbar: {
+                    add: true,
+                    title: "小蚁-AntShares"
+                },
+                navbars : [{
+                    position: 'top'
+                }, {
+                    position: 'bottom',
+                    content: ['<a class="withripple" href="https://www.antshares.com">www.antshares.com</a>']
+                }]
+            });
+            $.material.init()
+        });
+
+    </script>
+}
 

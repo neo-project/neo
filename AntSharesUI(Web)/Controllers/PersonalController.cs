@@ -20,5 +20,11 @@ namespace AntSharesUI_Web_.Controllers
         {
             return View();
         }
+
+        // GET: Protocal
+        public IActionResult Protocal()
+        {
+            return View();
+        }
     }
 }

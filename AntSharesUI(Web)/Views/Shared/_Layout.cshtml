@@ -4,7 +4,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"]</title>
-    <meta @ViewData["meta"] />
     <environment names="Development">
         <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
         <link rel="stylesheet" href="~/lib/bootstrap-touch-carousel/dist/css/bootstrap-touch-carousel.css" />
@@ -73,35 +72,7 @@
 
     @RenderSection("scripts", required: false)
     <script>
-        $(function ()
-        {
-            var slidingSubmenus = false;
-            if (slidingSubmenus) {
-                $(".my-title").remove();
-
-            }
-            $('nav#menu').mmenu({
-                searchfield: true,
-                counters: true,
-                extensions: ["pagedim-black", "widescreen"],
-                slidingSubmenus: slidingSubmenus,
-                navbar: {
-                    add: true,
-                    title: "小蚁-AntShares"
-                },
-                navbars : [{
-                    position: 'top'
-                }, {
-                    position: 'bottom',
-                    content: ['<a class="withripple" href="https://www.antshares.com">www.antshares.com</a>']
-                }]
-            });
-            $.material.init()
-        });
-
-
-        $('nav#menu').jqueryAccordionMenu();
-
+        $(".page-header").dblclick(function () { location.reload() })
     </script>
 </body>
 </html>
