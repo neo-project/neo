@@ -1,0 +1,42 @@
+﻿@model AntSharesUI_Web_.Models.Wallet
+
+@{
+    ViewData["Title"] = "创建钱包";
+}
+
+<form asp-action="Create" method="post" class="form-horizontal">
+    <fieldset>
+        <h2 class="page-header">创建钱包</h2>
+        <div class="form-group">
+            <label class="col-sm-4 control-label">输入钱包名称</label>
+            <div class="col-sm-6">
+                <input asp-for="Name" class="form-control" autocomplete="off" type="text" placeholder="钱包名称">
+                <span asp-validation-for="Name" class="text-danger" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-4 control-label">输入钱包密码</label>
+            <div class="col-sm-6">
+                <input asp-for="Password" class="form-control" autocomplete="off" type="password" placeholder="钱包密码">
+                <span asp-validation-for="Password" class="text-danger" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-4 control-label">输入钱包确认密码</label>
+            <div class="col-sm-6">
+                <input asp-for="ConfirmPassword" class="form-control" autocomplete="off" type="password" placeholder="确认密码">
+                <span asp-validation-for="ConfirmPassword" class="text-danger" />
+        </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-4 col-md-push-4 col-sm-push-4">
+                <button type="submit" class="btn btn-success">创建钱包</button>
+            </div>
+        </div>
+    </fieldset>
+</form>
+
+@section Scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+}

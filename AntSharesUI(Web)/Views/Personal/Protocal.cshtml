@@ -1,0 +1,25 @@
+﻿@{
+    ViewData["Title"] = "协议管理";
+}
+<style>
+    .cert { padding: 0; }
+    .cert li { margin-bottom: 10px; list-style: none; }
+    .cert li span { background-color: #f0f0f0; border-radius: 4px; padding: 6px 10px; letter-spacing: 1px; width: 50%; word-break:break-all; vertical-align: middle; display: inline-block; }
+    .cert li .btn { margin-left: 5px; padding: 5px 12px; }
+    .certdiv { padding: 0; margin-bottom: 10px; }
+</style>
+<h2 class="page-header">协议管理</h2>
+<div class="row nomargin">
+    <div class="col-md-12 certdiv">
+        <a class="btn btn-success withripple">创建协议</a>
+        <a class="btn btn-primary withripple">导入协议</a>
+    </div>
+    <ul class="col-sm-12 cert">
+        <li>
+            <span>chenzhitong</span>
+            <button class="btn btn-success withripple">导出</button>
+            <a href="javascript:" class="btn btn-info withripple">详情</a>
+            <button class="btn btn-danger withripple">删除</button>
+        </li>
+    </ul>
+</div>

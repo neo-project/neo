@@ -99,7 +99,15 @@ namespace AntShares.UI
             using (OpenWalletDialog dialog = new OpenWalletDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                ChangeWallet(UserWallet.Open(dialog.WalletPath, dialog.Password));
+
+                UserWallet uw = UserWallet.Open(dialog.WalletPath, dialog.Password);
+                //UInt160 u = new UInt160();
+                //UInt160.TryParse("836add6e2e9d4de169111fc827f5bced1e67e976", out u);
+                //bool b1 = uw.ContainsAddress(u);
+                //UInt160.TryParse("c8b7ca07ac831b4cf3f66e5c66a91030b6fda2d9", out u);
+                //bool b2 = uw.ContainsAddress(u);
+
+                ChangeWallet(uw);
             }
         }
 

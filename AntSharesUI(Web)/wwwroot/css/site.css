@@ -1,0 +1,79 @@
+﻿@font-face { font-family: 'iconfont'; src: url('../fonts/iconfont.eot'); /* IE9*/ src: url('../fonts/iconfont.eot?#iefix') format('../fonts/embedded-opentype'), /* IE6-IE8 */ url('../fonts/iconfont.woff') format('woff'), /* chrome、firefox */ url('../fonts/iconfont.ttf') format('truetype'), /* chrome、firefox、opera、Safari, Android, iOS 4.2+*/ url('../fonts/iconfont.svg#iconfont') format('svg'); /* iOS 4.1- */ }
+
+html { height: 100%; }
+
+body { height:100%; font-family:"微软雅黑 light" !important }
+
+.body-content { padding-left: 15px; padding-right: 15px; }
+
+nav:not(.mm-menu) { display: none; }
+
+.iconfont { font-family: "iconfont" !important; font-size: 16px; font-style: normal; -webkit-font-smoothing: antialiased; -webkit-text-stroke-width: 0.2px; -moz-osx-font-smoothing: grayscale; }
+
+a, a:focus, a:active { outline: none !important; }
+
+.frame-body { width:100%; height:100%; border:none; padding:50px 50px 30px; margin-top:-50px }
+
+.frame-body html, .frame-body body { height:auto !important }
+
+fieldset { border:none; overflow:hidden }
+
+/*.mm-panel.mm-vertical { margin-right: -15px; padding-right: 35px; }*/
+
+.header.mm-slideout { position: fixed; top: 0; left: 0; }
+.header a { background: center center no-repeat transparent; background-image: url( data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAADhJREFUeNpi/P//PwOtARMDHQBdLGFBYtMq3BiHT3DRPU4YR4NrNAmPJuHRJDyahEeT8Ii3BCDAAF0WBj5Er5idAAAAAElFTkSuQmCC ); display: block; width: 40px; height: 40px; position: absolute; top: 0; left: 10px; }
+.header a.contacts { background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAVNJREFUeNq01jFLAzEYxvH2UBCxiIiDUhzcdXCyIk5ufgUXLR37JdxcXBxcuwmOOtml0EKpo04iWIpIQREVEVFLjf9AhoC9e3O5uxd+lMLdPU1yedO8UiqXdQWO122ghi4+8IwGqiiId+uRCHbxqsLrFHNRz5ACSnhTch1EPScQpnIH0w7TWcGiz5rouS45rtkMVnxCJrAQ4yUq+oT8YhAjZOAT8oWHGCE9nxC9H64cA15w4xOiW0HbfErVNhvUa8c3cecQcoZv3xA9z+fCNbe4SNq7jvEUMaUnuE/au7SjkHbSR1G637ULh73Kn+gn7cIBttELGckQh9Jo8iMOrSksYx2b2MKk8FuvUUcHl/9GbiWuooYu3pVf/eARLZQxbp8na2YR0659e+HLmM/geN+z98lSRv8hZu2QQkYh+kzKjZkvHdPahymH6DNp5Cucev0JMAAkKj0NEoYBJwAAAABJRU5ErkJggg==); }
+.header a.right { left: auto; right: 10px; }
+.content { background: white; height: 100%; padding: 0; }
+.header.mm-fixed + .content { background-position: 25px 55px; }
+
+.mm-menu li .fa { margin: 0 20px 0 5px; font-size: 16px; width: 12px; }
+.mm-menu li[class*="mm-tile"] .fa { margin: 0; line-height: 0; }
+
+.mm-menu .buttonbar-item:after { content: none !important; display: none !important; }
+
+.mm-navbar > .mm-title { font-size: 16px; }
+
+.mm-listview > li i.iconfont { margin-right: 18px; }
+
+.mm-listview > li > a, .mm-listview > li > span { padding: 10px 10px 10px 20px; }
+
+/* 改进的 jquery.mmenu.widescreen.css */
+@media only screen and  (min-width:768px) {
+    .mm-menu.mm-offcanvas { display:block }
+    .header a { display: none; }
+    .mm-menu.mm-offcanvas:not(.mm-opened) + .mm-page { margin-left:300px }
+    .header { border-left:1px solid white }
+}
+
+/*设置侧边栏边框样式*/
+.mm-listview > li:not(.mm-divider)::after { left: 0; }
+.mm-listview > li:hover { border-left: 5px solid #0cf; }
+.mm-listview > li:hover span, .mm-listview > li:hover a { padding-left: 15px; }
+.mm-listview > li:hover .mm-listview li:hover a { padding-left: 10px; }
+.mm-listview > li .mm-next, .mm-listview > li .mm-next::before { border-color: rgba(0, 0, 0, 0.1); }
+.mm-listview > li > a { background-color:inherit !important }
+
+.mm-menu.mm-offcanvas { display:block; transition:margin-left .4s ease }
+
+.mm-slideout{ height:100%; transition:transform .4s ease, margin-left .4s ease }
+
+.mm-menu.mm-theme-dark { background:-webkit-linear-gradient(120deg, #251f40, #713e5c); background: linear-gradient(120deg, #251f40, #713e5c); }
+
+.header, footer { font-size: 16px; width: 100%;  height: 40px; line-height: 40px; text-align: center; background:gray; color:#fff }
+
+.header { font-weight: bold }
+
+footer { position: absolute;  bottom: 0; }
+
+.mm-panels, .mm-panels > .mm-panel { background:none }
+
+.mm-menu > .mm-panels { top:40px }
+
+button.btn, button.btn:focus { outline:none }
+
+.nomargin { margin:0 !important }
+
+a.btn, a.btn:active, a.btn:hover { text-decoration:none; color:white }
+
+.page-header { border-bottom: 1px solid #eee; padding: 40px 0 9px; margin: 0 0 20px; cursor:default }

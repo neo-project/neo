@@ -1,0 +1,123 @@
+﻿@{
+    ViewData["Title"] = "小蚁客户端WEB";
+    Layout = "_Layout";
+}
+
+<div id="page">
+    <div class="content">
+        @* 标题栏 *@
+        <div class="header">
+            <a target="frame_body" href="#menu"></a>
+            小蚁-AntShares
+        </div>
+        @* 主面板 *@
+        <iframe src="Wallet/Open" name="frame_body" class="frame-body">   
+        </iframe>
+        @* 状态栏 *@
+        <footer>
+            高度：65536/65536 连接数：7
+        </footer>
+    </div>
+    @* 导航栏 *@
+    <nav id="menu" class="mm-theme-dark">
+        <ul>
+            <li>
+                <span class="withripple"><i class="iconfont">&#xe602;</i>钱包</span>
+                <ul>
+                    <li class="withripple"><a target="frame_body" href="Wallet/Create">创建钱包</a></li>
+                    <li class="withripple"><a target="frame_body" href="Wallet/Open">打开钱包</a></li>
+                    <li class="withripple"><a target="frame_body" href="Wallet/MyWallet">我的钱包</a></li>
+                    <li class="withripple"><a target="frame_body" href="Wallet/ChangePassword">修改密码</a></li>
+                </ul>
+            </li>
+            <li>
+                <span class="withripple"><i class="iconfont">&#xe600;</i>个人中心</span>
+                <ul>
+                    <li class="withripple"><a target="frame_body" href="Personal/Cert">证书管理</a></li>
+                    <li class="withripple"><a target="frame_body" href="Personal/Protocal">协议管理</a></li>
+                </ul>
+            </li>
+            <li>
+                <span class="withripple"><i class="iconfont">&#xe604;</i>资产</span>
+                <ul>
+                    <li class="withripple"><a target="frame_body" href="Asset/MyAsset">我的资产</a></li>
+                    <li class="withripple"><a target="frame_body" href="Asset/Transfer">资产转让</a></li>
+                    <li class="withripple"><a target="frame_body" href="#">交易记录</a></li>
+                </ul>
+            </li>
+            <li>
+                <span class="withripple"><i class="iconfont">&#xe600;</i>联系人</span>
+                <ul>
+                    <li class="withripple"><a target="frame_body" href="#">所有联系人</a></li>
+                    <li class="withripple"><a target="frame_body" href="#">添加联系人</a></li>
+                    <li class="withripple"><a target="frame_body" href="#">修改联系人</a></li>
+                    <li class="withripple"><a target="frame_body" href="#">删除联系人</a></li>
+                </ul>
+            </li>
+            <li>
+                <span class="withripple"><i class="iconfont">&#xe60a;</i>小蚁区块链</span>
+                <ul>
+                    <li class="withripple"><a target="frame_body" href="#">区块查询</a></li>
+                    <li class="withripple"><a target="frame_body" href="#">交易查询</a></li>
+                    <li class="withripple"><a target="frame_body" href="#">地址查询</a></li>
+                </ul>
+            </li>
+            <li>
+                <span class="withripple"><i class="iconfont">&#xe609;</i>高级功能</span>
+                <ul>
+                    <li class="withripple"><a target="frame_body" href="#">签名</a></li>
+                    <li class="withripple"><a target="frame_body" href="#">发行资产</a></li>
+                    <li class="withripple"><a target="frame_body" href="#">资产分配</a></li>
+                    <li class="withripple"><a target="frame_body" href="#">开发人员工具</a></li>
+                </ul>
+            </li>
+            <li>
+                <span class="withripple"><i class="iconfont">&#xe601;</i>系统设置</span>
+                <ul>
+                    <li class="withripple"><a target="frame_body" href="#">常规设置</a></li>
+                    <li class="withripple"><a target="frame_body" href="#">检查更新</a></li>
+                </ul>
+            </li>
+            <li>
+                <span class="withripple"><i class="iconfont">&#xe607;</i>帮助</span>
+                <ul>
+                    <li class="withripple"><a asp-action="Contact">帮助</a></li>
+                    <li class="withripple"><a target="_blank" href="https://www.antshares.com">官网</a></li>
+                    <li class="withripple"><a asp-action="Contact">关于</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+@section Scripts {
+    <script>
+        $(function ()
+        {
+            var slidingSubmenus = false;
+            if (slidingSubmenus) {
+                $(".my-title").remove();
+
+            }
+            $('nav#menu').mmenu({
+                searchfield: true,
+                counters: true,
+                extensions: ["pagedim-black", "widescreen"],
+                slidingSubmenus: slidingSubmenus,
+                navbar: {
+                    add: true,
+                    title: "小蚁-AntShares"
+                },
+                navbars : [{
+                    position: 'top'
+                }, {
+                    position: 'bottom',
+                    content: ['<a class="withripple" href="https://www.antshares.com">www.antshares.com</a>']
+                }]
+            });
+            $.material.init()
+        });
+
+    </script>
+}
+

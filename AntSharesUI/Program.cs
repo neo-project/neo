@@ -54,7 +54,7 @@ namespace AntShares
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             WindowsFormsSynchronizationContext.AutoInstall = false;
-            if (!CheckVersion()) return;
+            //if (!CheckVersion()) return;
             using (Blockchain.RegisterBlockchain(new LevelDBBlockchain(Settings.Default.DataDirectoryPath)))
             using (LocalNode = new LocalNode())
             {
