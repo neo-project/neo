@@ -77,10 +77,10 @@ namespace AntShares.UI
             {
                 listView2.Items.AddRange(Program.CurrentWallet.FindUnspentCoins().GroupBy(p => p.AssetId, (k, g) => new
                 {
-                    AssetId = k,
-                    AssetName = ((RegisterTransaction)Blockchain.Default.GetTransaction(k)).GetName(),
+                    Asset = (RegisterTransaction)Blockchain.Default.GetTransaction(k),
                     Value = g.Sum(p => p.Value)
-                }).Select(p => new ListViewItem(new[] { p.AssetName, p.Value.ToString() }) { Name = p.AssetId.ToString() }).ToArray());
+                }).Select(p => new ListViewItem(new[] { p.Asset.GetName(), p.Value.ToString(), p.Asset.Issuer.ToString() }) { Name = p.Asset.Hash.ToString() }).ToArray());
+                //TODO: 未来要自动查询证书，显示真实发行者；如果发行者没有CA认证，或证书有问题，要有提示或警告。
             }
         }
 

@@ -53,9 +53,12 @@
             this.关于AntSharesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ContractListView = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.创建新地址NToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.导入私钥IToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.创建智能合约SToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.多方签名MToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
             this.查看私钥VToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.复制到剪贴板CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -72,9 +75,7 @@
             this.listView2 = new System.Windows.Forms.ListView();
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.创建智能合约SToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.多方签名MToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -163,19 +164,19 @@
             // 转账TToolStripMenuItem
             // 
             this.转账TToolStripMenuItem.Name = "转账TToolStripMenuItem";
-            this.转账TToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.转账TToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.转账TToolStripMenuItem.Text = "转账(&T)...";
             this.转账TToolStripMenuItem.Click += new System.EventHandler(this.转账TToolStripMenuItem_Click);
             // 
             // toolStripSeparator5
             // 
             this.toolStripSeparator5.Name = "toolStripSeparator5";
-            this.toolStripSeparator5.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator5.Size = new System.Drawing.Size(121, 6);
             // 
             // 签名SToolStripMenuItem
             // 
             this.签名SToolStripMenuItem.Name = "签名SToolStripMenuItem";
-            this.签名SToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.签名SToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.签名SToolStripMenuItem.Text = "签名(&S)...";
             this.签名SToolStripMenuItem.Click += new System.EventHandler(this.签名SToolStripMenuItem_Click);
             // 
@@ -192,14 +193,14 @@
             // 注册资产RToolStripMenuItem
             // 
             this.注册资产RToolStripMenuItem.Name = "注册资产RToolStripMenuItem";
-            this.注册资产RToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.注册资产RToolStripMenuItem.Size = new System.Drawing.Size(149, 22);
             this.注册资产RToolStripMenuItem.Text = "注册资产(&R)...";
             this.注册资产RToolStripMenuItem.Click += new System.EventHandler(this.注册资产RToolStripMenuItem_Click);
             // 
             // 资产分发IToolStripMenuItem
             // 
             this.资产分发IToolStripMenuItem.Name = "资产分发IToolStripMenuItem";
-            this.资产分发IToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.资产分发IToolStripMenuItem.Size = new System.Drawing.Size(149, 22);
             this.资产分发IToolStripMenuItem.Text = "发行资产(&I)...";
             this.资产分发IToolStripMenuItem.Click += new System.EventHandler(this.资产分发IToolStripMenuItem_Click);
             // 
@@ -277,6 +278,11 @@
             this.columnHeader1.Text = "地址";
             this.columnHeader1.Width = 300;
             // 
+            // columnHeader4
+            // 
+            this.columnHeader4.Text = "类型";
+            this.columnHeader4.Width = 270;
+            // 
             // contextMenuStrip1
             // 
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -295,7 +301,7 @@
             // 
             this.创建新地址NToolStripMenuItem.Enabled = false;
             this.创建新地址NToolStripMenuItem.Name = "创建新地址NToolStripMenuItem";
-            this.创建新地址NToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+            this.创建新地址NToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
             this.创建新地址NToolStripMenuItem.Text = "创建新地址(&N)";
             this.创建新地址NToolStripMenuItem.Click += new System.EventHandler(this.创建新地址NToolStripMenuItem_Click);
             // 
@@ -303,20 +309,36 @@
             // 
             this.导入私钥IToolStripMenuItem.Enabled = false;
             this.导入私钥IToolStripMenuItem.Name = "导入私钥IToolStripMenuItem";
-            this.导入私钥IToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+            this.导入私钥IToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
             this.导入私钥IToolStripMenuItem.Text = "导入私钥(&I)...";
             this.导入私钥IToolStripMenuItem.Click += new System.EventHandler(this.导入私钥IToolStripMenuItem_Click);
+            // 
+            // 创建智能合约SToolStripMenuItem
+            // 
+            this.创建智能合约SToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.多方签名MToolStripMenuItem});
+            this.创建智能合约SToolStripMenuItem.Enabled = false;
+            this.创建智能合约SToolStripMenuItem.Name = "创建智能合约SToolStripMenuItem";
+            this.创建智能合约SToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.创建智能合约SToolStripMenuItem.Text = "创建智能合约(&S)";
+            // 
+            // 多方签名MToolStripMenuItem
+            // 
+            this.多方签名MToolStripMenuItem.Name = "多方签名MToolStripMenuItem";
+            this.多方签名MToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.多方签名MToolStripMenuItem.Text = "多方签名(&M)...";
+            this.多方签名MToolStripMenuItem.Click += new System.EventHandler(this.多方签名MToolStripMenuItem_Click);
             // 
             // toolStripSeparator6
             // 
             this.toolStripSeparator6.Name = "toolStripSeparator6";
-            this.toolStripSeparator6.Size = new System.Drawing.Size(153, 6);
+            this.toolStripSeparator6.Size = new System.Drawing.Size(160, 6);
             // 
             // 查看私钥VToolStripMenuItem
             // 
             this.查看私钥VToolStripMenuItem.Enabled = false;
             this.查看私钥VToolStripMenuItem.Name = "查看私钥VToolStripMenuItem";
-            this.查看私钥VToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+            this.查看私钥VToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
             this.查看私钥VToolStripMenuItem.Text = "查看私钥(&V)";
             this.查看私钥VToolStripMenuItem.Click += new System.EventHandler(this.查看私钥VToolStripMenuItem_Click);
             // 
@@ -326,7 +348,7 @@
             this.复制到剪贴板CToolStripMenuItem.Name = "复制到剪贴板CToolStripMenuItem";
             this.复制到剪贴板CToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C)));
             this.复制到剪贴板CToolStripMenuItem.ShowShortcutKeys = false;
-            this.复制到剪贴板CToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+            this.复制到剪贴板CToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
             this.复制到剪贴板CToolStripMenuItem.Text = "复制到剪贴板(&C)";
             this.复制到剪贴板CToolStripMenuItem.Click += new System.EventHandler(this.复制到剪贴板CToolStripMenuItem_Click);
             // 
@@ -334,7 +356,7 @@
             // 
             this.删除DToolStripMenuItem.Enabled = false;
             this.删除DToolStripMenuItem.Name = "删除DToolStripMenuItem";
-            this.删除DToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+            this.删除DToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
             this.删除DToolStripMenuItem.Text = "删除(&D)...";
             this.删除DToolStripMenuItem.Click += new System.EventHandler(this.删除DToolStripMenuItem_Click);
             // 
@@ -419,7 +441,8 @@
             // 
             this.listView2.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader2,
-            this.columnHeader3});
+            this.columnHeader3,
+            this.columnHeader5});
             this.listView2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.listView2.FullRowSelect = true;
             this.listView2.GridLines = true;
@@ -435,33 +458,17 @@
             // columnHeader2
             // 
             this.columnHeader2.Text = "资产";
-            this.columnHeader2.Width = 300;
+            this.columnHeader2.Width = 160;
             // 
             // columnHeader3
             // 
             this.columnHeader3.Text = "余额";
             this.columnHeader3.Width = 150;
             // 
-            // 创建智能合约SToolStripMenuItem
+            // columnHeader5
             // 
-            this.创建智能合约SToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.多方签名MToolStripMenuItem});
-            this.创建智能合约SToolStripMenuItem.Enabled = false;
-            this.创建智能合约SToolStripMenuItem.Name = "创建智能合约SToolStripMenuItem";
-            this.创建智能合约SToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
-            this.创建智能合约SToolStripMenuItem.Text = "创建智能合约(&S)";
-            // 
-            // 多方签名MToolStripMenuItem
-            // 
-            this.多方签名MToolStripMenuItem.Name = "多方签名MToolStripMenuItem";
-            this.多方签名MToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
-            this.多方签名MToolStripMenuItem.Text = "多方签名(&M)...";
-            this.多方签名MToolStripMenuItem.Click += new System.EventHandler(this.多方签名MToolStripMenuItem_Click);
-            // 
-            // columnHeader4
-            // 
-            this.columnHeader4.Text = "类型";
-            this.columnHeader4.Width = 270;
+            this.columnHeader5.Text = "发行者";
+            this.columnHeader5.Width = 265;
             // 
             // MainForm
             // 
@@ -540,6 +547,7 @@
         private System.Windows.Forms.ToolStripMenuItem 多方签名MToolStripMenuItem;
         private System.Windows.Forms.ColumnHeader columnHeader4;
         private System.Windows.Forms.ListView ContractListView;
+        private System.Windows.Forms.ColumnHeader columnHeader5;
     }
 }
 

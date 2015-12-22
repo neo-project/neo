@@ -116,6 +116,11 @@ namespace AntShares
             return ToDecimal().ToString();
         }
 
+        public string ToString(string format)
+        {
+            return ToDecimal().ToString(format);
+        }
+
         public string ToString(string format, IFormatProvider formatProvider)
         {
             return ToDecimal().ToString(format, formatProvider);

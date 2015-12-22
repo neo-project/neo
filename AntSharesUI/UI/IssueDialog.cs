@@ -17,28 +17,17 @@ namespace AntShares.UI
         {
             RegisterTransaction tx = comboBox1.SelectedItem as RegisterTransaction;
             if (tx == null) return null;
-            return new IssueTransaction
+            return Program.CurrentWallet.MakeTransaction<IssueTransaction>(listBox1.Items.OfType<TxOutListBoxItem>().GroupBy(p => p.Account).Select(g => new TransactionOutput
             {
-                Attributes = new TransactionAttribute[0],
-                Inputs = new TransactionInput[0],
-                Outputs = listBox1.Items.OfType<TxOutListBoxItem>().GroupBy(p => p.Account).Select(g => new TransactionOutput
-                {
-                    AssetId = tx.Hash,
-                    Value = g.Sum(p => p.Amount),
-                    ScriptHash = g.Key
-                }).ToArray()
-            };
+                AssetId = tx.Hash,
+                Value = g.Sum(p => p.Amount),
+                ScriptHash = g.Key
+            }).ToArray(), Fixed8.Zero);
         }
 
         private void IssueDialog_Load(object sender, EventArgs e)
         {
-            foreach (RegisterTransaction tx in Blockchain.Default.GetAssets())
-            {
-                if (Program.CurrentWallet.ContainsAddress(tx.Admin))
-                {
-                    comboBox1.Items.Add(tx);
-                }
-            }
+            comboBox1.Items.AddRange(Blockchain.Default.GetAssets().Where(p => Program.CurrentWallet.ContainsAddress(p.Admin)).ToArray());
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -58,7 +47,7 @@ namespace AntShares.UI
             {
                 textBox1.Text = tx.Issuer.ToString();
                 textBox2.Text = Wallet.ToAddress(tx.Admin);
-                textBox3.Text = tx.Amount.ToString();
+                textBox3.Text = tx.Amount == -Fixed8.Satoshi ? "+\u221e" : tx.Amount.ToString();
                 textBox4.Text = Blockchain.Default.GetQuantityIssued(tx.Hash).ToString();
                 groupBox3.Enabled = true;
             }
