@@ -12,11 +12,11 @@ namespace AntShares.UI
             InitializeComponent();
         }
 
-        public SignatureContext GetTransaction()
+        public ContractTransaction GetTransaction()
         {
             RegisterTransaction tx = comboBox1.SelectedItem as RegisterTransaction;
             if (tx == null) return null;
-            return Program.CurrentWallet.MakeTransaction(listBox1.Items.OfType<TxOutListBoxItem>().GroupBy(p => p.Account).Select(g => new TransactionOutput
+            return Program.CurrentWallet.MakeTransaction<ContractTransaction>(listBox1.Items.OfType<TxOutListBoxItem>().GroupBy(p => p.Account).Select(g => new TransactionOutput
             {
                 AssetId = tx.Hash,
                 Value = g.Sum(p => p.Amount),

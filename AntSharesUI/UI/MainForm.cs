@@ -158,8 +158,9 @@ namespace AntShares.UI
             using (TransferDialog dialog = new TransferDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                SignatureContext context = dialog.GetTransaction();
-                if (context == null) return;
+                Transaction tx = dialog.GetTransaction();
+                if (tx == null) return;
+                SignatureContext context = new SignatureContext(tx);
                 Program.CurrentWallet.Sign(context);
                 await ShowInformationAsync(context);
             }
@@ -173,9 +174,30 @@ namespace AntShares.UI
             }
         }
 
-        private void 注册资产RToolStripMenuItem_Click(object sender, EventArgs e)
+        private async void 注册资产RToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
+            using (AssetRegisterDialog dialog = new AssetRegisterDialog())
+            {
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                Transaction tx = null;
+                try
+                {
+                    tx = dialog.GetTransaction();
+                }
+                catch
+                {
+                    MessageBox.Show("数据填写不完整，或格式错误。");
+                    return;
+                }
+                if (tx == null)
+                {
+                    MessageBox.Show("余额不足以支付系统费用。");
+                    return;
+                }
+                SignatureContext context = new SignatureContext(tx);
+                Program.CurrentWallet.Sign(context);
+                await ShowInformationAsync(context);
+            }
         }
 
         private async void 资产分发IToolStripMenuItem_Click(object sender, EventArgs e)
@@ -183,8 +205,9 @@ namespace AntShares.UI
             using (IssueDialog dialog = new IssueDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                SignatureContext context = dialog.GetTransaction();
-                if (context == null) return;
+                Transaction tx = dialog.GetTransaction();
+                if (tx == null) return;
+                SignatureContext context = new SignatureContext(tx);
                 Program.CurrentWallet.Sign(context);
                 await ShowInformationAsync(context);
             }

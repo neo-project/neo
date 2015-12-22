@@ -28,6 +28,8 @@ namespace AntShares.Core
         public ECPoint Issuer;
         public UInt160 Admin;
 
+        private static readonly string ShareName = "[{'lang':'zh-CN','name':'股权'},{'lang':'en','name':'Share'}]";
+
         public override Fixed8 SystemFee => Fixed8.FromDecimal(10000);
 
         public RegisterTransaction()
@@ -55,16 +57,10 @@ namespace AntShares.Core
         private Dictionary<CultureInfo, string> _names;
         public string GetName(CultureInfo culture = null)
         {
-            if (AssetType == AssetType.Share)
-            {
-                //TODO: 获取证书上的名称
-                //股权的名称由证书上的公司名称决定，不能自定义
-                //目前实名认证的相关设计还没有完全定型，所以暂时先不实现股权资产的名称查询
-                throw new NotImplementedException();
-            }
+            string name_str = AssetType == AssetType.Share ? ShareName : Name;
             if (_names == null)
             {
-                _names = ((JArray)JObject.Parse(Name)).ToDictionary(p => CultureInfo.GetCultureInfo(p["lang"].AsString()), p => p["name"].AsString());
+                _names = ((JArray)JObject.Parse(name_str)).ToDictionary(p => CultureInfo.GetCultureInfo(p["lang"].AsString()), p => p["name"].AsString());
             }
             if (culture == null) culture = CultureInfo.CurrentCulture;
             if (_names.ContainsKey(culture))
@@ -98,9 +94,6 @@ namespace AntShares.Core
 
         public override string ToString()
         {
-            //TODO: 在资产名称的后面加上发行者的名称
-            //如：CNY(由xxx公司发行)
-            //用以区分不同主体发行的相同名称的资产
             return GetName();
         }
     }

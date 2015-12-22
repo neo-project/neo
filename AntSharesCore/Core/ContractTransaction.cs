@@ -8,8 +8,6 @@ namespace AntShares.Core
 {
     public class ContractTransaction : Transaction
     {
-        public TransactionAttribute[] Attributes;
-
         public ContractTransaction()
             : base(TransactionType.ContractTransaction)
         {
@@ -17,7 +15,6 @@ namespace AntShares.Core
 
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
-            this.Attributes = reader.ReadSerializableArray<TransactionAttribute>();
         }
 
         public override UInt160[] GetScriptHashesForVerifying()
@@ -37,7 +34,6 @@ namespace AntShares.Core
 
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
-            writer.Write(Attributes);
         }
     }
 }

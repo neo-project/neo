@@ -429,6 +429,11 @@ namespace AntShares.Network
                 {
                     OnMessageReceived(message);
                 }
+                catch (EndOfStreamException)
+                {
+                    Disconnect(true);
+                    break;
+                }
                 catch (FormatException)
                 {
                     Disconnect(true);

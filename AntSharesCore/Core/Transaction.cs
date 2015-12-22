@@ -12,6 +12,7 @@ namespace AntShares.Core
     public abstract class Transaction : Inventory, ISignable
     {
         public readonly TransactionType Type;
+        public TransactionAttribute[] Attributes;
         public TransactionInput[] Inputs;
         public TransactionOutput[] Outputs;
         public Script[] Scripts;
@@ -104,6 +105,7 @@ namespace AntShares.Core
         private void DeserializeUnsignedWithoutType(BinaryReader reader)
         {
             DeserializeExclusiveData(reader);
+            Attributes = reader.ReadSerializableArray<TransactionAttribute>();
             Inputs = reader.ReadSerializableArray<TransactionInput>();
             TransactionInput[] inputs = GetAllInputs().ToArray();
             for (int i = 1; i < inputs.Length; i++)
@@ -158,6 +160,7 @@ namespace AntShares.Core
         {
             writer.Write((byte)Type);
             SerializeExclusiveData(writer);
+            writer.Write(Attributes);
             writer.Write(Inputs);
             writer.Write(Outputs);
         }

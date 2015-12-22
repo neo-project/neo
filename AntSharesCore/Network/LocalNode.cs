@@ -372,8 +372,13 @@ namespace AntShares.Network
         {
             if (Interlocked.Exchange(ref started, 1) == 0)
             {
-                IPHostEntry localhost = Dns.GetHostEntry(Dns.GetHostName());
-                IPAddress address = localhost.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(p) && !IsIntranetAddress(p));
+                IPHostEntry localhost = null;
+                try
+                {
+                    localhost = Dns.GetHostEntry(Dns.GetHostName());
+                }
+                catch (SocketException) { }
+                IPAddress address = localhost?.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(p) && !IsIntranetAddress(p));
                 if (address == null && UpnpEnabled && UPnP.Discover())
                 {
                     address = UPnP.GetExternalIP();

@@ -74,6 +74,7 @@ namespace AntShares.UI
                 Amount = Fixed8.FromDecimal(numericUpDown1.Value),
                 Issuer = ECPoint.Parse(textBox1.Text, ECCurve.Secp256r1),
                 Admin = Wallet.ToScriptHash(textBox2.Text),
+                Attributes = new TransactionAttribute[0],
                 Inputs = new TransactionInput[0],
                 Outputs = new TransactionOutput[0]
             };
@@ -95,6 +96,7 @@ namespace AntShares.UI
                     new GenerationTransaction
                     {
                         Nonce = 0,
+                        Attributes = new TransactionAttribute[0],
                         Inputs = new TransactionInput[0],
                         Outputs = new TransactionOutput[0],
                         Scripts = new Script[0]
@@ -115,6 +117,7 @@ namespace AntShares.UI
                 new GenerationTransaction
                 {
                     Nonce = 0,
+                    Attributes = new TransactionAttribute[0],
                     Inputs = new TransactionInput[0],
                     Outputs = new TransactionOutput[0],
                     Scripts = new Script[0]

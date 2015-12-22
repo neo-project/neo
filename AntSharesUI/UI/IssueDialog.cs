@@ -13,12 +13,13 @@ namespace AntShares.UI
             InitializeComponent();
         }
 
-        public SignatureContext GetTransaction()
+        public IssueTransaction GetTransaction()
         {
             RegisterTransaction tx = comboBox1.SelectedItem as RegisterTransaction;
             if (tx == null) return null;
-            return new SignatureContext(new IssueTransaction
+            return new IssueTransaction
             {
+                Attributes = new TransactionAttribute[0],
                 Inputs = new TransactionInput[0],
                 Outputs = listBox1.Items.OfType<TxOutListBoxItem>().GroupBy(p => p.Account).Select(g => new TransactionOutput
                 {
@@ -26,7 +27,7 @@ namespace AntShares.UI
                     Value = g.Sum(p => p.Amount),
                     ScriptHash = g.Key
                 }).ToArray()
-            });
+            };
         }
 
         private void IssueDialog_Load(object sender, EventArgs e)

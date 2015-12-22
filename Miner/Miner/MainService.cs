@@ -65,6 +65,7 @@ namespace AntShares.Miner
             return new GenerationTransaction
             {
                 Nonce = (uint)(nonce % (uint.MaxValue + 1ul)),
+                Attributes = new TransactionAttribute[0],
                 Inputs = new TransactionInput[0],
                 Outputs = outputs.GroupBy(p => p.ScriptHash, (k, g) => new TransactionOutput
                 {
