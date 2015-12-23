@@ -6,7 +6,7 @@ namespace AntShares.Core
 {
     public class IssueTransaction : Transaction
     {
-        public override Fixed8 SystemFee => Outputs.All(p => p.AssetId == Blockchain.AntShare.Hash) ? Fixed8.Zero : Fixed8.FromDecimal(500);
+        public override Fixed8 SystemFee => Outputs.All(p => p.AssetId == Blockchain.AntShare.Hash || p.AssetId == Blockchain.AntCoin.Hash) ? Fixed8.Zero : Fixed8.FromDecimal(500);
 
         public IssueTransaction()
             : base(TransactionType.IssueTransaction)

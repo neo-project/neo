@@ -1,11 +1,14 @@
 ﻿using AntShares.Core;
+using AntShares.Cryptography.X509;
 using AntShares.Implementations.Wallets.EntityFramework;
 using AntShares.IO;
 using AntShares.Properties;
 using AntShares.Wallets;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -16,6 +19,8 @@ namespace AntShares.UI
 {
     internal partial class MainForm : Form
     {
+        private bool balance_changed = false;
+
         public MainForm()
         {
             InitializeComponent();
@@ -55,33 +60,12 @@ namespace AntShares.UI
                     AddContractToListView(contract);
                 }
             }
-            OnBalanceChanged();
+            balance_changed = true;
         }
 
         private void CurrentWallet_BalanceChanged(object sender, EventArgs e)
         {
-            if (InvokeRequired)
-            {
-                BeginInvoke(new Action(OnBalanceChanged));
-            }
-            else
-            {
-                OnBalanceChanged();
-            }
-        }
-
-        private void OnBalanceChanged()
-        {
-            listView2.Items.Clear();
-            if (Program.CurrentWallet != null)
-            {
-                listView2.Items.AddRange(Program.CurrentWallet.FindUnspentCoins().GroupBy(p => p.AssetId, (k, g) => new
-                {
-                    Asset = (RegisterTransaction)Blockchain.Default.GetTransaction(k),
-                    Value = g.Sum(p => p.Value)
-                }).Select(p => new ListViewItem(new[] { p.Asset.GetName(), p.Value.ToString(), p.Asset.Issuer.ToString() }) { Name = p.Asset.Hash.ToString() }).ToArray());
-                //TODO: 未来要自动查询证书，显示真实发行者；如果发行者没有CA认证，或证书有问题，要有提示或警告。
-            }
+            balance_changed = true;
         }
 
         private async Task ShowInformationAsync(SignatureContext context)
@@ -113,6 +97,102 @@ namespace AntShares.UI
         {
             lbl_height.Text = $"{Blockchain.Default.Height}/{Blockchain.Default.HeaderHeight}";
             lbl_count_node.Text = Program.LocalNode.RemoteNodeCount.ToString();
+            if (balance_changed)
+            {
+                IEnumerable<UnspentCoin> coins = Program.CurrentWallet == null ? Enumerable.Empty<UnspentCoin>() : Program.CurrentWallet.FindUnspentCoins();
+                var assets = coins.GroupBy(p => p.AssetId, (k, g) => new
+                {
+                    Asset = (RegisterTransaction)Blockchain.Default.GetTransaction(k),
+                    Value = g.Sum(p => p.Value)
+                }).ToDictionary(p => p.Asset.Hash);
+                foreach (RegisterTransaction tx in listView2.Items.OfType<ListViewItem>().Select(p => (RegisterTransaction)p.Tag).ToArray())
+                {
+                    if (!assets.ContainsKey(tx.Hash))
+                    {
+                        listView2.Items.RemoveByKey(tx.Hash.ToString());
+                    }
+                }
+                foreach (var asset in assets.Values)
+                {
+                    if (listView2.Items.ContainsKey(asset.Asset.Hash.ToString()))
+                    {
+                        listView2.Items[asset.Asset.Hash.ToString()].SubItems["value"].Text = asset.Value.ToString();
+                    }
+                    else
+                    {
+                        listView2.Items.Add(new ListViewItem(new[]
+                        {
+                            new ListViewItem.ListViewSubItem
+                            {
+                                Name = "name",
+                                Text = asset.Asset.GetName()
+                            },
+                            new ListViewItem.ListViewSubItem
+                            {
+                                Name = "type",
+                                Text = asset.Asset.AssetType.ToString()
+                            },
+                            new ListViewItem.ListViewSubItem
+                            {
+                                Name = "value",
+                                Text = asset.Value.ToString()
+                            },
+                            new ListViewItem.ListViewSubItem
+                            {
+                                ForeColor = Color.Gray,
+                                Name = "issuer",
+                                Text = $"未知发行者[{asset.Asset.Issuer}]"
+                            }
+                        }, -1, listView2.Groups["unchecked"])
+                        {
+                            Name = asset.Asset.Hash.ToString(),
+                            Tag = asset.Asset,
+                            UseItemStyleForSubItems = false
+                        });
+                    }
+                }
+                balance_changed = false;
+            }
+            foreach (ListViewItem item in listView2.Groups["unchecked"].Items.OfType<ListViewItem>().ToArray())
+            {
+                ListViewItem.ListViewSubItem subitem = item.SubItems["issuer"];
+                RegisterTransaction asset = (RegisterTransaction)item.Tag;
+                using (CertificateQueryResult result = CertificateQueryService.Query(asset.Issuer))
+                {
+                    switch (result.Type)
+                    {
+                        case CertificateQueryResultType.Querying:
+                        case CertificateQueryResultType.QueryFailed:
+                            break;
+                        case CertificateQueryResultType.System:
+                            subitem.ForeColor = Color.Green;
+                            subitem.Text = "小蚁系统";
+                            break;
+                        case CertificateQueryResultType.Invalid:
+                            subitem.ForeColor = Color.Red;
+                            subitem.Text = $"[证书错误][{asset.Issuer}]";
+                            break;
+                        case CertificateQueryResultType.Expired:
+                            subitem.ForeColor = Color.Yellow;
+                            subitem.Text = $"[证书已过期]{result.Certificate.Subject}[{asset.Issuer}]";
+                            break;
+                        case CertificateQueryResultType.Good:
+                            subitem.ForeColor = Color.Green;
+                            subitem.Text = $"{result.Certificate.Subject}[{asset.Issuer}]";
+                            break;
+                    }
+                    switch (result.Type)
+                    {
+                        case CertificateQueryResultType.System:
+                        case CertificateQueryResultType.Missing:
+                        case CertificateQueryResultType.Invalid:
+                        case CertificateQueryResultType.Expired:
+                        case CertificateQueryResultType.Good:
+                            item.Group = listView2.Groups["checked"];
+                            break;
+                    }
+                }
+            }
         }
 
         private void 创建钱包数据库NToolStripMenuItem_Click(object sender, EventArgs e)
@@ -302,7 +382,7 @@ namespace AntShares.UI
                 UInt160 scriptHash = Wallet.ToScriptHash(address);
                 Program.CurrentWallet.DeleteContract(scriptHash);
             }
-            OnBalanceChanged();
+            balance_changed = true;
         }
     }
 }

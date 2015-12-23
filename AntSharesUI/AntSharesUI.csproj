@@ -57,6 +57,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Cryptography\X509\CertificateQueryResult.cs" />
+    <Compile Include="Cryptography\X509\CertificateQueryResultType.cs" />
+    <Compile Include="Cryptography\X509\CertificateQueryService.cs" />
     <Compile Include="UI\AddContractDialog.cs">
       <SubType>Form</SubType>
     </Compile>

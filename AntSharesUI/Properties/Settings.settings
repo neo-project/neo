@@ -8,5 +8,8 @@
     <Setting Name="NodePort" Type="System.UInt16" Scope="Application">
       <Value Profile="(Default)">20333</Value>
     </Setting>
+    <Setting Name="CertCachePath" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">.\Certs</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

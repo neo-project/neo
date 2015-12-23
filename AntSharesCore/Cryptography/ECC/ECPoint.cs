@@ -134,6 +134,8 @@ namespace AntShares.Cryptography.ECC
         {
             if (ReferenceEquals(this, other)) return true;
             if (ReferenceEquals(null, other)) return false;
+            if (IsInfinity && other.IsInfinity) return true;
+            if (IsInfinity || other.IsInfinity) return false;
             return X.Equals(other.X) && Y.Equals(other.Y);
         }
 

@@ -40,5 +40,14 @@ namespace AntShares.Properties {
                 return ((ushort)(this["NodePort"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute(".\\Certs")]
+        public string CertCachePath {
+            get {
+                return ((string)(this["CertCachePath"]));
+            }
+        }
     }
 }
