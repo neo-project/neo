@@ -1,4 +1,4 @@
-﻿namespace AntShares.Cryptography.X509
+﻿namespace AntShares.Cryptography
 {
     internal enum CertificateQueryResultType
     {

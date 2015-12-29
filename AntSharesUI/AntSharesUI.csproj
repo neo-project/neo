@@ -52,14 +52,15 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Design" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Cryptography\X509\CertificateQueryResult.cs" />
-    <Compile Include="Cryptography\X509\CertificateQueryResultType.cs" />
-    <Compile Include="Cryptography\X509\CertificateQueryService.cs" />
+    <Compile Include="Cryptography\CertificateQueryResult.cs" />
+    <Compile Include="Cryptography\CertificateQueryResultType.cs" />
+    <Compile Include="Cryptography\CertificateQueryService.cs" />
     <Compile Include="UI\AddContractDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -72,12 +73,33 @@
     <Compile Include="UI\AssetRegisterDialog.Designer.cs">
       <DependentUpon>AssetRegisterDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\CertificateRequestDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\CertificateRequestDialog.Designer.cs">
+      <DependentUpon>CertificateRequestDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\CreateMultiSigContractDialog.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="UI\CreateMultiSigContractDialog.Designer.cs">
       <DependentUpon>CreateMultiSigContractDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\HyperLib\Wizard.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\HyperLib\Wizard.designer.cs">
+      <DependentUpon>Wizard.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\HyperLib\WizardStep.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\HyperLib\WizardStep.designer.cs">
+      <DependentUpon>WizardStep.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\HyperLib\WizardStepChangedEventArgs.cs" />
+    <Compile Include="UI\HyperLib\WizardStepChangingEventArgs.cs" />
+    <Compile Include="UI\HyperLib\WizardStepCollection.cs" />
     <Compile Include="UI\ImportPrivateKeyDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -171,6 +193,9 @@
     <EmbeddedResource Include="UI\AssetRegisterDialog.resx">
       <DependentUpon>AssetRegisterDialog.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\CertificateRequestDialog.resx">
+      <DependentUpon>CertificateRequestDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\ContractDetailsDialog.resx">
       <DependentUpon>ContractDetailsDialog.cs</DependentUpon>
     </EmbeddedResource>
@@ -179,6 +204,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\DeveloperToolsForm.resx">
       <DependentUpon>DeveloperToolsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\HyperLib\Wizard.resx">
+      <DependentUpon>Wizard.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\HyperLib\WizardStep.resx">
+      <DependentUpon>WizardStep.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\ImportPrivateKeyDialog.resx">
       <DependentUpon>ImportPrivateKeyDialog.cs</DependentUpon>

@@ -384,21 +384,24 @@ namespace AntShares.Wallets
                 AssetId = k,
                 Value = g.Sum(p => p.Value)
             }).ToDictionary(p => p.AssetId);
-            if (pay_total.ContainsKey(Blockchain.AntCoin.Hash))
+            if (fee > Fixed8.Zero)
             {
-                pay_total[Blockchain.AntCoin.Hash] = new
+                if (pay_total.ContainsKey(Blockchain.AntCoin.Hash))
                 {
-                    AssetId = Blockchain.AntCoin.Hash,
-                    Value = pay_total[Blockchain.AntCoin.Hash].Value + fee
-                };
-            }
-            else
-            {
-                pay_total.Add(Blockchain.AntCoin.Hash, new
+                    pay_total[Blockchain.AntCoin.Hash] = new
+                    {
+                        AssetId = Blockchain.AntCoin.Hash,
+                        Value = pay_total[Blockchain.AntCoin.Hash].Value + fee
+                    };
+                }
+                else
                 {
-                    AssetId = Blockchain.AntCoin.Hash,
-                    Value = fee
-                });
+                    pay_total.Add(Blockchain.AntCoin.Hash, new
+                    {
+                        AssetId = Blockchain.AntCoin.Hash,
+                        Value = fee
+                    });
+                }
             }
             var coins = pay_total.Select(p => new
             {

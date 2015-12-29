@@ -64,6 +64,7 @@
             this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
             this.查看私钥VToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.复制到剪贴板CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.创建证书申请RToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.删除DToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
@@ -271,7 +272,7 @@
             this.ContractListView.HideSelection = false;
             this.ContractListView.Location = new System.Drawing.Point(3, 3);
             this.ContractListView.Name = "ContractListView";
-            this.ContractListView.Size = new System.Drawing.Size(793, 511);
+            this.ContractListView.Size = new System.Drawing.Size(742, 457);
             this.ContractListView.TabIndex = 1;
             this.ContractListView.UseCompatibleStateImageBehavior = false;
             this.ContractListView.View = System.Windows.Forms.View.Details;
@@ -295,16 +296,17 @@
             this.toolStripSeparator6,
             this.查看私钥VToolStripMenuItem,
             this.复制到剪贴板CToolStripMenuItem,
+            this.创建证书申请RToolStripMenuItem,
             this.删除DToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(164, 142);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(174, 186);
             this.contextMenuStrip1.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip1_Opening);
             // 
             // 创建新地址NToolStripMenuItem
             // 
             this.创建新地址NToolStripMenuItem.Enabled = false;
             this.创建新地址NToolStripMenuItem.Name = "创建新地址NToolStripMenuItem";
-            this.创建新地址NToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.创建新地址NToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
             this.创建新地址NToolStripMenuItem.Text = "创建新地址(&N)";
             this.创建新地址NToolStripMenuItem.Click += new System.EventHandler(this.创建新地址NToolStripMenuItem_Click);
             // 
@@ -312,7 +314,7 @@
             // 
             this.导入私钥IToolStripMenuItem.Enabled = false;
             this.导入私钥IToolStripMenuItem.Name = "导入私钥IToolStripMenuItem";
-            this.导入私钥IToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.导入私钥IToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
             this.导入私钥IToolStripMenuItem.Text = "导入私钥(&I)...";
             this.导入私钥IToolStripMenuItem.Click += new System.EventHandler(this.导入私钥IToolStripMenuItem_Click);
             // 
@@ -322,7 +324,7 @@
             this.多方签名MToolStripMenuItem});
             this.创建智能合约SToolStripMenuItem.Enabled = false;
             this.创建智能合约SToolStripMenuItem.Name = "创建智能合约SToolStripMenuItem";
-            this.创建智能合约SToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.创建智能合约SToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
             this.创建智能合约SToolStripMenuItem.Text = "创建智能合约(&S)";
             // 
             // 多方签名MToolStripMenuItem
@@ -335,13 +337,13 @@
             // toolStripSeparator6
             // 
             this.toolStripSeparator6.Name = "toolStripSeparator6";
-            this.toolStripSeparator6.Size = new System.Drawing.Size(160, 6);
+            this.toolStripSeparator6.Size = new System.Drawing.Size(170, 6);
             // 
             // 查看私钥VToolStripMenuItem
             // 
             this.查看私钥VToolStripMenuItem.Enabled = false;
             this.查看私钥VToolStripMenuItem.Name = "查看私钥VToolStripMenuItem";
-            this.查看私钥VToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.查看私钥VToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
             this.查看私钥VToolStripMenuItem.Text = "查看私钥(&V)";
             this.查看私钥VToolStripMenuItem.Click += new System.EventHandler(this.查看私钥VToolStripMenuItem_Click);
             // 
@@ -351,15 +353,23 @@
             this.复制到剪贴板CToolStripMenuItem.Name = "复制到剪贴板CToolStripMenuItem";
             this.复制到剪贴板CToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C)));
             this.复制到剪贴板CToolStripMenuItem.ShowShortcutKeys = false;
-            this.复制到剪贴板CToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.复制到剪贴板CToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
             this.复制到剪贴板CToolStripMenuItem.Text = "复制到剪贴板(&C)";
             this.复制到剪贴板CToolStripMenuItem.Click += new System.EventHandler(this.复制到剪贴板CToolStripMenuItem_Click);
+            // 
+            // 创建证书申请RToolStripMenuItem
+            // 
+            this.创建证书申请RToolStripMenuItem.Enabled = false;
+            this.创建证书申请RToolStripMenuItem.Name = "创建证书申请RToolStripMenuItem";
+            this.创建证书申请RToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
+            this.创建证书申请RToolStripMenuItem.Text = "创建证书申请(&R)...";
+            this.创建证书申请RToolStripMenuItem.Click += new System.EventHandler(this.创建证书申请RToolStripMenuItem_Click);
             // 
             // 删除DToolStripMenuItem
             // 
             this.删除DToolStripMenuItem.Enabled = false;
             this.删除DToolStripMenuItem.Name = "删除DToolStripMenuItem";
-            this.删除DToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.删除DToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
             this.删除DToolStripMenuItem.Text = "删除(&D)...";
             this.删除DToolStripMenuItem.Click += new System.EventHandler(this.删除DToolStripMenuItem_Click);
             // 
@@ -424,7 +434,7 @@
             this.tabPage1.Location = new System.Drawing.Point(4, 26);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(799, 517);
+            this.tabPage1.Size = new System.Drawing.Size(748, 463);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "账户";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -566,6 +576,7 @@
         private System.Windows.Forms.ListView ContractListView;
         private System.Windows.Forms.ColumnHeader columnHeader5;
         private System.Windows.Forms.ColumnHeader columnHeader6;
+        private System.Windows.Forms.ToolStripMenuItem 创建证书申请RToolStripMenuItem;
     }
 }
 

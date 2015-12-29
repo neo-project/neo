@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Security.Cryptography.X509Certificates;
 
-namespace AntShares.Cryptography.X509
+namespace AntShares.Cryptography
 {
     internal class CertificateQueryResult : IDisposable
     {

@@ -5,7 +5,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
-namespace AntShares.Cryptography.X509
+namespace AntShares.Cryptography
 {
     internal static class CertificateQueryService
     {
@@ -30,12 +30,27 @@ namespace AntShares.Cryptography.X509
             {
                 return new CertificateQueryResult { Type = CertificateQueryResultType.Missing };
             }
-            //TODO: 取到证书后，验证证书是否合法等
-            return new CertificateQueryResult
+            if (cert.PublicKey.Oid.Value != "1.2.840.10045.2.1")
+                return new CertificateQueryResult { Type = CertificateQueryResultType.Missing };
+            if (!pubkey.Equals(ECPoint.DecodePoint(cert.PublicKey.EncodedKeyValue.RawData, ECCurve.Secp256r1)))
+                return new CertificateQueryResult { Type = CertificateQueryResultType.Missing };
+            using (X509Chain chain = new X509Chain())
             {
-                Certificate = cert,
-                Type = CertificateQueryResultType.Good
-            };
+                CertificateQueryResult result = new CertificateQueryResult { Certificate = cert };
+                if (chain.Build(cert))
+                {
+                    result.Type = CertificateQueryResultType.Good;
+                }
+                else if (chain.ChainStatus.Length == 1 && chain.ChainStatus[0].Status == X509ChainStatusFlags.NotTimeValid)
+                {
+                    result.Type = CertificateQueryResultType.Expired;
+                }
+                else
+                {
+                    result.Type = CertificateQueryResultType.Invalid;
+                }
+                return result;
+            }
         }
     }
 }
