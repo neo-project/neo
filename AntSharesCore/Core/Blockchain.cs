@@ -13,10 +13,11 @@ namespace AntShares.Core
         public event EventHandler<Block> PersistCompleted;
 
         public const int SecondsPerBlock = 15;
+        public const int MintingInterval = 10;
         private const int BlocksPerYear = 365 * 24 * 60 * 60 / SecondsPerBlock;
         private const double R_Init = 0.5;
         private const double R_Final = 0.3;
-        public static readonly decimal GenerationFactor = 1 - (decimal)Math.Pow(R_Final / R_Init, 1.0 / BlocksPerYear);
+        public static readonly decimal GenerationFactor = 1 - (decimal)Math.Pow(R_Final / R_Init, (double)MintingInterval / BlocksPerYear);
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromSeconds(SecondsPerBlock);
         public static readonly ECPoint[] StandbyMiners =
         {

@@ -176,7 +176,7 @@ namespace AntShares.Network
             EnqueueMessage("inv", InvPayload.Create(InventoryType.Block, hashes.ToArray()));
         }
 
-        private void OnGetDataMessageReceived(GetDataPayload payload)
+        private void OnGetDataMessageReceived(InvPayload payload)
         {
             foreach (InventoryVector vector in payload.Inventories.Distinct())
             {
@@ -268,7 +268,7 @@ namespace AntShares.Network
                 }
             }
             if (vectors.Length == 0) return;
-            EnqueueMessage("getdata", GetDataPayload.Create(vectors));
+            EnqueueMessage("getdata", InvPayload.Create(vectors));
         }
 
         private void OnMessageReceived(Message message)
@@ -294,7 +294,7 @@ namespace AntShares.Network
                     OnGetBlocksMessageReceived(message.Payload.AsSerializable<GetBlocksPayload>());
                     break;
                 case "getdata":
-                    OnGetDataMessageReceived(message.Payload.AsSerializable<GetDataPayload>());
+                    OnGetDataMessageReceived(message.Payload.AsSerializable<InvPayload>());
                     break;
                 case "getheaders":
                     OnGetHeadersMessageReceived(message.Payload.AsSerializable<GetBlocksPayload>());

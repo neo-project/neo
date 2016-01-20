@@ -313,7 +313,6 @@ namespace AntShares.UI
         {
             查看私钥VToolStripMenuItem.Enabled = ContractListView.SelectedIndices.Count == 1;
             复制到剪贴板CToolStripMenuItem.Enabled = ContractListView.SelectedIndices.Count == 1;
-            创建证书申请RToolStripMenuItem.Enabled = ContractListView.SelectedIndices.Count == 1 && ContractListView.SelectedItems[0].Tag is SignatureContract;
             删除DToolStripMenuItem.Enabled = ContractListView.SelectedIndices.Count > 0;
         }
 
@@ -327,13 +326,27 @@ namespace AntShares.UI
             }
         }
 
-        private void 导入私钥IToolStripMenuItem_Click(object sender, EventArgs e)
+        private void importWIFToolStripMenuItem_Click(object sender, EventArgs e)
         {
             using (ImportPrivateKeyDialog dialog = new ImportPrivateKeyDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
                 ContractListView.SelectedIndices.Clear();
                 Account account = Program.CurrentWallet.Import(dialog.WIF);
+                foreach (Contract contract in Program.CurrentWallet.GetContracts(account.PublicKeyHash))
+                {
+                    AddContractToListView(contract, true);
+                }
+            }
+        }
+
+        private void importCertificateToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (SelectCertificateDialog dialog = new SelectCertificateDialog())
+            {
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                ContractListView.SelectedIndices.Clear();
+                Account account = Program.CurrentWallet.Import(dialog.SelectedCertificate);
                 foreach (Contract contract in Program.CurrentWallet.GetContracts(account.PublicKeyHash))
                 {
                     AddContractToListView(contract, true);
@@ -371,16 +384,6 @@ namespace AntShares.UI
         private void 复制到剪贴板CToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Clipboard.SetText(ContractListView.SelectedItems[0].Text);
-        }
-
-        private void 创建证书申请RToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Contract contract = (Contract)ContractListView.SelectedItems[0].Tag;
-            Account account = Program.CurrentWallet.GetAccountByScriptHash(contract.ScriptHash);
-            using (CertificateRequestDialog dialog = new CertificateRequestDialog(account))
-            {
-                dialog.ShowDialog();
-            }
         }
 
         private void 删除DToolStripMenuItem_Click(object sender, EventArgs e)

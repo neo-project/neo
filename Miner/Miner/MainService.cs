@@ -26,7 +26,7 @@ namespace AntShares.Miner
         protected override string Prompt => "ant";
         public override string ServiceName => "AntSharesMiner";
 
-        private GenerationTransaction CreateGenerationTransaction(IEnumerable<Transaction> transactions, ulong nonce)
+        private GenerationTransaction CreateGenerationTransaction(IEnumerable<Transaction> transactions, uint height, ulong nonce)
         {
             var antshares = Blockchain.Default.GetUnspentAntShares().GroupBy(p => p.ScriptHash, (k, g) => new
             {
@@ -46,7 +46,7 @@ namespace AntShares.Miner
                     ScriptHash = wallet.GetContracts().First().ScriptHash
                 }
             };
-            if (antshares.Length > 0)
+            if (height % Blockchain.MintingInterval == 0 && antshares.Length > 0)
             {
                 ulong n = nonce % (ulong)antshares.Sum(p => p.Amount).GetData();
                 ulong line = 0;
@@ -261,7 +261,7 @@ namespace AntShares.Miner
                 }
                 ulong nonce = BitConverter.ToUInt64(nonce_data, 0);
                 List<Transaction> transactions = Blockchain.Default.GetMemoryPool().ToList();
-                transactions.Insert(0, CreateGenerationTransaction(transactions, nonce));
+                transactions.Insert(0, CreateGenerationTransaction(transactions, header.Height + 1, nonce));
                 Block block = new Block
                 {
                     PrevBlock = header.Hash,

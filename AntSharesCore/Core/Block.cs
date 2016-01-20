@@ -258,7 +258,11 @@ namespace AntShares.Core
                 Fixed8 amount_sysfee = transactions.Sum(p => p.SystemFee);
                 Fixed8 amount_netfee = amount_in - amount_out - amount_sysfee;
                 Fixed8 quantity = Blockchain.Default.GetQuantityIssued(Blockchain.AntCoin.Hash);
-                Fixed8 gen = antshares.Length == 0 ? Fixed8.Zero : Fixed8.FromDecimal((Blockchain.AntCoin.Amount - (quantity - amount_sysfee)).ToDecimal() * Blockchain.GenerationFactor);
+                Fixed8 gen = Fixed8.Zero;
+                if (Height % Blockchain.MintingInterval == 0 && antshares.Length > 0)
+                {
+                    gen = Fixed8.FromDecimal((Blockchain.AntCoin.Amount - (quantity - amount_sysfee)).ToDecimal() * Blockchain.GenerationFactor);
+                }
                 GenerationTransaction tx_gen = Transactions.OfType<GenerationTransaction>().First();
                 if (tx_gen.Outputs.Sum(p => p.Value) != amount_netfee + gen)
                     return false;

@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>AntShares</RootNamespace>
     <AssemblyName>AntSharesCore</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <NuGetPackageImportStamp>
@@ -204,7 +204,6 @@
     <Compile Include="Network\Message.cs" />
     <Compile Include="Network\Payloads\AddrPayload.cs" />
     <Compile Include="Network\Payloads\GetBlocksPayload.cs" />
-    <Compile Include="Network\Payloads\GetDataPayload.cs" />
     <Compile Include="Network\Payloads\HeadersPayload.cs" />
     <Compile Include="Network\Payloads\Helper.cs" />
     <Compile Include="Network\InventoryType.cs" />

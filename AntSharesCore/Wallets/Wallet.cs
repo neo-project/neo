@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Security;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 
 namespace AntShares.Wallets
@@ -129,15 +130,21 @@ namespace AntShares.Wallets
             }
         }
 
-        public virtual Account CreateAccount()
+        public Account CreateAccount()
         {
             byte[] privateKey;
             using (CngKey key = CngKey.Create(CngAlgorithm.ECDsaP256, null, new CngKeyCreationParameters { ExportPolicy = CngExportPolicies.AllowPlaintextArchiving }))
             {
                 privateKey = key.Export(CngKeyBlobFormat.EccPrivateBlob);
             }
-            Account account = new Account(privateKey);
+            Account account = CreateAccount(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
+            return account;
+        }
+
+        public virtual Account CreateAccount(byte[] privateKey)
+        {
+            Account account = new Account(privateKey);
             lock (accounts)
             {
                 accounts.Add(account.PublicKeyHash, account);
@@ -351,15 +358,23 @@ namespace AntShares.Wallets
             return privateKey;
         }
 
-        public virtual Account Import(string wif)
+        public Account Import(X509Certificate2 cert)
+        {
+            byte[] privateKey;
+            using (ECDsaCng ecdsa = (ECDsaCng)cert.GetECDsaPrivateKey())
+            {
+                privateKey = ecdsa.Key.Export(CngKeyBlobFormat.EccPrivateBlob);
+            }
+            Account account = CreateAccount(privateKey);
+            Array.Clear(privateKey, 0, privateKey.Length);
+            return account;
+        }
+
+        public Account Import(string wif)
         {
             byte[] privateKey = GetPrivateKeyFromWIF(wif);
-            Account account = new Account(privateKey);
+            Account account = CreateAccount(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
-            lock (accounts)
-            {
-                accounts.Add(account.PublicKeyHash, account);
-            }
             return account;
         }
 

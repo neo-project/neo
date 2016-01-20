@@ -115,6 +115,8 @@ namespace AntShares.Core
                     if (inputs[i].PrevHash == inputs[j].PrevHash && inputs[i].PrevIndex == inputs[j].PrevIndex)
                         throw new FormatException();
             Outputs = reader.ReadSerializableArray<TransactionOutput>();
+            if (Outputs.Length > ushort.MaxValue + 1)
+                throw new FormatException();
         }
 
         public virtual IEnumerable<TransactionInput> GetAllInputs()

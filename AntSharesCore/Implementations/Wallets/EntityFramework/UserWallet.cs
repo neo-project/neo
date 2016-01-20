@@ -63,9 +63,9 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             return wallet;
         }
 
-        public override WalletAccount CreateAccount()
+        public override WalletAccount CreateAccount(byte[] privateKey)
         {
-            WalletAccount account = base.CreateAccount();
+            WalletAccount account = base.CreateAccount(privateKey);
             OnCreateAccount(account);
             AddContract(SignatureContract.Create(account.PublicKey));
             return account;
@@ -110,14 +110,6 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         public override WalletUnspentCoin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount)
         {
             return FindUnspentCoins(FindUnspentCoins().Where(p => GetContract(p.ScriptHash) is SignatureContract), asset_id, amount) ?? base.FindUnspentCoins(asset_id, amount);
-        }
-
-        public override WalletAccount Import(string wif)
-        {
-            WalletAccount account = base.Import(wif);
-            OnCreateAccount(account);
-            AddContract(SignatureContract.Create(account.PublicKey));
-            return account;
         }
 
         protected override IEnumerable<WalletAccount> LoadAccounts()
@@ -217,7 +209,9 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                 }
                 foreach (WalletUnspentCoin coin in unspent)
                 {
-                    UnspentCoin unspent_coin = ctx.UnspentCoins.FirstOrDefault(p => p.TxId.SequenceEqual(coin.Input.PrevHash.ToArray()) && p.Index == coin.Input.PrevIndex);
+					//这样速度更快，但不知道会不会出问题
+                    //UnspentCoin unspent_coin = ctx.UnspentCoins.FirstOrDefault(p => p.TxId.SequenceEqual(coin.Input.PrevHash.ToArray()) && p.Index == coin.Input.PrevIndex);
+                    UnspentCoin unspent_coin = null;
                     if (unspent_coin == null)
                     {
                         unspent_coin = ctx.UnspentCoins.Add(new UnspentCoin

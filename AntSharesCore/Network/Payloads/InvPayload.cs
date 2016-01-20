@@ -8,6 +8,14 @@ namespace AntShares.Network.Payloads
     {
         public InventoryVector[] Inventories;
 
+        public static InvPayload Create(InventoryVector[] vectors)
+        {
+            return new InvPayload
+            {
+                Inventories = vectors
+            };
+        }
+
         public static InvPayload Create(InventoryType type, params UInt256[] hashes)
         {
             return new InvPayload
