@@ -1,18 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{58870D2E-9DAE-41EF-9766-17C39238ED0F}</ProjectGuid>
+    <ProjectGuid>{3E7DD63A-6AD5-41F1-837D-42C11694246C}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>AntShares</RootNamespace>
-    <AssemblyName>Miner</AssemblyName>
+    <AssemblyName>AntSharesDaemon</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>AntShares.Program</StartupObject>
@@ -25,46 +24,24 @@
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
     <PlatformTarget>x64</PlatformTarget>
-    <UseVSHostingProcess>false</UseVSHostingProcess>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Security" />
     <Reference Include="System.ServiceProcess" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\AntSharesDaemon\Network\RPC\RpcServer.cs">
-      <Link>Network\RPC\RpcServer.cs</Link>
-    </Compile>
-    <Compile Include="..\AntSharesDaemon\Services\ConsoleServiceBase.cs">
-      <Link>Services\ConsoleServiceBase.cs</Link>
-    </Compile>
-    <Compile Include="..\AntSharesDaemon\Services\ServiceProxy.cs">
-      <Link>Services\ServiceProxy.cs</Link>
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="..\AntSharesDaemon\Shell\MainService.cs">
-      <Link>Shell\MainService.cs</Link>
-    </Compile>
-    <Compile Include="BigIntegerExtensions.cs" />
-    <Compile Include="Algebra\FiniteFieldPoint.cs" />
-    <Compile Include="Algebra\FiniteFieldPolynomial.cs" />
-    <Compile Include="Algebra\IrreduciblePolynomial.cs" />
-    <Compile Include="Algebra\LagrangeInterpolator.cs" />
-    <Compile Include="Cryptography\Diffuser.cs" />
-    <Compile Include="Cryptography\SecretSharing.cs" />
-    <Compile Include="Cryptography\SplitSecret.cs" />
-    <Compile Include="Miner\BlockConsensusContext.cs" />
-    <Compile Include="Miner\MinerService.cs" />
+    <Compile Include="Network\RPC\RpcServer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
@@ -72,14 +49,14 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Threading\TimeoutAction.cs" />
-    <Compile Include="Wallets\Helper.cs" />
-    <Compile Include="Wallets\MinerWallet.cs" />
+    <Compile Include="Services\ConsoleServiceBase.cs" />
+    <Compile Include="Services\ServiceProxy.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Shell\MainService.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config">
-      <SubType>Designer</SubType>
-    </None>
+    <None Include="App.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

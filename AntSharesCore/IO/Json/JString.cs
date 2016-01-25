@@ -6,7 +6,7 @@ using System.Web;
 
 namespace AntShares.IO.Json
 {
-    internal class JString : JObject
+    public class JString : JObject
     {
         public string Value { get; private set; }
 

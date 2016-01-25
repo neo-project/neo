@@ -1,10 +1,8 @@
 ﻿using AntShares.Core;
 using AntShares.Core.Scripts;
 using AntShares.Cryptography.ECC;
-using AntShares.Implementations.Blockchains.LevelDB;
 using AntShares.Network;
-using AntShares.Properties;
-using AntShares.Services;
+using AntShares.Shell;
 using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
@@ -16,15 +14,11 @@ using System.Threading.Tasks;
 
 namespace AntShares.Miner
 {
-    internal class MainService : ConsoleServiceBase
+    internal class MinerService : MainService
     {
-        private LocalNode localnode;
         private MinerWallet wallet;
         private CancellationTokenSource source = new CancellationTokenSource();
         private bool stopped = false;
-
-        protected override string Prompt => "ant";
-        public override string ServiceName => "AntSharesMiner";
 
         private GenerationTransaction CreateGenerationTransaction(IEnumerable<Transaction> transactions, uint height, ulong nonce)
         {
@@ -85,8 +79,6 @@ namespace AntShares.Miner
                     return OnCreateCommand(args);
                 case "open":
                     return OnOpenCommand(args);
-                case "show":
-                    return OnShowCommand(args);
                 default:
                     return base.OnCommand(args);
             }
@@ -167,40 +159,9 @@ namespace AntShares.Miner
             return true;
         }
 
-        private bool OnShowCommand(string[] args)
+        protected internal override void OnStart(string[] args)
         {
-            switch (args[1].ToLower())
-            {
-                case "node":
-                    return OnShowNodeCommand(args);
-                case "state":
-                    return OnShowStateCommand(args);
-                default:
-                    return base.OnCommand(args);
-            }
-        }
-
-        private bool OnShowNodeCommand(string[] args)
-        {
-            RemoteNode[] nodes = localnode.GetRemoteNodes();
-            for (int i = 0; i < nodes.Length; i++)
-            {
-                Console.WriteLine($"{nodes[i].RemoteEndpoint.Address} port:{nodes[i].RemoteEndpoint.Port} listen:{nodes[i].ListenerEndpoint?.Port ?? 0} [{i + 1}/{nodes.Length}]");
-            }
-            return true;
-        }
-
-        private bool OnShowStateCommand(string[] args)
-        {
-            Console.WriteLine($"Height: {Blockchain.Default.Height}/{Blockchain.Default.HeaderHeight}, Nodes: {localnode.RemoteNodeCount}");
-            return true;
-        }
-
-        protected internal override void OnStart()
-        {
-            Blockchain.RegisterBlockchain(new LevelDBBlockchain(Settings.Default.DataDirectoryPath));
-            localnode = new LocalNode();
-            localnode.Start();
+            base.OnStart(new string[0]);
             StartMine(source.Token);
         }
 
@@ -211,8 +172,7 @@ namespace AntShares.Miner
             {
                 Thread.Sleep(100);
             }
-            localnode.Dispose();
-            Blockchain.Default.Dispose();
+            base.OnStop();
         }
 
         private async void StartMine(CancellationToken token)
@@ -273,7 +233,7 @@ namespace AntShares.Miner
                 };
                 block.RebuildMerkleRoot();
                 wallet.Sign(block, miners);
-                await localnode.RelayAsync(block);
+                await LocalNode.RelayAsync(block);
                 while (Blockchain.Default.CurrentBlockHash != block.Hash && !token.IsCancellationRequested)
                 {
                     await Task.Delay(100, token);

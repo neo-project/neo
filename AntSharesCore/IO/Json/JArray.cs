@@ -6,7 +6,7 @@ using System.Text;
 
 namespace AntShares.IO.Json
 {
-    internal class JArray : JObject, IList<JObject>
+    public class JArray : JObject, IList<JObject>
     {
         private List<JObject> items = new List<JObject>();
 

@@ -13,7 +13,7 @@ namespace AntShares.Services
 
         protected override void OnStart(string[] args)
         {
-            service.OnStart();
+            service.OnStart(args);
         }
 
         protected override void OnStop()

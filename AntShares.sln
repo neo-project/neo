@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AntSharesCore", "AntSharesCore\AntSharesCore.csproj", "{BCD6B896-6CD0-4601-AA13-5672A15E0CAD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AntSharesUI", "AntSharesUI\AntSharesUI.csproj", "{CFC243F0-F4E3-4754-8E21-8BA17E1C1788}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Miner", "Miner\Miner.csproj", "{58870D2E-9DAE-41EF-9766-17C39238ED0F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AntSharesDaemon", "AntSharesDaemon\AntSharesDaemon.csproj", "{3E7DD63A-6AD5-41F1-837D-42C11694246C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{58870D2E-9DAE-41EF-9766-17C39238ED0F}.Debug|x64.Build.0 = Debug|x64
 		{58870D2E-9DAE-41EF-9766-17C39238ED0F}.Release|x64.ActiveCfg = Release|x64
 		{58870D2E-9DAE-41EF-9766-17C39238ED0F}.Release|x64.Build.0 = Release|x64
+		{3E7DD63A-6AD5-41F1-837D-42C11694246C}.Debug|x64.ActiveCfg = Debug|x64
+		{3E7DD63A-6AD5-41F1-837D-42C11694246C}.Debug|x64.Build.0 = Debug|x64
+		{3E7DD63A-6AD5-41F1-837D-42C11694246C}.Release|x64.ActiveCfg = Release|x64
+		{3E7DD63A-6AD5-41F1-837D-42C11694246C}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

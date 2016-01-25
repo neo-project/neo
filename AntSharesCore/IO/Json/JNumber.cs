@@ -4,7 +4,7 @@ using System.Text;
 
 namespace AntShares.IO.Json
 {
-    internal class JNumber : JObject
+    public class JNumber : JObject
     {
         public decimal Value { get; private set; }
 

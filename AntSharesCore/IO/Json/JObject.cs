@@ -5,7 +5,7 @@ using System.Text;
 
 namespace AntShares.IO.Json
 {
-    internal class JObject
+    public class JObject
     {
         public static readonly JObject Null = null;
         private Dictionary<string, JObject> properties = new Dictionary<string, JObject>();
@@ -89,7 +89,7 @@ namespace AntShares.IO.Json
             return properties.ContainsKey(key);
         }
 
-        internal static JObject Parse(TextReader reader)
+        public static JObject Parse(TextReader reader)
         {
             SkipSpace(reader);
             char firstChar = (char)reader.Peek();
@@ -123,7 +123,7 @@ namespace AntShares.IO.Json
                 string name = JString.Parse(reader).Value;
                 SkipSpace(reader);
                 if (reader.Read() != ':') throw new FormatException();
-                JObject value = JObject.Parse(reader);
+                JObject value = Parse(reader);
                 obj.properties.Add(name, value);
                 SkipSpace(reader);
             }

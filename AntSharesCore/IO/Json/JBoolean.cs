@@ -3,7 +3,7 @@ using System.IO;
 
 namespace AntShares.IO.Json
 {
-    internal class JBoolean : JObject
+    public class JBoolean : JObject
     {
         public bool Value { get; private set; }
 

@@ -33,7 +33,7 @@ namespace AntShares.Services
             }
         }
 
-        protected internal abstract void OnStart();
+        protected internal abstract void OnStart(string[] args);
 
         protected internal abstract void OnStop();
 
@@ -108,7 +108,7 @@ namespace AntShares.Services
                 }
                 else
                 {
-                    OnStart();
+                    OnStart(args);
                     RunConsole();
                     OnStop();
                 }
