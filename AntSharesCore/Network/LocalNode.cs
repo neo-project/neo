@@ -381,12 +381,15 @@ namespace AntShares.Network
                 IPAddress address = localhost?.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(p) && !IsIntranetAddress(p));
                 if (address == null && UpnpEnabled && UPnP.Discover())
                 {
-                    address = UPnP.GetExternalIP();
                     try
                     {
+                        address = UPnP.GetExternalIP();
                         UPnP.ForwardPort(port, ProtocolType.Tcp, "AntShares");
                     }
-                    catch { }
+                    catch
+                    {
+                        address = null;
+                    }
                 }
                 if (address != null && !IsIntranetAddress(address))
                 {

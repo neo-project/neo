@@ -1,4 +1,5 @@
 ﻿using AntShares.IO;
+using AntShares.IO.Json;
 using System;
 using System.IO;
 
@@ -42,6 +43,14 @@ namespace AntShares.Core
             if (Usage >= TransactionAttributeUsage.Remark)
                 writer.Write((byte)Data.Length);
             writer.Write(Data);
+        }
+
+        public JObject ToJson()
+        {
+            JObject json = new JObject();
+            json["usage"] = Usage;
+            json["data"] = Data.ToHexString();
+            return json;
         }
     }
 }

@@ -1,7 +1,9 @@
 ﻿using AntShares.Core.Scripts;
 using AntShares.Cryptography;
 using AntShares.IO;
+using AntShares.IO.Json;
 using AntShares.Network;
+using AntShares.Wallets;
 using System;
 using System.IO;
 using System.Linq;
@@ -202,6 +204,22 @@ namespace AntShares.Core
             writer.Write(Height);
             writer.Write(Nonce);
             writer.Write(NextMiner);
+        }
+
+        public JObject ToJson()
+        {
+            JObject json = new JObject();
+            json["hash"] = Hash.ToString();
+            json["version"] = Version;
+            json["previousblockhash"] = PrevBlock.ToString();
+            json["merkleroot"] = MerkleRoot.ToString();
+            json["time"] = Timestamp;
+            json["height"] = Height;
+            json["nonce"] = Nonce;
+            json["nextminer"] = Wallet.ToAddress(NextMiner);
+            json["script"] = Script.ToJson();
+            json["tx"] = Transactions.Select(p => p.ToJson()).ToArray();
+            return json;
         }
 
         public byte[] Trim()

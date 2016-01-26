@@ -34,15 +34,6 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             return dst;
         }
 
-        public static IEnumerable<TResult> IndexedSelect<T, TResult>(this IEnumerable<T> source, Func<T, int, TResult> selector)
-        {
-            int index = 0;
-            foreach (T item in source)
-            {
-                yield return selector(item, index++);
-            }
-        }
-
         public static IEnumerable<ushort> Range(ushort start, int count)
         {
             if (count < 0 || start + count > ushort.MaxValue)

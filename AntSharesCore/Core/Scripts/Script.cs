@@ -1,4 +1,5 @@
 ﻿using AntShares.IO;
+using AntShares.IO.Json;
 using System.IO;
 
 namespace AntShares.Core.Scripts
@@ -18,6 +19,14 @@ namespace AntShares.Core.Scripts
         {
             writer.WriteVarInt(StackScript.Length); writer.Write(StackScript);
             writer.WriteVarInt(RedeemScript.Length); writer.Write(RedeemScript);
+        }
+
+        public JObject ToJson()
+        {
+            JObject json = new JObject();
+            json["stack"] = StackScript.ToHexString();
+            json["redeem"] = RedeemScript.ToHexString();
+            return json;
         }
     }
 }

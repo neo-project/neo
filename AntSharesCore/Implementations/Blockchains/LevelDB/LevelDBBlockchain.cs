@@ -216,18 +216,6 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             }
         }
 
-        public override Block GetBlock(uint height)
-        {
-            Block block = base.GetBlock(height);
-            if (block != null) return block;
-            if (current_block_height < height) return null;
-            lock (header_chain)
-            {
-                if (header_index.Count <= height) return null;
-                return GetBlockInternal(header_index[(int)height], ReadOptions.Default);
-            }
-        }
-
         public override Block GetBlock(UInt256 hash)
         {
             Block block = base.GetBlock(hash);
@@ -236,6 +224,18 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 block = GetBlockInternal(hash, ReadOptions.Default);
             }
             return block;
+        }
+
+        public override UInt256 GetBlockHash(uint height)
+        {
+            UInt256 hash = base.GetBlockHash(height);
+            if (hash != null) return hash;
+            if (current_block_height < height) return null;
+            lock (header_chain)
+            {
+                if (header_index.Count <= height) return null;
+                return header_index[(int)height];
+            }
         }
 
         private Block GetBlockInternal(UInt256 hash, ReadOptions options)

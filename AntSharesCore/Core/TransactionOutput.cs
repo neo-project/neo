@@ -1,4 +1,6 @@
 ﻿using AntShares.IO;
+using AntShares.IO.Json;
+using AntShares.Wallets;
 using System;
 using System.IO;
 
@@ -23,6 +25,16 @@ namespace AntShares.Core
             writer.Write(AssetId);
             writer.Write(Value);
             writer.Write(ScriptHash);
+        }
+
+        public JObject ToJson(ushort index)
+        {
+            JObject json = new JObject();
+            json["n"] = index;
+            json["asset"] = AssetId.ToString();
+            json["value"] = Value.ToDecimal();
+            json["address"] = Wallet.ToAddress(ScriptHash);
+            return json;
         }
     }
 }

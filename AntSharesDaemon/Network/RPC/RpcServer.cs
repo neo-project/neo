@@ -1,4 +1,5 @@
-﻿using AntShares.IO.Json;
+﻿using AntShares.Core;
+using AntShares.IO.Json;
 using System;
 using System.IO;
 using System.Linq;
@@ -51,8 +52,33 @@ namespace AntShares.Network.RPC
         {
             switch (method)
             {
+                case "getbestblockhash":
+                    return Blockchain.Default.CurrentBlockHash.ToString();
+                case "getblock":
+                    {
+                        UInt256 hash = UInt256.Parse(_params[0].AsString());
+                        Block block = Blockchain.Default.GetBlock(hash);
+                        if (block == null)
+                            throw new RpcException(-100, "Unknown block");
+                        return block.ToJson();
+                    }
+                case "getblockcount":
+                    return Blockchain.Default.Height + 1;
+                case "getblockhash":
+                    {
+                        uint height = (uint)_params[0].AsNumber();
+                        return Blockchain.Default.GetBlockHash(height).ToString();
+                    }
+                case "getrawtransaction":
+                    {
+                        UInt256 hash = UInt256.Parse(_params[0].AsString());
+                        Transaction tx = Blockchain.Default.GetTransaction(hash);
+                        if (tx == null)
+                            throw new RpcException(-101, "Unknown transaction");
+                        return tx.ToJson();
+                    }
                 default:
-                    throw new ArgumentException("Method not found", nameof(method));
+                    throw new RpcException(-32601, "Method not found");
             }
         }
 
@@ -84,7 +110,7 @@ namespace AntShares.Network.RPC
                     }
                     else
                     {
-                        response = new JArray(array.Select(p => ProcessRequest(p)).Where(p => p != null).ToArray());
+                        response = array.Select(p => ProcessRequest(p)).Where(p => p != null).ToArray();
                     }
                 }
                 else
@@ -114,10 +140,6 @@ namespace AntShares.Network.RPC
             try
             {
                 result = InternalCall(request["method"].AsString(), (JArray)request["params"]);
-            }
-            catch (ArgumentException ex) when (ex.ParamName == "method")
-            {
-                return CreateErrorResponse(request["id"], -32601, "Method not found");
             }
             catch (Exception ex)
             {

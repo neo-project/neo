@@ -103,16 +103,21 @@ namespace AntShares.Core
 
         public abstract IEnumerable<RegisterTransaction> GetAssets();
 
-        public virtual Block GetBlock(uint height)
+        public Block GetBlock(uint height)
         {
-            if (height == 0) return GenesisBlock;
-            return null;
+            return GetBlock(GetBlockHash(height));
         }
 
         public virtual Block GetBlock(UInt256 hash)
         {
             if (hash == GenesisBlock.Hash)
                 return GenesisBlock;
+            return null;
+        }
+
+        public virtual UInt256 GetBlockHash(uint height)
+        {
+            if (height == 0) return GenesisBlock.Hash;
             return null;
         }
 

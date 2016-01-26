@@ -1,5 +1,6 @@
 ﻿using AntShares.Core.Scripts;
 using AntShares.IO;
+using AntShares.IO.Json;
 using AntShares.Network;
 using System;
 using System.Collections.Generic;
@@ -179,6 +180,19 @@ namespace AntShares.Core
             writer.Write(Attributes);
             writer.Write(Inputs);
             writer.Write(Outputs);
+        }
+
+        public JObject ToJson()
+        {
+            JObject json = new JObject();
+            json["txid"] = Hash.ToString();
+            json["hex"] = this.ToArray().ToHexString();
+            json["type"] = Type;
+            json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
+            json["vin"] = Inputs.Select(p => p.ToJson()).ToArray();
+            json["vout"] = Outputs.IndexedSelect((p, i) => p.ToJson((ushort)i)).ToArray();
+            json["script"] = Scripts.Select(p => p.ToJson()).ToArray();
+            return json;
         }
 
         public override bool Verify()

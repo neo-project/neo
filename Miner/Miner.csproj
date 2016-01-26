@@ -42,6 +42,9 @@
     <Reference Include="System.ServiceProcess" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\AntSharesDaemon\Network\RPC\RpcException.cs">
+      <Link>Network\RPC\RpcException.cs</Link>
+    </Compile>
     <Compile Include="..\AntSharesDaemon\Network\RPC\RpcServer.cs">
       <Link>Network\RPC\RpcServer.cs</Link>
     </Compile>

@@ -1,4 +1,5 @@
 ﻿using AntShares.IO;
+using AntShares.IO.Json;
 using System;
 using System.IO;
 
@@ -39,6 +40,14 @@ namespace AntShares.Core
         {
             writer.Write(PrevHash);
             writer.Write(PrevIndex);
+        }
+
+        public JObject ToJson()
+        {
+            JObject json = new JObject();
+            json["txid"] = PrevHash.ToString();
+            json["vout"] = PrevIndex;
+            return json;
         }
     }
 }
