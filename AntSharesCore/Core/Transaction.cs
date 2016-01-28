@@ -125,6 +125,16 @@ namespace AntShares.Core
             return Inputs;
         }
 
+        protected override byte[] GetHashData()
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms))
+            {
+                ((ISignable)this).SerializeUnsigned(writer);
+                return ms.ToArray();
+            }
+        }
+
         public virtual UInt160[] GetScriptHashesForVerifying()
         {
             if (References == null) throw new InvalidOperationException();
@@ -191,7 +201,7 @@ namespace AntShares.Core
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["vin"] = Inputs.Select(p => p.ToJson()).ToArray();
             json["vout"] = Outputs.IndexedSelect((p, i) => p.ToJson((ushort)i)).ToArray();
-            json["script"] = Scripts.Select(p => p.ToJson()).ToArray();
+            json["scripts"] = Scripts.Select(p => p.ToJson()).ToArray();
             return json;
         }
 

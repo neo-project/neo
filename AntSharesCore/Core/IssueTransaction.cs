@@ -1,16 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace AntShares.Core
 {
     public class IssueTransaction : Transaction
     {
+        public uint Nonce;
+
         public override Fixed8 SystemFee => Outputs.All(p => p.AssetId == Blockchain.AntShare.Hash || p.AssetId == Blockchain.AntCoin.Hash) ? Fixed8.Zero : Fixed8.FromDecimal(500);
 
         public IssueTransaction()
             : base(TransactionType.IssueTransaction)
         {
+        }
+
+        protected override void DeserializeExclusiveData(BinaryReader reader)
+        {
+            this.Nonce = reader.ReadUInt32();
         }
 
         public override UInt160[] GetScriptHashesForVerifying()
@@ -23,6 +31,11 @@ namespace AntShares.Core
                 hashes.Add(tx.Admin);
             }
             return hashes.OrderBy(p => p).ToArray();
+        }
+
+        protected override void SerializeExclusiveData(BinaryWriter writer)
+        {
+            writer.Write(Nonce);
         }
 
         public override bool Verify()

@@ -75,6 +75,7 @@ namespace AntShares.Core
             Height = reader.ReadUInt32();
             Nonce = reader.ReadUInt64();
             NextMiner = reader.ReadSerializable<UInt160>();
+            if (reader.ReadByte() != 1) throw new FormatException();
             Script = reader.ReadSerializable<Script>();
             Transactions = new Transaction[reader.ReadVarInt()];
             for (int i = 0; i < Transactions.Length; i++)
@@ -129,7 +130,7 @@ namespace AntShares.Core
                 block.Height = reader.ReadUInt32();
                 block.Nonce = reader.ReadUInt64();
                 block.NextMiner = reader.ReadSerializable<UInt160>();
-                block.Script = reader.ReadSerializable<Script>();
+                reader.ReadByte(); block.Script = reader.ReadSerializable<Script>();
                 if (txSelector == null)
                 {
                     block.Transactions = new Transaction[0];
@@ -163,7 +164,6 @@ namespace AntShares.Core
                 writer.Write(Height);
                 writer.Write(Nonce);
                 writer.Write(NextMiner);
-                writer.Write(Script);
                 return ms.ToArray();
             }
         }
@@ -191,7 +191,7 @@ namespace AntShares.Core
             writer.Write(Height);
             writer.Write(Nonce);
             writer.Write(NextMiner);
-            writer.Write(Script);
+            writer.Write((byte)1); writer.Write(Script);
             writer.Write(Transactions);
         }
 
@@ -234,7 +234,7 @@ namespace AntShares.Core
                 writer.Write(Height);
                 writer.Write(Nonce);
                 writer.Write(NextMiner);
-                writer.Write(Script);
+                writer.Write((byte)1); writer.Write(Script);
                 writer.Write(Transactions.Select(p => p.Hash).ToArray());
                 writer.Flush();
                 return ms.ToArray();

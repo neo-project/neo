@@ -15,14 +15,18 @@ namespace AntShares.UI
 
         public IssueTransaction GetTransaction()
         {
-            RegisterTransaction tx = comboBox1.SelectedItem as RegisterTransaction;
-            if (tx == null) return null;
-            return Program.CurrentWallet.MakeTransaction<IssueTransaction>(listBox1.Items.OfType<TxOutListBoxItem>().GroupBy(p => p.Account).Select(g => new TransactionOutput
+            RegisterTransaction asset = comboBox1.SelectedItem as RegisterTransaction;
+            if (asset == null) return null;
+            IssueTransaction tx = Program.CurrentWallet.MakeTransaction<IssueTransaction>(listBox1.Items.OfType<TxOutListBoxItem>().GroupBy(p => p.Account).Select(g => new TransactionOutput
             {
-                AssetId = tx.Hash,
+                AssetId = asset.Hash,
                 Value = g.Sum(p => p.Amount),
                 ScriptHash = g.Key
             }).ToArray(), Fixed8.Zero);
+            if (tx == null) return null;
+            Random rand = new Random();
+            tx.Nonce = (uint)rand.Next();
+            return tx;
         }
 
         private void IssueDialog_Load(object sender, EventArgs e)
