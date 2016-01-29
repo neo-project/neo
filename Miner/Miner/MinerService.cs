@@ -161,7 +161,7 @@ namespace AntShares.Miner
 
         protected internal override void OnStart(string[] args)
         {
-            base.OnStart(new string[0]);
+            base.OnStart(args);
             StartMine(source.Token);
         }
 

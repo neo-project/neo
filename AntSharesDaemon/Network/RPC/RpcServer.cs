@@ -160,7 +160,13 @@ namespace AntShares.Network.RPC
             listener.Start();
             while (listener.IsListening)
             {
-                Process(await listener.GetContextAsync());
+                HttpListenerContext context = null;
+                try
+                {
+                    context = await listener.GetContextAsync();
+                }
+                catch (HttpListenerException) { }
+                if (context != null) Process(context);
             }
             stopped = true;
         }
