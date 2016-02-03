@@ -86,6 +86,10 @@ namespace AntShares.Network.RPC
         {
             try
             {
+                context.Response.AddHeader("Access-Control-Allow-Origin", "*");
+                context.Response.AddHeader("Access-Control-Allow-Methods", "POST");
+                context.Response.AddHeader("Access-Control-Allow-Headers", "Content-Type");
+                context.Response.AddHeader("Access-Control-Max-Age", "31536000");
                 if (context.Request.HttpMethod != "POST") return;
                 JObject request = null;
                 JObject response;
@@ -118,6 +122,7 @@ namespace AntShares.Network.RPC
                     response = ProcessRequest(request);
                 }
                 if (response == null || (response as JArray)?.Count == 0) return;
+                context.Response.ContentType = "application/json-rpc";
                 using (StreamWriter writer = new StreamWriter(context.Response.OutputStream))
                 {
                     writer.Write(response.ToString());
