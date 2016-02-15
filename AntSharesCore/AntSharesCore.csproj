@@ -47,7 +47,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="LevelDB.Net, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\LevelDB.Net.1.1.2\lib\net40\LevelDB.Net.dll</HintPath>
+      <HintPath>..\packages\LevelDB.Net.1.2.1\lib\net40\LevelDB.Net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />

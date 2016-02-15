@@ -37,7 +37,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             header_index.Add(GenesisBlock.Hash);
             Version version;
             Slice value;
-            db = DB.Open(path);
+            db = DB.Open(path, new Options { CreateIfMissing = true });
             if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.CFG_Version), out value) && Version.TryParse(value.ToString(), out version) && version >= Version.Parse("0.4"))
             {
                 ReadOptions options = new ReadOptions { FillCache = false };
