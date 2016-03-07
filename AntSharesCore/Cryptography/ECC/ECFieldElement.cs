@@ -166,7 +166,7 @@ namespace AntShares.Cryptography.ECC
 
         public static ECFieldElement operator /(ECFieldElement x, ECFieldElement y)
         {
-            return new ECFieldElement((x.Value * BigInteger.ModPow(y.Value, x.curve.Q - 2, x.curve.Q)).Mod(x.curve.Q), x.curve);
+            return new ECFieldElement((x.Value * y.Value.ModInverse(x.curve.Q)).Mod(x.curve.Q), x.curve);
         }
 
         public static ECFieldElement operator +(ECFieldElement x, ECFieldElement y)
