@@ -84,7 +84,7 @@ namespace AntShares.Core
             }
             if (Transactions.Length > 0)
             {
-                if (Transactions[0].Type != TransactionType.GenerationTransaction || Transactions.Skip(1).Any(p => p.Type == TransactionType.GenerationTransaction))
+                if (Transactions.Skip(1).Any(p => p.Type == TransactionType.GenerationTransaction))
                     throw new FormatException();
                 if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
                     throw new FormatException();
@@ -171,7 +171,7 @@ namespace AntShares.Core
         UInt160[] ISignable.GetScriptHashesForVerifying()
         {
             if (PrevBlock == UInt256.Zero)
-                return new UInt160[] { NextMiner };
+                return new UInt160[] { new byte[0].ToScriptHash() };
             Block prev_header = Blockchain.Default.GetHeader(PrevBlock);
             if (prev_header == null) throw new InvalidOperationException();
             return new UInt160[] { prev_header.NextMiner };
@@ -261,41 +261,15 @@ namespace AntShares.Core
                 return false;
             if (completely)
             {
-                if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.Statistics))
-                    return false;
                 foreach (Transaction tx in Transactions)
                     if (!tx.Verify()) return false;
-                var antshares = Blockchain.Default.GetUnspentAntShares().GroupBy(p => p.ScriptHash, (k, g) => new
-                {
-                    ScriptHash = k,
-                    Amount = g.Sum(p => p.Value)
-                }).OrderBy(p => p.Amount).ThenBy(p => p.ScriptHash).ToArray();
                 Transaction[] transactions = Transactions.Where(p => p.Type != TransactionType.GenerationTransaction).ToArray();
                 Fixed8 amount_in = transactions.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
                 Fixed8 amount_out = transactions.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
                 Fixed8 amount_sysfee = transactions.Sum(p => p.SystemFee);
                 Fixed8 amount_netfee = amount_in - amount_out - amount_sysfee;
-                Fixed8 quantity = Blockchain.Default.GetQuantityIssued(Blockchain.AntCoin.Hash);
-                Fixed8 gen = Fixed8.Zero;
-                if (Height % Blockchain.MintingInterval == 0 && antshares.Length > 0)
-                {
-                    gen = Fixed8.FromDecimal((Blockchain.AntCoin.Amount - (quantity - amount_sysfee)).ToDecimal() * Blockchain.GenerationFactor);
-                }
-                GenerationTransaction tx_gen = Transactions.OfType<GenerationTransaction>().First();
-                if (tx_gen.Outputs.Sum(p => p.Value) != amount_netfee + gen)
-                    return false;
-                if (antshares.Length > 0)
-                {
-                    ulong n = Nonce % (ulong)antshares.Sum(p => p.Amount).value;
-                    ulong line = 0;
-                    int i = -1;
-                    do
-                    {
-                        line += (ulong)antshares[++i].Amount.value;
-                    } while (line <= n);
-                    if (tx_gen.Outputs.Where(p => p.ScriptHash == antshares[i].ScriptHash).Sum(p => p.Value) < gen)
-                        return false;
-                }
+                GenerationTransaction tx_gen = Transactions.OfType<GenerationTransaction>().FirstOrDefault();
+                if (tx_gen?.Outputs.Sum(p => p.Value) != amount_netfee) return false;
             }
             return true;
         }

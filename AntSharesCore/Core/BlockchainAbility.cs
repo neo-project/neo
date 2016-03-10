@@ -8,7 +8,7 @@ namespace AntShares.Core
         None = 0,
 
         /// <summary>
-        /// 必须实现的虚函数：GetBlockAndHeight, GetBlockHeight, GetNextBlock, GetNextBlockHash
+        /// 必须实现的虚函数：GetBlockAndHeight, GetBlockHeight, GetNextBlock, GetNextBlockHash, GetSysFeeAmount
         /// </summary>
         BlockIndexes = 0x01,
 
@@ -18,7 +18,7 @@ namespace AntShares.Core
         TransactionIndexes = 0x02,
 
         /// <summary>
-        /// 必须实现的虚函数：ContainsUnspent, GetUnspent, GetUnspentAntShares, GetVotes, IsDoubleSpend
+        /// 必须实现的虚函数：ContainsUnspent, GetUnclaimed, GetUnspent, GetVotes, IsDoubleSpend
         /// </summary>
         UnspentIndexes = 0x04,
 

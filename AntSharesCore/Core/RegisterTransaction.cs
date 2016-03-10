@@ -30,7 +30,7 @@ namespace AntShares.Core
 
         private static readonly string ShareName = "[{'lang':'zh-CN','name':'股权'},{'lang':'en','name':'Share'}]";
 
-        public override Fixed8 SystemFee => Fixed8.FromDecimal(10000);
+        public override Fixed8 SystemFee => AssetType == AssetType.AntShare || AssetType == AssetType.AntCoin ? Fixed8.Zero : Fixed8.FromDecimal(10000);
 
         public RegisterTransaction()
             : base(TransactionType.RegisterTransaction)

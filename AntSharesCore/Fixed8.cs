@@ -106,24 +106,19 @@ namespace AntShares
             writer.Write(value);
         }
 
-        public decimal ToDecimal()
-        {
-            return value / (decimal)D;
-        }
-
         public override string ToString()
         {
-            return ToDecimal().ToString();
+            return ((decimal)this).ToString();
         }
 
         public string ToString(string format)
         {
-            return ToDecimal().ToString(format);
+            return ((decimal)this).ToString(format);
         }
 
         public string ToString(string format, IFormatProvider formatProvider)
         {
-            return ToDecimal().ToString(format, formatProvider);
+            return ((decimal)this).ToString(format, formatProvider);
         }
 
         public static bool TryParse(string s, out Fixed8 result)
@@ -145,6 +140,16 @@ namespace AntShares
                 value = (long)d
             };
             return true;
+        }
+
+        public static explicit operator decimal(Fixed8 value)
+        {
+            return value.value / (decimal)D;
+        }
+
+        public static explicit operator long(Fixed8 value)
+        {
+            return value.value / D;
         }
 
         public static bool operator ==(Fixed8 x, Fixed8 y)
@@ -201,6 +206,12 @@ namespace AntShares
                 throw new OverflowException();
             ulong r = rh * QUO + (rh * REM + rl) / D;
             x.value = (long)r * sign;
+            return x;
+        }
+
+        public static Fixed8 operator *(Fixed8 x, long y)
+        {
+            x.value *= y;
             return x;
         }
 

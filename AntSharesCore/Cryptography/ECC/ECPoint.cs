@@ -107,7 +107,24 @@ namespace AntShares.Cryptography.ECC
         public static ECPoint DeserializeFrom(BinaryReader reader, ECCurve curve)
         {
             int expectedLength = (curve.Q.GetBitLength() + 7) / 8;
-            return DecodePoint(reader.ReadBytes(expectedLength + 1), curve);
+            byte[] buffer = new byte[1 + expectedLength * 2];
+            buffer[0] = reader.ReadByte();
+            switch (buffer[0])
+            {
+                case 0x00:
+                    return curve.Infinity;
+                case 0x02:
+                case 0x03:
+                    reader.Read(buffer, 1, expectedLength);
+                    return DecodePoint(buffer.Take(1 + expectedLength).ToArray(), curve);
+                case 0x04:
+                case 0x06:
+                case 0x07:
+                    reader.Read(buffer, 1, expectedLength * 2);
+                    return DecodePoint(buffer, curve);
+                default:
+                    throw new FormatException("Invalid point encoding " + buffer[0]);
+            }
         }
 
         public byte[] EncodePoint(bool commpressed)

@@ -31,6 +31,12 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             return this;
         }
 
+        public SliceBuilder Add(long value)
+        {
+            data.AddRange(BitConverter.GetBytes(value));
+            return this;
+        }
+
         public SliceBuilder Add(IEnumerable<byte> value)
         {
             data.AddRange(value);

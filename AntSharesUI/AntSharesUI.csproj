@@ -88,6 +88,12 @@
     <Compile Include="UI\IssueDialog.Designer.cs">
       <DependentUpon>IssueDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\TxOutListBox.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\TxOutListBox.Designer.cs">
+      <DependentUpon>TxOutListBox.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\PayToDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -192,6 +198,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\OpenWalletDialog.resx">
       <DependentUpon>OpenWalletDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\TxOutListBox.resx">
+      <DependentUpon>TxOutListBox.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\PayToDialog.resx">
       <DependentUpon>PayToDialog.cs</DependentUpon>

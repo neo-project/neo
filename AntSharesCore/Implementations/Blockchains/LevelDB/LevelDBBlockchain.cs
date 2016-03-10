@@ -38,7 +38,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             Version version;
             Slice value;
             db = DB.Open(path, new Options { CreateIfMissing = true });
-            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.CFG_Version), out value) && Version.TryParse(value.ToString(), out version) && version >= Version.Parse("0.4"))
+            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.CFG_Version), out value) && Version.TryParse(value.ToString(), out version) && version >= Version.Parse("0.5"))
             {
                 ReadOptions options = new ReadOptions { FillCache = false };
                 value = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock));
@@ -66,7 +66,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 }
                 if (stored_header_count == 0)
                 {
-                    Dictionary<UInt256, Block> table = db.Find(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block), (k, v) => Block.FromTrimmedData(v.ToArray(), 0)).ToDictionary(p => p.PrevBlock);
+                    Dictionary<UInt256, Block> table = db.Find(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block), (k, v) => Block.FromTrimmedData(v.ToArray(), sizeof(long))).ToDictionary(p => p.PrevBlock);
                     for (UInt256 hash = GenesisBlock.Hash; hash != current_block_hash;)
                     {
                         Block header = table[hash];
@@ -80,7 +80,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     List<Block> list = new List<Block>();
                     for (UInt256 hash = current_block_hash; hash != header_index[(int)stored_header_count - 1];)
                     {
-                        Block header = Block.FromTrimmedData(db.Get(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash)).ToArray(), 0);
+                        Block header = Block.FromTrimmedData(db.Get(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash)).ToArray(), sizeof(long));
                         list.Add(header);
                         header_index.Insert((int)stored_header_count, hash);
                         hash = header.PrevBlock;
@@ -208,10 +208,11 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
+                int height;
                 foreach (Slice key in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_Asset), (k, v) => k))
                 {
                     UInt256 hash = new UInt256(key.ToArray().Skip(1).ToArray());
-                    yield return (RegisterTransaction)GetTransaction(hash, options);
+                    yield return (RegisterTransaction)GetTransaction(options, hash, out height);
                 }
             }
         }
@@ -221,7 +222,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             Block block = base.GetBlock(hash);
             if (block == null)
             {
-                block = GetBlockInternal(hash, ReadOptions.Default);
+                block = GetBlockInternal(ReadOptions.Default, hash);
             }
             return block;
         }
@@ -238,12 +239,13 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             }
         }
 
-        private Block GetBlockInternal(UInt256 hash, ReadOptions options)
+        private Block GetBlockInternal(ReadOptions options, UInt256 hash)
         {
             Slice value;
             if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash), out value))
                 return null;
-            return Block.FromTrimmedData(value.ToArray(), 0, p => GetTransaction(p, options));
+            int height;
+            return Block.FromTrimmedData(value.ToArray(), sizeof(long), p => GetTransaction(options, p, out height));
         }
 
         public override IEnumerable<EnrollmentTransaction> GetEnrollments(IEnumerable<Transaction> others)
@@ -251,12 +253,13 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
+                int height;
                 foreach (Slice key in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment), (k, v) => k))
                 {
                     UInt256 hash = new UInt256(key.ToArray().Skip(1).Take(32).ToArray());
                     if (others.SelectMany(p => p.GetAllInputs()).Any(p => p.PrevHash == hash && p.PrevIndex == 0))
                         continue;
-                    yield return (EnrollmentTransaction)GetTransaction(hash, options);
+                    yield return (EnrollmentTransaction)GetTransaction(options, hash, out height);
                 }
             }
             foreach (EnrollmentTransaction tx in others.OfType<EnrollmentTransaction>())
@@ -281,7 +284,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override Block GetNextBlock(UInt256 hash)
         {
-            return GetBlockInternal(GetNextBlockHash(hash), ReadOptions.Default);
+            return GetBlockInternal(ReadOptions.Default, GetNextBlockHash(hash));
         }
 
         public override UInt256 GetNextBlockHash(UInt256 hash)
@@ -303,22 +306,61 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             return new Fixed8(quantity.ToInt64());
         }
 
-        public override Transaction GetTransaction(UInt256 hash)
+        public override long GetSysFeeAmount(UInt256 hash)
         {
-            Transaction tx = base.GetTransaction(hash);
+            Slice value;
+            if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash), out value))
+                return -1;
+            return BitConverter.ToInt64(value.ToArray(), 0);
+        }
+
+        public override Transaction GetTransaction(UInt256 hash, out int height)
+        {
+            Transaction tx = base.GetTransaction(hash, out height);
             if (tx == null)
             {
-                tx = GetTransaction(hash, ReadOptions.Default);
+                tx = GetTransaction(ReadOptions.Default, hash, out height);
             }
             return tx;
         }
 
-        private Transaction GetTransaction(UInt256 hash, ReadOptions options)
+        private Transaction GetTransaction(ReadOptions options, UInt256 hash, out int height)
         {
             Slice value;
-            if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Transaction).Add(hash), out value))
+            if (db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Transaction).Add(hash), out value))
+            {
+                byte[] data = value.ToArray();
+                height = BitConverter.ToInt32(data, 0);
+                return Transaction.DeserializeFrom(data, sizeof(uint));
+            }
+            else
+            {
+                height = -1;
                 return null;
-            return Transaction.DeserializeFrom(value.ToArray());
+            }
+        }
+
+        public override Dictionary<ushort, Claimable> GetUnclaimed(UInt256 hash)
+        {
+            int height;
+            Transaction tx = GetTransaction(ReadOptions.Default, hash, out height);
+            if (tx == null) return null;
+            Slice value;
+            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Unclaimed).Add(hash), out value))
+            {
+                const int UnclaimedItemSize = sizeof(ushort) + sizeof(uint);
+                byte[] data = value.ToArray();
+                return Enumerable.Range(0, data.Length / UnclaimedItemSize).ToDictionary(i => BitConverter.ToUInt16(data, i * UnclaimedItemSize), i => new Claimable
+                {
+                    Output = tx.Outputs[BitConverter.ToUInt16(data, i * UnclaimedItemSize)],
+                    StartHeight = (uint)height,
+                    EndHeight = BitConverter.ToUInt32(data, i * UnclaimedItemSize + sizeof(ushort))
+                });
+            }
+            else
+            {
+                return new Dictionary<ushort, Claimable>();
+            }
         }
 
         public override TransactionOutput GetUnspent(UInt256 hash, ushort index)
@@ -333,25 +375,8 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     return null;
                 if (!value.ToArray().GetUInt16Array().Contains(index))
                     return null;
-                return GetTransaction(hash, options).Outputs[index];
-            }
-        }
-
-        public override IEnumerable<TransactionOutput> GetUnspentAntShares()
-        {
-            ReadOptions options = new ReadOptions();
-            using (options.Snapshot = db.GetSnapshot())
-            {
-                foreach (var kv in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_AntShare), (k, v) => new { Key = k, Value = v }))
-                {
-                    UInt256 hash = new UInt256(kv.Key.ToArray().Skip(1).ToArray());
-                    ushort[] indexes = kv.Value.ToArray().GetUInt16Array();
-                    Transaction tx = GetTransaction(hash, options);
-                    foreach (ushort index in indexes)
-                    {
-                        yield return tx.Outputs[index];
-                    }
-                }
+                int height;
+                return GetTransaction(options, hash, out height).Outputs[index];
             }
         }
 
@@ -360,12 +385,13 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
+                int height;
                 foreach (var kv in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_Vote), (k, v) => new { Key = k, Value = v }))
                 {
                     UInt256 hash = new UInt256(kv.Key.ToArray().Skip(1).ToArray());
                     ushort[] indexes = kv.Value.ToArray().GetUInt16Array().Except(others.SelectMany(p => p.GetAllInputs()).Where(p => p.PrevHash == hash).Select(p => p.PrevIndex)).ToArray();
                     if (indexes.Length == 0) continue;
-                    VotingTransaction tx = (VotingTransaction)GetTransaction(hash, options);
+                    VotingTransaction tx = (VotingTransaction)GetTransaction(options, hash, out height);
                     yield return new Vote
                     {
                         Enrollments = tx.Enrollments,
@@ -447,7 +473,8 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     }
                     if (header_chain.Nodes[current_block_hash].Height > common.Height)
                     {
-                        Rollback(common.Item.Hash);
+                        //Rollback(common.Item.Hash);
+                        throw new InvalidDataException("Unexpected Rollback");
                     }
                 }
             }
@@ -455,17 +482,19 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         private void Persist(Block block)
         {
+            const int UnclaimedItemSize = sizeof(ushort) + sizeof(uint);
             MultiValueDictionary<UInt256, ushort> unspents = new MultiValueDictionary<UInt256, ushort>(p =>
             {
                 Slice value = new byte[0];
                 db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Unspent).Add(p), out value);
                 return new HashSet<ushort>(value.ToArray().GetUInt16Array());
             });
-            MultiValueDictionary<UInt256, ushort> unspent_antshares = new MultiValueDictionary<UInt256, ushort>(p =>
+            MultiValueDictionary<UInt256, ushort, uint> unclaimed = new MultiValueDictionary<UInt256, ushort, uint>(p =>
             {
                 Slice value = new byte[0];
-                db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_AntShare).Add(p), out value);
-                return new HashSet<ushort>(value.ToArray().GetUInt16Array());
+                db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Unclaimed).Add(p), out value);
+                byte[] data = value.ToArray();
+                return Enumerable.Range(0, data.Length / UnclaimedItemSize).ToDictionary(i => BitConverter.ToUInt16(data, i * UnclaimedItemSize), i => BitConverter.ToUInt32(data, i * UnclaimedItemSize + sizeof(ushort)));
             });
             MultiValueDictionary<UInt256, ushort> unspent_votes = new MultiValueDictionary<UInt256, ushort>(p =>
             {
@@ -475,10 +504,11 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             });
             Dictionary<UInt256, Fixed8> quantities = new Dictionary<UInt256, Fixed8>();
             WriteBatch batch = new WriteBatch();
-            batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(block.Hash), block.Trim());
+            long amount_sysfee = GetSysFeeAmount(block.PrevBlock) + (long)block.Transactions.Sum(p => p.SystemFee);
+            batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(block.Hash), SliceBuilder.Begin().Add(amount_sysfee).Add(block.Trim()));
             foreach (Transaction tx in block.Transactions)
             {
-                batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Transaction).Add(tx.Hash), tx.ToArray());
+                batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Transaction).Add(tx.Hash), SliceBuilder.Begin().Add(block.Height).Add(tx.ToArray()));
                 switch (tx.Type)
                 {
                     case TransactionType.IssueTransaction:
@@ -492,6 +522,12 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                             {
                                 quantities.Add(result.AssetId, -result.Amount);
                             }
+                        }
+                        break;
+                    case TransactionType.ClaimTransaction:
+                        foreach (TransactionInput input in ((ClaimTransaction)tx).Claims)
+                        {
+                            unclaimed.Remove(input.PrevHash, input.PrevIndex);
                         }
                         break;
                     case TransactionType.EnrollmentTransaction:
@@ -518,33 +554,27 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                         break;
                 }
                 unspents.AddEmpty(tx.Hash);
-                unspent_antshares.AddEmpty(tx.Hash);
                 for (ushort index = 0; index < tx.Outputs.Length; index++)
                 {
                     unspents.Add(tx.Hash, index);
-                    if (tx.Outputs[index].AssetId == AntShare.Hash)
+                }
+            }
+            foreach (var group in block.Transactions.SelectMany(p => p.GetAllInputs()).GroupBy(p => p.PrevHash))
+            {
+                int height;
+                Transaction tx = GetTransaction(ReadOptions.Default, group.Key, out height);
+                foreach (TransactionInput input in group)
+                {
+                    if (input.PrevIndex == 0)
                     {
-                        unspent_antshares.Add(tx.Hash, index);
+                        batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment).Add(input.PrevHash));
                     }
-                }
-            }
-            foreach (TransactionInput input in block.Transactions.SelectMany(p => p.GetAllInputs()))
-            {
-                if (input.PrevIndex == 0)
-                {
-                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment).Add(input.PrevHash));
-                }
-                unspents.Remove(input.PrevHash, input.PrevIndex);
-                unspent_antshares.Remove(input.PrevHash, input.PrevIndex);
-                unspent_votes.Remove(input.PrevHash, input.PrevIndex);
-            }
-            //统计AntCoin的发行量
-            {
-                Fixed8 amount_in = block.Transactions.SelectMany(p => p.References.Values.Where(o => o.AssetId == AntCoin.Hash)).Sum(p => p.Value);
-                Fixed8 amount_out = block.Transactions.SelectMany(p => p.Outputs.Where(o => o.AssetId == AntCoin.Hash)).Sum(p => p.Value);
-                if (amount_in != amount_out)
-                {
-                    quantities.Add(AntCoin.Hash, amount_out - amount_in);
+                    unspents.Remove(input.PrevHash, input.PrevIndex);
+                    unspent_votes.Remove(input.PrevHash, input.PrevIndex);
+                    if (tx?.Outputs[input.PrevIndex].AssetId == AntShare.Hash)
+                    {
+                        unclaimed.Add(input.PrevHash, input.PrevIndex, block.Height);
+                    }
                 }
             }
             foreach (var unspent in unspents)
@@ -558,15 +588,25 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Unspent).Add(unspent.Key), unspent.Value.ToByteArray());
                 }
             }
-            foreach (var unspent in unspent_antshares)
+            foreach (var spent in unclaimed)
             {
-                if (unspent.Value.Count == 0)
+                if (spent.Value.Count == 0)
                 {
-                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_AntShare).Add(unspent.Key));
+                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Unclaimed).Add(spent.Key));
                 }
                 else
                 {
-                    batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_AntShare).Add(unspent.Key), unspent.Value.ToByteArray());
+                    using (MemoryStream ms = new MemoryStream(spent.Value.Count * UnclaimedItemSize))
+                    using (BinaryWriter w = new BinaryWriter(ms))
+                    {
+                        foreach (var pair in spent.Value)
+                        {
+                            w.Write(pair.Key);
+                            w.Write(pair.Value);
+                        }
+                        w.Flush();
+                        batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Unclaimed).Add(spent.Key), ms.ToArray());
+                    }
                 }
             }
             foreach (var unspent in unspent_votes)
@@ -623,6 +663,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             }
         }
 
+        /*由于unclaimed无法恢复，所以Rollback没有办法实现，除非对每个交易输出都建立索引。
         /// <summary>
         /// 将区块链的状态回滚到指定的位置
         /// </summary>
@@ -638,7 +679,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             {
                 if (current == GenesisBlock.Hash)
                     throw new InvalidOperationException();
-                Block block = GetBlockInternal(current, ReadOptions.Default);
+                Block block = GetBlockInternal(ReadOptions.Default, current);
                 blocks.Add(block);
                 current = block.PrevBlock;
             }
@@ -651,7 +692,6 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     batch.Delete(SliceBuilder.Begin(DataEntryPrefix.DATA_Transaction).Add(tx.Hash));
                     batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment).Add(tx.Hash));
                     batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Unspent).Add(tx.Hash));
-                    batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_AntShare).Add(tx.Hash));
                     batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Vote).Add(tx.Hash));
                     if (tx.Type == TransactionType.RegisterTransaction)
                     {
@@ -663,19 +703,12 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             HashSet<UInt256> tx_hashes = new HashSet<UInt256>(blocks.SelectMany(p => p.Transactions).Select(p => p.Hash));
             foreach (var group in blocks.SelectMany(p => p.Transactions).SelectMany(p => p.GetAllInputs()).GroupBy(p => p.PrevHash).Where(g => !tx_hashes.Contains(g.Key)))
             {
-                Transaction tx = GetTransaction(group.Key, ReadOptions.Default);
+                int height;
+                Transaction tx = GetTransaction(ReadOptions.Default, group.Key, out height);
                 Slice value = new byte[0];
                 db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Unspent).Add(tx.Hash), out value);
                 IEnumerable<ushort> indexes = value.ToArray().GetUInt16Array().Union(group.Select(p => p.PrevIndex));
                 batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Unspent).Add(tx.Hash), indexes.ToByteArray());
-                TransactionInput[] antshares = group.Where(p => tx.Outputs[p.PrevIndex].AssetId == AntShare.Hash).ToArray();
-                if (antshares.Length > 0)
-                {
-                    value = new byte[0];
-                    db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_AntShare).Add(tx.Hash), out value);
-                    indexes = value.ToArray().GetUInt16Array().Union(antshares.Select(p => p.PrevIndex));
-                    batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_AntShare).Add(tx.Hash), indexes.ToByteArray());
-                }
                 switch (tx.Type)
                 {
                     case TransactionType.EnrollmentTransaction:
@@ -698,15 +731,6 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                         break;
                 }
             }
-            //回滚AntCoin的发行量
-            {
-                Fixed8 amount_in = blocks.SelectMany(p => p.Transactions).SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
-                Fixed8 amount_out = blocks.SelectMany(p => p.Transactions).SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
-                if (amount_in != amount_out)
-                {
-                    batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(AntCoin.Hash), (GetQuantityIssued(AntCoin.Hash) - (amount_out - amount_in)).GetData());
-                }
-            }
             foreach (var result in blocks.SelectMany(p => p.Transactions).Where(p => p.Type == TransactionType.IssueTransaction).SelectMany(p => p.GetTransactionResults()).Where(p => p.Amount < Fixed8.Zero).GroupBy(p => p.AssetId, (k, g) => new
             {
                 AssetId = k,
@@ -719,6 +743,6 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             current_block_height -= (uint)blocks.Count;
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(current_block_hash).Add(current_block_height));
             db.Write(WriteOptions.Default, batch);
-        }
+        }*/
     }
 }

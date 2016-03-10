@@ -50,4 +50,48 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             return this[key].Remove(item);
         }
     }
+
+    internal class MultiValueDictionary<TKey, TValueKey, TValueData> : Dictionary<TKey, Dictionary<TValueKey, TValueData>>
+    {
+        private Func<TKey, Dictionary<TValueKey, TValueData>> constructor;
+
+        public MultiValueDictionary()
+            : this(k => new Dictionary<TValueKey, TValueData>())
+        {
+        }
+
+        public MultiValueDictionary(Func<TKey, Dictionary<TValueKey, TValueData>> constructor)
+        {
+            this.constructor = constructor;
+        }
+
+        public bool Add(TKey key, TValueKey itemKey, TValueData itemData)
+        {
+            EnsureKey(key);
+            if (this[key].ContainsKey(itemKey)) return false;
+            this[key].Add(itemKey, itemData);
+            return true;
+        }
+
+        public bool AddEmpty(TKey key)
+        {
+            if (ContainsKey(key)) return false;
+            Add(key, new Dictionary<TValueKey, TValueData>());
+            return true;
+        }
+
+        private void EnsureKey(TKey key)
+        {
+            if (!ContainsKey(key))
+            {
+                Add(key, constructor(key));
+            }
+        }
+
+        public bool Remove(TKey key, TValueKey itemKey)
+        {
+            EnsureKey(key);
+            return this[key].Remove(itemKey);
+        }
+    }
 }

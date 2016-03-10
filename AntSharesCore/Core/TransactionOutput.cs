@@ -32,7 +32,7 @@ namespace AntShares.Core
             JObject json = new JObject();
             json["n"] = index;
             json["asset"] = AssetId.ToString();
-            json["value"] = Value.ToDecimal();
+            json["value"] = (decimal)Value;
             json["address"] = Wallet.ToAddress(ScriptHash);
             return json;
         }

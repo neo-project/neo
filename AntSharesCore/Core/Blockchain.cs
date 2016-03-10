@@ -12,12 +12,9 @@ namespace AntShares.Core
     {
         public event EventHandler<Block> PersistCompleted;
 
-        public const int SecondsPerBlock = 15;
-        public const int MintingInterval = 10;
-        private const int BlocksPerYear = 365 * 24 * 60 * 60 / SecondsPerBlock;
-        private const double R_Init = 0.5;
-        private const double R_Final = 0.3;
-        public static readonly decimal GenerationFactor = 1 - (decimal)Math.Pow(R_Final / R_Init, (double)MintingInterval / BlocksPerYear);
+        public const uint SecondsPerBlock = 15;
+        public const uint DecrementInterval = 2000000;
+        public static readonly uint[] MintingAmount = { 8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromSeconds(SecondsPerBlock);
         public static readonly ECPoint[] StandbyMiners =
         {
@@ -27,24 +24,9 @@ namespace AntShares.Core
             ECPoint.DecodePoint("039dafd8571a641058ccc832c5e2111ea39b09c0bde36050914384f7a48bce9bf9".HexToBytes(), ECCurve.Secp256r1),
             ECPoint.DecodePoint("038dddc06ce687677a53d54f096d2591ba2302068cf123c1f2d75c2dddc5425579".HexToBytes(), ECCurve.Secp256r1),
         };
-        public static readonly Block GenesisBlock = "0000000000000000000000000000000000000000000000000000000000000000000000003af466056e266f45fd4f929e5f6c55367b9047fb8bdd581cc77bb1dfcc40f43aa1f2a956000000001dac2b7c00000000d5b21f2e11a9795a22a482f342f53634b5a8cf3a01fd450140afa15d18d9f31dba3db565a69ebee34a09453d110fe3349257579d1c9359ff59a0e14e948141bbc5e2431dd171047f92d7ecd964b6cd4f3e5dd5854a0cd590d240e02f74fb6d8dc6283f00a3d51f1c3e252288b474da0f2b081370417740b950f07e45856b77f89524e830750364baa6cf90f4b8775da9ff720b87b75aa5989ca8405a6bbfbdcbbbf3cf47b668e1a781df9f745b5b2e9379aaf7d40c1f9fb8714d2d5dad2f72e5db2cc7646490e1545897d4820d2b54ae2c20b2b141c4cac4eaa6c6409d8d1ade01619614ade4e2e07f6a4094e5141e5a4d9995fc358d8101502edcda306b97707579800d39a16a047e67b758e57e5c384b39274815bf7bc75f98fe8d402182a064dc6831f2988834bc51c3d5db0300d19c0554923885d9ef8f38dbac4981afbbeb2d9b346d3557f10f6c988faf69f7d238aa4e4c6570e2a5629ef8143dad53210209e7fd41dfb5c2f8dc72eb30358ac100ea8c72da18847befe06eade68cebfcb9210327da12b5c40200e9f65569476bbff2218da4f32548ff43b6387ec1416a231ee821026ce35b29147ad09e4afe4ec4a7319095f08198fa8babbe3c56e970b143528d2221038dddc06ce687677a53d54f096d2591ba2302068cf123c1f2d75c2dddc542557921039dafd8571a641058ccc832c5e2111ea39b09c0bde36050914384f7a48bce9bf955ae020000000000000000004000565b7b276c616e67273a277a682d434e272c276e616d65273a27e5b08fe89a81e882a128e6b58be8af9529277d2c7b276c616e67273a27656e272c276e616d65273a27416e74536861726528546573744e657429277d5d0000c16ff28623000327da12b5c40200e9f65569476bbff2218da4f32548ff43b6387ec1416a231ee8d5b21f2e11a9795a22a482f342f53634b5a8cf3a00000002414034b5265dc400befd91f0441d8aa2ed1cad6d1fc4426c5bf72b3f9fe140ff7bd4bc386b34ac66c442ef1a216d36313fa1917a7a2f649dd6330e2403de0ca0fe7623210327da12b5c40200e9f65569476bbff2218da4f32548ff43b6387ec1416a231ee8acfd4501400e02302d5711999b8cc93e5f93b556cd7b4c4018422182201a29548c2924e1a62a65f188cdf51dc3a6b72e7357b57f101a420e09b40d6c6f2673e74065d1b036407feb69a038d0d138e055835abe10415f9d1a6155dbd8b077d87e73bcc78713f76ebc7750aa8bab484ec87f929a7b865362e0a6ceb5da9c24e0567667ea3912864059d38d920be5d774a359270ecbed7817a2ad48b3deb29fd4588563f532bf085a4c2b0372a3bc4fdc6187403e1642f61005b585df1834d863daafae3379a386a040b0ef07e761e00ede7047339690dc4632ae5d20cda49030f1141a839d9284df86ac181bc2340183d0dcc961e646a44d07732dac6a49da0dd613556e74f0edcd164090073f99a88b39ba27970ebaa858ff8ef05eed6c546f7ea6860a433efc6384c22c4afcc2ca6aa2f2bd62af9a32c0c7ae0ab9b5cbe28d1bb7469c1a1d63a9de72ad53210209e7fd41dfb5c2f8dc72eb30358ac100ea8c72da18847befe06eade68cebfcb9210327da12b5c40200e9f65569476bbff2218da4f32548ff43b6387ec1416a231ee821026ce35b29147ad09e4afe4ec4a7319095f08198fa8babbe3c56e970b143528d2221038dddc06ce687677a53d54f096d2591ba2302068cf123c1f2d75c2dddc542557921039dafd8571a641058ccc832c5e2111ea39b09c0bde36050914384f7a48bce9bf955ae".HexToBytes().AsSerializable<Block>();
-        public static readonly RegisterTransaction AntShare = (RegisterTransaction)GenesisBlock.Transactions[1];
-        public static readonly RegisterTransaction AntCoin = new RegisterTransaction
-        {
-            AssetType = AssetType.AntCoin,
-#if TESTNET
-            Name = "[{'lang':'zh-CN','name':'小蚁币(测试)'},{'lang':'en','name':'AntCoin(TestNet)'}]",
-#else
-            Name = "[{'lang':'zh-CN','name':'小蚁币'},{'lang':'en','name':'AntCoin'}]",
-#endif
-            Amount = Fixed8.FromDecimal(100000000),
-            Issuer = ECCurve.Secp256r1.Infinity,
-            Admin = new UInt160(),
-            Attributes = new TransactionAttribute[0],
-            Inputs = new TransactionInput[0],
-            Outputs = new TransactionOutput[0],
-            Scripts = new Script[0]
-        };
+        public static readonly Block GenesisBlock = "000000000000000000000000000000000000000000000000000000000000000000000000333ac98b7be557a7dfd716802ef3c30ebf735b068da5d4a6ec672857f3250201ee24e156000000001dac2b7c00000000d5b21f2e11a9795a22a482f342f53634b5a8cf3a010000034000565b7b276c616e67273a277a682d434e272c276e616d65273a27e5b08fe89a81e882a128e6b58be8af9529277d2c7b276c616e67273a27656e272c276e616d65273a27416e74536861726528546573744e657429277d5d0000c16ff28623000327da12b5c40200e9f65569476bbff2218da4f32548ff43b6387ec1416a231ee8d5b21f2e11a9795a22a482f342f53634b5a8cf3a000000024140f3f8e85ef82610d0854d68fdfcdcbc2c96f464d69954ec24c24f7f65602998f11937bd5208643c7355f7ce69739ed45e5d60c3072e920a1119f3a66905675d4e23210327da12b5c40200e9f65569476bbff2218da4f32548ff43b6387ec1416a231ee8acfd45014039271a3513a35b916a524813d2297b1de9cde9cbdc8ded13b359874f9e0c95f00d2d8f30e17cd905b94b342ec6caf3e214a2234534768137670004a7a308b2e74057a981205c93198901f9c527145fd2e1fdb35ae7215b31a037298081bafe98cdddded07e2aec2fb95cd5477c4cd297c3c127f7ad7beb73ea9b3639b8d7f7c8a14026b01df2536e052b7864d38617fb7260d2cf7f9c4449a7fe752ff2997b877d65ecf2ab131636a2313850443a8ebfd79fc40699589331f35e767ed1af551c66a4407e29093c6d1126f699a123b1692cf9ab7ebc55fff6e7dfb82113578ddf4e386108d7f65dcca6f5ca33851602e5c1de5959de845faa53f55abf9897e4d107fbbe4050055cb7bcec8b9526d5ba901f8994bf4430fe2465c9ab5f638745e22b57ba8655cfb21997d825fec8b2bc689cac2a0971c44dff9ca7e33ac7ee9c3e857ec7adad53210209e7fd41dfb5c2f8dc72eb30358ac100ea8c72da18847befe06eade68cebfcb9210327da12b5c40200e9f65569476bbff2218da4f32548ff43b6387ec1416a231ee821026ce35b29147ad09e4afe4ec4a7319095f08198fa8babbe3c56e970b143528d2221038dddc06ce687677a53d54f096d2591ba2302068cf123c1f2d75c2dddc542557921039dafd8571a641058ccc832c5e2111ea39b09c0bde36050914384f7a48bce9bf955ae4001555b7b276c616e67273a277a682d434e272c276e616d65273a27e5b08fe89a81e5b88128e6b58be8af9529277d2c7b276c616e67273a27656e272c276e616d65273a27416e74436f696e28546573744e657429277d5d0000c16ff28623000000000000000000000000000000000000000000000000000001825f8e43000001c621a062ebda4636d889afaf7c88980094a90ae2921a6d73f4f7ef8033501b350000c16ff2862300d5b21f2e11a9795a22a482f342f53634b5a8cf3a01fd4501401e2c070141784ab827c336047cd14d17332c543e462a6b8009da74f0a68dde51f8f4136efb913e798de441b41934f2059a0c1cbf70da68aef8eade358483fada40b921e21139de275ab1d483098ec652a017532b5949138576cf7207ce3b6742fe484e8bbac7415cb2682a6098ecfefd32d3691316656c3491182130fa6986433d40b242380806ef14a9d7399bb9f855a8c2aa468126a095349e5f6793a47c09f48307bddf61c9f9b3d6169d68011b85e50dc804d81428d0b5987333f98b03cf4c68402601aff530a8da22b581c4b3f56a142b7acc4c64762f0a0ea8c5d274c05be08aeeff50f911685980fa2aae0cba33efa7daa258491e9726a695e683c09faab85140ae26301938965038d06a97d61e5b72b6805f19a967bd0d13ee55828d94d228e5fc3840857e1ab9a0a9778564cc9a01656181810e99efa04599a69830da14cc88ad53210209e7fd41dfb5c2f8dc72eb30358ac100ea8c72da18847befe06eade68cebfcb9210327da12b5c40200e9f65569476bbff2218da4f32548ff43b6387ec1416a231ee821026ce35b29147ad09e4afe4ec4a7319095f08198fa8babbe3c56e970b143528d2221038dddc06ce687677a53d54f096d2591ba2302068cf123c1f2d75c2dddc542557921039dafd8571a641058ccc832c5e2111ea39b09c0bde36050914384f7a48bce9bf955ae".HexToBytes().AsSerializable<Block>();
+        public static readonly RegisterTransaction AntShare = (RegisterTransaction)GenesisBlock.Transactions[0];
+        public static readonly RegisterTransaction AntCoin = (RegisterTransaction)GenesisBlock.Transactions[1];
         protected static readonly Dictionary<UInt256, Transaction> MemoryPool = new Dictionary<UInt256, Transaction>();
 
         public abstract BlockchainAbility Ability { get; }
@@ -73,7 +55,7 @@ namespace AntShares.Core
 
         public virtual bool ContainsAsset(UInt256 hash)
         {
-            return hash == AntCoin.Hash || hash == AntShare.Hash;
+            return hash == AntShare.Hash || hash == AntCoin.Hash;
         }
 
         public virtual bool ContainsBlock(UInt256 hash)
@@ -83,7 +65,7 @@ namespace AntShares.Core
 
         public virtual bool ContainsTransaction(UInt256 hash)
         {
-            return hash == AntCoin.Hash || GenesisBlock.Transactions.Any(p => p.Hash == hash) || MemoryPool.ContainsKey(hash);
+            return GenesisBlock.Transactions.Any(p => p.Hash == hash) || MemoryPool.ContainsKey(hash);
         }
 
         public bool ContainsUnspent(TransactionInput input)
@@ -194,15 +176,38 @@ namespace AntShares.Core
 
         public abstract Fixed8 GetQuantityIssued(UInt256 asset_id);
 
-        public virtual Transaction GetTransaction(UInt256 hash)
+        public virtual long GetSysFeeAmount(uint height)
         {
-            if (hash == AntCoin.Hash)
-                return AntCoin;
+            return GetSysFeeAmount(GetBlockHash(height));
+        }
+
+        public abstract long GetSysFeeAmount(UInt256 hash);
+
+        public Transaction GetTransaction(UInt256 hash)
+        {
+            int height;
+            return GetTransaction(hash, out height);
+        }
+
+        public virtual Transaction GetTransaction(UInt256 hash, out int height)
+        {
             Transaction tx;
             if (MemoryPool.TryGetValue(hash, out tx))
+            {
+                height = -1;
                 return tx;
-            return GenesisBlock.Transactions.FirstOrDefault(p => p.Hash == hash);
+            }
+            tx = GenesisBlock.Transactions.FirstOrDefault(p => p.Hash == hash);
+            if (tx != null)
+            {
+                height = 0;
+                return tx;
+            }
+            height = -1;
+            return null;
         }
+
+        public abstract Dictionary<ushort, Claimable> GetUnclaimed(UInt256 hash);
 
         public virtual TransactionOutput GetUnspent(UInt256 hash, ushort index)
         {
@@ -211,8 +216,6 @@ namespace AntShares.Core
                 return null;
             return tx.Outputs[index];
         }
-
-        public abstract IEnumerable<TransactionOutput> GetUnspentAntShares();
 
         public IEnumerable<Vote> GetVotes()
         {

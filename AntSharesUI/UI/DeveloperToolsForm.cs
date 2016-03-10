@@ -7,7 +7,6 @@ using AntShares.Network;
 using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Windows.Forms;
 using Transaction = AntShares.Core.Transaction;
@@ -16,6 +15,23 @@ namespace AntShares.UI
 {
     internal partial class DeveloperToolsForm : Form
     {
+        private static RegisterTransaction AntCoin = new RegisterTransaction
+        {
+            AssetType = AssetType.AntCoin,
+#if TESTNET
+            Name = "[{'lang':'zh-CN','name':'小蚁币(测试)'},{'lang':'en','name':'AntCoin(TestNet)'}]",
+#else
+            Name = "[{'lang':'zh-CN','name':'小蚁币'},{'lang':'en','name':'AntCoin'}]",
+#endif
+            Amount = Fixed8.FromDecimal(Blockchain.MintingAmount.Sum(p => p * Blockchain.DecrementInterval)),
+            Issuer = ECCurve.Secp256r1.Infinity,
+            Admin = new UInt160(),
+            Attributes = new TransactionAttribute[0],
+            Inputs = new TransactionInput[0],
+            Outputs = new TransactionOutput[0],
+            Scripts = new Script[0]
+        };
+
         private static readonly int[] magic = { 38, 38, 40, 40, 37, 39, 37, 39, 65, 66, 65, 66 };
         private List<int> chars = new List<int>();
 
@@ -34,7 +50,7 @@ namespace AntShares.UI
                 {
                     tabControl1.TabPages.Add(tabPage100);
                     tabControl1.SelectedTab = tabPage100;
-                    this.KeyDown -= DeveloperToolsForm_KeyDown;
+                    KeyDown -= DeveloperToolsForm_KeyDown;
                 }
             }
         }
@@ -84,6 +100,23 @@ namespace AntShares.UI
 
         private void button2_Click(object sender, EventArgs e)
         {
+            RegisterTransaction antshare = textBox3.Text.HexToBytes().AsSerializable<RegisterTransaction>();
+            using (IssueDialog dialog = new IssueDialog(antshare))
+            {
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                IssueTransaction tx = dialog.GetTransaction();
+                if (tx.Outputs.Sum(p => p.Value) != antshare.Amount)
+                {
+                    MessageBox.Show("发行量不等于总量！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                SignatureContext context = new SignatureContext(tx);
+                InformationBox.Show(context.ToString(), "小蚁股发行签名上下文：");
+            }
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
             Block block = new Block
             {
                 PrevBlock = UInt256.Zero,
@@ -91,40 +124,19 @@ namespace AntShares.UI
                 Height = 0,
                 Nonce = 2083236893, //向比特币致敬
                 NextMiner = Blockchain.GetMinerAddress(Blockchain.StandbyMiners),
+                Script = new Script
+                {
+                    StackScript = new byte[0],
+                    RedeemScript = new byte[0]
+                },
                 Transactions = new Transaction[]
                 {
-                    new GenerationTransaction
-                    {
-                        Nonce = 0,
-                        Attributes = new TransactionAttribute[0],
-                        Inputs = new TransactionInput[0],
-                        Outputs = new TransactionOutput[0],
-                        Scripts = new Script[0]
-                    },
-                    textBox3.Text.HexToBytes().AsSerializable<RegisterTransaction>()
+                    textBox3.Text.HexToBytes().AsSerializable<RegisterTransaction>(),
+                    AntCoin,
+                    textBox5.Text.HexToBytes().AsSerializable<IssueTransaction>()
                 }
             };
             block.RebuildMerkleRoot();
-            SignatureContext context = new SignatureContext(block.Header);
-            InformationBox.Show(context.ToString(), "创世区块头签名上下文：");
-        }
-
-        private void button3_Click(object sender, EventArgs e)
-        {
-            Block block = textBox4.Text.HexToBytes().AsSerializable<Block>();
-            block.Transactions = new Transaction[]
-            {
-                new GenerationTransaction
-                {
-                    Nonce = 0,
-                    Attributes = new TransactionAttribute[0],
-                    Inputs = new TransactionInput[0],
-                    Outputs = new TransactionOutput[0],
-                    Scripts = new Script[0]
-                },
-                textBox3.Text.HexToBytes().AsSerializable<RegisterTransaction>()
-            };
-            Debug.Assert(MerkleTree.ComputeRoot(block.Transactions.Select(p => p.Hash).ToArray()) == block.MerkleRoot);
             InformationBox.Show(block.ToArray().ToHexString(), "创世区块：");
         }
     }

@@ -38,9 +38,9 @@
         IX_Unspent = 0x90,
 
         /// <summary>
-        /// 未花费的小蚁股索引
+        /// 未领取小蚁币的小蚁股
         /// </summary>
-        IX_AntShare = 0x91,
+        IX_Unclaimed = 0x91,
 
         /// <summary>
         /// 选票索引

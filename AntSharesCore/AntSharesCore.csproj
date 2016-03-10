@@ -136,6 +136,8 @@
     <Compile Include="Core\Block.cs" />
     <Compile Include="Core\Blockchain.cs" />
     <Compile Include="Core\BlockchainAbility.cs" />
+    <Compile Include="Core\Claimable.cs" />
+    <Compile Include="Core\ClaimTransaction.cs" />
     <Compile Include="Core\ContractTransaction.cs" />
     <Compile Include="Core\EnrollmentTransaction.cs" />
     <Compile Include="Core\GenerationTransaction.cs" />
