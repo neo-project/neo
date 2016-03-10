@@ -109,6 +109,8 @@ namespace AntShares.Core
         {
             DeserializeExclusiveData(reader);
             Attributes = reader.ReadSerializableArray<TransactionAttribute>();
+            if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.Script) > 1)
+                throw new FormatException();
             Inputs = reader.ReadSerializableArray<TransactionInput>();
             TransactionInput[] inputs = GetAllInputs().ToArray();
             for (int i = 1; i < inputs.Length; i++)
@@ -243,6 +245,16 @@ namespace AntShares.Core
                     if (results_issue.Length > 0)
                         return false;
                     break;
+            }
+            TransactionAttribute script = Attributes.FirstOrDefault(p => p.Usage == TransactionAttributeUsage.Script);
+            if (script != null)
+            {
+                ScriptEngine engine = new ScriptEngine(new Script
+                {
+                    StackScript = new byte[0],
+                    RedeemScript = script.Data
+                }, this.GetHashForSigning());
+                if (!engine.Execute()) return false;
             }
             return this.VerifySignature();
         }

@@ -12,9 +12,7 @@ namespace AntShares.Core
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            this.Usage = (TransactionAttributeUsage)reader.ReadByte();
-            if (!Enum.IsDefined(typeof(TransactionAttributeUsage), Usage))
-                throw new FormatException();
+            Usage = (TransactionAttributeUsage)reader.ReadByte();
             int length;
             switch (Usage)
             {
@@ -23,18 +21,14 @@ namespace AntShares.Core
                 case TransactionAttributeUsage.ECDH03:
                     length = 32;
                     break;
-                case TransactionAttributeUsage.LockAfter:
-                case TransactionAttributeUsage.LockBefore:
-                    length = 4;
+                case TransactionAttributeUsage.Remark:
+                case TransactionAttributeUsage.Script:
+                    length = reader.ReadByte();
                     break;
                 default:
-                    if (Usage >= TransactionAttributeUsage.Remark)
-                        length = reader.ReadByte();
-                    else
-                        throw new FormatException();
-                    break;
+                    throw new FormatException();
             }
-            this.Data = reader.ReadBytes(length);
+            Data = reader.ReadBytes(length);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

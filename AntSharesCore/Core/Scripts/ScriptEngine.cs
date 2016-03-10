@@ -28,23 +28,6 @@ namespace AntShares.Core.Scripts
             this.hash = hash;
         }
 
-        private bool CallAPI(ScriptAPI code)
-        {
-            switch (code)
-            {
-                case ScriptAPI.API_BLOCKHEIGHT:
-                    if (Blockchain.Default == null) return false;
-                    stack.Push(Blockchain.Default.Height);
-                    break;
-                case ScriptAPI.API_TIME:
-                    stack.Push(DateTime.Now.ToTimestamp());
-                    break;
-                default:
-                    return false;
-            }
-            return true;
-        }
-
         public bool Execute()
         {
             if (!ExecuteScript(script.StackScript, true)) return false;
@@ -120,7 +103,7 @@ namespace AntShares.Core.Scripts
                     break;
                 case ScriptOp.OP_CALL:
                     if (remain < 1) return false;
-                    return CallAPI((ScriptAPI)opReader.ReadByte());
+                    return InterfaceEngine.ExecuteOp(stack, altStack, (InterfaceOp)opReader.ReadByte());
                 case ScriptOp.OP_IF:
                 case ScriptOp.OP_NOTIF:
                     {
