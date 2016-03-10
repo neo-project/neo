@@ -15,23 +15,6 @@ namespace AntShares.UI
 {
     internal partial class DeveloperToolsForm : Form
     {
-        private static RegisterTransaction AntCoin = new RegisterTransaction
-        {
-            AssetType = AssetType.AntCoin,
-#if TESTNET
-            Name = "[{'lang':'zh-CN','name':'小蚁币(测试)'},{'lang':'en','name':'AntCoin(TestNet)'}]",
-#else
-            Name = "[{'lang':'zh-CN','name':'小蚁币'},{'lang':'en','name':'AntCoin'}]",
-#endif
-            Amount = Fixed8.FromDecimal(Blockchain.MintingAmount.Sum(p => p * Blockchain.DecrementInterval)),
-            Issuer = ECCurve.Secp256r1.Infinity,
-            Admin = new UInt160(),
-            Attributes = new TransactionAttribute[0],
-            Inputs = new TransactionInput[0],
-            Outputs = new TransactionOutput[0],
-            Scripts = new Script[0]
-        };
-
         private static readonly int[] magic = { 38, 38, 40, 40, 37, 39, 37, 39, 65, 66, 65, 66 };
         private List<int> chars = new List<int>();
 
@@ -117,12 +100,13 @@ namespace AntShares.UI
 
         private void button3_Click(object sender, EventArgs e)
         {
+            const uint BitCoinNonce = 2083236893; //向比特币致敬
             Block block = new Block
             {
                 PrevBlock = UInt256.Zero,
                 Timestamp = DateTime.Now.ToTimestamp(),
                 Height = 0,
-                Nonce = 2083236893, //向比特币致敬
+                Nonce = BitCoinNonce,
                 NextMiner = Blockchain.GetMinerAddress(Blockchain.StandbyMiners),
                 Script = new Script
                 {
@@ -131,8 +115,31 @@ namespace AntShares.UI
                 },
                 Transactions = new Transaction[]
                 {
+                    new MinerTransaction
+                    {
+                        Nonce = BitCoinNonce,
+                        Attributes = new TransactionAttribute[0],
+                        Inputs = new TransactionInput[0],
+                        Outputs = new TransactionOutput[0],
+                        Scripts = new Script[0]
+                    },
                     textBox3.Text.HexToBytes().AsSerializable<RegisterTransaction>(),
-                    AntCoin,
+                    new RegisterTransaction
+                    {
+                        AssetType = AssetType.AntCoin,
+#if TESTNET
+                        Name = "[{'lang':'zh-CN','name':'小蚁币(测试)'},{'lang':'en','name':'AntCoin(TestNet)'}]",
+#else
+                        Name = "[{'lang':'zh-CN','name':'小蚁币'},{'lang':'en','name':'AntCoin'}]",
+#endif
+                        Amount = Fixed8.FromDecimal(Blockchain.MintingAmount.Sum(p => p * Blockchain.DecrementInterval)),
+                        Issuer = ECCurve.Secp256r1.Infinity,
+                        Admin = new UInt160(),
+                        Attributes = new TransactionAttribute[0],
+                        Inputs = new TransactionInput[0],
+                        Outputs = new TransactionOutput[0],
+                        Scripts = new Script[0]
+                    },
                     textBox5.Text.HexToBytes().AsSerializable<IssueTransaction>()
                 }
             };

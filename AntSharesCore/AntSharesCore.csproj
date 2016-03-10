@@ -140,7 +140,7 @@
     <Compile Include="Core\ClaimTransaction.cs" />
     <Compile Include="Core\ContractTransaction.cs" />
     <Compile Include="Core\EnrollmentTransaction.cs" />
-    <Compile Include="Core\GenerationTransaction.cs" />
+    <Compile Include="Core\MinerTransaction.cs" />
     <Compile Include="Core\Helper.cs" />
     <Compile Include="Core\Scripts\Helper.cs" />
     <Compile Include="Core\Scripts\Script.cs" />

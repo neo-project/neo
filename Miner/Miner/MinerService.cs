@@ -20,26 +20,24 @@ namespace AntShares.Miner
         private CancellationTokenSource source = new CancellationTokenSource();
         private bool stopped = false;
 
-        private GenerationTransaction CreateGenerationTransaction(IEnumerable<Transaction> transactions, uint height, ulong nonce)
+        private MinerTransaction CreateGenerationTransaction(IEnumerable<Transaction> transactions, uint height, ulong nonce)
         {
             Fixed8 amount_in = transactions.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
             Fixed8 amount_out = transactions.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
             Fixed8 amount_sysfee = transactions.Sum(p => p.SystemFee);
             Fixed8 amount_netfee = amount_in - amount_out - amount_sysfee;
-            return new GenerationTransaction
+            TransactionOutput[] outputs = amount_netfee == Fixed8.Zero ? new TransactionOutput[0] : new[] { new TransactionOutput
+            {
+                AssetId = Blockchain.AntCoin.Hash,
+                Value = amount_netfee,
+                ScriptHash = wallet.GetContracts().First().ScriptHash
+            } };
+            return new MinerTransaction
             {
                 Nonce = (uint)(nonce % (uint.MaxValue + 1ul)),
                 Attributes = new TransactionAttribute[0],
                 Inputs = new TransactionInput[0],
-                Outputs = new[]
-                {
-                    new TransactionOutput
-                    {
-                        AssetId = Blockchain.AntCoin.Hash,
-                        Value = amount_netfee,
-                        ScriptHash = wallet.GetContracts().First().ScriptHash
-                    }
-                },
+                Outputs = outputs,
                 Scripts = new Script[0]
             };
         }
@@ -194,9 +192,7 @@ namespace AntShares.Miner
                 }
                 ulong nonce = BitConverter.ToUInt64(nonce_data, 0);
                 List<Transaction> transactions = Blockchain.Default.GetMemoryPool().ToList();
-                GenerationTransaction tx_gen = CreateGenerationTransaction(transactions, header.Height + 1, nonce);
-                if (tx_gen.Outputs.Sum(p => p.Value) > Fixed8.Zero)
-                    transactions.Insert(0, tx_gen);
+                transactions.Insert(0, CreateGenerationTransaction(transactions, header.Height + 1, nonce));
                 Block block = new Block
                 {
                     PrevBlock = header.Hash,

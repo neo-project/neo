@@ -230,7 +230,7 @@ namespace AntShares.Core
             TransactionResult[] results_issue = results.Where(p => p.Amount < Fixed8.Zero).ToArray();
             switch (Type)
             {
-                case TransactionType.GenerationTransaction:
+                case TransactionType.MinerTransaction:
                 case TransactionType.ClaimTransaction:
                     if (results_issue.Any(p => p.AssetId != Blockchain.AntCoin.Hash))
                         return false;

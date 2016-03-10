@@ -2,7 +2,7 @@
 {
     public enum TransactionType : byte
     {
-        GenerationTransaction = 0x00,
+        MinerTransaction = 0x00,
         IssueTransaction = 0x01,
         ClaimTransaction = 0x02,
         EnrollmentTransaction = 0x20,

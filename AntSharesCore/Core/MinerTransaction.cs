@@ -4,12 +4,12 @@ using System.Linq;
 
 namespace AntShares.Core
 {
-    public class GenerationTransaction : Transaction
+    public class MinerTransaction : Transaction
     {
         public uint Nonce;
 
-        public GenerationTransaction()
-            : base(TransactionType.GenerationTransaction)
+        public MinerTransaction()
+            : base(TransactionType.MinerTransaction)
         {
         }
 

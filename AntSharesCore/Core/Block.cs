@@ -84,7 +84,7 @@ namespace AntShares.Core
             }
             if (Transactions.Length > 0)
             {
-                if (Transactions.Skip(1).Any(p => p.Type == TransactionType.GenerationTransaction))
+                if (Transactions[0].Type != TransactionType.MinerTransaction || Transactions.Skip(1).Any(p => p.Type == TransactionType.MinerTransaction))
                     throw new FormatException();
                 if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
                     throw new FormatException();
@@ -263,12 +263,12 @@ namespace AntShares.Core
             {
                 foreach (Transaction tx in Transactions)
                     if (!tx.Verify()) return false;
-                Transaction[] transactions = Transactions.Where(p => p.Type != TransactionType.GenerationTransaction).ToArray();
+                Transaction[] transactions = Transactions.Where(p => p.Type != TransactionType.MinerTransaction).ToArray();
                 Fixed8 amount_in = transactions.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
                 Fixed8 amount_out = transactions.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
                 Fixed8 amount_sysfee = transactions.Sum(p => p.SystemFee);
                 Fixed8 amount_netfee = amount_in - amount_out - amount_sysfee;
-                GenerationTransaction tx_gen = Transactions.OfType<GenerationTransaction>().FirstOrDefault();
+                MinerTransaction tx_gen = Transactions.OfType<MinerTransaction>().FirstOrDefault();
                 if (tx_gen?.Outputs.Sum(p => p.Value) != amount_netfee) return false;
             }
             return true;
