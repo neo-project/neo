@@ -268,6 +268,15 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             }
         }
 
+        public override Block GetHeader(uint height)
+        {
+            lock (header_chain)
+            {
+                if (header_index.Count <= height) return null;
+                return header_chain[header_index[(int)height]];
+            }
+        }
+
         public override Block GetHeader(UInt256 hash)
         {
             if (!header_chain.Nodes.ContainsKey(hash)) return null;

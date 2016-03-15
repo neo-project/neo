@@ -146,6 +146,7 @@
     <Compile Include="Core\Scripts\InterfaceEngine.cs" />
     <Compile Include="Core\Scripts\Script.cs" />
     <Compile Include="Core\Scripts\InterfaceOp.cs" />
+    <Compile Include="Core\Scripts\StackItem.cs" />
     <Compile Include="Cryptography\ECC\ECDsa.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\DataEntryPrefix.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\Helper.cs" />
@@ -174,7 +175,6 @@
     <Compile Include="Core\Scripts\ScriptBuilder.cs" />
     <Compile Include="Core\Scripts\ScriptEngine.cs" />
     <Compile Include="Core\Scripts\ScriptOp.cs" />
-    <Compile Include="Core\Scripts\Stack.cs" />
     <Compile Include="Core\SignatureContext.cs" />
     <Compile Include="Core\SplitOrder.cs" />
     <Compile Include="Core\Transaction.cs" />

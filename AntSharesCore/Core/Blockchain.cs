@@ -110,6 +110,11 @@ namespace AntShares.Core
 
         public abstract IEnumerable<EnrollmentTransaction> GetEnrollments(IEnumerable<Transaction> others);
 
+        public virtual Block GetHeader(uint height)
+        {
+            return GetHeader(GetBlockHash(height));
+        }
+
         public virtual Block GetHeader(UInt256 hash)
         {
             return GetBlock(hash)?.Header;

@@ -253,7 +253,7 @@ namespace AntShares.Core
                 {
                     StackScript = new byte[0],
                     RedeemScript = script.Data
-                }, this.GetHashForSigning());
+                }, this);
                 if (!engine.Execute()) return false;
             }
             return this.VerifySignature();

@@ -129,5 +129,27 @@
 
 
         //OP_EVAL = 0xB0, // see BIP12. Currently disabled.
+
+
+        // Array
+        OP_ARRAYSIZE = 0xC0,
+        OP_PACK = 0xC1,
+        OP_UNPACK = 0xC2,
+        OP_DISTINCT = 0xC3,
+        OP_SORT = 0xC4,
+        OP_REVERSE = 0xC5,
+        OP_CONCAT = 0xC6,
+        OP_UNION = 0xC7,
+        OP_INTERSECT = 0xC8,
+        OP_EXCEPT = 0xC9,
+        OP_TAKE = 0xCA,
+        OP_SKIP = 0xCB,
+        OP_PICKITEM = 0xCC,
+        OP_ALL = 0xCD,
+        OP_ANY = 0xCE,
+        OP_SUM = 0xCF,
+        OP_AVERAGE = 0xD0,
+        OP_MAXITEM = 0xD1,
+        OP_MINITEM = 0xD2,
     }
 }

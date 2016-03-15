@@ -56,7 +56,7 @@ namespace AntShares.Core
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (hashes[i] != signable.Scripts[i].RedeemScript.ToScriptHash()) return false;
-                ScriptEngine engine = new ScriptEngine(signable.Scripts[i], signable.GetHashForSigning());
+                ScriptEngine engine = new ScriptEngine(signable.Scripts[i], signable);
                 if (!engine.Execute()) return false;
             }
             return true;
