@@ -97,9 +97,8 @@ namespace AntShares.Network
                     pendingPeers.Add(remoteNode);
                 }
                 remoteNode.Disconnected += RemoteNode_Disconnected;
+                remoteNode.InventoryReceived += RemoteNode_InventoryReceived;
                 remoteNode.PeersReceived += RemoteNode_PeersReceived;
-                remoteNode.BlockReceived += RemoteNode_BlockReceived;
-                remoteNode.TransactionReceived += RemoteNode_TransactionReceived;
                 remoteNode.StartProtocol();
             }
         }
@@ -138,9 +137,8 @@ namespace AntShares.Network
                 remoteNode = new RemoteNode(this, remoteEndpoint);
                 pendingPeers.Add(remoteNode);
                 remoteNode.Disconnected += RemoteNode_Disconnected;
+                remoteNode.InventoryReceived += RemoteNode_InventoryReceived;
                 remoteNode.PeersReceived += RemoteNode_PeersReceived;
-                remoteNode.BlockReceived += RemoteNode_BlockReceived;
-                remoteNode.TransactionReceived += RemoteNode_TransactionReceived;
             }
             await remoteNode.ConnectAsync();
         }
@@ -280,22 +278,12 @@ namespace AntShares.Network
             return true;
         }
 
-        private void RemoteNode_BlockReceived(object sender, Block block)
-        {
-            if (Blockchain.Default == null) return;
-            if (Blockchain.Default.ContainsBlock(block.Hash)) return;
-            if (!Blockchain.Default.AddBlock(block)) return;
-            RelayInternalAsync(block).Void();
-            if (NewInventory != null) NewInventory(this, block);
-        }
-
         private void RemoteNode_Disconnected(object sender, bool error)
         {
             RemoteNode remoteNode = (RemoteNode)sender;
             remoteNode.Disconnected -= RemoteNode_Disconnected;
+            remoteNode.InventoryReceived -= RemoteNode_InventoryReceived;
             remoteNode.PeersReceived -= RemoteNode_PeersReceived;
-            remoteNode.BlockReceived -= RemoteNode_BlockReceived;
-            remoteNode.TransactionReceived -= RemoteNode_TransactionReceived;
             if (error && remoteNode.ListenerEndpoint != null)
             {
                 lock (badPeers)
@@ -316,6 +304,29 @@ namespace AntShares.Network
                     }
                 }
             }
+        }
+
+        private void RemoteNode_InventoryReceived(object sender, Inventory inventory)
+        {
+            if (Blockchain.Default == null) return;
+            if (inventory is Block)
+            {
+                Block block = (Block)inventory;
+                if (Blockchain.Default.ContainsBlock(block.Hash)) return;
+                if (!Blockchain.Default.AddBlock(block)) return;
+            }
+            else if (inventory is Transaction)
+            {
+                Transaction tx = (Transaction)inventory;
+                if (Blockchain.Default.ContainsTransaction(tx.Hash)) return;
+                if (!Blockchain.Default.AddTransaction(tx)) return;
+            }
+            else //if (inventory is Consensus)
+            {
+                if (!inventory.Verify()) return;
+            }
+            RelayInternalAsync(inventory).Void();
+            if (NewInventory != null) NewInventory(this, inventory);
         }
 
         private void RemoteNode_PeersReceived(object sender, IPEndPoint[] peers)
@@ -339,15 +350,6 @@ namespace AntShares.Network
                     }
                 }
             }
-        }
-
-        private void RemoteNode_TransactionReceived(object sender, Transaction tx)
-        {
-            if (Blockchain.Default == null) return;
-            if (Blockchain.Default.ContainsTransaction(tx.Hash)) return;
-            if (!Blockchain.Default.AddTransaction(tx)) return;
-            RelayInternalAsync(tx).Void();
-            if (NewInventory != null) NewInventory(this, tx);
         }
 
         public static void SaveState(Stream stream)

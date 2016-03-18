@@ -164,8 +164,7 @@
     <Compile Include="IO\Caching\FIFOCache.cs" />
     <Compile Include="IO\Caching\Tree.cs" />
     <Compile Include="IO\Caching\TreeNode.cs" />
-    <Compile Include="Miner\BlockConsensusRequest.cs" />
-    <Compile Include="Miner\BlockConsensusResponse.cs" />
+    <Compile Include="Network\Payloads\ConsensusPayload.cs" />
     <Compile Include="Network\Inventory.cs" />
     <Compile Include="Core\ISignable.cs" />
     <Compile Include="Core\IssueTransaction.cs" />
@@ -208,7 +207,6 @@
     <Compile Include="Network\Payloads\AddrPayload.cs" />
     <Compile Include="Network\Payloads\GetBlocksPayload.cs" />
     <Compile Include="Network\Payloads\HeadersPayload.cs" />
-    <Compile Include="Network\Payloads\Helper.cs" />
     <Compile Include="Network\InventoryType.cs" />
     <Compile Include="Network\Payloads\InventoryVector.cs" />
     <Compile Include="Network\Payloads\InvPayload.cs" />
@@ -237,6 +235,7 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

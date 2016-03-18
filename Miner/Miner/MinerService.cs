@@ -1,26 +1,21 @@
 ﻿using AntShares.Core;
 using AntShares.Core.Scripts;
-using AntShares.Cryptography.ECC;
-using AntShares.Network;
+using AntShares.Miner.Consensus;
 using AntShares.Shell;
 using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security;
-using System.Security.Cryptography;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace AntShares.Miner
 {
     internal class MinerService : MainService
     {
+        private ConsensusContext context = new ConsensusContext();
         private MinerWallet wallet;
-        private CancellationTokenSource source = new CancellationTokenSource();
-        private bool stopped = false;
 
-        private MinerTransaction CreateGenerationTransaction(IEnumerable<Transaction> transactions, uint height, ulong nonce)
+        private MinerTransaction CreateMinerTransaction(IEnumerable<Transaction> transactions, uint height, ulong nonce)
         {
             Fixed8 amount_in = transactions.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
             Fixed8 amount_out = transactions.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
@@ -40,6 +35,14 @@ namespace AntShares.Miner
                 Outputs = outputs,
                 Scripts = new Script[0]
             };
+        }
+
+        private static ulong GetNonce()
+        {
+            byte[] nonce = new byte[sizeof(ulong)];
+            Random rand = new Random();
+            rand.NextBytes(nonce);
+            return BitConverter.ToUInt64(nonce, 0);
         }
 
         protected override bool OnCommand(string[] args)
@@ -127,90 +130,46 @@ namespace AntShares.Miner
                     Console.WriteLine($"failed to open file \"{args[2]}\"");
                 }
             }
+            StartMine();
             return true;
         }
 
-        protected internal override void OnStart(string[] args)
+        private void StartMine()
         {
-            base.OnStart(args);
-            StartMine(source.Token);
-        }
-
-        protected internal override void OnStop()
-        {
-            source.Cancel();
-            while (!stopped)
+            lock (context)
             {
-                Thread.Sleep(100);
-            }
-            base.OnStop();
-        }
-
-        private async void StartMine(CancellationToken token)
-        {
-            while (wallet == null && !token.IsCancellationRequested)
-            {
-                await Task.Delay(100);
-            }
-            while (!token.IsCancellationRequested)
-            {
-                ECPoint[] miners = Blockchain.Default.GetMiners();
-                bool is_miner = false;
-                foreach (Account account in wallet.GetAccounts())
+                context.Reset();
+                int my_id = -1;
+                for (int i = 0; i < context.Miners.Length; i++)
                 {
-                    if (miners.Contains(account.PublicKey))
+                    if (wallet.ContainsAccount(context.Miners[i]))
                     {
-                        is_miner = true;
+                        my_id = i;
                         break;
                     }
                 }
-                if (!is_miner)
+                if (my_id < 0) return;
+                int pi = ((int)context.Height - context.ViewNumber) % context.Miners.Length;
+                if (pi < 0) pi += context.Miners.Length;
+                if (pi == my_id)
                 {
-                    try
-                    {
-                        await Task.Delay(Blockchain.TimePerBlock, token);
-                    }
-                    catch (TaskCanceledException) { }
-                    continue;
+                    //TODO: Run Primary
+                    //1. 填充共识上下文
+                    context.State = ConsensusState.Primary;
+                    context.Timestamp = DateTime.Now.ToTimestamp();
+                    context.Nonce = GetNonce();
+                    Transaction[] transactions = Blockchain.Default.GetMemoryPool().ToArray();
+                    context.MinerTransaction = CreateMinerTransaction(transactions, context.Height, context.Nonce);
+                    context.TransactionHashes = new Transaction[] { context.MinerTransaction }.Concat(transactions).Select(p => p.Hash).ToArray();
+                    //2. 构造共识请求
+                    //3. 发送
+                    //4. 构造区块头并签名
                 }
-                Block header = Blockchain.Default.GetHeader(Blockchain.Default.CurrentBlockHash);
-                if (header == null) continue;
-                TimeSpan timespan = header.Timestamp.ToDateTime() + Blockchain.TimePerBlock - DateTime.Now;
-                if (timespan > TimeSpan.Zero)
+                else
                 {
-                    try
-                    {
-                        await Task.Delay(timespan, token);
-                    }
-                    catch (TaskCanceledException) { }
-                    if (token.IsCancellationRequested) break;
-                }
-                byte[] nonce_data = new byte[sizeof(ulong)];
-                using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
-                {
-                    rng.GetBytes(nonce_data);
-                }
-                ulong nonce = BitConverter.ToUInt64(nonce_data, 0);
-                List<Transaction> transactions = Blockchain.Default.GetMemoryPool().ToList();
-                transactions.Insert(0, CreateGenerationTransaction(transactions, header.Height + 1, nonce));
-                Block block = new Block
-                {
-                    PrevBlock = header.Hash,
-                    Timestamp = DateTime.Now.ToTimestamp(),
-                    Height = header.Height + 1,
-                    Nonce = nonce,
-                    NextMiner = Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(transactions).ToArray()),
-                    Transactions = transactions.ToArray()
-                };
-                block.RebuildMerkleRoot();
-                wallet.Sign(block, miners);
-                await LocalNode.RelayAsync(block);
-                while (Blockchain.Default.CurrentBlockHash != block.Hash && !token.IsCancellationRequested)
-                {
-                    await Task.Delay(100, token);
+                    //TODO: Run Backup
                 }
             }
-            stopped = true;
         }
     }
 }

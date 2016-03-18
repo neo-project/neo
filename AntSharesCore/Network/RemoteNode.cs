@@ -15,10 +15,9 @@ namespace AntShares.Network
 {
     public class RemoteNode : IDisposable
     {
-        internal event EventHandler<Block> BlockReceived;
         public event EventHandler<bool> Disconnected;
+        internal event EventHandler<Inventory> InventoryReceived;
         internal event EventHandler<IPEndPoint[]> PeersReceived;
-        internal event EventHandler<Transaction> TransactionReceived;
 
         private static readonly TimeSpan OneMinute = TimeSpan.FromMinutes(1);
 
@@ -197,6 +196,10 @@ namespace AntShares.Network
                         if (inventory != null)
                             EnqueueMessage("block", inventory);
                         break;
+                    case InventoryType.Consensus:
+                        if (inventory != null)
+                            EnqueueMessage("consensus", inventory);
+                        break;
                 }
             }
         }
@@ -239,14 +242,7 @@ namespace AntShares.Network
                 missions_global.Remove(inventory.Hash);
             }
             missions.Remove(inventory.Hash);
-            if (inventory is Block)
-            {
-                if (BlockReceived != null) BlockReceived(this, (Block)inventory);
-            }
-            else if (inventory is Transaction)
-            {
-                if (TransactionReceived != null) TransactionReceived(this, (Transaction)inventory);
-            }
+            if (InventoryReceived != null) InventoryReceived(this, inventory);
         }
 
         private void OnInvMessageReceived(InvPayload payload)
@@ -281,11 +277,8 @@ namespace AntShares.Network
                 case "block":
                     OnInventoryReceived(message.Payload.AsSerializable<Block>());
                     break;
-                case "consrequest":
-                    //OnNewInventory(message.Payload.AsSerializable<BlockConsensusRequest>());
-                    break;
-                case "consresponse":
-                    //OnNewInventory(message.Payload.AsSerializable<BlockConsensusResponse>());
+                case "consensus":
+                    OnInventoryReceived(message.Payload.AsSerializable<ConsensusPayload>());
                     break;
                 case "getaddr":
                     OnGetAddrMessageReceived();

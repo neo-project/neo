@@ -12,7 +12,7 @@ namespace AntShares.Core
 {
     public class Block : Inventory, IEquatable<Block>, ISignable
     {
-        public const uint Version = 0;
+        public uint Version;
         public UInt256 PrevBlock;
         public UInt256 MerkleRoot;
         public uint Timestamp;
@@ -67,14 +67,7 @@ namespace AntShares.Core
 
         public override void Deserialize(BinaryReader reader)
         {
-            if (reader.ReadUInt32() != Version)
-                throw new FormatException();
-            PrevBlock = reader.ReadSerializable<UInt256>();
-            MerkleRoot = reader.ReadSerializable<UInt256>();
-            Timestamp = reader.ReadUInt32();
-            Height = reader.ReadUInt32();
-            Nonce = reader.ReadUInt64();
-            NextMiner = reader.ReadSerializable<UInt160>();
+            ((ISignable)this).DeserializeUnsigned(reader);
             if (reader.ReadByte() != 1) throw new FormatException();
             Script = reader.ReadSerializable<Script>();
             Transactions = new Transaction[reader.ReadVarInt()];
@@ -93,8 +86,7 @@ namespace AntShares.Core
 
         void ISignable.DeserializeUnsigned(BinaryReader reader)
         {
-            if (reader.ReadUInt32() != Version)
-                throw new FormatException();
+            Version = reader.ReadUInt32();
             PrevBlock = reader.ReadSerializable<UInt256>();
             MerkleRoot = reader.ReadSerializable<UInt256>();
             Timestamp = reader.ReadUInt32();
@@ -122,14 +114,7 @@ namespace AntShares.Core
             using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
             using (BinaryReader reader = new BinaryReader(ms))
             {
-                if (reader.ReadUInt32() != Version)
-                    throw new FormatException();
-                block.PrevBlock = reader.ReadSerializable<UInt256>();
-                block.MerkleRoot = reader.ReadSerializable<UInt256>();
-                block.Timestamp = reader.ReadUInt32();
-                block.Height = reader.ReadUInt32();
-                block.Nonce = reader.ReadUInt64();
-                block.NextMiner = reader.ReadSerializable<UInt160>();
+                ((ISignable)block).DeserializeUnsigned(reader);
                 reader.ReadByte(); block.Script = reader.ReadSerializable<Script>();
                 if (txSelector == null)
                 {
@@ -157,13 +142,8 @@ namespace AntShares.Core
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms))
             {
-                writer.Write(Version);
-                writer.Write(PrevBlock);
-                writer.Write(MerkleRoot);
-                writer.Write(Timestamp);
-                writer.Write(Height);
-                writer.Write(Nonce);
-                writer.Write(NextMiner);
+                ((ISignable)this).SerializeUnsigned(writer);
+                writer.Flush();
                 return ms.ToArray();
             }
         }
@@ -184,13 +164,7 @@ namespace AntShares.Core
 
         public override void Serialize(BinaryWriter writer)
         {
-            writer.Write(Version);
-            writer.Write(PrevBlock);
-            writer.Write(MerkleRoot);
-            writer.Write(Timestamp);
-            writer.Write(Height);
-            writer.Write(Nonce);
-            writer.Write(NextMiner);
+            ((ISignable)this).SerializeUnsigned(writer);
             writer.Write((byte)1); writer.Write(Script);
             writer.Write(Transactions);
         }
@@ -227,13 +201,7 @@ namespace AntShares.Core
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms))
             {
-                writer.Write(Version);
-                writer.Write(PrevBlock);
-                writer.Write(MerkleRoot);
-                writer.Write(Timestamp);
-                writer.Write(Height);
-                writer.Write(Nonce);
-                writer.Write(NextMiner);
+                ((ISignable)this).SerializeUnsigned(writer);
                 writer.Write((byte)1); writer.Write(Script);
                 writer.Write(Transactions.Select(p => p.Hash).ToArray());
                 writer.Flush();
