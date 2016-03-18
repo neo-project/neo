@@ -67,6 +67,7 @@
     <Compile Include="Cryptography\SecretSharing.cs" />
     <Compile Include="Cryptography\SplitSecret.cs" />
     <Compile Include="Miner\Consensus\ConsensusContext.cs" />
+    <Compile Include="Miner\Consensus\ConsensusMessageType.cs" />
     <Compile Include="Miner\Consensus\ConsensusState.cs" />
     <Compile Include="Miner\MinerService.cs" />
     <Compile Include="Program.cs" />
@@ -76,8 +77,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Wallets\Helper.cs" />
-    <Compile Include="Wallets\MinerWallet.cs" />
+    <Compile Include="Helper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

@@ -1,6 +1,8 @@
 ﻿using AntShares.Core;
 using AntShares.Core.Scripts;
+using AntShares.Implementations.Wallets.EntityFramework;
 using AntShares.Miner.Consensus;
+using AntShares.Network.Payloads;
 using AntShares.Shell;
 using AntShares.Wallets;
 using System;
@@ -13,7 +15,7 @@ namespace AntShares.Miner
     internal class MinerService : MainService
     {
         private ConsensusContext context = new ConsensusContext();
-        private MinerWallet wallet;
+        private UserWallet wallet;
 
         private MinerTransaction CreateMinerTransaction(IEnumerable<Transaction> transactions, uint height, ulong nonce)
         {
@@ -84,7 +86,7 @@ namespace AntShares.Miner
                     Console.WriteLine("error");
                     return true;
                 }
-                wallet = MinerWallet.Create(args[2], password);
+                wallet = UserWallet.Create(args[2], password);
                 foreach (Account account in wallet.GetAccounts())
                 {
                     Console.WriteLine(account.PublicKey.EncodePoint(true).ToHexString());
@@ -123,7 +125,7 @@ namespace AntShares.Miner
                 }
                 try
                 {
-                    wallet = MinerWallet.Open(args[2], password);
+                    wallet = UserWallet.Open(args[2], password);
                 }
                 catch
                 {
@@ -153,17 +155,25 @@ namespace AntShares.Miner
                 if (pi < 0) pi += context.Miners.Length;
                 if (pi == my_id)
                 {
+                    List<Transaction> transactions = Blockchain.Default.GetMemoryPool().ToList();
+                    transactions.Insert(0, CreateMinerTransaction(transactions, context.Height, context.Nonce));
                     //TODO: Run Primary
                     //1. 填充共识上下文
                     context.State = ConsensusState.Primary;
                     context.Timestamp = DateTime.Now.ToTimestamp();
                     context.Nonce = GetNonce();
-                    Transaction[] transactions = Blockchain.Default.GetMemoryPool().ToArray();
-                    context.MinerTransaction = CreateMinerTransaction(transactions, context.Height, context.Nonce);
-                    context.TransactionHashes = new Transaction[] { context.MinerTransaction }.Concat(transactions).Select(p => p.Hash).ToArray();
+                    context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
+                    context.Transactions = transactions.ToArray();
                     //2. 构造共识请求
+                    ConsensusPayload payload = context.MakePerpareRequest((ushort)my_id);
+                    SignatureContext sc = new SignatureContext(payload);
+                    wallet.Sign(sc);
+                    sc.Signable.Scripts = sc.GetScripts();
                     //3. 发送
+                    var eatwarning = LocalNode.RelayAsync(payload);
                     //4. 构造区块头并签名
+                    Block header = context.MakeHeader();
+                    context.Signatures[my_id] = header.Sign(wallet.GetAccount(context.Miners[my_id]));
                 }
                 else
                 {

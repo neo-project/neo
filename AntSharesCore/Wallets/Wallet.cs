@@ -261,6 +261,11 @@ namespace AntShares.Wallets
             }).ToArray();
         }
 
+        public Account GetAccount(ECPoint publicKey)
+        {
+            return GetAccount(publicKey.EncodePoint(true).ToScriptHash());
+        }
+
         public Account GetAccount(UInt160 publicKeyHash)
         {
             lock (accounts)

@@ -63,6 +63,13 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             return wallet;
         }
 
+        public static UserWallet Create(string path, SecureString password)
+        {
+            UserWallet wallet = new UserWallet(path, password, true);
+            wallet.CreateAccount();
+            return wallet;
+        }
+
         public override WalletAccount CreateAccount(byte[] privateKey)
         {
             WalletAccount account = base.CreateAccount(privateKey);
@@ -235,6 +242,11 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         }
 
         public static UserWallet Open(string path, string password)
+        {
+            return new UserWallet(path, password, false);
+        }
+
+        public static UserWallet Open(string path, SecureString password)
         {
             return new UserWallet(path, password, false);
         }

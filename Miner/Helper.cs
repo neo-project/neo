@@ -2,9 +2,9 @@
 using System.Runtime.InteropServices;
 using System.Security;
 
-namespace AntShares.Wallets
+namespace AntShares
 {
-    public static class Helper
+    internal static class Helper
     {
         public static bool CompareTo(this SecureString s1, SecureString s2)
         {
