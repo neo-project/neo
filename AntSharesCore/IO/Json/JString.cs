@@ -45,11 +45,11 @@ namespace AntShares.IO.Json
             }
         }
 
-        public override decimal AsNumber()
+        public override double AsNumber()
         {
             try
             {
-                return decimal.Parse(Value);
+                return double.Parse(Value);
             }
             catch
             {
