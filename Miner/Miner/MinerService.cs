@@ -2,6 +2,7 @@
 using AntShares.Core.Scripts;
 using AntShares.Implementations.Wallets.EntityFramework;
 using AntShares.Miner.Consensus;
+using AntShares.Network;
 using AntShares.Network.Payloads;
 using AntShares.Shell;
 using AntShares.Wallets;
@@ -9,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security;
+using System.Threading;
 
 namespace AntShares.Miner
 {
@@ -16,6 +18,59 @@ namespace AntShares.Miner
     {
         private ConsensusContext context = new ConsensusContext();
         private UserWallet wallet;
+        private Timer timer;
+        private uint timer_height;
+        private byte timer_view;
+        private DateTime block_received_time;
+
+        private bool AddTransaction(Transaction tx)
+        {
+            if (context.Transactions.SelectMany(p => p.Value.GetAllInputs()).Intersect(tx.GetAllInputs()).Count() > 0)
+                return false;
+            if (Blockchain.Default.ContainsTransaction(tx.Hash))
+                return false;
+            if (!tx.Verify()) return false;
+            context.Transactions[tx.Hash] = tx;
+            if (context.TransactionHashes.Length == context.Transactions.Count)
+            {
+                context.State |= ConsensusState.SignatureSent;
+                context.Signatures[context.MinerIndex] = context.MakeHeader().Sign(wallet.GetAccount(context.Miners[context.MinerIndex]));
+                SignAndRelay(context.MakePerpareResponse(context.Signatures[context.MinerIndex]));
+            }
+            return true;
+        }
+
+        private void Blockchain_PersistCompleted(object sender, Block block)
+        {
+            block_received_time = DateTime.Now;
+            InitializeConsensus(0);
+        }
+
+        private void CheckExpectedView(byte view_number)
+        {
+            if (context.ViewNumber == view_number) return;
+            if (context.ExpectedView.Count(p => p == view_number) >= context.M)
+            {
+                InitializeConsensus(view_number);
+            }
+        }
+
+        private void CheckSignatures()
+        {
+            if (context.Signatures.Length >= context.M)
+            {
+                Contract contract = MultiSigContract.Create(context.Miners[context.MinerIndex].EncodePoint(true).ToScriptHash(), context.M, context.Miners);
+                Block block = context.MakeHeader();
+                SignatureContext sc = new SignatureContext(block);
+                for (int i = 0; i < context.Miners.Length; i++)
+                    if (context.Signatures[i] != null)
+                        sc.Add(contract, context.Miners[i], context.Signatures[i]);
+                sc.Signable.Scripts = sc.GetScripts();
+                block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
+                var eatwarning = LocalNode.RelayAsync(block);
+                context.State |= ConsensusState.BlockSent;
+            }
+        }
 
         private MinerTransaction CreateMinerTransaction(IEnumerable<Transaction> transactions, uint height, ulong nonce)
         {
@@ -45,6 +100,87 @@ namespace AntShares.Miner
             Random rand = new Random();
             rand.NextBytes(nonce);
             return BitConverter.ToUInt64(nonce, 0);
+        }
+
+        private void InitializeConsensus(byte view_number)
+        {
+            lock (context)
+            {
+                if (view_number == 0)
+                    context.Reset(wallet);
+                else
+                    context.ChangeView(view_number);
+                if (context.MinerIndex < 0) return;
+                int pi = ((int)context.Height - context.ViewNumber) % context.Miners.Length;
+                if (pi < 0) pi += context.Miners.Length;
+                if (pi == context.MinerIndex)
+                {
+                    context.State = ConsensusState.Primary;
+                    timer_height = context.Height;
+                    timer_view = view_number;
+                    TimeSpan span = DateTime.Now - block_received_time;
+                    if (span >= Blockchain.TimePerBlock)
+                        timer.Change(0, Timeout.Infinite);
+                    else
+                        timer.Change(Blockchain.TimePerBlock - span, Timeout.InfiniteTimeSpan);
+                }
+                else
+                {
+                    context.State = ConsensusState.Backup;
+                    timer_height = context.Height;
+                    timer_view = view_number;
+                    timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (view_number + 1)), Timeout.InfiniteTimeSpan);
+                }
+            }
+        }
+
+        private void LocalNode_NewInventory(object sender, Inventory inventory)
+        {
+            ConsensusPayload payload = inventory as ConsensusPayload;
+            if (payload != null)
+            {
+                lock (context)
+                {
+                    if (payload.Version != ConsensusContext.Version || payload.PrevHash != context.PrevHash || payload.Height != context.Height)
+                        return;
+                    if (payload.MinerIndex >= context.Miners.Length) return;
+                    ConsensusMessage message = ConsensusMessage.DeserializeFrom(payload.Data);
+                    if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView)
+                        return;
+                    switch (message.Type)
+                    {
+                        case ConsensusMessageType.ChangeView:
+                            OnChangeViewReceived(payload, (ChangeView)message);
+                            break;
+                        case ConsensusMessageType.PerpareRequest:
+                            OnPerpareRequestReceived(payload, (PerpareRequest)message);
+                            break;
+                        case ConsensusMessageType.PerpareResponse:
+                            OnPerpareResponseReceived(payload, (PerpareResponse)message);
+                            break;
+                    }
+                }
+            }
+            Transaction tx = inventory as Transaction;
+            if (tx != null)
+            {
+                lock (context)
+                {
+                    if (!context.State.HasFlag(ConsensusState.Backup) || !context.State.HasFlag(ConsensusState.RequestReceived) || context.State.HasFlag(ConsensusState.SignatureSent))
+                        return;
+                    if (context.Transactions.ContainsKey(tx.Hash)) return;
+                    if (!context.TransactionHashes.Contains(tx.Hash)) return;
+                    AddTransaction(tx);
+                }
+            }
+        }
+
+        private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
+        {
+            if (message.NewViewNumber <= context.ExpectedView[payload.MinerIndex])
+                return;
+            context.ExpectedView[payload.MinerIndex] = message.NewViewNumber;
+            CheckExpectedView(message.NewViewNumber);
         }
 
         protected override bool OnCommand(string[] args)
@@ -136,50 +272,84 @@ namespace AntShares.Miner
             return true;
         }
 
-        private void StartMine()
+        private void OnPerpareRequestReceived(ConsensusPayload payload, PerpareRequest message)
+        {
+            if (!context.State.HasFlag(ConsensusState.Backup) || context.State.HasFlag(ConsensusState.RequestReceived))
+                return;
+            if (payload.Timestamp <= Blockchain.Default.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.Now.AddMinutes(10).ToTimestamp())
+                return;
+            context.State |= ConsensusState.RequestReceived;
+            context.Timestamp = payload.Timestamp;
+            context.Nonce = message.Nonce;
+            context.TransactionHashes = message.TransactionHashes;
+            context.Transactions = new Dictionary<UInt256, Transaction>();
+            if (!AddTransaction(message.MinerTransaction)) return;
+            Dictionary<UInt256, Transaction> mempool = LocalNode.GetMemoryPool().ToDictionary(p => p.Hash);
+            foreach (UInt256 hash in context.TransactionHashes.Skip(1))
+                if (mempool.ContainsKey(hash))
+                    if (!AddTransaction(mempool[hash]))
+                        return;
+        }
+
+        private void OnPerpareResponseReceived(ConsensusPayload payload, PerpareResponse message)
+        {
+            if (context.State.HasFlag(ConsensusState.BlockSent)) return;
+            if (context.Signatures[payload.MinerIndex] != null) return;
+            if (!context.MakeHeader().VerifySignature(context.Miners[payload.MinerIndex], message.Signature)) return;
+            context.Signatures[payload.MinerIndex] = message.Signature;
+            CheckSignatures();
+        }
+
+        protected internal override void OnStop()
+        {
+            if (timer != null) timer.Dispose();
+            Blockchain.PersistCompleted -= Blockchain_PersistCompleted;
+            LocalNode.NewInventory -= LocalNode_NewInventory;
+            base.OnStop();
+        }
+
+        private void OnTimeout(object state)
         {
             lock (context)
             {
-                context.Reset();
-                int my_id = -1;
-                for (int i = 0; i < context.Miners.Length; i++)
+                if (timer_height != context.Height || timer_view != context.ViewNumber)
+                    return;
+                if (context.State.HasFlag(ConsensusState.Primary) && !context.State.HasFlag(ConsensusState.RequestSent))
                 {
-                    if (wallet.ContainsAccount(context.Miners[i]))
-                    {
-                        my_id = i;
-                        break;
-                    }
-                }
-                if (my_id < 0) return;
-                int pi = ((int)context.Height - context.ViewNumber) % context.Miners.Length;
-                if (pi < 0) pi += context.Miners.Length;
-                if (pi == my_id)
-                {
-                    List<Transaction> transactions = Blockchain.Default.GetMemoryPool().ToList();
+                    List<Transaction> transactions = LocalNode.GetMemoryPool().ToList();
                     transactions.Insert(0, CreateMinerTransaction(transactions, context.Height, context.Nonce));
-                    //TODO: Run Primary
-                    //1. 填充共识上下文
-                    context.State = ConsensusState.Primary;
-                    context.Timestamp = DateTime.Now.ToTimestamp();
+                    context.State |= ConsensusState.RequestSent;
+                    context.Timestamp = Math.Max(DateTime.Now.ToTimestamp(), Blockchain.Default.GetHeader(context.PrevHash).Timestamp + 1);
                     context.Nonce = GetNonce();
                     context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
-                    context.Transactions = transactions.ToArray();
-                    //2. 构造共识请求
-                    ConsensusPayload payload = context.MakePerpareRequest((ushort)my_id);
-                    SignatureContext sc = new SignatureContext(payload);
-                    wallet.Sign(sc);
-                    sc.Signable.Scripts = sc.GetScripts();
-                    //3. 发送
-                    var eatwarning = LocalNode.RelayAsync(payload);
-                    //4. 构造区块头并签名
-                    Block header = context.MakeHeader();
-                    context.Signatures[my_id] = header.Sign(wallet.GetAccount(context.Miners[my_id]));
+                    context.Transactions = transactions.ToDictionary(p => p.Hash);
+                    context.Signatures[context.MinerIndex] = context.MakeHeader().Sign(wallet.GetAccount(context.Miners[context.MinerIndex]));
+                    SignAndRelay(context.MakePerpareRequest());
                 }
-                else
+                else if (context.State.HasFlag(ConsensusState.Backup))
                 {
-                    //TODO: Run Backup
+                    context.ExpectedView[context.MinerIndex]++;
+                    timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MinerIndex] + 1)), Timeout.InfiniteTimeSpan);
+                    SignAndRelay(context.MakeChangeView());
+                    CheckExpectedView(context.ExpectedView[context.MinerIndex]);
                 }
             }
+        }
+
+        private void SignAndRelay(ConsensusPayload payload)
+        {
+            SignatureContext sc = new SignatureContext(payload);
+            wallet.Sign(sc);
+            sc.Signable.Scripts = sc.GetScripts();
+            var eatwarning = LocalNode.RelayAsync(payload);
+        }
+
+        private void StartMine()
+        {
+            timer = new Timer(OnTimeout, null, Timeout.Infinite, Timeout.Infinite);
+            Blockchain.PersistCompleted += Blockchain_PersistCompleted;
+            LocalNode.NewInventory += LocalNode_NewInventory;
+            InitializeConsensus(0);
         }
     }
 }

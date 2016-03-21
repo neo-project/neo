@@ -66,9 +66,13 @@
     <Compile Include="Cryptography\Diffuser.cs" />
     <Compile Include="Cryptography\SecretSharing.cs" />
     <Compile Include="Cryptography\SplitSecret.cs" />
+    <Compile Include="Miner\Consensus\ChangeView.cs" />
     <Compile Include="Miner\Consensus\ConsensusContext.cs" />
+    <Compile Include="Miner\Consensus\ConsensusMessage.cs" />
     <Compile Include="Miner\Consensus\ConsensusMessageType.cs" />
     <Compile Include="Miner\Consensus\ConsensusState.cs" />
+    <Compile Include="Miner\Consensus\PerpareRequest.cs" />
+    <Compile Include="Miner\Consensus\PerpareResponse.cs" />
     <Compile Include="Miner\MinerService.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

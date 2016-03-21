@@ -177,7 +177,6 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override bool ContainsUnspent(UInt256 hash, ushort index)
         {
-            if (base.ContainsUnspent(hash, index)) return true;
             Slice value;
             if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Unspent).Add(hash), out value))
                 return false;
@@ -374,8 +373,6 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override TransactionOutput GetUnspent(UInt256 hash, ushort index)
         {
-            TransactionOutput unspent = base.GetUnspent(hash, index);
-            if (unspent != null) return unspent;
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
@@ -422,11 +419,6 @@ namespace AntShares.Implementations.Blockchains.LevelDB
         {
             TransactionInput[] inputs = tx.GetAllInputs().ToArray();
             if (inputs.Length == 0) return false;
-            lock (MemoryPool)
-            {
-                if (MemoryPool.Values.SelectMany(p => p.GetAllInputs()).Intersect(inputs).Count() > 0)
-                    return true;
-            }
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {

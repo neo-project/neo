@@ -1,5 +1,6 @@
 ﻿using AntShares.Core.Scripts;
 using AntShares.Cryptography;
+using AntShares.Cryptography.ECC;
 using AntShares.Wallets;
 using System;
 using System.IO;
@@ -11,6 +12,8 @@ namespace AntShares.Core
 {
     public static class Helper
     {
+        private const int ECDSA_PRIVATE_P256_MAGIC = 0x32534345;
+
         public static byte[] GetHashForSigning(this ISignable signable)
         {
             using (MemoryStream ms = new MemoryStream())
@@ -24,7 +27,6 @@ namespace AntShares.Core
 
         internal static byte[] Sign(this ISignable signable, byte[] prikey, byte[] pubkey)
         {
-            const int ECDSA_PRIVATE_P256_MAGIC = 0x32534345;
             prikey = BitConverter.GetBytes(ECDSA_PRIVATE_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey).Concat(prikey).ToArray();
             using (CngKey key = CngKey.Import(prikey, CngKeyBlobFormat.EccPrivateBlob))
             using (ECDsaCng ecdsa = new ECDsaCng(key))
@@ -60,6 +62,16 @@ namespace AntShares.Core
                 if (!engine.Execute()) return false;
             }
             return true;
+        }
+
+        public static bool VerifySignature(this ISignable signable, ECPoint pubkey, byte[] signature)
+        {
+            byte[] bytes = BitConverter.GetBytes(ECDSA_PRIVATE_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey.EncodePoint(false).Skip(1)).ToArray();
+            using (CngKey key = CngKey.Import(bytes, CngKeyBlobFormat.EccPublicBlob))
+            using (ECDsaCng ecdsa = new ECDsaCng(key))
+            {
+                return ecdsa.VerifyHash(signable.GetHashForSigning(), signature);
+            }
         }
     }
 }

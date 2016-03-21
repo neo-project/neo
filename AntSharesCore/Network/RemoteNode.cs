@@ -235,7 +235,7 @@ namespace AntShares.Network
         {
             lock (KnownHashes)
             {
-                KnownHashes.Add(inventory.Hash);
+                if (!KnownHashes.Add(inventory.Hash)) return;
             }
             lock (missions_global)
             {

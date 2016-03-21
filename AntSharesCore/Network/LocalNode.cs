@@ -39,6 +39,7 @@ namespace AntShares.Network
             "seed5.antshares.org"
         };
 
+        private static readonly Dictionary<UInt256, Transaction> MemoryPool = new Dictionary<UInt256, Transaction>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
 
         private static readonly HashSet<IPEndPoint> unconnectedPeers = new HashSet<IPEndPoint>();
@@ -58,6 +59,11 @@ namespace AntShares.Network
         public bool ServiceEnabled { get; set; } = true;
         public bool UpnpEnabled { get; set; } = false;
         public string UserAgent { get; set; }
+
+        static LocalNode()
+        {
+            Blockchain.PersistCompleted += Blockchain_PersistCompleted;
+        }
 
         public LocalNode()
         {
@@ -100,6 +106,32 @@ namespace AntShares.Network
                 remoteNode.InventoryReceived += RemoteNode_InventoryReceived;
                 remoteNode.PeersReceived += RemoteNode_PeersReceived;
                 remoteNode.StartProtocol();
+            }
+        }
+
+        private static bool AddTransaction(Transaction tx)
+        {
+            if (Blockchain.Default == null) return false;
+            lock (MemoryPool)
+            {
+                if (MemoryPool.ContainsKey(tx.Hash)) return false;
+                if (MemoryPool.Values.SelectMany(p => p.GetAllInputs()).Intersect(tx.GetAllInputs()).Count() > 0)
+                    return false;
+                if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
+                if (!tx.Verify()) return false;
+                MemoryPool.Add(tx.Hash, tx);
+                return true;
+            }
+        }
+
+        private static void Blockchain_PersistCompleted(object sender, Block block)
+        {
+            lock (MemoryPool)
+            {
+                foreach (Transaction tx in block.Transactions)
+                {
+                    MemoryPool.Remove(tx.Hash);
+                }
             }
         }
 
@@ -212,6 +244,15 @@ namespace AntShares.Network
             }
         }
 
+        public static IEnumerable<Transaction> GetMemoryPool()
+        {
+            lock (MemoryPool)
+            {
+                foreach (Transaction tx in MemoryPool.Values)
+                    yield return tx;
+            }
+        }
+
         public RemoteNode[] GetRemoteNodes()
         {
             lock (connectedPeers)
@@ -255,7 +296,7 @@ namespace AntShares.Network
             }
             else if (data is Transaction)
             {
-                if (Blockchain.Default != null && !Blockchain.Default.ContainsTransaction(data.Hash) && Blockchain.Default.AddTransaction(data as Transaction))
+                if (AddTransaction(data as Transaction))
                 {
                     if (NewInventory != null) NewInventory(this, data);
                 }
@@ -317,9 +358,7 @@ namespace AntShares.Network
             }
             else if (inventory is Transaction)
             {
-                Transaction tx = (Transaction)inventory;
-                if (Blockchain.Default.ContainsTransaction(tx.Hash)) return;
-                if (!Blockchain.Default.AddTransaction(tx)) return;
+                if (!AddTransaction((Transaction)inventory)) return;
             }
             else //if (inventory is Consensus)
             {
