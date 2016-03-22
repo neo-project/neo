@@ -55,12 +55,12 @@ namespace AntShares.IO.Json
             return AsEnum<T>(ignoreCase);
         }
 
-        public virtual decimal AsNumber()
+        public virtual double AsNumber()
         {
             throw new InvalidCastException();
         }
 
-        public decimal AsNumberOrDefault(decimal value = 0)
+        public double AsNumberOrDefault(double value = 0)
         {
             if (!CanConvertTo(typeof(decimal)))
                 return value;
@@ -209,7 +209,7 @@ namespace AntShares.IO.Json
             return new JBoolean(value);
         }
 
-        public static implicit operator JObject(decimal value)
+        public static implicit operator JObject(double value)
         {
             return new JNumber(value);
         }
