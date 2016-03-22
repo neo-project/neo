@@ -22,6 +22,8 @@ namespace AntShares.UI
         {
             InitializeComponent();
             tabControl1.TabPages.Remove(tabPage100);
+            textBox1.Text = Blockchain.StandbyMiners[0].EncodePoint(true).ToHexString();
+            textBox2.Text = Wallet.ToAddress(Blockchain.GetMinerAddress(Blockchain.StandbyMiners));
         }
 
         private void DeveloperToolsForm_KeyDown(object sender, KeyEventArgs e)

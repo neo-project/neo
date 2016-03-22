@@ -25,11 +25,13 @@ namespace AntShares.Miner
 
         private bool AddTransaction(Transaction tx)
         {
-            if (context.Transactions.SelectMany(p => p.Value.GetAllInputs()).Intersect(tx.GetAllInputs()).Count() > 0)
+            if (context.Transactions.SelectMany(p => p.Value.GetAllInputs()).Intersect(tx.GetAllInputs()).Count() > 0 ||
+                Blockchain.Default.ContainsTransaction(tx.Hash) ||
+                !tx.Verify())
+            {
+                ChangeView();
                 return false;
-            if (Blockchain.Default.ContainsTransaction(tx.Hash))
-                return false;
-            if (!tx.Verify()) return false;
+            }
             context.Transactions[tx.Hash] = tx;
             if (context.TransactionHashes.Length == context.Transactions.Count)
             {
@@ -44,6 +46,14 @@ namespace AntShares.Miner
         {
             block_received_time = DateTime.Now;
             InitializeConsensus(0);
+        }
+
+        private void ChangeView()
+        {
+            context.ExpectedView[context.MinerIndex]++;
+            timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MinerIndex] + 1)), Timeout.InfiniteTimeSpan);
+            SignAndRelay(context.MakeChangeView());
+            CheckExpectedView(context.ExpectedView[context.MinerIndex]);
         }
 
         private void CheckExpectedView(byte view_number)
@@ -328,10 +338,7 @@ namespace AntShares.Miner
                 }
                 else if (context.State.HasFlag(ConsensusState.Backup))
                 {
-                    context.ExpectedView[context.MinerIndex]++;
-                    timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MinerIndex] + 1)), Timeout.InfiniteTimeSpan);
-                    SignAndRelay(context.MakeChangeView());
-                    CheckExpectedView(context.ExpectedView[context.MinerIndex]);
+                    ChangeView();
                 }
             }
         }
