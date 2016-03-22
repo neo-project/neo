@@ -6,9 +6,9 @@ namespace AntShares.IO.Json
 {
     public class JNumber : JObject
     {
-        public decimal Value { get; private set; }
+        public double Value { get; private set; }
 
-        public JNumber(decimal value = 0)
+        public JNumber(double value = 0)
         {
             this.Value = value;
         }
@@ -44,7 +44,7 @@ namespace AntShares.IO.Json
             throw new InvalidCastException();
         }
 
-        public override decimal AsNumber()
+        public override double AsNumber()
         {
             return Value;
         }
@@ -84,7 +84,7 @@ namespace AntShares.IO.Json
                     break;
                 }
             }
-            return new JNumber(decimal.Parse(sb.ToString()));
+            return new JNumber(double.Parse(sb.ToString()));
         }
 
         public override string ToString()

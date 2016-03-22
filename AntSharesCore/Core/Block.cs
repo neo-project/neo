@@ -189,7 +189,7 @@ namespace AntShares.Core
             json["merkleroot"] = MerkleRoot.ToString();
             json["time"] = Timestamp;
             json["height"] = Height;
-            json["nonce"] = Nonce;
+            json["nonce"] = Nonce.ToString("x16");
             json["nextminer"] = Wallet.ToAddress(NextMiner);
             json["script"] = Script.ToJson();
             json["tx"] = Transactions.Select(p => p.ToJson()).ToArray();
