@@ -94,7 +94,8 @@ namespace AntShares.Network
                         missions_global.Remove(hash);
                     }
                 }
-                if (!protocolThread.ThreadState.HasFlag(ThreadState.Unstarted)) protocolThread.Join();
+                if (protocolThread != Thread.CurrentThread && !protocolThread.ThreadState.HasFlag(ThreadState.Unstarted))
+                    protocolThread.Join();
                 if (!sendThread.ThreadState.HasFlag(ThreadState.Unstarted)) sendThread.Join();
             }
         }
@@ -127,22 +128,9 @@ namespace AntShares.Network
         private void OnConnected()
         {
             IPEndPoint remoteEndpoint = (IPEndPoint)tcp.Client.RemoteEndPoint;
-            remoteEndpoint = new IPEndPoint(remoteEndpoint.Address.MapToIPv6(), remoteEndpoint.Port);
-            lock (localNode.pendingPeers)
-                lock (localNode.connectedPeers)
-                {
-                    if (localNode.pendingPeers.All(p => p.RemoteEndpoint != remoteEndpoint) && !localNode.connectedPeers.ContainsKey(remoteEndpoint))
-                    {
-                        RemoteEndpoint = remoteEndpoint;
-                    }
-                }
-            if (RemoteEndpoint == null)
-            {
-                Disconnect(false);
-                return;
-            }
-            protocolThread.Name = $"RemoteNode.RunProtocol@{tcp.Client.RemoteEndPoint}";
-            sendThread.Name = $"RemoteNode.SendLoop@{tcp.Client.RemoteEndPoint}";
+            RemoteEndpoint = new IPEndPoint(remoteEndpoint.Address.MapToIPv6(), remoteEndpoint.Port);
+            protocolThread.Name = $"RemoteNode.RunProtocol@{RemoteEndpoint}";
+            sendThread.Name = $"RemoteNode.SendLoop@{RemoteEndpoint}";
             tcp.SendTimeout = 10000;
             stream = tcp.GetStream();
             connected = true;
@@ -154,7 +142,7 @@ namespace AntShares.Network
             AddrPayload payload;
             lock (localNode.connectedPeers)
             {
-                payload = AddrPayload.Create(localNode.connectedPeers.Values.Where(p => p.ListenerEndpoint != null).Take(100).Select(p => NetworkAddressWithTime.Create(p.ListenerEndpoint, p.Version.Services, p.Version.Timestamp)).ToArray());
+                payload = AddrPayload.Create(localNode.connectedPeers.Where(p => p.ListenerEndpoint != null).Take(100).Select(p => NetworkAddressWithTime.Create(p.ListenerEndpoint, p.Version.Services, p.Version.Timestamp)).ToArray());
             }
             EnqueueMessage("addr", payload, true);
         }
@@ -359,7 +347,7 @@ namespace AntShares.Network
 
         private void RunProtocol()
         {
-            if (!SendMessage(Message.Create("version", VersionPayload.Create(localNode.LocalEndpoint?.Port ?? 0, localNode.UserAgent, Blockchain.Default?.Height ?? 0))))
+            if (!SendMessage(Message.Create("version", VersionPayload.Create(localNode.LocalEndpoint?.Port ?? 0, localNode.Nonce, localNode.UserAgent))))
                 return;
             Message message = ReceiveMessage(TimeSpan.FromSeconds(30));
             if (message == null) return;
@@ -377,6 +365,20 @@ namespace AntShares.Network
                 Disconnect(true);
                 return;
             }
+            lock (localNode.pendingPeers)
+            {
+                lock (localNode.connectedPeers)
+                {
+                    if (localNode.connectedPeers.Any(p => p.RemoteEndpoint.Address.Equals(RemoteEndpoint.Address) && p.Version.Nonce == Version.Nonce))
+                    {
+                        Disconnect(false);
+                        return;
+                    }
+                    localNode.connectedPeers.Add(this);
+                }
+                if (ListenerEndpoint != null)
+                    localNode.pendingPeers.Remove(ListenerEndpoint);
+            }
             if (ListenerEndpoint != null)
             {
                 if (ListenerEndpoint.Port != Version.Port)
@@ -387,8 +389,7 @@ namespace AntShares.Network
             }
             else if (Version.Port > 0)
             {
-                IPAddress ip = ((IPEndPoint)tcp.Client.RemoteEndPoint).Address.MapToIPv6();
-                ListenerEndpoint = new IPEndPoint(ip, Version.Port);
+                ListenerEndpoint = new IPEndPoint(RemoteEndpoint.Address, Version.Port);
             }
             if (!SendMessage(Message.Create("verack"))) return;
             message = ReceiveMessage(TimeSpan.FromSeconds(30));
@@ -397,14 +398,6 @@ namespace AntShares.Network
             {
                 Disconnect(true);
                 return;
-            }
-            lock (localNode.pendingPeers)
-            {
-                lock (localNode.connectedPeers)
-                {
-                    localNode.connectedPeers.Add(RemoteEndpoint, this);
-                }
-                localNode.pendingPeers.Remove(this);
             }
             if (Blockchain.Default?.HeaderHeight < Version.StartHeight)
             {
