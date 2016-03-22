@@ -25,11 +25,12 @@ namespace AntShares.Miner
 
         private bool AddTransaction(Transaction tx)
         {
+            Log($"{nameof(AddTransaction)} hash:{tx.Hash}");
             if (context.Transactions.SelectMany(p => p.Value.GetAllInputs()).Intersect(tx.GetAllInputs()).Count() > 0 ||
                 Blockchain.Default.ContainsTransaction(tx.Hash) ||
                 !tx.Verify())
             {
-                ChangeView();
+                RequestChangeView();
                 return false;
             }
             context.Transactions[tx.Hash] = tx;
@@ -44,16 +45,9 @@ namespace AntShares.Miner
 
         private void Blockchain_PersistCompleted(object sender, Block block)
         {
+            Log($"{nameof(Blockchain_PersistCompleted)} hash:{block.Hash}");
             block_received_time = DateTime.Now;
             InitializeConsensus(0);
-        }
-
-        private void ChangeView()
-        {
-            context.ExpectedView[context.MinerIndex]++;
-            timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MinerIndex] + 1)), Timeout.InfiniteTimeSpan);
-            SignAndRelay(context.MakeChangeView());
-            CheckExpectedView(context.ExpectedView[context.MinerIndex]);
         }
 
         private void CheckExpectedView(byte view_number)
@@ -67,8 +61,9 @@ namespace AntShares.Miner
 
         private void CheckSignatures()
         {
-            if (context.Signatures.Length >= context.M)
+            if (context.Signatures.Count(p => p != null) >= context.M)
             {
+                Log($"{nameof(CheckSignatures)} {context.Signatures.Count(p => p != null)}/{context.M}");
                 Contract contract = MultiSigContract.Create(context.Miners[context.MinerIndex].EncodePoint(true).ToScriptHash(), context.M, context.Miners);
                 Block block = context.MakeHeader();
                 SignatureContext sc = new SignatureContext(block);
@@ -79,6 +74,7 @@ namespace AntShares.Miner
                 block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
                 var eatwarning = LocalNode.RelayAsync(block);
                 context.State |= ConsensusState.BlockSent;
+                Log($"RelayBlock hash:{block.Hash}");
             }
         }
 
@@ -121,6 +117,7 @@ namespace AntShares.Miner
                 else
                     context.ChangeView(view_number);
                 if (context.MinerIndex < 0) return;
+                Log($"{nameof(InitializeConsensus)} h:{context.Height} v:{view_number}");
                 int pi = ((int)context.Height - context.ViewNumber) % context.Miners.Length;
                 if (pi < 0) pi += context.Miners.Length;
                 if (pi == context.MinerIndex)
@@ -146,6 +143,7 @@ namespace AntShares.Miner
 
         private void LocalNode_NewInventory(object sender, Inventory inventory)
         {
+            Log($"{nameof(LocalNode_NewInventory)} type:{inventory.InventoryType} hash:{inventory.Hash}");
             ConsensusPayload payload = inventory as ConsensusPayload;
             if (payload != null)
             {
@@ -185,8 +183,14 @@ namespace AntShares.Miner
             }
         }
 
+        private static void Log(string message)
+        {
+            Console.WriteLine(message);
+        }
+
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
+            Log($"{nameof(OnChangeViewReceived)} h:{payload.Height} v:{message.ViewNumber} i:{payload.MinerIndex} nv:{message.NewViewNumber}");
             if (message.NewViewNumber <= context.ExpectedView[payload.MinerIndex])
                 return;
             context.ExpectedView[payload.MinerIndex] = message.NewViewNumber;
@@ -284,6 +288,7 @@ namespace AntShares.Miner
 
         private void OnPerpareRequestReceived(ConsensusPayload payload, PerpareRequest message)
         {
+            Log($"{nameof(OnPerpareRequestReceived)} h:{payload.Height} v:{message.ViewNumber} i:{payload.MinerIndex} tx:{message.TransactionHashes.Length}");
             if (!context.State.HasFlag(ConsensusState.Backup) || context.State.HasFlag(ConsensusState.RequestReceived))
                 return;
             if (payload.Timestamp <= Blockchain.Default.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.Now.AddMinutes(10).ToTimestamp())
@@ -303,15 +308,18 @@ namespace AntShares.Miner
 
         private void OnPerpareResponseReceived(ConsensusPayload payload, PerpareResponse message)
         {
+            Log($"{nameof(OnPerpareResponseReceived)} h:{payload.Height} v:{message.ViewNumber} i:{payload.MinerIndex}");
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (context.Signatures[payload.MinerIndex] != null) return;
-            if (!context.MakeHeader().VerifySignature(context.Miners[payload.MinerIndex], message.Signature)) return;
+            Block header = context.MakeHeader();
+            if (header == null || !header.VerifySignature(context.Miners[payload.MinerIndex], message.Signature)) return;
             context.Signatures[payload.MinerIndex] = message.Signature;
             CheckSignatures();
         }
 
         protected internal override void OnStop()
         {
+            Log($"{nameof(OnStop)}");
             if (timer != null) timer.Dispose();
             Blockchain.PersistCompleted -= Blockchain_PersistCompleted;
             LocalNode.NewInventory -= LocalNode_NewInventory;
@@ -320,6 +328,7 @@ namespace AntShares.Miner
 
         private void OnTimeout(object state)
         {
+            Log($"{nameof(OnTimeout)} h:{timer_height} v:{timer_view} state:{context.State}");
             lock (context)
             {
                 if (timer_height != context.Height || timer_view != context.ViewNumber)
@@ -338,9 +347,18 @@ namespace AntShares.Miner
                 }
                 else if (context.State.HasFlag(ConsensusState.Backup))
                 {
-                    ChangeView();
+                    RequestChangeView();
                 }
             }
+        }
+
+        private void RequestChangeView()
+        {
+            context.ExpectedView[context.MinerIndex]++;
+            Log($"{nameof(RequestChangeView)} h:{context.Height} v:{context.ViewNumber} nv:{context.ExpectedView[context.MinerIndex]} state:{context.State}");
+            timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MinerIndex] + 1)), Timeout.InfiniteTimeSpan);
+            SignAndRelay(context.MakeChangeView());
+            CheckExpectedView(context.ExpectedView[context.MinerIndex]);
         }
 
         private void SignAndRelay(ConsensusPayload payload)
@@ -353,6 +371,7 @@ namespace AntShares.Miner
 
         private void StartMine()
         {
+            Log($"{nameof(StartMine)}");
             timer = new Timer(OnTimeout, null, Timeout.Infinite, Timeout.Infinite);
             Blockchain.PersistCompleted += Blockchain_PersistCompleted;
             LocalNode.NewInventory += LocalNode_NewInventory;

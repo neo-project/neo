@@ -31,6 +31,9 @@ namespace AntShares.Miner.Consensus
         {
             State = ConsensusState.Initial;
             ViewNumber = view_number;
+            TransactionHashes = null;
+            Signatures = new byte[Miners.Length][];
+            _header = null;
         }
 
         public ConsensusPayload MakeChangeView()
@@ -44,6 +47,7 @@ namespace AntShares.Miner.Consensus
         private Block _header = null;
         public Block MakeHeader()
         {
+            if (TransactionHashes == null) return null;
             if (_header == null)
             {
                 _header = new Block
@@ -101,6 +105,7 @@ namespace AntShares.Miner.Consensus
             ViewNumber = 0;
             Miners = Blockchain.Default.GetMiners();
             MinerIndex = -1;
+            TransactionHashes = null;
             Signatures = new byte[Miners.Length][];
             ExpectedView = new byte[Miners.Length];
             for (int i = 0; i < Miners.Length; i++)
