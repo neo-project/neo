@@ -70,7 +70,7 @@ namespace AntShares.Network
             }
             catch (SocketException)
             {
-                Disconnect(true);
+                Disconnect(false);
                 return;
             }
             OnConnected();
@@ -117,7 +117,7 @@ namespace AntShares.Network
 
         private void OnAddrMessageReceived(AddrPayload payload)
         {
-            IPEndPoint[] peers = payload.AddressList.Select(p => p.EndPoint).Where(p => !p.Equals(localNode.LocalEndpoint)).ToArray();
+            IPEndPoint[] peers = payload.AddressList.Select(p => p.EndPoint).Where(p => p.Port != localNode.Port || !LocalNode.LocalAddresses.Contains(p.Address)).ToArray();
             if (PeersReceived != null && peers.Length > 0)
             {
                 PeersReceived(this, peers);
@@ -322,7 +322,7 @@ namespace AntShares.Network
                 }
                 catch (IOException)
                 {
-                    Disconnect(true);
+                    Disconnect(false);
                 }
             }
             return null;
@@ -340,7 +340,7 @@ namespace AntShares.Network
 
         private void RunProtocol()
         {
-            if (!SendMessage(Message.Create("version", VersionPayload.Create(localNode.LocalEndpoint?.Port ?? 0, localNode.Nonce, localNode.UserAgent))))
+            if (!SendMessage(Message.Create("version", VersionPayload.Create(localNode.Port, localNode.Nonce, localNode.UserAgent))))
                 return;
             Message message = ReceiveMessage(TimeSpan.FromSeconds(30));
             if (message == null) return;
@@ -353,7 +353,17 @@ namespace AntShares.Network
             {
                 Version = message.Payload.AsSerializable<VersionPayload>();
             }
+            catch (EndOfStreamException)
+            {
+                Disconnect(false);
+                return;
+            }
             catch (FormatException)
+            {
+                Disconnect(true);
+                return;
+            }
+            if (Version.Nonce == localNode.Nonce)
             {
                 Disconnect(true);
                 return;
@@ -417,7 +427,7 @@ namespace AntShares.Network
                 }
                 catch (EndOfStreamException)
                 {
-                    Disconnect(true);
+                    Disconnect(false);
                     break;
                 }
                 catch (FormatException)
@@ -467,7 +477,7 @@ namespace AntShares.Network
             catch (ObjectDisposedException) { }
             catch (IOException)
             {
-                Disconnect(true);
+                Disconnect(false);
             }
             return false;
         }

@@ -47,7 +47,8 @@ namespace AntShares.Network
         internal readonly Dictionary<IPEndPoint, RemoteNode> pendingPeers = new Dictionary<IPEndPoint, RemoteNode>();
         internal readonly List<RemoteNode> connectedPeers = new List<RemoteNode>();
 
-        internal IPEndPoint LocalEndpoint;
+        internal static readonly HashSet<IPAddress> LocalAddresses = new HashSet<IPAddress>();
+        internal ushort Port;
         internal readonly uint Nonce;
         private TcpListener listener;
         private Thread connectThread;
@@ -63,6 +64,11 @@ namespace AntShares.Network
 
         static LocalNode()
         {
+            try
+            {
+                LocalAddresses.UnionWith(Dns.GetHostEntry(Dns.GetHostName()).AddressList.Where(p => !IPAddress.IsLoopback(p)).Select(p => p.MapToIPv6()));
+            }
+            catch (SocketException) { }
             Blockchain.PersistCompleted += Blockchain_PersistCompleted;
         }
 
@@ -152,7 +158,7 @@ namespace AntShares.Network
 
         public async Task ConnectToPeerAsync(IPEndPoint remoteEndpoint)
         {
-            if (remoteEndpoint.Equals(LocalEndpoint)) return;
+            if (remoteEndpoint.Port == Port && LocalAddresses.Contains(remoteEndpoint.Address)) return;
             RemoteNode remoteNode;
             lock (unconnectedPeers)
             {
@@ -414,38 +420,26 @@ namespace AntShares.Network
         {
             if (Interlocked.Exchange(ref started, 1) == 0)
             {
-                IPHostEntry localhost = null;
-                try
-                {
-                    localhost = Dns.GetHostEntry(Dns.GetHostName());
-                }
-                catch (SocketException) { }
-                IPAddress address = localhost?.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(p) && !IsIntranetAddress(p));
+                IPAddress address = LocalAddresses.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork && !IsIntranetAddress(p));
                 if (address == null && UpnpEnabled && UPnP.Discover())
                 {
                     try
                     {
                         address = UPnP.GetExternalIP();
                         UPnP.ForwardPort(port, ProtocolType.Tcp, "AntShares");
+                        LocalAddresses.Add(address);
                     }
-                    catch
-                    {
-                        address = null;
-                    }
+                    catch { }
                 }
-                if (address != null && !IsIntranetAddress(address))
+                listener = new TcpListener(IPAddress.Any, port);
+                try
                 {
-                    listener = new TcpListener(IPAddress.Any, port);
-                    try
-                    {
-                        listener.Start();
-                        LocalEndpoint = new IPEndPoint(address.MapToIPv6(), port);
-                    }
-                    catch (SocketException) { }
+                    listener.Start();
+                    Port = (ushort)port;
                 }
+                catch (SocketException) { }
                 connectThread.Start();
-                if (LocalEndpoint == null) return;
-                listenerThread.Start();
+                if (Port > 0) listenerThread.Start();
             }
         }
     }
