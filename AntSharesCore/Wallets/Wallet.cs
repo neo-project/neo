@@ -1,5 +1,7 @@
 ﻿using AntShares.Core;
+using AntShares.Core.Scripts;
 using AntShares.Cryptography;
+using AntShares.Cryptography.ECC;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -119,6 +121,19 @@ namespace AntShares.Wallets
                 {
                     Array.Clear(passwordKey, 0, passwordKey.Length);
                 }
+            }
+        }
+
+        public bool ContainsAccount(ECPoint publicKey)
+        {
+            return ContainsAccount(publicKey.EncodePoint(true).ToScriptHash());
+        }
+
+        public bool ContainsAccount(UInt160 publicKeyHash)
+        {
+            lock (accounts)
+            {
+                return accounts.ContainsKey(publicKeyHash);
             }
         }
 
@@ -244,6 +259,11 @@ namespace AntShares.Wallets
                 amount -= Fixed8.Min(amount, p.Value);
                 return true;
             }).ToArray();
+        }
+
+        public Account GetAccount(ECPoint publicKey)
+        {
+            return GetAccount(publicKey.EncodePoint(true).ToScriptHash());
         }
 
         public Account GetAccount(UInt160 publicKeyHash)

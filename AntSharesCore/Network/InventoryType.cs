@@ -4,8 +4,6 @@
     {
         TX = 0x01,
         Block = 0x02,
-
-        ConsRequest = 0xe1,
-        ConsResponse = 0xe2
+        Consensus = 0xe0
     }
 }

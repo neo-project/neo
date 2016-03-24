@@ -5,7 +5,7 @@ using System.IO;
 
 namespace AntShares.Network.Payloads
 {
-    public class VersionPayload : ISerializable
+    internal class VersionPayload : ISerializable
     {
         public uint Version;
         public ulong Services;

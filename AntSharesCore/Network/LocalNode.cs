@@ -39,6 +39,7 @@ namespace AntShares.Network
             "seed5.antshares.org"
         };
 
+        private static readonly Dictionary<UInt256, Transaction> MemoryPool = new Dictionary<UInt256, Transaction>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
 
         private static readonly HashSet<IPEndPoint> unconnectedPeers = new HashSet<IPEndPoint>();
@@ -59,6 +60,11 @@ namespace AntShares.Network
         public bool ServiceEnabled { get; set; } = true;
         public bool UpnpEnabled { get; set; } = false;
         public string UserAgent { get; set; }
+
+        static LocalNode()
+        {
+            Blockchain.PersistCompleted += Blockchain_PersistCompleted;
+        }
 
         public LocalNode()
         {
@@ -96,10 +102,35 @@ namespace AntShares.Network
                 }
                 RemoteNode remoteNode = new RemoteNode(this, tcp);
                 remoteNode.Disconnected += RemoteNode_Disconnected;
+                remoteNode.InventoryReceived += RemoteNode_InventoryReceived;
                 remoteNode.PeersReceived += RemoteNode_PeersReceived;
-                remoteNode.BlockReceived += RemoteNode_BlockReceived;
-                remoteNode.TransactionReceived += RemoteNode_TransactionReceived;
                 remoteNode.StartProtocol();
+            }
+        }
+
+        private static bool AddTransaction(Transaction tx)
+        {
+            if (Blockchain.Default == null) return false;
+            lock (MemoryPool)
+            {
+                if (MemoryPool.ContainsKey(tx.Hash)) return false;
+                if (MemoryPool.Values.SelectMany(p => p.GetAllInputs()).Intersect(tx.GetAllInputs()).Count() > 0)
+                    return false;
+                if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
+                if (!tx.Verify()) return false;
+                MemoryPool.Add(tx.Hash, tx);
+                return true;
+            }
+        }
+
+        private static void Blockchain_PersistCompleted(object sender, Block block)
+        {
+            lock (MemoryPool)
+            {
+                foreach (Transaction tx in block.Transactions)
+                {
+                    MemoryPool.Remove(tx.Hash);
+                }
             }
         }
 
@@ -137,9 +168,8 @@ namespace AntShares.Network
                 remoteNode = new RemoteNode(this, remoteEndpoint);
                 pendingPeers.Add(remoteEndpoint, remoteNode);
                 remoteNode.Disconnected += RemoteNode_Disconnected;
+                remoteNode.InventoryReceived += RemoteNode_InventoryReceived;
                 remoteNode.PeersReceived += RemoteNode_PeersReceived;
-                remoteNode.BlockReceived += RemoteNode_BlockReceived;
-                remoteNode.TransactionReceived += RemoteNode_TransactionReceived;
             }
             await remoteNode.ConnectAsync();
         }
@@ -213,6 +243,15 @@ namespace AntShares.Network
             }
         }
 
+        public static IEnumerable<Transaction> GetMemoryPool()
+        {
+            lock (MemoryPool)
+            {
+                foreach (Transaction tx in MemoryPool.Values)
+                    yield return tx;
+            }
+        }
+
         public RemoteNode[] GetRemoteNodes()
         {
             lock (connectedPeers)
@@ -256,7 +295,7 @@ namespace AntShares.Network
             }
             else if (data is Transaction)
             {
-                if (Blockchain.Default != null && !Blockchain.Default.ContainsTransaction(data.Hash) && Blockchain.Default.AddTransaction(data as Transaction))
+                if (AddTransaction(data as Transaction))
                 {
                     if (NewInventory != null) NewInventory(this, data);
                 }
@@ -279,22 +318,12 @@ namespace AntShares.Network
             return true;
         }
 
-        private void RemoteNode_BlockReceived(object sender, Block block)
-        {
-            if (Blockchain.Default == null) return;
-            if (Blockchain.Default.ContainsBlock(block.Hash)) return;
-            if (!Blockchain.Default.AddBlock(block)) return;
-            RelayInternalAsync(block).Void();
-            if (NewInventory != null) NewInventory(this, block);
-        }
-
         private void RemoteNode_Disconnected(object sender, bool error)
         {
             RemoteNode remoteNode = (RemoteNode)sender;
             remoteNode.Disconnected -= RemoteNode_Disconnected;
+            remoteNode.InventoryReceived -= RemoteNode_InventoryReceived;
             remoteNode.PeersReceived -= RemoteNode_PeersReceived;
-            remoteNode.BlockReceived -= RemoteNode_BlockReceived;
-            remoteNode.TransactionReceived -= RemoteNode_TransactionReceived;
             if (error && remoteNode.ListenerEndpoint != null)
             {
                 lock (badPeers)
@@ -319,6 +348,27 @@ namespace AntShares.Network
             }
         }
 
+        private void RemoteNode_InventoryReceived(object sender, Inventory inventory)
+        {
+            if (Blockchain.Default == null) return;
+            if (inventory is Block)
+            {
+                Block block = (Block)inventory;
+                if (Blockchain.Default.ContainsBlock(block.Hash)) return;
+                if (!Blockchain.Default.AddBlock(block)) return;
+            }
+            else if (inventory is Transaction)
+            {
+                if (!AddTransaction((Transaction)inventory)) return;
+            }
+            else //if (inventory is Consensus)
+            {
+                if (!inventory.Verify()) return;
+            }
+            RelayInternalAsync(inventory).Void();
+            if (NewInventory != null) NewInventory(this, inventory);
+        }
+
         private void RemoteNode_PeersReceived(object sender, IPEndPoint[] peers)
         {
             lock (unconnectedPeers)
@@ -340,15 +390,6 @@ namespace AntShares.Network
                     }
                 }
             }
-        }
-
-        private void RemoteNode_TransactionReceived(object sender, Transaction tx)
-        {
-            if (Blockchain.Default == null) return;
-            if (Blockchain.Default.ContainsTransaction(tx.Hash)) return;
-            if (!Blockchain.Default.AddTransaction(tx)) return;
-            RelayInternalAsync(tx).Void();
-            if (NewInventory != null) NewInventory(this, tx);
         }
 
         public static void SaveState(Stream stream)

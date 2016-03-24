@@ -26,10 +26,7 @@ namespace AntShares.Network
 
         public abstract void Deserialize(BinaryReader reader);
 
-        protected virtual byte[] GetHashData()
-        {
-            return this.ToArray();
-        }
+        protected abstract byte[] GetHashData();
 
         public abstract void Serialize(BinaryWriter writer);
 

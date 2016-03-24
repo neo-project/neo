@@ -227,7 +227,7 @@ namespace AntShares.Core.Scripts
             StackItem x = altStack.Peek();
             Block[] headers = x.GetArray<Block>();
             if (headers.Any(p => p == null)) return false;
-            uint[] r = headers.Select(p => Block.Version).ToArray(); //header.Version
+            uint[] r = headers.Select(p => p.Version).ToArray();
             if (x.IsArray)
                 stack.Push(r);
             else

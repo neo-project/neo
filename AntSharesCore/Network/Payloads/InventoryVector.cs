@@ -11,26 +11,23 @@ namespace AntShares.Network.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            this.Type = (InventoryType)reader.ReadUInt32();
-            this.Hash = reader.ReadSerializable<UInt256>();
+            Type = (InventoryType)reader.ReadUInt32();
+            if (!Enum.IsDefined(typeof(InventoryType), Type))
+                throw new FormatException();
+            Hash = reader.ReadSerializable<UInt256>();
         }
 
         public override bool Equals(object obj)
         {
-            if (obj == null)
-                return false;
-            if (!(obj is InventoryVector))
-                return false;
-            return this.Equals((InventoryVector)obj);
+            if (!(obj is InventoryVector)) return false;
+            return Equals((InventoryVector)obj);
         }
 
         public bool Equals(InventoryVector other)
         {
-            if (other == null)
-                return false;
-            if (this == other)
-                return true;
-            return this.Hash == other.Hash;
+            if (ReferenceEquals(other, null)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Hash == other.Hash;
         }
 
         public override int GetHashCode()
@@ -40,7 +37,7 @@ namespace AntShares.Network.Payloads
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write((UInt32)Type);
+            writer.Write((uint)Type);
             writer.Write(Hash);
         }
     }

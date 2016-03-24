@@ -295,7 +295,6 @@
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(540, 23);
             this.textBox2.TabIndex = 3;
-            this.textBox2.Text = "AbFnxUew73DD343WfRXJurrU4nE2vsPNTC";
             // 
             // label2
             // 
@@ -314,7 +313,6 @@
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(540, 23);
             this.textBox1.TabIndex = 1;
-            this.textBox1.Text = "0327da12b5c40200e9f65569476bbff2218da4f32548ff43b6387ec1416a231ee8";
             // 
             // label1
             // 
