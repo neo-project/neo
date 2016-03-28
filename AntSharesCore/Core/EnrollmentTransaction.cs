@@ -1,5 +1,6 @@
 ﻿using AntShares.Cryptography.ECC;
 using AntShares.IO;
+using AntShares.IO.Json;
 using AntShares.Wallets;
 using System;
 using System.IO;
@@ -52,6 +53,13 @@ namespace AntShares.Core
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(PublicKey);
+        }
+
+        public override JObject ToJson()
+        {
+            JObject json = base.ToJson();
+            json["pubkey"] = PublicKey.ToString();
+            return json;
         }
     }
 }

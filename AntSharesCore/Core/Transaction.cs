@@ -198,7 +198,7 @@ namespace AntShares.Core
             writer.Write(Outputs);
         }
 
-        public JObject ToJson()
+        public virtual JObject ToJson()
         {
             JObject json = new JObject();
             json["txid"] = Hash.ToString();

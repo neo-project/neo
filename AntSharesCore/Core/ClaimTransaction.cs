@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using AntShares.IO.Json;
 
 namespace AntShares.Core
 {
@@ -42,6 +43,13 @@ namespace AntShares.Core
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(Claims);
+        }
+
+        public override JObject ToJson()
+        {
+            JObject json = base.ToJson();
+            json["claims"] = new JArray(Claims.Select(p => p.ToJson()).ToArray());
+            return json;
         }
 
         public override bool Verify()

@@ -92,6 +92,20 @@ namespace AntShares.Core
             writer.Write(Admin);
         }
 
+        public override JObject ToJson()
+        {
+            JObject json = base.ToJson();
+            json["asset"] = new JObject();
+            json["asset"]["type"] = AssetType;
+            json["asset"]["name"] = Name == "" ? null : JObject.Parse(Name);
+            json["asset"]["amount"] = Amount.ToString();
+            json["asset"]["high"] = Amount.GetData() >> 32;
+            json["asset"]["low"] = Amount.GetData() & 0xffffffff;
+            json["asset"]["issuer"] = Issuer.ToString();
+            json["asset"]["admin"] = Wallet.ToAddress(Admin);
+            return json;
+        }
+
         public override string ToString()
         {
             return GetName();
