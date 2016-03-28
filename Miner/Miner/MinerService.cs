@@ -118,9 +118,7 @@ namespace AntShares.Miner
                     context.ChangeView(view_number);
                 if (context.MinerIndex < 0) return;
                 Log($"{nameof(InitializeConsensus)} h:{context.Height} v:{view_number}");
-                int pi = ((int)context.Height - context.ViewNumber) % context.Miners.Length;
-                if (pi < 0) pi += context.Miners.Length;
-                if (pi == context.MinerIndex)
+                if (context.MinerIndex == context.PrimaryIndex)
                 {
                     context.State = ConsensusState.Primary;
                     timer_height = context.Height;
@@ -291,6 +289,7 @@ namespace AntShares.Miner
             Log($"{nameof(OnPerpareRequestReceived)} h:{payload.Height} v:{message.ViewNumber} i:{payload.MinerIndex} tx:{message.TransactionHashes.Length}");
             if (!context.State.HasFlag(ConsensusState.Backup) || context.State.HasFlag(ConsensusState.RequestReceived))
                 return;
+            if (payload.MinerIndex != context.PrimaryIndex) return;
             if (payload.Timestamp <= Blockchain.Default.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.Now.AddMinutes(10).ToTimestamp())
                 return;
             context.State |= ConsensusState.RequestReceived;
@@ -298,6 +297,8 @@ namespace AntShares.Miner
             context.Nonce = message.Nonce;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
+            if (!context.MakeHeader().VerifySignature(context.Miners[payload.MinerIndex], message.Signature)) return;
+            context.Signatures[payload.MinerIndex] = message.Signature;
             if (!AddTransaction(message.MinerTransaction)) return;
             Dictionary<UInt256, Transaction> mempool = LocalNode.GetMemoryPool().ToDictionary(p => p.Hash);
             foreach (UInt256 hash in context.TransactionHashes.Skip(1))

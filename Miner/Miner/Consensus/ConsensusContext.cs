@@ -18,6 +18,7 @@ namespace AntShares.Miner.Consensus
         public byte ViewNumber;
         public ECPoint[] Miners;
         public int MinerIndex;
+        public uint PrimaryIndex;
         public uint Timestamp;
         public ulong Nonce;
         public UInt256[] TransactionHashes;
@@ -29,8 +30,10 @@ namespace AntShares.Miner.Consensus
 
         public void ChangeView(byte view_number)
         {
+            int p = ((int)Height - view_number) % Miners.Length;
             State = ConsensusState.Initial;
             ViewNumber = view_number;
+            PrimaryIndex = p >= 0 ? (uint)p : (uint)(p + Miners.Length);
             TransactionHashes = null;
             Signatures = new byte[Miners.Length][];
             _header = null;
@@ -85,7 +88,8 @@ namespace AntShares.Miner.Consensus
             {
                 Nonce = Nonce,
                 TransactionHashes = TransactionHashes,
-                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]]
+                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
+                Signature = Signatures[MinerIndex]
             });
         }
 
@@ -105,6 +109,7 @@ namespace AntShares.Miner.Consensus
             ViewNumber = 0;
             Miners = Blockchain.Default.GetMiners();
             MinerIndex = -1;
+            PrimaryIndex = Height % (uint)Miners.Length;
             TransactionHashes = null;
             Signatures = new byte[Miners.Length][];
             ExpectedView = new byte[Miners.Length];

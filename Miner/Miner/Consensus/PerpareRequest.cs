@@ -11,6 +11,7 @@ namespace AntShares.Miner.Consensus
         public ulong Nonce;
         public UInt256[] TransactionHashes;
         public MinerTransaction MinerTransaction;
+        public byte[] Signature;
 
         public PerpareRequest()
             : base(ConsensusMessageType.PerpareRequest)
