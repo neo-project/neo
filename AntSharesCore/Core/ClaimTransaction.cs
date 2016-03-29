@@ -100,8 +100,8 @@ namespace AntShares.Core
                 amount_claimed += group.Sum(p => p.Value) / 100000000 * amount;
             }
             TransactionResult result = GetTransactionResults().FirstOrDefault(p => p.AssetId == Blockchain.AntCoin.Hash);
-            if (result == null || result.Amount > Fixed8.Zero) return true;
-            return amount_claimed >= -result.Amount;
+            if (result == null || result.Amount > Fixed8.Zero) return false;
+            return amount_claimed == -result.Amount;
         }
     }
 }

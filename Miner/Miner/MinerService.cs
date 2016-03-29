@@ -80,10 +80,7 @@ namespace AntShares.Miner
 
         private MinerTransaction CreateMinerTransaction(IEnumerable<Transaction> transactions, uint height, ulong nonce)
         {
-            Fixed8 amount_in = transactions.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
-            Fixed8 amount_out = transactions.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
-            Fixed8 amount_sysfee = transactions.Sum(p => p.SystemFee);
-            Fixed8 amount_netfee = amount_in - amount_out - amount_sysfee;
+            Fixed8 amount_netfee = Block.CalculateNetFee(transactions);
             TransactionOutput[] outputs = amount_netfee == Fixed8.Zero ? new TransactionOutput[0] : new[] { new TransactionOutput
             {
                 AssetId = Blockchain.AntCoin.Hash,

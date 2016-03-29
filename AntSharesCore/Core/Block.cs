@@ -5,6 +5,7 @@ using AntShares.IO.Json;
 using AntShares.Network;
 using AntShares.Wallets;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -64,6 +65,15 @@ namespace AntShares.Core
         }
 
         public bool IsHeader => Transactions.Length == 0;
+
+        public static Fixed8 CalculateNetFee(IEnumerable<Transaction> transactions)
+        {
+            Transaction[] ts = transactions.Where(p => p.Type != TransactionType.MinerTransaction && p.Type != TransactionType.ClaimTransaction).ToArray();
+            Fixed8 amount_in = ts.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
+            Fixed8 amount_out = ts.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
+            Fixed8 amount_sysfee = ts.Sum(p => p.SystemFee);
+            return amount_in - amount_out - amount_sysfee;
+        }
 
         public override void Deserialize(BinaryReader reader)
         {
@@ -231,13 +241,8 @@ namespace AntShares.Core
             {
                 foreach (Transaction tx in Transactions)
                     if (!tx.Verify()) return false;
-                Transaction[] transactions = Transactions.Where(p => p.Type != TransactionType.MinerTransaction).ToArray();
-                Fixed8 amount_in = transactions.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
-                Fixed8 amount_out = transactions.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
-                Fixed8 amount_sysfee = transactions.Sum(p => p.SystemFee);
-                Fixed8 amount_netfee = amount_in - amount_out - amount_sysfee;
-                MinerTransaction tx_gen = Transactions.OfType<MinerTransaction>().FirstOrDefault();
-                if (tx_gen?.Outputs.Sum(p => p.Value) != amount_netfee) return false;
+                Transaction tx_gen = Transactions.FirstOrDefault(p => p.Type == TransactionType.MinerTransaction);
+                if (tx_gen?.Outputs.Sum(p => p.Value) != CalculateNetFee(Transactions)) return false;
             }
             return true;
         }
