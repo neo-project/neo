@@ -30,12 +30,14 @@ namespace AntShares.Miner
                 Blockchain.Default.ContainsTransaction(tx.Hash) ||
                 !tx.Verify())
             {
+                Log($"failed hash:{tx.Hash}");
                 RequestChangeView();
                 return false;
             }
             context.Transactions[tx.Hash] = tx;
             if (context.TransactionHashes.Length == context.Transactions.Count)
             {
+                Log($"SendPerpareResponse");
                 context.State |= ConsensusState.SignatureSent;
                 context.Signatures[context.MinerIndex] = context.MakeHeader().Sign(wallet.GetAccount(context.Miners[context.MinerIndex]));
                 SignAndRelay(context.MakePerpareResponse(context.Signatures[context.MinerIndex]));
@@ -114,7 +116,7 @@ namespace AntShares.Miner
                 else
                     context.ChangeView(view_number);
                 if (context.MinerIndex < 0) return;
-                Log($"{nameof(InitializeConsensus)} h:{context.Height} v:{view_number}");
+                Log($"{nameof(InitializeConsensus)} h:{context.Height} v:{view_number} i:{context.MinerIndex} s:{(context.MinerIndex == context.PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup)}");
                 if (context.MinerIndex == context.PrimaryIndex)
                 {
                     context.State = ConsensusState.Primary;
@@ -138,7 +140,6 @@ namespace AntShares.Miner
 
         private void LocalNode_NewInventory(object sender, Inventory inventory)
         {
-            Log($"{nameof(LocalNode_NewInventory)} type:{inventory.InventoryType} hash:{inventory.Hash}");
             ConsensusPayload payload = inventory as ConsensusPayload;
             if (payload != null)
             {
@@ -180,7 +181,7 @@ namespace AntShares.Miner
 
         private static void Log(string message)
         {
-            Console.WriteLine(message);
+            Console.WriteLine($"[{DateTime.Now.TimeOfDay:hh\\:mm\\:ss}] {message}");
         }
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
@@ -370,6 +371,7 @@ namespace AntShares.Miner
         private void StartMine()
         {
             Log($"{nameof(StartMine)}");
+            ShowPrompt = false;
             timer = new Timer(OnTimeout, null, Timeout.Infinite, Timeout.Infinite);
             Blockchain.PersistCompleted += Blockchain_PersistCompleted;
             LocalNode.NewInventory += LocalNode_NewInventory;

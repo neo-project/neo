@@ -28,6 +28,7 @@ namespace AntShares.Miner.Consensus
             MinerTransaction = reader.ReadSerializable<MinerTransaction>();
             if (MinerTransaction.Hash != TransactionHashes[0])
                 throw new FormatException();
+            Signature = reader.ReadBytes(64);
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -36,6 +37,7 @@ namespace AntShares.Miner.Consensus
             writer.Write(Nonce);
             writer.Write(TransactionHashes);
             writer.Write(MinerTransaction);
+            writer.Write(Signature);
         }
     }
 }

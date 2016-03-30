@@ -15,6 +15,8 @@ namespace AntShares.Services
 
         public abstract string ServiceName { get; }
 
+        protected bool ShowPrompt { get; set; } = true;
+
         protected virtual bool OnCommand(string[] args)
         {
             switch (args[0].ToLower())
@@ -117,7 +119,7 @@ namespace AntShares.Services
             Console.Title = ServiceName;
             while (running)
             {
-                Console.Write($"{Prompt}>");
+                if (ShowPrompt) Console.Write($"{Prompt}>");
                 string line = Console.ReadLine().Trim();
                 string[] args = line.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 if (args.Length == 0)
