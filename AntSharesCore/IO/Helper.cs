@@ -29,16 +29,6 @@ namespace AntShares.IO
             return serializable;
         }
 
-        public static byte[][] ReadBytesArray(this BinaryReader reader)
-        {
-            byte[][] array = new byte[reader.ReadVarInt()][];
-            for (int i = 0; i < array.Length; i++)
-            {
-                array[i] = reader.ReadBytes((int)reader.ReadVarInt());
-            }
-            return array;
-        }
-
         public static string ReadFixedString(this BinaryReader reader, int length)
         {
             byte[] data = reader.ReadBytes(length);
@@ -54,7 +44,7 @@ namespace AntShares.IO
 
         public static T[] ReadSerializableArray<T>(this BinaryReader reader) where T : ISerializable, new()
         {
-            T[] array = new T[reader.ReadVarInt()];
+            T[] array = new T[reader.ReadVarInt(0x10000000)];
             for (int i = 0; i < array.Length; i++)
             {
                 array[i] = new T();
@@ -63,22 +53,30 @@ namespace AntShares.IO
             return array;
         }
 
-        public static ulong ReadVarInt(this BinaryReader reader)
+        public static byte[] ReadVarBytes(this BinaryReader reader)
         {
-            byte value = reader.ReadByte();
-            if (value == 0xFD)
-                return reader.ReadUInt16();
-            else if (value == 0xFE)
-                return reader.ReadUInt32();
-            else if (value == 0xFF)
-                return reader.ReadUInt64();
+            return reader.ReadBytes((int)reader.ReadVarInt(0X7fffffc7));
+        }
+
+        public static ulong ReadVarInt(this BinaryReader reader, ulong max = ulong.MaxValue)
+        {
+            byte fb = reader.ReadByte();
+            ulong value;
+            if (fb == 0xFD)
+                value = reader.ReadUInt16();
+            else if (fb == 0xFE)
+                value = reader.ReadUInt32();
+            else if (fb == 0xFF)
+                value = reader.ReadUInt64();
             else
-                return value;
+                value = fb;
+            if (value > max) throw new FormatException();
+            return value;
         }
 
         public static string ReadVarString(this BinaryReader reader)
         {
-            return Encoding.UTF8.GetString(reader.ReadBytes((int)reader.ReadVarInt()));
+            return Encoding.UTF8.GetString(reader.ReadVarBytes());
         }
 
         public static byte[] ToArray(this ISerializable value)
@@ -106,16 +104,6 @@ namespace AntShares.IO
             }
         }
 
-        public static void Write(this BinaryWriter writer, byte[][] value)
-        {
-            writer.WriteVarInt(value.Length);
-            for (int i = 0; i < value.Length; i++)
-            {
-                writer.WriteVarInt(value[i].Length);
-                writer.Write(value[i]);
-            }
-        }
-
         public static void WriteFixedString(this BinaryWriter writer, string value, int length)
         {
             if (value == null)
@@ -128,6 +116,12 @@ namespace AntShares.IO
             writer.Write(bytes);
             if (bytes.Length < length)
                 writer.Write(new byte[length - bytes.Length]);
+        }
+
+        public static void WriteVarBytes(this BinaryWriter writer, byte[] value)
+        {
+            writer.WriteVarInt(value.Length);
+            writer.Write(value);
         }
 
         public static void WriteVarInt(this BinaryWriter writer, long value)
@@ -157,9 +151,7 @@ namespace AntShares.IO
 
         public static void WriteVarString(this BinaryWriter writer, string value)
         {
-            byte[] data = Encoding.UTF8.GetBytes(value);
-            writer.WriteVarInt(data.Length);
-            writer.Write(data);
+            writer.WriteVarBytes(Encoding.UTF8.GetBytes(value));
         }
     }
 }

@@ -37,15 +37,13 @@ namespace AntShares.Core
             this.ValueAssetId = reader.ReadSerializable<UInt256>();
             if (AssetId == ValueAssetId) throw new FormatException();
             this.Agent = reader.ReadSerializable<UInt160>();
-            this.Orders = new Order[reader.ReadVarInt()];
+            this.Orders = new Order[reader.ReadVarInt(0x10000000)];
             for (int i = 0; i < Orders.Length; i++)
             {
                 Orders[i] = new Order();
                 Orders[i].DeserializeInTransaction(reader, this);
             }
-            ulong count = reader.ReadVarInt();
-            if (count > 1) throw new FormatException();
-            if (count == 0)
+            if (reader.ReadVarInt(1) == 0)
             {
                 this.SplitOrder = null;
             }

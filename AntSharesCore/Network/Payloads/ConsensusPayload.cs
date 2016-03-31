@@ -47,7 +47,7 @@ namespace AntShares.Network.Payloads
             Height = reader.ReadUInt32();
             MinerIndex = reader.ReadUInt16();
             Timestamp = reader.ReadUInt32();
-            Data = reader.ReadBytes((int)reader.ReadVarInt());
+            Data = reader.ReadVarBytes();
         }
 
         protected override byte[] GetHashData()
@@ -86,7 +86,7 @@ namespace AntShares.Network.Payloads
             writer.Write(Height);
             writer.Write(MinerIndex);
             writer.Write(Timestamp);
-            writer.WriteVarInt(Data.Length); writer.Write(Data);
+            writer.WriteVarBytes(Data);
         }
 
         public override bool Verify()

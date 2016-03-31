@@ -49,10 +49,9 @@ namespace AntShares.Algebra
 
         private static void DeserializeFrom(BinaryReader reader, out FiniteFieldPolynomial x, out FiniteFieldPolynomial y)
         {
-            int x_i = (int)reader.ReadVarInt();
-            int expectedByteCount = (int)reader.ReadVarInt();
-            byte[] y_b = reader.ReadBytes(expectedByteCount);
-            IrreduciblePolynomial irp = new IrreduciblePolynomial(expectedByteCount * 8);
+            int x_i = (int)reader.ReadVarInt(int.MaxValue);
+            byte[] y_b = reader.ReadVarBytes();
+            IrreduciblePolynomial irp = new IrreduciblePolynomial(y_b.Length * 8);
             x = new FiniteFieldPolynomial(irp, x_i);
             y = new FiniteFieldPolynomial(irp, y_b.ToBigIntegerFromBigEndianUnsignedBytes());
         }

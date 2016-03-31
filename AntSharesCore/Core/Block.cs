@@ -80,7 +80,7 @@ namespace AntShares.Core
             ((ISignable)this).DeserializeUnsigned(reader);
             if (reader.ReadByte() != 1) throw new FormatException();
             Script = reader.ReadSerializable<Script>();
-            Transactions = new Transaction[reader.ReadVarInt()];
+            Transactions = new Transaction[reader.ReadVarInt(0x10000000)];
             for (int i = 0; i < Transactions.Length; i++)
             {
                 Transactions[i] = Transaction.DeserializeFrom(reader);
@@ -132,7 +132,7 @@ namespace AntShares.Core
                 }
                 else
                 {
-                    block.Transactions = new Transaction[reader.ReadVarInt()];
+                    block.Transactions = new Transaction[reader.ReadVarInt(0x10000000)];
                     for (int i = 0; i < block.Transactions.Length; i++)
                     {
                         block.Transactions[i] = txSelector(reader.ReadSerializable<UInt256>());

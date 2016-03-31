@@ -11,14 +11,14 @@ namespace AntShares.Core.Scripts
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            StackScript = reader.ReadBytes((int)reader.ReadVarInt());
-            RedeemScript = reader.ReadBytes((int)reader.ReadVarInt());
+            StackScript = reader.ReadVarBytes();
+            RedeemScript = reader.ReadVarBytes();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.WriteVarInt(StackScript.Length); writer.Write(StackScript);
-            writer.WriteVarInt(RedeemScript.Length); writer.Write(RedeemScript);
+            writer.WriteVarBytes(StackScript);
+            writer.WriteVarBytes(RedeemScript);
         }
 
         public JObject ToJson()

@@ -42,14 +42,14 @@ namespace AntShares.Wallets
 
         public override void Deserialize(BinaryReader reader)
         {
-            this.m = (int)reader.ReadVarInt();
-            this.publicKeys = new ECPoint[reader.ReadVarInt()];
+            m = (int)reader.ReadVarInt(int.MaxValue);
+            publicKeys = new ECPoint[reader.ReadVarInt(0x10000000)];
             for (int i = 0; i < publicKeys.Length; i++)
             {
                 publicKeys[i] = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
             }
-            base.RedeemScript = CreateMultiSigRedeemScript(m, publicKeys);
-            base.PublicKeyHash = reader.ReadSerializable<UInt160>();
+            RedeemScript = CreateMultiSigRedeemScript(m, publicKeys);
+            PublicKeyHash = reader.ReadSerializable<UInt160>();
         }
 
         public override bool IsCompleted(ECPoint[] publicKeys)
