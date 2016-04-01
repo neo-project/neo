@@ -53,12 +53,12 @@ namespace AntShares.UI
             InformationBox.Show(context.Signable.ToArray().ToHexString(), "原始数据：");
         }
 
-        private async void button8_Click(object sender, EventArgs e)
+        private void button8_Click(object sender, EventArgs e)
         {
             SignatureContext context = SignatureContext.Parse(textBox8.Text);
             context.Signable.Scripts = context.GetScripts();
             Inventory inventory = (Inventory)context.Signable;
-            await Program.LocalNode.RelayAsync(inventory);
+            Program.LocalNode.Relay(inventory);
             InformationBox.Show(inventory.Hash.ToString(), "数据广播成功，这是广播数据的散列值：", "广播成功");
         }
 

@@ -22,7 +22,6 @@ namespace AntShares.Network
         private static readonly TimeSpan OneMinute = TimeSpan.FromMinutes(1);
 
         private Queue<Message> message_queue = new Queue<Message>();
-        private static HashSet<UInt256> KnownHashes = new HashSet<UInt256>();
         private static HashSet<UInt256> missions_global = new HashSet<UInt256>();
         private HashSet<UInt256> missions = new HashSet<UInt256>();
 
@@ -221,10 +220,6 @@ namespace AntShares.Network
 
         private void OnInventoryReceived(Inventory inventory)
         {
-            lock (KnownHashes)
-            {
-                if (!KnownHashes.Add(inventory.Hash)) return;
-            }
             lock (missions_global)
             {
                 missions_global.Remove(inventory.Hash);
@@ -236,9 +231,9 @@ namespace AntShares.Network
         private void OnInvMessageReceived(InvPayload payload)
         {
             InventoryVector[] vectors = payload.Inventories.Distinct().Where(p => Enum.IsDefined(typeof(InventoryType), p.Type)).ToArray();
-            lock (KnownHashes)
+            lock (LocalNode.KnownHashes)
             {
-                vectors = vectors.Where(p => !KnownHashes.Contains(p.Hash)).ToArray();
+                vectors = vectors.Where(p => !LocalNode.KnownHashes.Contains(p.Hash)).ToArray();
             }
             if (vectors.Length == 0) return;
             lock (missions_global)

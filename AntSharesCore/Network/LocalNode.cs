@@ -1,7 +1,6 @@
 ﻿using AntShares.Core;
 using AntShares.IO;
 using AntShares.IO.Caching;
-using AntShares.Threading;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -40,6 +39,7 @@ namespace AntShares.Network
         };
 
         private static readonly Dictionary<UInt256, Transaction> MemoryPool = new Dictionary<UInt256, Transaction>();
+        internal static readonly HashSet<UInt256> KnownHashes = new HashSet<UInt256>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
 
         private static readonly HashSet<IPEndPoint> unconnectedPeers = new HashSet<IPEndPoint>();
@@ -220,6 +220,14 @@ namespace AntShares.Network
             }
         }
 
+        public static bool ContainsTransaction(UInt256 hash)
+        {
+            lock (MemoryPool)
+            {
+                return MemoryPool.ContainsKey(hash);
+            }
+        }
+
         public void Dispose()
         {
             if (Interlocked.Exchange(ref disposed, 1) == 0)
@@ -289,38 +297,36 @@ namespace AntShares.Network
             }
         }
 
-        public async Task<bool> RelayAsync(Inventory data)
+        public bool Relay(Inventory inventory)
         {
-            bool result = await RelayInternalAsync(data);
-            if (data is Block)
-            {
-                if (Blockchain.Default != null && !Blockchain.Default.ContainsBlock(data.Hash) && Blockchain.Default.AddBlock(data as Block))
-                {
-                    if (NewInventory != null) NewInventory(this, data);
-                }
-            }
-            else if (data is Transaction)
-            {
-                if (AddTransaction(data as Transaction))
-                {
-                    if (NewInventory != null) NewInventory(this, data);
-                }
-            }
-            return result;
-        }
-
-        private async Task<bool> RelayInternalAsync(Inventory data)
-        {
+            if (Blockchain.Default == null) return false;
             if (connectedPeers.Count == 0) return false;
-            RemoteNode[] remoteNodes;
+            lock (KnownHashes)
+            {
+                if (!KnownHashes.Add(inventory.Hash)) return false;
+            }
+            if (inventory is Block)
+            {
+                Block block = (Block)inventory;
+                if (Blockchain.Default.ContainsBlock(block.Hash)) return false;
+                if (!Blockchain.Default.AddBlock(block)) return false;
+            }
+            else if (inventory is Transaction)
+            {
+                if (!AddTransaction((Transaction)inventory)) return false;
+            }
+            else //if (inventory is Consensus)
+            {
+                if (!inventory.Verify()) return false;
+            }
             lock (connectedPeers)
             {
                 if (connectedPeers.Count == 0) return false;
-                remoteNodes = connectedPeers.ToArray();
+                RelayCache.Add(inventory);
+                foreach (RemoteNode node in connectedPeers)
+                    node.Relay(inventory);
             }
-            if (remoteNodes.Length == 0) return false;
-            RelayCache.Add(data);
-            await Task.WhenAll(remoteNodes.Select(p => Task.Run(() => p.Relay(data))));
+            if (NewInventory != null) NewInventory(this, inventory);
             return true;
         }
 
@@ -356,23 +362,7 @@ namespace AntShares.Network
 
         private void RemoteNode_InventoryReceived(object sender, Inventory inventory)
         {
-            if (Blockchain.Default == null) return;
-            if (inventory is Block)
-            {
-                Block block = (Block)inventory;
-                if (Blockchain.Default.ContainsBlock(block.Hash)) return;
-                if (!Blockchain.Default.AddBlock(block)) return;
-            }
-            else if (inventory is Transaction)
-            {
-                if (!AddTransaction((Transaction)inventory)) return;
-            }
-            else //if (inventory is Consensus)
-            {
-                if (!inventory.Verify()) return;
-            }
-            RelayInternalAsync(inventory).Void();
-            if (NewInventory != null) NewInventory(this, inventory);
+            Relay(inventory);
         }
 
         private void RemoteNode_PeersReceived(object sender, IPEndPoint[] peers)

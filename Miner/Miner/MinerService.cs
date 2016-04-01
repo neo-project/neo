@@ -74,7 +74,7 @@ namespace AntShares.Miner
                         sc.Add(contract, context.Miners[i], context.Signatures[i]);
                 sc.Signable.Scripts = sc.GetScripts();
                 block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
-                var eatwarning = LocalNode.RelayAsync(block);
+                LocalNode.Relay(block);
                 context.State |= ConsensusState.BlockSent;
                 Log($"RelayBlock hash:{block.Hash}");
             }
@@ -372,7 +372,7 @@ namespace AntShares.Miner
             SignatureContext sc = new SignatureContext(payload);
             wallet.Sign(sc);
             sc.Signable.Scripts = sc.GetScripts();
-            var eatwarning = LocalNode.RelayAsync(payload);
+            LocalNode.Relay(payload);
         }
 
         private void StartMine()

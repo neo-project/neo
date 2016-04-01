@@ -12,7 +12,6 @@ using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace AntShares.UI
@@ -69,13 +68,13 @@ namespace AntShares.UI
             balance_changed = true;
         }
 
-        private async Task ShowInformationAsync(SignatureContext context)
+        private void ShowInformation(SignatureContext context)
         {
             if (context.Completed)
             {
                 context.Signable.Scripts = context.GetScripts();
                 Transaction tx = (Transaction)context.Signable;
-                await Program.LocalNode.RelayAsync(tx);
+                Program.LocalNode.Relay(tx);
                 InformationBox.Show(tx.Hash.ToString(), "交易已发送，这是交易编号(TXID)：", "交易成功");
             }
             else
@@ -234,7 +233,7 @@ namespace AntShares.UI
             Close();
         }
 
-        private async void 转账TToolStripMenuItem_Click(object sender, EventArgs e)
+        private void 转账TToolStripMenuItem_Click(object sender, EventArgs e)
         {
             using (TransferDialog dialog = new TransferDialog())
             {
@@ -243,7 +242,7 @@ namespace AntShares.UI
                 if (tx == null) return;
                 SignatureContext context = new SignatureContext(tx);
                 Program.CurrentWallet.Sign(context);
-                await ShowInformationAsync(context);
+                ShowInformation(context);
             }
         }
 
@@ -255,7 +254,7 @@ namespace AntShares.UI
             }
         }
 
-        private async void 注册资产RToolStripMenuItem_Click(object sender, EventArgs e)
+        private void 注册资产RToolStripMenuItem_Click(object sender, EventArgs e)
         {
             using (AssetRegisterDialog dialog = new AssetRegisterDialog())
             {
@@ -277,11 +276,11 @@ namespace AntShares.UI
                 }
                 SignatureContext context = new SignatureContext(tx);
                 Program.CurrentWallet.Sign(context);
-                await ShowInformationAsync(context);
+                ShowInformation(context);
             }
         }
 
-        private async void 资产分发IToolStripMenuItem_Click(object sender, EventArgs e)
+        private void 资产分发IToolStripMenuItem_Click(object sender, EventArgs e)
         {
             using (IssueDialog dialog = new IssueDialog())
             {
@@ -290,7 +289,7 @@ namespace AntShares.UI
                 if (tx == null) return;
                 SignatureContext context = new SignatureContext(tx);
                 Program.CurrentWallet.Sign(context);
-                await ShowInformationAsync(context);
+                ShowInformation(context);
             }
         }
 

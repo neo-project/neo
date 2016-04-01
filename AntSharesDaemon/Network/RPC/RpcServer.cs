@@ -16,8 +16,14 @@ namespace AntShares.Network.RPC
         public const int DEFAULT_PORT = 10332;
 #endif
 
+        private LocalNode localNode;
         private HttpListener listener = new HttpListener();
         private bool stopped = false;
+
+        public RpcServer(LocalNode localNode)
+        {
+            this.localNode = localNode;
+        }
 
         private static JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
         {
@@ -48,7 +54,7 @@ namespace AntShares.Network.RPC
             listener.Close();
         }
 
-        private static JObject InternalCall(string method, JArray _params)
+        private JObject InternalCall(string method, JArray _params)
         {
             switch (method)
             {
@@ -77,12 +83,17 @@ namespace AntShares.Network.RPC
                             throw new RpcException(-101, "Unknown transaction");
                         return tx.ToJson();
                     }
+                case "sendrawtransaction":
+                    {
+                        Transaction tx = Transaction.DeserializeFrom(_params[0].AsString().HexToBytes());
+                        return localNode.Relay(tx);
+                    }
                 default:
                     throw new RpcException(-32601, "Method not found");
             }
         }
 
-        private static void Process(HttpListenerContext context)
+        private void Process(HttpListenerContext context)
         {
             try
             {
@@ -134,7 +145,7 @@ namespace AntShares.Network.RPC
             }
         }
 
-        private static JObject ProcessRequest(JObject request)
+        private JObject ProcessRequest(JObject request)
         {
             if (!request.ContainsProperty("id")) return null;
             if (!request.ContainsProperty("method") || !request.ContainsProperty("params") || !(request["params"] is JArray))
