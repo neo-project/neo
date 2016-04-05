@@ -145,6 +145,7 @@ namespace AntShares.Miner
             {
                 lock (context)
                 {
+                    if (payload.MinerIndex == context.MinerIndex) return;
                     if (payload.Version != ConsensusContext.Version || payload.PrevHash != context.PrevHash || payload.Height != context.Height)
                         return;
                     if (payload.MinerIndex >= context.Miners.Length) return;
@@ -289,7 +290,10 @@ namespace AntShares.Miner
                 return;
             if (payload.MinerIndex != context.PrimaryIndex) return;
             if (payload.Timestamp <= Blockchain.Default.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.Now.AddMinutes(10).ToTimestamp())
+            {
+                Log($"Timestamp incorrect:{payload.Timestamp}");
                 return;
+            }
             context.State |= ConsensusState.RequestReceived;
             context.Timestamp = payload.Timestamp;
             context.Nonce = message.Nonce;
@@ -335,23 +339,18 @@ namespace AntShares.Miner
                 if (context.State.HasFlag(ConsensusState.Primary) && !context.State.HasFlag(ConsensusState.RequestSent))
                 {
                     Log($"SendPerpareRequest h:{timer_height} v:{timer_view}");
-                    List<Transaction> transactions = LocalNode.GetMemoryPool().ToList();
-                    transactions.Insert(0, CreateMinerTransaction(transactions, context.Height, context.Nonce));
                     context.State |= ConsensusState.RequestSent;
                     context.Timestamp = Math.Max(DateTime.Now.ToTimestamp(), Blockchain.Default.GetHeader(context.PrevHash).Timestamp + 1);
                     context.Nonce = GetNonce();
+                    List<Transaction> transactions = LocalNode.GetMemoryPool().ToList();
+                    transactions.Insert(0, CreateMinerTransaction(transactions, context.Height, context.Nonce));
                     context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
                     context.Transactions = transactions.ToDictionary(p => p.Hash);
                     context.Signatures[context.MinerIndex] = context.MakeHeader().Sign(wallet.GetAccount(context.Miners[context.MinerIndex]));
                     SignAndRelay(context.MakePerpareRequest());
-                    timer.Change(Blockchain.TimePerBlock, Blockchain.TimePerBlock);
+                    timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer_view + 1)), Timeout.InfiniteTimeSpan);
                 }
-                else if (context.State.HasFlag(ConsensusState.Primary) && context.State.HasFlag(ConsensusState.RequestSent))
-                {
-                    Log($"ResendPerpareRequest h:{timer_height} v:{timer_view}");
-                    SignAndRelay(context.MakePerpareRequest());
-                }
-                else if (context.State.HasFlag(ConsensusState.Backup))
+                else if ((context.State.HasFlag(ConsensusState.Primary) && context.State.HasFlag(ConsensusState.RequestSent)) || context.State.HasFlag(ConsensusState.Backup))
                 {
                     RequestChangeView();
                 }
