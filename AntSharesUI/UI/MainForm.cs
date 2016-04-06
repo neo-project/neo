@@ -99,7 +99,7 @@ namespace AntShares.UI
             lbl_count_node.Text = Program.LocalNode.RemoteNodeCount.ToString();
             if (balance_changed)
             {
-                IEnumerable<UnspentCoin> coins = Program.CurrentWallet == null ? Enumerable.Empty<UnspentCoin>() : Program.CurrentWallet.FindUnspentCoins();
+                IEnumerable<Coin> coins = Program.CurrentWallet == null ? Enumerable.Empty<Coin>() : Program.CurrentWallet.FindUnspentCoins();
                 var assets = coins.GroupBy(p => p.AssetId, (k, g) => new
                 {
                     Asset = (RegisterTransaction)Blockchain.Default.GetTransaction(k),
@@ -291,6 +291,11 @@ namespace AntShares.UI
                 Program.CurrentWallet.Sign(context);
                 ShowInformation(context);
             }
+        }
+
+        private void 提取小蚁币CToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Helper.Show<ClaimForm>();
         }
 
         private void 官网WToolStripMenuItem_Click(object sender, EventArgs e)

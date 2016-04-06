@@ -24,8 +24,9 @@ namespace AntShares.Wallets
         private readonly byte[] masterKey;
         private readonly Dictionary<UInt160, Account> accounts;
         private readonly Dictionary<UInt160, Contract> contracts;
-        private readonly Dictionary<TransactionInput, UnspentCoin> unspent_coins;
-        private readonly Dictionary<TransactionInput, UnspentCoin> change_coins;
+        private readonly Dictionary<TransactionInput, Coin> unspent_coins;
+        private readonly Dictionary<TransactionInput, Coin> change_coins;
+        private readonly Dictionary<TransactionInput, Coin> unclaimed_coins;
         private uint current_height;
 
         private readonly Thread thread;
@@ -43,8 +44,9 @@ namespace AntShares.Wallets
                 this.masterKey = new byte[32];
                 this.accounts = new Dictionary<UInt160, Account>();
                 this.contracts = new Dictionary<UInt160, Contract>();
-                this.unspent_coins = new Dictionary<TransactionInput, UnspentCoin>();
-                this.change_coins = new Dictionary<TransactionInput, UnspentCoin>();
+                this.unspent_coins = new Dictionary<TransactionInput, Coin>();
+                this.change_coins = new Dictionary<TransactionInput, Coin>();
+                this.unclaimed_coins = new Dictionary<TransactionInput, Coin>();
                 this.current_height = Blockchain.Default?.HeaderHeight + 1 ?? 0;
                 using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
                 {
@@ -70,8 +72,9 @@ namespace AntShares.Wallets
                 ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
                 this.accounts = LoadAccounts().ToDictionary(p => p.PublicKeyHash);
                 this.contracts = LoadContracts().ToDictionary(p => p.ScriptHash);
-                this.unspent_coins = LoadUnspentCoins(false).ToDictionary(p => p.Input);
-                this.change_coins = LoadUnspentCoins(true).ToDictionary(p => p.Input);
+                this.unspent_coins = LoadCoins(CoinState.Unspent).ToDictionary(p => p.Input);
+                this.change_coins = LoadCoins(CoinState.Unconfirmed).ToDictionary(p => p.Input);
+                this.unclaimed_coins = LoadCoins(CoinState.Unclaimed).ToDictionary(p => p.Input);
                 this.current_height = BitConverter.ToUInt32(LoadStoredData("Height"), 0);
             }
             Array.Clear(passwordKey, 0, passwordKey.Length);
@@ -224,7 +227,7 @@ namespace AntShares.Wallets
             }
         }
 
-        public IEnumerable<UnspentCoin> FindUnspentCoins()
+        public IEnumerable<Coin> FindUnspentCoins()
         {
             lock (unspent_coins)
             {
@@ -235,7 +238,7 @@ namespace AntShares.Wallets
             }
         }
 
-        public virtual UnspentCoin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount)
+        public virtual Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount)
         {
             lock (unspent_coins)
             {
@@ -243,10 +246,10 @@ namespace AntShares.Wallets
             }
         }
 
-        protected static UnspentCoin[] FindUnspentCoins(IEnumerable<UnspentCoin> unspents, UInt256 asset_id, Fixed8 amount)
+        protected static Coin[] FindUnspentCoins(IEnumerable<Coin> unspents, UInt256 asset_id, Fixed8 amount)
         {
             unspents = unspents.Where(p => p.AssetId == asset_id);
-            UnspentCoin coin = unspents.FirstOrDefault(p => p.Value == amount);
+            Coin coin = unspents.FirstOrDefault(p => p.Value == amount);
             if (coin != null) return new[] { coin };
             coin = unspents.OrderBy(p => p.Value).FirstOrDefault(p => p.Value > amount);
             if (coin != null) return new[] { coin };
@@ -400,11 +403,11 @@ namespace AntShares.Wallets
 
         protected abstract IEnumerable<Account> LoadAccounts();
 
+        protected abstract IEnumerable<Coin> LoadCoins(CoinState state);
+
         protected abstract IEnumerable<Contract> LoadContracts();
 
         protected abstract byte[] LoadStoredData(string name);
-
-        protected abstract IEnumerable<UnspentCoin> LoadUnspentCoins(bool is_change);
 
         public T MakeTransaction<T>(TransactionOutput[] outputs, Fixed8 fee) where T : Transaction, new()
         {
@@ -468,7 +471,7 @@ namespace AntShares.Wallets
             return tx;
         }
 
-        protected abstract void OnProcessNewBlock(IEnumerable<TransactionInput> spent, IEnumerable<UnspentCoin> unspent);
+        protected abstract void OnProcessNewBlock(IEnumerable<TransactionInput> spent, IEnumerable<Coin> unspent);
 
         private void ProcessBlocks()
         {
@@ -489,7 +492,7 @@ namespace AntShares.Wallets
         private void ProcessNewBlock(Block block)
         {
             List<TransactionInput> spent = new List<TransactionInput>();
-            Dictionary<TransactionInput, UnspentCoin> unspent = new Dictionary<TransactionInput, UnspentCoin>();
+            Dictionary<TransactionInput, Coin> unspent = new Dictionary<TransactionInput, Coin>();
             lock (contracts)
             {
                 foreach (Transaction tx in block.Transactions)
@@ -499,7 +502,7 @@ namespace AntShares.Wallets
                         TransactionOutput output = tx.Outputs[index];
                         if (contracts.ContainsKey(output.ScriptHash))
                         {
-                            UnspentCoin coin = new UnspentCoin
+                            Coin coin = new Coin
                             {
                                 Input = new TransactionInput
                                 {

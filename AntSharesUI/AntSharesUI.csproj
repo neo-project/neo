@@ -70,6 +70,12 @@
     <Compile Include="UI\AssetRegisterDialog.Designer.cs">
       <DependentUpon>AssetRegisterDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\ClaimForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\ClaimForm.Designer.cs">
+      <DependentUpon>ClaimForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\CreateMultiSigContractDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -177,6 +183,9 @@
     </Compile>
     <EmbeddedResource Include="UI\AssetRegisterDialog.resx">
       <DependentUpon>AssetRegisterDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ClaimForm.resx">
+      <DependentUpon>ClaimForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\ContractDetailsDialog.resx">
       <DependentUpon>ContractDetailsDialog.cs</DependentUpon>

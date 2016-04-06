@@ -157,7 +157,7 @@
     <Compile Include="Implementations\Wallets\EntityFramework\Contract.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\Key.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\Transaction.cs" />
-    <Compile Include="Implementations\Wallets\EntityFramework\UnspentCoin.cs" />
+    <Compile Include="Implementations\Wallets\EntityFramework\Coin.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\UserWallet.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\WalletDataContext.cs" />
     <Compile Include="IO\Caching\Cache.cs" />
@@ -220,10 +220,11 @@
     <Compile Include="UInt256.cs" />
     <Compile Include="UIntBase.cs" />
     <Compile Include="Cryptography\ProtectedMemoryContext.cs" />
+    <Compile Include="Wallets\CoinState.cs" />
     <Compile Include="Wallets\Contract.cs" />
     <Compile Include="Wallets\MultiSigContract.cs" />
     <Compile Include="Wallets\SignatureContract.cs" />
-    <Compile Include="Wallets\UnspentCoin.cs" />
+    <Compile Include="Wallets\Coin.cs" />
     <Compile Include="Wallets\Wallet.cs" />
     <Compile Include="Wallets\Account.cs" />
   </ItemGroup>

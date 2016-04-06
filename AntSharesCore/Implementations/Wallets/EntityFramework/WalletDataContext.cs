@@ -10,7 +10,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         public DbSet<Contract> Contracts { get; set; }
         public DbSet<Key> Keys { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
-        public DbSet<UnspentCoin> UnspentCoins { get; set; }
+        public DbSet<Coin> Coins { get; set; }
 
         private readonly string filename;
 
@@ -48,15 +48,15 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             modelBuilder.Entity<Transaction>().Property(p => p.Hash).HasColumnType("Binary").HasMaxLength(32).IsRequired();
             modelBuilder.Entity<Transaction>().Property(p => p.Type).IsRequired();
             modelBuilder.Entity<Transaction>().Property(p => p.RawData).HasColumnType("VarBinary").IsRequired();
-            modelBuilder.Entity<UnspentCoin>().ToTable("Unspent").HasKey(p => new { p.TxId, p.Index });
-            modelBuilder.Entity<UnspentCoin>().HasIndex(p => p.AssetId);
-            modelBuilder.Entity<UnspentCoin>().HasIndex(p => p.ScriptHash);
-            modelBuilder.Entity<UnspentCoin>().HasOne(p => p.Contract).WithMany().HasForeignKey(p => p.ScriptHash).OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<UnspentCoin>().Property(p => p.TxId).HasColumnType("Binary").HasMaxLength(32).IsRequired();
-            modelBuilder.Entity<UnspentCoin>().Property(p => p.Index).IsRequired();
-            modelBuilder.Entity<UnspentCoin>().Property(p => p.AssetId).HasColumnType("Binary").HasMaxLength(32).IsRequired();
-            modelBuilder.Entity<UnspentCoin>().Property(p => p.ScriptHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
-            modelBuilder.Entity<UnspentCoin>().Property(p => p.IsChange).IsRequired();
+            modelBuilder.Entity<Coin>().HasKey(p => new { p.TxId, p.Index });
+            modelBuilder.Entity<Coin>().HasIndex(p => p.AssetId);
+            modelBuilder.Entity<Coin>().HasIndex(p => p.ScriptHash);
+            modelBuilder.Entity<Coin>().HasOne(p => p.Contract).WithMany().HasForeignKey(p => p.ScriptHash).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Coin>().Property(p => p.TxId).HasColumnType("Binary").HasMaxLength(32).IsRequired();
+            modelBuilder.Entity<Coin>().Property(p => p.Index).IsRequired();
+            modelBuilder.Entity<Coin>().Property(p => p.AssetId).HasColumnType("Binary").HasMaxLength(32).IsRequired();
+            modelBuilder.Entity<Coin>().Property(p => p.ScriptHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
+            modelBuilder.Entity<Coin>().Property(p => p.State).IsRequired();
         }
     }
 }
