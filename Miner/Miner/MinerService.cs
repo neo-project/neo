@@ -277,6 +277,7 @@ namespace AntShares.Miner
                 catch
                 {
                     Console.WriteLine($"failed to open file \"{args[2]}\"");
+                    return true;
                 }
             }
             StartMine();
@@ -335,7 +336,10 @@ namespace AntShares.Miner
             lock (context)
             {
                 if (timer_height != context.Height || timer_view != context.ViewNumber)
+                {
+                    Log($"ignored");
                     return;
+                }
                 if (context.State.HasFlag(ConsensusState.Primary) && !context.State.HasFlag(ConsensusState.RequestSent))
                 {
                     Log($"SendPerpareRequest h:{timer_height} v:{timer_view}");

@@ -4,7 +4,8 @@
     {
         Unconfirmed,
         Unspent,
-        Unclaimed,
-        Spent
+        Spending,
+        Spent,
+        SpentAndClaimed
     }
 }

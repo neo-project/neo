@@ -162,6 +162,9 @@
     <Compile Include="Implementations\Wallets\EntityFramework\WalletDataContext.cs" />
     <Compile Include="IO\Caching\Cache.cs" />
     <Compile Include="IO\Caching\FIFOCache.cs" />
+    <Compile Include="IO\Caching\ITrackable.cs" />
+    <Compile Include="IO\Caching\TrackableCollection.cs" />
+    <Compile Include="IO\Caching\TrackState.cs" />
     <Compile Include="IO\Caching\Tree.cs" />
     <Compile Include="IO\Caching\TreeNode.cs" />
     <Compile Include="Network\Payloads\ConsensusPayload.cs" />

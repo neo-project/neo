@@ -1,17 +1,17 @@
 ﻿using AntShares.Core;
-using AntShares.IO;
+using AntShares.IO.Caching;
 using System;
-using System.IO;
 
 namespace AntShares.Wallets
 {
-    public class Coin : IEquatable<Coin>, ISerializable
+    public class Coin : IEquatable<Coin>, ITrackable<TransactionInput>
     {
         public TransactionInput Input;
         public UInt256 AssetId;
         public Fixed8 Value;
         public UInt160 ScriptHash;
 
+        [NonSerialized]
         private string _address = null;
         public string Address
         {
@@ -25,13 +25,29 @@ namespace AntShares.Wallets
             }
         }
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        TransactionInput ITrackable<TransactionInput>.Key => Input;
+
+        [NonSerialized]
+        private CoinState state;
+        public CoinState State
         {
-            Input = reader.ReadSerializable<TransactionInput>();
-            AssetId = reader.ReadSerializable<UInt256>();
-            Value = reader.ReadSerializable<Fixed8>();
-            ScriptHash = reader.ReadSerializable<UInt160>();
+            get
+            {
+                return state;
+            }
+            set
+            {
+                if (state != value)
+                {
+                    state = value;
+                    ITrackable<TransactionInput> _this = this;
+                    if (_this.TrackState == TrackState.None)
+                        _this.TrackState = TrackState.Changed;
+                }
+            }
         }
+
+        TrackState ITrackable<TransactionInput>.TrackState { get; set; }
 
         public bool Equals(Coin other)
         {
@@ -48,14 +64,6 @@ namespace AntShares.Wallets
         public override int GetHashCode()
         {
             return Input.GetHashCode();
-        }
-
-        void ISerializable.Serialize(BinaryWriter writer)
-        {
-            writer.Write(Input);
-            writer.Write(AssetId);
-            writer.Write(Value);
-            writer.Write(ScriptHash);
         }
     }
 }
