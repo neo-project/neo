@@ -2,6 +2,7 @@
 using AntShares.IO.Json;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace AntShares.Core
 {
@@ -13,18 +14,16 @@ namespace AntShares.Core
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Usage = (TransactionAttributeUsage)reader.ReadByte();
-            int length;
             if (Usage == TransactionAttributeUsage.ContractHash || (Usage >= TransactionAttributeUsage.Hash1 && Usage <= TransactionAttributeUsage.Hash15))
-                length = 32;
+                Data = reader.ReadBytes(32);
             else if (Usage == TransactionAttributeUsage.ECDH02 || Usage == TransactionAttributeUsage.ECDH03)
-                length = 32;
+                Data = new[] { (byte)Usage }.Concat(reader.ReadBytes(32)).ToArray();
             else if (Usage == TransactionAttributeUsage.Script)
-                length = (int)reader.ReadVarInt(ushort.MaxValue);
+                Data = reader.ReadVarBytes(ushort.MaxValue);
             else if (Usage >= TransactionAttributeUsage.Remark)
-                length = reader.ReadByte();
+                Data = reader.ReadVarBytes(byte.MaxValue);
             else
                 throw new FormatException();
-            Data = reader.ReadBytes(length);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -34,7 +33,10 @@ namespace AntShares.Core
                 writer.WriteVarInt(Data.Length);
             else if (Usage >= TransactionAttributeUsage.Remark)
                 writer.Write((byte)Data.Length);
-            writer.Write(Data);
+            if (Usage == TransactionAttributeUsage.ECDH02 || Usage == TransactionAttributeUsage.ECDH03)
+                writer.Write(Data, 1, 32);
+            else
+                writer.Write(Data);
         }
 
         public JObject ToJson()
