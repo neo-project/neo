@@ -106,6 +106,57 @@ namespace AntShares.Wallets
         {
         }
 
+        public static Fixed8 CalculateClaimAmount(IEnumerable<TransactionInput> inputs)
+        {
+            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
+                throw new NotSupportedException();
+            List<Claimable> unclaimed = new List<Claimable>();
+            foreach (var group in inputs.GroupBy(p => p.PrevHash))
+            {
+                Dictionary<ushort, Claimable> claimable = Blockchain.Default.GetUnclaimed(group.Key);
+                if (claimable == null || claimable.Count == 0)
+                    throw new ArgumentException();
+                foreach (TransactionInput claim in group)
+                {
+                    if (!claimable.ContainsKey(claim.PrevIndex))
+                        throw new ArgumentException();
+                    unclaimed.Add(claimable[claim.PrevIndex]);
+                }
+            }
+            Fixed8 amount_claimed = Fixed8.Zero;
+            foreach (var group in unclaimed.GroupBy(p => new { p.StartHeight, p.EndHeight }))
+            {
+                uint amount = 0;
+                uint ustart = group.Key.StartHeight / Blockchain.DecrementInterval;
+                if (ustart < Blockchain.MintingAmount.Length)
+                {
+                    uint istart = group.Key.StartHeight % Blockchain.DecrementInterval;
+                    uint uend = group.Key.EndHeight / Blockchain.DecrementInterval;
+                    uint iend = group.Key.EndHeight % Blockchain.DecrementInterval;
+                    if (uend >= Blockchain.MintingAmount.Length)
+                    {
+                        uend = (uint)Blockchain.MintingAmount.Length;
+                        iend = 0;
+                    }
+                    if (iend == 0)
+                    {
+                        uend--;
+                        iend = Blockchain.DecrementInterval;
+                    }
+                    while (ustart < uend)
+                    {
+                        amount += (Blockchain.DecrementInterval - istart) * Blockchain.MintingAmount[ustart];
+                        ustart++;
+                        istart = 0;
+                    }
+                    amount += (iend - istart) * Blockchain.MintingAmount[ustart];
+                }
+                amount += (uint)(Blockchain.Default.GetSysFeeAmount(group.Key.EndHeight - 1) - (group.Key.StartHeight == 0 ? 0 : Blockchain.Default.GetSysFeeAmount(group.Key.StartHeight - 1)));
+                amount_claimed += group.Sum(p => p.Value) / 100000000 * amount;
+            }
+            return amount_claimed;
+        }
+
         public void ChangePassword(string password)
         {
             byte[] passwordKey = password.ToAesKey();
@@ -317,11 +368,11 @@ namespace AntShares.Wallets
             }
         }
 
-        protected virtual UInt160 GetChangeAddress()
+        public virtual UInt160 GetChangeAddress()
         {
             lock (contracts)
             {
-                return contracts.Keys.FirstOrDefault();
+                return contracts.Values.FirstOrDefault(p => p is SignatureContract)?.ScriptHash;
             }
         }
 
@@ -369,6 +420,17 @@ namespace AntShares.Wallets
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
             Array.Clear(data, 0, data.Length);
             return privateKey;
+        }
+
+        public IEnumerable<Coin> GetUnclaimedCoins()
+        {
+            lock (coins)
+            {
+                foreach (var coin in coins.Where(p => p.State == CoinState.Spent && p.AssetId == Blockchain.AntShare.Hash))
+                {
+                    yield return coin;
+                }
+            }
         }
 
         public Account Import(X509Certificate2 cert)

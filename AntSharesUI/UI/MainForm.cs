@@ -68,21 +68,6 @@ namespace AntShares.UI
             balance_changed = true;
         }
 
-        private void ShowInformation(SignatureContext context)
-        {
-            if (context.Completed)
-            {
-                context.Signable.Scripts = context.GetScripts();
-                Transaction tx = (Transaction)context.Signable;
-                Program.LocalNode.Relay(tx);
-                InformationBox.Show(tx.Hash.ToString(), "交易已发送，这是交易编号(TXID)：", "交易成功");
-            }
-            else
-            {
-                InformationBox.Show(context.ToString(), "交易构造完成，但没有足够的签名：", "签名不完整");
-            }
-        }
-
         private void MainForm_Load(object sender, EventArgs e)
         {
             Program.LocalNode.Start(Settings.Default.NodePort);
@@ -242,7 +227,7 @@ namespace AntShares.UI
                 if (tx == null) return;
                 SignatureContext context = new SignatureContext(tx);
                 Program.CurrentWallet.Sign(context);
-                ShowInformation(context);
+                Helper.ShowInformation(context);
             }
         }
 
@@ -276,7 +261,7 @@ namespace AntShares.UI
                 }
                 SignatureContext context = new SignatureContext(tx);
                 Program.CurrentWallet.Sign(context);
-                ShowInformation(context);
+                Helper.ShowInformation(context);
             }
         }
 
@@ -289,7 +274,7 @@ namespace AntShares.UI
                 if (tx == null) return;
                 SignatureContext context = new SignatureContext(tx);
                 Program.CurrentWallet.Sign(context);
-                ShowInformation(context);
+                Helper.ShowInformation(context);
             }
         }
 
