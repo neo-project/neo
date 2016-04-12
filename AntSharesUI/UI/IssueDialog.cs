@@ -25,16 +25,17 @@ namespace AntShares.UI
         {
             RegisterTransaction asset = comboBox1.SelectedItem as RegisterTransaction;
             if (asset == null) return null;
-            IssueTransaction tx = Program.CurrentWallet.MakeTransaction<IssueTransaction>(txOutListBox1.Items.GroupBy(p => p.Account).Select(g => new TransactionOutput
-            {
-                AssetId = asset.Hash,
-                Value = g.Sum(p => p.Amount),
-                ScriptHash = g.Key
-            }).ToArray(), Fixed8.Zero);
-            if (tx == null) return null;
             Random rand = new Random();
-            tx.Nonce = (uint)rand.Next();
-            return tx;
+            return Program.CurrentWallet.MakeTransaction(new IssueTransaction
+            {
+                Nonce = (uint)rand.Next(),
+                Outputs = txOutListBox1.Items.GroupBy(p => p.Account).Select(g => new TransactionOutput
+                {
+                    AssetId = asset.Hash,
+                    Value = g.Sum(p => p.Amount),
+                    ScriptHash = g.Key
+                }).ToArray()
+            }, Fixed8.Zero);
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)

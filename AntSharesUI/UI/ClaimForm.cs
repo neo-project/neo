@@ -21,7 +21,7 @@ namespace AntShares.UI
         private void button1_Click(object sender, EventArgs e)
         {
             TransactionInput[] claims = Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Input).ToArray();
-            SignatureContext context = new SignatureContext(new ClaimTransaction
+            Helper.SignAndShowInformation(new ClaimTransaction
             {
                 Claims = claims,
                 Attributes = new TransactionAttribute[0],
@@ -36,8 +36,6 @@ namespace AntShares.UI
                     }
                 }
             });
-            Program.CurrentWallet.Sign(context);
-            Helper.ShowInformation(context);
         }
     }
 }

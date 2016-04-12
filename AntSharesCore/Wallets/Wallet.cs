@@ -372,7 +372,7 @@ namespace AntShares.Wallets
         {
             lock (contracts)
             {
-                return contracts.Values.FirstOrDefault(p => p is SignatureContract)?.ScriptHash;
+                return contracts.Values.FirstOrDefault(p => p is SignatureContract)?.ScriptHash ?? contracts.Keys.FirstOrDefault();
             }
         }
 
@@ -461,15 +461,12 @@ namespace AntShares.Wallets
 
         protected abstract byte[] LoadStoredData(string name);
 
-        public T MakeTransaction<T>(TransactionOutput[] outputs, Fixed8 fee) where T : Transaction, new()
+        public T MakeTransaction<T>(T tx, Fixed8 fee) where T : Transaction
         {
-            T tx = new T
-            {
-                Attributes = new TransactionAttribute[0],
-                Outputs = outputs
-            };
+            if (tx.Outputs == null) throw new ArgumentException();
+            if (tx.Attributes == null) tx.Attributes = new TransactionAttribute[0];
             fee += tx.SystemFee;
-            var pay_total = (typeof(T) == typeof(IssueTransaction) ? new TransactionOutput[0] : outputs).GroupBy(p => p.AssetId, (k, g) => new
+            var pay_total = (typeof(T) == typeof(IssueTransaction) ? new TransactionOutput[0] : tx.Outputs).GroupBy(p => p.AssetId, (k, g) => new
             {
                 AssetId = k,
                 Value = g.Sum(p => p.Value)
@@ -505,7 +502,7 @@ namespace AntShares.Wallets
                 Value = p.Unspents.Sum(q => q.Value)
             });
             UInt160 change_address = GetChangeAddress();
-            List<TransactionOutput> outputs_new = new List<TransactionOutput>(outputs);
+            List<TransactionOutput> outputs_new = new List<TransactionOutput>(tx.Outputs);
             foreach (UInt256 asset_id in input_sum.Keys)
             {
                 if (input_sum[asset_id].Value > pay_total[asset_id].Value)

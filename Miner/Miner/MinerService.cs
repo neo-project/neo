@@ -372,7 +372,15 @@ namespace AntShares.Miner
 
         private void SignAndRelay(ConsensusPayload payload)
         {
-            SignatureContext sc = new SignatureContext(payload);
+            SignatureContext sc;
+            try
+            {
+                sc = new SignatureContext(payload);
+            }
+            catch (InvalidOperationException)
+            {
+                return;
+            }
             wallet.Sign(sc);
             sc.Signable.Scripts = sc.GetScripts();
             LocalNode.Relay(payload);

@@ -44,8 +44,13 @@
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.签名SToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.高级AToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.提取小蚁币CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.注册资产RToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.资产分发IToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
+            this.选举EToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.投票VToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.帮助HToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.查看帮助VToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.官网WToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -81,8 +86,6 @@
             this.columnHeader6 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
-            this.提取小蚁币CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -190,14 +193,29 @@
             // 高级AToolStripMenuItem
             // 
             this.高级AToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.提取小蚁币CToolStripMenuItem,
+            this.toolStripSeparator7,
             this.注册资产RToolStripMenuItem,
             this.资产分发IToolStripMenuItem,
-            this.toolStripSeparator7,
-            this.提取小蚁币CToolStripMenuItem});
+            this.toolStripSeparator8,
+            this.选举EToolStripMenuItem,
+            this.投票VToolStripMenuItem});
             this.高级AToolStripMenuItem.Enabled = false;
             this.高级AToolStripMenuItem.Name = "高级AToolStripMenuItem";
             this.高级AToolStripMenuItem.Size = new System.Drawing.Size(60, 21);
             this.高级AToolStripMenuItem.Text = "高级(&A)";
+            // 
+            // 提取小蚁币CToolStripMenuItem
+            // 
+            this.提取小蚁币CToolStripMenuItem.Name = "提取小蚁币CToolStripMenuItem";
+            this.提取小蚁币CToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
+            this.提取小蚁币CToolStripMenuItem.Text = "提取小蚁币(&C)...";
+            this.提取小蚁币CToolStripMenuItem.Click += new System.EventHandler(this.提取小蚁币CToolStripMenuItem_Click);
+            // 
+            // toolStripSeparator7
+            // 
+            this.toolStripSeparator7.Name = "toolStripSeparator7";
+            this.toolStripSeparator7.Size = new System.Drawing.Size(158, 6);
             // 
             // 注册资产RToolStripMenuItem
             // 
@@ -212,6 +230,25 @@
             this.资产分发IToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
             this.资产分发IToolStripMenuItem.Text = "发行资产(&I)...";
             this.资产分发IToolStripMenuItem.Click += new System.EventHandler(this.资产分发IToolStripMenuItem_Click);
+            // 
+            // toolStripSeparator8
+            // 
+            this.toolStripSeparator8.Name = "toolStripSeparator8";
+            this.toolStripSeparator8.Size = new System.Drawing.Size(158, 6);
+            // 
+            // 选举EToolStripMenuItem
+            // 
+            this.选举EToolStripMenuItem.Name = "选举EToolStripMenuItem";
+            this.选举EToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
+            this.选举EToolStripMenuItem.Text = "选举(&E)...";
+            this.选举EToolStripMenuItem.Click += new System.EventHandler(this.选举EToolStripMenuItem_Click);
+            // 
+            // 投票VToolStripMenuItem
+            // 
+            this.投票VToolStripMenuItem.Name = "投票VToolStripMenuItem";
+            this.投票VToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
+            this.投票VToolStripMenuItem.Text = "投票(&V)...";
+            this.投票VToolStripMenuItem.Click += new System.EventHandler(this.投票VToolStripMenuItem_Click);
             // 
             // 帮助HToolStripMenuItem
             // 
@@ -509,18 +546,6 @@
             this.columnHeader5.Text = "发行者";
             this.columnHeader5.Width = 296;
             // 
-            // toolStripSeparator7
-            // 
-            this.toolStripSeparator7.Name = "toolStripSeparator7";
-            this.toolStripSeparator7.Size = new System.Drawing.Size(158, 6);
-            // 
-            // 提取小蚁币CToolStripMenuItem
-            // 
-            this.提取小蚁币CToolStripMenuItem.Name = "提取小蚁币CToolStripMenuItem";
-            this.提取小蚁币CToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
-            this.提取小蚁币CToolStripMenuItem.Text = "提取小蚁币(&C)...";
-            this.提取小蚁币CToolStripMenuItem.Click += new System.EventHandler(this.提取小蚁币CToolStripMenuItem_Click);
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
@@ -604,6 +629,9 @@
         private System.Windows.Forms.ToolStripMenuItem importCertificateToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
         private System.Windows.Forms.ToolStripMenuItem 提取小蚁币CToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
+        private System.Windows.Forms.ToolStripMenuItem 选举EToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem 投票VToolStripMenuItem;
     }
 }
 

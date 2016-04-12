@@ -26,12 +26,18 @@ namespace AntShares.UI
             tool_forms[t].Activate();
         }
 
-        public static void ShowInformation(SignatureContext context)
+        public static void SignAndShowInformation(Transaction tx)
         {
+            if (tx == null)
+            {
+                MessageBox.Show("余额不足以支付系统费用。");
+                return;
+            }
+            SignatureContext context = new SignatureContext(tx);
+            Program.CurrentWallet.Sign(context);
             if (context.Completed)
             {
                 context.Signable.Scripts = context.GetScripts();
-                Transaction tx = (Transaction)context.Signable;
                 Program.LocalNode.Relay(tx);
                 InformationBox.Show(tx.Hash.ToString(), "交易已发送，这是交易编号(TXID)：", "交易成功");
             }

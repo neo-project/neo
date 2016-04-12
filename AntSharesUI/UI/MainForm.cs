@@ -223,11 +223,7 @@ namespace AntShares.UI
             using (TransferDialog dialog = new TransferDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                Transaction tx = dialog.GetTransaction();
-                if (tx == null) return;
-                SignatureContext context = new SignatureContext(tx);
-                Program.CurrentWallet.Sign(context);
-                Helper.ShowInformation(context);
+                Helper.SignAndShowInformation(dialog.GetTransaction());
             }
         }
 
@@ -239,29 +235,17 @@ namespace AntShares.UI
             }
         }
 
+        private void 提取小蚁币CToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Helper.Show<ClaimForm>();
+        }
+
         private void 注册资产RToolStripMenuItem_Click(object sender, EventArgs e)
         {
             using (AssetRegisterDialog dialog = new AssetRegisterDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                Transaction tx = null;
-                try
-                {
-                    tx = dialog.GetTransaction();
-                }
-                catch
-                {
-                    MessageBox.Show("数据填写不完整，或格式错误。");
-                    return;
-                }
-                if (tx == null)
-                {
-                    MessageBox.Show("余额不足以支付系统费用。");
-                    return;
-                }
-                SignatureContext context = new SignatureContext(tx);
-                Program.CurrentWallet.Sign(context);
-                Helper.ShowInformation(context);
+                Helper.SignAndShowInformation(dialog.GetTransaction());
             }
         }
 
@@ -270,17 +254,26 @@ namespace AntShares.UI
             using (IssueDialog dialog = new IssueDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                Transaction tx = dialog.GetTransaction();
-                if (tx == null) return;
-                SignatureContext context = new SignatureContext(tx);
-                Program.CurrentWallet.Sign(context);
-                Helper.ShowInformation(context);
+                Helper.SignAndShowInformation(dialog.GetTransaction());
             }
         }
 
-        private void 提取小蚁币CToolStripMenuItem_Click(object sender, EventArgs e)
+        private void 选举EToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Helper.Show<ClaimForm>();
+            using (ElectionDialog dialog = new ElectionDialog())
+            {
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                Helper.SignAndShowInformation(dialog.GetTransaction());
+            }
+        }
+
+        private void 投票VToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (VotingDialog dialog = new VotingDialog())
+            {
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                Helper.SignAndShowInformation(dialog.GetTransaction());
+            }
         }
 
         private void 官网WToolStripMenuItem_Click(object sender, EventArgs e)

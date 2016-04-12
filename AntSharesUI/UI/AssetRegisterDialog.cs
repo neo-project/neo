@@ -16,14 +16,15 @@ namespace AntShares.UI
 
         public RegisterTransaction GetTransaction()
         {
-            RegisterTransaction tx = Program.CurrentWallet.MakeTransaction<RegisterTransaction>(new TransactionOutput[0], Fixed8.Zero);
-            if (tx == null) return null;
-            tx.AssetType = (AssetType)comboBox1.SelectedItem;
-            tx.Name = tx.AssetType == AssetType.Share ? string.Empty : $"[{{'lang':'zh-CN','name':'{textBox1.Text}'}}]";
-            tx.Amount = checkBox1.Checked ? Fixed8.Parse(textBox2.Text) : -Fixed8.Satoshi;
-            tx.Issuer = (ECPoint)comboBox2.SelectedItem;
-            tx.Admin = Wallet.ToScriptHash(comboBox3.Text);
-            return tx;
+            return Program.CurrentWallet.MakeTransaction(new RegisterTransaction
+            {
+                AssetType = (AssetType)comboBox1.SelectedItem,
+                Name = (AssetType)comboBox1.SelectedItem == AssetType.Share ? string.Empty : $"[{{'lang':'zh-CN','name':'{textBox1.Text}'}}]",
+                Amount = checkBox1.Checked ? Fixed8.Parse(textBox2.Text) : -Fixed8.Satoshi,
+                Issuer = (ECPoint)comboBox2.SelectedItem,
+                Admin = Wallet.ToScriptHash(comboBox3.Text),
+                Outputs = new TransactionOutput[0]
+            }, Fixed8.Zero);
         }
 
         private void AssetRegisterDialog_Load(object sender, EventArgs e)

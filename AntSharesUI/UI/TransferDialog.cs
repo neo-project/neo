@@ -14,14 +14,17 @@ namespace AntShares.UI
 
         public ContractTransaction GetTransaction()
         {
-            RegisterTransaction tx = comboBox1.SelectedItem as RegisterTransaction;
-            if (tx == null) return null;
-            return Program.CurrentWallet.MakeTransaction<ContractTransaction>(txOutListBox1.Items.GroupBy(p => p.Account).Select(g => new TransactionOutput
+            RegisterTransaction asset = comboBox1.SelectedItem as RegisterTransaction;
+            if (asset == null) return null;
+            return Program.CurrentWallet.MakeTransaction(new ContractTransaction
             {
-                AssetId = tx.Hash,
-                Value = g.Sum(p => p.Amount),
-                ScriptHash = g.Key
-            }).ToArray(), Fixed8.Zero);
+                Outputs = txOutListBox1.Items.GroupBy(p => p.Account).Select(g => new TransactionOutput
+                {
+                    AssetId = asset.Hash,
+                    Value = g.Sum(p => p.Amount),
+                    ScriptHash = g.Key
+                }).ToArray()
+            }, Fixed8.Zero);
         }
 
         private void TransferDialog_Load(object sender, EventArgs e)
