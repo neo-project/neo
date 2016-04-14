@@ -31,11 +31,14 @@ namespace AntShares.Miner.Consensus
         public void ChangeView(byte view_number)
         {
             int p = ((int)Height - view_number) % Miners.Length;
-            State = ConsensusState.Initial;
+            State &= ConsensusState.SignatureSent;
             ViewNumber = view_number;
             PrimaryIndex = p >= 0 ? (uint)p : (uint)(p + Miners.Length);
-            TransactionHashes = null;
-            Signatures = new byte[Miners.Length][];
+            if (State == ConsensusState.Initial)
+            {
+                TransactionHashes = null;
+                Signatures = new byte[Miners.Length][];
+            }
             _header = null;
         }
 

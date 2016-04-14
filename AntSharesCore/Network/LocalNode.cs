@@ -299,7 +299,6 @@ namespace AntShares.Network
 
         public bool Relay(Inventory inventory)
         {
-            if (Blockchain.Default == null) return false;
             if (connectedPeers.Count == 0) return false;
             lock (KnownHashes)
             {
@@ -307,6 +306,7 @@ namespace AntShares.Network
             }
             if (inventory is Block)
             {
+                if (Blockchain.Default == null) return false;
                 Block block = (Block)inventory;
                 if (Blockchain.Default.ContainsBlock(block.Hash)) return false;
                 if (!Blockchain.Default.AddBlock(block)) return false;
