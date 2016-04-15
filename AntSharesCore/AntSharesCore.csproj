@@ -218,7 +218,6 @@
     <Compile Include="Network\RemoteNode.cs" />
     <Compile Include="Network\UPnP.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Threading\Helper.cs" />
     <Compile Include="UInt160.cs" />
     <Compile Include="UInt256.cs" />
     <Compile Include="UIntBase.cs" />
