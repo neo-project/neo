@@ -12,6 +12,7 @@ using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text;
 using System.Windows.Forms;
 
 namespace AntShares.UI
@@ -142,7 +143,9 @@ namespace AntShares.UI
             {
                 ListViewItem.ListViewSubItem subitem = item.SubItems["issuer"];
                 RegisterTransaction asset = (RegisterTransaction)item.Tag;
-                using (CertificateQueryResult result = CertificateQueryService.Query(asset.Issuer))
+                byte[] cert_url_data = asset.Attributes.FirstOrDefault(p => p.Usage == TransactionAttributeUsage.CertUrl)?.Data;
+                string cert_url = cert_url_data == null ? null : Encoding.UTF8.GetString(cert_url_data);
+                using (CertificateQueryResult result = CertificateQueryService.Query(asset.Issuer, cert_url))
                 {
                     switch (result.Type)
                     {

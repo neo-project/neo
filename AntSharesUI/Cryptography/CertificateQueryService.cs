@@ -2,6 +2,7 @@
 using AntShares.Cryptography.ECC;
 using AntShares.Properties;
 using System.IO;
+using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
@@ -9,15 +10,22 @@ namespace AntShares.Cryptography
 {
     internal static class CertificateQueryService
     {
-        public static CertificateQueryResult Query(ECPoint pubkey)
+        public static CertificateQueryResult Query(ECPoint pubkey, string url)
         {
             if (pubkey.Equals(Blockchain.AntShare.Issuer) || pubkey.Equals(Blockchain.AntCoin.Issuer))
                 return new CertificateQueryResult { Type = CertificateQueryResultType.System };
             Directory.CreateDirectory(Settings.Default.CertCachePath);
             string path = Path.Combine(Settings.Default.CertCachePath, $"{pubkey}.cer");
-            if (!File.Exists(path))
+            if (!File.Exists(path) && !string.IsNullOrEmpty(url))
             {
-                //TODO: 本地缓存中找不到证书的情况下，去公共服务器上查询
+                using (WebClient web = new WebClient())
+                {
+                    try
+                    {
+                        web.DownloadFile(url, path);
+                    }
+                    catch (WebException) { }
+                }
             }
             if (!File.Exists(path))
                 return new CertificateQueryResult { Type = CertificateQueryResultType.Missing };

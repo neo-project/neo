@@ -3,6 +3,7 @@
     public enum TransactionAttributeUsage : byte
     {
         ContractHash = 0x00,
+        CertUrl = 0x01,
 
         ECDH02 = 0x02,
         ECDH03 = 0x03,
