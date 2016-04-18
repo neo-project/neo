@@ -20,7 +20,9 @@ namespace AntShares.Core
                 Data = new[] { (byte)Usage }.Concat(reader.ReadBytes(32)).ToArray();
             else if (Usage == TransactionAttributeUsage.Script)
                 Data = reader.ReadVarBytes(ushort.MaxValue);
-            else if (Usage >= TransactionAttributeUsage.Remark)
+            else if (Usage == TransactionAttributeUsage.CertUrl || Usage == TransactionAttributeUsage.DescriptionUrl)
+                Data = reader.ReadVarBytes(byte.MaxValue);
+            else if (Usage == TransactionAttributeUsage.Description || Usage >= TransactionAttributeUsage.Remark)
                 Data = reader.ReadVarBytes(byte.MaxValue);
             else
                 throw new FormatException();
@@ -31,7 +33,9 @@ namespace AntShares.Core
             writer.Write((byte)Usage);
             if (Usage == TransactionAttributeUsage.Script)
                 writer.WriteVarInt(Data.Length);
-            else if (Usage >= TransactionAttributeUsage.Remark)
+            else if (Usage == TransactionAttributeUsage.CertUrl || Usage == TransactionAttributeUsage.DescriptionUrl)
+                writer.Write((byte)Data.Length);
+            else if (Usage == TransactionAttributeUsage.Description || Usage >= TransactionAttributeUsage.Remark)
                 writer.Write((byte)Data.Length);
             if (Usage == TransactionAttributeUsage.ECDH02 || Usage == TransactionAttributeUsage.ECDH03)
                 writer.Write(Data, 1, 32);

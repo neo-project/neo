@@ -16,8 +16,10 @@ namespace AntShares.Cryptography
                 return new CertificateQueryResult { Type = CertificateQueryResultType.System };
             Directory.CreateDirectory(Settings.Default.CertCachePath);
             string path = Path.Combine(Settings.Default.CertCachePath, $"{pubkey}.cer");
-            if (!File.Exists(path) && !string.IsNullOrEmpty(url))
+            if (!File.Exists(path))
             {
+                if (string.IsNullOrEmpty(url))
+                    url = $"http://cert.onchain.com/antshares/{pubkey}.cer";
                 using (WebClient web = new WebClient())
                 {
                     try

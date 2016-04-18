@@ -165,7 +165,7 @@ namespace AntShares.UI
                             subitem.Text = $"[证书已过期]{result.Certificate.Subject}[{asset.Issuer}]";
                             break;
                         case CertificateQueryResultType.Good:
-                            subitem.ForeColor = Color.Green;
+                            subitem.ForeColor = Color.Black;
                             subitem.Text = $"{result.Certificate.Subject}[{asset.Issuer}]";
                             break;
                     }

@@ -109,7 +109,7 @@ namespace AntShares.Core
         {
             DeserializeExclusiveData(reader);
             Attributes = reader.ReadSerializableArray<TransactionAttribute>();
-            if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.Script) > 1)
+            if (Attributes.Select(p => p.Usage).Distinct().Count() != Attributes.Length)
                 throw new FormatException();
             Inputs = reader.ReadSerializableArray<TransactionInput>();
             TransactionInput[] inputs = GetAllInputs().ToArray();
