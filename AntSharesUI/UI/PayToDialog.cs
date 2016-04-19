@@ -1,43 +1,59 @@
-﻿using AntShares.Wallets;
+﻿using AntShares.Core;
+using AntShares.Wallets;
 using System;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace AntShares.UI
 {
     internal partial class PayToDialog : Form
     {
-        public UInt160 Account
-        {
-            get
-            {
-                return Wallet.ToScriptHash(textBox1.Text);
-            }
-            set
-            {
-                textBox1.Text = Wallet.ToAddress(value);
-            }
-        }
+        public string AssetName => (comboBox1.SelectedItem as RegisterTransaction).GetName();
 
-        public Fixed8 Amount
-        {
-            get
-            {
-                return Fixed8.Parse(textBox2.Text);
-            }
-            set
-            {
-                textBox2.Text = value.ToString();
-            }
-        }
-
-        public PayToDialog()
+        public PayToDialog(RegisterTransaction asset = null)
         {
             InitializeComponent();
+            if (asset == null)
+            {
+                foreach (UInt256 asset_id in Program.CurrentWallet.FindUnspentCoins().Select(p => p.AssetId).Distinct())
+                {
+                    comboBox1.Items.Add(Blockchain.Default.GetTransaction(asset_id));
+                }
+            }
+            else
+            {
+                comboBox1.Items.Add(asset);
+                comboBox1.SelectedIndex = 0;
+            }
+        }
+
+        public TransactionOutput GetOutput()
+        {
+            return new TransactionOutput
+            {
+                AssetId = (comboBox1.SelectedItem as RegisterTransaction).Hash,
+                Value = Fixed8.Parse(textBox2.Text),
+                ScriptHash = Wallet.ToScriptHash(textBox1.Text)
+            };
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            RegisterTransaction tx = comboBox1.SelectedItem as RegisterTransaction;
+            if (tx == null)
+            {
+                textBox3.Text = "";
+            }
+            else
+            {
+                textBox3.Text = Program.CurrentWallet.GetAvailable(tx.Hash).ToString();
+            }
+            textBox_TextChanged(this, EventArgs.Empty);
         }
 
         private void textBox_TextChanged(object sender, EventArgs e)
         {
-            if (textBox1.TextLength == 0 || textBox2.TextLength == 0)
+            if (comboBox1.SelectedIndex < 0 || textBox1.TextLength == 0 || textBox2.TextLength == 0)
             {
                 button1.Enabled = false;
                 return;

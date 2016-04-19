@@ -23,16 +23,15 @@ namespace AntShares.UI
 
         public IssueTransaction GetTransaction()
         {
-            RegisterTransaction asset = comboBox1.SelectedItem as RegisterTransaction;
-            if (asset == null) return null;
+            if (txOutListBox1.Asset == null) return null;
             Random rand = new Random();
             return Program.CurrentWallet.MakeTransaction(new IssueTransaction
             {
                 Nonce = (uint)rand.Next(),
-                Outputs = txOutListBox1.Items.GroupBy(p => p.Account).Select(g => new TransactionOutput
+                Outputs = txOutListBox1.Items.GroupBy(p => p.Output.ScriptHash).Select(g => new TransactionOutput
                 {
-                    AssetId = asset.Hash,
-                    Value = g.Sum(p => p.Amount),
+                    AssetId = txOutListBox1.Asset.Hash,
+                    Value = g.Sum(p => p.Output.Value),
                     ScriptHash = g.Key
                 }).ToArray()
             }, Fixed8.Zero);
@@ -40,8 +39,8 @@ namespace AntShares.UI
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            RegisterTransaction asset = comboBox1.SelectedItem as RegisterTransaction;
-            if (asset == null)
+            txOutListBox1.Asset = comboBox1.SelectedItem as RegisterTransaction;
+            if (txOutListBox1.Asset == null)
             {
                 textBox1.Text = "";
                 textBox2.Text = "";
@@ -51,10 +50,10 @@ namespace AntShares.UI
             }
             else
             {
-                textBox1.Text = asset.Issuer.ToString();
-                textBox2.Text = Wallet.ToAddress(asset.Admin);
-                textBox3.Text = asset.Amount == -Fixed8.Satoshi ? "+\u221e" : asset.Amount.ToString();
-                textBox4.Text = Blockchain.Default.GetQuantityIssued(asset.Hash).ToString();
+                textBox1.Text = txOutListBox1.Asset.Issuer.ToString();
+                textBox2.Text = Wallet.ToAddress(txOutListBox1.Asset.Admin);
+                textBox3.Text = txOutListBox1.Asset.Amount == -Fixed8.Satoshi ? "+\u221e" : txOutListBox1.Asset.Amount.ToString();
+                textBox4.Text = Blockchain.Default.GetQuantityIssued(txOutListBox1.Asset.Hash).ToString();
                 groupBox3.Enabled = true;
             }
             txOutListBox1.Clear();

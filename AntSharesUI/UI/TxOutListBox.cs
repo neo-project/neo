@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AntShares.Core;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -9,6 +10,7 @@ namespace AntShares.UI
     {
         public event EventHandler ItemsChanged;
 
+        public RegisterTransaction Asset { get; set; }
         public int ItemCount => listBox1.Items.Count;
         public IEnumerable<TxOutListBoxItem> Items => listBox1.Items.OfType<TxOutListBoxItem>();
 
@@ -30,13 +32,13 @@ namespace AntShares.UI
 
         private void button1_Click(object sender, EventArgs e)
         {
-            using (PayToDialog dialog = new PayToDialog())
+            using (PayToDialog dialog = new PayToDialog(Asset))
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
                 listBox1.Items.Add(new TxOutListBoxItem
                 {
-                    Account = dialog.Account,
-                    Amount = dialog.Amount
+                    Output = dialog.GetOutput(),
+                    AssetName = dialog.AssetName
                 });
                 if (ItemsChanged != null) ItemsChanged(this, EventArgs.Empty);
             }
