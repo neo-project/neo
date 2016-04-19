@@ -10,7 +10,22 @@ namespace AntShares
         {
 #if DEBUG
             Exception ex = (Exception)e.ExceptionObject;
-            File.WriteAllText("error.log", $"{ex.Message}\r\n{ex.StackTrace}");
+            using (FileStream fs = new FileStream("error.log", FileMode.Create, FileAccess.Write, FileShare.None))
+            using (StreamWriter w = new StreamWriter(fs))
+            {
+                w.WriteLine(ex.Message);
+                w.WriteLine(ex.StackTrace);
+                AggregateException ex2 = ex as AggregateException;
+                if (ex2 != null)
+                {
+                    foreach (Exception inner in ex2.InnerExceptions)
+                    {
+                        w.WriteLine();
+                        w.WriteLine(inner.Message);
+                        w.WriteLine(inner.StackTrace);
+                    }
+                }
+            }
 #endif
         }
 
