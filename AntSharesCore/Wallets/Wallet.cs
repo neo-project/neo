@@ -32,6 +32,7 @@ namespace AntShares.Wallets
         private bool isrunning = true;
 
         protected string DbPath => path;
+        protected object SyncRoot { get; } = new object();
         protected uint WalletHeight => current_height;
 
         private Wallet(string path, byte[] passwordKey, bool create)
@@ -528,8 +529,11 @@ namespace AntShares.Wallets
             {
                 while (current_height <= Blockchain.Default?.Height && isrunning)
                 {
-                    Block block = Blockchain.Default.GetBlock(current_height);
-                    if (block != null) ProcessNewBlock(block);
+                    lock (SyncRoot)
+                    {
+                        Block block = Blockchain.Default.GetBlock(current_height);
+                        if (block != null) ProcessNewBlock(block);
+                    }
                 }
                 for (int i = 0; i < 20 && isrunning; i++)
                 {
@@ -594,16 +598,18 @@ namespace AntShares.Wallets
                     }
                 }
             if (changeset.Length > 0)
-                if (BalanceChanged != null) BalanceChanged(this, EventArgs.Empty);
+                BalanceChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        public void Rebuild()
+        public virtual void Rebuild()
         {
-            //TODO: 重建钱包数据库中的交易数据
-            //1. 清空所有交易数据；
-            //2. 穷举所有的Unspent，找出钱包账户所持有的那部分；
-            //3. 写入数据库；
-            throw new NotImplementedException();
+            lock (SyncRoot)
+                lock (coins)
+                {
+                    coins.Clear();
+                    coins.Commit();
+                    current_height = 0;
+                }
         }
 
         protected abstract void SaveStoredData(string name, byte[] value);

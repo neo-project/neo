@@ -10,7 +10,7 @@ namespace AntShares.UI
     {
         public string AssetName => (comboBox1.SelectedItem as RegisterTransaction).GetName();
 
-        public PayToDialog(RegisterTransaction asset = null)
+        public PayToDialog(RegisterTransaction asset = null, UInt160 scriptHash = null)
         {
             InitializeComponent();
             if (asset == null)
@@ -24,6 +24,12 @@ namespace AntShares.UI
             {
                 comboBox1.Items.Add(asset);
                 comboBox1.SelectedIndex = 0;
+                comboBox1.Enabled = false;
+            }
+            if (scriptHash != null)
+            {
+                textBox1.Text = Wallet.ToAddress(scriptHash);
+                textBox1.ReadOnly = true;
             }
         }
 

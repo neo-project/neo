@@ -37,10 +37,12 @@
             this.打开钱包数据库OToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.修改密码CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.重建钱包数据库RToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.退出XToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.交易TToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.转账TToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.交易TToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.签名SToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.高级AToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -86,6 +88,7 @@
             this.columnHeader6 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.tabPage3 = new System.Windows.Forms.TabPage();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -115,6 +118,7 @@
             this.打开钱包数据库OToolStripMenuItem,
             this.toolStripSeparator1,
             this.修改密码CToolStripMenuItem,
+            this.重建钱包数据库RToolStripMenuItem,
             this.toolStripSeparator2,
             this.退出XToolStripMenuItem});
             this.钱包WToolStripMenuItem.Name = "钱包WToolStripMenuItem";
@@ -148,6 +152,14 @@
             this.修改密码CToolStripMenuItem.Text = "修改密码(&C)...";
             this.修改密码CToolStripMenuItem.Click += new System.EventHandler(this.修改密码CToolStripMenuItem_Click);
             // 
+            // 重建钱包数据库RToolStripMenuItem
+            // 
+            this.重建钱包数据库RToolStripMenuItem.Enabled = false;
+            this.重建钱包数据库RToolStripMenuItem.Name = "重建钱包数据库RToolStripMenuItem";
+            this.重建钱包数据库RToolStripMenuItem.Size = new System.Drawing.Size(187, 22);
+            this.重建钱包数据库RToolStripMenuItem.Text = "重建钱包数据库(&R)";
+            this.重建钱包数据库RToolStripMenuItem.Click += new System.EventHandler(this.重建钱包数据库RToolStripMenuItem_Click);
+            // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
@@ -164,6 +176,7 @@
             // 
             this.交易TToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.转账TToolStripMenuItem,
+            this.交易TToolStripMenuItem1,
             this.toolStripSeparator5,
             this.签名SToolStripMenuItem});
             this.交易TToolStripMenuItem.Enabled = false;
@@ -175,8 +188,15 @@
             // 
             this.转账TToolStripMenuItem.Name = "转账TToolStripMenuItem";
             this.转账TToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
-            this.转账TToolStripMenuItem.Text = "转账(&T)...";
+            this.转账TToolStripMenuItem.Text = "转账(&S)...";
             this.转账TToolStripMenuItem.Click += new System.EventHandler(this.转账TToolStripMenuItem_Click);
+            // 
+            // 交易TToolStripMenuItem1
+            // 
+            this.交易TToolStripMenuItem1.Name = "交易TToolStripMenuItem1";
+            this.交易TToolStripMenuItem1.Size = new System.Drawing.Size(124, 22);
+            this.交易TToolStripMenuItem1.Text = "交易(&T)...";
+            this.交易TToolStripMenuItem1.Click += new System.EventHandler(this.交易TToolStripMenuItem1_Click);
             // 
             // toolStripSeparator5
             // 
@@ -470,6 +490,7 @@
             // 
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
+            this.tabControl1.Controls.Add(this.tabPage3);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl1.Location = new System.Drawing.Point(0, 27);
             this.tabControl1.Name = "tabControl1";
@@ -545,6 +566,16 @@
             // 
             this.columnHeader5.Text = "发行者";
             this.columnHeader5.Width = 296;
+            // 
+            // tabPage3
+            // 
+            this.tabPage3.Location = new System.Drawing.Point(4, 26);
+            this.tabPage3.Name = "tabPage3";
+            this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage3.Size = new System.Drawing.Size(748, 463);
+            this.tabPage3.TabIndex = 2;
+            this.tabPage3.Text = "交易记录";
+            this.tabPage3.UseVisualStyleBackColor = true;
             // 
             // MainForm
             // 
@@ -632,6 +663,9 @@
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
         private System.Windows.Forms.ToolStripMenuItem 选举EToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 投票VToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem 重建钱包数据库RToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem 交易TToolStripMenuItem1;
+        private System.Windows.Forms.TabPage tabPage3;
     }
 }
 

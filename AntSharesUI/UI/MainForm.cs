@@ -48,6 +48,7 @@ namespace AntShares.UI
                 Program.CurrentWallet.BalanceChanged += CurrentWallet_BalanceChanged;
             }
             修改密码CToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            重建钱包数据库RToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             交易TToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             高级AToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             创建新地址NToolStripMenuItem.Enabled = Program.CurrentWallet != null;
@@ -216,6 +217,11 @@ namespace AntShares.UI
             //弹出对话框，验证原密码，保存新密码
         }
 
+        private void 重建钱包数据库RToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Program.CurrentWallet.Rebuild();
+        }
+
         private void 退出XToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Close();
@@ -227,6 +233,14 @@ namespace AntShares.UI
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
                 Helper.SignAndShowInformation(dialog.GetTransaction());
+            }
+        }
+
+        private void 交易TToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            using (TradeForm form = new TradeForm())
+            {
+                form.ShowDialog();
             }
         }
 

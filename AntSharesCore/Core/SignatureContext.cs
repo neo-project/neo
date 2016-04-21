@@ -69,31 +69,8 @@ namespace AntShares.Core
             }
         }
 
-        public Script[] GetScripts()
+        public static SignatureContext FromJson(JObject json)
         {
-            if (!Completed) throw new InvalidOperationException();
-            Script[] scripts = new Script[signatures.Length];
-            for (int i = 0; i < scripts.Length; i++)
-            {
-                using (ScriptBuilder sb = new ScriptBuilder())
-                {
-                    foreach (byte[] signature in signatures[i].OrderBy(p => p.Key).Select(p => p.Value))
-                    {
-                        sb.Push(signature);
-                    }
-                    scripts[i] = new Script
-                    {
-                        StackScript = sb.ToArray(),
-                        RedeemScript = redeemScripts[i]
-                    };
-                }
-            }
-            return scripts;
-        }
-
-        public static SignatureContext Parse(string value)
-        {
-            JObject json = JObject.Parse(value);
             string typename = string.Format("{0}.{1}", typeof(SignatureContext).Namespace, json["type"].AsString());
             ISignable signable = Assembly.GetExecutingAssembly().CreateInstance(typename) as ISignable;
             using (MemoryStream ms = new MemoryStream(json["hex"].AsString().HexToBytes(), false))
@@ -122,7 +99,34 @@ namespace AntShares.Core
             return context;
         }
 
-        public override string ToString()
+        public Script[] GetScripts()
+        {
+            if (!Completed) throw new InvalidOperationException();
+            Script[] scripts = new Script[signatures.Length];
+            for (int i = 0; i < scripts.Length; i++)
+            {
+                using (ScriptBuilder sb = new ScriptBuilder())
+                {
+                    foreach (byte[] signature in signatures[i].OrderBy(p => p.Key).Select(p => p.Value))
+                    {
+                        sb.Push(signature);
+                    }
+                    scripts[i] = new Script
+                    {
+                        StackScript = sb.ToArray(),
+                        RedeemScript = redeemScripts[i]
+                    };
+                }
+            }
+            return scripts;
+        }
+
+        public static SignatureContext Parse(string value)
+        {
+            return FromJson(JObject.Parse(value));
+        }
+
+        public JObject ToJson()
         {
             JObject json = new JObject();
             json["type"] = Signable.GetType().Name;
@@ -157,7 +161,12 @@ namespace AntShares.Core
                 }
             }
             json["scripts"] = scripts;
-            return json.ToString();
+            return json;
+        }
+
+        public override string ToString()
+        {
+            return ToJson().ToString();
         }
     }
 }

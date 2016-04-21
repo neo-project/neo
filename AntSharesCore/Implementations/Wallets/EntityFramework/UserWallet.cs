@@ -1,6 +1,7 @@
 ﻿using AntShares.Core;
 using AntShares.IO;
 using AntShares.Wallets;
+using Microsoft.Data.Entity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -243,6 +244,21 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         public static UserWallet Open(string path, SecureString password)
         {
             return new UserWallet(path, password, false);
+        }
+
+        public override void Rebuild()
+        {
+            lock (SyncRoot)
+            {
+                base.Rebuild();
+                using (WalletDataContext ctx = new WalletDataContext(DbPath))
+                {
+                    ctx.Keys.First(p => p.Name == "Height").Value = BitConverter.GetBytes(0);
+                    ctx.Database.ExecuteSqlCommand($"DELETE FROM [{nameof(Transaction)}]");
+                    ctx.Database.ExecuteSqlCommand($"DELETE FROM [{nameof(Coin)}]");
+                    ctx.SaveChanges();
+                }
+            }
         }
 
         protected override void SaveStoredData(string name, byte[] value)

@@ -54,7 +54,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.comboBox1.Location = new System.Drawing.Point(6, 22);
             this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(392, 25);
+            this.comboBox1.Size = new System.Drawing.Size(491, 25);
             this.comboBox1.TabIndex = 1;
             this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
             // 
@@ -74,7 +74,7 @@
             this.textBox1.Location = new System.Drawing.Point(59, 22);
             this.textBox1.Name = "textBox1";
             this.textBox1.ReadOnly = true;
-            this.textBox1.Size = new System.Drawing.Size(339, 23);
+            this.textBox1.Size = new System.Drawing.Size(438, 23);
             this.textBox1.TabIndex = 3;
             // 
             // label3
@@ -93,7 +93,7 @@
             this.textBox2.Location = new System.Drawing.Point(59, 51);
             this.textBox2.Name = "textBox2";
             this.textBox2.ReadOnly = true;
-            this.textBox2.Size = new System.Drawing.Size(339, 23);
+            this.textBox2.Size = new System.Drawing.Size(438, 23);
             this.textBox2.TabIndex = 5;
             // 
             // textBox3
@@ -137,7 +137,7 @@
             this.groupBox1.Controls.Add(this.comboBox1);
             this.groupBox1.Location = new System.Drawing.Point(12, 12);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(404, 57);
+            this.groupBox1.Size = new System.Drawing.Size(503, 57);
             this.groupBox1.TabIndex = 10;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "资产名称";
@@ -156,7 +156,7 @@
             this.groupBox2.Controls.Add(this.textBox4);
             this.groupBox2.Location = new System.Drawing.Point(12, 75);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(404, 142);
+            this.groupBox2.Size = new System.Drawing.Size(503, 142);
             this.groupBox2.TabIndex = 11;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "资产详情";
@@ -170,7 +170,7 @@
             this.groupBox3.Enabled = false;
             this.groupBox3.Location = new System.Drawing.Point(12, 223);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(404, 189);
+            this.groupBox3.Size = new System.Drawing.Size(503, 189);
             this.groupBox3.TabIndex = 12;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "分发";
@@ -180,11 +180,14 @@
             this.txOutListBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.txOutListBox1.Asset = null;
             this.txOutListBox1.Font = new System.Drawing.Font("微软雅黑", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.txOutListBox1.Location = new System.Drawing.Point(6, 23);
             this.txOutListBox1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.txOutListBox1.Name = "txOutListBox1";
-            this.txOutListBox1.Size = new System.Drawing.Size(392, 159);
+            this.txOutListBox1.ReadOnly = false;
+            this.txOutListBox1.ScriptHash = null;
+            this.txOutListBox1.Size = new System.Drawing.Size(491, 159);
             this.txOutListBox1.TabIndex = 3;
             this.txOutListBox1.ItemsChanged += new System.EventHandler(this.txOutListBox1_ItemsChanged);
             // 
@@ -193,7 +196,7 @@
             this.button3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.button3.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.button3.Enabled = false;
-            this.button3.Location = new System.Drawing.Point(260, 418);
+            this.button3.Location = new System.Drawing.Point(359, 418);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(75, 23);
             this.button3.TabIndex = 13;
@@ -204,7 +207,7 @@
             // 
             this.button4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.button4.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.button4.Location = new System.Drawing.Point(341, 418);
+            this.button4.Location = new System.Drawing.Point(440, 418);
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(75, 23);
             this.button4.TabIndex = 14;
@@ -217,7 +220,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.button4;
-            this.ClientSize = new System.Drawing.Size(428, 453);
+            this.ClientSize = new System.Drawing.Size(527, 453);
             this.Controls.Add(this.button4);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.groupBox3);

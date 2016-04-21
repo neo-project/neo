@@ -106,6 +106,18 @@
     <Compile Include="UI\IssueDialog.Designer.cs">
       <DependentUpon>IssueDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\TradeForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\TradeForm.Designer.cs">
+      <DependentUpon>TradeForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\TradeVerificationDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\TradeVerificationDialog.Designer.cs">
+      <DependentUpon>TradeVerificationDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\TxOutListBox.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -232,6 +244,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\OpenWalletDialog.resx">
       <DependentUpon>OpenWalletDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\TradeForm.resx">
+      <DependentUpon>TradeForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\TradeVerificationDialog.resx">
+      <DependentUpon>TradeVerificationDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\TxOutListBox.resx">
       <DependentUpon>TxOutListBox.cs</DependentUpon>
