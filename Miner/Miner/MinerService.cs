@@ -41,6 +41,7 @@ namespace AntShares.Miner
                 context.State |= ConsensusState.SignatureSent;
                 context.Signatures[context.MinerIndex] = context.MakeHeader().Sign(wallet.GetAccount(context.Miners[context.MinerIndex]));
                 SignAndRelay(context.MakePerpareResponse(context.Signatures[context.MinerIndex]));
+                CheckSignatures();
             }
             return true;
         }
@@ -63,7 +64,7 @@ namespace AntShares.Miner
 
         private void CheckSignatures()
         {
-            if (context.Signatures.Count(p => p != null) >= context.M)
+            if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 Log($"{nameof(CheckSignatures)} {context.Signatures.Count(p => p != null)}/{context.M}");
                 Contract contract = MultiSigContract.Create(context.Miners[context.MinerIndex].EncodePoint(true).ToScriptHash(), context.M, context.Miners);
