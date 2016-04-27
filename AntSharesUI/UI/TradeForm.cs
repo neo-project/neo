@@ -147,6 +147,7 @@ namespace AntShares.UI
             {
                 context.Signable.Scripts = context.GetScripts();
                 ContractTransaction tx = (ContractTransaction)context.Signable;
+                Program.CurrentWallet.SendTransaction(tx);
                 Program.LocalNode.Relay(tx);
                 InformationBox.Show(tx.Hash.ToString(), "交易已发送，这是交易编号(TXID)：", "交易成功");
             }

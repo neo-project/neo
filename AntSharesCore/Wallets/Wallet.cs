@@ -521,7 +521,8 @@ namespace AntShares.Wallets
             return tx;
         }
 
-        protected abstract void OnProcessNewBlock(IEnumerable<Coin> added, IEnumerable<Coin> changed, IEnumerable<Coin> deleted);
+        protected abstract void OnProcessNewBlock(Block block, IEnumerable<Transaction> transactions, IEnumerable<Coin> added, IEnumerable<Coin> changed, IEnumerable<Coin> deleted);
+        protected abstract void OnSendTransaction(Transaction tx, IEnumerable<Coin> added, IEnumerable<Coin> changed);
 
         private void ProcessBlocks()
         {
@@ -548,6 +549,7 @@ namespace AntShares.Wallets
             lock (contracts)
                 lock (coins)
                 {
+                    HashSet<Transaction> transactions = new HashSet<Transaction>();
                     foreach (Transaction tx in block.Transactions)
                     {
                         for (ushort index = 0; index < tx.Outputs.Length; index++)
@@ -571,29 +573,40 @@ namespace AntShares.Wallets
                                         ScriptHash = output.ScriptHash,
                                         State = CoinState.Unspent
                                     });
+                                transactions.Add(tx);
                             }
                         }
                     }
-                    foreach (TransactionInput input in block.Transactions.SelectMany(p => p.GetAllInputs()))
+                    foreach (Transaction tx in block.Transactions)
                     {
-                        if (coins.Contains(input))
+                        foreach (TransactionInput input in tx.GetAllInputs())
                         {
-                            if (coins[input].AssetId == Blockchain.AntShare.Hash)
-                                coins[input].State = CoinState.Spent;
-                            else
-                                coins.Remove(input);
+                            if (coins.Contains(input))
+                            {
+                                if (coins[input].AssetId == Blockchain.AntShare.Hash)
+                                    coins[input].State = CoinState.Spent;
+                                else
+                                    coins.Remove(input);
+                                transactions.Add(tx);
+                            }
                         }
                     }
-                    foreach (TransactionInput claim in block.Transactions.OfType<ClaimTransaction>().SelectMany(p => p.Claims))
+                    foreach (ClaimTransaction tx in block.Transactions.OfType<ClaimTransaction>())
                     {
-                        if (coins.Contains(claim))
-                            coins.Remove(claim);
+                        foreach (TransactionInput claim in tx.Claims)
+                        {
+                            if (coins.Contains(claim))
+                            {
+                                coins.Remove(claim);
+                                transactions.Add(tx);
+                            }
+                        }
                     }
                     current_height++;
                     changeset = coins.GetChangeSet();
                     if (changeset.Length > 0)
                     {
-                        OnProcessNewBlock(changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Added), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Changed), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Deleted));
+                        OnProcessNewBlock(block, transactions, changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Added), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Changed), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Deleted));
                         coins.Commit();
                     }
                 }
@@ -613,6 +626,44 @@ namespace AntShares.Wallets
         }
 
         protected abstract void SaveStoredData(string name, byte[] value);
+
+        public bool SendTransaction(Transaction tx)
+        {
+            Coin[] changeset;
+            lock (contracts)
+                lock (coins)
+                {
+                    if (tx.GetAllInputs().Any(p => !coins.Contains(p) || coins[p].State != CoinState.Unspent))
+                        return false;
+                    foreach (TransactionInput input in tx.GetAllInputs())
+                        coins[input].State = CoinState.Spending;
+                    for (ushort i = 0; i < tx.Outputs.Length; i++)
+                    {
+                        if (contracts.ContainsKey(tx.Outputs[i].ScriptHash))
+                            coins.Add(new Coin
+                            {
+                                Input = new TransactionInput
+                                {
+                                    PrevHash = tx.Hash,
+                                    PrevIndex = i
+                                },
+                                AssetId = tx.Outputs[i].AssetId,
+                                Value = tx.Outputs[i].Value,
+                                ScriptHash = tx.Outputs[i].ScriptHash,
+                                State = CoinState.Unconfirmed
+                            });
+                    }
+                    changeset = coins.GetChangeSet();
+                    if (changeset.Length > 0)
+                    {
+                        OnSendTransaction(tx, changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Added), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Changed));
+                        coins.Commit();
+                    }
+                }
+            if (changeset.Length > 0)
+                BalanceChanged?.Invoke(this, EventArgs.Empty);
+            return true;
+        }
 
         public bool Sign(SignatureContext context)
         {

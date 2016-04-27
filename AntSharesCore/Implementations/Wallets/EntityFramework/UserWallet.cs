@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security;
+using CoreTransaction = AntShares.Core.Transaction;
 using WalletAccount = AntShares.Wallets.Account;
 using WalletCoin = AntShares.Wallets.Coin;
 using WalletContract = AntShares.Wallets.Contract;
@@ -177,6 +178,31 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             }
         }
 
+        private void OnCoinsChanged(WalletDataContext ctx, IEnumerable<WalletCoin> added, IEnumerable<WalletCoin> changed, IEnumerable<WalletCoin> deleted)
+        {
+            foreach (WalletCoin coin in added)
+            {
+                ctx.Coins.Add(new Coin
+                {
+                    TxId = coin.Input.PrevHash.ToArray(),
+                    Index = coin.Input.PrevIndex,
+                    AssetId = coin.AssetId.ToArray(),
+                    Value = coin.Value.GetData(),
+                    ScriptHash = coin.ScriptHash.ToArray(),
+                    State = CoinState.Unspent
+                });
+            }
+            foreach (WalletCoin coin in changed)
+            {
+                ctx.Coins.First(p => p.TxId.SequenceEqual(coin.Input.PrevHash.ToArray()) && p.Index == coin.Input.PrevIndex).State = coin.State;
+            }
+            foreach (WalletCoin coin in deleted)
+            {
+                Coin unspent_coin = ctx.Coins.FirstOrDefault(p => p.TxId.SequenceEqual(coin.Input.PrevHash.ToArray()) && p.Index == coin.Input.PrevIndex);
+                ctx.Coins.Remove(unspent_coin);
+            }
+        }
+
         private void OnCreateAccount(WalletAccount account)
         {
             byte[] decryptedPrivateKey = new byte[96];
@@ -206,32 +232,49 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             }
         }
 
-        protected override void OnProcessNewBlock(IEnumerable<WalletCoin> added, IEnumerable<WalletCoin> changed, IEnumerable<WalletCoin> deleted)
+        protected override void OnProcessNewBlock(Block block, IEnumerable<CoreTransaction> transactions, IEnumerable<WalletCoin> added, IEnumerable<WalletCoin> changed, IEnumerable<WalletCoin> deleted)
         {
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
-                foreach (WalletCoin coin in added)
+                foreach (Transaction db_tx in ctx.Transactions.Where(p => !p.Height.HasValue))
+                    if (block.Transactions.Any(p => p.Hash == new UInt256(db_tx.Hash)))
+                        db_tx.Height = block.Height;
+                foreach (CoreTransaction tx in transactions)
                 {
-                    ctx.Coins.Add(new Coin
+                    Transaction db_tx = ctx.Transactions.FirstOrDefault(p => p.Hash.SequenceEqual(tx.Hash.ToArray()));
+                    if (db_tx == null)
                     {
-                        TxId = coin.Input.PrevHash.ToArray(),
-                        Index = coin.Input.PrevIndex,
-                        AssetId = coin.AssetId.ToArray(),
-                        Value = coin.Value.GetData(),
-                        ScriptHash = coin.ScriptHash.ToArray(),
-                        State = CoinState.Unspent
-                    });
+                        ctx.Transactions.Add(new Transaction
+                        {
+                            Hash = tx.Hash.ToArray(),
+                            Type = tx.Type,
+                            RawData = tx.ToArray(),
+                            Height = block.Height
+                        });
+                    }
+                    else
+                    {
+                        db_tx.Height = block.Height;
+                    }
                 }
-                foreach (WalletCoin coin in changed)
-                {
-                    ctx.Coins.First(p => p.TxId.SequenceEqual(coin.Input.PrevHash.ToArray()) && p.Index == coin.Input.PrevIndex).State = coin.State;
-                }
-                foreach (WalletCoin coin in deleted)
-                {
-                    Coin unspent_coin = ctx.Coins.FirstOrDefault(p => p.TxId.SequenceEqual(coin.Input.PrevHash.ToArray()) && p.Index == coin.Input.PrevIndex);
-                    ctx.Coins.Remove(unspent_coin);
-                }
+                OnCoinsChanged(ctx, added, changed, deleted);
                 ctx.Keys.First(p => p.Name == "Height").Value = BitConverter.GetBytes(WalletHeight);
+                ctx.SaveChanges();
+            }
+        }
+
+        protected override void OnSendTransaction(CoreTransaction tx, IEnumerable<WalletCoin> added, IEnumerable<WalletCoin> changed)
+        {
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
+            {
+                ctx.Transactions.Add(new Transaction
+                {
+                    Hash = tx.Hash.ToArray(),
+                    Type = tx.Type,
+                    RawData = tx.ToArray(),
+                    Height = null
+                });
+                OnCoinsChanged(ctx, added, changed, Enumerable.Empty<WalletCoin>());
                 ctx.SaveChanges();
             }
         }
