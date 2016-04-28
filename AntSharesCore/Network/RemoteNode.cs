@@ -81,10 +81,7 @@ namespace AntShares.Network
             if (Interlocked.Exchange(ref disposed, 1) == 0)
             {
                 tcp.Close();
-                if (Disconnected != null)
-                {
-                    Disconnected(this, error);
-                }
+                Disconnected?.Invoke(this, error);
                 lock (missions_global)
                 {
                     foreach (UInt256 hash in missions)
@@ -117,10 +114,7 @@ namespace AntShares.Network
         private void OnAddrMessageReceived(AddrPayload payload)
         {
             IPEndPoint[] peers = payload.AddressList.Select(p => p.EndPoint).Where(p => p.Port != localNode.Port || !LocalNode.LocalAddresses.Contains(p.Address)).ToArray();
-            if (PeersReceived != null && peers.Length > 0)
-            {
-                PeersReceived(this, peers);
-            }
+            if (peers.Length > 0) PeersReceived?.Invoke(this, peers);
         }
 
         private void OnConnected()
@@ -225,7 +219,7 @@ namespace AntShares.Network
                 missions_global.Remove(inventory.Hash);
             }
             missions.Remove(inventory.Hash);
-            if (InventoryReceived != null) InventoryReceived(this, inventory);
+            InventoryReceived?.Invoke(this, inventory);
         }
 
         private void OnInvMessageReceived(InvPayload payload)
@@ -303,22 +297,26 @@ namespace AntShares.Network
         private Message ReceiveMessage(TimeSpan timeout)
         {
             if (timeout == Timeout.InfiniteTimeSpan) timeout = TimeSpan.Zero;
-            using (BinaryReader reader = new BinaryReader(stream, Encoding.UTF8, true))
+            BinaryReader reader = null;
+            try
             {
-                try
-                {
-                    tcp.ReceiveTimeout = (int)timeout.TotalMilliseconds;
-                    return reader.ReadSerializable<Message>();
-                }
-                catch (ObjectDisposedException) { }
-                catch (FormatException)
-                {
-                    Disconnect(true);
-                }
-                catch (IOException)
-                {
-                    Disconnect(false);
-                }
+                reader = new BinaryReader(stream, Encoding.UTF8, true);
+                tcp.ReceiveTimeout = (int)timeout.TotalMilliseconds;
+                return reader.ReadSerializable<Message>();
+            }
+            catch (ArgumentException) { }
+            catch (ObjectDisposedException) { }
+            catch (FormatException)
+            {
+                Disconnect(true);
+            }
+            catch (IOException)
+            {
+                Disconnect(false);
+            }
+            finally
+            {
+                if (reader != null) reader.Dispose();
             }
             return null;
         }

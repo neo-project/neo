@@ -131,8 +131,9 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     if (VerifyBlocks && !block.Verify()) return false;
                     header_chain.Add(block.Hash, block.Header, block.PrevBlock);
                     OnAddHeader(block);
-                    new_block_event.Set();
                 }
+                if (header_chain.Nodes.ContainsKey(block.Hash))
+                    new_block_event.Set();
             }
             return true;
         }
