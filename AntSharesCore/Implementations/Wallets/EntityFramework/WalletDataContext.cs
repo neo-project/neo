@@ -49,6 +49,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             modelBuilder.Entity<Transaction>().Property(p => p.Type).IsRequired();
             modelBuilder.Entity<Transaction>().Property(p => p.RawData).HasColumnType("VarBinary").IsRequired();
             modelBuilder.Entity<Transaction>().Property(p => p.Height);
+            modelBuilder.Entity<Transaction>().Property(p => p.Time).IsRequired();
             modelBuilder.Entity<Coin>().HasKey(p => new { p.TxId, p.Index });
             modelBuilder.Entity<Coin>().HasIndex(p => p.AssetId);
             modelBuilder.Entity<Coin>().HasIndex(p => p.ScriptHash);

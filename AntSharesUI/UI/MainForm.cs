@@ -29,7 +29,7 @@ namespace AntShares.UI
 
         private void AddContractToListView(Contract contract, bool selected = false)
         {
-            ContractListView.Items.Add(new ListViewItem(new[] { contract.Address, contract.GetType().ToString() })
+            listView1.Items.Add(new ListViewItem(new[] { contract.Address, contract.GetType().ToString() })
             {
                 Name = contract.Address,
                 Tag = contract
@@ -41,12 +41,15 @@ namespace AntShares.UI
             if (Program.CurrentWallet != null)
             {
                 Program.CurrentWallet.BalanceChanged -= CurrentWallet_BalanceChanged;
+                Program.CurrentWallet.TransactionsChanged -= CurrentWallet_TransactionsChanged;
                 Program.CurrentWallet.Dispose();
             }
             Program.CurrentWallet = wallet;
             if (Program.CurrentWallet != null)
             {
+                CurrentWallet_TransactionsChanged(null, Program.CurrentWallet.LoadTransactions());
                 Program.CurrentWallet.BalanceChanged += CurrentWallet_BalanceChanged;
+                Program.CurrentWallet.TransactionsChanged += CurrentWallet_TransactionsChanged;
             }
             修改密码CToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             重建钱包数据库RToolStripMenuItem.Enabled = Program.CurrentWallet != null;
@@ -55,7 +58,7 @@ namespace AntShares.UI
             创建新地址NToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             导入私钥IToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             创建智能合约SToolStripMenuItem.Enabled = Program.CurrentWallet != null;
-            ContractListView.Items.Clear();
+            listView1.Items.Clear();
             if (Program.CurrentWallet != null)
             {
                 foreach (Contract contract in Program.CurrentWallet.GetContracts())
@@ -69,6 +72,54 @@ namespace AntShares.UI
         private void CurrentWallet_BalanceChanged(object sender, EventArgs e)
         {
             balance_changed = true;
+        }
+
+        private void CurrentWallet_TransactionsChanged(object sender, IEnumerable<TransactionInfo> transactions)
+        {
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action<object, IEnumerable<TransactionInfo>>(CurrentWallet_TransactionsChanged), sender, transactions);
+            }
+            else
+            {
+                foreach (TransactionInfo info in transactions)
+                {
+                    string txid = info.Transaction.Hash.ToString();
+                    if (listView3.Items.ContainsKey(txid))
+                    {
+                        listView3.Items[txid].Tag = info;
+                    }
+                    else
+                    {
+                        listView3.Items.Insert(0, new ListViewItem(new[]
+                        {
+                            new ListViewItem.ListViewSubItem
+                            {
+                                Name = "time",
+                                Text = info.Time.ToString()
+                            },
+                            new ListViewItem.ListViewSubItem
+                            {
+                                Name = "hash",
+                                Text = txid
+                            },
+                            new ListViewItem.ListViewSubItem
+                            {
+                                Name = "confirmations",
+                                Text = "未确认"
+                            }
+                        }, -1)
+                        {
+                            Name = txid,
+                            Tag = info
+                        });
+                    }
+                }
+                foreach (ListViewItem item in listView3.Items)
+                {
+                    item.SubItems["confirmations"].Text = (Blockchain.Default.Height - ((TransactionInfo)item.Tag).Height + 1)?.ToString() ?? "未确认";
+                }
+            }
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -87,11 +138,12 @@ namespace AntShares.UI
             lbl_count_node.Text = Program.LocalNode.RemoteNodeCount.ToString();
             if (balance_changed)
             {
-                IEnumerable<Coin> coins = Program.CurrentWallet == null ? Enumerable.Empty<Coin>() : Program.CurrentWallet.FindUnspentCoins();
+                IEnumerable<Coin> coins = Program.CurrentWallet?.FindCoins() ?? Enumerable.Empty<Coin>();
                 var assets = coins.GroupBy(p => p.AssetId, (k, g) => new
                 {
                     Asset = (RegisterTransaction)Blockchain.Default.GetTransaction(k),
-                    Value = g.Sum(p => p.Value)
+                    Value = g.Sum(p => p.Value),
+                    Available = g.Where(p => p.State == CoinState.Unspent).Sum(p => p.Value)
                 }).ToDictionary(p => p.Asset.Hash);
                 foreach (RegisterTransaction tx in listView2.Items.OfType<ListViewItem>().Select(p => (RegisterTransaction)p.Tag).ToArray())
                 {
@@ -199,7 +251,7 @@ namespace AntShares.UI
             using (OpenWalletDialog dialog = new OpenWalletDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                if (UserWallet.GetVersion(dialog.WalletPath) < Version.Parse("0.6.5962.25517"))
+                if (UserWallet.GetVersion(dialog.WalletPath) < Version.Parse("0.6.5963.1516"))
                 {
                     if (MessageBox.Show("正在打开旧版本的钱包文件，是否尝试将文件升级为新版格式？\n注意，升级后将无法用旧版本的客户端打开该文件！", "钱包文件升级", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) != DialogResult.Yes)
                         return;
@@ -322,14 +374,14 @@ namespace AntShares.UI
 
         private void contextMenuStrip1_Opening(object sender, CancelEventArgs e)
         {
-            查看私钥VToolStripMenuItem.Enabled = ContractListView.SelectedIndices.Count == 1;
-            复制到剪贴板CToolStripMenuItem.Enabled = ContractListView.SelectedIndices.Count == 1;
-            删除DToolStripMenuItem.Enabled = ContractListView.SelectedIndices.Count > 0;
+            查看私钥VToolStripMenuItem.Enabled = listView1.SelectedIndices.Count == 1;
+            复制到剪贴板CToolStripMenuItem.Enabled = listView1.SelectedIndices.Count == 1;
+            删除DToolStripMenuItem.Enabled = listView1.SelectedIndices.Count > 0;
         }
 
         private void 创建新地址NToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            ContractListView.SelectedIndices.Clear();
+            listView1.SelectedIndices.Clear();
             Account account = Program.CurrentWallet.CreateAccount();
             foreach (Contract contract in Program.CurrentWallet.GetContracts(account.PublicKeyHash))
             {
@@ -342,7 +394,7 @@ namespace AntShares.UI
             using (ImportPrivateKeyDialog dialog = new ImportPrivateKeyDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                ContractListView.SelectedIndices.Clear();
+                listView1.SelectedIndices.Clear();
                 Account account = Program.CurrentWallet.Import(dialog.WIF);
                 foreach (Contract contract in Program.CurrentWallet.GetContracts(account.PublicKeyHash))
                 {
@@ -356,7 +408,7 @@ namespace AntShares.UI
             using (SelectCertificateDialog dialog = new SelectCertificateDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                ContractListView.SelectedIndices.Clear();
+                listView1.SelectedIndices.Clear();
                 Account account = Program.CurrentWallet.Import(dialog.SelectedCertificate);
                 foreach (Contract contract in Program.CurrentWallet.GetContracts(account.PublicKeyHash))
                 {
@@ -377,14 +429,14 @@ namespace AntShares.UI
                     return;
                 }
                 Program.CurrentWallet.AddContract(contract);
-                ContractListView.SelectedIndices.Clear();
+                listView1.SelectedIndices.Clear();
                 AddContractToListView(contract, true);
             }
         }
 
         private void 查看私钥VToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Contract contract = (Contract)ContractListView.SelectedItems[0].Tag;
+            Contract contract = (Contract)listView1.SelectedItems[0].Tag;
             Account account = Program.CurrentWallet.GetAccountByScriptHash(contract.ScriptHash);
             using (ViewPrivateKeyDialog dialog = new ViewPrivateKeyDialog(account, contract.ScriptHash))
             {
@@ -394,17 +446,17 @@ namespace AntShares.UI
 
         private void 复制到剪贴板CToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Clipboard.SetText(ContractListView.SelectedItems[0].Text);
+            Clipboard.SetText(listView1.SelectedItems[0].Text);
         }
 
         private void 删除DToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (MessageBox.Show("删除地址后，这些地址中的资产将永久性地丢失，确认要继续吗？", "删除地址确认", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
                 return;
-            Contract[] contracts = ContractListView.SelectedItems.OfType<ListViewItem>().Select(p => (Contract)p.Tag).ToArray();
+            Contract[] contracts = listView1.SelectedItems.OfType<ListViewItem>().Select(p => (Contract)p.Tag).ToArray();
             foreach (Contract contract in contracts)
             {
-                ContractListView.Items.RemoveByKey(contract.Address);
+                listView1.Items.RemoveByKey(contract.Address);
                 Program.CurrentWallet.DeleteContract(contract.ScriptHash);
             }
             balance_changed = true;

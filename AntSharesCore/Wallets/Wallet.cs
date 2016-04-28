@@ -270,6 +270,17 @@ namespace AntShares.Wallets
             }
         }
 
+        public IEnumerable<Coin> FindCoins()
+        {
+            lock (coins)
+            {
+                foreach (var coin in coins.Where(p => p.State == CoinState.Unconfirmed || p.State == CoinState.Unspent))
+                {
+                    yield return coin;
+                }
+            }
+        }
+
         public IEnumerable<Coin> FindUnspentCoins()
         {
             lock (coins)

@@ -16,6 +16,8 @@ namespace AntShares.Implementations.Wallets.EntityFramework
 {
     public class UserWallet : Wallet
     {
+        public event EventHandler<IEnumerable<TransactionInfo>> TransactionsChanged;
+
         protected UserWallet(string path, string password, bool create)
             : base(path, password, create)
         {
@@ -122,6 +124,16 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             return FindUnspentCoins(FindUnspentCoins().Where(p => GetContract(p.ScriptHash) is SignatureContract), asset_id, amount) ?? base.FindUnspentCoins(asset_id, amount);
         }
 
+        private static IEnumerable<TransactionInfo> GetTransactionInfo(IEnumerable<Transaction> transactions)
+        {
+            return transactions.Select(p => new TransactionInfo
+            {
+                Transaction = CoreTransaction.DeserializeFrom(p.RawData),
+                Height = p.Height,
+                Time = p.Time
+            });
+        }
+
         public static Version GetVersion(string path)
         {
             byte[] buffer;
@@ -191,6 +203,14 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
                 return ctx.Keys.FirstOrDefault(p => p.Name == name)?.Value;
+            }
+        }
+
+        public IEnumerable<TransactionInfo> LoadTransactions()
+        {
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
+            {
+                return GetTransactionInfo(ctx.Transactions.ToArray());
             }
         }
 
@@ -266,6 +286,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
 
         protected override void OnProcessNewBlock(Block block, IEnumerable<CoreTransaction> transactions, IEnumerable<WalletCoin> added, IEnumerable<WalletCoin> changed, IEnumerable<WalletCoin> deleted)
         {
+            Transaction[] tx_changed;
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
                 foreach (Transaction db_tx in ctx.Transactions.Where(p => !p.Height.HasValue))
@@ -281,7 +302,8 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                             Hash = tx.Hash.ToArray(),
                             Type = tx.Type,
                             RawData = tx.ToArray(),
-                            Height = block.Height
+                            Height = block.Height,
+                            Time = block.Timestamp.ToDateTime()
                         });
                     }
                     else
@@ -289,26 +311,32 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                         db_tx.Height = block.Height;
                     }
                 }
+                tx_changed = ctx.ChangeTracker.Entries<Transaction>().Select(p => p.Entity).ToArray();
                 OnCoinsChanged(ctx, added, changed, deleted);
                 ctx.Keys.First(p => p.Name == "Height").Value = BitConverter.GetBytes(WalletHeight);
                 ctx.SaveChanges();
             }
+            if (tx_changed.Length > 0)
+                TransactionsChanged?.Invoke(this, GetTransactionInfo(tx_changed));
         }
 
         protected override void OnSendTransaction(CoreTransaction tx, IEnumerable<WalletCoin> added, IEnumerable<WalletCoin> changed)
         {
+            Transaction tx_changed;
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
-                ctx.Transactions.Add(new Transaction
+                tx_changed = ctx.Transactions.Add(new Transaction
                 {
                     Hash = tx.Hash.ToArray(),
                     Type = tx.Type,
                     RawData = tx.ToArray(),
-                    Height = null
-                });
+                    Height = null,
+                    Time = DateTime.Now
+                }).Entity;
                 OnCoinsChanged(ctx, added, changed, Enumerable.Empty<WalletCoin>());
                 ctx.SaveChanges();
             }
+            TransactionsChanged?.Invoke(this, GetTransactionInfo(new[] { tx_changed }));
         }
 
         public static UserWallet Open(string path, string password)
