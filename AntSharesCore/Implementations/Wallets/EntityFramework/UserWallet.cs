@@ -5,6 +5,7 @@ using Microsoft.Data.Entity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Security;
 using CoreTransaction = AntShares.Core.Transaction;
 using WalletAccount = AntShares.Wallets.Account;
@@ -121,6 +122,21 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             return FindUnspentCoins(FindUnspentCoins().Where(p => GetContract(p.ScriptHash) is SignatureContract), asset_id, amount) ?? base.FindUnspentCoins(asset_id, amount);
         }
 
+        public static Version GetVersion(string path)
+        {
+            byte[] buffer;
+            using (WalletDataContext ctx = new WalletDataContext(path))
+            {
+                buffer = ctx.Keys.FirstOrDefault(p => p.Name == "Version")?.Value;
+            }
+            if (buffer == null) return new Version();
+            int major = BitConverter.ToInt32(buffer, 0);
+            int minor = BitConverter.ToInt32(buffer, 4);
+            int build = BitConverter.ToInt32(buffer, 8);
+            int revision = BitConverter.ToInt32(buffer, 12);
+            return new Version(major, minor, build, revision);
+        }
+
         protected override IEnumerable<WalletAccount> LoadAccounts()
         {
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
@@ -175,6 +191,22 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
                 return ctx.Keys.FirstOrDefault(p => p.Name == name)?.Value;
+            }
+        }
+
+        public static void Migrate(string path_old, string path_new)
+        {
+            Version current_version = Assembly.GetExecutingAssembly().GetName().Version;
+            using (WalletDataContext ctx_old = new WalletDataContext(path_old))
+            using (WalletDataContext ctx_new = new WalletDataContext(path_new))
+            {
+                ctx_new.Database.EnsureCreated();
+                ctx_new.Accounts.AddRange(ctx_old.Accounts);
+                ctx_new.Contracts.AddRange(ctx_old.Contracts);
+                ctx_new.Keys.AddRange(ctx_old.Keys.Where(p => p.Name != "Height" && p.Name != "Version"));
+                SaveStoredData(ctx_new, "Height", BitConverter.GetBytes(0));
+                SaveStoredData(ctx_new, "Version", new[] { current_version.Major, current_version.Minor, current_version.Build, current_version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
+                ctx_new.SaveChanges();
             }
         }
 
@@ -308,20 +340,25 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         {
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
-                Key key = ctx.Keys.FirstOrDefault(p => p.Name == name);
-                if (key == null)
-                {
-                    key = ctx.Keys.Add(new Key
-                    {
-                        Name = name,
-                        Value = value
-                    }).Entity;
-                }
-                else
-                {
-                    key.Value = value;
-                }
+                SaveStoredData(ctx, name, value);
                 ctx.SaveChanges();
+            }
+        }
+
+        private static void SaveStoredData(WalletDataContext ctx, string name, byte[] value)
+        {
+            Key key = ctx.Keys.FirstOrDefault(p => p.Name == name);
+            if (key == null)
+            {
+                ctx.Keys.Add(new Key
+                {
+                    Name = name,
+                    Value = value
+                });
+            }
+            else
+            {
+                key.Value = value;
             }
         }
     }
