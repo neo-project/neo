@@ -219,6 +219,7 @@ namespace AntShares.Network
                 missions_global.Remove(inventory.Hash);
             }
             missions.Remove(inventory.Hash);
+            if (inventory is MinerTransaction) return;
             InventoryReceived?.Invoke(this, inventory);
         }
 
@@ -242,6 +243,11 @@ namespace AntShares.Network
             }
             if (vectors.Length == 0) return;
             EnqueueMessage("getdata", InvPayload.Create(vectors));
+        }
+
+        private void OnMemPoolMessageReceived()
+        {
+            EnqueueMessage("inv", InvPayload.Create(InventoryType.TX, LocalNode.GetMemoryPool().Select(p => p.Hash).ToArray()));
         }
 
         private void OnMessageReceived(Message message)
@@ -275,11 +281,13 @@ namespace AntShares.Network
                 case "inv":
                     OnInvMessageReceived(message.Payload.AsSerializable<InvPayload>());
                     break;
+                case "mempool":
+                    OnMemPoolMessageReceived();
+                    break;
                 case "tx":
                     OnInventoryReceived(Transaction.DeserializeFrom(message.Payload));
                     break;
                 case "alert":
-                case "mempool":
                 case "notfound":
                 case "ping":
                 case "pong":
@@ -324,6 +332,11 @@ namespace AntShares.Network
         internal void Relay(Inventory data)
         {
             EnqueueMessage("inv", InvPayload.Create(data.InventoryType, data.Hash));
+        }
+
+        internal void RequestMemoryPool()
+        {
+            EnqueueMessage("mempool", null, true);
         }
 
         internal void RequestPeers()

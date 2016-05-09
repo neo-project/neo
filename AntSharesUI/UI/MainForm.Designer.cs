@@ -88,6 +88,8 @@
             this.columnHeader6 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.contextMenuStrip2 = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.删除DToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.tabPage3 = new System.Windows.Forms.TabPage();
             this.listView3 = new System.Windows.Forms.ListView();
             this.columnHeader7 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -99,6 +101,7 @@
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
+            this.contextMenuStrip2.SuspendLayout();
             this.tabPage3.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -532,6 +535,7 @@
             this.columnHeader6,
             this.columnHeader3,
             this.columnHeader5});
+            this.listView2.ContextMenuStrip = this.contextMenuStrip2;
             this.listView2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.listView2.FullRowSelect = true;
             this.listView2.GridLines = true;
@@ -572,6 +576,21 @@
             this.columnHeader5.Text = "发行者";
             this.columnHeader5.Width = 296;
             // 
+            // contextMenuStrip2
+            // 
+            this.contextMenuStrip2.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.删除DToolStripMenuItem1});
+            this.contextMenuStrip2.Name = "contextMenuStrip2";
+            this.contextMenuStrip2.Size = new System.Drawing.Size(118, 26);
+            this.contextMenuStrip2.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip2_Opening);
+            // 
+            // 删除DToolStripMenuItem1
+            // 
+            this.删除DToolStripMenuItem1.Name = "删除DToolStripMenuItem1";
+            this.删除DToolStripMenuItem1.Size = new System.Drawing.Size(117, 22);
+            this.删除DToolStripMenuItem1.Text = "删除(&D)";
+            this.删除DToolStripMenuItem1.Click += new System.EventHandler(this.删除DToolStripMenuItem1_Click);
+            // 
             // tabPage3
             // 
             this.tabPage3.Controls.Add(this.listView3);
@@ -610,7 +629,7 @@
             // columnHeader8
             // 
             this.columnHeader8.Text = "交易编号";
-            this.columnHeader8.Width = 435;
+            this.columnHeader8.Width = 473;
             // 
             // columnHeader9
             // 
@@ -640,6 +659,7 @@
             this.tabControl1.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
             this.tabPage2.ResumeLayout(false);
+            this.contextMenuStrip2.ResumeLayout(false);
             this.tabPage3.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -710,6 +730,8 @@
         private System.Windows.Forms.ColumnHeader columnHeader7;
         private System.Windows.Forms.ColumnHeader columnHeader8;
         private System.Windows.Forms.ColumnHeader columnHeader9;
+        private System.Windows.Forms.ContextMenuStrip contextMenuStrip2;
+        private System.Windows.Forms.ToolStripMenuItem 删除DToolStripMenuItem1;
     }
 }
 

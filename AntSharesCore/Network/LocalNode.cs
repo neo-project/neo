@@ -190,7 +190,7 @@ namespace AntShares.Network
                 int maxConnections = Math.Max(CONNECTED_MAX + CONNECTED_MAX / 5, PENDING_MAX);
                 if (connectedCount < CONNECTED_MAX && pendingCount < PENDING_MAX && (connectedCount + pendingCount) < maxConnections)
                 {
-                    Task[] tasks;
+                    Task[] tasks = { };
                     if (unconnectedCount > 0)
                     {
                         IPEndPoint[] endpoints;
@@ -204,7 +204,8 @@ namespace AntShares.Network
                     {
                         lock (connectedPeers)
                         {
-                            tasks = connectedPeers.ToArray().Select(p => Task.Run(new Action(p.RequestPeers))).ToArray();
+                            foreach (RemoteNode node in connectedPeers)
+                                node.RequestPeers();
                         }
                     }
                     else
@@ -326,7 +327,7 @@ namespace AntShares.Network
                 foreach (RemoteNode node in connectedPeers)
                     node.Relay(inventory);
             }
-            if (NewInventory != null) NewInventory(this, inventory);
+            NewInventory?.Invoke(this, inventory);
             return true;
         }
 
@@ -430,6 +431,15 @@ namespace AntShares.Network
                 catch (SocketException) { }
                 connectThread.Start();
                 if (Port > 0) listenerThread.Start();
+            }
+        }
+
+        public void SynchronizeMemoryPool()
+        {
+            lock (connectedPeers)
+            {
+                foreach (RemoteNode node in connectedPeers)
+                    node.RequestMemoryPool();
             }
         }
     }

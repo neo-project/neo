@@ -33,6 +33,8 @@ namespace AntShares.Shell
             {
                 case "node":
                     return OnShowNodeCommand(args);
+                case "pool":
+                    return OnShowPoolCommand(args);
                 case "state":
                     return OnShowStateCommand(args);
                 default:
@@ -46,6 +48,15 @@ namespace AntShares.Shell
             for (int i = 0; i < nodes.Length; i++)
             {
                 Console.WriteLine($"{nodes[i].RemoteEndpoint.Address} port:{nodes[i].RemoteEndpoint.Port} listen:{nodes[i].ListenerEndpoint?.Port ?? 0} [{i + 1}/{nodes.Length}]");
+            }
+            return true;
+        }
+
+        private bool OnShowPoolCommand(string[] args)
+        {
+            foreach (Transaction tx in LocalNode.GetMemoryPool())
+            {
+                Console.WriteLine($"{tx.Hash} {tx.GetType().Name}");
             }
             return true;
         }

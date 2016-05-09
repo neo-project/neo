@@ -1,4 +1,5 @@
 ﻿using AntShares.Core;
+using AntShares.Core.Scripts;
 using AntShares.Cryptography;
 using AntShares.Implementations.Wallets.EntityFramework;
 using AntShares.IO;
@@ -20,6 +21,7 @@ namespace AntShares.UI
 {
     internal partial class MainForm : Form
     {
+        private static readonly UInt160 RecycleScriptHash = new byte[] { (byte)ScriptOp.OP_DUP, (byte)ScriptOp.OP_HASH160, (byte)ScriptOp.OP_CALL, (byte)InterfaceOp.CHAIN_HEIGHT, (byte)ScriptOp.OP_CALL, (byte)InterfaceOp.CHAIN_GETHEADER, (byte)ScriptOp.OP_TOALTSTACK, (byte)ScriptOp.OP_CALL, (byte)InterfaceOp.HEADER_NEXTMINER, (byte)ScriptOp.OP_EQUALVERIFY, 0xB0/*OP_EVAL*/ }.ToScriptHash();
         private bool balance_changed = false;
 
         public MainForm()
@@ -45,6 +47,7 @@ namespace AntShares.UI
                 Program.CurrentWallet.Dispose();
             }
             Program.CurrentWallet = wallet;
+            listView3.Items.Clear();
             if (Program.CurrentWallet != null)
             {
                 CurrentWallet_TransactionsChanged(null, Program.CurrentWallet.LoadTransactions());
@@ -283,6 +286,8 @@ namespace AntShares.UI
 
         private void 重建钱包数据库RToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            listView2.Items.Clear();
+            listView3.Items.Clear();
             Program.CurrentWallet.Rebuild();
         }
 
@@ -460,6 +465,35 @@ namespace AntShares.UI
                 Program.CurrentWallet.DeleteContract(contract.ScriptHash);
             }
             balance_changed = true;
+        }
+
+        private void contextMenuStrip2_Opening(object sender, CancelEventArgs e)
+        {
+            删除DToolStripMenuItem1.Enabled = listView2.SelectedIndices.Count > 0;
+        }
+
+        private void 删除DToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            if (listView2.SelectedIndices.Count == 0) return;
+            var delete = listView2.SelectedItems.OfType<ListViewItem>().Select(p => (RegisterTransaction)p.Tag).Select(p => new
+            {
+                Asset = p,
+                Value = Program.CurrentWallet.GetAvailable(p.Hash)
+            }).ToArray();
+            if (MessageBox.Show("资产删除后将无法恢复，您确定要删除以下资产吗？\n"
+                + string.Join("\n", delete.Select(p => $"{p.Asset.GetName()}:{p.Value}"))
+                , "删除确认", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+                return;
+            ContractTransaction tx = Program.CurrentWallet.MakeTransaction(new ContractTransaction
+            {
+                Outputs = delete.Select(p => new TransactionOutput
+                {
+                    AssetId = p.Asset.Hash,
+                    Value = p.Value,
+                    ScriptHash = RecycleScriptHash
+                }).ToArray()
+            }, Fixed8.Zero);
+            Helper.SignAndShowInformation(tx);
         }
     }
 }

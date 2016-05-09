@@ -1,6 +1,6 @@
 ﻿namespace AntShares.Core.Scripts
 {
-    internal enum InterfaceOp : byte
+    public enum InterfaceOp : byte
     {
         //System
         SYSTEM_NOW = 0x00,

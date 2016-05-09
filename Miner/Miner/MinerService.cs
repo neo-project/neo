@@ -309,6 +309,8 @@ namespace AntShares.Miner
                 if (mempool.ContainsKey(hash))
                     if (!AddTransaction(mempool[hash]))
                         return;
+            if (context.Transactions.Count < context.TransactionHashes.Length)
+                LocalNode.SynchronizeMemoryPool();
         }
 
         private void OnPerpareResponseReceived(ConsensusPayload payload, PerpareResponse message)
