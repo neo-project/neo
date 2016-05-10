@@ -274,10 +274,7 @@ namespace AntShares.Wallets
         {
             lock (coins)
             {
-                foreach (var coin in coins.Where(p => p.State == CoinState.Unconfirmed || p.State == CoinState.Unspent))
-                {
-                    yield return coin;
-                }
+                return coins.Where(p => p.State == CoinState.Unconfirmed || p.State == CoinState.Unspent).ToArray();
             }
         }
 
@@ -285,10 +282,7 @@ namespace AntShares.Wallets
         {
             lock (coins)
             {
-                foreach (var coin in coins.Where(p => p.State == CoinState.Unspent))
-                {
-                    yield return coin;
-                }
+                return coins.Where(p => p.State == CoinState.Unspent).ToArray();
             }
         }
 

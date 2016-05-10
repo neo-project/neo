@@ -162,9 +162,13 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override bool ContainsBlock(UInt256 hash)
         {
-            if (!header_chain.Nodes.ContainsKey(hash)) return false;
-            TreeNode<Block> node = header_chain.Nodes[hash];
-            TreeNode<Block> i = header_chain.Nodes[current_block_hash];
+            TreeNode<Block> node, i;
+            lock (header_chain)
+            {
+                if (!header_chain.Nodes.ContainsKey(hash)) return false;
+                node = header_chain.Nodes[hash];
+                i = header_chain.Nodes[current_block_hash];
+            }
             if (i.Height < node.Height) return false;
             while (i.Height > node.Height)
                 i = i.Parent;
@@ -283,8 +287,11 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override Block GetHeader(UInt256 hash)
         {
-            if (!header_chain.Nodes.ContainsKey(hash)) return null;
-            return header_chain[hash];
+            lock (header_chain)
+            {
+                if (!header_chain.Nodes.ContainsKey(hash)) return null;
+                return header_chain[hash];
+            }
         }
 
         public override UInt256[] GetLeafHeaderHashes()

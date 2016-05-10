@@ -75,9 +75,10 @@ namespace AntShares.Miner
                         sc.Add(contract, context.Miners[i], context.Signatures[i]);
                 sc.Signable.Scripts = sc.GetScripts();
                 block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
-                LocalNode.Relay(block);
-                context.State |= ConsensusState.BlockSent;
                 Log($"RelayBlock hash:{block.Hash}");
+                if (!LocalNode.Relay(block))
+                    Log($"failed hash:{block.Hash}");
+                context.State |= ConsensusState.BlockSent;
             }
         }
 
@@ -302,6 +303,7 @@ namespace AntShares.Miner
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
             if (!context.MakeHeader().VerifySignature(context.Miners[payload.MinerIndex], message.Signature)) return;
+            context.Signatures = new byte[context.Miners.Length][];
             context.Signatures[payload.MinerIndex] = message.Signature;
             if (!AddTransaction(message.MinerTransaction)) return;
             Dictionary<UInt256, Transaction> mempool = LocalNode.GetMemoryPool().ToDictionary(p => p.Hash);
