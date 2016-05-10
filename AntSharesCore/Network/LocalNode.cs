@@ -129,6 +129,14 @@ namespace AntShares.Network
             }
         }
 
+        public static void AllowHashes(IEnumerable<UInt256> hashes)
+        {
+            lock (KnownHashes)
+            {
+                KnownHashes.ExceptWith(hashes);
+            }
+        }
+
         private static void Blockchain_PersistCompleted(object sender, Block block)
         {
             HashSet<TransactionInput> inputs = new HashSet<TransactionInput>(block.Transactions.SelectMany(p => p.GetAllInputs()));

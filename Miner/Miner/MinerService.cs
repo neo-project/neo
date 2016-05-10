@@ -311,6 +311,7 @@ namespace AntShares.Miner
                 if (mempool.ContainsKey(hash))
                     if (!AddTransaction(mempool[hash]))
                         return;
+            LocalNode.AllowHashes(context.TransactionHashes.Except(context.Transactions.Keys));
             if (context.Transactions.Count < context.TransactionHashes.Length)
                 LocalNode.SynchronizeMemoryPool();
         }

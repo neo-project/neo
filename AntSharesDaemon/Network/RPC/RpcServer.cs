@@ -180,6 +180,7 @@ namespace AntShares.Network.RPC
                 {
                     Process(await listener.GetContextAsync());
                 }
+                catch (ApplicationException) { }
                 catch (HttpListenerException) { }
             }
             stopped = true;
