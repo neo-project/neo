@@ -6,10 +6,22 @@ using System.IO;
 
 namespace AntShares.Core
 {
+    /// <summary>
+    /// 交易输出
+    /// </summary>
     public class TransactionOutput : ISerializable
     {
+        /// <summary>
+        /// 资产编号
+        /// </summary>
         public UInt256 AssetId;
+        /// <summary>
+        /// 金额
+        /// </summary>
         public Fixed8 Value;
+        /// <summary>
+        /// 收款地址
+        /// </summary>
         public UInt160 ScriptHash;
 
         void ISerializable.Deserialize(BinaryReader reader)
@@ -27,6 +39,11 @@ namespace AntShares.Core
             writer.Write(ScriptHash);
         }
 
+        /// <summary>
+        /// 将交易输出转变为json对象
+        /// </summary>
+        /// <param name="index">该交易输出在交易中的索引</param>
+        /// <returns>返回json对象</returns>
         public JObject ToJson(ushort index)
         {
             JObject json = new JObject();

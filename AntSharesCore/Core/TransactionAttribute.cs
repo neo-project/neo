@@ -6,9 +6,18 @@ using System.Linq;
 
 namespace AntShares.Core
 {
+    /// <summary>
+    /// 交易特性
+    /// </summary>
     public class TransactionAttribute : ISerializable
     {
+        /// <summary>
+        /// 用途
+        /// </summary>
         public TransactionAttributeUsage Usage;
+        /// <summary>
+        /// 特定于用途的外部数据
+        /// </summary>
         public byte[] Data;
 
         void ISerializable.Deserialize(BinaryReader reader)
@@ -43,6 +52,10 @@ namespace AntShares.Core
                 writer.Write(Data);
         }
 
+        /// <summary>
+        /// 变成json对象
+        /// </summary>
+        /// <returns>返回json对象</returns>
         public JObject ToJson()
         {
             JObject json = new JObject();

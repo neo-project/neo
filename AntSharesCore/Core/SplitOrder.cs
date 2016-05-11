@@ -4,10 +4,22 @@ using System.IO;
 
 namespace AntShares.Core
 {
+    /// <summary>
+    /// 部分成交的订单
+    /// </summary>
     public class SplitOrder : ISerializable
     {
+        /// <summary>
+        /// 买入或卖出的数量
+        /// </summary>
         public Fixed8 Amount;
+        /// <summary>
+        /// 价格
+        /// </summary>
         public Fixed8 Price;
+        /// <summary>
+        /// 委托人的合约散列
+        /// </summary>
         public UInt160 Client;
 
         void ISerializable.Deserialize(BinaryReader reader)

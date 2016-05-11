@@ -11,9 +11,18 @@ using System.Linq;
 
 namespace AntShares.Core
 {
+    /// <summary>
+    /// 用于资产登记的特殊交易
+    /// </summary>
     public class RegisterTransaction : Transaction
     {
+        /// <summary>
+        /// 资产类别
+        /// </summary>
         public AssetType AssetType;
+        /// <summary>
+        /// 资产名称
+        /// </summary>
         public string Name;
         /// <summary>
         /// 发行总量，共有2种模式：
@@ -25,11 +34,20 @@ namespace AntShares.Core
         /// 3. 对于点券，可以使用任意模式；
         /// </summary>
         public Fixed8 Amount;
+        /// <summary>
+        /// 发行者的公钥
+        /// </summary>
         public ECPoint Issuer;
+        /// <summary>
+        /// 资产管理员的合约散列值
+        /// </summary>
         public UInt160 Admin;
 
         private static readonly string ShareName = "[{'lang':'zh-CN','name':'股权'},{'lang':'en','name':'Share'}]";
 
+        /// <summary>
+        /// 系统费用
+        /// </summary>
         public override Fixed8 SystemFee => AssetType == AssetType.AntShare || AssetType == AssetType.AntCoin ? Fixed8.Zero : Fixed8.FromDecimal(10000);
 
         public RegisterTransaction()
@@ -37,6 +55,10 @@ namespace AntShares.Core
         {
         }
 
+        /// <summary>
+        /// 反序列化交易中额外的数据
+        /// </summary>
+        /// <param name="reader">数据来源</param>
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             this.AssetType = (AssetType)reader.ReadByte();
@@ -55,6 +77,11 @@ namespace AntShares.Core
 
         [NonSerialized]
         private Dictionary<CultureInfo, string> _names;
+        /// <summary>
+        /// 获取资产的本地化名称
+        /// </summary>
+        /// <param name="culture">区域性/语言名称</param>
+        /// <returns>返回资产名称</returns>
         public string GetName(CultureInfo culture = null)
         {
             string name_str = AssetType == AssetType.Share ? ShareName : Name;
@@ -77,12 +104,20 @@ namespace AntShares.Core
             }
         }
 
+        /// <summary>
+        /// 获取需要校验的脚本Hash值
+        /// </summary>
+        /// <returns>返回需要校验的脚本Hash值</returns>
         public override UInt160[] GetScriptHashesForVerifying()
         {
             UInt160 issuer = SignatureContract.CreateSignatureRedeemScript(Issuer).ToScriptHash();
             return base.GetScriptHashesForVerifying().Union(new UInt160[] { issuer, Admin }).OrderBy(p => p).ToArray();
         }
 
+        /// <summary>
+        /// 序列化交易中额外的数据
+        /// </summary>
+        /// <param name="writer">存放序列化后的结果</param>
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write((byte)AssetType);
@@ -92,6 +127,10 @@ namespace AntShares.Core
             writer.Write(Admin);
         }
 
+        /// <summary>
+        /// 变成json对象
+        /// </summary>
+        /// <returns>返回json对象</returns>
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
@@ -106,6 +145,10 @@ namespace AntShares.Core
             return json;
         }
 
+        /// <summary>
+        /// 返回资产的本地化名称
+        /// </summary>
+        /// <returns>返回资产的本地化名称</returns>
         public override string ToString()
         {
             return GetName();

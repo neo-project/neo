@@ -11,14 +11,26 @@ using System.Text;
 
 namespace AntShares.Core
 {
+    /// <summary>
+    /// 签名上下文
+    /// </summary>
     public class SignatureContext
     {
+        /// <summary>
+        /// 要签名的数据
+        /// </summary>
         public readonly ISignable Signable;
+        /// <summary>
+        /// 要验证的脚本散列值
+        /// </summary>
         public readonly UInt160[] ScriptHashes;
         private readonly byte[][] redeemScripts;
         private readonly Dictionary<ECPoint, byte[]>[] signatures;
         private readonly bool[] completed;
 
+        /// <summary>
+        /// 判断签名是否完成
+        /// </summary>
         public bool Completed
         {
             get
@@ -27,6 +39,10 @@ namespace AntShares.Core
             }
         }
 
+        /// <summary>
+        /// 对指定的数据构造签名上下文
+        /// </summary>
+        /// <param name="signable">要签名的数据</param>
         public SignatureContext(ISignable signable)
         {
             this.Signable = signable;
@@ -36,6 +52,13 @@ namespace AntShares.Core
             this.completed = new bool[ScriptHashes.Length];
         }
 
+        /// <summary>
+        /// 添加一个签名
+        /// </summary>
+        /// <param name="contract">该签名所对应的合约</param>
+        /// <param name="pubkey">该签名所对应的公钥</param>
+        /// <param name="signature">签名</param>
+        /// <returns>返回签名是否已成功添加</returns>
         public bool Add(Contract contract, ECPoint pubkey, byte[] signature)
         {
             for (int i = 0; i < ScriptHashes.Length; i++)
@@ -57,6 +80,10 @@ namespace AntShares.Core
             return false;
         }
 
+        /// <summary>
+        /// 检查指定合约的签名是否完整
+        /// </summary>
+        /// <param name="contract">合约</param>
         public void Check(Contract contract)
         {
             for (int i = 0; i < ScriptHashes.Length; i++)
@@ -69,6 +96,11 @@ namespace AntShares.Core
             }
         }
 
+        /// <summary>
+        /// 从指定的json对象中解析出签名上下文
+        /// </summary>
+        /// <param name="json">json对象</param>
+        /// <returns>返回上下文</returns>
         public static SignatureContext FromJson(JObject json)
         {
             string typename = string.Format("{0}.{1}", typeof(SignatureContext).Namespace, json["type"].AsString());
@@ -99,6 +131,10 @@ namespace AntShares.Core
             return context;
         }
 
+        /// <summary>
+        /// 从签名上下文中获得完整签名的合约脚本
+        /// </summary>
+        /// <returns>返回合约脚本</returns>
         public Script[] GetScripts()
         {
             if (!Completed) throw new InvalidOperationException();
@@ -126,6 +162,10 @@ namespace AntShares.Core
             return FromJson(JObject.Parse(value));
         }
 
+        /// <summary>
+        /// 把签名上下文转为json对象
+        /// </summary>
+        /// <returns>返回json对象</returns>
         public JObject ToJson()
         {
             JObject json = new JObject();

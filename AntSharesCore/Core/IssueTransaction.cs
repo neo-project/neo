@@ -5,10 +5,19 @@ using System.Linq;
 
 namespace AntShares.Core
 {
+    /// <summary>
+    /// 用于分发资产的特殊交易
+    /// </summary>
     public class IssueTransaction : Transaction
     {
+        /// <summary>
+        /// 随机数
+        /// </summary>
         public uint Nonce;
 
+        /// <summary>
+        /// 系统费用
+        /// </summary>
         public override Fixed8 SystemFee => Outputs.All(p => p.AssetId == Blockchain.AntShare.Hash || p.AssetId == Blockchain.AntCoin.Hash) ? Fixed8.Zero : Fixed8.FromDecimal(500);
 
         public IssueTransaction()
@@ -16,11 +25,19 @@ namespace AntShares.Core
         {
         }
 
+        /// <summary>
+        /// 反序列化交易中的额外数据
+        /// </summary>
+        /// <param name="reader">数据来源</param>
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             this.Nonce = reader.ReadUInt32();
         }
 
+        /// <summary>
+        /// 获取需要校验的脚本散列值
+        /// </summary>
+        /// <returns>返回需要校验的脚本散列值</returns>
         public override UInt160[] GetScriptHashesForVerifying()
         {
             HashSet<UInt160> hashes = new HashSet<UInt160>(base.GetScriptHashesForVerifying());
@@ -33,11 +50,19 @@ namespace AntShares.Core
             return hashes.OrderBy(p => p).ToArray();
         }
 
+        /// <summary>
+        /// 序列化交易中的额外数据
+        /// </summary>
+        /// <param name="writer">存放序列化后的结果</param>
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(Nonce);
         }
 
+        /// <summary>
+        /// 验证交易
+        /// </summary>
+        /// <returns>返回验证后的结果</returns>
         public override bool Verify()
         {
             if (!base.Verify()) return false;

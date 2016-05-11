@@ -8,8 +8,14 @@ using System.Linq;
 
 namespace AntShares.Core
 {
+    /// <summary>
+    /// 用于分配小蚁币的特殊交易
+    /// </summary>
     public class ClaimTransaction : Transaction
     {
+        /// <summary>
+        /// 将要用于分配小蚁币的小蚁股
+        /// </summary>
         public TransactionInput[] Claims;
 
         public ClaimTransaction()
@@ -17,6 +23,10 @@ namespace AntShares.Core
         {
         }
 
+        /// <summary>
+        /// 反序列化交易中的额外数据
+        /// </summary>
+        /// <param name="reader">数据来源</param>
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             Claims = reader.ReadSerializableArray<TransactionInput>();
@@ -25,6 +35,10 @@ namespace AntShares.Core
                 throw new FormatException();
         }
 
+        /// <summary>
+        /// 获得需要校验的脚本Hash
+        /// </summary>
+        /// <returns>返回需要校验的脚本Hash</returns>
         public override UInt160[] GetScriptHashesForVerifying()
         {
             HashSet<UInt160> hashes = new HashSet<UInt160>(base.GetScriptHashesForVerifying());
@@ -41,11 +55,19 @@ namespace AntShares.Core
             return hashes.OrderBy(p => p).ToArray();
         }
 
+        /// <summary>
+        /// 序列化交易中的额外数据
+        /// </summary>
+        /// <param name="writer">存放序列化后的结果</param>
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(Claims);
         }
 
+        /// <summary>
+        /// 变成json对象
+        /// </summary>
+        /// <returns>返回json对象</returns>
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
@@ -53,6 +75,10 @@ namespace AntShares.Core
             return json;
         }
 
+        /// <summary>
+        /// 验证交易
+        /// </summary>
+        /// <returns>返回验证结果</returns>
         public override bool Verify()
         {
             if (!base.Verify()) return false;

@@ -7,7 +7,8 @@ using System.Linq;
 namespace AntShares.Core
 {
     /// <summary>
-    /// 交易规则：
+    /// 委托交易
+	/// 交易规则：
     /// 1. 单个交易中，所有订单的代理人必须是同一人；
     /// 2. 单个交易中，所有订单的交易商品必须完全相同，交易货币也必须完全相同；
     /// 3. 交易商品不能和交易货币相同；
@@ -20,17 +21,36 @@ namespace AntShares.Core
     /// </summary>
     public class AgencyTransaction : Transaction
     {
+        /// <summary>
+        /// 资产编号
+        /// </summary>
         public UInt256 AssetId;
+        /// <summary>
+        /// 货币编号
+        /// </summary>
         public UInt256 ValueAssetId;
+        /// <summary>
+        /// 代理人的合约散列
+        /// </summary>
         public UInt160 Agent;
+        /// <summary>
+        /// 订单列表
+        /// </summary>
         public Order[] Orders;
+        /// <summary>
+        /// 部分成交的订单
+        /// </summary>
         public SplitOrder SplitOrder;
 
         public AgencyTransaction()
             : base(TransactionType.AgencyTransaction)
         {
         }
-
+        
+        /// <summary>
+        /// 反序列化交易中的额外数据
+        /// </summary>
+        /// <param name="reader">数据来源</param>
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             this.AssetId = reader.ReadSerializable<UInt256>();
@@ -52,12 +72,20 @@ namespace AntShares.Core
                 this.SplitOrder = reader.ReadSerializable<SplitOrder>();
             }
         }
-
+       
+        /// <summary>
+        /// 获取交易中所有的输入
+        /// </summary>
+        /// <returns>返回交易中所有的输入以及订单<paramref name="Orders"/>中的所有输入</returns>
         public override IEnumerable<TransactionInput> GetAllInputs()
         {
             return Orders.SelectMany(p => p.Inputs).Concat(base.GetAllInputs());
         }
 
+        /// <summary>
+        /// 获得需要校验的脚本Hash
+        /// </summary>
+        /// <returns>返回需要校验的脚本Hash</returns>
         public override UInt160[] GetScriptHashesForVerifying()
         {
             HashSet<UInt160> hashes = new HashSet<UInt160>();
@@ -79,6 +107,10 @@ namespace AntShares.Core
             return hashes.OrderBy(p => p).ToArray();
         }
 
+        /// <summary>
+        /// 序列化交易中的额外数据
+        /// </summary>
+        /// <param name="writer">存放序列化后的结果</param>
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(AssetId);
@@ -103,6 +135,10 @@ namespace AntShares.Core
         //TODO: 此处需要较多的测试来证明它的正确性
         //因为委托交易的验证算法有点太复杂了，
         //考虑未来是否可以优化这个算法
+        /// <summary>
+        /// 验证交易
+        /// </summary>
+        /// <returns>返回验证的结果</returns>
         public override bool Verify()
         {
             if (!base.Verify()) return false;

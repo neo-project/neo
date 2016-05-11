@@ -11,20 +11,53 @@ using System.Linq;
 
 namespace AntShares.Core
 {
+    /// <summary>
+    /// 区块或区块头
+    /// </summary>
     public class Block : Inventory, IEquatable<Block>, ISignable
     {
+        /// <summary>
+        /// 区块版本
+        /// </summary>
         public uint Version;
+        /// <summary>
+        /// 前一个区块的散列值
+        /// </summary>
         public UInt256 PrevBlock;
+        /// <summary>
+        /// 该区块中所有交易的Merkle树的根
+        /// </summary>
         public UInt256 MerkleRoot;
+        /// <summary>
+        /// 时间戳
+        /// </summary>
         public uint Timestamp;
+        /// <summary>
+        /// 区块高度
+        /// </summary>
         public uint Height;
+        /// <summary>
+        /// 随机数
+        /// </summary>
         public ulong Nonce;
+        /// <summary>
+        /// 下一个区块的记账合约的散列值
+        /// </summary>
         public UInt160 NextMiner;
+        /// <summary>
+        /// 用于验证该区块的脚本
+        /// </summary>
         public Script Script;
+        /// <summary>
+        /// 交易列表，当列表中交易的数量为0时，该Block对象表示一个区块头
+        /// </summary>
         public Transaction[] Transactions;
 
         [NonSerialized]
         private Block _header = null;
+        /// <summary>
+        /// 该区块的区块头
+        /// </summary>
         public Block Header
         {
             get
@@ -48,8 +81,10 @@ namespace AntShares.Core
             }
         }
 
+        /// <summary>
+        /// 资产清单的类型
+        /// </summary>
         public override InventoryType InventoryType => InventoryType.Block;
-
 
         Script[] ISignable.Scripts
         {
@@ -64,6 +99,9 @@ namespace AntShares.Core
             }
         }
 
+        /// <summary>
+        /// 返回当前Block对象是否为区块头
+        /// </summary>
         public bool IsHeader => Transactions.Length == 0;
 
         public static Fixed8 CalculateNetFee(IEnumerable<Transaction> transactions)
@@ -75,6 +113,10 @@ namespace AntShares.Core
             return amount_in - amount_out - amount_sysfee;
         }
 
+        /// <summary>
+        /// 反序列化
+        /// </summary>
+        /// <param name="reader">数据来源</param>
         public override void Deserialize(BinaryReader reader)
         {
             ((ISignable)this).DeserializeUnsigned(reader);
@@ -106,6 +148,11 @@ namespace AntShares.Core
             Transactions = new Transaction[0];
         }
 
+        /// <summary>
+        /// 比较当前区块与指定区块是否相等
+        /// </summary>
+        /// <param name="other">要比较的区块</param>
+        /// <returns>返回对象是否相等</returns>
         public bool Equals(Block other)
         {
             if (ReferenceEquals(this, other)) return true;
@@ -113,6 +160,11 @@ namespace AntShares.Core
             return Hash.Equals(other.Hash);
         }
 
+        /// <summary>
+        /// 比较当前区块与指定区块是否相等
+        /// </summary>
+        /// <param name="obj">要比较的区块</param>
+        /// <returns>返回对象是否相等</returns>
         public override bool Equals(object obj)
         {
             return Equals(obj as Block);
@@ -142,11 +194,19 @@ namespace AntShares.Core
             return block;
         }
 
+        /// <summary>
+        /// 获得区块的HashCode
+        /// </summary>
+        /// <returns>返回区块的HashCode</returns>
         public override int GetHashCode()
         {
             return Hash.GetHashCode();
         }
 
+        /// <summary>
+        /// 获得区块中要计算Hash的数据
+        /// </summary>
+        /// <returns>返回区块中要计算Hash的数据</returns>
         protected override byte[] GetHashData()
         {
             using (MemoryStream ms = new MemoryStream())
@@ -167,11 +227,18 @@ namespace AntShares.Core
             return new UInt160[] { prev_header.NextMiner };
         }
 
+        /// <summary>
+        /// 根据区块中所有交易的Hash生成MerkleRoot
+        /// </summary>
         public void RebuildMerkleRoot()
         {
             MerkleRoot = MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray());
         }
 
+        /// <summary>
+        /// 序列化
+        /// </summary>
+        /// <param name="writer">存放序列化后的数据</param>
         public override void Serialize(BinaryWriter writer)
         {
             ((ISignable)this).SerializeUnsigned(writer);
@@ -190,6 +257,10 @@ namespace AntShares.Core
             writer.Write(NextMiner);
         }
 
+        /// <summary>
+        /// 变成json对象
+        /// </summary>
+        /// <returns>返回json对象</returns>
         public JObject ToJson()
         {
             JObject json = new JObject();
@@ -206,6 +277,10 @@ namespace AntShares.Core
             return json;
         }
 
+        /// <summary>
+        /// 把区块对象变为只包含区块头和交易Hash的字节数组，去除交易数据
+        /// </summary>
+        /// <returns>返回只包含区块头和交易Hash的字节数组</returns>
         public byte[] Trim()
         {
             using (MemoryStream ms = new MemoryStream())
@@ -219,11 +294,20 @@ namespace AntShares.Core
             }
         }
 
+        /// <summary>
+        /// 验证该区块头是否合法
+        /// </summary>
+        /// <returns>返回该区块头的合法性，返回true即为合法，否则，非法。</returns>
         public override bool Verify()
         {
             return Verify(false);
         }
 
+        /// <summary>
+        /// 验证该区块头是否合法
+        /// </summary>
+        /// <param name="completely">是否同时验证区块中的每一笔交易</param>
+        /// <returns>返回该区块头的合法性，返回true即为合法，否则，非法。</returns>
         public bool Verify(bool completely)
         {
             if (Hash == Blockchain.GenesisBlock.Hash) return true;

@@ -10,8 +10,16 @@ using System.Text;
 
 namespace AntShares.Core
 {
+    /// <summary>
+    /// 包含一系列签名与验证的扩展方法
+    /// </summary>
     public static class Helper
     {
+        /// <summary>
+        /// 获取需要签名的散列值
+        /// </summary>
+        /// <param name="signable">要签名的数据</param>
+        /// <returns>返回需要签名的散列值</returns>
         public static byte[] GetHashForSigning(this ISignable signable)
         {
             using (MemoryStream ms = new MemoryStream())
@@ -23,6 +31,13 @@ namespace AntShares.Core
             }
         }
 
+        /// <summary>
+        /// 根据传入的公私钥，对可签名的对象进行签名
+        /// </summary>
+        /// <param name="signable">要签名的数据</param>
+        /// <param name="prikey">私钥</param>
+        /// <param name="pubkey">公钥</param>
+        /// <returns>返回签名后的结果</returns>
         internal static byte[] Sign(this ISignable signable, byte[] prikey, byte[] pubkey)
         {
             const int ECDSA_PRIVATE_P256_MAGIC = 0x32534345;
@@ -34,6 +49,12 @@ namespace AntShares.Core
             }
         }
 
+        /// <summary>
+        /// 根据传入的账户信息，对可签名的对象进行签名
+        /// </summary>
+        /// <param name="signable">要签名的数据</param>
+        /// <param name="account">用于签名的账户</param>
+        /// <returns>返回签名后的结果</returns>
         public static byte[] Sign(this ISignable signable, Account account)
         {
             using (account.Decrypt())
@@ -63,6 +84,13 @@ namespace AntShares.Core
             return true;
         }
 
+        /// <summary>
+        /// 根据传入的公钥与签名，对可签名对象的签名进行验证
+        /// </summary>
+        /// <param name="signable">要验证的数据</param>
+        /// <param name="pubkey">公钥</param>
+        /// <param name="signature">签名</param>
+        /// <returns>返回验证结果</returns>
         public static bool VerifySignature(this ISignable signable, ECPoint pubkey, byte[] signature)
         {
             const int ECDSA_PUBLIC_P256_MAGIC = 0x31534345;

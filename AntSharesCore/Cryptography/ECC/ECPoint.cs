@@ -11,7 +11,10 @@ namespace AntShares.Cryptography.ECC
     {
         internal readonly ECFieldElement X, Y;
         internal readonly ECCurve Curve;
-
+        
+        /// <summary>
+        /// 判断是否为无穷远点
+        /// </summary>
         public bool IsInfinity
         {
             get { return X == null && Y == null; }
@@ -26,6 +29,11 @@ namespace AntShares.Cryptography.ECC
             this.Curve = curve;
         }
 
+        /// <summary>
+        /// 与另一对象进行比较
+        /// </summary>
+        /// <param name="other">另一对象</param>
+        /// <returns>返回比较的结果</returns>
         public int CompareTo(ECPoint other)
         {
             if (ReferenceEquals(this, other)) return 0;
@@ -34,6 +42,12 @@ namespace AntShares.Cryptography.ECC
             return Y.CompareTo(other.Y);
         }
 
+        /// <summary>
+        /// 从字节数组中解码
+        /// </summary>
+        /// <param name="encoded">要解码的字节数组</param>
+        /// <param name="curve">曲线参数</param>
+        /// <returns></returns>
         public static ECPoint DecodePoint(byte[] encoded, ECCurve curve)
         {
             ECPoint p = null;
@@ -104,6 +118,12 @@ namespace AntShares.Cryptography.ECC
             throw new NotSupportedException();
         }
 
+        /// <summary>
+        /// 反序列化
+        /// </summary>
+        /// <param name="reader">数据来源</param>
+        /// <param name="curve">椭圆曲线参数</param>
+        /// <returns></returns>
         public static ECPoint DeserializeFrom(BinaryReader reader, ECCurve curve)
         {
             int expectedLength = (curve.Q.GetBitLength() + 7) / 8;
@@ -127,6 +147,11 @@ namespace AntShares.Cryptography.ECC
             }
         }
 
+        /// <summary>
+        /// 将对象编码到字节数组
+        /// </summary>
+        /// <param name="commpressed">是否为压缩格式的编码</param>
+        /// <returns>返回编码后的字节数组</returns>
         public byte[] EncodePoint(bool commpressed)
         {
             if (IsInfinity) return new byte[1];
@@ -147,6 +172,11 @@ namespace AntShares.Cryptography.ECC
             return data;
         }
 
+        /// <summary>
+        /// 比较与另一个对象是否相等
+        /// </summary>
+        /// <param name="other">另一个对象</param>
+        /// <returns>返回比较的结果</returns>
         public bool Equals(ECPoint other)
         {
             if (ReferenceEquals(this, other)) return true;
@@ -156,11 +186,22 @@ namespace AntShares.Cryptography.ECC
             return X.Equals(other.X) && Y.Equals(other.Y);
         }
 
+        /// <summary>
+        /// 比较与另一个对象是否相等
+        /// </summary>
+        /// <param name="obj">另一个对象</param>
+        /// <returns>返回比较的结果</returns>
         public override bool Equals(object obj)
         {
             return Equals(obj as ECPoint);
         }
 
+        /// <summary>   
+        /// 从指定的字节数组中解析出公钥，这个字节数组可以是任意形式的公钥编码、或者包含私钥的内容
+        /// </summary>
+        /// <param name="pubkey">要解析的字节数组</param>
+        /// <param name="curve">椭圆曲线参数</param>
+        /// <returns>返回解析出的公钥</returns>
         public static ECPoint FromBytes(byte[] pubkey, ECCurve curve)
         {
             switch (pubkey.Length)
@@ -179,6 +220,10 @@ namespace AntShares.Cryptography.ECC
             }
         }
 
+        /// <summary>
+        /// 获取HashCode
+        /// </summary>
+        /// <returns>返回HashCode</returns>
         public override int GetHashCode()
         {
             return X.GetHashCode() + Y.GetHashCode();

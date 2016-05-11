@@ -7,18 +7,42 @@ using System.Linq;
 
 namespace AntShares.Core
 {
+    /// <summary>
+    /// 订单
+    /// </summary>
     public class Order : ISignable
     {
+        /// <summary>
+        /// 资产编号
+        /// </summary>
         public UInt256 AssetId;
+        /// <summary>
+        /// 货币编号
+        /// </summary>
         public UInt256 ValueAssetId;
+        /// <summary>
+        /// 代理人的合约散列
+        /// </summary>
         public UInt160 Agent;
         /// <summary>
         /// 买入或卖出的数量，正数表示买入，负数表示卖出
         /// </summary>
         public Fixed8 Amount;
+        /// <summary>
+        /// 价格
+        /// </summary>
         public Fixed8 Price;
+        /// <summary>
+        /// 委托人的合约散列
+        /// </summary>
         public UInt160 Client;
+        /// <summary>
+        /// 输入列表
+        /// </summary>
         public TransactionInput[] Inputs;
+        /// <summary>
+        /// 用于验证该订单的脚本列表
+        /// </summary>
         public Script[] Scripts;
 
         Script[] ISignable.Scripts

@@ -3,13 +3,22 @@ using System.Numerics;
 
 namespace AntShares.Cryptography.ECC
 {
+    /// <summary>
+    /// ECC椭圆曲线参数
+    /// </summary>
     public class ECCurve
     {
         internal readonly BigInteger Q;
         internal readonly ECFieldElement A;
         internal readonly ECFieldElement B;
         internal readonly BigInteger N;
+        /// <summary>
+        /// 无穷远点
+        /// </summary>
         public readonly ECPoint Infinity;
+        /// <summary>
+        /// 基点
+        /// </summary>
         public readonly ECPoint G;
 
         private ECCurve(BigInteger Q, BigInteger A, BigInteger B, BigInteger N, byte[] G)
@@ -22,6 +31,9 @@ namespace AntShares.Cryptography.ECC
             this.G = ECPoint.DecodePoint(G, this);
         }
 
+        /// <summary>
+        /// 曲线secp256k1
+        /// </summary>
         public static readonly ECCurve Secp256k1 = new ECCurve
         (
             BigInteger.Parse("00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F", NumberStyles.AllowHexSpecifier),
@@ -31,6 +43,9 @@ namespace AntShares.Cryptography.ECC
             ("04" + "79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798" + "483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8").HexToBytes()
         );
 
+        /// <summary>
+        /// 曲线secp256r1
+        /// </summary>
         public static readonly ECCurve Secp256r1 = new ECCurve
         (
             BigInteger.Parse("00FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.AllowHexSpecifier),

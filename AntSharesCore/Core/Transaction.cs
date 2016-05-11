@@ -10,18 +10,42 @@ using System.Text;
 
 namespace AntShares.Core
 {
-    public abstract class Transaction : Inventory, IEquatable<Transaction>, ISignable
+    /// <summary>
+    /// 一切交易的基类
+    /// </summary>
+    public abstract class Transaction : Inventory, ISignable
     {
+        /// <summary>
+        /// 交易类型
+        /// </summary>
         public readonly TransactionType Type;
+        /// <summary>
+        /// 该交易所具备的额外特性
+        /// </summary>
         public TransactionAttribute[] Attributes;
+        /// <summary>
+        /// 输入列表
+        /// </summary>
         public TransactionInput[] Inputs;
+        /// <summary>
+        /// 输出列表
+        /// </summary>
         public TransactionOutput[] Outputs;
+        /// <summary>
+        /// 用于验证该交易的脚本列表
+        /// </summary>
         public Script[] Scripts;
 
+        /// <summary>
+        /// 清单类型
+        /// </summary>
         public sealed override InventoryType InventoryType => InventoryType.TX;
 
         [NonSerialized]
         private IReadOnlyDictionary<TransactionInput, TransactionOutput> _references;
+        /// <summary>
+        /// 每一个交易输入所引用的交易输出
+        /// </summary>
         public IReadOnlyDictionary<TransactionInput, TransactionOutput> References
         {
             get
@@ -60,23 +84,44 @@ namespace AntShares.Core
             }
         }
 
+        /// <summary>
+        /// 系统费用
+        /// </summary>
         public virtual Fixed8 SystemFee => Fixed8.Zero;
 
+        /// <summary>
+        /// 用指定的类型初始化Transaction对象
+        /// </summary>
+        /// <param name="type">交易类型</param>
         protected Transaction(TransactionType type)
         {
             this.Type = type;
         }
 
+        /// <summary>
+        /// 反序列化
+        /// </summary>
+        /// <param name="reader">数据来源</param>
         public override void Deserialize(BinaryReader reader)
         {
             ((ISignable)this).DeserializeUnsigned(reader);
             Scripts = reader.ReadSerializableArray<Script>();
         }
 
+        /// <summary>
+        /// 反序列化交易中的额外数据
+        /// </summary>
+        /// <param name="reader">数据来源</param>
         protected virtual void DeserializeExclusiveData(BinaryReader reader)
         {
         }
 
+        /// <summary>
+        /// 从指定的字节数组反序列化一笔交易
+        /// </summary>
+        /// <param name="value">字节数组</param>
+        /// <param name="offset">偏移量，反序列化从该偏移量处开始</param>
+        /// <returns>返回反序列化后的结果</returns>
         public static Transaction DeserializeFrom(byte[] value, int offset = 0)
         {
             using (MemoryStream ms = new MemoryStream(value, offset, value.Length - offset, false))
@@ -86,6 +131,11 @@ namespace AntShares.Core
             }
         }
 
+        /// <summary>
+        /// 反序列化
+        /// </summary>
+        /// <param name="reader">数据来源</param>
+        /// <returns>返回反序列化后的结果</returns>
         internal static Transaction DeserializeFrom(BinaryReader reader)
         {
             TransactionType type = (TransactionType)reader.ReadByte();
@@ -138,6 +188,10 @@ namespace AntShares.Core
             return Equals(obj as Transaction);
         }
 
+        /// <summary>
+        /// 获取交易的所有输入
+        /// </summary>
+        /// <returns>返回交易的所有输入</returns>
         public virtual IEnumerable<TransactionInput> GetAllInputs()
         {
             return Inputs;
@@ -148,6 +202,10 @@ namespace AntShares.Core
             return Hash.GetHashCode();
         }
 
+        /// <summary>
+        /// 获取计算该交易的散列值时所用到的数据
+        /// </summary>
+        /// <returns>返回计算该交易的散列值时所用到的数据</returns>
         protected override byte[] GetHashData()
         {
             using (MemoryStream ms = new MemoryStream())
@@ -158,6 +216,10 @@ namespace AntShares.Core
             }
         }
 
+        /// <summary>
+        /// 获取需要校验的脚本散列值
+        /// </summary>
+        /// <returns>返回需要校验的脚本散列值</returns>
         public virtual UInt160[] GetScriptHashesForVerifying()
         {
             if (References == null) throw new InvalidOperationException();
@@ -174,6 +236,10 @@ namespace AntShares.Core
             return hashes.OrderBy(p => p).ToArray();
         }
 
+        /// <summary>
+        /// 获取交易后各资产的变化量
+        /// </summary>
+        /// <returns>返回交易后各资产的变化量</returns>
         public IEnumerable<TransactionResult> GetTransactionResults()
         {
             if (References == null) return null;
@@ -192,16 +258,27 @@ namespace AntShares.Core
             }).Where(p => p.Amount != Fixed8.Zero);
         }
 
+        /// <summary>
+        /// 通知子类反序列化完毕
+        /// </summary>
         protected virtual void OnDeserialized()
         {
         }
 
+        /// <summary>
+        /// 序列化
+        /// </summary>
+        /// <param name="writer">存放序列化后的结果</param>
         public override void Serialize(BinaryWriter writer)
         {
             ((ISignable)this).SerializeUnsigned(writer);
             writer.Write(Scripts);
         }
 
+        /// <summary>
+        /// 序列化交易中的额外数据
+        /// </summary>
+        /// <param name="writer">存放序列化后的结果</param>
         protected virtual void SerializeExclusiveData(BinaryWriter writer)
         {
         }
@@ -215,6 +292,10 @@ namespace AntShares.Core
             writer.Write(Outputs);
         }
 
+        /// <summary>
+        /// 变成json对象
+        /// </summary>
+        /// <returns>返回json对象</returns>
         public virtual JObject ToJson()
         {
             JObject json = new JObject();
@@ -228,6 +309,10 @@ namespace AntShares.Core
             return json;
         }
 
+        /// <summary>
+        /// 验证交易
+        /// </summary>
+        /// <returns>返回验证的结果</returns>
         public override bool Verify()
         {
             if (Blockchain.Default.ContainsTransaction(Hash)) return true;

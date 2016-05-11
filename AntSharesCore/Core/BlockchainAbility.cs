@@ -2,9 +2,15 @@
 
 namespace AntShares.Core
 {
+    /// <summary>
+    /// 表示特定区块链实现所提供的功能
+    /// </summary>
     [Flags]
     public enum BlockchainAbility : byte
     {
+        /// <summary>
+        /// 无
+        /// </summary>
         None = 0,
 
         /// <summary>
@@ -27,6 +33,9 @@ namespace AntShares.Core
         /// </summary>
         Statistics = 0x08,
 
+        /// <summary>
+        /// 所有的功能
+        /// </summary>
         All = 0xff
     }
 }

@@ -1,12 +1,27 @@
 ﻿namespace AntShares.Core
 {
+    /// <summary>
+    /// 表示交易特性的用途
+    /// </summary>
     public enum TransactionAttributeUsage : byte
     {
+        /// <summary>
+        /// 外部合同的散列值
+        /// </summary>
         ContractHash = 0x00,
 
+        /// <summary>
+        /// 用于ECDH密钥交换的公钥，该公钥的第一个字节为0x02
+        /// </summary>
         ECDH02 = 0x02,
+        /// <summary>
+        /// 用于ECDH密钥交换的公钥，该公钥的第一个字节为0x03
+        /// </summary>
         ECDH03 = 0x03,
 
+        /// <summary>
+        /// 用于对交易进行额外的验证
+        /// </summary>
         Script = 0x20,
 
         CertUrl = 0x80,
@@ -29,6 +44,9 @@
         Hash14 = 0xae,
         Hash15 = 0xaf,
 
+        /// <summary>
+        /// 备注
+        /// </summary>
         Remark = 0xf0,
         Remark1 = 0xf1,
         Remark2 = 0xf2,

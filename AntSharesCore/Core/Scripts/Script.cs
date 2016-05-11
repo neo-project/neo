@@ -4,6 +4,9 @@ using System.IO;
 
 namespace AntShares.Core.Scripts
 {
+    /// <summary>
+    /// 脚本
+    /// </summary>
     public class Script : ISerializable
     {
         public byte[] StackScript;
@@ -21,6 +24,10 @@ namespace AntShares.Core.Scripts
             writer.WriteVarBytes(RedeemScript);
         }
 
+        /// <summary>
+        /// 变成json对象
+        /// </summary>
+        /// <returns>返回json对象</returns>
         public JObject ToJson()
         {
             JObject json = new JObject();

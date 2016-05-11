@@ -4,8 +4,14 @@ using System.Linq;
 
 namespace AntShares.Core
 {
+    /// <summary>
+    /// 用于分配字节费的特殊交易
+    /// </summary>
     public class MinerTransaction : Transaction
     {
+        /// <summary>
+        /// 随机数
+        /// </summary>
         public uint Nonce;
 
         public MinerTransaction()
@@ -13,11 +19,18 @@ namespace AntShares.Core
         {
         }
 
+        /// <summary>
+        /// 反序列化交易中的额外数据
+        /// </summary>
+        /// <param name="reader">数据来源</param>
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             this.Nonce = reader.ReadUInt32();
         }
 
+        /// <summary>
+        /// 反序列化进行完毕时触发
+        /// </summary>
         protected override void OnDeserialized()
         {
             base.OnDeserialized();
@@ -27,6 +40,10 @@ namespace AntShares.Core
                 throw new FormatException();
         }
 
+        /// <summary>
+        /// 序列化交易中的额外数据
+        /// </summary>
+        /// <param name="writer">存放序列化后的结果 </param>
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(Nonce);

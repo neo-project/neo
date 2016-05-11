@@ -8,10 +8,19 @@ using AntShares.IO.Json;
 
 namespace AntShares.Core
 {
+    /// <summary>
+    /// 用于投票选出记账人的特殊交易
+    /// </summary>
     public class VotingTransaction : Transaction
     {
+        /// <summary>
+        /// 报名表的散列值列表，本交易中的选票将投给这些报名表所指代的候选人
+        /// </summary>
         public UInt256[] Enrollments;
 
+        /// <summary>
+        /// 系统费用
+        /// </summary>
         public override Fixed8 SystemFee => Fixed8.FromDecimal(10);
 
         public VotingTransaction()
@@ -19,6 +28,10 @@ namespace AntShares.Core
         {
         }
 
+        /// <summary>
+        /// 反序列化交易中的额外数据
+        /// </summary>
+        /// <param name="reader">数据来源</param>
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             this.Enrollments = reader.ReadSerializableArray<UInt256>();
@@ -28,6 +41,9 @@ namespace AntShares.Core
                 throw new FormatException();
         }
 
+        /// <summary>
+        /// 反序列化进行完毕时触发
+        /// </summary>
         protected override void OnDeserialized()
         {
             base.OnDeserialized();
@@ -35,11 +51,19 @@ namespace AntShares.Core
                 throw new FormatException();
         }
 
+        /// <summary>
+        /// 序列化交易中的额外数据
+        /// </summary>
+        /// <param name="writer">存放序列化后的结果</param>
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(Enrollments);
         }
 
+        /// <summary>
+        /// 将交易转变为json对象的形式
+        /// </summary>
+        /// <returns>返回Json对象</returns>
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
@@ -47,6 +71,10 @@ namespace AntShares.Core
             return json;
         }
 
+        /// <summary>
+        /// 验证交易
+        /// </summary>
+        /// <returns>返回验证结果</returns>
         public override bool Verify()
         {
             if (!base.Verify()) return false;
