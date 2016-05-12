@@ -73,27 +73,11 @@ namespace AntShares.Core
                         signatures[i][pubkey] = signature;
                     else
                         signatures[i].Add(pubkey, signature);
-                    Check(contract);
+                    completed[i] |= contract.ParameterList.Length == signatures[i].Count && contract.ParameterList.All(p => p == ContractParameterType.Signature);
                     return true;
                 }
             }
             return false;
-        }
-
-        /// <summary>
-        /// 检查指定合约的签名是否完整
-        /// </summary>
-        /// <param name="contract">合约</param>
-        public void Check(Contract contract)
-        {
-            for (int i = 0; i < ScriptHashes.Length; i++)
-            {
-                if (ScriptHashes[i] == contract.ScriptHash)
-                {
-                    completed[i] = contract.IsCompleted(signatures[i].Keys.ToArray());
-                    break;
-                }
-            }
         }
 
         /// <summary>

@@ -1,5 +1,4 @@
 ﻿using AntShares.Core.Scripts;
-using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using System;
 using System.IO;
@@ -35,6 +34,11 @@ namespace AntShares.Wallets
                 return _address;
             }
         }
+
+        /// <summary>
+        /// 合约的形式参数列表
+        /// </summary>
+        public abstract ContractParameterType[] ParameterList { get; }
 
         private UInt160 _scriptHash;
         /// <summary>
@@ -88,13 +92,6 @@ namespace AntShares.Wallets
         {
             return ScriptHash.GetHashCode();
         }
-
-        /// <summary>
-        /// 判断由指定的账户签名后，合约是否可以达成
-        /// </summary>
-        /// <param name="publicKeys">公钥列表</param>
-        /// <returns>返回判断的结果</returns>
-        public abstract bool IsCompleted(ECPoint[] publicKeys);
 
         /// <summary>
         /// 序列化
