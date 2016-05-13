@@ -79,6 +79,8 @@
             this.lbl_height = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel4 = new System.Windows.Forms.ToolStripStatusLabel();
             this.lbl_count_node = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripProgressBar1 = new System.Windows.Forms.ToolStripProgressBar();
+            this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
@@ -95,6 +97,7 @@
             this.columnHeader7 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader8 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader9 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.自定义CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -368,7 +371,7 @@
             this.复制到剪贴板CToolStripMenuItem,
             this.删除DToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(164, 142);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(164, 164);
             this.contextMenuStrip1.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip1_Opening);
             // 
             // 创建新地址NToolStripMenuItem
@@ -406,7 +409,8 @@
             // 创建智能合约SToolStripMenuItem
             // 
             this.创建智能合约SToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.多方签名MToolStripMenuItem});
+            this.多方签名MToolStripMenuItem,
+            this.自定义CToolStripMenuItem});
             this.创建智能合约SToolStripMenuItem.Enabled = false;
             this.创建智能合约SToolStripMenuItem.Name = "创建智能合约SToolStripMenuItem";
             this.创建智能合约SToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
@@ -456,7 +460,10 @@
             this.toolStripStatusLabel1,
             this.lbl_height,
             this.toolStripStatusLabel4,
-            this.lbl_count_node});
+            this.lbl_count_node,
+            this.toolStripProgressBar1,
+            this.toolStripStatusLabel2});
+            this.statusStrip1.LayoutStyle = System.Windows.Forms.ToolStripLayoutStyle.HorizontalStackWithOverflow;
             this.statusStrip1.Location = new System.Drawing.Point(0, 520);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(756, 22);
@@ -487,6 +494,21 @@
             this.lbl_count_node.Name = "lbl_count_node";
             this.lbl_count_node.Size = new System.Drawing.Size(15, 17);
             this.lbl_count_node.Text = "0";
+            // 
+            // toolStripProgressBar1
+            // 
+            this.toolStripProgressBar1.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            this.toolStripProgressBar1.Maximum = 15;
+            this.toolStripProgressBar1.Name = "toolStripProgressBar1";
+            this.toolStripProgressBar1.Size = new System.Drawing.Size(100, 16);
+            this.toolStripProgressBar1.Step = 1;
+            // 
+            // toolStripStatusLabel2
+            // 
+            this.toolStripStatusLabel2.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
+            this.toolStripStatusLabel2.Size = new System.Drawing.Size(95, 17);
+            this.toolStripStatusLabel2.Text = "等待下一个区块:";
             // 
             // timer1
             // 
@@ -635,6 +657,13 @@
             // 
             this.columnHeader9.Text = "确认";
             // 
+            // 自定义CToolStripMenuItem
+            // 
+            this.自定义CToolStripMenuItem.Name = "自定义CToolStripMenuItem";
+            this.自定义CToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.自定义CToolStripMenuItem.Text = "自定义(&C)...";
+            this.自定义CToolStripMenuItem.Click += new System.EventHandler(this.自定义CToolStripMenuItem_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
@@ -732,6 +761,9 @@
         private System.Windows.Forms.ColumnHeader columnHeader9;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip2;
         private System.Windows.Forms.ToolStripMenuItem 删除DToolStripMenuItem1;
+        private System.Windows.Forms.ToolStripProgressBar toolStripProgressBar1;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel2;
+        private System.Windows.Forms.ToolStripMenuItem 自定义CToolStripMenuItem;
     }
 }
 

@@ -94,6 +94,12 @@
     <Compile Include="UI\ElectionDialog.Designer.cs">
       <DependentUpon>ElectionDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\ImportCustomContractDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\ImportCustomContractDialog.Designer.cs">
+      <DependentUpon>ImportCustomContractDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\ImportPrivateKeyDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -232,6 +238,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\ElectionDialog.resx">
       <DependentUpon>ElectionDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ImportCustomContractDialog.resx">
+      <DependentUpon>ImportCustomContractDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\ImportPrivateKeyDialog.resx">
       <DependentUpon>ImportPrivateKeyDialog.cs</DependentUpon>

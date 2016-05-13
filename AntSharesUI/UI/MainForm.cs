@@ -23,6 +23,7 @@ namespace AntShares.UI
     {
         private static readonly UInt160 RecycleScriptHash = new byte[] { (byte)ScriptOp.OP_DUP, (byte)ScriptOp.OP_HASH160, (byte)ScriptOp.OP_CALL, (byte)InterfaceOp.CHAIN_HEIGHT, (byte)ScriptOp.OP_CALL, (byte)InterfaceOp.CHAIN_GETHEADER, (byte)ScriptOp.OP_TOALTSTACK, (byte)ScriptOp.OP_CALL, (byte)InterfaceOp.HEADER_NEXTMINER, (byte)ScriptOp.OP_EQUALVERIFY, 0xB0/*OP_EVAL*/ }.ToScriptHash();
         private bool balance_changed = false;
+        private DateTime persistence_time = DateTime.MinValue;
 
         public MainForm()
         {
@@ -36,6 +37,11 @@ namespace AntShares.UI
                 Name = contract.Address,
                 Tag = contract
             }).Selected = selected;
+        }
+
+        private void Blockchain_PersistCompleted(object sender, Block block)
+        {
+            persistence_time = DateTime.Now;
         }
 
         private void ChangeWallet(UserWallet wallet)
@@ -128,10 +134,12 @@ namespace AntShares.UI
         private void MainForm_Load(object sender, EventArgs e)
         {
             Program.LocalNode.Start(Settings.Default.NodePort);
+            Blockchain.PersistCompleted += Blockchain_PersistCompleted;
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+            Blockchain.PersistCompleted -= Blockchain_PersistCompleted;
             ChangeWallet(null);
         }
 
@@ -139,6 +147,16 @@ namespace AntShares.UI
         {
             lbl_height.Text = $"{Blockchain.Default.Height}/{Blockchain.Default.HeaderHeight}";
             lbl_count_node.Text = Program.LocalNode.RemoteNodeCount.ToString();
+            TimeSpan persistence_span = DateTime.Now - persistence_time;
+            if (persistence_span > Blockchain.TimePerBlock)
+            {
+                toolStripProgressBar1.Style = ProgressBarStyle.Marquee;
+            }
+            else
+            {
+                toolStripProgressBar1.Value = persistence_span.Seconds;
+                toolStripProgressBar1.Style = ProgressBarStyle.Blocks;
+            }
             if (balance_changed)
             {
                 IEnumerable<Coin> coins = Program.CurrentWallet?.FindCoins() ?? Enumerable.Empty<Coin>();
@@ -433,6 +451,18 @@ namespace AntShares.UI
                     MessageBox.Show("无法添加智能合约，因为当前钱包中不包含签署该合约的私钥。");
                     return;
                 }
+                Program.CurrentWallet.AddContract(contract);
+                listView1.SelectedIndices.Clear();
+                AddContractToListView(contract, true);
+            }
+        }
+
+        private void 自定义CToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (ImportCustomContractDialog dialog = new ImportCustomContractDialog())
+            {
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                CustomContract contract = dialog.GetContract();
                 Program.CurrentWallet.AddContract(contract);
                 listView1.SelectedIndices.Clear();
                 AddContractToListView(contract, true);

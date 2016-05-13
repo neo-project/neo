@@ -5,6 +5,7 @@ using AntShares.Network;
 using AntShares.Properties;
 using AntShares.UI;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -83,9 +84,10 @@ namespace AntShares
                     store.Add(cert);
                     return true;
                 }
-                catch (CryptographicException)
+                catch (CryptographicException) { }
+                if (MessageBox.Show("小蚁需要安装Onchain的根证书才能对区块链上的资产进行认证，是否现在就安装证书？", "安装证书", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) != DialogResult.Yes) return true;
+                try
                 {
-                    if (MessageBox.Show("小蚁需要安装Onchain的根证书才能对区块链上的资产进行认证，是否现在就安装证书？", "安装证书", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) != DialogResult.Yes) return true;
                     Process.Start(new ProcessStartInfo
                     {
                         FileName = Application.ExecutablePath,
@@ -95,6 +97,9 @@ namespace AntShares
                     });
                     return false;
                 }
+                catch (Win32Exception) { }
+                MessageBox.Show("您已取消了证书安装过程。");
+                return true;
             }
         }
 
