@@ -1,7 +1,6 @@
 ﻿using AntShares.Core;
 using AntShares.IO;
 using AntShares.IO.Caching;
-using LevelDB;
 using System;
 using System.Collections.Generic;
 using System.IO;
