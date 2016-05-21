@@ -18,7 +18,6 @@ namespace AntShares.Core
         /// </summary>
         public ECPoint PublicKey;
 
-        [NonSerialized]
         private UInt160 _miner = null;
         /// <summary>
         /// 记账人的抵押地址

@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -46,19 +45,21 @@ namespace AntShares.Wallets
                 this.contracts = new Dictionary<UInt160, Contract>();
                 this.coins = new TrackableCollection<TransactionInput, Coin>();
                 this.current_height = Blockchain.Default?.HeaderHeight + 1 ?? 0;
-                using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
+                using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
                 {
-                    rng.GetNonZeroBytes(iv);
-                    rng.GetNonZeroBytes(masterKey);
+                    rng.GetBytes(iv);
+                    rng.GetBytes(masterKey);
                 }
-                Version current_version = Assembly.GetExecutingAssembly().GetName().Version;
+                Version current_version = GetType().GetTypeInfo().Assembly.GetName().Version;
                 BuildDatabase();
                 SaveStoredData("PasswordHash", passwordKey.Sha256());
                 SaveStoredData("IV", iv);
                 SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
                 SaveStoredData("Version", new[] { current_version.Major, current_version.Minor, current_version.Build, current_version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
                 SaveStoredData("Height", BitConverter.GetBytes(current_height));
+#if NETFRAMEWORK
                 ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
+#endif
             }
             else
             {
@@ -67,7 +68,9 @@ namespace AntShares.Wallets
                     throw new CryptographicException();
                 this.iv = LoadStoredData("IV");
                 this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
+#if NETFRAMEWORK
                 ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
+#endif
                 this.accounts = LoadAccounts().ToDictionary(p => p.PublicKeyHash);
                 this.contracts = LoadContracts().ToDictionary(p => p.ScriptHash);
                 this.coins = new TrackableCollection<TransactionInput, Coin>(LoadCoins());
@@ -81,11 +84,6 @@ namespace AntShares.Wallets
         }
 
         protected Wallet(string path, string password, bool create)
-            : this(path, password.ToAesKey(), create)
-        {
-        }
-
-        protected Wallet(string path, SecureString password, bool create)
             : this(path, password.ToAesKey(), create)
         {
         }
@@ -161,7 +159,9 @@ namespace AntShares.Wallets
         public void ChangePassword(string password)
         {
             byte[] passwordKey = password.ToAesKey();
+#if NETFRAMEWORK
             using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
+#endif
             {
                 try
                 {
@@ -221,7 +221,9 @@ namespace AntShares.Wallets
         {
             if (encryptedPrivateKey == null) throw new ArgumentNullException(nameof(encryptedPrivateKey));
             if (encryptedPrivateKey.Length != 96) throw new ArgumentException();
+#if NETFRAMEWORK
             using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
+#endif
             {
                 return encryptedPrivateKey.AesDecrypt(masterKey, iv);
             }
@@ -264,7 +266,9 @@ namespace AntShares.Wallets
 
         protected byte[] EncryptPrivateKey(byte[] decryptedPrivateKey)
         {
+#if NETFRAMEWORK
             using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
+#endif
             {
                 return decryptedPrivateKey.AesEncrypt(masterKey, iv);
             }

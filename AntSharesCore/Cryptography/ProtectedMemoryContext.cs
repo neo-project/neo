@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if NETFRAMEWORK
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 
@@ -35,3 +36,4 @@ namespace AntShares.Cryptography
         }
     }
 }
+#endif

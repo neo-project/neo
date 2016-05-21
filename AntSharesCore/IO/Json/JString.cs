@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Text;
-using System.Web;
+using System.Text.Encodings.Web;
 
 namespace AntShares.IO.Json
 {
@@ -66,7 +67,7 @@ namespace AntShares.IO.Json
         {
             if (type == typeof(bool))
                 return true;
-            if (type.IsEnum && Enum.IsDefined(type, Value))
+            if (type.GetTypeInfo().IsEnum && Enum.IsDefined(type, Value))
                 return true;
             if (type == typeof(decimal))
                 return true;
@@ -103,7 +104,7 @@ namespace AntShares.IO.Json
 
         public override string ToString()
         {
-            return HttpUtility.JavaScriptStringEncode(Value, true);
+            return $"\"{JavaScriptEncoder.Default.Encode(Value)}\"";
         }
     }
 }

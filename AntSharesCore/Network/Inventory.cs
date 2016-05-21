@@ -1,13 +1,11 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO;
-using System;
 using System.IO;
 
 namespace AntShares.Network
 {
     public abstract class Inventory : ISerializable
     {
-        [NonSerialized]
         private UInt256 _hash = null;
 
         public UInt256 Hash

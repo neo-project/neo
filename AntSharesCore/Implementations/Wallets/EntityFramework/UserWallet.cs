@@ -1,12 +1,11 @@
 ﻿using AntShares.Core;
 using AntShares.IO;
 using AntShares.Wallets;
-using Microsoft.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Security;
 using CoreTransaction = AntShares.Core.Transaction;
 using WalletAccount = AntShares.Wallets.Account;
 using WalletCoin = AntShares.Wallets.Coin;
@@ -19,11 +18,6 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         public event EventHandler<IEnumerable<TransactionInfo>> TransactionsChanged;
 
         protected UserWallet(string path, string password, bool create)
-            : base(path, password, create)
-        {
-        }
-
-        protected UserWallet(string path, SecureString password, bool create)
             : base(path, password, create)
         {
         }
@@ -62,13 +56,6 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         }
 
         public static UserWallet Create(string path, string password)
-        {
-            UserWallet wallet = new UserWallet(path, password, true);
-            wallet.CreateAccount();
-            return wallet;
-        }
-
-        public static UserWallet Create(string path, SecureString password)
         {
             UserWallet wallet = new UserWallet(path, password, true);
             wallet.CreateAccount();
@@ -141,7 +128,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             {
                 buffer = ctx.Keys.FirstOrDefault(p => p.Name == "Version")?.Value;
             }
-            if (buffer == null) return new Version();
+            if (buffer == null) return new Version(0, 0);
             int major = BitConverter.ToInt32(buffer, 0);
             int minor = BitConverter.ToInt32(buffer, 4);
             int build = BitConverter.ToInt32(buffer, 8);
@@ -216,7 +203,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
 
         public static void Migrate(string path_old, string path_new)
         {
-            Version current_version = Assembly.GetExecutingAssembly().GetName().Version;
+            Version current_version = typeof(UserWallet).GetTypeInfo().Assembly.GetName().Version;
             using (WalletDataContext ctx_old = new WalletDataContext(path_old))
             using (WalletDataContext ctx_new = new WalletDataContext(path_new))
             {
@@ -340,11 +327,6 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         }
 
         public static UserWallet Open(string path, string password)
-        {
-            return new UserWallet(path, password, false);
-        }
-
-        public static UserWallet Open(string path, SecureString password)
         {
             return new UserWallet(path, password, false);
         }

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace AntShares.Core
@@ -41,7 +42,6 @@ namespace AntShares.Core
         /// </summary>
         public sealed override InventoryType InventoryType => InventoryType.TX;
 
-        [NonSerialized]
         private IReadOnlyDictionary<TransactionInput, TransactionOutput> _references;
         /// <summary>
         /// 每一个交易输入所引用的交易输出
@@ -140,7 +140,7 @@ namespace AntShares.Core
         {
             TransactionType type = (TransactionType)reader.ReadByte();
             string typeName = string.Format("{0}.{1}", typeof(Transaction).Namespace, type);
-            Transaction transaction = typeof(Transaction).Assembly.CreateInstance(typeName) as Transaction;
+            Transaction transaction = typeof(Transaction).GetTypeInfo().Assembly.CreateInstance(typeName) as Transaction;
             if (transaction == null)
                 throw new FormatException();
             transaction.DeserializeUnsignedWithoutType(reader);

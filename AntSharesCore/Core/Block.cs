@@ -53,7 +53,6 @@ namespace AntShares.Core
         /// </summary>
         public Transaction[] Transactions;
 
-        [NonSerialized]
         private Block _header = null;
         /// <summary>
         /// 该区块的区块头

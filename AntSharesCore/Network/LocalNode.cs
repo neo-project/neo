@@ -425,17 +425,17 @@ namespace AntShares.Network
             }
         }
 
-        public void Start(int port = DEFAULT_PORT)
+        public async void Start(int port = DEFAULT_PORT)
         {
             if (Interlocked.Exchange(ref started, 1) == 0)
             {
                 IPAddress address = LocalAddresses.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork && !IsIntranetAddress(p));
-                if (address == null && UpnpEnabled && UPnP.Discover())
+                if (address == null && UpnpEnabled && await UPnP.DiscoverAsync())
                 {
                     try
                     {
-                        address = UPnP.GetExternalIP();
-                        UPnP.ForwardPort(port, ProtocolType.Tcp, "AntShares");
+                        address = await UPnP.GetExternalIPAsync();
+                        await UPnP.ForwardPortAsync(port, ProtocolType.Tcp, "AntShares");
                         LocalAddresses.Add(address);
                     }
                     catch { }

@@ -11,7 +11,6 @@ namespace AntShares.Wallets
         public Fixed8 Value;
         public UInt160 ScriptHash;
 
-        [NonSerialized]
         private string _address = null;
         public string Address
         {
@@ -27,7 +26,6 @@ namespace AntShares.Wallets
 
         TransactionInput ITrackable<TransactionInput>.Key => Input;
 
-        [NonSerialized]
         private CoinState state;
         public CoinState State
         {

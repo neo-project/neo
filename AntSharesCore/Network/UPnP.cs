@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml;
 
 namespace AntShares.Network
@@ -14,7 +15,7 @@ namespace AntShares.Network
 
         public static TimeSpan TimeOut { get; set; } = TimeSpan.FromSeconds(3);
 
-        public static bool Discover()
+        public static async Task<bool> DiscoverAsync()
         {
             Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             s.ReceiveTimeout = (int)TimeOut.TotalMilliseconds;
@@ -50,7 +51,7 @@ namespace AntShares.Network
                 {
                     resp = resp.Substring(resp.ToLower().IndexOf("location:") + 9);
                     resp = resp.Substring(0, resp.IndexOf("\r")).Trim();
-                    if (!string.IsNullOrEmpty(_serviceUrl = GetServiceUrl(resp)))
+                    if (!string.IsNullOrEmpty(_serviceUrl = await GetServiceUrlAsync(resp)))
                     {
                         _descUrl = resp;
                         return true;
@@ -60,14 +61,14 @@ namespace AntShares.Network
             return false;
         }
 
-        private static string GetServiceUrl(string resp)
+        private static async Task<string> GetServiceUrlAsync(string resp)
         {
             try
             {
                 XmlDocument desc = new XmlDocument();
-                WebRequest request = WebRequest.Create(resp);
-                request.Timeout = (int)TimeOut.TotalMilliseconds;
-                desc.Load(request.GetResponse().GetResponseStream());
+                HttpWebRequest request = WebRequest.CreateHttp(resp);
+                WebResponse response = await request.GetResponseAsync();
+                desc.Load(response.GetResponseStream());
                 XmlNamespaceManager nsMgr = new XmlNamespaceManager(desc.NameTable);
                 nsMgr.AddNamespace("tns", "urn:schemas-upnp-org:device-1-0");
                 XmlNode typen = desc.SelectSingleNode("//tns:device/tns:deviceType/text()", nsMgr);
@@ -90,22 +91,22 @@ namespace AntShares.Network
             return resp.Substring(0, n) + p;
         }
 
-        public static void ForwardPort(int port, ProtocolType protocol, string description)
+        public static async Task ForwardPortAsync(int port, ProtocolType protocol, string description)
         {
             if (string.IsNullOrEmpty(_serviceUrl))
                 throw new Exception("No UPnP service available or Discover() has not been called");
-            XmlDocument xdoc = SOAPRequest(_serviceUrl, "<u:AddPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
+            XmlDocument xdoc = await SOAPRequestAsync(_serviceUrl, "<u:AddPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
                 "<NewRemoteHost></NewRemoteHost><NewExternalPort>" + port.ToString() + "</NewExternalPort><NewProtocol>" + protocol.ToString().ToUpper() + "</NewProtocol>" +
-                "<NewInternalPort>" + port.ToString() + "</NewInternalPort><NewInternalClient>" + Dns.GetHostAddresses(Dns.GetHostName()).First(p => p.AddressFamily == AddressFamily.InterNetwork).ToString() +
+                "<NewInternalPort>" + port.ToString() + "</NewInternalPort><NewInternalClient>" + (await Dns.GetHostAddressesAsync(Dns.GetHostName())).First(p => p.AddressFamily == AddressFamily.InterNetwork).ToString() +
                 "</NewInternalClient><NewEnabled>1</NewEnabled><NewPortMappingDescription>" + description +
             "</NewPortMappingDescription><NewLeaseDuration>0</NewLeaseDuration></u:AddPortMapping>", "AddPortMapping");
         }
 
-        public static void DeleteForwardingRule(int port, ProtocolType protocol)
+        public static async Task DeleteForwardingRuleAsync(int port, ProtocolType protocol)
         {
             if (string.IsNullOrEmpty(_serviceUrl))
                 throw new Exception("No UPnP service available or Discover() has not been called");
-            XmlDocument xdoc = SOAPRequest(_serviceUrl,
+            XmlDocument xdoc = await SOAPRequestAsync(_serviceUrl,
             "<u:DeletePortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
             "<NewRemoteHost>" +
             "</NewRemoteHost>" +
@@ -114,11 +115,11 @@ namespace AntShares.Network
             "</u:DeletePortMapping>", "DeletePortMapping");
         }
 
-        public static IPAddress GetExternalIP()
+        public static async Task<IPAddress> GetExternalIPAsync()
         {
             if (string.IsNullOrEmpty(_serviceUrl))
                 throw new Exception("No UPnP service available or Discover() has not been called");
-            XmlDocument xdoc = SOAPRequest(_serviceUrl, "<u:GetExternalIPAddress xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
+            XmlDocument xdoc = await SOAPRequestAsync(_serviceUrl, "<u:GetExternalIPAddress xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
             "</u:GetExternalIPAddress>", "GetExternalIPAddress");
             XmlNamespaceManager nsMgr = new XmlNamespaceManager(xdoc.NameTable);
             nsMgr.AddNamespace("tns", "urn:schemas-upnp-org:device-1-0");
@@ -126,7 +127,7 @@ namespace AntShares.Network
             return IPAddress.Parse(IP);
         }
 
-        private static XmlDocument SOAPRequest(string url, string soap, string function)
+        private static async Task<XmlDocument> SOAPRequestAsync(string url, string soap, string function)
         {
             string req = "<?xml version=\"1.0\"?>" +
             "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">" +
@@ -134,15 +135,15 @@ namespace AntShares.Network
             soap +
             "</s:Body>" +
             "</s:Envelope>";
-            WebRequest r = WebRequest.Create(url);
+            HttpWebRequest r = WebRequest.CreateHttp(url);
             r.Method = "POST";
             byte[] b = Encoding.UTF8.GetBytes(req);
-            r.Headers.Add("SOAPACTION", "\"urn:schemas-upnp-org:service:WANIPConnection:1#" + function + "\"");
+            r.Headers["SOAPACTION"] = "\"urn:schemas-upnp-org:service:WANIPConnection:1#" + function + "\"";
             r.ContentType = "text/xml; charset=\"utf-8\"";
-            r.ContentLength = b.Length;
-            r.GetRequestStream().Write(b, 0, b.Length);
+            Stream reqs = await r.GetRequestStreamAsync();
+            reqs.Write(b, 0, b.Length);
             XmlDocument resp = new XmlDocument();
-            WebResponse wres = r.GetResponse();
+            WebResponse wres = await r.GetResponseAsync();
             Stream ress = wres.GetResponseStream();
             resp.Load(ress);
             return resp;

@@ -75,7 +75,6 @@ namespace AntShares.Core
             this.Admin = reader.ReadSerializable<UInt160>();
         }
 
-        [NonSerialized]
         private Dictionary<CultureInfo, string> _names;
         /// <summary>
         /// 获取资产的本地化名称
@@ -87,16 +86,16 @@ namespace AntShares.Core
             string name_str = AssetType == AssetType.Share ? ShareName : Name;
             if (_names == null)
             {
-                _names = ((JArray)JObject.Parse(name_str)).ToDictionary(p => CultureInfo.GetCultureInfo(p["lang"].AsString()), p => p["name"].AsString());
+                _names = ((JArray)JObject.Parse(name_str)).ToDictionary(p => new CultureInfo(p["lang"].AsString()), p => p["name"].AsString());
             }
             if (culture == null) culture = CultureInfo.CurrentCulture;
             if (_names.ContainsKey(culture))
             {
                 return _names[culture];
             }
-            else if (_names.ContainsKey(CultureInfo.GetCultureInfo("en")))
+            else if (_names.ContainsKey(new CultureInfo("en")))
             {
-                return _names[CultureInfo.GetCultureInfo("en")];
+                return _names[new CultureInfo("en")];
             }
             else
             {

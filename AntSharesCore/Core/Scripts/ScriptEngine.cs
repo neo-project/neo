@@ -841,7 +841,7 @@ namespace AntShares.Core.Scripts
                     }
                     break;
                 case ScriptOp.OP_SHA1:
-                    using (SHA1Managed sha = new SHA1Managed())
+                    using (SHA1 sha = SHA1.Create())
                     {
                         if (stack.Count < 1) return false;
                         StackItem x = stack.Pop();

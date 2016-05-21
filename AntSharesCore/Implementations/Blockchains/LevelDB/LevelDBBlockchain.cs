@@ -105,12 +105,11 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 }
                 db.Write(WriteOptions.Default, batch);
                 Persist(GenesisBlock);
-                db.Put(WriteOptions.Default, SliceBuilder.Begin(DataEntryPrefix.CFG_Version), Assembly.GetExecutingAssembly().GetName().Version.ToString());
+                db.Put(WriteOptions.Default, SliceBuilder.Begin(DataEntryPrefix.CFG_Version), GetType().GetTypeInfo().Assembly.GetName().Version.ToString());
             }
             thread_persistence = new Thread(PersistBlocks);
             thread_persistence.Name = "LevelDBBlockchain.PersistBlocks";
             thread_persistence.Start();
-            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
         }
 
         protected internal override bool AddBlock(Block block)
@@ -189,16 +188,10 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             return value.ToArray().GetUInt16Array().Contains(index);
         }
 
-        private void CurrentDomain_ProcessExit(object sender, EventArgs e)
-        {
-            Dispose();
-        }
-
         public override void Dispose()
         {
             disposed = true;
             new_block_event.Set();
-            AppDomain.CurrentDomain.ProcessExit -= CurrentDomain_ProcessExit;
             if (!thread_persistence.ThreadState.HasFlag(ThreadState.Unstarted))
                 thread_persistence.Join();
             new_block_event.Dispose();

@@ -57,7 +57,7 @@ namespace AntShares.Cryptography.ECC
             BigInteger e = CalculateE(curve.N, message);
             BigInteger d = new BigInteger(privateKey.Reverse().Concat(new byte[1]).ToArray());
             BigInteger r, s;
-            using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
                 do
                 {
