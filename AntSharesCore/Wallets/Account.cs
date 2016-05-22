@@ -27,14 +27,14 @@ namespace AntShares.Wallets
                 this.PublicKey = ECPoint.FromBytes(privateKey, ECCurve.Secp256r1);
             }
             this.PublicKeyHash = PublicKey.EncodePoint(true).ToScriptHash();
-#if NETFRAMEWORK
+#if NET461
             ProtectedMemory.Protect(PrivateKey, MemoryProtectionScope.SameProcess);
 #endif
         }
 
         public IDisposable Decrypt()
         {
-#if NETFRAMEWORK
+#if NET461
             return new ProtectedMemoryContext(PrivateKey, MemoryProtectionScope.SameProcess);
 #else
             return new System.IO.MemoryStream(0);

@@ -1,4 +1,4 @@
-﻿#if !NETFRAMEWORK
+﻿#if !NET461
 using System;
 using System.Runtime.InteropServices;
 using System.Security;

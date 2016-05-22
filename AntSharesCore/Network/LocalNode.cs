@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
@@ -52,7 +53,6 @@ namespace AntShares.Network
         internal readonly uint Nonce;
         private TcpListener listener;
         private Thread connectThread;
-        private Thread listenerThread;
         private int started = 0;
         private int disposed = 0;
 
@@ -64,11 +64,7 @@ namespace AntShares.Network
 
         static LocalNode()
         {
-            try
-            {
-                LocalAddresses.UnionWith(Dns.GetHostEntry(Dns.GetHostName()).AddressList.Where(p => !IPAddress.IsLoopback(p)).Select(p => p.MapToIPv6()));
-            }
-            catch (SocketException) { }
+            LocalAddresses.UnionWith(NetworkInterface.GetAllNetworkInterfaces().SelectMany(p => p.GetIPProperties().UnicastAddresses).Where(p => p.IsDnsEligible).Select(p => p.Address.MapToIPv6()));
             Blockchain.PersistCompleted += Blockchain_PersistCompleted;
         }
 
@@ -81,22 +77,17 @@ namespace AntShares.Network
                 IsBackground = true,
                 Name = "LocalNode.ConnectToPeersLoop"
             };
-            this.listenerThread = new Thread(AcceptPeersLoop)
-            {
-                IsBackground = true,
-                Name = "LocalNode.AcceptPeersLoop"
-            };
             this.UserAgent = string.Format("/AntSharesCore:{0}/", GetType().GetTypeInfo().Assembly.GetName().Version.ToString(3));
         }
 
-        private void AcceptPeersLoop()
+        private async Task AcceptPeersAsync()
         {
             while (disposed == 0)
             {
-                TcpClient tcp;
+                Socket socket;
                 try
                 {
-                    tcp = listener.AcceptTcpClient();
+                    socket = await listener.AcceptSocketAsync();
                 }
                 catch (ObjectDisposedException)
                 {
@@ -106,7 +97,7 @@ namespace AntShares.Network
                 {
                     break;
                 }
-                RemoteNode remoteNode = new RemoteNode(this, tcp);
+                RemoteNode remoteNode = new RemoteNode(this, socket);
                 remoteNode.Disconnected += RemoteNode_Disconnected;
                 remoteNode.InventoryReceived += RemoteNode_InventoryReceived;
                 remoteNode.PeersReceived += RemoteNode_PeersReceived;
@@ -255,7 +246,6 @@ namespace AntShares.Network
                 {
                     if (listener != null) listener.Stop();
                     if (!connectThread.ThreadState.HasFlag(ThreadState.Unstarted)) connectThread.Join();
-                    if (!listenerThread.ThreadState.HasFlag(ThreadState.Unstarted)) listenerThread.Join();
                     lock (unconnectedPeers)
                     {
                         if (unconnectedPeers.Count < UNCONNECTED_MAX)
@@ -295,7 +285,7 @@ namespace AntShares.Network
 
         private static bool IsIntranetAddress(IPAddress address)
         {
-            byte[] data = address.GetAddressBytes();
+            byte[] data = address.MapToIPv4().GetAddressBytes();
             Array.Reverse(data);
             uint value = BitConverter.ToUInt32(data, 0);
             return (value & 0xff000000) == 0x0a000000 || (value & 0xfff00000) == 0xac100000 || (value & 0xffff0000) == 0xc0a80000;
@@ -429,7 +419,7 @@ namespace AntShares.Network
         {
             if (Interlocked.Exchange(ref started, 1) == 0)
             {
-                IPAddress address = LocalAddresses.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork && !IsIntranetAddress(p));
+                IPAddress address = LocalAddresses.FirstOrDefault(p => p.IsIPv4MappedToIPv6 && !IsIntranetAddress(p));
                 if (address == null && UpnpEnabled && await UPnP.DiscoverAsync())
                 {
                     try
@@ -448,7 +438,7 @@ namespace AntShares.Network
                 }
                 catch (SocketException) { }
                 connectThread.Start();
-                if (Port > 0) listenerThread.Start();
+                if (Port > 0) await AcceptPeersAsync();
             }
         }
 

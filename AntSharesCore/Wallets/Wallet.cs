@@ -57,7 +57,7 @@ namespace AntShares.Wallets
                 SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
                 SaveStoredData("Version", new[] { current_version.Major, current_version.Minor, current_version.Build, current_version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
                 SaveStoredData("Height", BitConverter.GetBytes(current_height));
-#if NETFRAMEWORK
+#if NET461
                 ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
 #endif
             }
@@ -68,7 +68,7 @@ namespace AntShares.Wallets
                     throw new CryptographicException();
                 this.iv = LoadStoredData("IV");
                 this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
-#if NETFRAMEWORK
+#if NET461
                 ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
 #endif
                 this.accounts = LoadAccounts().ToDictionary(p => p.PublicKeyHash);
@@ -159,7 +159,7 @@ namespace AntShares.Wallets
         public void ChangePassword(string password)
         {
             byte[] passwordKey = password.ToAesKey();
-#if NETFRAMEWORK
+#if NET461
             using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
 #endif
             {
@@ -221,7 +221,7 @@ namespace AntShares.Wallets
         {
             if (encryptedPrivateKey == null) throw new ArgumentNullException(nameof(encryptedPrivateKey));
             if (encryptedPrivateKey.Length != 96) throw new ArgumentException();
-#if NETFRAMEWORK
+#if NET461
             using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
 #endif
             {
@@ -266,7 +266,7 @@ namespace AntShares.Wallets
 
         protected byte[] EncryptPrivateKey(byte[] decryptedPrivateKey)
         {
-#if NETFRAMEWORK
+#if NET461
             using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
 #endif
             {

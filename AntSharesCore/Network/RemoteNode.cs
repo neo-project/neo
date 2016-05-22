@@ -28,7 +28,7 @@ namespace AntShares.Network
         private LocalNode localNode;
         private Thread protocolThread;
         private Thread sendThread;
-        private TcpClient tcp;
+        private Socket socket;
         private NetworkStream stream;
         private bool connected = false;
         private int disposed = 0;
@@ -47,14 +47,14 @@ namespace AntShares.Network
         internal RemoteNode(LocalNode localNode, IPEndPoint remoteEndpoint)
             : this(localNode)
         {
-            this.tcp = new TcpClient(remoteEndpoint.Address.IsIPv4MappedToIPv6 ? AddressFamily.InterNetwork : remoteEndpoint.AddressFamily);
+            this.socket = new Socket(remoteEndpoint.Address.IsIPv4MappedToIPv6 ? AddressFamily.InterNetwork : remoteEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             this.ListenerEndpoint = remoteEndpoint;
         }
 
-        internal RemoteNode(LocalNode localNode, TcpClient tcp)
+        internal RemoteNode(LocalNode localNode, Socket socket)
             : this(localNode)
         {
-            this.tcp = tcp;
+            this.socket = socket;
             OnConnected();
         }
 
@@ -65,7 +65,7 @@ namespace AntShares.Network
                 address = address.MapToIPv4();
             try
             {
-                await tcp.ConnectAsync(address, ListenerEndpoint.Port);
+                await socket.ConnectAsync(address, ListenerEndpoint.Port);
             }
             catch (SocketException)
             {
@@ -80,7 +80,8 @@ namespace AntShares.Network
         {
             if (Interlocked.Exchange(ref disposed, 1) == 0)
             {
-                tcp.Close();
+                stream.Dispose();
+                socket.Dispose();
                 Disconnected?.Invoke(this, error);
                 lock (missions_global)
                 {
@@ -119,12 +120,12 @@ namespace AntShares.Network
 
         private void OnConnected()
         {
-            IPEndPoint remoteEndpoint = (IPEndPoint)tcp.Client.RemoteEndPoint;
+            IPEndPoint remoteEndpoint = (IPEndPoint)socket.RemoteEndPoint;
             RemoteEndpoint = new IPEndPoint(remoteEndpoint.Address.MapToIPv6(), remoteEndpoint.Port);
             protocolThread.Name = $"RemoteNode.RunProtocol@{RemoteEndpoint}";
             sendThread.Name = $"RemoteNode.SendLoop@{RemoteEndpoint}";
-            tcp.SendTimeout = 10000;
-            stream = tcp.GetStream();
+            socket.SendTimeout = 10000;
+            stream = new NetworkStream(socket);
             connected = true;
         }
 
@@ -309,7 +310,7 @@ namespace AntShares.Network
             try
             {
                 reader = new BinaryReader(stream, Encoding.UTF8, true);
-                tcp.ReceiveTimeout = (int)timeout.TotalMilliseconds;
+                socket.ReceiveTimeout = (int)timeout.TotalMilliseconds;
                 return reader.ReadSerializable<Message>();
             }
             catch (ArgumentException) { }

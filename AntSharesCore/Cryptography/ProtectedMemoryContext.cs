@@ -1,4 +1,4 @@
-﻿#if NETFRAMEWORK
+﻿#if NET461
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;

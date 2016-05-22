@@ -1,39 +1,40 @@
 {
-  "copyright": "? AntShares Project 2015 Released under the MIT license",
-  "title": "AntShares",
-  "version": "0.7.0-*",
+    "copyright": "? AntShares Project 2015 Released under the MIT license",
+    "title": "AntShares",
+    "version": "0.7.0-*",
 
-  "dependencies": {
-    "Microsoft.EntityFrameworkCore.Sqlite": "1.0.0-rc2-final",
-    "System.Text.Encodings.Web": "4.0.0-rc2-24027"
-  },
-
-  "frameworks": {
-    "netstandard1.5": {
-      "buildOptions": { "allowUnsafe": true },
-      "dependencies": {
-        "NETStandard.Library": "1.5.0-rc2-24027",
-        "System.Data.Common": "4.0.1-rc2-24027",
-        "System.Linq.Parallel": "4.0.1-rc2-24027",
-        "System.Net.NameResolution": "4.0.0-rc2-24027",
-        "System.Net.Requests": "4.0.11-rc2-24027",
-        "System.Security.Cryptography.Cng": "4.1.0-rc2-24027",
-        "System.Security.Cryptography.X509Certificates": "4.1.0-rc2-24027",
-        "System.Threading.Thread": "4.0.0-rc2-24027",
-        "System.Xml.XPath.XmlDocument": "4.0.1-rc2-24027"
-      },
-      "imports": [
-        "dnxcore50",
-        "portable-net45+win8"
-      ]
+    "dependencies": {
+        "Microsoft.EntityFrameworkCore.Sqlite": "1.0.0-rc2-final",
+        "System.Net.Sockets": "4.1.0-rc2-24027",
+        "System.Text.Encodings.Web": "4.0.0-rc2-24027"
     },
-    "net461": {
-      "buildOptions": { "define": [ "NETFRAMEWORK" ] },
-      "frameworkAssemblies": {
-        "System.Numerics": "4.0.0.0",
-        "System.Security": "4.0.0.0",
-        "System.Xml": "4.0.0.0"
-      }
+
+    "frameworks": {
+        "netstandard1.5": {
+            "buildOptions": { "allowUnsafe": true },
+            "dependencies": {
+                "NETStandard.Library": "1.5.0-rc2-24027",
+                "System.Data.Common": "4.0.1-rc2-24027",
+                "System.Linq.Parallel": "4.0.1-rc2-24027",
+                "System.Net.NameResolution": "4.0.0-rc2-24027",
+                "System.Net.NetworkInformation": "4.1.0-rc2-24027",
+                "System.Net.Requests": "4.0.11-rc2-24027",
+                "System.Security.Cryptography.Cng": "4.1.0-rc2-24027",
+                "System.Security.Cryptography.X509Certificates": "4.1.0-rc2-24027",
+                "System.Threading.Thread": "4.0.0-rc2-24027",
+                "System.Xml.XPath.XmlDocument": "4.0.1-rc2-24027"
+            },
+            "imports": [
+                "dnxcore50",
+                "portable-net45+win8"
+            ]
+        },
+        "net461": {
+            "frameworkAssemblies": {
+                "System.Numerics": "4.0.0.0",
+                "System.Security": "4.0.0.0",
+                "System.Xml": "4.0.0.0"
+            }
+        }
     }
-  }
 }
