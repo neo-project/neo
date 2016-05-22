@@ -77,15 +77,11 @@ namespace AntShares.Core.Scripts
                 ms.Write(BitConverter.GetBytes((ushort)data.Length), 0, 2);
                 ms.Write(data, 0, data.Length);
             }
-            else if (data.LongLength < 0x100000000L)
+            else// if (data.Length < 0x100000000L)
             {
                 Add(ScriptOp.OP_PUSHDATA4);
                 ms.Write(BitConverter.GetBytes((uint)data.Length), 0, 4);
                 ms.Write(data, 0, data.Length);
-            }
-            else
-            {
-                throw new ArgumentException();
             }
             return this;
         }

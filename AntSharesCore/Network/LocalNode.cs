@@ -86,7 +86,7 @@ namespace AntShares.Network
                 IsBackground = true,
                 Name = "LocalNode.AcceptPeersLoop"
             };
-            this.UserAgent = string.Format("/AntSharesCore:{0}/", Assembly.GetExecutingAssembly().GetName().Version.ToString(3));
+            this.UserAgent = string.Format("/AntSharesCore:{0}/", GetType().GetTypeInfo().Assembly.GetName().Version.ToString(3));
         }
 
         private void AcceptPeersLoop()

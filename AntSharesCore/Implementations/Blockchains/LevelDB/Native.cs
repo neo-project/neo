@@ -13,7 +13,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
     {
         static Native()
         {
-            LoadLibrary($"{(Environment.Is64BitProcess ? "x64" : "x86")}/libleveldb");
+            LoadLibrary($"{(IntPtr.Size == 8 ? "x64" : "x86")}/libleveldb");
         }
 
         [DllImport("kernel32")]

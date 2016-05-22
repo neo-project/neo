@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace AntShares.IO
@@ -18,7 +19,7 @@ namespace AntShares.IO
 
         public static ISerializable AsSerializable(this byte[] value, Type type)
         {
-            if (!typeof(ISerializable).IsAssignableFrom(type))
+            if (!typeof(ISerializable).GetTypeInfo().IsAssignableFrom(type))
                 throw new InvalidCastException();
             ISerializable serializable = (ISerializable)Activator.CreateInstance(type);
             using (MemoryStream ms = new MemoryStream(value, false))

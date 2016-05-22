@@ -25,10 +25,8 @@ namespace AntShares.Implementations.Blockchains.LevelDB
         public static ushort[] GetUInt16Array(this byte[] source)
         {
             if (source == null) throw new ArgumentNullException();
-            int rem;
-            int size = Math.DivRem(source.Length, sizeof(ushort), out rem);
-            if (rem != 0) throw new ArgumentException();
-            ushort[] dst = new ushort[size];
+            if (source.Length % sizeof(ushort) != 0) throw new ArgumentException();
+            ushort[] dst = new ushort[source.Length / sizeof(ushort)];
             Buffer.BlockCopy(source, 0, dst, 0, source.Length);
             return dst;
         }

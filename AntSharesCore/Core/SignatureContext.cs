@@ -88,7 +88,7 @@ namespace AntShares.Core
         public static SignatureContext FromJson(JObject json)
         {
             string typename = string.Format("{0}.{1}", typeof(SignatureContext).Namespace, json["type"].AsString());
-            ISignable signable = Assembly.GetExecutingAssembly().CreateInstance(typename) as ISignable;
+            ISignable signable = typeof(SignatureContext).GetTypeInfo().Assembly.CreateInstance(typename) as ISignable;
             using (MemoryStream ms = new MemoryStream(json["hex"].AsString().HexToBytes(), false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
