@@ -1,0 +1,34 @@
+{
+    "copyright": "© AntShares Project 2015 Released under the MIT license",
+    "title": "AntShares",
+    "version": "0.7.0-*",
+    "buildOptions": {
+        "emitEntryPoint": true
+    },
+
+    "dependencies": {
+        "AntSharesCore": "0.7.0-*",
+        "AntSharesDaemon": "0.7.0-*",
+        "Microsoft.NETCore.App": {
+            "type": "platform",
+            "version": "1.0.0-rc2-3002702"
+        }
+    },
+
+    "frameworks": {
+        "netcoreapp1.0": {
+            "imports": [
+                "dnxcore50",
+                "portable-net45+win8"
+            ]
+        }
+    },
+
+    "configurations": {
+        "Debug": {
+            "buildOptions": {
+                "define": [ "TESTNET" ]
+            }
+        }
+    }
+}

@@ -9,7 +9,6 @@ using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security;
 using System.Threading;
 
 namespace AntShares.Miner
@@ -227,19 +226,17 @@ namespace AntShares.Miner
                 Console.WriteLine("error");
                 return true;
             }
-            using (SecureString password = ReadSecureString("password"))
-            using (SecureString password2 = ReadSecureString("password"))
+            string password = ReadPassword("password");
+            string password2 = ReadPassword("password");
+            if (password != password2)
             {
-                if (!password.CompareTo(password2))
-                {
-                    Console.WriteLine("error");
-                    return true;
-                }
-                wallet = UserWallet.Create(args[2], password);
-                foreach (Account account in wallet.GetAccounts())
-                {
-                    Console.WriteLine(account.PublicKey.EncodePoint(true).ToHexString());
-                }
+                Console.WriteLine("error");
+                return true;
+            }
+            wallet = UserWallet.Create(args[2], password);
+            foreach (Account account in wallet.GetAccounts())
+            {
+                Console.WriteLine(account.PublicKey.EncodePoint(true).ToHexString());
             }
             return true;
         }
@@ -265,22 +262,20 @@ namespace AntShares.Miner
                 Console.WriteLine("error");
                 return true;
             }
-            using (SecureString password = ReadSecureString("password"))
+            string password = ReadPassword("password");
+            if (password.Length == 0)
             {
-                if (password.Length == 0)
-                {
-                    Console.WriteLine("cancelled");
-                    return true;
-                }
-                try
-                {
-                    wallet = UserWallet.Open(args[2], password);
-                }
-                catch
-                {
-                    Console.WriteLine($"failed to open file \"{args[2]}\"");
-                    return true;
-                }
+                Console.WriteLine("cancelled");
+                return true;
+            }
+            try
+            {
+                wallet = UserWallet.Open(args[2], password);
+            }
+            catch
+            {
+                Console.WriteLine($"failed to open file \"{args[2]}\"");
+                return true;
             }
             StartMine();
             return true;
@@ -327,7 +322,7 @@ namespace AntShares.Miner
             CheckSignatures();
         }
 
-        protected internal override void OnStop()
+        protected override void OnStop()
         {
             Log($"{nameof(OnStop)}");
             if (timer != null) timer.Dispose();

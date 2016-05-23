@@ -1,16 +1,11 @@
 ﻿using System;
-using System.Diagnostics;
-using System.IO;
 using System.Reflection;
-using System.Security;
-using System.ServiceProcess;
+using System.Text;
 
 namespace AntShares.Services
 {
     public abstract class ConsoleServiceBase
     {
-        protected virtual string Depends => null;
-
         protected virtual string Prompt => "service";
 
         public abstract string ServiceName { get; }
@@ -39,10 +34,10 @@ namespace AntShares.Services
 
         protected internal abstract void OnStop();
 
-        public static SecureString ReadSecureString(string prompt)
+        public static string ReadPassword(string prompt)
         {
             const string t = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-            SecureString securePwd = new SecureString();
+            StringBuilder sb = new StringBuilder();
             ConsoleKeyInfo key;
             Console.Write(prompt);
             Console.Write(':');
@@ -51,66 +46,26 @@ namespace AntShares.Services
                 key = Console.ReadKey(true);
                 if (t.IndexOf(key.KeyChar) != -1)
                 {
-                    securePwd.AppendChar(key.KeyChar);
+                    sb.Append(key.KeyChar);
                     Console.Write('*');
                 }
-                else if (key.Key == ConsoleKey.Backspace && securePwd.Length > 0)
+                else if (key.Key == ConsoleKey.Backspace && sb.Length > 0)
                 {
-                    securePwd.RemoveAt(securePwd.Length - 1);
+                    sb.Remove(sb.Length - 1, 1);
                     Console.Write(key.KeyChar);
                     Console.Write(' ');
                     Console.Write(key.KeyChar);
                 }
             } while (key.Key != ConsoleKey.Enter);
             Console.WriteLine();
-            securePwd.MakeReadOnly();
-            return securePwd;
+            return sb.ToString();
         }
 
         public void Run(string[] args)
         {
-            if (Environment.UserInteractive)
-            {
-                if (args.Length > 0 && args[0] == "/install")
-                {
-                    string arguments = string.Format("create {0} start= auto binPath= \"{1}\"", ServiceName, Process.GetCurrentProcess().MainModule.FileName);
-                    if (!string.IsNullOrEmpty(Depends))
-                    {
-                        arguments += string.Format(" depend= {0}", Depends);
-                    }
-                    Process process = Process.Start(new ProcessStartInfo
-                    {
-                        Arguments = arguments,
-                        FileName = Path.Combine(Environment.SystemDirectory, "sc.exe"),
-                        RedirectStandardOutput = true,
-                        UseShellExecute = false
-                    });
-                    process.WaitForExit();
-                    Console.Write(process.StandardOutput.ReadToEnd());
-                }
-                else if (args.Length > 0 && args[0] == "/uninstall")
-                {
-                    Process process = Process.Start(new ProcessStartInfo
-                    {
-                        Arguments = string.Format("delete {0}", ServiceName),
-                        FileName = Path.Combine(Environment.SystemDirectory, "sc.exe"),
-                        RedirectStandardOutput = true,
-                        UseShellExecute = false
-                    });
-                    process.WaitForExit();
-                    Console.Write(process.StandardOutput.ReadToEnd());
-                }
-                else
-                {
-                    OnStart(args);
-                    RunConsole();
-                    OnStop();
-                }
-            }
-            else
-            {
-                ServiceBase.Run(new ServiceProxy(this));
-            }
+            OnStart(args);
+            RunConsole();
+            OnStop();
         }
 
         private void RunConsole()

@@ -1,10 +1,12 @@
 ﻿using AntShares.Core;
 using AntShares.IO.Json;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace AntShares.Network.RPC
 {
@@ -17,8 +19,7 @@ namespace AntShares.Network.RPC
 #endif
 
         private LocalNode localNode;
-        private HttpListener listener = new HttpListener();
-        private bool stopped = false;
+        private IWebHost host;
 
         public RpcServer(LocalNode localNode)
         {
@@ -46,12 +47,11 @@ namespace AntShares.Network.RPC
 
         public void Dispose()
         {
-            if (listener.IsListening)
+            if (host != null)
             {
-                listener.Stop();
-                while (!stopped) Thread.Sleep(100);
+                host.Dispose();
+                host = null;
             }
-            listener.Close();
         }
 
         private JObject InternalCall(string method, JArray _params)
@@ -93,56 +93,46 @@ namespace AntShares.Network.RPC
             }
         }
 
-        private void Process(HttpListenerContext context)
+        private async Task ProcessAsync(HttpContext context)
         {
-            try
+            context.Response.Headers["Access-Control-Allow-Origin"] = "*";
+            context.Response.Headers["Access-Control-Allow-Methods"] = "POST";
+            context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type";
+            context.Response.Headers["Access-Control-Max-Age"] = "31536000";
+            if (context.Request.Method != "POST") return;
+            JObject request = null;
+            JObject response;
+            using (StreamReader reader = new StreamReader(context.Request.Body))
             {
-                context.Response.AddHeader("Access-Control-Allow-Origin", "*");
-                context.Response.AddHeader("Access-Control-Allow-Methods", "POST");
-                context.Response.AddHeader("Access-Control-Allow-Headers", "Content-Type");
-                context.Response.AddHeader("Access-Control-Max-Age", "31536000");
-                if (context.Request.HttpMethod != "POST") return;
-                JObject request = null;
-                JObject response;
-                using (StreamReader reader = new StreamReader(context.Request.InputStream))
+                try
                 {
-                    try
-                    {
-                        request = JObject.Parse(reader);
-                    }
-                    catch (FormatException) { }
+                    request = JObject.Parse(reader);
                 }
-                if (request == null)
+                catch (FormatException) { }
+            }
+            if (request == null)
+            {
+                response = CreateErrorResponse(null, -32700, "Parse error");
+            }
+            else if (request is JArray)
+            {
+                JArray array = (JArray)request;
+                if (array.Count == 0)
                 {
-                    response = CreateErrorResponse(null, -32700, "Parse error");
-                }
-                else if (request is JArray)
-                {
-                    JArray array = (JArray)request;
-                    if (array.Count == 0)
-                    {
-                        response = CreateErrorResponse(request["id"], -32600, "Invalid Request");
-                    }
-                    else
-                    {
-                        response = array.Select(p => ProcessRequest(p)).Where(p => p != null).ToArray();
-                    }
+                    response = CreateErrorResponse(request["id"], -32600, "Invalid Request");
                 }
                 else
                 {
-                    response = ProcessRequest(request);
-                }
-                if (response == null || (response as JArray)?.Count == 0) return;
-                context.Response.ContentType = "application/json-rpc";
-                using (StreamWriter writer = new StreamWriter(context.Response.OutputStream))
-                {
-                    writer.Write(response.ToString());
+                    response = array.Select(p => ProcessRequest(p)).Where(p => p != null).ToArray();
                 }
             }
-            finally
+            else
             {
-                context.Response.Close();
+                response = ProcessRequest(request);
             }
+            if (response == null || (response as JArray)?.Count == 0) return;
+            context.Response.ContentType = "application/json-rpc";
+            await context.Response.WriteAsync(response.ToString());
         }
 
         private JObject ProcessRequest(JObject request)
@@ -170,20 +160,14 @@ namespace AntShares.Network.RPC
             return response;
         }
 
-        public async void Start(string host = "*", int port = DEFAULT_PORT)
+        public void Start(string domain = "*", int port = DEFAULT_PORT)
         {
-            listener.Prefixes.Add($"http://{host}:{port}/");
-            listener.Start();
-            while (listener.IsListening)
-            {
-                try
-                {
-                    Process(await listener.GetContextAsync());
-                }
-                catch (ApplicationException) { }
-                catch (HttpListenerException) { }
-            }
-            stopped = true;
+            host = new WebHostBuilder()
+                .UseKestrel()
+                .UseUrls($"http://{domain}:{port}")
+                .Configure(app => app.Run(ProcessAsync))
+                .Build();
+            host.Start();
         }
     }
 }

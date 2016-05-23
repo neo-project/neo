@@ -2,13 +2,12 @@
 using AntShares.Implementations.Blockchains.LevelDB;
 using AntShares.Network;
 using AntShares.Network.RPC;
-using AntShares.Properties;
 using AntShares.Services;
 using System;
 
 namespace AntShares.Shell
 {
-    internal class MainService : ConsoleServiceBase
+    public class MainService : ConsoleServiceBase
     {
         private RpcServer rpc;
 
@@ -69,7 +68,7 @@ namespace AntShares.Shell
 
         protected internal override void OnStart(string[] args)
         {
-            Blockchain.RegisterBlockchain(new LevelDBBlockchain(Settings.Default.DataDirectoryPath));
+            Blockchain.RegisterBlockchain(new LevelDBBlockchain(@".\Chain"/*Settings.Default.DataDirectoryPath*/));
             LocalNode = new LocalNode();
             LocalNode.Start();
             if (args.Length >= 1 && args[0] == "/rpc")

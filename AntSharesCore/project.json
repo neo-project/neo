@@ -36,5 +36,13 @@
                 "System.Xml": "4.0.0.0"
             }
         }
+    },
+
+    "configurations": {
+        "Debug": {
+            "buildOptions": {
+                "define": [ "TESTNET" ]
+            }
+        }
     }
 }

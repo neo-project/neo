@@ -1,5 +1,5 @@
 ﻿{
-    "projects": [ "AntSharesCore" ],
+    "projects": [ "AntSharesCore", "AntSharesDaemon" ],
     "sdk": {
         "version": "1.0.0-preview1-002702"
     }

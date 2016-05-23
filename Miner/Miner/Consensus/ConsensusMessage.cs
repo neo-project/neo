@@ -1,6 +1,7 @@
 ﻿using AntShares.IO;
 using System;
 using System.IO;
+using System.Reflection;
 
 namespace AntShares.Miner.Consensus
 {
@@ -25,7 +26,7 @@ namespace AntShares.Miner.Consensus
         {
             ConsensusMessageType type = (ConsensusMessageType)data[0];
             string typeName = $"{typeof(ConsensusMessage).Namespace}.{type}";
-            ConsensusMessage message = typeof(ConsensusMessage).Assembly.CreateInstance(typeName) as ConsensusMessage;
+            ConsensusMessage message = typeof(ConsensusMessage).GetTypeInfo().Assembly.CreateInstance(typeName) as ConsensusMessage;
             using (MemoryStream ms = new MemoryStream(data, false))
             using (BinaryReader r = new BinaryReader(ms))
             {
