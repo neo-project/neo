@@ -80,7 +80,7 @@ namespace AntShares.Network
         {
             if (Interlocked.Exchange(ref disposed, 1) == 0)
             {
-                stream.Dispose();
+                if (stream != null) stream.Dispose();
                 socket.Dispose();
                 Disconnected?.Invoke(this, error);
                 lock (missions_global)

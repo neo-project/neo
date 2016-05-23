@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace AntShares.Implementations.Blockchains.LevelDB
@@ -13,7 +14,8 @@ namespace AntShares.Implementations.Blockchains.LevelDB
     {
         static Native()
         {
-            LoadLibrary($"{(IntPtr.Size == 8 ? "x64" : "x86")}/libleveldb");
+            string platform = IntPtr.Size == 8 ? "x64" : "x86";
+            LoadLibrary(Path.Combine(AppContext.BaseDirectory, platform, "libleveldb"));
         }
 
         [DllImport("kernel32")]
