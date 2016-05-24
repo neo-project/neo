@@ -30,9 +30,11 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<Account>().ToTable(nameof(Account));
             modelBuilder.Entity<Account>().HasKey(p => p.PublicKeyHash);
             modelBuilder.Entity<Account>().Property(p => p.PrivateKeyEncrypted).HasColumnType("VarBinary").HasMaxLength(96).IsRequired();
             modelBuilder.Entity<Account>().Property(p => p.PublicKeyHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
+            modelBuilder.Entity<Contract>().ToTable(nameof(Contract));
             modelBuilder.Entity<Contract>().HasKey(p => p.ScriptHash);
             modelBuilder.Entity<Contract>().HasIndex(p => p.PublicKeyHash);
             modelBuilder.Entity<Contract>().HasOne(p => p.Account).WithMany().HasForeignKey(p => p.PublicKeyHash).OnDelete(DeleteBehavior.Cascade);
@@ -40,9 +42,11 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             modelBuilder.Entity<Contract>().Property(p => p.RawData).HasColumnType("VarBinary").IsRequired();
             modelBuilder.Entity<Contract>().Property(p => p.ScriptHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
             modelBuilder.Entity<Contract>().Property(p => p.PublicKeyHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
+            modelBuilder.Entity<Key>().ToTable(nameof(Key));
             modelBuilder.Entity<Key>().HasKey(p => p.Name);
             modelBuilder.Entity<Key>().Property(p => p.Name).HasColumnType("VarChar").HasMaxLength(20).IsRequired();
             modelBuilder.Entity<Key>().Property(p => p.Value).HasColumnType("VarBinary").IsRequired();
+            modelBuilder.Entity<Transaction>().ToTable(nameof(Transaction));
             modelBuilder.Entity<Transaction>().HasKey(p => p.Hash);
             modelBuilder.Entity<Transaction>().HasIndex(p => p.Type);
             modelBuilder.Entity<Transaction>().Property(p => p.Hash).HasColumnType("Binary").HasMaxLength(32).IsRequired();
@@ -50,6 +54,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             modelBuilder.Entity<Transaction>().Property(p => p.RawData).HasColumnType("VarBinary").IsRequired();
             modelBuilder.Entity<Transaction>().Property(p => p.Height);
             modelBuilder.Entity<Transaction>().Property(p => p.Time).IsRequired();
+            modelBuilder.Entity<Coin>().ToTable(nameof(Coin));
             modelBuilder.Entity<Coin>().HasKey(p => new { p.TxId, p.Index });
             modelBuilder.Entity<Coin>().HasIndex(p => p.AssetId);
             modelBuilder.Entity<Coin>().HasIndex(p => p.ScriptHash);

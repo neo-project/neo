@@ -12,6 +12,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
     internal static class Native
     {
+#if NET461
         static Native()
         {
             string platform = IntPtr.Size == 8 ? "x64" : "x86";
@@ -20,6 +21,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         [DllImport("kernel32")]
         private static extern IntPtr LoadLibrary(string dllToLoad);
+#endif
 
         #region Logger
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
