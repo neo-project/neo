@@ -31,7 +31,7 @@ namespace AntShares.UI
         {
             comboBox1.Items.AddRange(Enum.GetValues(typeof(AssetType)).OfType<AssetType>().Where(p => p >= AssetType.Share).OfType<object>().ToArray());
             comboBox2.Items.AddRange(Program.CurrentWallet.GetAccounts().Select(p => p.PublicKey).ToArray());
-            comboBox3.Items.AddRange(Program.CurrentWallet.GetContracts().ToArray());
+            comboBox3.Items.AddRange(Program.CurrentWallet.GetContracts().Select(p => p.Address).ToArray());
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
