@@ -5,6 +5,7 @@ using AntShares.Wallets;
 using System;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -40,6 +41,7 @@ namespace AntShares.Core
         /// <returns>返回签名后的结果</returns>
         internal static byte[] Sign(this ISignable signable, byte[] prikey, byte[] pubkey)
         {
+#if NET461
             const int ECDSA_PRIVATE_P256_MAGIC = 0x32534345;
             prikey = BitConverter.GetBytes(ECDSA_PRIVATE_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey).Concat(prikey).ToArray();
             using (CngKey key = CngKey.Import(prikey, CngKeyBlobFormat.EccPrivateBlob))
@@ -47,6 +49,13 @@ namespace AntShares.Core
             {
                 return ecdsa.SignHash(signable.GetHashForSigning());
             }
+#else
+            var ecdsa = new AntShares.Cryptography.ECC.ECDsa(prikey, ECCurve.Secp256r1);
+            BigInteger[] bi = ecdsa.GenerateSignature(signable.GetHashForSigning());
+            byte[] r = bi[0].ToByteArray().Take(32).Reverse().ToArray();
+            byte[] s = bi[1].ToByteArray().Take(32).Reverse().ToArray();
+            return Enumerable.Repeat((byte)0, 32 - r.Length).Concat(r).Concat(Enumerable.Repeat((byte)0, 32 - s.Length)).Concat(s).ToArray();
+#endif
         }
 
         /// <summary>
@@ -93,6 +102,7 @@ namespace AntShares.Core
         /// <returns>返回验证结果</returns>
         public static bool VerifySignature(this ISignable signable, ECPoint pubkey, byte[] signature)
         {
+#if NET461
             const int ECDSA_PUBLIC_P256_MAGIC = 0x31534345;
             byte[] bytes = BitConverter.GetBytes(ECDSA_PUBLIC_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey.EncodePoint(false).Skip(1)).ToArray();
             using (CngKey key = CngKey.Import(bytes, CngKeyBlobFormat.EccPublicBlob))
@@ -100,6 +110,12 @@ namespace AntShares.Core
             {
                 return ecdsa.VerifyHash(signable.GetHashForSigning(), signature);
             }
+#else
+            BigInteger r = new BigInteger(signature.Take(32).Reverse().Concat(new byte[1]).ToArray());
+            BigInteger s = new BigInteger(signature.Skip(32).Reverse().Concat(new byte[1]).ToArray());
+            var ecdsa = new AntShares.Cryptography.ECC.ECDsa(pubkey);
+            return ecdsa.VerifySignature(signable.GetHashForSigning(), r, s);
+#endif
         }
     }
 }

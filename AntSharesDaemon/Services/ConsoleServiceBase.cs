@@ -71,7 +71,9 @@ namespace AntShares.Services
         private void RunConsole()
         {
             bool running = true;
+#if NET461
             Console.Title = ServiceName;
+#endif
             while (running)
             {
                 if (ShowPrompt) Console.Write($"{Prompt}>");
@@ -83,9 +85,13 @@ namespace AntShares.Services
                 {
                     running = OnCommand(args);
                 }
-                catch
+                catch (Exception ex)
                 {
+#if DEBUG
+                    Console.WriteLine($"error: {ex.Message}");
+#else
                     Console.WriteLine("error");
+#endif
                 }
             }
         }

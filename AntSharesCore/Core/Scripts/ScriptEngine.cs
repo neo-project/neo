@@ -1108,6 +1108,7 @@ namespace AntShares.Core.Scripts
 
         private static bool VerifySignature(byte[] hash, byte[] signature, byte[] pubkey)
         {
+#if NET461
             const int ECDSA_PUBLIC_P256_MAGIC = 0x31534345;
             try
             {
@@ -1123,6 +1124,12 @@ namespace AntShares.Core.Scripts
             {
                 return ecdsa.VerifyHash(hash, signature);
             }
+#else
+            BigInteger r = new BigInteger(signature.Take(32).Reverse().Concat(new byte[1]).ToArray());
+            BigInteger s = new BigInteger(signature.Skip(32).Reverse().Concat(new byte[1]).ToArray());
+            var ecdsa = new AntShares.Cryptography.ECC.ECDsa(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1));
+            return ecdsa.VerifySignature(hash, r, s);
+#endif
         }
     }
 }

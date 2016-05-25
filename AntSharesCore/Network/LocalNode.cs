@@ -64,7 +64,7 @@ namespace AntShares.Network
 
         static LocalNode()
         {
-            LocalAddresses.UnionWith(NetworkInterface.GetAllNetworkInterfaces().SelectMany(p => p.GetIPProperties().UnicastAddresses).Where(p => p.IsDnsEligible).Select(p => p.Address.MapToIPv6()));
+            LocalAddresses.UnionWith(NetworkInterface.GetAllNetworkInterfaces().SelectMany(p => p.GetIPProperties().UnicastAddresses).Select(p => p.Address.MapToIPv6()));
             Blockchain.PersistCompleted += Blockchain_PersistCompleted;
         }
 
