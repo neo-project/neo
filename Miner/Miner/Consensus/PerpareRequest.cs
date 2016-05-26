@@ -9,6 +9,7 @@ namespace AntShares.Miner.Consensus
     internal class PerpareRequest : ConsensusMessage
     {
         public ulong Nonce;
+        public UInt160 NextMiner;
         public UInt256[] TransactionHashes;
         public MinerTransaction MinerTransaction;
         public byte[] Signature;
@@ -22,6 +23,7 @@ namespace AntShares.Miner.Consensus
         {
             base.Deserialize(reader);
             Nonce = reader.ReadUInt64();
+            NextMiner = reader.ReadSerializable<UInt160>();
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
             if (TransactionHashes.Distinct().Count() != TransactionHashes.Length)
                 throw new FormatException();
@@ -35,6 +37,7 @@ namespace AntShares.Miner.Consensus
         {
             base.Serialize(writer);
             writer.Write(Nonce);
+            writer.Write(NextMiner);
             writer.Write(TransactionHashes);
             writer.Write(MinerTransaction);
             writer.Write(Signature);

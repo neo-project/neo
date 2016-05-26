@@ -70,6 +70,7 @@
             this.importCertificateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.创建智能合约SToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.多方签名MToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.自定义CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
             this.查看私钥VToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.复制到剪贴板CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -97,7 +98,6 @@
             this.columnHeader7 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader8 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader9 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.自定义CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -259,7 +259,7 @@
             // 
             this.资产分发IToolStripMenuItem.Name = "资产分发IToolStripMenuItem";
             this.资产分发IToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
-            this.资产分发IToolStripMenuItem.Text = "发行资产(&I)...";
+            this.资产分发IToolStripMenuItem.Text = "分发资产(&I)...";
             this.资产分发IToolStripMenuItem.Click += new System.EventHandler(this.资产分发IToolStripMenuItem_Click);
             // 
             // toolStripSeparator8
@@ -371,7 +371,7 @@
             this.复制到剪贴板CToolStripMenuItem,
             this.删除DToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(164, 164);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(164, 142);
             this.contextMenuStrip1.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip1_Opening);
             // 
             // 创建新地址NToolStripMenuItem
@@ -422,6 +422,13 @@
             this.多方签名MToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.多方签名MToolStripMenuItem.Text = "多方签名(&M)...";
             this.多方签名MToolStripMenuItem.Click += new System.EventHandler(this.多方签名MToolStripMenuItem_Click);
+            // 
+            // 自定义CToolStripMenuItem
+            // 
+            this.自定义CToolStripMenuItem.Name = "自定义CToolStripMenuItem";
+            this.自定义CToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.自定义CToolStripMenuItem.Text = "自定义(&C)...";
+            this.自定义CToolStripMenuItem.Click += new System.EventHandler(this.自定义CToolStripMenuItem_Click);
             // 
             // toolStripSeparator6
             // 
@@ -656,13 +663,6 @@
             // columnHeader9
             // 
             this.columnHeader9.Text = "确认";
-            // 
-            // 自定义CToolStripMenuItem
-            // 
-            this.自定义CToolStripMenuItem.Name = "自定义CToolStripMenuItem";
-            this.自定义CToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
-            this.自定义CToolStripMenuItem.Text = "自定义(&C)...";
-            this.自定义CToolStripMenuItem.Click += new System.EventHandler(this.自定义CToolStripMenuItem_Click);
             // 
             // MainForm
             // 
