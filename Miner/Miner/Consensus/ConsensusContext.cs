@@ -21,6 +21,7 @@ namespace AntShares.Miner.Consensus
         public uint PrimaryIndex;
         public uint Timestamp;
         public ulong Nonce;
+        public UInt160 NextMiner;
         public UInt256[] TransactionHashes;
         public Dictionary<UInt256, Transaction> Transactions;
         public byte[][] Signatures;
@@ -64,7 +65,7 @@ namespace AntShares.Miner.Consensus
                     Timestamp = Timestamp,
                     Height = Height,
                     Nonce = Nonce,
-                    NextMiner = Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(Transactions.Values).ToArray()),
+                    NextMiner = NextMiner,
                     Transactions = new Transaction[0]
                 };
             }
@@ -90,6 +91,7 @@ namespace AntShares.Miner.Consensus
             return MakePayload(new PerpareRequest
             {
                 Nonce = Nonce,
+                NextMiner = NextMiner,
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
                 Signature = Signatures[MinerIndex]

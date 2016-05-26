@@ -37,11 +37,19 @@ namespace AntShares.Miner
             context.Transactions[tx.Hash] = tx;
             if (context.TransactionHashes.Length == context.Transactions.Count)
             {
-                Log($"SendPerpareResponse");
-                context.State |= ConsensusState.SignatureSent;
-                context.Signatures[context.MinerIndex] = context.MakeHeader().Sign(wallet.GetAccount(context.Miners[context.MinerIndex]));
-                SignAndRelay(context.MakePerpareResponse(context.Signatures[context.MinerIndex]));
-                CheckSignatures();
+                if (Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(context.Transactions.Values).ToArray()).Equals(context.NextMiner))
+                {
+                    Log($"SendPerpareResponse");
+                    context.State |= ConsensusState.SignatureSent;
+                    context.Signatures[context.MinerIndex] = context.MakeHeader().Sign(wallet.GetAccount(context.Miners[context.MinerIndex]));
+                    SignAndRelay(context.MakePerpareResponse(context.Signatures[context.MinerIndex]));
+                    CheckSignatures();
+                }
+                else
+                {
+                    RequestChangeView();
+                    return false;
+                }
             }
             return true;
         }
@@ -300,6 +308,7 @@ namespace AntShares.Miner
             context.State |= ConsensusState.RequestReceived;
             context.Timestamp = payload.Timestamp;
             context.Nonce = message.Nonce;
+            context.NextMiner = message.NextMiner;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
             if (!context.MakeHeader().VerifySignature(context.Miners[payload.MinerIndex], message.Signature)) return;
@@ -358,6 +367,7 @@ namespace AntShares.Miner
                         transactions.Insert(0, CreateMinerTransaction(transactions, context.Height, context.Nonce));
                         context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
                         context.Transactions = transactions.ToDictionary(p => p.Hash);
+                        context.NextMiner = Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(transactions).ToArray());
                         context.Signatures[context.MinerIndex] = context.MakeHeader().Sign(wallet.GetAccount(context.Miners[context.MinerIndex]));
                     }
                     SignAndRelay(context.MakePerpareRequest());
