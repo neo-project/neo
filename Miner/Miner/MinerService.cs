@@ -209,6 +209,8 @@ namespace AntShares.Miner
             {
                 case "create":
                     return OnCreateCommand(args);
+                case "list":
+                    return OnListCommand(args);
                 case "open":
                     return OnOpenCommand(args);
                 default:
@@ -245,6 +247,39 @@ namespace AntShares.Miner
             foreach (Account account in wallet.GetAccounts())
             {
                 Console.WriteLine(account.PublicKey.EncodePoint(true).ToHexString());
+            }
+            return true;
+        }
+
+        private bool OnListCommand(string[] args)
+        {
+            switch (args[1].ToLower())
+            {
+                case "account":
+                    return OnListAccountCommand(args);
+                case "address":
+                    return OnListAddressCommand(args);
+                default:
+                    return base.OnCommand(args);
+            }
+        }
+
+        private bool OnListAccountCommand(string[] args)
+        {
+            if (wallet == null) return true;
+            foreach (Account account in wallet.GetAccounts())
+            {
+                Console.WriteLine(account.PublicKey);
+            }
+            return true;
+        }
+
+        private bool OnListAddressCommand(string[] args)
+        {
+            if (wallet == null) return true;
+            foreach (Contract contract in wallet.GetContracts())
+            {
+                Console.WriteLine($"{contract.Address}\t{contract.GetType()}");
             }
             return true;
         }
