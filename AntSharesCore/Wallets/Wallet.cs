@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -84,6 +85,11 @@ namespace AntShares.Wallets
         }
 
         protected Wallet(string path, string password, bool create)
+            : this(path, password.ToAesKey(), create)
+        {
+        }
+
+        protected Wallet(string path, SecureString password, bool create)
             : this(path, password.ToAesKey(), create)
         {
         }

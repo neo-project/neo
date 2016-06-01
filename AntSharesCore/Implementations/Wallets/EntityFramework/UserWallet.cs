@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Security;
 using CoreTransaction = AntShares.Core.Transaction;
 using WalletAccount = AntShares.Wallets.Account;
 using WalletCoin = AntShares.Wallets.Coin;
@@ -18,6 +19,11 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         public event EventHandler<IEnumerable<TransactionInfo>> TransactionsChanged;
 
         protected UserWallet(string path, string password, bool create)
+            : base(path, password, create)
+        {
+        }
+
+        protected UserWallet(string path, SecureString password, bool create)
             : base(path, password, create)
         {
         }
@@ -56,6 +62,13 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         }
 
         public static UserWallet Create(string path, string password)
+        {
+            UserWallet wallet = new UserWallet(path, password, true);
+            wallet.CreateAccount();
+            return wallet;
+        }
+
+        public static UserWallet Create(string path, SecureString password)
         {
             UserWallet wallet = new UserWallet(path, password, true);
             wallet.CreateAccount();
@@ -327,6 +340,11 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         }
 
         public static UserWallet Open(string path, string password)
+        {
+            return new UserWallet(path, password, false);
+        }
+
+        public static UserWallet Open(string path, SecureString password)
         {
             return new UserWallet(path, password, false);
         }

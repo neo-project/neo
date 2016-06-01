@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -86,6 +88,45 @@ namespace AntShares.Cryptography
                 Array.Clear(passwordHash, 0, passwordHash.Length);
                 return passwordHash2;
             }
+        }
+
+        internal static byte[] ToAesKey(this SecureString password)
+        {
+            using (SHA256 sha256 = SHA256.Create())
+            {
+                byte[] passwordBytes = password.ToArray();
+                byte[] passwordHash = sha256.ComputeHash(passwordBytes);
+                byte[] passwordHash2 = sha256.ComputeHash(passwordHash);
+                Array.Clear(passwordBytes, 0, passwordBytes.Length);
+                Array.Clear(passwordHash, 0, passwordHash.Length);
+                return passwordHash2;
+            }
+        }
+
+        internal static byte[] ToArray(this SecureString s)
+        {
+            if (s == null)
+                throw new NullReferenceException();
+            if (s.Length == 0)
+                return new byte[0];
+            List<byte> result = new List<byte>();
+            IntPtr ptr = SecureStringMarshal.SecureStringToGlobalAllocAnsi(s);
+            try
+            {
+                int i = 0;
+                do
+                {
+                    byte b = Marshal.ReadByte(ptr, i++);
+                    if (b == 0)
+                        break;
+                    result.Add(b);
+                } while (true);
+            }
+            finally
+            {
+                Marshal.ZeroFreeGlobalAllocAnsi(ptr);
+            }
+            return result.ToArray();
         }
     }
 }

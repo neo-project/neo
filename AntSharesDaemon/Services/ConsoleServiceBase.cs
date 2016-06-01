@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Reflection;
-using System.Text;
+using System.Security;
 
 namespace AntShares.Services
 {
@@ -34,10 +34,10 @@ namespace AntShares.Services
 
         protected internal abstract void OnStop();
 
-        public static string ReadPassword(string prompt)
+        public static SecureString ReadSecureString(string prompt)
         {
             const string t = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-            StringBuilder sb = new StringBuilder();
+            SecureString securePwd = new SecureString();
             ConsoleKeyInfo key;
             Console.Write(prompt);
             Console.Write(':');
@@ -46,19 +46,20 @@ namespace AntShares.Services
                 key = Console.ReadKey(true);
                 if (t.IndexOf(key.KeyChar) != -1)
                 {
-                    sb.Append(key.KeyChar);
+                    securePwd.AppendChar(key.KeyChar);
                     Console.Write('*');
                 }
-                else if (key.Key == ConsoleKey.Backspace && sb.Length > 0)
+                else if (key.Key == ConsoleKey.Backspace && securePwd.Length > 0)
                 {
-                    sb.Remove(sb.Length - 1, 1);
+                    securePwd.RemoveAt(securePwd.Length - 1);
                     Console.Write(key.KeyChar);
                     Console.Write(' ');
                     Console.Write(key.KeyChar);
                 }
             } while (key.Key != ConsoleKey.Enter);
             Console.WriteLine();
-            return sb.ToString();
+            securePwd.MakeReadOnly();
+            return securePwd;
         }
 
         public void Run(string[] args)
