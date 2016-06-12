@@ -68,7 +68,7 @@ namespace AntShares.IO.Json
                 return true;
             if (type.IsEnum && Enum.IsDefined(type, Value))
                 return true;
-            if (type == typeof(decimal))
+            if (type == typeof(double))
                 return true;
             if (type == typeof(string))
                 return true;

@@ -10,7 +10,11 @@ namespace AntShares.IO.Json
     {
         private List<JObject> items = new List<JObject>();
 
-        public JArray(params JObject[] items)
+        public JArray(params JObject[] items) : this((IEnumerable<JObject>)items)
+        {
+        }
+
+        public JArray(IEnumerable<JObject> items)
         {
             this.items.AddRange(items);
         }
