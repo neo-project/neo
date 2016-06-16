@@ -1,4 +1,5 @@
 ﻿using AntShares.Core;
+using AntShares.IO;
 using AntShares.IO.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -62,8 +63,17 @@ namespace AntShares.Network.RPC
                     return Blockchain.Default.CurrentBlockHash.ToString();
                 case "getblock":
                     {
-                        UInt256 hash = UInt256.Parse(_params[0].AsString());
-                        Block block = Blockchain.Default.GetBlock(hash);
+                        Block block;
+                        if (_params[0] is JNumber)
+                        {
+                            uint index = (uint)_params[0].AsNumber();
+                            block = Blockchain.Default.GetBlock(index);
+                        }
+                        else
+                        {
+                            UInt256 hash = UInt256.Parse(_params[0].AsString());
+                            block = Blockchain.Default.GetBlock(hash);
+                        }
                         if (block == null)
                             throw new RpcException(-100, "Unknown block");
                         return block.ToJson();
@@ -75,13 +85,27 @@ namespace AntShares.Network.RPC
                         uint height = (uint)_params[0].AsNumber();
                         return Blockchain.Default.GetBlockHash(height).ToString();
                     }
+                case "getconnectioncount":
+                    return localNode.RemoteNodeCount;
+                case "getrawmempool":
+                    return new JArray(LocalNode.GetMemoryPool().Select(p => (JObject)p.Hash.ToString()));
                 case "getrawtransaction":
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
+                        bool verbose = _params.Count >= 2 && _params[1].AsBooleanOrDefault(false);
                         Transaction tx = Blockchain.Default.GetTransaction(hash);
                         if (tx == null)
                             throw new RpcException(-101, "Unknown transaction");
-                        return tx.ToJson();
+                        if (verbose)
+                            return tx.ToJson();
+                        else
+                            return tx.ToArray().ToHexString();
+                    }
+                case "gettxout":
+                    {
+                        UInt256 hash = UInt256.Parse(_params[0].AsString());
+                        ushort index = (ushort)_params[1].AsNumber();
+                        return Blockchain.Default.GetUnspent(hash, index).ToJson(index);
                     }
                 case "sendrawtransaction":
                     {

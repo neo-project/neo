@@ -60,7 +60,7 @@ namespace AntShares.IO.Json
         {
             if (type == typeof(bool))
                 return true;
-            if (type == typeof(decimal))
+            if (type == typeof(double))
                 return true;
             if (type == typeof(string))
                 return true;

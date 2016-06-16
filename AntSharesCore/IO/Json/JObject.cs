@@ -62,7 +62,7 @@ namespace AntShares.IO.Json
 
         public double AsNumberOrDefault(double value = 0)
         {
-            if (!CanConvertTo(typeof(decimal)))
+            if (!CanConvertTo(typeof(double)))
                 return value;
             return AsNumber();
         }

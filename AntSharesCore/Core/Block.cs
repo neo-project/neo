@@ -311,6 +311,7 @@ namespace AntShares.Core
         {
             if (Hash == Blockchain.GenesisBlock.Hash) return true;
             if (Blockchain.Default.ContainsBlock(Hash)) return true;
+            if (completely && IsHeader) return false;
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
                 return false;
             Block prev_header = Blockchain.Default.GetHeader(PrevBlock);
@@ -318,10 +319,10 @@ namespace AntShares.Core
             if (prev_header.Height + 1 != Height) return false;
             if (prev_header.Timestamp >= Timestamp) return false;
             if (!this.VerifySignature()) return false;
-            if (NextMiner != Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(Transactions).ToArray()))
-                return false;
             if (completely)
             {
+                if (NextMiner != Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(Transactions).ToArray()))
+                    return false;
                 foreach (Transaction tx in Transactions)
                     if (!tx.Verify()) return false;
                 Transaction tx_gen = Transactions.FirstOrDefault(p => p.Type == TransactionType.MinerTransaction);
