@@ -1,5 +1,4 @@
 ﻿using AntShares.Cryptography;
-using AntShares.Cryptography.ECC;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -1108,28 +1107,33 @@ namespace AntShares.Core.Scripts
 
         private static bool VerifySignature(byte[] hash, byte[] signature, byte[] pubkey)
         {
-#if NET461
-            const int ECDSA_PUBLIC_P256_MAGIC = 0x31534345;
             try
             {
-                pubkey = ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1).EncodePoint(false).Skip(1).ToArray();
+                pubkey = Cryptography.ECC.ECPoint.DecodePoint(pubkey, Cryptography.ECC.ECCurve.Secp256r1).EncodePoint(false).Skip(1).ToArray();
             }
             catch
             {
                 return false;
             }
+#if NET461
+            const int ECDSA_PUBLIC_P256_MAGIC = 0x31534345;
             pubkey = BitConverter.GetBytes(ECDSA_PUBLIC_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey).ToArray();
             using (CngKey key = CngKey.Import(pubkey, CngKeyBlobFormat.EccPublicBlob))
             using (ECDsaCng ecdsa = new ECDsaCng(key))
+#else
+            using (var ecdsa = System.Security.Cryptography.ECDsa.Create(new ECParameters
+            {
+                Curve = System.Security.Cryptography.ECCurve.NamedCurves.nistP256,
+                Q = new System.Security.Cryptography.ECPoint
+                {
+                    X = pubkey.Take(32).ToArray(),
+                    Y = pubkey.Skip(32).ToArray()
+                }
+            }))
+#endif
             {
                 return ecdsa.VerifyHash(hash, signature);
             }
-#else
-            BigInteger r = new BigInteger(signature.Take(32).Reverse().Concat(new byte[1]).ToArray());
-            BigInteger s = new BigInteger(signature.Skip(32).Reverse().Concat(new byte[1]).ToArray());
-            var ecdsa = new AntShares.Cryptography.ECC.ECDsa(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1));
-            return ecdsa.VerifySignature(hash, r, s);
-#endif
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using AntShares.Core.Scripts;
 using AntShares.Cryptography;
-using AntShares.Cryptography.ECC;
 using System;
 using System.Security.Cryptography;
 
@@ -9,7 +8,7 @@ namespace AntShares.Wallets
     public class Account : IEquatable<Account>
     {
         public readonly byte[] PrivateKey;
-        public readonly ECPoint PublicKey;
+        public readonly Cryptography.ECC.ECPoint PublicKey;
         public readonly UInt160 PublicKeyHash;
 
         public Account(byte[] privateKey)
@@ -20,11 +19,11 @@ namespace AntShares.Wallets
             Buffer.BlockCopy(privateKey, privateKey.Length - 32, PrivateKey, 0, 32);
             if (privateKey.Length == 32)
             {
-                this.PublicKey = ECCurve.Secp256r1.G * privateKey;
+                this.PublicKey = Cryptography.ECC.ECCurve.Secp256r1.G * privateKey;
             }
             else
             {
-                this.PublicKey = ECPoint.FromBytes(privateKey, ECCurve.Secp256r1);
+                this.PublicKey = Cryptography.ECC.ECPoint.FromBytes(privateKey, Cryptography.ECC.ECCurve.Secp256r1);
             }
             this.PublicKeyHash = PublicKey.EncodePoint(true).ToScriptHash();
 #if NET461

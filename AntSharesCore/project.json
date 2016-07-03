@@ -4,30 +4,26 @@
     "version": "0.7.0-*",
 
     "dependencies": {
-        "Microsoft.EntityFrameworkCore.Sqlite": "1.0.0-rc2-final",
-        "System.Net.Sockets": "4.1.0-rc4-24201-03",
-        "System.Security.SecureString": "4.0.0-rc4-24201-03",
-        "System.Text.Encodings.Web": "4.0.0-rc4-24201-03"
+        "Microsoft.EntityFrameworkCore.Sqlite": "1.0.0",
+        "System.Net.Sockets": "4.1.0",
+        "System.Security.SecureString": "4.0.0",
+        "System.Text.Encodings.Web": "4.0.0"
     },
 
     "frameworks": {
-        "netstandard1.5": {
+        "netstandard1.6": {
             "buildOptions": { "allowUnsafe": true },
             "dependencies": {
-                "NETStandard.Library": "1.6.0-rc4-24201-03",
-                "System.Data.Common": "4.1.0-rc4-24201-03",
-                "System.Linq.Parallel": "4.0.1-rc4-24201-03",
-                "System.Net.NameResolution": "4.0.0-rc4-24201-03",
-                "System.Net.NetworkInformation": "4.1.0-rc4-24201-03",
-                "System.Net.Requests": "4.0.11-rc4-24201-03",
-                "System.Security.Cryptography.Cng": "4.2.0-rc4-24201-03",
-                "System.Threading.Thread": "4.0.0-rc4-24201-03",
-                "System.Xml.XPath.XmlDocument": "4.0.1-rc4-24201-03"
-            },
-            "imports": [
-                "dnxcore50",
-                "portable-net45+win8"
-            ]
+                "NETStandard.Library": "1.6.0",
+                "System.Data.Common": "4.1.0",
+                "System.Linq.Parallel": "4.0.1",
+                "System.Net.NameResolution": "4.0.0",
+                "System.Net.NetworkInformation": "4.1.0",
+                "System.Net.Requests": "4.0.11",
+                "System.Security.Cryptography.Algorithms": "4.2.0",
+                "System.Threading.Thread": "4.0.0",
+                "System.Xml.XPath.XmlDocument": "4.0.1"
+            }
         },
         "net461": {
             "frameworkAssemblies": {

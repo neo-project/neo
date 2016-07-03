@@ -1,7 +1,6 @@
 ﻿using AntShares.Core;
 using AntShares.Core.Scripts;
 using AntShares.Cryptography;
-using AntShares.Cryptography.ECC;
 using AntShares.IO.Caching;
 using System;
 using System.Collections.Generic;
@@ -180,7 +179,7 @@ namespace AntShares.Wallets
             }
         }
 
-        public bool ContainsAccount(ECPoint publicKey)
+        public bool ContainsAccount(Cryptography.ECC.ECPoint publicKey)
         {
             return ContainsAccount(publicKey.EncodePoint(true).ToScriptHash());
         }
@@ -203,10 +202,10 @@ namespace AntShares.Wallets
 
         public Account CreateAccount()
         {
-            byte[] privateKey;
-            using (CngKey key = CngKey.Create(CngAlgorithm.ECDsaP256, null, new CngKeyCreationParameters { ExportPolicy = CngExportPolicies.AllowPlaintextArchiving }))
+            byte[] privateKey = new byte[32];
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
-                privateKey = key.Export(CngKeyBlobFormat.EccPrivateBlob);
+                rng.GetBytes(privateKey);
             }
             Account account = CreateAccount(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
@@ -322,7 +321,7 @@ namespace AntShares.Wallets
             }).ToArray();
         }
 
-        public Account GetAccount(ECPoint publicKey)
+        public Account GetAccount(Cryptography.ECC.ECPoint publicKey)
         {
             return GetAccount(publicKey.EncodePoint(true).ToScriptHash());
         }
@@ -452,9 +451,13 @@ namespace AntShares.Wallets
         public Account Import(X509Certificate2 cert)
         {
             byte[] privateKey;
-            using (ECDsaCng ecdsa = (ECDsaCng)cert.GetECDsaPrivateKey())
+            using (ECDsa ecdsa = cert.GetECDsaPrivateKey())
             {
-                privateKey = ecdsa.Key.Export(CngKeyBlobFormat.EccPrivateBlob);
+#if NET461
+                privateKey = ((ECDsaCng)ecdsa).Key.Export(CngKeyBlobFormat.EccPrivateBlob);
+#else
+                privateKey = ecdsa.ExportParameters(true).D;
+#endif
             }
             Account account = CreateAccount(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
