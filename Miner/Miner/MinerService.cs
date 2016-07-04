@@ -240,7 +240,7 @@ namespace AntShares.Miner
             using (SecureString password = ReadSecureString("password"))
             using (SecureString password2 = ReadSecureString("password"))
             {
-                if (password.CompareTo(password2))
+                if (!password.CompareTo(password2))
                 {
                     Console.WriteLine("error");
                     return true;
