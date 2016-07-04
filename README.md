@@ -12,7 +12,7 @@ AntShares (小蚁)
 |**Red Hat 7.1**| |:white_check_mark:|:white_check_mark:|
 |**Windows 7 SP1 x64**|:white_check_mark:|:white_check_mark:|:white_check_mark:|
 |**Windows Server 2008 R2**| |:white_check_mark:|:white_check_mark:|
-未来将支持Debian、FreeBSD、openSUSE、OS X、Fedora、Ubuntu等。
+未来将支持Docker、Debian、FreeBSD、Linux Mint、openSUSE、Oracle Linux、OS X、Fedora、Ubuntu等。
 
 如何编译
 --------
@@ -50,6 +50,8 @@ AntShares (小蚁)
 
 联系我们
 ------------
+
+官网：https://www.antshares.com/
 
 论坛：http://8btc.com/antshares
 
