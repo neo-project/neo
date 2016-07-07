@@ -14,7 +14,7 @@ namespace AntShares.Core
     /// <summary>
     /// 区块或区块头
     /// </summary>
-    public class Block : Inventory, IEquatable<Block>, ISignable
+    public class Block : Inventory, IEquatable<Block>
     {
         /// <summary>
         /// 区块版本
@@ -86,7 +86,7 @@ namespace AntShares.Core
         /// </summary>
         public override InventoryType InventoryType => InventoryType.Block;
 
-        Script[] ISignable.Scripts
+        public override Script[] Scripts
         {
             get
             {
@@ -136,7 +136,7 @@ namespace AntShares.Core
             }
         }
 
-        void ISignable.DeserializeUnsigned(BinaryReader reader)
+        public override void DeserializeUnsigned(BinaryReader reader)
         {
             Version = reader.ReadUInt32();
             PrevBlock = reader.ReadSerializable<UInt256>();
@@ -203,22 +203,7 @@ namespace AntShares.Core
             return Hash.GetHashCode();
         }
 
-        /// <summary>
-        /// 获得区块中要计算Hash的数据
-        /// </summary>
-        /// <returns>返回区块中要计算Hash的数据</returns>
-        protected override byte[] GetHashData()
-        {
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            {
-                ((ISignable)this).SerializeUnsigned(writer);
-                writer.Flush();
-                return ms.ToArray();
-            }
-        }
-
-        UInt160[] ISignable.GetScriptHashesForVerifying()
+        public override UInt160[] GetScriptHashesForVerifying()
         {
             if (PrevBlock == UInt256.Zero)
                 return new UInt160[] { new byte[0].ToScriptHash() };
@@ -246,7 +231,7 @@ namespace AntShares.Core
             writer.Write(Transactions);
         }
 
-        void ISignable.SerializeUnsigned(BinaryWriter writer)
+        public override void SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write(Version);
             writer.Write(PrevBlock);

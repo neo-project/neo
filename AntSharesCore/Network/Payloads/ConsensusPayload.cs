@@ -8,7 +8,7 @@ using System.IO;
 
 namespace AntShares.Network.Payloads
 {
-    public class ConsensusPayload : Inventory, ISignable
+    public class ConsensusPayload : Inventory
     {
         public uint Version;
         public UInt256 PrevHash;
@@ -20,7 +20,7 @@ namespace AntShares.Network.Payloads
 
         public override InventoryType InventoryType => InventoryType.Consensus;
 
-        Script[] ISignable.Scripts
+        public override Script[] Scripts
         {
             get
             {
@@ -40,7 +40,7 @@ namespace AntShares.Network.Payloads
             Script = reader.ReadSerializable<Script>();
         }
 
-        void ISignable.DeserializeUnsigned(BinaryReader reader)
+        public override void DeserializeUnsigned(BinaryReader reader)
         {
             Version = reader.ReadUInt32();
             PrevHash = reader.ReadSerializable<UInt256>();
@@ -50,18 +50,7 @@ namespace AntShares.Network.Payloads
             Data = reader.ReadVarBytes();
         }
 
-        protected override byte[] GetHashData()
-        {
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            {
-                ((ISignable)this).SerializeUnsigned(writer);
-                writer.Flush();
-                return ms.ToArray();
-            }
-        }
-
-        UInt160[] ISignable.GetScriptHashesForVerifying()
+        public override UInt160[] GetScriptHashesForVerifying()
         {
             if (Blockchain.Default == null)
                 throw new InvalidOperationException();
@@ -79,7 +68,7 @@ namespace AntShares.Network.Payloads
             writer.Write((byte)1); writer.Write(Script);
         }
 
-        void ISignable.SerializeUnsigned(BinaryWriter writer)
+        public override void SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write(Version);
             writer.Write(PrevHash);
