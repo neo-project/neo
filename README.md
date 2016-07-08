@@ -14,12 +14,18 @@ AntShares (小蚁)
 |**Windows Server 2008 R2**| |:white_check_mark:|:white_check_mark:|
 未来将支持Docker、Debian、FreeBSD、Linux Mint、openSUSE、Oracle Linux、OS X、Fedora、Ubuntu等。
 
-如何编译
+如何开发
 --------
 
 在 Windows 下，使用 [Visual Studio 2015](https://www.visualstudio.com/products/visual-studio-community-vs) 来开发和编译本项目是最方便的。
 
 在 Linux 或 MAC OS 下，可以使用任何你喜欢的开发工具来开发，然后使用 [.Net Core SDK](http://dotnet.github.io/getting-started/) 来生成项目。
+
+此外，你还可以通过调用 API 或者 SDK 的方式来开发基于小蚁的应用：
+
++ [JSON-RPC](https://github.com/AntShares/AntShares/wiki/API%E5%8F%82%E8%80%83)
++ [C# SDK](https://github.com/AntShares/AntShares/tree/master/AntSharesCore)
++ [JavaScript/TypeScript SDK](https://github.com/erikzhang/AntSharesSDK)
 
 项目介绍
 --------
