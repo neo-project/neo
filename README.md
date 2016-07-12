@@ -1,7 +1,9 @@
-AntShares (小蚁)
+小蚁 AntShares
 ================
 
 小蚁是基于区块链技术，将实体世界的资产和权益进行数字化，通过点对点网络进行登记发行、转让交易、清算交割等金融业务的去中心化网络协议。
+
+Antshares is a decentralized and distributed network protocol which is based on blockchain technology. People can use it to digitalize assets or shares, and accomplish some financial business through peer-to-peer network such as registration and issuing, make transactions, settlement and payment.
 
 支持平台
 --------
@@ -25,7 +27,7 @@ AntShares (小蚁)
 
 + [JSON-RPC](https://github.com/AntShares/AntShares/wiki/API%E5%8F%82%E8%80%83)
 + [C# SDK](https://github.com/AntShares/AntShares/tree/master/AntSharesCore)
-+ [JavaScript/TypeScript SDK](https://github.com/erikzhang/AntSharesSDK)
++ [JavaScript/TypeScript SDK](https://github.com/AntSharesSDK/antshares-ts)
 
 项目介绍
 --------
