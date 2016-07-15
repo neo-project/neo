@@ -18,7 +18,19 @@ namespace AntShares.Core
         /// <summary>
         /// 系统费用
         /// </summary>
-        public override Fixed8 SystemFee => Outputs.All(p => p.AssetId == Blockchain.AntShare.Hash || p.AssetId == Blockchain.AntCoin.Hash) ? Fixed8.Zero : Fixed8.FromDecimal(500);
+        public override Fixed8 SystemFee
+        {
+            get
+            {
+                if (Outputs.All(p => p.AssetId == Blockchain.AntShare.Hash || p.AssetId == Blockchain.AntCoin.Hash))
+                    return Fixed8.Zero;
+#if TESTNET
+                return Fixed8.Zero;
+#else
+                return Fixed8.FromDecimal(500);
+#endif
+            }
+        }
 
         public IssueTransaction()
             : base(TransactionType.IssueTransaction)

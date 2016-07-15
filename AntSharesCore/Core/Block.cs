@@ -206,7 +206,7 @@ namespace AntShares.Core
         public override UInt160[] GetScriptHashesForVerifying()
         {
             if (PrevBlock == UInt256.Zero)
-                return new UInt160[] { new byte[0].ToScriptHash() };
+                return new[] { Script.RedeemScript.ToScriptHash() };
             Block prev_header = Blockchain.Default.GetHeader(PrevBlock);
             if (prev_header == null) throw new InvalidOperationException();
             return new UInt160[] { prev_header.NextMiner };

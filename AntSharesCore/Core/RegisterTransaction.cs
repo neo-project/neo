@@ -48,7 +48,19 @@ namespace AntShares.Core
         /// <summary>
         /// 系统费用
         /// </summary>
-        public override Fixed8 SystemFee => AssetType == AssetType.AntShare || AssetType == AssetType.AntCoin ? Fixed8.Zero : Fixed8.FromDecimal(10000);
+        public override Fixed8 SystemFee
+        {
+            get
+            {
+                if (AssetType == AssetType.AntShare || AssetType == AssetType.AntCoin)
+                    return Fixed8.Zero;
+#if TESTNET
+                return Fixed8.FromDecimal(100);
+#else
+                return Fixed8.FromDecimal(10000);
+#endif
+            }
+        }
 
         public RegisterTransaction()
             : base(TransactionType.RegisterTransaction)

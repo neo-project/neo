@@ -42,7 +42,7 @@ namespace AntShares.Core.Scripts
             {
                 return false;
             }
-            return stack.Count == 0 || (stack.Count == 1 && stack.Peek());
+            return stack.Count == 1 && stack.Pop();
         }
 
         private bool ExecuteOp(ScriptOp opcode, BinaryReader opReader)
