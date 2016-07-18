@@ -32,7 +32,7 @@ Antshares is a decentralized and distributed network protocol which is based on 
 项目介绍
 --------
 
-+ [白皮书](http://t.cn/Ry4MgXn)
++ [白皮书](https://www.antshares.org/Files/%e5%b0%8f%e8%9a%81%e7%99%bd%e7%9a%ae%e4%b9%a6%201.0.htm)
 + [共识机制](http://www.onchain.com/paper/66c6773b.pdf)
 + [部署文档](https://github.com/AntShares/AntShares/wiki/%E8%AE%B0%E8%B4%A6%E8%8A%82%E7%82%B9)
 
@@ -59,7 +59,7 @@ Antshares is a decentralized and distributed network protocol which is based on 
 联系我们
 ------------
 
-官网：https://www.antshares.com/
+官网：https://www.antshares.org/
 
 论坛：http://8btc.com/antshares
 
