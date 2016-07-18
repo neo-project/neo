@@ -202,7 +202,7 @@ namespace AntShares.Core
             {
                 RegisterTransaction tx = Blockchain.Default.GetTransaction(group.Key) as RegisterTransaction;
                 if (tx == null) throw new InvalidOperationException();
-                if (tx.AssetType == AssetType.Share)
+                if (tx.AssetType.HasFlag(AssetType.DutyFlag))
                 {
                     hashes.UnionWith(group.Select(p => p.ScriptHash));
                 }

@@ -272,7 +272,7 @@ namespace AntShares.UI
             using (OpenWalletDialog dialog = new OpenWalletDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                if (UserWallet.GetVersion(dialog.WalletPath) < Version.Parse("0.6.5963.1516"))
+                if (UserWallet.GetVersion(dialog.WalletPath) < Version.Parse("0.6.6043.32131"))
                 {
                     if (MessageBox.Show("正在打开旧版本的钱包文件，是否尝试将文件升级为新版格式？\n注意，升级后将无法用旧版本的客户端打开该文件！", "钱包文件升级", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) != DialogResult.Yes)
                         return;

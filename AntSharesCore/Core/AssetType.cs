@@ -5,25 +5,31 @@
     /// </summary>
     public enum AssetType : byte
     {
+        CreditFlag = 0x40,
+        DutyFlag = 0x80,
+
         /// <summary>
         /// 小蚁股
         /// </summary>
         AntShare = 0x00,
+
         /// <summary>
         /// 小蚁币
         /// </summary>
         AntCoin = 0x01,
+
         /// <summary>
-        /// 股权/股份
+        /// 法币
         /// </summary>
-        Share = 0x10,
+        Currency = 0x08,
+
         /// <summary>
-        /// 货币
+        /// 股权
         /// </summary>
-        Currency = 0x20,
-        /// <summary>
-        /// 自定义资产
-        /// </summary>
-        Token = 0x40,
+        Share = DutyFlag | 0x10,
+
+        Invoice = DutyFlag | 0x18,
+
+        Token = CreditFlag | 0x20,
     }
 }
