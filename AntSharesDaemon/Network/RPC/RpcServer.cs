@@ -76,7 +76,11 @@ namespace AntShares.Network.RPC
                         }
                         if (block == null)
                             throw new RpcException(-100, "Unknown block");
-                        return block.ToJson();
+                        bool verbose = _params.Count >= 2 && _params[1].AsBooleanOrDefault(false);
+                        if (verbose)
+                            return block.ToJson();
+                        else
+                            return block.ToArray().ToHexString();
                     }
                 case "getblockcount":
                     return Blockchain.Default.Height + 1;

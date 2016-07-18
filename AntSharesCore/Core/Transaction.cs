@@ -14,7 +14,7 @@ namespace AntShares.Core
     /// <summary>
     /// 一切交易的基类
     /// </summary>
-    public abstract class Transaction : Inventory, ISignable
+    public abstract class Transaction : Inventory
     {
         /// <summary>
         /// 交易类型
@@ -35,7 +35,7 @@ namespace AntShares.Core
         /// <summary>
         /// 用于验证该交易的脚本列表
         /// </summary>
-        public Script[] Scripts;
+        public override Script[] Scripts { get; set; }
 
         /// <summary>
         /// 清单类型
@@ -69,18 +69,6 @@ namespace AntShares.Core
                     _references = dictionary;
                 }
                 return _references;
-            }
-        }
-
-        Script[] ISignable.Scripts
-        {
-            get
-            {
-                return Scripts;
-            }
-            set
-            {
-                Scripts = value;
             }
         }
 
@@ -148,7 +136,7 @@ namespace AntShares.Core
             return transaction;
         }
 
-        void ISignable.DeserializeUnsigned(BinaryReader reader)
+        public override void DeserializeUnsigned(BinaryReader reader)
         {
             if ((TransactionType)reader.ReadByte() != Type)
                 throw new FormatException();
@@ -203,24 +191,10 @@ namespace AntShares.Core
         }
 
         /// <summary>
-        /// 获取计算该交易的散列值时所用到的数据
-        /// </summary>
-        /// <returns>返回计算该交易的散列值时所用到的数据</returns>
-        protected override byte[] GetHashData()
-        {
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            {
-                ((ISignable)this).SerializeUnsigned(writer);
-                return ms.ToArray();
-            }
-        }
-
-        /// <summary>
         /// 获取需要校验的脚本散列值
         /// </summary>
         /// <returns>返回需要校验的脚本散列值</returns>
-        public virtual UInt160[] GetScriptHashesForVerifying()
+        public override UInt160[] GetScriptHashesForVerifying()
         {
             if (References == null) throw new InvalidOperationException();
             HashSet<UInt160> hashes = new HashSet<UInt160>(Inputs.Select(p => References[p].ScriptHash));
@@ -228,7 +202,7 @@ namespace AntShares.Core
             {
                 RegisterTransaction tx = Blockchain.Default.GetTransaction(group.Key) as RegisterTransaction;
                 if (tx == null) throw new InvalidOperationException();
-                if (tx.AssetType == AssetType.Share)
+                if (tx.AssetType.HasFlag(AssetType.DutyFlag))
                 {
                     hashes.UnionWith(group.Select(p => p.ScriptHash));
                 }
@@ -283,7 +257,7 @@ namespace AntShares.Core
         {
         }
 
-        void ISignable.SerializeUnsigned(BinaryWriter writer)
+        public override void SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write((byte)Type);
             SerializeExclusiveData(writer);

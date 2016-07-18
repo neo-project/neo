@@ -1,29 +1,22 @@
 {
-    "copyright": "© AntShares Project 2016 Released under the MIT license",
-    "title": "AntShares",
-    "version": "0.7.0-*",
-    "buildOptions": {
-        "emitEntryPoint": true
-    },
+  "copyright": "© AntShares Project 2016 Released under the MIT license",
+  "title": "AntShares",
+  "version": "0.7.0-*",
+  "buildOptions": {
+    "emitEntryPoint": true,
+    "define": [ "DEBUG", "TESTNET" ]
+  },
 
-    "dependencies": {
-        "AntSharesCore": "0.7.0-*",
-        "Microsoft.AspNetCore.Server.Kestrel": "1.0.0",
-        "Microsoft.NETCore.App": {
-            "type": "platform",
-            "version": "1.0.0"
-        }
-    },
-
-    "frameworks": {
-        "netcoreapp1.0": {}
-    },
-
-    "configurations": {
-        "Debug": {
-            "buildOptions": {
-                "define": [ "DEBUG", "TESTNET" ]
-            }
-        }
+  "dependencies": {
+    "AntSharesCore": "0.7.0-*",
+    "Microsoft.AspNetCore.Server.Kestrel": "1.0.0",
+    "Microsoft.NETCore.App": {
+      "type": "platform",
+      "version": "1.0.0"
     }
+  },
+
+  "frameworks": {
+    "netcoreapp1.0": {}
+  }
 }
