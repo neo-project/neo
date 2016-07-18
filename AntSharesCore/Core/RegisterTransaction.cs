@@ -74,14 +74,14 @@ namespace AntShares.Core
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             this.AssetType = (AssetType)reader.ReadByte();
-            if (!Enum.IsDefined(typeof(AssetType), AssetType))
+            if (!Enum.IsDefined(typeof(AssetType), AssetType) || AssetType == AssetType.CreditFlag || AssetType == AssetType.DutyFlag)
                 throw new FormatException();
             this.Name = reader.ReadVarString();
             this.Amount = reader.ReadSerializable<Fixed8>();
             if (Amount == Fixed8.Zero || Amount < -Fixed8.Satoshi) throw new FormatException();
             if (AssetType == AssetType.Share && Amount <= Fixed8.Zero)
                 throw new FormatException();
-            if (AssetType == AssetType.Currency && Amount != -Fixed8.Satoshi)
+            if (AssetType == AssetType.Invoice && Amount != -Fixed8.Satoshi)
                 throw new FormatException();
             this.Issuer = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
             this.Admin = reader.ReadSerializable<UInt160>();

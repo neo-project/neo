@@ -29,7 +29,7 @@ namespace AntShares.UI
 
         private void AssetRegisterDialog_Load(object sender, EventArgs e)
         {
-            comboBox1.Items.AddRange(Enum.GetValues(typeof(AssetType)).OfType<AssetType>().Where(p => p >= AssetType.Share).OfType<object>().ToArray());
+            comboBox1.Items.AddRange(new object[] { AssetType.Share, AssetType.Token });
             comboBox2.Items.AddRange(Program.CurrentWallet.GetAccounts().Select(p => p.PublicKey).ToArray());
             comboBox3.Items.AddRange(Program.CurrentWallet.GetContracts().Select(p => p.Address).ToArray());
         }
@@ -39,7 +39,6 @@ namespace AntShares.UI
             textBox1.Enabled = (AssetType)comboBox1.SelectedItem != AssetType.Share;
             checkBox1.Enabled = (AssetType)comboBox1.SelectedItem == AssetType.Token;
             if ((AssetType)comboBox1.SelectedItem == AssetType.Share) checkBox1.Checked = true;
-            else if ((AssetType)comboBox1.SelectedItem == AssetType.Currency) checkBox1.Checked = false;
         }
 
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
