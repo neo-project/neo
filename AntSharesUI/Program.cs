@@ -27,7 +27,7 @@ namespace AntShares
             try
             {
                 XmlDocument doc = new XmlDocument();
-                doc.Load("https://www.antshares.com/client/version.xml");
+                doc.Load("https://www.antshares.org/client/version.xml");
                 Version minimum = Version.Parse(doc.GetElementsByTagName("version")[0].Attributes["minimum"].Value);
                 Version latest = Version.Parse(doc.GetElementsByTagName("version")[0].Attributes["latest"].Value);
                 Version self = Assembly.GetExecutingAssembly().GetName().Version;

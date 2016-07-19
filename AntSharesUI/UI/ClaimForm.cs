@@ -15,7 +15,9 @@ namespace AntShares.UI
 
         private void ClaimForm_Load(object sender, EventArgs e)
         {
-            textBox1.Text = Wallet.CalculateClaimAmount(Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Input)).ToString();
+            Fixed8 amount = Wallet.CalculateClaimAmount(Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Input));
+            textBox1.Text = amount.ToString();
+            if (amount == Fixed8.Zero) button1.Enabled = false;
         }
 
         private void button1_Click(object sender, EventArgs e)
