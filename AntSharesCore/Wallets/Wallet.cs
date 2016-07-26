@@ -158,14 +158,18 @@ namespace AntShares.Wallets
             return amount_claimed;
         }
 
-        public void ChangePassword(string password)
+        public bool ChangePassword(string password_old, string password_new)
         {
-            byte[] passwordKey = password.ToAesKey();
+            byte[] passwordHash = LoadStoredData("PasswordHash");
+            if (!passwordHash.SequenceEqual(password_old.ToAesKey().Sha256()))
+                return false;
+            byte[] passwordKey = password_new.ToAesKey();
             using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
             {
                 try
                 {
                     SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
+                    return true;
                 }
                 finally
                 {

@@ -45,6 +45,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             modelBuilder.Entity<Key>().Property(p => p.Value).HasColumnType("VarBinary").IsRequired();
             modelBuilder.Entity<Transaction>().HasKey(p => p.Hash);
             modelBuilder.Entity<Transaction>().HasIndex(p => p.Type);
+            modelBuilder.Entity<Transaction>().HasIndex(p => p.Height);
             modelBuilder.Entity<Transaction>().Property(p => p.Hash).HasColumnType("Binary").HasMaxLength(32).IsRequired();
             modelBuilder.Entity<Transaction>().Property(p => p.Type).IsRequired();
             modelBuilder.Entity<Transaction>().Property(p => p.RawData).HasColumnType("VarBinary").IsRequired();
