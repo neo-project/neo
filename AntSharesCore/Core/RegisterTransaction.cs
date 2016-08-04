@@ -99,7 +99,11 @@ namespace AntShares.Core
             string name_str = AssetType == AssetType.Share ? ShareName : Name;
             if (_names == null)
             {
-                _names = ((JArray)JObject.Parse(name_str)).ToDictionary(p => CultureInfo.GetCultureInfo(p["lang"].AsString()), p => p["name"].AsString());
+                JObject name_obj = JObject.Parse(name_str);
+                if (name_obj is JString)
+                    _names = new Dictionary<CultureInfo, string> { { CultureInfo.GetCultureInfo("en"), name_obj.AsString() } };
+                else
+                    _names = ((JArray)JObject.Parse(name_str)).ToDictionary(p => CultureInfo.GetCultureInfo(p["lang"].AsString()), p => p["name"].AsString());
             }
             if (culture == null) culture = CultureInfo.CurrentCulture;
             if (_names.ContainsKey(culture))

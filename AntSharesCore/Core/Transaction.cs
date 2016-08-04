@@ -278,7 +278,7 @@ namespace AntShares.Core
             json["type"] = Type;
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["vin"] = Inputs.Select(p => p.ToJson()).ToArray();
-            json["vout"] = Outputs.IndexedSelect((p, i) => p.ToJson((ushort)i)).ToArray();
+            json["vout"] = Outputs.Select((p, i) => p.ToJson((ushort)i)).ToArray();
             json["scripts"] = Scripts.Select(p => p.ToJson()).ToArray();
             return json;
         }

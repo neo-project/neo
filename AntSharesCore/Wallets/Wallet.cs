@@ -613,11 +613,8 @@ namespace AntShares.Wallets
                     }
                     current_height++;
                     changeset = coins.GetChangeSet();
-                    if (changeset.Length > 0)
-                    {
-                        OnProcessNewBlock(block, transactions, changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Added), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Changed), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Deleted));
-                        coins.Commit();
-                    }
+                    OnProcessNewBlock(block, transactions, changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Added), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Changed), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Deleted));
+                    coins.Commit();
                 }
             if (changeset.Length > 0)
                 BalanceChanged?.Invoke(this, EventArgs.Empty);

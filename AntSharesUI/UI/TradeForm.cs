@@ -37,7 +37,7 @@ namespace AntShares.UI
         {
             JObject json = new JObject();
             json["vin"] = tx.Inputs.Select(p => p.ToJson()).ToArray();
-            json["vout"] = tx.Outputs.IndexedSelect((p, i) => p.ToJson((ushort)i)).ToArray();
+            json["vout"] = tx.Outputs.Select((p, i) => p.ToJson((ushort)i)).ToArray();
             json["change_address"] = Wallet.ToAddress(Program.CurrentWallet.GetChangeAddress());
             return json;
         }
