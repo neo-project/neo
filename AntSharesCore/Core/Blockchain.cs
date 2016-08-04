@@ -56,17 +56,16 @@ namespace AntShares.Core
         {
             AssetType = AssetType.AntShare,
 #if TESTNET
-            Name = "[{'lang':'zh-CN','name':'小蚁股(测试)'},{'lang':'en','name':'AntShare(TestNet)'}]",
+            Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股(测试)\"},{\"lang\":\"en\",\"name\":\"AntShare(TestNet)\"}]",
 #else
-            Name = "[{'lang':'zh-CN','name':'小蚁股'},{'lang':'en','name':'AntShare'}]",
+            Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]",
 #endif
             Amount = Fixed8.FromDecimal(100000000),
-            Issuer = ECPoint.DecodePoint((new[] { (byte)0x02 }).Concat(ECCurve.Secp256r1.G.EncodePoint(false).Skip(1).Sha256().Sha256()).ToArray(), ECCurve.Secp256r1),
+            Issuer = ECCurve.Secp256r1.Infinity,
             Admin = (new[] { (byte)ScriptOp.OP_TRUE }).ToScriptHash(),
             Attributes = new TransactionAttribute[0],
             Inputs = new TransactionInput[0],
-            Outputs = new TransactionOutput[0],
-            Scripts = new Script[0]
+            Outputs = new TransactionOutput[0]
         };
 
         /// <summary>
@@ -76,17 +75,16 @@ namespace AntShares.Core
         {
             AssetType = AssetType.AntCoin,
 #if TESTNET
-            Name = "[{'lang':'zh-CN','name':'小蚁币(测试)'},{'lang':'en','name':'AntCoin(TestNet)'}]",
+            Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币(测试)\"},{\"lang\":\"en\",\"name\":\"AntCoin(TestNet)\"}]",
 #else
-            Name = "[{'lang':'zh-CN','name':'小蚁币'},{'lang':'en','name':'AntCoin'}]",
+            Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币\"},{\"lang\":\"en\",\"name\":\"AntCoin\"}]",
 #endif
             Amount = Fixed8.FromDecimal(MintingAmount.Sum(p => p * DecrementInterval)),
-            Issuer = ECPoint.DecodePoint((new[] { (byte)0x02 }).Concat(ECCurve.Secp256r1.G.EncodePoint(false).Skip(1).Sha256().Sha256()).ToArray(), ECCurve.Secp256r1),
+            Issuer = ECCurve.Secp256r1.Infinity,
             Admin = (new[] { (byte)ScriptOp.OP_FALSE }).ToScriptHash(),
             Attributes = new TransactionAttribute[0],
             Inputs = new TransactionInput[0],
-            Outputs = new TransactionOutput[0],
-            Scripts = new Script[0]
+            Outputs = new TransactionOutput[0]
         };
 
         /// <summary>
@@ -173,6 +171,18 @@ namespace AntShares.Core
 
         static Blockchain()
         {
+            AntShare.Scripts = new[] { new Script { RedeemScript = SignatureContract.CreateSignatureRedeemScript(AntShare.Issuer) } };
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.Push(ECCurve.Secp256r1.G.EncodePoint(true).Skip(1).Concat(AntShare.GetHashForSigning()).ToArray());
+                AntShare.Scripts[0].StackScript = sb.ToArray();
+            }
+            AntCoin.Scripts = new[] { new Script { RedeemScript = SignatureContract.CreateSignatureRedeemScript(AntCoin.Issuer) } };
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.Push(ECCurve.Secp256r1.G.EncodePoint(true).Skip(1).Concat(AntCoin.GetHashForSigning()).ToArray());
+                AntCoin.Scripts[0].StackScript = sb.ToArray();
+            }
             GenesisBlock.RebuildMerkleRoot();
         }
 

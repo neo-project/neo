@@ -43,7 +43,7 @@ namespace AntShares.Core
         /// </summary>
         public UInt160 Admin;
 
-        private static readonly string ShareName = "[{'lang':'zh-CN','name':'股权'},{'lang':'en','name':'Share'}]";
+        private static readonly string ShareName = "[{\"lang\":\"zh-CN\",\"name\":\"股权\"},{\"lang\":\"en\",\"name\":\"Share\"}]";
 
         /// <summary>
         /// 系统费用
@@ -127,7 +127,7 @@ namespace AntShares.Core
         public override UInt160[] GetScriptHashesForVerifying()
         {
             UInt160 issuer = SignatureContract.CreateSignatureRedeemScript(Issuer).ToScriptHash();
-            return base.GetScriptHashesForVerifying().Union(new UInt160[] { issuer, Admin }).OrderBy(p => p).ToArray();
+            return base.GetScriptHashesForVerifying().Union(new[] { issuer }).OrderBy(p => p).ToArray();
         }
 
         /// <summary>
