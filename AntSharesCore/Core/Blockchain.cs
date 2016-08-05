@@ -61,6 +61,7 @@ namespace AntShares.Core
             Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]",
 #endif
             Amount = Fixed8.FromDecimal(100000000),
+            Precision = 0,
             Issuer = ECCurve.Secp256r1.Infinity,
             Admin = (new[] { (byte)ScriptOp.OP_TRUE }).ToScriptHash(),
             Attributes = new TransactionAttribute[0],
@@ -80,6 +81,7 @@ namespace AntShares.Core
             Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币\"},{\"lang\":\"en\",\"name\":\"AntCoin\"}]",
 #endif
             Amount = Fixed8.FromDecimal(MintingAmount.Sum(p => p * DecrementInterval)),
+            Precision = 8,
             Issuer = ECCurve.Secp256r1.Infinity,
             Admin = (new[] { (byte)ScriptOp.OP_FALSE }).ToScriptHash(),
             Attributes = new TransactionAttribute[0],

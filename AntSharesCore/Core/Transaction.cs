@@ -158,10 +158,6 @@ namespace AntShares.Core
             Outputs = reader.ReadSerializableArray<TransactionOutput>();
             if (Outputs.Length > ushort.MaxValue + 1)
                 throw new FormatException();
-            if (Blockchain.AntShare != null)
-                foreach (TransactionOutput output in Outputs.Where(p => p.AssetId == Blockchain.AntShare.Hash))
-                    if (output.Value.GetData() % 100000000 != 0)
-                        throw new FormatException();
         }
 
         public bool Equals(Transaction other)
@@ -294,9 +290,14 @@ namespace AntShares.Core
                 return false;
             if (Blockchain.Default.IsDoubleSpend(this))
                 return false;
-            foreach (UInt256 hash in Outputs.Select(p => p.AssetId).Distinct())
-                if (!Blockchain.Default.ContainsAsset(hash))
-                    return false;
+            foreach (var group in Outputs.GroupBy(p => p.AssetId))
+            {
+                RegisterTransaction asset = Blockchain.Default.GetTransaction(group.Key) as RegisterTransaction;
+                if (asset == null) return false;
+                foreach (TransactionOutput output in group)
+                    if (output.Value.GetData() % (long)Math.Pow(10, 8 - asset.Precision) != 0)
+                        return false;
+            }
             TransactionResult[] results = GetTransactionResults()?.ToArray();
             if (results == null) return false;
             TransactionResult[] results_destroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
