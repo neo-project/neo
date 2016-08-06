@@ -311,7 +311,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                         db_tx.Height = block.Height;
                     }
                 }
-                tx_changed = ctx.ChangeTracker.Entries<Transaction>().Select(p => p.Entity).ToArray();
+                tx_changed = ctx.ChangeTracker.Entries<Transaction>().Where(p => p.State != EntityState.Unchanged).Select(p => p.Entity).ToArray();
                 OnCoinsChanged(ctx, added, changed, deleted);
                 ctx.Keys.First(p => p.Name == "Height").Value = BitConverter.GetBytes(WalletHeight);
                 ctx.SaveChanges();
