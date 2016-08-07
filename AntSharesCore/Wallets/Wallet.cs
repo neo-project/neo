@@ -300,20 +300,18 @@ namespace AntShares.Wallets
 
         protected static Coin[] FindUnspentCoins(IEnumerable<Coin> unspents, UInt256 asset_id, Fixed8 amount)
         {
-            unspents = unspents.Where(p => p.AssetId == asset_id);
-            Coin coin = unspents.FirstOrDefault(p => p.Value == amount);
-            if (coin != null) return new[] { coin };
-            coin = unspents.OrderBy(p => p.Value).FirstOrDefault(p => p.Value > amount);
-            if (coin != null) return new[] { coin };
-            Fixed8 sum = unspents.Sum(p => p.Value);
+            Coin[] unspents_asset = unspents.Where(p => p.AssetId == asset_id).ToArray();
+            Fixed8 sum = unspents_asset.Sum(p => p.Value);
             if (sum < amount) return null;
-            if (sum == amount) return unspents.ToArray();
-            return unspents.OrderByDescending(p => p.Value).TakeWhile(p =>
-            {
-                if (amount == Fixed8.Zero) return false;
-                amount -= Fixed8.Min(amount, p.Value);
-                return true;
-            }).ToArray();
+            if (sum == amount) return unspents_asset;
+            Coin[] unspents_ordered = unspents_asset.OrderByDescending(p => p.Value).ToArray();
+            int i = 0;
+            while (unspents_ordered[i].Value <= amount)
+                amount -= unspents_ordered[i++].Value;
+            if (amount == Fixed8.Zero)
+                return unspents_ordered.Take(i).ToArray();
+            else
+                return unspents_ordered.Take(i).Concat(new[] { unspents_ordered.Last(p => p.Value >= amount) }).ToArray();
         }
 
         public Account GetAccount(ECPoint publicKey)
