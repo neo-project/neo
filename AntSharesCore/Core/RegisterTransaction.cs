@@ -152,7 +152,14 @@ namespace AntShares.Core
             JObject json = base.ToJson();
             json["asset"] = new JObject();
             json["asset"]["type"] = AssetType;
-            json["asset"]["name"] = Name == "" ? null : JObject.Parse(Name);
+            try
+            {
+                json["asset"]["name"] = Name == "" ? null : JObject.Parse(Name);
+            }
+            catch (FormatException)
+            {
+                json["asset"]["name"] = Name;
+            }
             json["asset"]["amount"] = Amount.ToString();
             json["asset"]["high"] = Amount.GetData() >> 32;
             json["asset"]["low"] = Amount.GetData() & 0xffffffff;
