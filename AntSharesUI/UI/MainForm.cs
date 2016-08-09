@@ -116,7 +116,15 @@ namespace AntShares.UI
                             {
                                 Name = "confirmations",
                                 Text = "未确认"
+                            },
+                            //add transaction type to list by phinx
+                            new ListViewItem.ListViewSubItem
+                            {
+                                Name = "txtype",
+                                Text = info.Transaction.Type.ToString()
                             }
+                            //end
+
                         }, -1)
                         {
                             Name = txid,

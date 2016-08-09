@@ -98,6 +98,7 @@
             this.columnHeader7 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader8 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader9 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeader10 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -118,7 +119,7 @@
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Padding = new System.Windows.Forms.Padding(7, 3, 0, 3);
-            this.menuStrip1.Size = new System.Drawing.Size(756, 27);
+            this.menuStrip1.Size = new System.Drawing.Size(839, 27);
             this.menuStrip1.TabIndex = 0;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -473,7 +474,7 @@
             this.statusStrip1.LayoutStyle = System.Windows.Forms.ToolStripLayoutStyle.HorizontalStackWithOverflow;
             this.statusStrip1.Location = new System.Drawing.Point(0, 520);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(756, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(839, 22);
             this.statusStrip1.SizingGrip = false;
             this.statusStrip1.TabIndex = 2;
             this.statusStrip1.Text = "statusStrip1";
@@ -532,7 +533,7 @@
             this.tabControl1.Location = new System.Drawing.Point(0, 27);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(756, 493);
+            this.tabControl1.Size = new System.Drawing.Size(839, 493);
             this.tabControl1.TabIndex = 3;
             // 
             // tabPage1
@@ -626,7 +627,7 @@
             this.tabPage3.Location = new System.Drawing.Point(4, 26);
             this.tabPage3.Name = "tabPage3";
             this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage3.Size = new System.Drawing.Size(748, 463);
+            this.tabPage3.Size = new System.Drawing.Size(831, 463);
             this.tabPage3.TabIndex = 2;
             this.tabPage3.Text = "交易记录";
             this.tabPage3.UseVisualStyleBackColor = true;
@@ -636,7 +637,8 @@
             this.listView3.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader7,
             this.columnHeader8,
-            this.columnHeader9});
+            this.columnHeader9,
+            this.columnHeader10});
             this.listView3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.listView3.FullRowSelect = true;
             this.listView3.GridLines = true;
@@ -645,7 +647,7 @@
             this.listView3.Location = new System.Drawing.Point(3, 3);
             this.listView3.Name = "listView3";
             this.listView3.ShowGroups = false;
-            this.listView3.Size = new System.Drawing.Size(742, 457);
+            this.listView3.Size = new System.Drawing.Size(825, 457);
             this.listView3.TabIndex = 0;
             this.listView3.UseCompatibleStateImageBehavior = false;
             this.listView3.View = System.Windows.Forms.View.Details;
@@ -664,11 +666,16 @@
             // 
             this.columnHeader9.Text = "确认";
             // 
+            // columnHeader10
+            // 
+            this.columnHeader10.Text = "交易类型";
+            this.columnHeader10.Width = 150;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(756, 542);
+            this.ClientSize = new System.Drawing.Size(839, 542);
             this.Controls.Add(this.tabControl1);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.menuStrip1);
@@ -764,6 +771,7 @@
         private System.Windows.Forms.ToolStripProgressBar toolStripProgressBar1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel2;
         private System.Windows.Forms.ToolStripMenuItem 自定义CToolStripMenuItem;
+        private System.Windows.Forms.ColumnHeader columnHeader10;
     }
 }
 
