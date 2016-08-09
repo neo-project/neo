@@ -533,5 +533,11 @@ namespace AntShares.UI
             }, Fixed8.Zero);
             Helper.SignAndShowInformation(tx);
         }
+
+        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            if (listView3.SelectedItems.Count == 0) return;
+            Clipboard.SetDataObject(listView3.SelectedItems[0].SubItems[1].Text);
+        }
     }
 }
