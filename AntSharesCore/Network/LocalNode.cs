@@ -160,17 +160,25 @@ namespace AntShares.Network
 
         public async Task ConnectToPeerAsync(string hostNameOrAddress)
         {
-            IPHostEntry entry;
-            try
+            IPAddress ipAddress;
+            if (IPAddress.TryParse(hostNameOrAddress, out ipAddress))
             {
-                entry = await Dns.GetHostEntryAsync(hostNameOrAddress);
+                ipAddress = ipAddress.MapToIPv6();
             }
-            catch (SocketException)
+            else
             {
-                return;
+                IPHostEntry entry;
+                try
+                {
+                    entry = await Dns.GetHostEntryAsync(hostNameOrAddress);
+                }
+                catch (SocketException)
+                {
+                    return;
+                }
+                ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo)?.MapToIPv6();
+                if (ipAddress == null) return;
             }
-            IPAddress ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo)?.MapToIPv6();
-            if (ipAddress == null) return;
             await ConnectToPeerAsync(new IPEndPoint(ipAddress, DEFAULT_PORT));
         }
 
