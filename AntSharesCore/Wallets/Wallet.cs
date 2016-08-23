@@ -6,7 +6,6 @@ using AntShares.IO.Caching;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -34,6 +33,7 @@ namespace AntShares.Wallets
         protected string DbPath => path;
         protected object SyncRoot { get; } = new object();
         protected uint WalletHeight => current_height;
+        protected abstract Version Version { get; }
 
         private Wallet(string path, byte[] passwordKey, bool create)
         {
@@ -51,12 +51,11 @@ namespace AntShares.Wallets
                     rng.GetNonZeroBytes(iv);
                     rng.GetNonZeroBytes(masterKey);
                 }
-                Version current_version = Assembly.GetExecutingAssembly().GetName().Version;
                 BuildDatabase();
                 SaveStoredData("PasswordHash", passwordKey.Sha256());
                 SaveStoredData("IV", iv);
                 SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
-                SaveStoredData("Version", new[] { current_version.Major, current_version.Minor, current_version.Build, current_version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
+                SaveStoredData("Version", new[] { Version.Major, Version.Minor, Version.Build, Version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
                 SaveStoredData("Height", BitConverter.GetBytes(current_height));
                 ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
             }

@@ -18,6 +18,8 @@ namespace AntShares.Implementations.Wallets.EntityFramework
     {
         public event EventHandler<IEnumerable<TransactionInfo>> TransactionsChanged;
 
+        protected override Version Version => Assembly.GetExecutingAssembly().GetName().Version;
+
         protected UserWallet(string path, string password, bool create)
             : base(path, password, create)
         {
