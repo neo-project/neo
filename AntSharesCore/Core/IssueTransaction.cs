@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using AntShares.IO.Json;
 
 namespace AntShares.Core
 {
@@ -69,6 +70,13 @@ namespace AntShares.Core
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(Nonce);
+        }
+
+        public override JObject ToJson()
+        {
+            JObject json = base.ToJson();
+            json["nonce"] = Nonce;
+            return json;
         }
 
         /// <summary>

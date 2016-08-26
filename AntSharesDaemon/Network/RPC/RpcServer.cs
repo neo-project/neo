@@ -109,7 +109,7 @@ namespace AntShares.Network.RPC
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
                         ushort index = (ushort)_params[1].AsNumber();
-                        return Blockchain.Default.GetUnspent(hash, index).ToJson(index);
+                        return Blockchain.Default.GetUnspent(hash, index)?.ToJson(index);
                     }
                 case "sendrawtransaction":
                     {
