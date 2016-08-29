@@ -24,10 +24,8 @@ namespace AntShares.UI
         public IssueTransaction GetTransaction()
         {
             if (txOutListBox1.Asset == null) return null;
-            Random rand = new Random();
             return Program.CurrentWallet.MakeTransaction(new IssueTransaction
             {
-                Nonce = (uint)rand.Next(),
                 Outputs = txOutListBox1.Items.GroupBy(p => p.Output.ScriptHash).Select(g => new TransactionOutput
                 {
                     AssetId = txOutListBox1.Asset.Hash,

@@ -20,6 +20,10 @@ namespace AntShares.Core
         /// </summary>
         public readonly TransactionType Type;
         /// <summary>
+        /// 版本
+        /// </summary>
+        public const byte Version = 0;
+        /// <summary>
         /// 该交易所具备的额外特性
         /// </summary>
         public TransactionAttribute[] Attributes;
@@ -145,6 +149,8 @@ namespace AntShares.Core
 
         private void DeserializeUnsignedWithoutType(BinaryReader reader)
         {
+            if (reader.ReadByte() != Version)
+                throw new FormatException();
             DeserializeExclusiveData(reader);
             Attributes = reader.ReadSerializableArray<TransactionAttribute>();
             if (Attributes.Select(p => p.Usage).Distinct().Count() != Attributes.Length)
@@ -256,6 +262,7 @@ namespace AntShares.Core
         public override void SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write((byte)Type);
+            writer.Write(Version);
             SerializeExclusiveData(writer);
             writer.Write(Attributes);
             writer.Write(Inputs);

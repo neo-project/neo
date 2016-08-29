@@ -118,7 +118,6 @@ namespace AntShares.Core
                 AntCoin,
                 new IssueTransaction
                 {
-                    Nonce = 2083236893,
                     Attributes = new TransactionAttribute[0],
                     Inputs = new TransactionInput[0],
                     Outputs = new[]
@@ -347,7 +346,7 @@ namespace AntShares.Core
             Dictionary<UInt256, ECPoint> enrollments = GetEnrollments(others).ToDictionary(p => p.Hash, p => p.PublicKey);
             foreach (var vote in votes)
             {
-                foreach (UInt256 hash in vote.Enrollments)
+                foreach (UInt256 hash in vote.Enrollments.Take(miner_count))
                 {
                     if (!enrollments.ContainsKey(hash)) continue;
                     ECPoint pubkey = enrollments[hash];
