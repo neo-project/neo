@@ -1,12 +1,12 @@
 ﻿using AntShares.Cryptography;
 using AntShares.Cryptography.ECC;
+using AntShares.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
-using BooleanStack = System.Collections.Generic.Stack<bool>;
 
 namespace AntShares.Core.Scripts
 {
@@ -21,7 +21,6 @@ namespace AntShares.Core.Scripts
         private InterfaceEngine iEngine = null;
         private readonly Stack<StackItem> stack = new Stack<StackItem>();
         private readonly Stack<StackItem> altStack = new Stack<StackItem>();
-        private readonly BooleanStack vfExec = new BooleanStack();
         private int nOpCount = 0;
 
         public ScriptEngine(Script script, ISignable signable)
@@ -47,9 +46,6 @@ namespace AntShares.Core.Scripts
 
         private bool ExecuteOp(ScriptOp opcode, BinaryReader opReader)
         {
-            bool fExec = vfExec.All(p => p);
-            if (!fExec && (opcode < ScriptOp.OP_IF || opcode > ScriptOp.OP_ENDIF))
-                return true;
             if (opcode > ScriptOp.OP_16 && ++nOpCount > MAXSTEPS) return false;
             int remain = (int)(opReader.BaseStream.Length - opReader.BaseStream.Position);
             if (opcode >= ScriptOp.OP_PUSHBYTES1 && opcode <= ScriptOp.OP_PUSHBYTES75)
@@ -111,33 +107,54 @@ namespace AntShares.Core.Scripts
                 // Control
                 case ScriptOp.OP_NOP:
                     break;
+                case ScriptOp.OP_JMP:
+                case ScriptOp.OP_JMPIF:
+                case ScriptOp.OP_JMPIFNOT:
+                    {
+                        if (remain < 2) return false;
+                        int offset = opReader.ReadInt16() - 3;
+                        int offset_new = (int)opReader.BaseStream.Position + offset;
+                        if (offset_new < 0 || offset_new > opReader.BaseStream.Length)
+                            return false;
+                        bool fValue = true;
+                        if (opcode > ScriptOp.OP_JMP)
+                        {
+                            if (stack.Count < 1) return false;
+                            fValue = stack.Pop();
+                            if (opcode == ScriptOp.OP_JMPIFNOT)
+                                fValue = !fValue;
+                        }
+                        if (fValue)
+                            opReader.BaseStream.Seek(offset_new, SeekOrigin.Begin);
+                    }
+                    break;
                 case ScriptOp.OP_CALL:
+                    stack.Push(opReader.BaseStream.Position + 2);
+                    return ExecuteOp(ScriptOp.OP_JMP, opReader);
+                case ScriptOp.OP_RET:
+                    {
+                        if (stack.Count < 2) return false;
+                        StackItem result = stack.Pop();
+                        int position = (int)(BigInteger)stack.Pop();
+                        if (position < 0 || position > opReader.BaseStream.Length)
+                            return false;
+                        stack.Push(result);
+                        opReader.BaseStream.Seek(position, SeekOrigin.Begin);
+                    }
+                    break;
+                case ScriptOp.OP_APPCALL:
+                    {
+                        if (remain < 20) return false;
+                        UInt160 hash = opReader.ReadSerializable<UInt160>();
+                        //TODO:OP_APPCALL
+                        return false;
+                    }
+                    break;
+                case ScriptOp.OP_SYSCALL:
                     if (remain < 1) return false;
                     if (iEngine == null)
                         iEngine = new InterfaceEngine(stack, altStack, signable);
                     return iEngine.ExecuteOp((InterfaceOp)opReader.ReadByte());
-                case ScriptOp.OP_IF:
-                case ScriptOp.OP_NOTIF:
-                    {
-                        bool fValue = false;
-                        if (fExec)
-                        {
-                            if (stack.Count < 1) return false;
-                            fValue = stack.Pop();
-                            if (opcode == ScriptOp.OP_NOTIF)
-                                fValue = !fValue;
-                        }
-                        vfExec.Push(fValue);
-                    }
-                    break;
-                case ScriptOp.OP_ELSE:
-                    if (vfExec.Count == 0) return false;
-                    vfExec.Push(!vfExec.Pop());
-                    break;
-                case ScriptOp.OP_ENDIF:
-                    if (vfExec.Count == 0) return false;
-                    vfExec.Pop();
-                    break;
                 case ScriptOp.OP_VERIFY:
                     if (stack.Count < 1) return false;
                     if (stack.Peek().GetBooleanArray().All(p => p))
@@ -145,7 +162,7 @@ namespace AntShares.Core.Scripts
                     else
                         return false;
                     break;
-                case ScriptOp.OP_RETURN:
+                case ScriptOp.OP_HALT:
                     return false;
 
                 // Stack ops
@@ -453,7 +470,6 @@ namespace AntShares.Core.Scripts
                     }
                     break;
                 case ScriptOp.OP_EQUAL:
-                case ScriptOp.OP_EQUALVERIFY:
                     {
                         if (stack.Count < 2) return false;
                         StackItem x2 = stack.Pop();
@@ -466,8 +482,6 @@ namespace AntShares.Core.Scripts
                             stack.Push(r);
                         else
                             stack.Push(r[0]);
-                        if (opcode == ScriptOp.OP_EQUALVERIFY)
-                            return ExecuteOp(ScriptOp.OP_VERIFY, opReader);
                     }
                     break;
 
@@ -696,7 +710,6 @@ namespace AntShares.Core.Scripts
                     }
                     break;
                 case ScriptOp.OP_NUMEQUAL:
-                case ScriptOp.OP_NUMEQUALVERIFY:
                     {
                         if (stack.Count < 2) return false;
                         StackItem x2 = stack.Pop();
@@ -709,8 +722,6 @@ namespace AntShares.Core.Scripts
                             stack.Push(r);
                         else
                             stack.Push(r[0]);
-                        if (opcode == ScriptOp.OP_NUMEQUALVERIFY)
-                            return ExecuteOp(ScriptOp.OP_VERIFY, opReader);
                     }
                     break;
                 case ScriptOp.OP_NUMNOTEQUAL:
@@ -886,18 +897,14 @@ namespace AntShares.Core.Scripts
                     }
                     break;
                 case ScriptOp.OP_CHECKSIG:
-                case ScriptOp.OP_CHECKSIGVERIFY:
                     {
                         if (stack.Count < 2) return false;
                         byte[] pubkey = (byte[])stack.Pop();
                         byte[] signature = (byte[])stack.Pop();
                         stack.Push(VerifySignature(hash, signature, pubkey));
-                        if (opcode == ScriptOp.OP_CHECKSIGVERIFY)
-                            return ExecuteOp(ScriptOp.OP_VERIFY, opReader);
                     }
                     break;
                 case ScriptOp.OP_CHECKMULTISIG:
-                case ScriptOp.OP_CHECKMULTISIGVERIFY:
                     {
                         if (stack.Count < 4) return false;
                         int n = (int)(BigInteger)stack.Pop();
@@ -932,16 +939,8 @@ namespace AntShares.Core.Scripts
                                 fSuccess = false;
                         }
                         stack.Push(fSuccess);
-                        if (opcode == ScriptOp.OP_CHECKMULTISIGVERIFY)
-                            return ExecuteOp(ScriptOp.OP_VERIFY, opReader);
                     }
                     break;
-
-                //case ScriptOp.OP_EVAL:
-                //    if (stack.Count < 1) return false;
-                //    if (!ExecuteScript((byte[])stack.Pop(), false))
-                //        return false;
-                //    break;
 
                 // Array
                 case ScriptOp.OP_ARRAYSIZE:

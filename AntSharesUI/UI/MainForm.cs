@@ -21,7 +21,7 @@ namespace AntShares.UI
 {
     internal partial class MainForm : Form
     {
-        private static readonly UInt160 RecycleScriptHash = new byte[] { (byte)ScriptOp.OP_DUP, (byte)ScriptOp.OP_HASH160, (byte)ScriptOp.OP_CALL, (byte)InterfaceOp.CHAIN_HEIGHT, (byte)ScriptOp.OP_CALL, (byte)InterfaceOp.CHAIN_GETHEADER, (byte)ScriptOp.OP_TOALTSTACK, (byte)ScriptOp.OP_CALL, (byte)InterfaceOp.HEADER_NEXTMINER, (byte)ScriptOp.OP_EQUALVERIFY, 0xB0/*OP_EVAL*/ }.ToScriptHash();
+        private static readonly UInt160 RecycleScriptHash = new[] { (byte)ScriptOp.OP_TRUE }.ToScriptHash();
         private bool balance_changed = false;
         private DateTime persistence_time = DateTime.MinValue;
 
