@@ -26,7 +26,7 @@ namespace AntShares.UI
                     {
                         AssetId = Blockchain.AntCoin.Hash,
                         Value = Fixed8.Parse(textBox1.Text),
-                        ScriptHash = SignatureContract.CreateSignatureRedeemScript((ECPoint)comboBox1.SelectedItem).ToScriptHash()
+                        ScriptHash = Contract.CreateSignatureRedeemScript((ECPoint)comboBox1.SelectedItem).ToScriptHash()
                     }
                 }
             }, Fixed8.Zero);

@@ -129,7 +129,7 @@ namespace AntShares.Core
         /// <returns>返回需要校验的脚本Hash值</returns>
         public override UInt160[] GetScriptHashesForVerifying()
         {
-            UInt160 issuer = SignatureContract.CreateSignatureRedeemScript(Issuer).ToScriptHash();
+            UInt160 issuer = Contract.CreateSignatureRedeemScript(Issuer).ToScriptHash();
             return base.GetScriptHashesForVerifying().Union(new[] { issuer }).OrderBy(p => p).ToArray();
         }
 
@@ -156,7 +156,14 @@ namespace AntShares.Core
             JObject json = base.ToJson();
             json["asset"] = new JObject();
             json["asset"]["type"] = AssetType;
-            json["asset"]["name"] = Name == "" ? null : JObject.Parse(Name);
+            try
+            {
+                json["asset"]["name"] = Name == "" ? null : JObject.Parse(Name);
+            }
+            catch (FormatException)
+            {
+                json["asset"]["name"] = Name;
+            }
             json["asset"]["amount"] = Amount.ToString();
             json["asset"]["precision"] = Precision;
             json["asset"]["high"] = Amount.GetData() >> 32;

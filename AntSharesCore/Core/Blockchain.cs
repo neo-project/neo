@@ -126,7 +126,7 @@ namespace AntShares.Core
                         {
                             AssetId = AntShare.Hash,
                             Value = AntShare.Amount,
-                            ScriptHash = MultiSigContract.CreateMultiSigRedeemScript(StandbyMiners.Length / 2 + 1, StandbyMiners).ToScriptHash()
+                            ScriptHash = Contract.CreateMultiSigRedeemScript(StandbyMiners.Length / 2 + 1, StandbyMiners).ToScriptHash()
                         }
                     },
                     Scripts = new[]
@@ -172,13 +172,13 @@ namespace AntShares.Core
 
         static Blockchain()
         {
-            AntShare.Scripts = new[] { new Script { RedeemScript = SignatureContract.CreateSignatureRedeemScript(AntShare.Issuer) } };
+            AntShare.Scripts = new[] { new Script { RedeemScript = Contract.CreateSignatureRedeemScript(AntShare.Issuer) } };
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.Push(ECCurve.Secp256r1.G.EncodePoint(true).Skip(1).Concat(AntShare.GetHashForSigning()).ToArray());
                 AntShare.Scripts[0].StackScript = sb.ToArray();
             }
-            AntCoin.Scripts = new[] { new Script { RedeemScript = SignatureContract.CreateSignatureRedeemScript(AntCoin.Issuer) } };
+            AntCoin.Scripts = new[] { new Script { RedeemScript = Contract.CreateSignatureRedeemScript(AntCoin.Issuer) } };
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.Push(ECCurve.Secp256r1.G.EncodePoint(true).Skip(1).Concat(AntCoin.GetHashForSigning()).ToArray());
@@ -199,16 +199,6 @@ namespace AntShares.Core
         /// </summary>
         /// <param name="headers">要添加的区块头列表</param>
         protected internal abstract void AddHeaders(IEnumerable<Block> headers);
-
-        /// <summary>
-        /// 判断区块链中是否包含指定的资产
-        /// </summary>
-        /// <param name="hash">资产编号</param>
-        /// <returns>如果包含指定资产则返回true</returns>
-        public virtual bool ContainsAsset(UInt256 hash)
-        {
-            return hash == AntShare.Hash || hash == AntCoin.Hash;
-        }
 
         /// <summary>
         /// 判断区块链中是否包含指定的区块
@@ -238,8 +228,6 @@ namespace AntShares.Core
         public abstract bool ContainsUnspent(UInt256 hash, ushort index);
 
         public abstract void Dispose();
-
-        public abstract IEnumerable<RegisterTransaction> GetAssets();
 
         /// <summary>
         /// 根据指定的高度，返回对应的区块信息
@@ -271,6 +259,11 @@ namespace AntShares.Core
         public virtual UInt256 GetBlockHash(uint height)
         {
             if (height == 0) return GenesisBlock.Hash;
+            return null;
+        }
+
+        public virtual byte[] GetContract(UInt160 hash)
+        {
             return null;
         }
 
@@ -310,7 +303,7 @@ namespace AntShares.Core
         /// <returns>返回记账人的合约地址</returns>
         public static UInt160 GetMinerAddress(ECPoint[] miners)
         {
-            return MultiSigContract.CreateMultiSigRedeemScript(miners.Length - (miners.Length - 1) / 3, miners).ToScriptHash();
+            return Contract.CreateMultiSigRedeemScript(miners.Length - (miners.Length - 1) / 3, miners).ToScriptHash();
         }
 
         private List<ECPoint> _miners = new List<ECPoint>();

@@ -116,7 +116,15 @@ namespace AntShares.UI
                             {
                                 Name = "confirmations",
                                 Text = "未确认"
+                            },
+                            //add transaction type to list by phinx
+                            new ListViewItem.ListViewSubItem
+                            {
+                                Name = "txtype",
+                                Text = info.Transaction.Type.ToString()
                             }
+                            //end
+
                         }, -1)
                         {
                             Name = txid,
@@ -445,7 +453,7 @@ namespace AntShares.UI
             using (CreateMultiSigContractDialog dialog = new CreateMultiSigContractDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                MultiSigContract contract = dialog.GetContract();
+                Contract contract = dialog.GetContract();
                 if (contract == null)
                 {
                     MessageBox.Show("无法添加智能合约，因为当前钱包中不包含签署该合约的私钥。");
@@ -462,7 +470,7 @@ namespace AntShares.UI
             using (ImportCustomContractDialog dialog = new ImportCustomContractDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                CustomContract contract = dialog.GetContract();
+                Contract contract = dialog.GetContract();
                 Program.CurrentWallet.AddContract(contract);
                 listView1.SelectedIndices.Clear();
                 AddContractToListView(contract, true);
@@ -524,6 +532,12 @@ namespace AntShares.UI
                 }).ToArray()
             }, Fixed8.Zero);
             Helper.SignAndShowInformation(tx);
+        }
+
+        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            if (listView3.SelectedItems.Count == 0) return;
+            Clipboard.SetDataObject(listView3.SelectedItems[0].SubItems[1].Text);
         }
     }
 }

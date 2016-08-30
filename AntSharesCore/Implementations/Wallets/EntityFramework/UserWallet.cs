@@ -18,6 +18,8 @@ namespace AntShares.Implementations.Wallets.EntityFramework
     {
         public event EventHandler<IEnumerable<TransactionInfo>> TransactionsChanged;
 
+        protected override Version Version => Assembly.GetExecutingAssembly().GetName().Version;
+
         protected UserWallet(string path, string password, bool create)
             : base(path, password, create)
         {
@@ -38,7 +40,6 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                 {
                     db_contract = ctx.Contracts.Add(new Contract
                     {
-                        Type = contract.GetType().ToString(),
                         RawData = contract.ToArray(),
                         ScriptHash = contract.ScriptHash.ToArray(),
                         PublicKeyHash = contract.PublicKeyHash.ToArray()
@@ -79,7 +80,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         {
             WalletAccount account = base.CreateAccount(privateKey);
             OnCreateAccount(account);
-            AddContract(SignatureContract.Create(account.PublicKey));
+            AddContract(WalletContract.CreateSignatureContract(account.PublicKey));
             return account;
         }
 
@@ -121,7 +122,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
 
         public override WalletCoin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount)
         {
-            return FindUnspentCoins(FindUnspentCoins().Where(p => GetContract(p.ScriptHash) is SignatureContract), asset_id, amount) ?? base.FindUnspentCoins(asset_id, amount);
+            return FindUnspentCoins(FindUnspentCoins().Where(p => GetContract(p.ScriptHash).IsStandard), asset_id, amount) ?? base.FindUnspentCoins(asset_id, amount);
         }
 
         private static IEnumerable<TransactionInfo> GetTransactionInfo(IEnumerable<Transaction> transactions)
@@ -132,6 +133,29 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                 Height = p.Height,
                 Time = p.Time
             });
+        }
+
+        public override IEnumerable<CoreTransaction> GetTransactions()
+        {
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
+            {
+                foreach (Transaction tx in ctx.Transactions)
+                {
+                    yield return CoreTransaction.DeserializeFrom(tx.RawData);
+                }
+            }
+        }
+
+        public override IEnumerable<T> GetTransactions<T>()
+        {
+            TransactionType type = (TransactionType)Enum.Parse(typeof(TransactionType), typeof(T).Name);
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
+            {
+                foreach (Transaction tx in ctx.Transactions.Where(p => p.Type == type))
+                {
+                    yield return (T)CoreTransaction.DeserializeFrom(tx.RawData);
+                }
+            }
         }
 
         public static Version GetVersion(string path)
@@ -191,9 +215,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             {
                 foreach (Contract contract in ctx.Contracts)
                 {
-                    Type type = Type.GetType(contract.Type, false);
-                    if (type == null || !typeof(WalletContract).IsAssignableFrom(type)) continue;
-                    yield return (WalletContract)contract.RawData.AsSerializable(type);
+                    yield return contract.RawData.AsSerializable<WalletContract>();
                 }
             }
         }
@@ -311,7 +333,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                         db_tx.Height = block.Height;
                     }
                 }
-                tx_changed = ctx.ChangeTracker.Entries<Transaction>().Select(p => p.Entity).ToArray();
+                tx_changed = ctx.ChangeTracker.Entries<Transaction>().Where(p => p.State != EntityState.Unchanged).Select(p => p.Entity).ToArray();
                 OnCoinsChanged(ctx, added, changed, deleted);
                 ctx.Keys.First(p => p.Name == "Height").Value = BitConverter.GetBytes(WalletHeight);
                 ctx.SaveChanges();

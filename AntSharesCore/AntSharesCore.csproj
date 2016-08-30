@@ -140,6 +140,7 @@
     <Compile Include="Core\Claimable.cs" />
     <Compile Include="Core\ClaimTransaction.cs" />
     <Compile Include="Core\ContractTransaction.cs" />
+    <Compile Include="Core\PublishTransaction.cs" />
     <Compile Include="Core\EnrollmentTransaction.cs" />
     <Compile Include="Core\MinerTransaction.cs" />
     <Compile Include="Core\Helper.cs" />
@@ -226,9 +227,6 @@
     <Compile Include="Wallets\CoinState.cs" />
     <Compile Include="Wallets\Contract.cs" />
     <Compile Include="Wallets\ContractParameterType.cs" />
-    <Compile Include="Wallets\CustomContract.cs" />
-    <Compile Include="Wallets\MultiSigContract.cs" />
-    <Compile Include="Wallets\SignatureContract.cs" />
     <Compile Include="Wallets\Coin.cs" />
     <Compile Include="Wallets\Wallet.cs" />
     <Compile Include="Wallets\Account.cs" />

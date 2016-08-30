@@ -59,7 +59,7 @@ namespace AntShares.Network.Payloads
             ECPoint[] miners = Blockchain.Default.GetMiners();
             if (miners.Length <= MinerIndex)
                 throw new InvalidOperationException();
-            return new[] { SignatureContract.Create(miners[MinerIndex]).ScriptHash };
+            return new[] { Contract.CreateSignatureContract(miners[MinerIndex]).ScriptHash };
         }
 
         public override void Serialize(BinaryWriter writer)

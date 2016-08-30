@@ -66,13 +66,13 @@ namespace AntShares.Network
             try
             {
                 await tcp.ConnectAsync(address, ListenerEndpoint.Port);
+                OnConnected();
             }
             catch (SocketException)
             {
                 Disconnect(false);
                 return;
             }
-            OnConnected();
             StartProtocol();
         }
 

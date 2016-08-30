@@ -6,7 +6,6 @@ using AntShares.IO.Caching;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -34,6 +33,7 @@ namespace AntShares.Wallets
         protected string DbPath => path;
         protected object SyncRoot { get; } = new object();
         protected uint WalletHeight => current_height;
+        protected abstract Version Version { get; }
 
         private Wallet(string path, byte[] passwordKey, bool create)
         {
@@ -51,12 +51,11 @@ namespace AntShares.Wallets
                     rng.GetNonZeroBytes(iv);
                     rng.GetNonZeroBytes(masterKey);
                 }
-                Version current_version = Assembly.GetExecutingAssembly().GetName().Version;
                 BuildDatabase();
                 SaveStoredData("PasswordHash", passwordKey.Sha256());
                 SaveStoredData("IV", iv);
                 SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
-                SaveStoredData("Version", new[] { current_version.Major, current_version.Minor, current_version.Build, current_version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
+                SaveStoredData("Version", new[] { Version.Major, Version.Minor, Version.Build, Version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
                 SaveStoredData("Height", BitConverter.GetBytes(current_height));
                 ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
             }
@@ -300,20 +299,18 @@ namespace AntShares.Wallets
 
         protected static Coin[] FindUnspentCoins(IEnumerable<Coin> unspents, UInt256 asset_id, Fixed8 amount)
         {
-            unspents = unspents.Where(p => p.AssetId == asset_id);
-            Coin coin = unspents.FirstOrDefault(p => p.Value == amount);
-            if (coin != null) return new[] { coin };
-            coin = unspents.OrderBy(p => p.Value).FirstOrDefault(p => p.Value > amount);
-            if (coin != null) return new[] { coin };
-            Fixed8 sum = unspents.Sum(p => p.Value);
+            Coin[] unspents_asset = unspents.Where(p => p.AssetId == asset_id).ToArray();
+            Fixed8 sum = unspents_asset.Sum(p => p.Value);
             if (sum < amount) return null;
-            if (sum == amount) return unspents.ToArray();
-            return unspents.OrderByDescending(p => p.Value).TakeWhile(p =>
-            {
-                if (amount == Fixed8.Zero) return false;
-                amount -= Fixed8.Min(amount, p.Value);
-                return true;
-            }).ToArray();
+            if (sum == amount) return unspents_asset;
+            Coin[] unspents_ordered = unspents_asset.OrderByDescending(p => p.Value).ToArray();
+            int i = 0;
+            while (unspents_ordered[i].Value <= amount)
+                amount -= unspents_ordered[i++].Value;
+            if (amount == Fixed8.Zero)
+                return unspents_ordered.Take(i).ToArray();
+            else
+                return unspents_ordered.Take(i).Concat(new[] { unspents_ordered.Last(p => p.Value >= amount) }).ToArray();
         }
 
         public Account GetAccount(ECPoint publicKey)
@@ -382,7 +379,7 @@ namespace AntShares.Wallets
         {
             lock (contracts)
             {
-                return contracts.Values.FirstOrDefault(p => p is SignatureContract)?.ScriptHash ?? contracts.Keys.FirstOrDefault();
+                return contracts.Values.FirstOrDefault(p => p.IsStandard)?.ScriptHash ?? contracts.Keys.FirstOrDefault();
             }
         }
 
@@ -430,6 +427,13 @@ namespace AntShares.Wallets
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
             Array.Clear(data, 0, data.Length);
             return privateKey;
+        }
+
+        public abstract IEnumerable<Transaction> GetTransactions();
+
+        public virtual IEnumerable<T> GetTransactions<T>() where T : Transaction
+        {
+            return GetTransactions().OfType<T>();
         }
 
         public IEnumerable<Coin> GetUnclaimedCoins()
@@ -613,8 +617,11 @@ namespace AntShares.Wallets
                     }
                     current_height++;
                     changeset = coins.GetChangeSet();
-                    OnProcessNewBlock(block, transactions, changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Added), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Changed), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Deleted));
-                    coins.Commit();
+                    if (block.Height == Blockchain.Default.Height || changeset.Length > 0)
+                    {
+                        OnProcessNewBlock(block, transactions, changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Added), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Changed), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Deleted));
+                        coins.Commit();
+                    }
                 }
             if (changeset.Length > 0)
                 BalanceChanged?.Invoke(this, EventArgs.Empty);
