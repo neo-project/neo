@@ -9,12 +9,12 @@ namespace AntShares.UI
 {
     internal partial class ImportCustomContractDialog : Form
     {
-        public CustomContract GetContract()
+        public Contract GetContract()
         {
             UInt160 publicKeyHash = ((ECPoint)comboBox1.SelectedItem).EncodePoint(true).ToScriptHash();
             ContractParameterType[] parameterList = textBox1.Text.HexToBytes().Cast<ContractParameterType>().ToArray();
             byte[] redeemScript = textBox2.Text.HexToBytes();
-            return CustomContract.Create(publicKeyHash, parameterList, redeemScript);
+            return Contract.Create(publicKeyHash, parameterList, redeemScript);
         }
 
         public ImportCustomContractDialog()

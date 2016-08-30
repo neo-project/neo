@@ -379,7 +379,7 @@ namespace AntShares.Wallets
         {
             lock (contracts)
             {
-                return contracts.Values.FirstOrDefault(p => p is SignatureContract)?.ScriptHash ?? contracts.Keys.FirstOrDefault();
+                return contracts.Values.FirstOrDefault(p => p.IsStandard)?.ScriptHash ?? contracts.Keys.FirstOrDefault();
             }
         }
 
@@ -427,6 +427,13 @@ namespace AntShares.Wallets
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
             Array.Clear(data, 0, data.Length);
             return privateKey;
+        }
+
+        public abstract IEnumerable<Transaction> GetTransactions();
+
+        public virtual IEnumerable<T> GetTransactions<T>() where T : Transaction
+        {
+            return GetTransactions().OfType<T>();
         }
 
         public IEnumerable<Coin> GetUnclaimedCoins()

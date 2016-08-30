@@ -294,7 +294,7 @@ namespace AntShares.Core
             if (Blockchain.Default.IsDoubleSpend(this))
                 return false;
             foreach (UInt256 hash in Outputs.Select(p => p.AssetId).Distinct())
-                if (!Blockchain.Default.ContainsAsset(hash))
+                if (Blockchain.Default.GetTransaction(hash)?.Type != TransactionType.RegisterTransaction)
                     return false;
             TransactionResult[] results = GetTransactionResults()?.ToArray();
             if (results == null) return false;

@@ -153,13 +153,6 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             }
         }
 
-        public override bool ContainsAsset(UInt256 hash)
-        {
-            if (base.ContainsAsset(hash)) return true;
-            Slice value;
-            return db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Asset).Add(hash), out value);
-        }
-
         public override bool ContainsBlock(UInt256 hash)
         {
             TreeNode<Block> node, i;
@@ -207,21 +200,6 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             {
                 db.Dispose();
                 db = null;
-            }
-        }
-
-        public override IEnumerable<RegisterTransaction> GetAssets()
-        {
-            yield return AntCoin;
-            ReadOptions options = new ReadOptions();
-            using (options.Snapshot = db.GetSnapshot())
-            {
-                int height;
-                foreach (Slice key in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_Asset), (k, v) => k))
-                {
-                    UInt256 hash = new UInt256(key.ToArray().Skip(1).ToArray());
-                    yield return (RegisterTransaction)GetTransaction(options, hash, out height);
-                }
             }
         }
 
@@ -557,12 +535,6 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                             {
                                 unspent_votes.Add(tx.Hash, index);
                             }
-                        }
-                        break;
-                    case TransactionType.RegisterTransaction:
-                        {
-                            RegisterTransaction reg_tx = (RegisterTransaction)tx;
-                            batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Asset).Add(reg_tx.Hash), true);
                         }
                         break;
                 }

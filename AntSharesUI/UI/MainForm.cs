@@ -453,7 +453,7 @@ namespace AntShares.UI
             using (CreateMultiSigContractDialog dialog = new CreateMultiSigContractDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                MultiSigContract contract = dialog.GetContract();
+                Contract contract = dialog.GetContract();
                 if (contract == null)
                 {
                     MessageBox.Show("无法添加智能合约，因为当前钱包中不包含签署该合约的私钥。");
@@ -470,7 +470,7 @@ namespace AntShares.UI
             using (ImportCustomContractDialog dialog = new ImportCustomContractDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                CustomContract contract = dialog.GetContract();
+                Contract contract = dialog.GetContract();
                 Program.CurrentWallet.AddContract(contract);
                 listView1.SelectedIndices.Clear();
                 AddContractToListView(contract, true);

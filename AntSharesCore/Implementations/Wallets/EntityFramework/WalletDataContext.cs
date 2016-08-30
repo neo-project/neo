@@ -36,7 +36,6 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             modelBuilder.Entity<Contract>().HasKey(p => p.ScriptHash);
             modelBuilder.Entity<Contract>().HasIndex(p => p.PublicKeyHash);
             modelBuilder.Entity<Contract>().HasOne(p => p.Account).WithMany().HasForeignKey(p => p.PublicKeyHash).OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<Contract>().Property(p => p.Type).HasColumnType("VarChar").HasMaxLength(100).IsRequired();
             modelBuilder.Entity<Contract>().Property(p => p.RawData).HasColumnType("VarBinary").IsRequired();
             modelBuilder.Entity<Contract>().Property(p => p.ScriptHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
             modelBuilder.Entity<Contract>().Property(p => p.PublicKeyHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();

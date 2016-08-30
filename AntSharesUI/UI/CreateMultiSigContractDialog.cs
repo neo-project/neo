@@ -14,7 +14,7 @@ namespace AntShares.UI
             InitializeComponent();
         }
 
-        public MultiSigContract GetContract()
+        public Contract GetContract()
         {
             ECPoint[] publicKeys = listBox1.Items.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
             foreach (ECPoint publicKey in publicKeys)
@@ -22,7 +22,7 @@ namespace AntShares.UI
                 Account account = Program.CurrentWallet.GetAccount(publicKey.EncodePoint(true).ToScriptHash());
                 if (account != null)
                 {
-                    return MultiSigContract.Create(account.PublicKeyHash, (int)numericUpDown2.Value, publicKeys);
+                    return Contract.CreateMultiSigContract(account.PublicKeyHash, (int)numericUpDown2.Value, publicKeys);
                 }
             }
             return null;

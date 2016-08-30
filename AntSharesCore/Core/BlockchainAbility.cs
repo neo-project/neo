@@ -19,7 +19,7 @@ namespace AntShares.Core
         BlockIndexes = 0x01,
 
         /// <summary>
-        /// 必须实现的虚函数：ContainsAsset, GetAssets, GetEnrollments
+        /// 必须实现的虚函数：GetEnrollments
         /// </summary>
         TransactionIndexes = 0x02,
 

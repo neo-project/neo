@@ -23,11 +23,6 @@
         SYS_CurrentBlock = 0x40,
 
         /// <summary>
-        /// 资产索引
-        /// </summary>
-        IX_Asset = 0x81,
-
-        /// <summary>
         /// 候选人索引
         /// </summary>
         IX_Enrollment = 0x84,

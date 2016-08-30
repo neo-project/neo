@@ -126,7 +126,7 @@ namespace AntShares.Core
         /// <returns>返回需要校验的脚本Hash值</returns>
         public override UInt160[] GetScriptHashesForVerifying()
         {
-            UInt160 issuer = SignatureContract.CreateSignatureRedeemScript(Issuer).ToScriptHash();
+            UInt160 issuer = Contract.CreateSignatureRedeemScript(Issuer).ToScriptHash();
             return base.GetScriptHashesForVerifying().Union(new UInt160[] { issuer, Admin }).OrderBy(p => p).ToArray();
         }
 

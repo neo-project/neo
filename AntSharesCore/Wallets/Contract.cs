@@ -1,19 +1,27 @@
 ﻿using AntShares.Core.Scripts;
+using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace AntShares.Wallets
 {
     /// <summary>
     /// 所有合约的基类
     /// </summary>
-    public abstract class Contract : IEquatable<Contract>, ISerializable
+    public class Contract : IEquatable<Contract>, ISerializable
     {
         /// <summary>
         /// 合约脚本代码
         /// </summary>
         public byte[] RedeemScript;
+
+        /// <summary>
+        /// 合约的形式参数列表
+        /// </summary>
+        public ContractParameterType[] ParameterList;
+
         /// <summary>
         /// 公钥散列值，用于标识该合约在钱包中隶属于哪一个账户
         /// </summary>
@@ -35,10 +43,16 @@ namespace AntShares.Wallets
             }
         }
 
-        /// <summary>
-        /// 合约的形式参数列表
-        /// </summary>
-        public abstract ContractParameterType[] ParameterList { get; }
+        public bool IsStandard
+        {
+            get
+            {
+                if (RedeemScript.Length != 35) return false;
+                if (RedeemScript[0] != 33 || RedeemScript[34] != (byte)ScriptOp.OP_CHECKSIG)
+                    return false;
+                return true;
+            }
+        }
 
         private UInt160 _scriptHash;
         /// <summary>
@@ -56,11 +70,73 @@ namespace AntShares.Wallets
             }
         }
 
+        public static Contract Create(UInt160 publicKeyHash, ContractParameterType[] parameterList, byte[] redeemScript)
+        {
+            return new Contract
+            {
+                RedeemScript = redeemScript,
+                ParameterList = parameterList,
+                PublicKeyHash = publicKeyHash
+            };
+        }
+
+        public static Contract CreateMultiSigContract(UInt160 publicKeyHash, int m, params ECPoint[] publicKeys)
+        {
+            return new Contract
+            {
+                RedeemScript = CreateMultiSigRedeemScript(m, publicKeys),
+                ParameterList = Enumerable.Repeat(ContractParameterType.Signature, m).ToArray(),
+                PublicKeyHash = publicKeyHash
+            };
+        }
+
+        public static byte[] CreateMultiSigRedeemScript(int m, params ECPoint[] publicKeys)
+        {
+            if (!(1 <= m && m <= publicKeys.Length && publicKeys.Length <= 1024))
+                throw new ArgumentException();
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.Push(m);
+                foreach (ECPoint publicKey in publicKeys.OrderBy(p => p))
+                {
+                    sb.Push(publicKey.EncodePoint(true));
+                }
+                sb.Push(publicKeys.Length);
+                sb.Add(ScriptOp.OP_CHECKMULTISIG);
+                return sb.ToArray();
+            }
+        }
+
+        public static Contract CreateSignatureContract(ECPoint publicKey)
+        {
+            return new Contract
+            {
+                RedeemScript = CreateSignatureRedeemScript(publicKey),
+                ParameterList = new[] { ContractParameterType.Signature },
+                PublicKeyHash = publicKey.EncodePoint(true).ToScriptHash(),
+            };
+        }
+
+        public static byte[] CreateSignatureRedeemScript(ECPoint publicKey)
+        {
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.Push(publicKey.EncodePoint(true));
+                sb.Add(ScriptOp.OP_CHECKSIG);
+                return sb.ToArray();
+            }
+        }
+
         /// <summary>
         /// 反序列化
         /// </summary>
         /// <param name="reader">数据来源</param>
-        public abstract void Deserialize(BinaryReader reader);
+        public void Deserialize(BinaryReader reader)
+        {
+            PublicKeyHash = reader.ReadSerializable<UInt160>();
+            ParameterList = reader.ReadVarBytes().Cast<ContractParameterType>().ToArray();
+            RedeemScript = reader.ReadVarBytes();
+        }
 
         /// <summary>
         /// 比较与另一个对象是否相等
@@ -97,6 +173,11 @@ namespace AntShares.Wallets
         /// 序列化
         /// </summary>
         /// <param name="writer">存放序列化后的结果</param>
-        public abstract void Serialize(BinaryWriter writer);
+        public void Serialize(BinaryWriter writer)
+        {
+            writer.Write(PublicKeyHash);
+            writer.WriteVarBytes(ParameterList.Cast<byte>().ToArray());
+            writer.WriteVarBytes(RedeemScript);
+        }
     }
 }
