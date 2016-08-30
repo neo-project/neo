@@ -120,10 +120,10 @@ namespace AntShares.Core.Scripts
                 case ScriptOp.OP_APPCALL:
                     {
                         UInt160 hash = opReader.ReadSerializable<UInt160>();
-                        //TODO:OP_APPCALL
-                        return false;
+                        byte[] script = Blockchain.Default?.GetContract(hash);
+                        if (script == null) return false;
+                        return ExecuteScript(script, false);
                     }
-                    break;
                 case ScriptOp.OP_SYSCALL:
                     {
                         string method = opReader.ReadVarString();
