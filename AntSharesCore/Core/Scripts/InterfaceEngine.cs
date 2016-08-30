@@ -19,77 +19,77 @@ namespace AntShares.Core.Scripts
             this.signable = signable;
         }
 
-        public bool ExecuteOp(InterfaceOp code)
+        public bool ExecuteOp(string method)
         {
-            switch (code)
+            switch (method)
             {
-                case InterfaceOp.SYSTEM_NOW:
+                case "System.now":
                     return SystemNow();
-                case InterfaceOp.SYSTEM_CURRENTTX:
+                case "System.currentTx":
                     return SystemCurrentTx();
-                case InterfaceOp.CHAIN_HEIGHT:
+                case "Chain.height":
                     return ChainHeight();
-                case InterfaceOp.CHAIN_GETHEADER:
+                case "Chain.getHeader":
                     return ChainGetHeader();
-                case InterfaceOp.CHAIN_GETBLOCK:
+                case "Chain.getBlock":
                     return ChainGetBlock();
-                case InterfaceOp.CHAIN_GETTX:
+                case "Chain.getTx":
                     return ChainGetTx();
-                case InterfaceOp.HEADER_HASH:
+                case "Header.hash":
                     return HeaderHash();
-                case InterfaceOp.HEADER_VERSION:
+                case "Header.version":
                     return HeaderVersion();
-                case InterfaceOp.HEADER_PREVHASH:
+                case "Header.prevHash":
                     return HeaderPrevHash();
-                case InterfaceOp.HEADER_MERKLEROOT:
+                case "Header.merkleRoot":
                     return HeaderMerkleRoot();
-                case InterfaceOp.HEADER_TIMESTAMP:
+                case "Header.timestamp":
                     return HeaderTimestamp();
-                case InterfaceOp.HEADER_NONCE:
+                case "Header.nonce":
                     return HeaderNonce();
-                case InterfaceOp.HEADER_NEXTMINER:
+                case "Header.nextMiner":
                     return HeaderNextMiner();
-                case InterfaceOp.BLOCK_TXCOUNT:
+                case "Block.txCount":
                     return BlockTxCount();
-                case InterfaceOp.BLOCK_TX:
+                case "Block.tx":
                     return BlockTx();
-                case InterfaceOp.BLOCK_GETTX:
+                case "Block.getTx":
                     return BlockGetTx();
-                case InterfaceOp.TX_HASH:
+                case "TX.hash":
                     return TxHash();
-                case InterfaceOp.TX_TYPE:
+                case "TX.type":
                     return TxType();
-                case InterfaceOp.ASSET_TYPE:
+                case "Asset.type":
                     return AssetType();
-                case InterfaceOp.ASSET_AMOUNT:
+                case "Asset.amount":
                     return AssetAmount();
-                case InterfaceOp.ASSET_ISSUER:
+                case "Asset.issuer":
                     return AssetIssuer();
-                case InterfaceOp.ASSET_ADMIN:
+                case "Asset.admin":
                     return AssetAdmin();
-                case InterfaceOp.ENROLL_PUBKEY:
+                case "Enroll.pubkey":
                     return EnrollPubkey();
-                case InterfaceOp.VOTE_ENROLLMENTS:
+                case "Vote.enrollments":
                     return VoteEnrollments();
-                case InterfaceOp.TX_ATTRIBUTES:
+                case "TX.attributes":
                     return TxAttributes();
-                case InterfaceOp.TX_INPUTS:
+                case "TX.inputs":
                     return TxInputs();
-                case InterfaceOp.TX_OUTPUTS:
+                case "TX.outputs":
                     return TxOutputs();
-                case InterfaceOp.ATTR_USAGE:
+                case "Attribute.usage":
                     return AttrUsage();
-                case InterfaceOp.ATTR_DATA:
+                case "Attribute.data":
                     return AttrData();
-                case InterfaceOp.TXIN_HASH:
+                case "Input.hash":
                     return TxInHash();
-                case InterfaceOp.TXIN_INDEX:
+                case "Input.index":
                     return TxInIndex();
-                case InterfaceOp.TXOUT_ASSET:
+                case "Output.asset":
                     return TxOutAsset();
-                case InterfaceOp.TXOUT_VALUE:
+                case "Output.value":
                     return TxOutValue();
-                case InterfaceOp.TXOUT_SCRIPTHASH:
+                case "Output.scriptHash":
                     return TxOutScriptHash();
                 default:
                     return false;

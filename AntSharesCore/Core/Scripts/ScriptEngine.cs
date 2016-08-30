@@ -32,25 +32,16 @@ namespace AntShares.Core.Scripts
 
         public bool Execute()
         {
-            try
-            {
-                if (!ExecuteScript(script.StackScript, true)) return false;
-                if (!ExecuteScript(script.RedeemScript, false)) return false;
-            }
-            catch (Exception ex) when (ex is FormatException || ex is InvalidCastException)
-            {
-                return false;
-            }
+            if (!ExecuteScript(script.StackScript, true)) return false;
+            if (!ExecuteScript(script.RedeemScript, false)) return false;
             return stack.Count == 1 && stack.Pop();
         }
 
         private bool ExecuteOp(ScriptOp opcode, BinaryReader opReader)
         {
             if (opcode > ScriptOp.OP_16 && ++nOpCount > MAXSTEPS) return false;
-            int remain = (int)(opReader.BaseStream.Length - opReader.BaseStream.Position);
             if (opcode >= ScriptOp.OP_PUSHBYTES1 && opcode <= ScriptOp.OP_PUSHBYTES75)
             {
-                if (remain < (byte)opcode) return false;
                 stack.Push(opReader.ReadBytes((byte)opcode));
                 return true;
             }
@@ -61,28 +52,13 @@ namespace AntShares.Core.Scripts
                     stack.Push(new byte[0]);
                     break;
                 case ScriptOp.OP_PUSHDATA1:
-                    {
-                        if (remain < 1) return false;
-                        byte length = opReader.ReadByte();
-                        if (remain - 1 < length) return false;
-                        stack.Push(opReader.ReadBytes(length));
-                    }
+                    stack.Push(opReader.ReadBytes(opReader.ReadByte()));
                     break;
                 case ScriptOp.OP_PUSHDATA2:
-                    {
-                        if (remain < 2) return false;
-                        ushort length = opReader.ReadUInt16();
-                        if (remain - 2 < length) return false;
-                        stack.Push(opReader.ReadBytes(length));
-                    }
+                    stack.Push(opReader.ReadBytes(opReader.ReadUInt16()));
                     break;
                 case ScriptOp.OP_PUSHDATA4:
-                    {
-                        if (remain < 4) return false;
-                        int length = opReader.ReadInt32();
-                        if (remain - 4 < length) return false;
-                        stack.Push(opReader.ReadBytes(length));
-                    }
+                    stack.Push(opReader.ReadBytes(opReader.ReadInt32()));
                     break;
                 case ScriptOp.OP_1NEGATE:
                 case ScriptOp.OP_1:
@@ -111,7 +87,6 @@ namespace AntShares.Core.Scripts
                 case ScriptOp.OP_JMPIF:
                 case ScriptOp.OP_JMPIFNOT:
                     {
-                        if (remain < 2) return false;
                         int offset = opReader.ReadInt16() - 3;
                         int offset_new = (int)opReader.BaseStream.Position + offset;
                         if (offset_new < 0 || offset_new > opReader.BaseStream.Length)
@@ -144,17 +119,18 @@ namespace AntShares.Core.Scripts
                     break;
                 case ScriptOp.OP_APPCALL:
                     {
-                        if (remain < 20) return false;
                         UInt160 hash = opReader.ReadSerializable<UInt160>();
                         //TODO:OP_APPCALL
                         return false;
                     }
                     break;
                 case ScriptOp.OP_SYSCALL:
-                    if (remain < 1) return false;
-                    if (iEngine == null)
-                        iEngine = new InterfaceEngine(stack, altStack, signable);
-                    return iEngine.ExecuteOp((InterfaceOp)opReader.ReadByte());
+                    {
+                        string method = opReader.ReadVarString();
+                        if (iEngine == null)
+                            iEngine = new InterfaceEngine(stack, altStack, signable);
+                        return iEngine.ExecuteOp(method);
+                    }
                 case ScriptOp.OP_VERIFY:
                     if (stack.Count < 1) return false;
                     if (stack.Peek().GetBooleanArray().All(p => p))
@@ -1095,11 +1071,18 @@ namespace AntShares.Core.Scripts
             using (MemoryStream ms = new MemoryStream(script, false))
             using (BinaryReader opReader = new BinaryReader(ms))
             {
-                while (opReader.BaseStream.Position < script.Length)
+                try
                 {
-                    ScriptOp opcode = (ScriptOp)opReader.ReadByte();
-                    if (push_only && opcode > ScriptOp.OP_16) return false;
-                    if (!ExecuteOp(opcode, opReader)) return false;
+                    while (opReader.BaseStream.Position < script.Length)
+                    {
+                        ScriptOp opcode = (ScriptOp)opReader.ReadByte();
+                        if (push_only && opcode > ScriptOp.OP_16) return false;
+                        if (!ExecuteOp(opcode, opReader)) return false;
+                    }
+                }
+                catch (Exception ex) when (ex is EndOfStreamException || ex is FormatException || ex is InvalidCastException)
+                {
+                    return false;
                 }
             }
             return true;
