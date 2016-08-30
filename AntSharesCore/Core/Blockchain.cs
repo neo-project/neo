@@ -251,6 +251,11 @@ namespace AntShares.Core
             return null;
         }
 
+        public virtual byte[] GetContract(UInt160 hash)
+        {
+            return null;
+        }
+
         public IEnumerable<EnrollmentTransaction> GetEnrollments()
         {
             return GetEnrollments(Enumerable.Empty<Transaction>());

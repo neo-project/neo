@@ -17,6 +17,8 @@
         /// </summary>
         DATA_Transaction = 0x02,
 
+        DATA_Contract = 0x03,
+
         /// <summary>
         /// 当前区块，区块链的当前状态（包括所有的索引、统计信息）由该区块以及所有的前置区块共同决定
         /// </summary>

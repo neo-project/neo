@@ -34,7 +34,7 @@ namespace AntShares.Core
         /// <summary>
         /// 用于验证该交易的脚本列表
         /// </summary>
-        public override Script[] Scripts { get; set; }
+        public sealed override Script[] Scripts { get; set; }
 
         /// <summary>
         /// 清单类型
@@ -90,7 +90,7 @@ namespace AntShares.Core
         /// 反序列化
         /// </summary>
         /// <param name="reader">数据来源</param>
-        public override void Deserialize(BinaryReader reader)
+        public sealed override void Deserialize(BinaryReader reader)
         {
             ((ISignable)this).DeserializeUnsigned(reader);
             Scripts = reader.ReadSerializableArray<Script>();
@@ -136,7 +136,7 @@ namespace AntShares.Core
             return transaction;
         }
 
-        public override void DeserializeUnsigned(BinaryReader reader)
+        public sealed override void DeserializeUnsigned(BinaryReader reader)
         {
             if ((TransactionType)reader.ReadByte() != Type)
                 throw new FormatException();
@@ -243,7 +243,7 @@ namespace AntShares.Core
         /// 序列化
         /// </summary>
         /// <param name="writer">存放序列化后的结果</param>
-        public override void Serialize(BinaryWriter writer)
+        public sealed override void Serialize(BinaryWriter writer)
         {
             ((ISignable)this).SerializeUnsigned(writer);
             writer.Write(Scripts);
@@ -257,7 +257,7 @@ namespace AntShares.Core
         {
         }
 
-        public override void SerializeUnsigned(BinaryWriter writer)
+        public sealed override void SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write((byte)Type);
             SerializeExclusiveData(writer);

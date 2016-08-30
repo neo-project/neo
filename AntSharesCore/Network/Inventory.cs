@@ -30,7 +30,7 @@ namespace AntShares.Network
 
         public abstract void DeserializeUnsigned(BinaryReader reader);
 
-        protected virtual byte[] GetHashData()
+        private byte[] GetHashData()
         {
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms))
