@@ -170,6 +170,7 @@
     <Compile Include="IO\Caching\TrackState.cs" />
     <Compile Include="IO\Caching\Tree.cs" />
     <Compile Include="IO\Caching\TreeNode.cs" />
+    <Compile Include="Network\AddingTransactionEventArgs.cs" />
     <Compile Include="Network\Payloads\ConsensusPayload.cs" />
     <Compile Include="Network\Inventory.cs" />
     <Compile Include="Core\ISignable.cs" />

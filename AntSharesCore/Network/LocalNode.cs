@@ -16,6 +16,7 @@ namespace AntShares.Network
 {
     public class LocalNode : IDisposable
     {
+        public static event EventHandler<AddingTransactionEventArgs> AddingTransaction;
         public static event EventHandler<Inventory> NewInventory;
 
         public const uint PROTOCOL_VERSION = 0;
@@ -114,7 +115,7 @@ namespace AntShares.Network
             }
         }
 
-        private static bool AddTransaction(Transaction tx)
+        private bool AddTransaction(Transaction tx)
         {
             if (Blockchain.Default == null) return false;
             lock (MemoryPool)
@@ -124,8 +125,10 @@ namespace AntShares.Network
                     return false;
                 if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
                 if (!tx.Verify()) return false;
-                MemoryPool.Add(tx.Hash, tx);
-                return true;
+                AddingTransactionEventArgs args = new AddingTransactionEventArgs(tx);
+                AddingTransaction?.Invoke(this, args);
+                if (!args.Cancel) MemoryPool.Add(tx.Hash, tx);
+                return args.Cancel;
             }
         }
 
