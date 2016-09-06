@@ -134,7 +134,7 @@ namespace AntShares.Wallets
         public void Deserialize(BinaryReader reader)
         {
             PublicKeyHash = reader.ReadSerializable<UInt160>();
-            ParameterList = reader.ReadVarBytes().Cast<ContractParameterType>().ToArray();
+            ParameterList = reader.ReadVarBytes().Select(p => (ContractParameterType)p).ToArray();
             RedeemScript = reader.ReadVarBytes();
         }
 
