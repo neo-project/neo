@@ -128,7 +128,7 @@ namespace AntShares.Network
                 AddingTransactionEventArgs args = new AddingTransactionEventArgs(tx);
                 AddingTransaction?.Invoke(this, args);
                 if (!args.Cancel) MemoryPool.Add(tx.Hash, tx);
-                return args.Cancel;
+                return !args.Cancel;
             }
         }
 
