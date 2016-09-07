@@ -336,7 +336,7 @@ namespace AntShares.Core
                 {
                     StackScript = new byte[0],
                     RedeemScript = script.Data
-                }, this);
+                }, this, InterfaceEngine.Default);
                 if (!engine.Execute()) return false;
             }
             return this.VerifySignature();

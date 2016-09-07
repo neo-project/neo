@@ -9,7 +9,7 @@ using System.Collections;
 
 namespace AntShares.Core.Scripts
 {
-    internal class StackItem : IEquatable<StackItem>, IReadOnlyCollection<StackItem>
+    public class StackItem : IEquatable<StackItem>, IReadOnlyCollection<StackItem>
     {
         public readonly bool IsArray;
         private byte[] _bytes;
