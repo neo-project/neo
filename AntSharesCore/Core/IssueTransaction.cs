@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using AntShares.IO.Json;
 
 namespace AntShares.Core
 {
@@ -11,11 +9,6 @@ namespace AntShares.Core
     /// </summary>
     public class IssueTransaction : Transaction
     {
-        /// <summary>
-        /// 随机数
-        /// </summary>
-        public uint Nonce;
-
         /// <summary>
         /// 系统费用
         /// </summary>
@@ -39,15 +32,6 @@ namespace AntShares.Core
         }
 
         /// <summary>
-        /// 反序列化交易中的额外数据
-        /// </summary>
-        /// <param name="reader">数据来源</param>
-        protected override void DeserializeExclusiveData(BinaryReader reader)
-        {
-            this.Nonce = reader.ReadUInt32();
-        }
-
-        /// <summary>
         /// 获取需要校验的脚本散列值
         /// </summary>
         /// <returns>返回需要校验的脚本散列值</returns>
@@ -61,22 +45,6 @@ namespace AntShares.Core
                 hashes.Add(tx.Admin);
             }
             return hashes.OrderBy(p => p).ToArray();
-        }
-
-        /// <summary>
-        /// 序列化交易中的额外数据
-        /// </summary>
-        /// <param name="writer">存放序列化后的结果</param>
-        protected override void SerializeExclusiveData(BinaryWriter writer)
-        {
-            writer.Write(Nonce);
-        }
-
-        public override JObject ToJson()
-        {
-            JObject json = base.ToJson();
-            json["nonce"] = Nonce;
-            return json;
         }
 
         /// <summary>
