@@ -39,7 +39,7 @@ namespace AntShares
             if (s.StartsWith("0x"))
                 s = s.Substring(2);
             if (s.Length != 64)
-                throw new FormatException(string.Format("字符串\"{0}\"无法识别为正确的UInt256。", s));
+                throw new FormatException();
             return new UInt256(s.HexToBytes().Reverse().ToArray());
         }
 

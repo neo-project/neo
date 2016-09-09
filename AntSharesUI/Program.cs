@@ -85,7 +85,7 @@ namespace AntShares
                     return true;
                 }
                 catch (CryptographicException) { }
-                if (MessageBox.Show("小蚁需要安装Onchain的根证书才能对区块链上的资产进行认证，是否现在就安装证书？", "安装证书", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) != DialogResult.Yes) return true;
+                if (MessageBox.Show(Strings.InstallCertificateText, Strings.InstallCertificateCaption, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) != DialogResult.Yes) return true;
                 try
                 {
                     Process.Start(new ProcessStartInfo
@@ -98,7 +98,7 @@ namespace AntShares
                     return false;
                 }
                 catch (Win32Exception) { }
-                MessageBox.Show("您已取消了证书安装过程。");
+                MessageBox.Show(Strings.InstallCertificateCancel);
                 return true;
             }
         }
