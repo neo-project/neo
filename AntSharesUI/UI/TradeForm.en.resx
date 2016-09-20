@@ -117,31 +117,95 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="IncompletedSignatureMessage" xml:space="preserve">
-    <value>Transaction initiated, but the signature is incomplete.</value>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="textBox1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>70, 18</value>
   </data>
-  <data name="IncompletedSignatureTitle" xml:space="preserve">
-    <value>Incomplete signature</value>
+  <data name="textBox1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>410, 23</value>
   </data>
-  <data name="InstallCertificateCancel" xml:space="preserve">
-    <value>You have cancelled the certificate installation.</value>
+  <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 21</value>
   </data>
-  <data name="InstallCertificateCaption" xml:space="preserve">
-    <value>Install the certificate</value>
+  <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>47, 17</value>
   </data>
-  <data name="InstallCertificateText" xml:space="preserve">
-    <value>Anthares must install Onchain root certificate to validate assets on the blockchain, install it now?</value>
+  <data name="label1.Text" xml:space="preserve">
+    <value>Pay to:</value>
   </data>
-  <data name="InsufficientFunds" xml:space="preserve">
-    <value>Insufficient funds, transaction cannot be initiated.</value>
+  <data name="button1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>408, 480</value>
   </data>
-  <data name="SendTxSucceedMessage" xml:space="preserve">
-    <value>Transaction sent, TXID:</value>
+  <data name="button1.Text" xml:space="preserve">
+    <value>initiate</value>
   </data>
-  <data name="SendTxSucceedTitle" xml:space="preserve">
-    <value>Transaction successful</value>
+  <data name="txOutListBox1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>469, 396</value>
   </data>
-  <data name="UnsynchronizedBlock" xml:space="preserve">
-    <value>Blockchain unsynchronized, transaction cannot be sent.</value>
+  <data name="groupBox1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 56</value>
+  </data>
+  <data name="groupBox1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>475, 418</value>
+  </data>
+  <data name="groupBox1.Text" xml:space="preserve">
+    <value>assets the counterparty will acquire</value>
+  </data>
+  <data name="tabPage1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>491, 515</value>
+  </data>
+  <data name="tabPage1.Text" xml:space="preserve">
+    <value>Initiate tx. request</value>
+  </data>
+  <data name="button3.Location" type="System.Drawing.Point, System.Drawing">
+    <value>408, 484</value>
+  </data>
+  <data name="button3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>75, 25</value>
+  </data>
+  <data name="button3.Text" xml:space="preserve">
+    <value>merge</value>
+  </data>
+  <data name="textBox3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>469, 178</value>
+  </data>
+  <data name="groupBox3.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 278</value>
+  </data>
+  <data name="groupBox3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>475, 200</value>
+  </data>
+  <data name="groupBox3.Text" xml:space="preserve">
+    <value>my request</value>
+  </data>
+  <data name="button2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>394, 237</value>
+  </data>
+  <data name="button2.Text" xml:space="preserve">
+    <value>validate</value>
+  </data>
+  <data name="textBox2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>463, 209</value>
+  </data>
+  <data name="groupBox2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>475, 266</value>
+  </data>
+  <data name="groupBox2.Text" xml:space="preserve">
+    <value>counterparty request</value>
+  </data>
+  <data name="tabPage2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>491, 515</value>
+  </data>
+  <data name="tabPage2.Text" xml:space="preserve">
+    <value>merge tx. request</value>
+  </data>
+  <data name="tabControl1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>499, 545</value>
+  </data>
+  <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
+    <value>499, 545</value>
+  </data>
+  <data name="$this.Text" xml:space="preserve">
+    <value>Transaction</value>
   </data>
 </root>

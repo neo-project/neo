@@ -117,31 +117,89 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="IncompletedSignatureMessage" xml:space="preserve">
-    <value>Transaction initiated, but the signature is incomplete.</value>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 18</value>
   </data>
-  <data name="IncompletedSignatureTitle" xml:space="preserve">
-    <value>Incomplete signature</value>
+  <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>71, 12</value>
   </data>
-  <data name="InstallCertificateCancel" xml:space="preserve">
-    <value>You have cancelled the certificate installation.</value>
+  <data name="label1.Text" xml:space="preserve">
+    <value>Asset Type:</value>
   </data>
-  <data name="InstallCertificateCaption" xml:space="preserve">
-    <value>Install the certificate</value>
+  <data name="comboBox1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>98, 15</value>
   </data>
-  <data name="InstallCertificateText" xml:space="preserve">
-    <value>Anthares must install Onchain root certificate to validate assets on the blockchain, install it now?</value>
+  <data name="comboBox1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>360, 20</value>
   </data>
-  <data name="InsufficientFunds" xml:space="preserve">
-    <value>Insufficient funds, transaction cannot be initiated.</value>
+  <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 51</value>
   </data>
-  <data name="SendTxSucceedMessage" xml:space="preserve">
-    <value>Transaction sent, TXID:</value>
+  <data name="label2.Text" xml:space="preserve">
+    <value>Name:</value>
   </data>
-  <data name="SendTxSucceedTitle" xml:space="preserve">
-    <value>Transaction successful</value>
+  <data name="textBox1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>98, 48</value>
   </data>
-  <data name="UnsynchronizedBlock" xml:space="preserve">
-    <value>Blockchain unsynchronized, transaction cannot be sent.</value>
+  <data name="textBox1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>360, 21</value>
+  </data>
+  <data name="label3.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 85</value>
+  </data>
+  <data name="label3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>47, 12</value>
+  </data>
+  <data name="label3.Text" xml:space="preserve">
+    <value>Capped:</value>
+  </data>
+  <data name="checkBox1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>72, 85</value>
+  </data>
+  <data name="textBox2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>98, 82</value>
+  </data>
+  <data name="textBox2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>360, 21</value>
+  </data>
+  <data name="label4.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 118</value>
+  </data>
+  <data name="label4.Text" xml:space="preserve">
+    <value>Issuer:</value>
+  </data>
+  <data name="comboBox2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>98, 115</value>
+  </data>
+  <data name="comboBox2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>360, 20</value>
+  </data>
+  <data name="label5.Location" type="System.Drawing.Point, System.Drawing">
+    <value>16, 151</value>
+  </data>
+  <data name="label5.Size" type="System.Drawing.Size, System.Drawing">
+    <value>41, 12</value>
+  </data>
+  <data name="label5.Text" xml:space="preserve">
+    <value>Admin:</value>
+  </data>
+  <data name="comboBox3.Location" type="System.Drawing.Point, System.Drawing">
+    <value>98, 148</value>
+  </data>
+  <data name="comboBox3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>360, 20</value>
+  </data>
+  <data name="button1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>383, 174</value>
+  </data>
+  <data name="button1.Text" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
+    <value>470, 205</value>
+  </data>
+  <data name="$this.Text" xml:space="preserve">
+    <value>Asset Registration</value>
   </data>
 </root>

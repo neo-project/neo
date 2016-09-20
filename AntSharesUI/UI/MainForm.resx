@@ -774,7 +774,7 @@
     <value>839, 542</value>
   </data>
   <data name="$this.Font" type="System.Drawing.Font, System.Drawing">
-    <value>微软雅黑, 9pt</value>
+    <value>Microsoft YaHei, 9pt</value>
   </data>
   <data name="$this.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 4, 3, 4</value>
@@ -783,7 +783,7 @@
     <value>CenterScreen</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>AntShares UI</value>
+    <value>AntShares Core</value>
   </data>
   <data name="&gt;&gt;钱包WToolStripMenuItem.Name" xml:space="preserve">
     <value>钱包WToolStripMenuItem</value>

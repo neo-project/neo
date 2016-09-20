@@ -233,44 +233,98 @@
     <EmbeddedResource Include="Properties\Strings.en.resx">
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\AssetRegisterDialog.en.resx">
+      <DependentUpon>AssetRegisterDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\AssetRegisterDialog.resx">
       <DependentUpon>AssetRegisterDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ClaimForm.en.resx">
+      <DependentUpon>ClaimForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\ClaimForm.resx">
       <DependentUpon>ClaimForm.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\ContractDetailsDialog.en.resx">
+      <DependentUpon>ContractDetailsDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\ContractDetailsDialog.resx">
       <DependentUpon>ContractDetailsDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\CreateMultiSigContractDialog.en.resx">
+      <DependentUpon>CreateMultiSigContractDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\CreateMultiSigContractDialog.resx">
       <DependentUpon>CreateMultiSigContractDialog.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\CreateWalletDialog.en.resx">
+      <DependentUpon>CreateWalletDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\DeveloperToolsForm.en.resx">
+      <DependentUpon>DeveloperToolsForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\DeveloperToolsForm.resx">
       <DependentUpon>DeveloperToolsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ElectionDialog.en.resx">
+      <DependentUpon>ElectionDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\ElectionDialog.resx">
       <DependentUpon>ElectionDialog.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\ImportCustomContractDialog.en.resx">
+      <DependentUpon>ImportCustomContractDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\ImportCustomContractDialog.resx">
       <DependentUpon>ImportCustomContractDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ImportPrivateKeyDialog.en.resx">
+      <DependentUpon>ImportPrivateKeyDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\ImportPrivateKeyDialog.resx">
       <DependentUpon>ImportPrivateKeyDialog.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\InformationBox.en.resx">
+      <DependentUpon>InformationBox.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\InformationBox.resx">
       <DependentUpon>InformationBox.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\IssueDialog.en.resx">
+      <DependentUpon>IssueDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\IssueDialog.resx">
       <DependentUpon>IssueDialog.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\MainForm.en.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\OpenWalletDialog.en.resx">
+      <DependentUpon>OpenWalletDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\OpenWalletDialog.resx">
       <DependentUpon>OpenWalletDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\PayToDialog.en.resx">
+      <DependentUpon>PayToDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\SigningDialog.en.resx">
+      <DependentUpon>SigningDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\TradeForm.en.resx">
+      <DependentUpon>TradeForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\TradeForm.resx">
       <DependentUpon>TradeForm.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\TradeVerificationDialog.en.resx">
+      <DependentUpon>TradeVerificationDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\TradeVerificationDialog.resx">
       <DependentUpon>TradeVerificationDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\TransferDialog.en.resx">
+      <DependentUpon>TransferDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\TxOutListBox.resx">
       <DependentUpon>TxOutListBox.cs</DependentUpon>
@@ -293,11 +347,20 @@
     <EmbeddedResource Include="UI\TransferDialog.resx">
       <DependentUpon>TransferDialog.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\UpdateDialog.en.resx">
+      <DependentUpon>UpdateDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\UpdateDialog.resx">
       <DependentUpon>UpdateDialog.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\ViewPrivateKeyDialog.en.resx">
+      <DependentUpon>ViewPrivateKeyDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\ViewPrivateKeyDialog.resx">
       <DependentUpon>ViewPrivateKeyDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\VotingDialog.en.resx">
+      <DependentUpon>VotingDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\VotingDialog.resx">
       <DependentUpon>VotingDialog.cs</DependentUpon>

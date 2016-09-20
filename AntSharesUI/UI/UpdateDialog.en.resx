@@ -117,31 +117,65 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="IncompletedSignatureMessage" xml:space="preserve">
-    <value>Transaction initiated, but the signature is incomplete.</value>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>12, 17</value>
   </data>
-  <data name="IncompletedSignatureTitle" xml:space="preserve">
-    <value>Incomplete signature</value>
+  <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>102, 17</value>
   </data>
-  <data name="InstallCertificateCancel" xml:space="preserve">
-    <value>You have cancelled the certificate installation.</value>
+  <data name="label1.Text" xml:space="preserve">
+    <value>Newest Version:</value>
   </data>
-  <data name="InstallCertificateCaption" xml:space="preserve">
-    <value>Install the certificate</value>
+  <data name="textBox1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>150, 14</value>
   </data>
-  <data name="InstallCertificateText" xml:space="preserve">
-    <value>Anthares must install Onchain root certificate to validate assets on the blockchain, install it now?</value>
+  <data name="textBox1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>373, 23</value>
   </data>
-  <data name="InsufficientFunds" xml:space="preserve">
-    <value>Insufficient funds, transaction cannot be initiated.</value>
+  <data name="linkLabel1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>12, 98</value>
   </data>
-  <data name="SendTxSucceedMessage" xml:space="preserve">
-    <value>Transaction sent, TXID:</value>
+  <data name="linkLabel1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>79, 17</value>
   </data>
-  <data name="SendTxSucceedTitle" xml:space="preserve">
-    <value>Transaction successful</value>
+  <data name="linkLabel1.Text" xml:space="preserve">
+    <value>Official Web</value>
   </data>
-  <data name="UnsynchronizedBlock" xml:space="preserve">
-    <value>Blockchain unsynchronized, transaction cannot be sent.</value>
+  <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>12, 51</value>
+  </data>
+  <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>102, 17</value>
+  </data>
+  <data name="label2.Text" xml:space="preserve">
+    <value>Current Version:</value>
+  </data>
+  <data name="textBox2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>150, 48</value>
+  </data>
+  <data name="textBox2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>373, 23</value>
+  </data>
+  <data name="linkLabel2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>147, 98</value>
+  </data>
+  <data name="linkLabel2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>67, 17</value>
+  </data>
+  <data name="linkLabel2.Text" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="button1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>448, 95</value>
+  </data>
+  <data name="button1.Text" xml:space="preserve">
+    <value>confirm</value>
+  </data>
+  <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
+    <value>540, 136</value>
+  </data>
+  <data name="$this.Text" xml:space="preserve">
+    <value>Update Available</value>
   </data>
 </root>
