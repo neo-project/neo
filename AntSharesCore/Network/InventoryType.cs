@@ -3,7 +3,7 @@
     /// <summary>
     /// 定义清单中的对象类型
     /// </summary>
-    public enum InventoryType : uint
+    public enum InventoryType : byte
     {
         /// <summary>
         /// 交易

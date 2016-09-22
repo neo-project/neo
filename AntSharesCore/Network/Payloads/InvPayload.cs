@@ -1,37 +1,35 @@
 ﻿using AntShares.IO;
+using System;
 using System.IO;
-using System.Linq;
 
 namespace AntShares.Network.Payloads
 {
     internal class InvPayload : ISerializable
     {
-        public InventoryVector[] Inventories;
-
-        public static InvPayload Create(InventoryVector[] vectors)
-        {
-            return new InvPayload
-            {
-                Inventories = vectors
-            };
-        }
+        public InventoryType Type;
+        public UInt256[] Hashes;
 
         public static InvPayload Create(InventoryType type, params UInt256[] hashes)
         {
             return new InvPayload
             {
-                Inventories = hashes.Select(p => new InventoryVector { Type = type, Hash = p }).ToArray()
+                Type = type,
+                Hashes = hashes
             };
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Inventories = reader.ReadSerializableArray<InventoryVector>();
+            Type = (InventoryType)reader.ReadByte();
+            if (!Enum.IsDefined(typeof(InventoryType), Type))
+                throw new FormatException();
+            Hashes = reader.ReadSerializableArray<UInt256>();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(Inventories);
+            writer.Write((byte)Type);
+            writer.Write(Hashes);
         }
     }
 }

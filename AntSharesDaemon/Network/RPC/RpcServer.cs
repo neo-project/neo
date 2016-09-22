@@ -116,6 +116,11 @@ namespace AntShares.Network.RPC
                         Transaction tx = Transaction.DeserializeFrom(_params[0].AsString().HexToBytes());
                         return localNode.Relay(tx);
                     }
+                case "submitblock":
+                    {
+                        Block block = _params[0].AsString().HexToBytes().AsSerializable<Block>();
+                        return localNode.Relay(block);
+                    }
                 default:
                     throw new RpcException(-32601, "Method not found");
             }

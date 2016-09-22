@@ -55,6 +55,14 @@ namespace AntShares.Cryptography
             return _ripemd160.Value.ComputeHash(value.ToArray());
         }
 
+        public static uint Murmur32(this IEnumerable<byte> value, uint seed)
+        {
+            using (Murmur3 murmur = new Murmur3(seed))
+            {
+                return BitConverter.ToUInt32(murmur.ComputeHash(value.ToArray()), 0);
+            }
+        }
+
         /// <summary>
         /// 求字节数组的sha256散列值
         /// </summary>

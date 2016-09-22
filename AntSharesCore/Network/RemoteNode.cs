@@ -158,22 +158,22 @@ namespace AntShares.Network
 
         private void OnGetDataMessageReceived(InvPayload payload)
         {
-            foreach (InventoryVector vector in payload.Inventories.Distinct())
+            foreach (UInt256 hash in payload.Hashes.Distinct())
             {
                 Inventory inventory;
-                if (!localNode.RelayCache.TryGet(vector.Hash, out inventory) && !localNode.ServiceEnabled)
+                if (!localNode.RelayCache.TryGet(hash, out inventory) && !localNode.ServiceEnabled)
                     continue;
-                switch (vector.Type)
+                switch (payload.Type)
                 {
                     case InventoryType.TX:
                         if (inventory == null && Blockchain.Default != null)
-                            inventory = Blockchain.Default.GetTransaction(vector.Hash);
+                            inventory = Blockchain.Default.GetTransaction(hash);
                         if (inventory != null)
                             EnqueueMessage("tx", inventory);
                         break;
                     case InventoryType.Block:
                         if (inventory == null && Blockchain.Default != null)
-                            inventory = Blockchain.Default.GetBlock(vector.Hash);
+                            inventory = Blockchain.Default.GetBlock(hash);
                         if (inventory != null)
                             EnqueueMessage("block", inventory);
                         break;
@@ -225,24 +225,26 @@ namespace AntShares.Network
 
         private void OnInvMessageReceived(InvPayload payload)
         {
-            InventoryVector[] vectors = payload.Inventories.Distinct().Where(p => Enum.IsDefined(typeof(InventoryType), p.Type)).ToArray();
+            if (payload.Type != InventoryType.TX && payload.Type != InventoryType.Block && payload.Type != InventoryType.Consensus)
+                return;
+            UInt256[] hashes = payload.Hashes.Distinct().ToArray();
             lock (LocalNode.KnownHashes)
             {
-                vectors = vectors.Where(p => !LocalNode.KnownHashes.Contains(p.Hash)).ToArray();
+                hashes = hashes.Where(p => !LocalNode.KnownHashes.Contains(p)).ToArray();
             }
-            if (vectors.Length == 0) return;
+            if (hashes.Length == 0) return;
             lock (missions_global)
             {
                 if (localNode.GlobalMissionsEnabled)
-                    vectors = vectors.Where(p => !missions_global.Contains(p.Hash)).ToArray();
-                foreach (InventoryVector vector in vectors)
+                    hashes = hashes.Where(p => !missions_global.Contains(p)).ToArray();
+                foreach (UInt256 hash in hashes)
                 {
-                    missions_global.Add(vector.Hash);
-                    missions.Add(vector.Hash);
+                    missions_global.Add(hash);
+                    missions.Add(hash);
                 }
             }
-            if (vectors.Length == 0) return;
-            EnqueueMessage("getdata", InvPayload.Create(vectors));
+            if (hashes.Length == 0) return;
+            EnqueueMessage("getdata", InvPayload.Create(payload.Type, hashes));
         }
 
         private void OnMemPoolMessageReceived()
@@ -288,6 +290,10 @@ namespace AntShares.Network
                     OnInventoryReceived(Transaction.DeserializeFrom(message.Payload));
                     break;
                 case "alert":
+                case "filteradd":
+                case "filterclear":
+                case "filterload":
+                case "merkleblock":
                 case "notfound":
                 case "ping":
                 case "pong":
@@ -329,9 +335,11 @@ namespace AntShares.Network
             return null;
         }
 
-        internal void Relay(Inventory data)
+        internal bool Relay(Inventory data)
         {
+            if (!Version.Relay) return false;
             EnqueueMessage("inv", InvPayload.Create(data.InventoryType, data.Hash));
+            return true;
         }
 
         internal void RequestMemoryPool()

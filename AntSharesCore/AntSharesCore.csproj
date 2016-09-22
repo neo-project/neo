@@ -24,6 +24,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\x64\Release\</OutputPath>
@@ -32,6 +33,7 @@
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="EntityFramework.Core, Version=7.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
@@ -148,7 +150,9 @@
     <Compile Include="Core\Scripts\InterfaceEngine.cs" />
     <Compile Include="Core\Scripts\Script.cs" />
     <Compile Include="Core\Scripts\StackItem.cs" />
+    <Compile Include="Cryptography\BloomFilter.cs" />
     <Compile Include="Cryptography\ECC\ECDsa.cs" />
+    <Compile Include="Cryptography\Murmur3.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\DataEntryPrefix.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\Helper.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\LevelDBBlockchain.cs" />
@@ -214,7 +218,6 @@
     <Compile Include="Network\Payloads\GetBlocksPayload.cs" />
     <Compile Include="Network\Payloads\HeadersPayload.cs" />
     <Compile Include="Network\InventoryType.cs" />
-    <Compile Include="Network\Payloads\InventoryVector.cs" />
     <Compile Include="Network\Payloads\InvPayload.cs" />
     <Compile Include="Network\Payloads\NetworkAddressWithTime.cs" />
     <Compile Include="Network\Payloads\VersionPayload.cs" />
