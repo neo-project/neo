@@ -16,7 +16,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
     {
         private DB db;
         private Thread thread_persistence;
-        private Tree<UInt256, Block> header_chain = new Tree<UInt256, Block>(GenesisBlock.Hash, GenesisBlock);
+        private Tree<UInt256, Header> header_chain = new Tree<UInt256, Header>(GenesisBlock.Hash, GenesisBlock.Header);
         private List<UInt256> header_index = new List<UInt256>();
         private Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private UInt256 current_block_hash = GenesisBlock.Hash;
@@ -46,7 +46,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 value = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock));
                 this.current_block_hash = new UInt256(value.ToArray().Take(32).ToArray());
                 this.current_block_height = BitConverter.ToUInt32(value.ToArray(), 32);
-                foreach (Block header in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.DATA_HeaderList), (k, v) =>
+                foreach (Header header in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.DATA_HeaderList), (k, v) =>
                 {
                     using (MemoryStream ms = new MemoryStream(v.ToArray(), false))
                     using (BinaryReader r = new BinaryReader(ms))
@@ -54,7 +54,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                         return new
                         {
                             Index = BitConverter.ToUInt32(k.ToArray(), 1),
-                            Headers = r.ReadSerializableArray<Block>()
+                            Headers = r.ReadSerializableArray<Header>()
                         };
                     }
                 }).OrderBy(p => p.Index).SelectMany(p => p.Headers).ToArray())
@@ -68,10 +68,10 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 }
                 if (stored_header_count == 0)
                 {
-                    Dictionary<UInt256, Block> table = db.Find(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block), (k, v) => Block.FromTrimmedData(v.ToArray(), sizeof(long))).ToDictionary(p => p.PrevBlock);
+                    Dictionary<UInt256, Header> table = db.Find(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block), (k, v) => Header.FromTrimmedData(v.ToArray(), sizeof(long))).ToDictionary(p => p.PrevBlock);
                     for (UInt256 hash = GenesisBlock.Hash; hash != current_block_hash;)
                     {
-                        Block header = table[hash];
+                        Header header = table[hash];
                         header_chain.Add(header.Hash, header, header.PrevBlock);
                         header_index.Add(header.Hash);
                         hash = header.Hash;
@@ -79,10 +79,10 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 }
                 else if (current_block_height >= stored_header_count)
                 {
-                    List<Block> list = new List<Block>();
+                    List<Header> list = new List<Header>();
                     for (UInt256 hash = current_block_hash; hash != header_index[(int)stored_header_count - 1];)
                     {
-                        Block header = Block.FromTrimmedData(db.Get(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash)).ToArray(), sizeof(long));
+                        Header header = Header.FromTrimmedData(db.Get(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash)).ToArray(), sizeof(long));
                         list.Add(header);
                         header_index.Insert((int)stored_header_count, hash);
                         hash = header.PrevBlock;
@@ -131,7 +131,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 {
                     if (VerifyBlocks && !block.Verify()) return false;
                     header_chain.Add(block.Hash, block.Header, block.PrevBlock);
-                    OnAddHeader(block);
+                    OnAddHeader(block.Header);
                 }
                 if (header_chain.Nodes.ContainsKey(block.Hash))
                     new_block_event.Set();
@@ -139,11 +139,11 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             return true;
         }
 
-        protected internal override void AddHeaders(IEnumerable<Block> headers)
+        protected internal override void AddHeaders(IEnumerable<Header> headers)
         {
             lock (header_chain)
             {
-                foreach (Block header in headers)
+                foreach (Header header in headers)
                 {
                     if (!header_chain.Nodes.ContainsKey(header.PrevBlock)) break;
                     if (header_chain.Nodes.ContainsKey(header.Hash)) continue;
@@ -156,7 +156,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override bool ContainsBlock(UInt256 hash)
         {
-            TreeNode<Block> node, i;
+            TreeNode<Header> node, i;
             lock (header_chain)
             {
                 if (!header_chain.Nodes.ContainsKey(hash)) return false;
@@ -263,7 +263,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             }
         }
 
-        public override Block GetHeader(uint height)
+        public override Header GetHeader(uint height)
         {
             lock (header_chain)
             {
@@ -272,7 +272,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             }
         }
 
-        public override Block GetHeader(UInt256 hash)
+        public override Header GetHeader(UInt256 hash)
         {
             lock (header_chain)
             {
@@ -434,7 +434,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             return false;
         }
 
-        private void OnAddHeader(Block header)
+        private void OnAddHeader(Header header)
         {
             if (header.PrevBlock == current_header_hash)
             {
@@ -460,14 +460,14 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             }
             else
             {
-                TreeNode<Block> main = header_chain.Leaves.OrderByDescending(p => p.Height).First();
+                TreeNode<Header> main = header_chain.Leaves.OrderByDescending(p => p.Height).First();
                 if (main.Item.Hash != current_header_hash)
                 {
-                    TreeNode<Block> fork = header_chain.Nodes[current_header_hash];
+                    TreeNode<Header> fork = header_chain.Nodes[current_header_hash];
                     current_header_hash = main.Item.Hash;
-                    TreeNode<Block> common = header_chain.FindCommonNode(main, fork);
+                    TreeNode<Header> common = header_chain.FindCommonNode(main, fork);
                     header_index.RemoveRange((int)common.Height + 1, header_index.Count - (int)common.Height - 1);
-                    for (TreeNode<Block> i = main; i != common; i = i.Parent)
+                    for (TreeNode<Header> i = main; i != common; i = i.Parent)
                     {
                         header_index.Insert((int)common.Height + 1, i.Item.Hash);
                     }
@@ -640,7 +640,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     UInt256 hash;
                     lock (header_chain)
                     {
-                        TreeNode<Block> node = header_chain.Nodes[current_block_hash];
+                        TreeNode<Header> node = header_chain.Nodes[current_block_hash];
                         if (header_index.Count <= node.Height + 1) break;
                         hash = header_index[(int)node.Height + 1];
                     }

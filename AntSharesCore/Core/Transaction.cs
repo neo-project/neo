@@ -1,4 +1,5 @@
 ﻿using AntShares.Core.Scripts;
+using AntShares.Cryptography;
 using AntShares.IO;
 using AntShares.IO.Json;
 using AntShares.Network;
@@ -13,7 +14,7 @@ namespace AntShares.Core
     /// <summary>
     /// 一切交易的基类
     /// </summary>
-    public abstract class Transaction : Inventory
+    public abstract class Transaction : IInventory
     {
         /// <summary>
         /// 交易类型
@@ -38,12 +39,26 @@ namespace AntShares.Core
         /// <summary>
         /// 用于验证该交易的脚本列表
         /// </summary>
-        public sealed override Script[] Scripts { get; set; }
+        public Script[] Scripts { get; set; }
+
+        [NonSerialized]
+        private UInt256 _hash = null;
+        public UInt256 Hash
+        {
+            get
+            {
+                if (_hash == null)
+                {
+                    _hash = new UInt256(this.GetHashData().Sha256().Sha256());
+                }
+                return _hash;
+            }
+        }
 
         /// <summary>
         /// 清单类型
         /// </summary>
-        public sealed override InventoryType InventoryType => InventoryType.TX;
+        InventoryType IInventory.InventoryType => InventoryType.TX;
 
         [NonSerialized]
         private IReadOnlyDictionary<TransactionInput, TransactionOutput> _references;
@@ -94,7 +109,7 @@ namespace AntShares.Core
         /// 反序列化
         /// </summary>
         /// <param name="reader">数据来源</param>
-        public sealed override void Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(BinaryReader reader)
         {
             ((ISignable)this).DeserializeUnsigned(reader);
             Scripts = reader.ReadSerializableArray<Script>();
@@ -140,7 +155,7 @@ namespace AntShares.Core
             return transaction;
         }
 
-        public sealed override void DeserializeUnsigned(BinaryReader reader)
+        void ISignable.DeserializeUnsigned(BinaryReader reader)
         {
             if ((TransactionType)reader.ReadByte() != Type)
                 throw new FormatException();
@@ -196,7 +211,7 @@ namespace AntShares.Core
         /// 获取需要校验的脚本散列值
         /// </summary>
         /// <returns>返回需要校验的脚本散列值</returns>
-        public override UInt160[] GetScriptHashesForVerifying()
+        public virtual UInt160[] GetScriptHashesForVerifying()
         {
             if (References == null) throw new InvalidOperationException();
             HashSet<UInt160> hashes = new HashSet<UInt160>(Inputs.Select(p => References[p].ScriptHash));
@@ -245,7 +260,7 @@ namespace AntShares.Core
         /// 序列化
         /// </summary>
         /// <param name="writer">存放序列化后的结果</param>
-        public sealed override void Serialize(BinaryWriter writer)
+        void ISerializable.Serialize(BinaryWriter writer)
         {
             ((ISignable)this).SerializeUnsigned(writer);
             writer.Write(Scripts);
@@ -259,7 +274,7 @@ namespace AntShares.Core
         {
         }
 
-        public sealed override void SerializeUnsigned(BinaryWriter writer)
+        void ISignable.SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write((byte)Type);
             writer.Write(Version);
@@ -289,7 +304,7 @@ namespace AntShares.Core
         /// 验证交易
         /// </summary>
         /// <returns>返回验证的结果</returns>
-        public override bool Verify()
+        public virtual bool Verify()
         {
             if (Blockchain.Default.ContainsTransaction(Hash)) return true;
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes))

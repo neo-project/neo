@@ -17,7 +17,7 @@ namespace AntShares.Network
     public class LocalNode : IDisposable
     {
         public static event EventHandler<AddingTransactionEventArgs> AddingTransaction;
-        public static event EventHandler<Inventory> NewInventory;
+        public static event EventHandler<IInventory> NewInventory;
 
         public const uint PROTOCOL_VERSION = 0;
         private const int CONNECTED_MAX = 10;
@@ -335,7 +335,7 @@ namespace AntShares.Network
             }
         }
 
-        public bool Relay(Inventory inventory)
+        public bool Relay(IInventory inventory)
         {
             lock (KnownHashes)
             {
@@ -345,7 +345,6 @@ namespace AntShares.Network
             {
                 if (Blockchain.Default == null) return false;
                 Block block = (Block)inventory;
-                if (block.IsHeader) return false;
                 if (Blockchain.Default.ContainsBlock(block.Hash)) return false;
                 if (!Blockchain.Default.AddBlock(block)) return false;
             }
@@ -398,7 +397,7 @@ namespace AntShares.Network
             }
         }
 
-        private void RemoteNode_InventoryReceived(object sender, Inventory inventory)
+        private void RemoteNode_InventoryReceived(object sender, IInventory inventory)
         {
             Relay(inventory);
         }

@@ -148,7 +148,7 @@ namespace AntShares.Miner
             }
         }
 
-        private void LocalNode_NewInventory(object sender, Inventory inventory)
+        private void LocalNode_NewInventory(object sender, IInventory inventory)
         {
             ConsensusPayload payload = inventory as ConsensusPayload;
             if (payload != null)

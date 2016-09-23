@@ -208,7 +208,7 @@ namespace AntShares.Core
         /// 将指定的区块头添加到区块头链中
         /// </summary>
         /// <param name="headers">要添加的区块头列表</param>
-        protected internal abstract void AddHeaders(IEnumerable<Block> headers);
+        protected internal abstract void AddHeaders(IEnumerable<Header> headers);
 
         /// <summary>
         /// 判断区块链中是否包含指定的区块
@@ -289,7 +289,7 @@ namespace AntShares.Core
         /// </summary>
         /// <param name="height">区块高度</param>
         /// <returns>返回对应的区块头信息</returns>
-        public virtual Block GetHeader(uint height)
+        public virtual Header GetHeader(uint height)
         {
             return GetHeader(GetBlockHash(height));
         }
@@ -299,7 +299,7 @@ namespace AntShares.Core
         /// </summary>
         /// <param name="hash">散列值</param>
         /// <returns>返回对应的区块头信息</returns>
-        public virtual Block GetHeader(UInt256 hash)
+        public virtual Header GetHeader(UInt256 hash)
         {
             return GetBlock(hash)?.Header;
         }

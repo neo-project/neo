@@ -15,6 +15,17 @@ namespace AntShares.Core
     /// </summary>
     public static class Helper
     {
+        public static byte[] GetHashData(this ISignable signable)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms))
+            {
+                signable.SerializeUnsigned(writer);
+                writer.Flush();
+                return ms.ToArray();
+            }
+        }
+
         /// <summary>
         /// 获取需要签名的散列值
         /// </summary>

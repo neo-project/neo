@@ -121,7 +121,7 @@ namespace AntShares.Core.Scripts
             if (engine.Stack.Count < 1) return false;
             StackItem x = engine.Stack.Pop();
             byte[][] data = x.GetBytesArray();
-            List<Block> r = new List<Block>();
+            List<Header> r = new List<Header>();
             foreach (byte[] d in data)
             {
                 switch (d.Length)
@@ -309,7 +309,7 @@ namespace AntShares.Core.Scripts
             if (engine.AltStack.Count < 1) return false;
             StackItem x = engine.AltStack.Peek();
             Block[] blocks = x.GetArray<Block>();
-            if (blocks.Any(p => p == null || p.IsHeader)) return false;
+            if (blocks.Any(p => p == null)) return false;
             int[] r = blocks.Select(p => p.Transactions.Length).ToArray();
             if (x.IsArray)
                 engine.Stack.Push(r);
@@ -322,7 +322,7 @@ namespace AntShares.Core.Scripts
         {
             if (engine.AltStack.Count < 1) return false;
             Block block = engine.AltStack.Peek().GetInterface<Block>();
-            if (block == null || block.IsHeader) return false;
+            if (block == null) return false;
             engine.Stack.Push(new StackItem(block.Transactions));
             return true;
         }
@@ -332,7 +332,7 @@ namespace AntShares.Core.Scripts
             if (engine.Stack.Count < 1 || engine.AltStack.Count < 1) return false;
             StackItem block_item = engine.AltStack.Peek();
             Block[] blocks = block_item.GetArray<Block>();
-            if (blocks.Any(p => p == null || p.IsHeader)) return false;
+            if (blocks.Any(p => p == null)) return false;
             StackItem index_item = engine.Stack.Pop();
             BigInteger[] indexes = index_item.GetIntArray();
             if (block_item.IsArray && index_item.IsArray && blocks.Length != indexes.Length)

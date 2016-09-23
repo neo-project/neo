@@ -1,7 +1,10 @@
 ﻿using AntShares.Core;
+using AntShares.Core.Scripts;
+using AntShares.Cryptography;
 using AntShares.IO;
 using AntShares.Network.Payloads;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,7 +19,7 @@ namespace AntShares.Network
     public class RemoteNode : IDisposable
     {
         public event EventHandler<bool> Disconnected;
-        internal event EventHandler<Inventory> InventoryReceived;
+        internal event EventHandler<IInventory> InventoryReceived;
         internal event EventHandler<IPEndPoint[]> PeersReceived;
 
         private static readonly TimeSpan OneMinute = TimeSpan.FromMinutes(1);
@@ -32,6 +35,7 @@ namespace AntShares.Network
         private NetworkStream stream;
         private bool connected = false;
         private int disposed = 0;
+        private BloomFilter bloom_filter;
 
         internal VersionPayload Version { get; private set; }
         public IPEndPoint RemoteEndpoint { get; private set; }
@@ -128,6 +132,22 @@ namespace AntShares.Network
             connected = true;
         }
 
+        private void OnFilterAddMessageReceived(FilterAddPayload payload)
+        {
+            if (bloom_filter != null)
+                bloom_filter.Add(payload.Data);
+        }
+
+        private void OnFilterClearMessageReceived()
+        {
+            bloom_filter = null;
+        }
+
+        private void OnFilterLoadMessageReceived(FilterLoadPayload payload)
+        {
+            bloom_filter = new BloomFilter(payload.Filter.Length * 8, payload.K, payload.Tweak, payload.Filter);
+        }
+
         private void OnGetAddrMessageReceived()
         {
             if (!localNode.ServiceEnabled) return;
@@ -160,7 +180,7 @@ namespace AntShares.Network
         {
             foreach (UInt256 hash in payload.Hashes.Distinct())
             {
-                Inventory inventory;
+                IInventory inventory;
                 if (!localNode.RelayCache.TryGet(hash, out inventory) && !localNode.ServiceEnabled)
                     continue;
                 switch (payload.Type)
@@ -175,7 +195,19 @@ namespace AntShares.Network
                         if (inventory == null && Blockchain.Default != null)
                             inventory = Blockchain.Default.GetBlock(hash);
                         if (inventory != null)
-                            EnqueueMessage("block", inventory);
+                        {
+                            BloomFilter filter = bloom_filter;
+                            if (filter == null)
+                            {
+                                EnqueueMessage("block", inventory);
+                            }
+                            else
+                            {
+                                Block block = (Block)inventory;
+                                BitArray flags = new BitArray(block.Transactions.Select(p => TestFilter(filter, p)).ToArray());
+                                EnqueueMessage("merkleblock", MerkleBlockPayload.Create(block, flags));
+                            }
+                        }
                         break;
                     case InventoryType.Consensus:
                         if (inventory != null)
@@ -192,7 +224,7 @@ namespace AntShares.Network
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.BlockIndexes)) return;
             UInt256 hash = payload.HashStart.Select(p => Blockchain.Default.GetHeader(p)).Where(p => p != null).OrderBy(p => p.Height).Select(p => p.Hash).FirstOrDefault();
             if (hash == null || hash == payload.HashStop) return;
-            List<Block> headers = new List<Block>();
+            List<Header> headers = new List<Header>();
             do
             {
                 hash = Blockchain.Default.GetNextBlockHash(hash);
@@ -212,7 +244,7 @@ namespace AntShares.Network
             }
         }
 
-        private void OnInventoryReceived(Inventory inventory)
+        private void OnInventoryReceived(IInventory inventory)
         {
             lock (missions_global)
             {
@@ -265,6 +297,15 @@ namespace AntShares.Network
                 case "consensus":
                     OnInventoryReceived(message.Payload.AsSerializable<ConsensusPayload>());
                     break;
+                case "filteradd":
+                    OnFilterAddMessageReceived(message.Payload.AsSerializable<FilterAddPayload>());
+                    break;
+                case "filterclear":
+                    OnFilterClearMessageReceived();
+                    break;
+                case "filterload":
+                    OnFilterLoadMessageReceived(message.Payload.AsSerializable<FilterLoadPayload>());
+                    break;
                 case "getaddr":
                     OnGetAddrMessageReceived();
                     break;
@@ -290,9 +331,6 @@ namespace AntShares.Network
                     OnInventoryReceived(Transaction.DeserializeFrom(message.Payload));
                     break;
                 case "alert":
-                case "filteradd":
-                case "filterclear":
-                case "filterload":
                 case "merkleblock":
                 case "notfound":
                 case "ping":
@@ -335,9 +373,15 @@ namespace AntShares.Network
             return null;
         }
 
-        internal bool Relay(Inventory data)
+        internal bool Relay(IInventory data)
         {
             if (!Version.Relay) return false;
+            if (data.InventoryType == InventoryType.TX)
+            {
+                BloomFilter filter = bloom_filter;
+                if (filter != null && !TestFilter(filter, (Transaction)data))
+                    return false;
+            }
             EnqueueMessage("inv", InvPayload.Create(data.InventoryType, data.Hash));
             return true;
         }
@@ -499,6 +543,21 @@ namespace AntShares.Network
         internal void StartProtocol()
         {
             protocolThread.Start();
+        }
+
+        private bool TestFilter(BloomFilter filter, Transaction tx)
+        {
+            if (filter.Check(tx.Hash.ToArray())) return true;
+            if (tx.Outputs.Any(p => filter.Check(p.ScriptHash.ToArray()))) return true;
+            if (tx.Inputs.Any(p => filter.Check(p.ToArray()))) return true;
+            if (tx.Scripts.Any(p => filter.Check(p.RedeemScript.ToScriptHash().ToArray())))
+                return true;
+            if (tx.Type == TransactionType.RegisterTransaction)
+            {
+                RegisterTransaction asset = (RegisterTransaction)tx;
+                if (filter.Check(asset.Admin.ToArray())) return true;
+            }
+            return false;
         }
     }
 }

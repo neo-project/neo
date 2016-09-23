@@ -136,11 +136,13 @@
   <ItemGroup>
     <Compile Include="Core\AgencyTransaction.cs" />
     <Compile Include="Core\Block.cs" />
+    <Compile Include="Core\BlockBase.cs" />
     <Compile Include="Core\Blockchain.cs" />
     <Compile Include="Core\BlockchainAbility.cs" />
     <Compile Include="Core\Claimable.cs" />
     <Compile Include="Core\ClaimTransaction.cs" />
     <Compile Include="Core\ContractTransaction.cs" />
+    <Compile Include="Core\Header.cs" />
     <Compile Include="Core\PublishTransaction.cs" />
     <Compile Include="Core\EnrollmentTransaction.cs" />
     <Compile Include="Core\MinerTransaction.cs" />
@@ -152,6 +154,7 @@
     <Compile Include="Core\Scripts\StackItem.cs" />
     <Compile Include="Cryptography\BloomFilter.cs" />
     <Compile Include="Cryptography\ECC\ECDsa.cs" />
+    <Compile Include="Cryptography\MerkleTreeNode.cs" />
     <Compile Include="Cryptography\Murmur3.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\DataEntryPrefix.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\Helper.cs" />
@@ -175,7 +178,7 @@
     <Compile Include="IO\Caching\TreeNode.cs" />
     <Compile Include="Network\AddingTransactionEventArgs.cs" />
     <Compile Include="Network\Payloads\ConsensusPayload.cs" />
-    <Compile Include="Network\Inventory.cs" />
+    <Compile Include="Network\IInventory.cs" />
     <Compile Include="Core\ISignable.cs" />
     <Compile Include="Core\IssueTransaction.cs" />
     <Compile Include="Core\Order.cs" />
@@ -215,10 +218,13 @@
     <Compile Include="Network\LocalNode.cs" />
     <Compile Include="Network\Message.cs" />
     <Compile Include="Network\Payloads\AddrPayload.cs" />
+    <Compile Include="Network\Payloads\FilterAddPayload.cs" />
+    <Compile Include="Network\Payloads\FilterLoadPayload.cs" />
     <Compile Include="Network\Payloads\GetBlocksPayload.cs" />
     <Compile Include="Network\Payloads\HeadersPayload.cs" />
     <Compile Include="Network\InventoryType.cs" />
     <Compile Include="Network\Payloads\InvPayload.cs" />
+    <Compile Include="Network\Payloads\MerkleBlockPayload.cs" />
     <Compile Include="Network\Payloads\NetworkAddressWithTime.cs" />
     <Compile Include="Network\Payloads\VersionPayload.cs" />
     <Compile Include="Network\RemoteNode.cs" />
