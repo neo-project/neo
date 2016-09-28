@@ -109,12 +109,17 @@ namespace AntShares.Network.RPC
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
                         ushort index = (ushort)_params[1].AsNumber();
-                        return Blockchain.Default.GetUnspent(hash, index).ToJson(index);
+                        return Blockchain.Default.GetUnspent(hash, index)?.ToJson(index);
                     }
                 case "sendrawtransaction":
                     {
                         Transaction tx = Transaction.DeserializeFrom(_params[0].AsString().HexToBytes());
                         return localNode.Relay(tx);
+                    }
+                case "submitblock":
+                    {
+                        Block block = _params[0].AsString().HexToBytes().AsSerializable<Block>();
+                        return localNode.Relay(block);
                     }
                 default:
                     throw new RpcException(-32601, "Method not found");

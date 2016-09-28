@@ -1,5 +1,6 @@
 ﻿using AntShares.Core;
 using AntShares.Core.Scripts;
+using AntShares.Cryptography;
 using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using AntShares.Wallets;
@@ -8,7 +9,7 @@ using System.IO;
 
 namespace AntShares.Network.Payloads
 {
-    public class ConsensusPayload : Inventory
+    public class ConsensusPayload : IInventory
     {
         public uint Version;
         public UInt256 PrevHash;
@@ -18,9 +19,22 @@ namespace AntShares.Network.Payloads
         public byte[] Data;
         public Script Script;
 
-        public override InventoryType InventoryType => InventoryType.Consensus;
+        private UInt256 _hash = null;
+        UInt256 IInventory.Hash
+        {
+            get
+            {
+                if (_hash == null)
+                {
+                    _hash = new UInt256(this.GetHashData().Sha256().Sha256());
+                }
+                return _hash;
+            }
+        }
 
-        public override Script[] Scripts
+        InventoryType IInventory.InventoryType => InventoryType.Consensus;
+
+        Script[] ISignable.Scripts
         {
             get
             {
@@ -33,14 +47,14 @@ namespace AntShares.Network.Payloads
             }
         }
 
-        public override void Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(BinaryReader reader)
         {
             ((ISignable)this).DeserializeUnsigned(reader);
             if (reader.ReadByte() != 1) throw new FormatException();
             Script = reader.ReadSerializable<Script>();
         }
 
-        public override void DeserializeUnsigned(BinaryReader reader)
+        void ISignable.DeserializeUnsigned(BinaryReader reader)
         {
             Version = reader.ReadUInt32();
             PrevHash = reader.ReadSerializable<UInt256>();
@@ -50,7 +64,7 @@ namespace AntShares.Network.Payloads
             Data = reader.ReadVarBytes();
         }
 
-        public override UInt160[] GetScriptHashesForVerifying()
+        UInt160[] ISignable.GetScriptHashesForVerifying()
         {
             if (Blockchain.Default == null)
                 throw new InvalidOperationException();
@@ -59,16 +73,16 @@ namespace AntShares.Network.Payloads
             ECPoint[] miners = Blockchain.Default.GetMiners();
             if (miners.Length <= MinerIndex)
                 throw new InvalidOperationException();
-            return new[] { SignatureContract.Create(miners[MinerIndex]).ScriptHash };
+            return new[] { Contract.CreateSignatureContract(miners[MinerIndex]).ScriptHash };
         }
 
-        public override void Serialize(BinaryWriter writer)
+        void ISerializable.Serialize(BinaryWriter writer)
         {
             ((ISignable)this).SerializeUnsigned(writer);
             writer.Write((byte)1); writer.Write(Script);
         }
 
-        public override void SerializeUnsigned(BinaryWriter writer)
+        void ISignable.SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write(Version);
             writer.Write(PrevHash);
@@ -78,7 +92,7 @@ namespace AntShares.Network.Payloads
             writer.WriteVarBytes(Data);
         }
 
-        public override bool Verify()
+        public bool Verify()
         {
             if (Blockchain.Default == null) return false;
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))

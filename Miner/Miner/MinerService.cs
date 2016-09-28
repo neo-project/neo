@@ -75,7 +75,7 @@ namespace AntShares.Miner
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 Log($"{nameof(CheckSignatures)} {context.Signatures.Count(p => p != null)}/{context.M}");
-                Contract contract = MultiSigContract.Create(context.Miners[context.MinerIndex].EncodePoint(true).ToScriptHash(), context.M, context.Miners);
+                Contract contract = Contract.CreateMultiSigContract(context.Miners[context.MinerIndex].EncodePoint(true).ToScriptHash(), context.M, context.Miners);
                 Block block = context.MakeHeader();
                 SignatureContext sc = new SignatureContext(block);
                 for (int i = 0; i < context.Miners.Length; i++)
@@ -148,7 +148,7 @@ namespace AntShares.Miner
             }
         }
 
-        private void LocalNode_NewInventory(object sender, Inventory inventory)
+        private void LocalNode_NewInventory(object sender, IInventory inventory)
         {
             ConsensusPayload payload = inventory as ConsensusPayload;
             if (payload != null)

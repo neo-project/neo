@@ -21,20 +21,21 @@ Antshares is a decentralized and distributed network protocol which is based on 
 
 在 Windows 下，使用 [Visual Studio 2015](https://www.visualstudio.com/products/visual-studio-community-vs) 来开发和编译本项目是最方便的。
 
-在 Linux 或 MAC OS 下，可以使用任何你喜欢的开发工具来开发，然后使用 [.Net Core SDK](http://dotnet.github.io/getting-started/) 来生成项目。
+在 Linux 或 MAC OS 下，可以使用任何你喜欢的开发工具来开发，然后使用 [.Net Core SDK](https://www.microsoft.com/net/core) 来生成项目。
 
 此外，你还可以通过调用 API 或者 SDK 的方式来开发基于小蚁的应用：
 
 + [JSON-RPC](https://github.com/AntShares/AntShares/wiki/API%E5%8F%82%E8%80%83)
 + [C# SDK](https://github.com/AntShares/AntShares/tree/master/AntSharesCore)
++ [JAVA SDK](https://github.com/AntSharesSDK/antshares-java)
 + [JavaScript/TypeScript SDK](https://github.com/AntSharesSDK/antshares-ts)
 
 项目介绍
 --------
 
-+ [白皮书](http://t.cn/Ry4MgXn)
-+ [共识机制](http://www.onchain.com/paper/66c6773b.pdf)
-+ [部署文档](https://github.com/AntShares/AntShares/wiki/%E8%AE%B0%E8%B4%A6%E8%8A%82%E7%82%B9)
++ 白皮书：[中文](https://github.com/AntShares/AntShares/wiki/%E7%99%BD%E7%9A%AE%E4%B9%A6-1.1)|[English](https://github.com/AntShares/AntShares/wiki/Whitepaper-1.1)
++ 共识机制：[dBFT](http://www.onchain.com/paper/66c6773b.pdf)
++ 部署文档：[记账节点](https://github.com/AntShares/AntShares/wiki/%E8%AE%B0%E8%B4%A6%E8%8A%82%E7%82%B9)
 
 如何贡献
 --------
@@ -59,7 +60,9 @@ Antshares is a decentralized and distributed network protocol which is based on 
 联系我们
 ------------
 
-官网：https://www.antshares.com/
+[![Join the chat at https://gitter.im/AntShares/Lobby](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/AntShares/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+官网：https://www.antshares.org/
 
 论坛：http://8btc.com/antshares
 

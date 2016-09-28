@@ -33,15 +33,15 @@
 
         // Flow control
         OP_NOP = 0x61, // Does nothing.
-        OP_CALL = 0x62, // Call antshares API. Not available in bitcoin.
-        OP_IF = 0x63, // If the top stack value is not 0, the statements are executed. The top stack value is removed.
-        OP_NOTIF = 0x64, // If the top stack value is 0, the statements are executed. The top stack value is removed.
-        //OP_VERIF = 0x65, // Transaction is invalid even when occuring in an unexecuted OP_IF branch
-        //OP_VERNOTIF = 0x66, // Transaction is invalid even when occuring in an unexecuted OP_IF branch
-        OP_ELSE = 0x67, // If the preceding OP_IF or OP_NOTIF or OP_ELSE was not executed then these statements are and if the preceding OP_IF or OP_NOTIF or OP_ELSE was executed then these statements are not.
-        OP_ENDIF = 0x68, // Ends an if/else block.
+        OP_JMP = 0x62,
+        OP_JMPIF = 0x63,
+        OP_JMPIFNOT = 0x64,
+        OP_CALL = 0x65,
+        OP_RET = 0x66,
+        OP_APPCALL = 0x67,
+        OP_SYSCALL = 0x68,
         OP_VERIFY = 0x69, // Marks transaction as invalid if top stack value is not true. True is removed, but false is not.
-        OP_RETURN = 0x6A, // Marks transaction as invalid.
+        OP_HALT = 0x6A, // Marks transaction as invalid.
 
 
         // Stack
@@ -80,7 +80,7 @@
         OP_OR = 0x85, // Boolean or between each bit in the inputs.
         OP_XOR = 0x86, // Boolean exclusive or between each bit in the inputs.
         OP_EQUAL = 0x87, // Returns 1 if the inputs are exactly equal, 0 otherwise.
-        OP_EQUALVERIFY = 0x88, // Same as OP_EQUAL, but runs OP_VERIFY afterward.
+        //OP_EQUALVERIFY = 0x88, // Same as OP_EQUAL, but runs OP_VERIFY afterward.
         //OP_RESERVED1 = 0x89, // Transaction is invalid unless occuring in an unexecuted OP_IF branch
         //OP_RESERVED2 = 0x8A, // Transaction is invalid unless occuring in an unexecuted OP_IF branch
 
@@ -104,7 +104,7 @@
         OP_BOOLAND = 0x9A, // If both a and b are not 0, the output is 1. Otherwise 0.
         OP_BOOLOR = 0x9B, // If a or b is not 0, the output is 1. Otherwise 0.
         OP_NUMEQUAL = 0x9C, // Returns 1 if the numbers are equal, 0 otherwise.
-        OP_NUMEQUALVERIFY = 0x9D, // Same as OP_NUMEQUAL, but runs OP_VERIFY afterward.
+        //OP_NUMEQUALVERIFY = 0x9D, // Same as OP_NUMEQUAL, but runs OP_VERIFY afterward.
         OP_NUMNOTEQUAL = 0x9E, // Returns 1 if the numbers are not equal, 0 otherwise.
         OP_LESSTHAN = 0x9F, // Returns 1 if a is less than b, 0 otherwise.
         OP_GREATERTHAN = 0xA0, // Returns 1 if a is greater than b, 0 otherwise.
@@ -123,12 +123,9 @@
         OP_HASH256 = 0xAA, // The input is hashed two times with SHA-256.
         //OP_CODESEPARATOR = 0xAB, // All of the signature checking words will only match signatures to the data after the most recently-executed OP_CODESEPARATOR.
         OP_CHECKSIG = 0xAC, // The entire transaction's outputs, inputs, and script (from the most recently-executed OP_CODESEPARATOR to the end) are hashed. The signature used by OP_CHECKSIG must be a valid signature for this hash and public key. If it is, 1 is returned, 0 otherwise.
-        OP_CHECKSIGVERIFY = 0xAD, // Same as OP_CHECKSIG, but OP_VERIFY is executed afterward.
+        //OP_CHECKSIGVERIFY = 0xAD, // Same as OP_CHECKSIG, but OP_VERIFY is executed afterward.
         OP_CHECKMULTISIG = 0xAE, // For each signature and public key pair, OP_CHECKSIG is executed. If more public keys than signatures are listed, some key/sig pairs can fail. All signatures need to match a public key. If all signatures are valid, 1 is returned, 0 otherwise. Due to a bug, one extra unused value is removed from the stack.
-        OP_CHECKMULTISIGVERIFY = 0xAF, // Same as OP_CHECKMULTISIG, but OP_VERIFY is executed afterward.
-
-
-        //OP_EVAL = 0xB0, // see BIP12. Currently disabled.
+        //OP_CHECKMULTISIGVERIFY = 0xAF, // Same as OP_CHECKMULTISIG, but OP_VERIFY is executed afterward.
 
 
         // Array

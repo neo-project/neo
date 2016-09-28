@@ -1,6 +1,6 @@
-﻿using System;
+﻿using AntShares.Network;
+using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace AntShares.Core
@@ -10,11 +10,6 @@ namespace AntShares.Core
     /// </summary>
     public class IssueTransaction : Transaction
     {
-        /// <summary>
-        /// 随机数
-        /// </summary>
-        public uint Nonce;
-
         /// <summary>
         /// 系统费用
         /// </summary>
@@ -38,15 +33,6 @@ namespace AntShares.Core
         }
 
         /// <summary>
-        /// 反序列化交易中的额外数据
-        /// </summary>
-        /// <param name="reader">数据来源</param>
-        protected override void DeserializeExclusiveData(BinaryReader reader)
-        {
-            this.Nonce = reader.ReadUInt32();
-        }
-
-        /// <summary>
         /// 获取需要校验的脚本散列值
         /// </summary>
         /// <returns>返回需要校验的脚本散列值</returns>
@@ -63,19 +49,15 @@ namespace AntShares.Core
         }
 
         /// <summary>
-        /// 序列化交易中的额外数据
-        /// </summary>
-        /// <param name="writer">存放序列化后的结果</param>
-        protected override void SerializeExclusiveData(BinaryWriter writer)
-        {
-            writer.Write(Nonce);
-        }
-
-        /// <summary>
         /// 验证交易
         /// </summary>
         /// <returns>返回验证后的结果</returns>
         public override bool Verify()
+        {
+            return Verify(false);
+        }
+
+        internal bool Verify(bool mempool)
         {
             if (!base.Verify()) return false;
             TransactionResult[] results = GetTransactionResults()?.Where(p => p.Amount < Fixed8.Zero).ToArray();
@@ -87,7 +69,9 @@ namespace AntShares.Core
                 if (tx.Amount < Fixed8.Zero) continue;
                 if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.Statistics))
                     return false;
-                Fixed8 quantity_issued = Blockchain.Default.GetQuantityIssued(r.AssetId); //TODO: 已发行量是否应考虑内存池内未被写入区块链的交易，以防止“双重发行”
+                Fixed8 quantity_issued = Blockchain.Default.GetQuantityIssued(r.AssetId);
+                if (mempool)
+                    quantity_issued += LocalNode.GetMemoryPool().OfType<IssueTransaction>().SelectMany(p => p.Outputs).Where(p => p.AssetId == r.AssetId).Sum(p => p.Value);
                 if (tx.Amount - quantity_issued < -r.Amount) return false;
             }
             return true;

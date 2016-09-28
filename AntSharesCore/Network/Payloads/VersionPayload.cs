@@ -14,6 +14,7 @@ namespace AntShares.Network.Payloads
         public uint Nonce;
         public string UserAgent;
         public uint StartHeight;
+        public bool Relay;
 
         public static VersionPayload Create(int port, uint nonce, string userAgent)
         {
@@ -25,7 +26,8 @@ namespace AntShares.Network.Payloads
                 Port = (ushort)port,
                 Nonce = nonce,
                 UserAgent = userAgent,
-                StartHeight = Blockchain.Default?.Height ?? 0
+                StartHeight = Blockchain.Default?.Height ?? 0,
+                Relay = true
             };
         }
 

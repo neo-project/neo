@@ -2,9 +2,7 @@
   "copyright": "? AntShares Project 2015 Released under the MIT license",
   "title": "AntShares",
   "version": "0.7.0-*",
-  "buildOptions": {
-    "define": [ "TESTNET" ]
-  },
+  "buildOptions": { "allowUnsafe": true },
 
   "dependencies": {
     "Microsoft.EntityFrameworkCore.Sqlite": "1.0.0",
@@ -15,7 +13,6 @@
 
   "frameworks": {
     "netstandard1.6": {
-      "buildOptions": { "allowUnsafe": true },
       "dependencies": {
         "NETStandard.Library": "1.6.0",
         "System.Data.Common": "4.1.0",

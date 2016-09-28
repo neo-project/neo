@@ -21,7 +21,7 @@ namespace AntShares.UI
 {
     internal partial class MainForm : Form
     {
-        private static readonly UInt160 RecycleScriptHash = new byte[] { (byte)ScriptOp.OP_DUP, (byte)ScriptOp.OP_HASH160, (byte)ScriptOp.OP_CALL, (byte)InterfaceOp.CHAIN_HEIGHT, (byte)ScriptOp.OP_CALL, (byte)InterfaceOp.CHAIN_GETHEADER, (byte)ScriptOp.OP_TOALTSTACK, (byte)ScriptOp.OP_CALL, (byte)InterfaceOp.HEADER_NEXTMINER, (byte)ScriptOp.OP_EQUALVERIFY, 0xB0/*OP_EVAL*/ }.ToScriptHash();
+        private static readonly UInt160 RecycleScriptHash = new[] { (byte)ScriptOp.OP_TRUE }.ToScriptHash();
         private bool balance_changed = false;
         private DateTime persistence_time = DateTime.MinValue;
 
@@ -116,7 +116,15 @@ namespace AntShares.UI
                             {
                                 Name = "confirmations",
                                 Text = "未确认"
+                            },
+                            //add transaction type to list by phinx
+                            new ListViewItem.ListViewSubItem
+                            {
+                                Name = "txtype",
+                                Text = info.Transaction.Type.ToString()
                             }
+                            //end
+
                         }, -1)
                         {
                             Name = txid,
@@ -382,7 +390,7 @@ namespace AntShares.UI
 
         private void 官网WToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start("https://www.antshares.com/");
+            Process.Start("https://www.antshares.org/");
         }
 
         private void 开发人员工具TToolStripMenuItem_Click(object sender, EventArgs e)
@@ -445,7 +453,7 @@ namespace AntShares.UI
             using (CreateMultiSigContractDialog dialog = new CreateMultiSigContractDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                MultiSigContract contract = dialog.GetContract();
+                Contract contract = dialog.GetContract();
                 if (contract == null)
                 {
                     MessageBox.Show("无法添加智能合约，因为当前钱包中不包含签署该合约的私钥。");
@@ -462,7 +470,7 @@ namespace AntShares.UI
             using (ImportCustomContractDialog dialog = new ImportCustomContractDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                CustomContract contract = dialog.GetContract();
+                Contract contract = dialog.GetContract();
                 Program.CurrentWallet.AddContract(contract);
                 listView1.SelectedIndices.Clear();
                 AddContractToListView(contract, true);
@@ -524,6 +532,12 @@ namespace AntShares.UI
                 }).ToArray()
             }, Fixed8.Zero);
             Helper.SignAndShowInformation(tx);
+        }
+
+        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            if (listView3.SelectedItems.Count == 0) return;
+            Clipboard.SetDataObject(listView3.SelectedItems[0].SubItems[1].Text);
         }
     }
 }

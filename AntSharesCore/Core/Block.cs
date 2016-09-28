@@ -3,7 +3,6 @@ using AntShares.Cryptography;
 using AntShares.IO;
 using AntShares.IO.Json;
 using AntShares.Network;
-using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,57 +13,24 @@ namespace AntShares.Core
     /// <summary>
     /// 区块或区块头
     /// </summary>
-    public class Block : Inventory, IEquatable<Block>
+    public class Block : BlockBase, IInventory, IEquatable<Block>
     {
         /// <summary>
-        /// 区块版本
-        /// </summary>
-        public uint Version;
-        /// <summary>
-        /// 前一个区块的散列值
-        /// </summary>
-        public UInt256 PrevBlock;
-        /// <summary>
-        /// 该区块中所有交易的Merkle树的根
-        /// </summary>
-        public UInt256 MerkleRoot;
-        /// <summary>
-        /// 时间戳
-        /// </summary>
-        public uint Timestamp;
-        /// <summary>
-        /// 区块高度
-        /// </summary>
-        public uint Height;
-        /// <summary>
-        /// 随机数
-        /// </summary>
-        public ulong Nonce;
-        /// <summary>
-        /// 下一个区块的记账合约的散列值
-        /// </summary>
-        public UInt160 NextMiner;
-        /// <summary>
-        /// 用于验证该区块的脚本
-        /// </summary>
-        public Script Script;
-        /// <summary>
-        /// 交易列表，当列表中交易的数量为0时，该Block对象表示一个区块头
+        /// 交易列表
         /// </summary>
         public Transaction[] Transactions;
 
-        private Block _header = null;
+        private Header _header = null;
         /// <summary>
         /// 该区块的区块头
         /// </summary>
-        public Block Header
+        public Header Header
         {
             get
             {
-                if (IsHeader) return this;
                 if (_header == null)
                 {
-                    _header = new Block
+                    _header = new Header
                     {
                         PrevBlock = PrevBlock,
                         MerkleRoot = MerkleRoot,
@@ -72,8 +38,7 @@ namespace AntShares.Core
                         Height = Height,
                         Nonce = Nonce,
                         NextMiner = NextMiner,
-                        Script = Script,
-                        Transactions = new Transaction[0]
+                        Script = Script
                     };
                 }
                 return _header;
@@ -83,25 +48,7 @@ namespace AntShares.Core
         /// <summary>
         /// 资产清单的类型
         /// </summary>
-        public override InventoryType InventoryType => InventoryType.Block;
-
-        public override Script[] Scripts
-        {
-            get
-            {
-                return new[] { Script };
-            }
-            set
-            {
-                if (value.Length != 1) throw new ArgumentException();
-                Script = value[0];
-            }
-        }
-
-        /// <summary>
-        /// 返回当前Block对象是否为区块头
-        /// </summary>
-        public bool IsHeader => Transactions.Length == 0;
+        InventoryType IInventory.InventoryType => InventoryType.Block;
 
         public static Fixed8 CalculateNetFee(IEnumerable<Transaction> transactions)
         {
@@ -118,33 +65,17 @@ namespace AntShares.Core
         /// <param name="reader">数据来源</param>
         public override void Deserialize(BinaryReader reader)
         {
-            ((ISignable)this).DeserializeUnsigned(reader);
-            if (reader.ReadByte() != 1) throw new FormatException();
-            Script = reader.ReadSerializable<Script>();
+            base.Deserialize(reader);
             Transactions = new Transaction[reader.ReadVarInt(0x10000000)];
+            if (Transactions.Length == 0) throw new FormatException();
             for (int i = 0; i < Transactions.Length; i++)
             {
                 Transactions[i] = Transaction.DeserializeFrom(reader);
             }
-            if (Transactions.Length > 0)
-            {
-                if (Transactions[0].Type != TransactionType.MinerTransaction || Transactions.Skip(1).Any(p => p.Type == TransactionType.MinerTransaction))
-                    throw new FormatException();
-                if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
-                    throw new FormatException();
-            }
-        }
-
-        public override void DeserializeUnsigned(BinaryReader reader)
-        {
-            Version = reader.ReadUInt32();
-            PrevBlock = reader.ReadSerializable<UInt256>();
-            MerkleRoot = reader.ReadSerializable<UInt256>();
-            Timestamp = reader.ReadUInt32();
-            Height = reader.ReadUInt32();
-            Nonce = reader.ReadUInt64();
-            NextMiner = reader.ReadSerializable<UInt160>();
-            Transactions = new Transaction[0];
+            if (Transactions[0].Type != TransactionType.MinerTransaction || Transactions.Skip(1).Any(p => p.Type == TransactionType.MinerTransaction))
+                throw new FormatException();
+            if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
+                throw new FormatException();
         }
 
         /// <summary>
@@ -169,7 +100,7 @@ namespace AntShares.Core
             return Equals(obj as Block);
         }
 
-        public static Block FromTrimmedData(byte[] data, int index, Func<UInt256, Transaction> txSelector = null)
+        public static Block FromTrimmedData(byte[] data, int index, Func<UInt256, Transaction> txSelector)
         {
             Block block = new Block();
             using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
@@ -177,17 +108,10 @@ namespace AntShares.Core
             {
                 ((ISignable)block).DeserializeUnsigned(reader);
                 reader.ReadByte(); block.Script = reader.ReadSerializable<Script>();
-                if (txSelector == null)
+                block.Transactions = new Transaction[reader.ReadVarInt(0x10000000)];
+                for (int i = 0; i < block.Transactions.Length; i++)
                 {
-                    block.Transactions = new Transaction[0];
-                }
-                else
-                {
-                    block.Transactions = new Transaction[reader.ReadVarInt(0x10000000)];
-                    for (int i = 0; i < block.Transactions.Length; i++)
-                    {
-                        block.Transactions[i] = txSelector(reader.ReadSerializable<UInt256>());
-                    }
+                    block.Transactions[i] = txSelector(reader.ReadSerializable<UInt256>());
                 }
             }
             return block;
@@ -200,15 +124,6 @@ namespace AntShares.Core
         public override int GetHashCode()
         {
             return Hash.GetHashCode();
-        }
-
-        public override UInt160[] GetScriptHashesForVerifying()
-        {
-            if (PrevBlock == UInt256.Zero)
-                return new[] { Script.RedeemScript.ToScriptHash() };
-            Block prev_header = Blockchain.Default.GetHeader(PrevBlock);
-            if (prev_header == null) throw new InvalidOperationException();
-            return new UInt160[] { prev_header.NextMiner };
         }
 
         /// <summary>
@@ -225,38 +140,17 @@ namespace AntShares.Core
         /// <param name="writer">存放序列化后的数据</param>
         public override void Serialize(BinaryWriter writer)
         {
-            ((ISignable)this).SerializeUnsigned(writer);
-            writer.Write((byte)1); writer.Write(Script);
+            base.Serialize(writer);
             writer.Write(Transactions);
-        }
-
-        public override void SerializeUnsigned(BinaryWriter writer)
-        {
-            writer.Write(Version);
-            writer.Write(PrevBlock);
-            writer.Write(MerkleRoot);
-            writer.Write(Timestamp);
-            writer.Write(Height);
-            writer.Write(Nonce);
-            writer.Write(NextMiner);
         }
 
         /// <summary>
         /// 变成json对象
         /// </summary>
         /// <returns>返回json对象</returns>
-        public JObject ToJson()
+        public override JObject ToJson()
         {
-            JObject json = new JObject();
-            json["hash"] = Hash.ToString();
-            json["version"] = Version;
-            json["previousblockhash"] = PrevBlock.ToString();
-            json["merkleroot"] = MerkleRoot.ToString();
-            json["time"] = Timestamp;
-            json["height"] = Height;
-            json["nonce"] = Nonce.ToString("x16");
-            json["nextminer"] = Wallet.ToAddress(NextMiner);
-            json["script"] = Script.ToJson();
+            JObject json = base.ToJson();
             json["tx"] = Transactions.Select(p => p.ToJson()).ToArray();
             return json;
         }
@@ -279,31 +173,13 @@ namespace AntShares.Core
         }
 
         /// <summary>
-        /// 验证该区块头是否合法
-        /// </summary>
-        /// <returns>返回该区块头的合法性，返回true即为合法，否则，非法。</returns>
-        public override bool Verify()
-        {
-            return Verify(false);
-        }
-
-        /// <summary>
-        /// 验证该区块头是否合法
+        /// 验证该区块是否合法
         /// </summary>
         /// <param name="completely">是否同时验证区块中的每一笔交易</param>
-        /// <returns>返回该区块头的合法性，返回true即为合法，否则，非法。</returns>
+        /// <returns>返回该区块的合法性，返回true即为合法，否则，非法。</returns>
         public bool Verify(bool completely)
         {
-            if (Hash == Blockchain.GenesisBlock.Hash) return true;
-            if (Blockchain.Default.ContainsBlock(Hash)) return true;
-            if (completely && IsHeader) return false;
-            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
-                return false;
-            Block prev_header = Blockchain.Default.GetHeader(PrevBlock);
-            if (prev_header == null) return false;
-            if (prev_header.Height + 1 != Height) return false;
-            if (prev_header.Timestamp >= Timestamp) return false;
-            if (!this.VerifySignature()) return false;
+            if (!Verify()) return false;
             if (completely)
             {
                 if (NextMiner != Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(Transactions).ToArray()))

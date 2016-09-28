@@ -30,12 +30,12 @@ namespace AntShares.UI
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            Process.Start("https://www.antshares.com/");
+            Process.Start("https://www.antshares.org/");
         }
 
         private void linkLabel2_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            Process.Start($"https://www.antshares.com/client/{latest}.zip");
+            Process.Start($"https://www.antshares.org/client/{latest}.zip");
         }
     }
 }

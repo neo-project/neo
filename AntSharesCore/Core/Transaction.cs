@@ -1,4 +1,5 @@
 ﻿using AntShares.Core.Scripts;
+using AntShares.Cryptography;
 using AntShares.IO;
 using AntShares.IO.Json;
 using AntShares.Network;
@@ -14,12 +15,16 @@ namespace AntShares.Core
     /// <summary>
     /// 一切交易的基类
     /// </summary>
-    public abstract class Transaction : Inventory
+    public abstract class Transaction : IInventory
     {
         /// <summary>
         /// 交易类型
         /// </summary>
         public readonly TransactionType Type;
+        /// <summary>
+        /// 版本
+        /// </summary>
+        public const byte Version = 0;
         /// <summary>
         /// 该交易所具备的额外特性
         /// </summary>
@@ -35,12 +40,25 @@ namespace AntShares.Core
         /// <summary>
         /// 用于验证该交易的脚本列表
         /// </summary>
-        public override Script[] Scripts { get; set; }
+        public Script[] Scripts { get; set; }
+
+        private UInt256 _hash = null;
+        public UInt256 Hash
+        {
+            get
+            {
+                if (_hash == null)
+                {
+                    _hash = new UInt256(this.GetHashData().Sha256().Sha256());
+                }
+                return _hash;
+            }
+        }
 
         /// <summary>
         /// 清单类型
         /// </summary>
-        public sealed override InventoryType InventoryType => InventoryType.TX;
+        InventoryType IInventory.InventoryType => InventoryType.TX;
 
         private IReadOnlyDictionary<TransactionInput, TransactionOutput> _references;
         /// <summary>
@@ -90,7 +108,7 @@ namespace AntShares.Core
         /// 反序列化
         /// </summary>
         /// <param name="reader">数据来源</param>
-        public override void Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(BinaryReader reader)
         {
             ((ISignable)this).DeserializeUnsigned(reader);
             Scripts = reader.ReadSerializableArray<Script>();
@@ -136,7 +154,7 @@ namespace AntShares.Core
             return transaction;
         }
 
-        public override void DeserializeUnsigned(BinaryReader reader)
+        void ISignable.DeserializeUnsigned(BinaryReader reader)
         {
             if ((TransactionType)reader.ReadByte() != Type)
                 throw new FormatException();
@@ -145,6 +163,8 @@ namespace AntShares.Core
 
         private void DeserializeUnsignedWithoutType(BinaryReader reader)
         {
+            if (reader.ReadByte() != Version)
+                throw new FormatException();
             DeserializeExclusiveData(reader);
             Attributes = reader.ReadSerializableArray<TransactionAttribute>();
             if (Attributes.Select(p => p.Usage).Distinct().Count() != Attributes.Length)
@@ -158,10 +178,6 @@ namespace AntShares.Core
             Outputs = reader.ReadSerializableArray<TransactionOutput>();
             if (Outputs.Length > ushort.MaxValue + 1)
                 throw new FormatException();
-            if (Blockchain.AntShare != null)
-                foreach (TransactionOutput output in Outputs.Where(p => p.AssetId == Blockchain.AntShare.Hash))
-                    if (output.Value.GetData() % 100000000 != 0)
-                        throw new FormatException();
         }
 
         public bool Equals(Transaction other)
@@ -194,7 +210,7 @@ namespace AntShares.Core
         /// 获取需要校验的脚本散列值
         /// </summary>
         /// <returns>返回需要校验的脚本散列值</returns>
-        public override UInt160[] GetScriptHashesForVerifying()
+        public virtual UInt160[] GetScriptHashesForVerifying()
         {
             if (References == null) throw new InvalidOperationException();
             HashSet<UInt160> hashes = new HashSet<UInt160>(Inputs.Select(p => References[p].ScriptHash));
@@ -243,7 +259,7 @@ namespace AntShares.Core
         /// 序列化
         /// </summary>
         /// <param name="writer">存放序列化后的结果</param>
-        public override void Serialize(BinaryWriter writer)
+        void ISerializable.Serialize(BinaryWriter writer)
         {
             ((ISignable)this).SerializeUnsigned(writer);
             writer.Write(Scripts);
@@ -257,9 +273,10 @@ namespace AntShares.Core
         {
         }
 
-        public override void SerializeUnsigned(BinaryWriter writer)
+        void ISignable.SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write((byte)Type);
+            writer.Write(Version);
             SerializeExclusiveData(writer);
             writer.Write(Attributes);
             writer.Write(Inputs);
@@ -274,11 +291,10 @@ namespace AntShares.Core
         {
             JObject json = new JObject();
             json["txid"] = Hash.ToString();
-            json["hex"] = this.ToArray().ToHexString();
             json["type"] = Type;
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["vin"] = Inputs.Select(p => p.ToJson()).ToArray();
-            json["vout"] = Outputs.IndexedSelect((p, i) => p.ToJson((ushort)i)).ToArray();
+            json["vout"] = Outputs.Select((p, i) => p.ToJson((ushort)i)).ToArray();
             json["scripts"] = Scripts.Select(p => p.ToJson()).ToArray();
             return json;
         }
@@ -287,16 +303,21 @@ namespace AntShares.Core
         /// 验证交易
         /// </summary>
         /// <returns>返回验证的结果</returns>
-        public override bool Verify()
+        public virtual bool Verify()
         {
             if (Blockchain.Default.ContainsTransaction(Hash)) return true;
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes))
                 return false;
             if (Blockchain.Default.IsDoubleSpend(this))
                 return false;
-            foreach (UInt256 hash in Outputs.Select(p => p.AssetId).Distinct())
-                if (!Blockchain.Default.ContainsAsset(hash))
-                    return false;
+            foreach (var group in Outputs.GroupBy(p => p.AssetId))
+            {
+                RegisterTransaction asset = Blockchain.Default.GetTransaction(group.Key) as RegisterTransaction;
+                if (asset == null) return false;
+                foreach (TransactionOutput output in group)
+                    if (output.Value.GetData() % (long)Math.Pow(10, 8 - asset.Precision) != 0)
+                        return false;
+            }
             TransactionResult[] results = GetTransactionResults()?.ToArray();
             if (results == null) return false;
             TransactionResult[] results_destroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
@@ -329,7 +350,7 @@ namespace AntShares.Core
                 {
                     StackScript = new byte[0],
                     RedeemScript = script.Data
-                }, this);
+                }, this, InterfaceEngine.Default);
                 if (!engine.Execute()) return false;
             }
             return this.VerifySignature();

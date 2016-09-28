@@ -32,7 +32,7 @@ namespace AntShares.UI
         {
             SignatureContext context = SignatureContext.Parse(textBox1.Text);
             context.Signable.Scripts = context.GetScripts();
-            Inventory inventory = (Inventory)context.Signable;
+            IInventory inventory = (IInventory)context.Signable;
             Program.LocalNode.Relay(inventory);
             InformationBox.Show(inventory.Hash.ToString(), "数据广播成功，这是广播数据的散列值：", "广播成功");
         }

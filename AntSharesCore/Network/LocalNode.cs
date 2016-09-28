@@ -17,7 +17,8 @@ namespace AntShares.Network
 {
     public class LocalNode : IDisposable
     {
-        public static event EventHandler<Inventory> NewInventory;
+        public static event EventHandler<AddingTransactionEventArgs> AddingTransaction;
+        public static event EventHandler<IInventory> NewInventory;
 
         public const uint PROTOCOL_VERSION = 0;
         private const int CONNECTED_MAX = 10;
@@ -105,7 +106,7 @@ namespace AntShares.Network
             }
         }
 
-        private static bool AddTransaction(Transaction tx)
+        private bool AddTransaction(Transaction tx)
         {
             if (Blockchain.Default == null) return false;
             lock (MemoryPool)
@@ -114,9 +115,19 @@ namespace AntShares.Network
                 if (MemoryPool.Values.SelectMany(p => p.GetAllInputs()).Intersect(tx.GetAllInputs()).Count() > 0)
                     return false;
                 if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
-                if (!tx.Verify()) return false;
-                MemoryPool.Add(tx.Hash, tx);
-                return true;
+                if (tx is IssueTransaction)
+                {
+                    IssueTransaction issue = (IssueTransaction)tx;
+                    if (!issue.Verify(true)) return false;
+                }
+                else
+                {
+                    if (!tx.Verify()) return false;
+                }
+                AddingTransactionEventArgs args = new AddingTransactionEventArgs(tx);
+                AddingTransaction?.Invoke(this, args);
+                if (!args.Cancel) MemoryPool.Add(tx.Hash, tx);
+                return !args.Cancel;
             }
         }
 
@@ -151,17 +162,25 @@ namespace AntShares.Network
 
         public async Task ConnectToPeerAsync(string hostNameOrAddress)
         {
-            IPHostEntry entry;
-            try
+            IPAddress ipAddress;
+            if (IPAddress.TryParse(hostNameOrAddress, out ipAddress))
             {
-                entry = await Dns.GetHostEntryAsync(hostNameOrAddress);
+                ipAddress = ipAddress.MapToIPv6();
             }
-            catch (SocketException)
+            else
             {
-                return;
+                IPHostEntry entry;
+                try
+                {
+                    entry = await Dns.GetHostEntryAsync(hostNameOrAddress);
+                }
+                catch (SocketException)
+                {
+                    return;
+                }
+                ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo)?.MapToIPv6();
+                if (ipAddress == null) return;
             }
-            IPAddress ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo)?.MapToIPv6();
-            if (ipAddress == null) return;
             await ConnectToPeerAsync(new IPEndPoint(ipAddress, DEFAULT_PORT));
         }
 
@@ -306,9 +325,8 @@ namespace AntShares.Network
             }
         }
 
-        public bool Relay(Inventory inventory)
+        public bool Relay(IInventory inventory)
         {
-            if (connectedPeers.Count == 0) return false;
             lock (KnownHashes)
             {
                 if (!KnownHashes.Add(inventory.Hash)) return false;
@@ -328,15 +346,15 @@ namespace AntShares.Network
             {
                 if (!inventory.Verify()) return false;
             }
+            bool relayed = false;
             lock (connectedPeers)
             {
-                if (connectedPeers.Count == 0) return false;
                 RelayCache.Add(inventory);
                 foreach (RemoteNode node in connectedPeers)
-                    node.Relay(inventory);
+                    relayed |= node.Relay(inventory);
             }
             NewInventory?.Invoke(this, inventory);
-            return true;
+            return relayed;
         }
 
         private void RemoteNode_Disconnected(object sender, bool error)
@@ -369,7 +387,7 @@ namespace AntShares.Network
             }
         }
 
-        private void RemoteNode_InventoryReceived(object sender, Inventory inventory)
+        private void RemoteNode_InventoryReceived(object sender, IInventory inventory)
         {
             Relay(inventory);
         }

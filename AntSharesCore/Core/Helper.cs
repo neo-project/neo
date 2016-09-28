@@ -14,6 +14,17 @@ namespace AntShares.Core
     /// </summary>
     public static class Helper
     {
+        public static byte[] GetHashData(this ISignable signable)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms))
+            {
+                signable.SerializeUnsigned(writer);
+                writer.Flush();
+                return ms.ToArray();
+            }
+        }
+
         /// <summary>
         /// 获取需要签名的散列值
         /// </summary>
@@ -90,7 +101,7 @@ namespace AntShares.Core
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (hashes[i] != signable.Scripts[i].RedeemScript.ToScriptHash()) return false;
-                ScriptEngine engine = new ScriptEngine(signable.Scripts[i], signable);
+                ScriptEngine engine = new ScriptEngine(signable.Scripts[i], signable, InterfaceEngine.Default);
                 if (!engine.Execute()) return false;
             }
             return true;

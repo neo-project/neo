@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AntShares.IO.Json;
+using System;
 using System.IO;
 using System.Linq;
 
@@ -47,6 +48,13 @@ namespace AntShares.Core
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(Nonce);
+        }
+
+        public override JObject ToJson()
+        {
+            JObject json = base.ToJson();
+            json["nonce"] = Nonce;
+            return json;
         }
     }
 }
