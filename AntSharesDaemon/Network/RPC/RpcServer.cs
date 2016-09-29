@@ -12,9 +12,9 @@ namespace AntShares.Network.RPC
     internal class RpcServer : IDisposable
     {
 #if TESTNET
-        public const int DEFAULT_PORT = 20332;
+        private const string DEFAULT_URI_PREFIX = "http://*:20332/";
 #else
-        public const int DEFAULT_PORT = 10332;
+        private const string DEFAULT_URI_PREFIX = "http://*:10332/";
 #endif
 
         private LocalNode localNode;
@@ -203,9 +203,9 @@ namespace AntShares.Network.RPC
             return response;
         }
 
-        public async void Start(string host = "*", int port = DEFAULT_PORT)
+        public async void Start(string uriPrefix = DEFAULT_URI_PREFIX)
         {
-            listener.Prefixes.Add($"http://{host}:{port}/");
+            listener.Prefixes.Add(uriPrefix);
             listener.Start();
             while (listener.IsListening)
             {
