@@ -29,6 +29,17 @@ namespace AntShares
 #endif
         }
 
+        internal static void Log(string message)
+        {
+            DateTime now = DateTime.Now;
+            string line = $"[{now.TimeOfDay:hh\\:mm\\:ss}] {message}";
+            Console.WriteLine(line);
+            string path = Path.Combine(AppContext.BaseDirectory, "Logs");
+            Directory.CreateDirectory(path);
+            path = Path.Combine(path, $"{now:yyyy-MM-dd}.log");
+            File.AppendAllLines(path, new[] { line });
+        }
+
         static void Main(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
