@@ -16,24 +16,24 @@
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x64\Debug\</OutputPath>
+    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\x64\Release\</OutputPath>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <OutputPath>bin\Release\</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Optimize>true</Optimize>
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="EntityFramework.Core, Version=7.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
@@ -46,10 +46,6 @@
     </Reference>
     <Reference Include="EntityFramework.Sqlite, Version=7.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.Sqlite.7.0.0-rc1-final\lib\net451\EntityFramework.Sqlite.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="LevelDB.Net, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\LevelDB.Net.1.2.1\lib\net40\LevelDB.Net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
@@ -157,10 +153,20 @@
     <Compile Include="Cryptography\MerkleTreeNode.cs" />
     <Compile Include="Cryptography\Murmur3.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\DataEntryPrefix.cs" />
+    <Compile Include="Implementations\Blockchains\LevelDB\DB.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\Helper.cs" />
+    <Compile Include="Implementations\Blockchains\LevelDB\Iterator.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\LevelDBBlockchain.cs" />
+    <Compile Include="Implementations\Blockchains\LevelDB\LevelDBException.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\MultiValueDictionary.cs" />
+    <Compile Include="Implementations\Blockchains\LevelDB\Native.cs" />
+    <Compile Include="Implementations\Blockchains\LevelDB\Options.cs" />
+    <Compile Include="Implementations\Blockchains\LevelDB\ReadOptions.cs" />
+    <Compile Include="Implementations\Blockchains\LevelDB\Slice.cs" />
     <Compile Include="Implementations\Blockchains\LevelDB\SliceBuilder.cs" />
+    <Compile Include="Implementations\Blockchains\LevelDB\Snapshot.cs" />
+    <Compile Include="Implementations\Blockchains\LevelDB\WriteBatch.cs" />
+    <Compile Include="Implementations\Blockchains\LevelDB\WriteOptions.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\Account.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\Contract.cs" />
     <Compile Include="Implementations\Wallets\EntityFramework\Key.cs" />

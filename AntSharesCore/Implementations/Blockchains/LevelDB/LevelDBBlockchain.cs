@@ -2,7 +2,6 @@
 using AntShares.Core.Scripts;
 using AntShares.IO;
 using AntShares.IO.Caching;
-using LevelDB;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -308,8 +307,9 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override Fixed8 GetQuantityIssued(UInt256 asset_id)
         {
-            Slice quantity = 0L;
-            db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset_id), out quantity);
+            Slice quantity;
+            if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(asset_id), out quantity))
+                quantity = 0L;
             return new Fixed8(quantity.ToInt64());
         }
 
@@ -485,21 +485,24 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             const int UnclaimedItemSize = sizeof(ushort) + sizeof(uint);
             MultiValueDictionary<UInt256, ushort> unspents = new MultiValueDictionary<UInt256, ushort>(p =>
             {
-                Slice value = new byte[0];
-                db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Unspent).Add(p), out value);
+                Slice value;
+                if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Unspent).Add(p), out value))
+                    value = new byte[0];
                 return new HashSet<ushort>(value.ToArray().GetUInt16Array());
             });
             MultiValueDictionary<UInt256, ushort, uint> unclaimed = new MultiValueDictionary<UInt256, ushort, uint>(p =>
             {
-                Slice value = new byte[0];
-                db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Unclaimed).Add(p), out value);
+                Slice value;
+                if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Unclaimed).Add(p), out value))
+                    value = new byte[0];
                 byte[] data = value.ToArray();
                 return Enumerable.Range(0, data.Length / UnclaimedItemSize).ToDictionary(i => BitConverter.ToUInt16(data, i * UnclaimedItemSize), i => BitConverter.ToUInt32(data, i * UnclaimedItemSize + sizeof(ushort)));
             });
             MultiValueDictionary<UInt256, ushort> unspent_votes = new MultiValueDictionary<UInt256, ushort>(p =>
             {
-                Slice value = new byte[0];
-                db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Vote).Add(p), out value);
+                Slice value;
+                if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Vote).Add(p), out value))
+                    value = new byte[0];
                 return new HashSet<ushort>(value.ToArray().GetUInt16Array());
             });
             Dictionary<UInt256, Fixed8> quantities = new Dictionary<UInt256, Fixed8>();
