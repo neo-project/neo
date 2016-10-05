@@ -1,7 +1,7 @@
 {
   "copyright": "? AntShares Project 2015 Released under the MIT license",
   "title": "AntShares",
-  "version": "0.7.0-*",
+  "version": "1.0-coreclr",
   "buildOptions": { "allowUnsafe": true },
 
   "dependencies": {

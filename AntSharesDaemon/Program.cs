@@ -4,7 +4,7 @@ using System.IO;
 
 namespace AntShares
 {
-    public class Program
+    static class Program
     {
 //        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
 //        {
@@ -29,7 +29,7 @@ namespace AntShares
 //#endif
 //        }
 
-        public static void Main(string[] args)
+        static void Main(string[] args)
         {
             //AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             new MainService().Run(args);

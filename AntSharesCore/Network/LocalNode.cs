@@ -30,7 +30,6 @@ namespace AntShares.Network
         public const int DEFAULT_PORT = 10333;
 #endif
 
-        //TODO: 需要搭建一批种子节点
         private static readonly string[] SeedList =
         {
             "seed1.antshares.org",

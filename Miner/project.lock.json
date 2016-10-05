@@ -2835,7 +2835,7 @@
           "lib/netstandard1.3/System.Xml.XPath.XmlDocument.dll": {}
         }
       },
-      "AntSharesCore/0.7.0": {
+      "AntSharesCore/1.0.0-coreclr": {
         "type": "project",
         "framework": ".NETStandard,Version=v1.6",
         "dependencies": {
@@ -2860,11 +2860,11 @@
           "netstandard1.6/AntSharesCore.dll": {}
         }
       },
-      "AntSharesDaemon/0.7.0": {
+      "AntSharesDaemon/1.0.0-coreclr": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v1.0",
         "dependencies": {
-          "AntSharesCore": "0.7.0",
+          "AntSharesCore": "1.0.0-coreclr",
           "Microsoft.AspNetCore.Server.Kestrel": "1.0.0",
           "Microsoft.NETCore.App": "1.0.1"
         },
@@ -8195,12 +8195,12 @@
         "ref/xamarinwatchos10/_._"
       ]
     },
-    "AntSharesCore/0.7.0": {
+    "AntSharesCore/1.0.0-coreclr": {
       "type": "project",
       "path": "../AntSharesCore/project.json",
       "msbuildProject": "../AntSharesCore/AntSharesCore.xproj"
     },
-    "AntSharesDaemon/0.7.0": {
+    "AntSharesDaemon/1.0.0-coreclr": {
       "type": "project",
       "path": "../AntSharesDaemon/project.json",
       "msbuildProject": "../AntSharesDaemon/AntSharesDaemon.xproj"
@@ -8208,8 +8208,8 @@
   },
   "projectFileDependencyGroups": {
     "": [
-      "AntSharesCore >= 0.7.0-*",
-      "AntSharesDaemon >= 0.7.0-*",
+      "AntSharesCore >= 1.0.0-coreclr",
+      "AntSharesDaemon >= 1.0.0-coreclr",
       "Microsoft.NETCore.App >= 1.0.1"
     ],
     ".NETCoreApp,Version=v1.0": []

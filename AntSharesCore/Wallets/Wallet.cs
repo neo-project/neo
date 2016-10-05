@@ -480,6 +480,18 @@ namespace AntShares.Wallets
             return account;
         }
 
+        protected bool IsWalletTransaction(Transaction tx)
+        {
+            lock (contracts)
+            {
+                if (tx.Outputs.Any(p => contracts.ContainsKey(p.ScriptHash)))
+                    return true;
+                if (tx.Scripts.Any(p => contracts.ContainsKey(p.RedeemScript.ToScriptHash())))
+                    return true;
+            }
+            return false;
+        }
+
         protected abstract IEnumerable<Account> LoadAccounts();
 
         protected abstract IEnumerable<Coin> LoadCoins();
@@ -547,8 +559,8 @@ namespace AntShares.Wallets
             return tx;
         }
 
-        protected abstract void OnProcessNewBlock(Block block, IEnumerable<Transaction> transactions, IEnumerable<Coin> added, IEnumerable<Coin> changed, IEnumerable<Coin> deleted);
-        protected abstract void OnSendTransaction(Transaction tx, IEnumerable<Coin> added, IEnumerable<Coin> changed);
+        protected abstract void OnProcessNewBlock(Block block, IEnumerable<Coin> added, IEnumerable<Coin> changed, IEnumerable<Coin> deleted);
+        protected abstract void OnSaveTransaction(Transaction tx, IEnumerable<Coin> added, IEnumerable<Coin> changed);
 
         private void ProcessBlocks()
         {
@@ -575,7 +587,6 @@ namespace AntShares.Wallets
             lock (contracts)
                 lock (coins)
                 {
-                    HashSet<Transaction> transactions = new HashSet<Transaction>();
                     foreach (Transaction tx in block.Transactions)
                     {
                         for (ushort index = 0; index < tx.Outputs.Length; index++)
@@ -599,7 +610,6 @@ namespace AntShares.Wallets
                                         ScriptHash = output.ScriptHash,
                                         State = CoinState.Unspent
                                     });
-                                transactions.Add(tx);
                             }
                         }
                     }
@@ -613,7 +623,6 @@ namespace AntShares.Wallets
                                     coins[input].State = CoinState.Spent;
                                 else
                                     coins.Remove(input);
-                                transactions.Add(tx);
                             }
                         }
                     }
@@ -624,17 +633,13 @@ namespace AntShares.Wallets
                             if (coins.Contains(claim))
                             {
                                 coins.Remove(claim);
-                                transactions.Add(tx);
                             }
                         }
                     }
                     current_height++;
                     changeset = coins.GetChangeSet();
-                    if (block.Height == Blockchain.Default.Height || changeset.Length > 0)
-                    {
-                        OnProcessNewBlock(block, transactions, changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Added), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Changed), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Deleted));
-                        coins.Commit();
-                    }
+                    OnProcessNewBlock(block, changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Added), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Changed), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Deleted));
+                    coins.Commit();
                 }
             if (changeset.Length > 0)
                 BalanceChanged?.Invoke(this, EventArgs.Empty);
@@ -653,7 +658,7 @@ namespace AntShares.Wallets
 
         protected abstract void SaveStoredData(string name, byte[] value);
 
-        public bool SendTransaction(Transaction tx)
+        public bool SaveTransaction(Transaction tx)
         {
             Coin[] changeset;
             lock (contracts)
@@ -680,11 +685,8 @@ namespace AntShares.Wallets
                             });
                     }
                     changeset = coins.GetChangeSet();
-                    if (changeset.Length > 0)
-                    {
-                        OnSendTransaction(tx, changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Added), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Changed));
-                        coins.Commit();
-                    }
+                    OnSaveTransaction(tx, changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Added), changeset.Where(p => ((ITrackable<TransactionInput>)p).TrackState == TrackState.Changed));
+                    coins.Commit();
                 }
             if (changeset.Length > 0)
                 BalanceChanged?.Invoke(this, EventArgs.Empty);

@@ -48,7 +48,7 @@ namespace AntShares.UI
             if (context.Completed)
             {
                 context.Signable.Scripts = context.GetScripts();
-                Program.CurrentWallet.SendTransaction(tx);
+                Program.CurrentWallet.SaveTransaction(tx);
                 Program.LocalNode.Relay(tx);
                 InformationBox.Show(tx.Hash.ToString(), Strings.SendTxSucceedMessage, Strings.SendTxSucceedTitle);
             }

@@ -306,15 +306,12 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             }
         }
 
-        protected override void OnProcessNewBlock(Block block, IEnumerable<CoreTransaction> transactions, IEnumerable<WalletCoin> added, IEnumerable<WalletCoin> changed, IEnumerable<WalletCoin> deleted)
+        protected override void OnProcessNewBlock(Block block, IEnumerable<WalletCoin> added, IEnumerable<WalletCoin> changed, IEnumerable<WalletCoin> deleted)
         {
-            Transaction[] tx_changed;
+            Transaction[] tx_changed = null;
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
-                foreach (Transaction db_tx in ctx.Transactions.Where(p => !p.Height.HasValue))
-                    if (block.Transactions.Any(p => p.Hash == new UInt256(db_tx.Hash)))
-                        db_tx.Height = block.Height;
-                foreach (CoreTransaction tx in transactions)
+                foreach (CoreTransaction tx in block.Transactions.Where(p => IsWalletTransaction(p)))
                 {
                     Transaction db_tx = ctx.Transactions.FirstOrDefault(p => p.Hash.SequenceEqual(tx.Hash.ToArray()));
                     if (db_tx == null)
@@ -333,32 +330,42 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                         db_tx.Height = block.Height;
                     }
                 }
-                tx_changed = ctx.ChangeTracker.Entries<Transaction>().Where(p => p.State != EntityState.Unchanged).Select(p => p.Entity).ToArray();
                 OnCoinsChanged(ctx, added, changed, deleted);
-                ctx.Keys.First(p => p.Name == "Height").Value = BitConverter.GetBytes(WalletHeight);
-                ctx.SaveChanges();
+                if (block.Height == Blockchain.Default.Height || ctx.ChangeTracker.Entries().Any())
+                {
+                    foreach (Transaction db_tx in ctx.Transactions.Where(p => !p.Height.HasValue))
+                        if (block.Transactions.Any(p => p.Hash == new UInt256(db_tx.Hash)))
+                            db_tx.Height = block.Height;
+                    ctx.Keys.First(p => p.Name == "Height").Value = BitConverter.GetBytes(WalletHeight);
+                    tx_changed = ctx.ChangeTracker.Entries<Transaction>().Where(p => p.State != EntityState.Unchanged).Select(p => p.Entity).ToArray();
+                    ctx.SaveChanges();
+                }
             }
-            if (tx_changed.Length > 0)
+            if (tx_changed?.Length > 0)
                 TransactionsChanged?.Invoke(this, GetTransactionInfo(tx_changed));
         }
 
-        protected override void OnSendTransaction(CoreTransaction tx, IEnumerable<WalletCoin> added, IEnumerable<WalletCoin> changed)
+        protected override void OnSaveTransaction(CoreTransaction tx, IEnumerable<WalletCoin> added, IEnumerable<WalletCoin> changed)
         {
-            Transaction tx_changed;
+            Transaction tx_changed = null;
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
-                tx_changed = ctx.Transactions.Add(new Transaction
+                if (IsWalletTransaction(tx))
                 {
-                    Hash = tx.Hash.ToArray(),
-                    Type = tx.Type,
-                    RawData = tx.ToArray(),
-                    Height = null,
-                    Time = DateTime.Now
-                }).Entity;
+                    tx_changed = ctx.Transactions.Add(new Transaction
+                    {
+                        Hash = tx.Hash.ToArray(),
+                        Type = tx.Type,
+                        RawData = tx.ToArray(),
+                        Height = null,
+                        Time = DateTime.Now
+                    }).Entity;
+                }
                 OnCoinsChanged(ctx, added, changed, Enumerable.Empty<WalletCoin>());
                 ctx.SaveChanges();
             }
-            TransactionsChanged?.Invoke(this, GetTransactionInfo(new[] { tx_changed }));
+            if (tx_changed != null)
+                TransactionsChanged?.Invoke(this, GetTransactionInfo(new[] { tx_changed }));
         }
 
         public static UserWallet Open(string path, string password)

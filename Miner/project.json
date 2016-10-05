@@ -1,21 +1,21 @@
 {
-    "copyright": "© AntShares Project 2015 Released under the MIT license",
-    "title": "AntShares",
-    "version": "0.7.0-*",
-    "buildOptions": {
-        "emitEntryPoint": true
-    },
+  "copyright": "© AntShares Project 2015 Released under the MIT license",
+  "title": "AntShares",
+  "version": "1.0-coreclr",
+  "buildOptions": {
+    "emitEntryPoint": true
+  },
 
-    "dependencies": {
-        "AntSharesCore": "0.7.0-*",
-        "AntSharesDaemon": "0.7.0-*",
-        "Microsoft.NETCore.App": {
-            "type": "platform",
-            "version": "1.0.1"
-        }
-    },
-
-    "frameworks": {
-        "netcoreapp1.0": {}
+  "dependencies": {
+    "AntSharesCore": "1.0-coreclr",
+    "AntSharesDaemon": "1.0-coreclr",
+    "Microsoft.NETCore.App": {
+      "type": "platform",
+      "version": "1.0.1"
     }
+  },
+
+  "frameworks": {
+    "netcoreapp1.0": {}
+  }
 }

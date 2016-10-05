@@ -112,6 +112,7 @@ namespace AntShares.Core
         {
             ((ISignable)this).DeserializeUnsigned(reader);
             Scripts = reader.ReadSerializableArray<Script>();
+            OnDeserialized();
         }
 
         /// <summary>

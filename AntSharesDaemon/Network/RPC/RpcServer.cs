@@ -14,9 +14,9 @@ namespace AntShares.Network.RPC
     internal class RpcServer : IDisposable
     {
 #if TESTNET
-        public const int DEFAULT_PORT = 20332;
+        private const string DEFAULT_URI_PREFIX = "http://*:20332";
 #else
-        public const int DEFAULT_PORT = 10332;
+        private const string DEFAULT_URI_PREFIX = "http://*:10332";
 #endif
 
         private LocalNode localNode;
@@ -193,11 +193,11 @@ namespace AntShares.Network.RPC
             return response;
         }
 
-        public void Start(string domain = "*", int port = DEFAULT_PORT)
+        public void Start(string uriPrefix = DEFAULT_URI_PREFIX)
         {
             host = new WebHostBuilder()
                 .UseKestrel()
-                .UseUrls($"http://{domain}:{port}")
+                .UseUrls(uriPrefix)
                 .Configure(app => app.Run(ProcessAsync))
                 .Build();
             host.Start();
