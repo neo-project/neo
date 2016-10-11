@@ -5,5 +5,8 @@
     <Setting Name="DataDirectoryPath" Type="System.String" Scope="Application">
       <Value Profile="(Default)">.\Chain</Value>
     </Setting>
+    <Setting Name="NodePort" Type="System.UInt16" Scope="Application">
+      <Value Profile="(Default)">10333</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

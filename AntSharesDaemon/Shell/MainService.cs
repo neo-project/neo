@@ -71,7 +71,7 @@ namespace AntShares.Shell
         {
             Blockchain.RegisterBlockchain(new LevelDBBlockchain(Settings.Default.DataDirectoryPath));
             LocalNode = new LocalNode();
-            LocalNode.Start();
+            LocalNode.Start(Settings.Default.NodePort);
             if (args.Length >= 1 && args[0] == "/rpc")
             {
                 rpc = new RpcServer(LocalNode);

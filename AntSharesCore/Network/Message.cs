@@ -1,5 +1,6 @@
 ﻿using AntShares.Cryptography;
 using AntShares.IO;
+using AntShares.Properties;
 using System;
 using System.IO;
 
@@ -7,11 +8,7 @@ namespace AntShares.Network
 {
     internal class Message : ISerializable
     {
-#if TESTNET
-        public const uint Magic = 0x74746e41;
-#else
-        public const uint Magic = 0x00746e41;
-#endif
+        public static readonly uint Magic = Settings.Default.Magic;
         public string Command;
         public uint Checksum;
         public byte[] Payload;
