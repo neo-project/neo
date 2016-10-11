@@ -4,12 +4,14 @@
   "version": "1.0-coreclr",
   "buildOptions": {
     "emitEntryPoint": true,
-    "define": [ "DEBUG" ]
+    "define": [ "DEBUG" ],
+    "copyToOutput": "config.json"
   },
 
   "dependencies": {
     "AntSharesCore": "1.0-coreclr",
     "Microsoft.AspNetCore.Server.Kestrel": "1.0.0",
+    "Microsoft.Extensions.Configuration.Json": "1.0.0",
     "Microsoft.NETCore.App": {
       "type": "platform",
       "version": "1.0.1"

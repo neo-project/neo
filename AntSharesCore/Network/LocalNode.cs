@@ -24,20 +24,6 @@ namespace AntShares.Network
         private const int CONNECTED_MAX = 10;
         private const int PENDING_MAX = CONNECTED_MAX;
         private const int UNCONNECTED_MAX = 1000;
-#if TESTNET
-        public const int DEFAULT_PORT = 20333;
-#else
-        public const int DEFAULT_PORT = 10333;
-#endif
-
-        private static readonly string[] SeedList =
-        {
-            "seed1.antshares.org",
-            "seed2.antshares.org",
-            "seed3.antshares.org",
-            "seed4.antshares.org",
-            "seed5.antshares.org"
-        };
 
         private static readonly Dictionary<UInt256, Transaction> MemoryPool = new Dictionary<UInt256, Transaction>();
         internal static readonly HashSet<UInt256> KnownHashes = new HashSet<UInt256>();
@@ -159,7 +145,7 @@ namespace AntShares.Network
             }
         }
 
-        public async Task ConnectToPeerAsync(string hostNameOrAddress)
+        public async Task ConnectToPeerAsync(string hostNameOrAddress, int port)
         {
             IPAddress ipAddress;
             if (IPAddress.TryParse(hostNameOrAddress, out ipAddress))
@@ -180,7 +166,7 @@ namespace AntShares.Network
                 ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo)?.MapToIPv6();
                 if (ipAddress == null) return;
             }
-            await ConnectToPeerAsync(new IPEndPoint(ipAddress, DEFAULT_PORT));
+            await ConnectToPeerAsync(new IPEndPoint(ipAddress, port));
         }
 
         public async Task ConnectToPeerAsync(IPEndPoint remoteEndpoint)
@@ -237,7 +223,7 @@ namespace AntShares.Network
                     }
                     else
                     {
-                        tasks = SeedList.Select(p => ConnectToPeerAsync(p)).ToArray();
+                        tasks = Settings.Default.SeedList.OfType<string>().Select(p => p.Split(':')).Select(p => ConnectToPeerAsync(p[0], int.Parse(p[1]))).ToArray();
                     }
                     Task.WaitAll(tasks);
                 }
@@ -298,6 +284,17 @@ namespace AntShares.Network
             lock (connectedPeers)
             {
                 return connectedPeers.ToArray();
+            }
+        }
+
+        public static Transaction GetTransaction(UInt256 hash)
+        {
+            lock (MemoryPool)
+            {
+                Transaction tx;
+                if (!MemoryPool.TryGetValue(hash, out tx))
+                    return null;
+                return tx;
             }
         }
 
@@ -432,7 +429,7 @@ namespace AntShares.Network
             }
         }
 
-        public async void Start(int port = DEFAULT_PORT)
+        public async void Start(int port)
         {
             if (Interlocked.Exchange(ref started, 1) == 0)
             {

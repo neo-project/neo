@@ -2,10 +2,14 @@
   "copyright": "? AntShares Project 2015 Released under the MIT license",
   "title": "AntShares",
   "version": "1.0-coreclr",
-  "buildOptions": { "allowUnsafe": true },
+  "buildOptions": {
+    "allowUnsafe": true,
+    "copyToOutput": "protocol.json"
+  },
 
   "dependencies": {
     "Microsoft.EntityFrameworkCore.Sqlite": "1.0.0",
+    "Microsoft.Extensions.Configuration.Json": "1.0.0",
     "System.Net.Sockets": "4.1.0",
     "System.Security.SecureString": "4.0.0",
     "System.Text.Encodings.Web": "4.0.0"

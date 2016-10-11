@@ -16,7 +16,7 @@ namespace AntShares.Wallets
     {
         public event EventHandler BalanceChanged;
 
-        public const byte CoinVersion = 0x17;
+        public static readonly byte CoinVersion = Settings.Default.CoinVersion;
 
         private readonly string path;
         private readonly byte[] iv;

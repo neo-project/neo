@@ -40,6 +40,7 @@ namespace AntShares.Network.Payloads
             Nonce = reader.ReadUInt32();
             UserAgent = reader.ReadVarString();
             StartHeight = reader.ReadUInt32();
+            Relay = reader.ReadBoolean();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -51,6 +52,7 @@ namespace AntShares.Network.Payloads
             writer.Write(Nonce);
             writer.WriteVarString(UserAgent);
             writer.Write(StartHeight);
+            writer.Write(Relay);
         }
     }
 }
