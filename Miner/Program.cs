@@ -6,6 +6,8 @@ namespace AntShares
 {
     static class Program
     {
+        private static readonly object LogSync = new object();
+
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
 #if DEBUG
@@ -34,10 +36,13 @@ namespace AntShares
             DateTime now = DateTime.Now;
             string line = $"[{now.TimeOfDay:hh\\:mm\\:ss}] {message}";
             Console.WriteLine(line);
-            string path = Path.Combine(AppContext.BaseDirectory, "Logs");
-            Directory.CreateDirectory(path);
-            path = Path.Combine(path, $"{now:yyyy-MM-dd}.log");
-            File.AppendAllLines(path, new[] { line });
+            lock (LogSync)
+            {
+                string path = Path.Combine(AppContext.BaseDirectory, "Logs");
+                Directory.CreateDirectory(path);
+                path = Path.Combine(path, $"{now:yyyy-MM-dd}.log");
+                File.AppendAllLines(path, new[] { line });
+            }
         }
 
         static void Main(string[] args)
