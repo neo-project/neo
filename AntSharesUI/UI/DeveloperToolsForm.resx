@@ -136,7 +136,7 @@
     <value>3</value>
   </data>
   <data name="button2.Text" xml:space="preserve">
-    <value>广播</value>
+    <value>broadcast</value>
   </data>
   <data name="&gt;&gt;button2.Name" xml:space="preserve">
     <value>button2</value>
@@ -166,7 +166,7 @@
     <value>2</value>
   </data>
   <data name="button1.Text" xml:space="preserve">
-    <value>转换</value>
+    <value>transform</value>
   </data>
   <data name="&gt;&gt;button1.Name" xml:space="preserve">
     <value>button1</value>
@@ -223,7 +223,7 @@
     <value>1</value>
   </data>
   <data name="groupBox5.Text" xml:space="preserve">
-    <value>要广播的数据包</value>
+    <value>data to broadcast</value>
   </data>
   <data name="&gt;&gt;groupBox5.Name" xml:space="preserve">
     <value>groupBox5</value>
@@ -250,7 +250,7 @@
     <value>2</value>
   </data>
   <data name="tabPage2.Text" xml:space="preserve">
-    <value>广播</value>
+    <value>Broadcast</value>
   </data>
   <data name="&gt;&gt;tabPage2.Name" xml:space="preserve">
     <value>tabPage2</value>
@@ -288,9 +288,9 @@
   <data name="&gt;&gt;tabControl1.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
-  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+  <data name="$this.Localizable" type="System.Boolean, mscorlib">
     <value>True</value>
-  </metadata>
+  </data>
   <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
     <value>7, 17</value>
   </data>
@@ -304,7 +304,7 @@
     <value>CenterScreen</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>AntShares 开发人员工具</value>
+    <value>AntShares Devloper Tool</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>DeveloperToolsForm</value>

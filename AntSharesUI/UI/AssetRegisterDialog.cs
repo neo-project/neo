@@ -2,6 +2,7 @@
 using AntShares.Cryptography.ECC;
 using AntShares.Wallets;
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -19,7 +20,7 @@ namespace AntShares.UI
             return Program.CurrentWallet.MakeTransaction(new RegisterTransaction
             {
                 AssetType = (AssetType)comboBox1.SelectedItem,
-                Name = (AssetType)comboBox1.SelectedItem == AssetType.Share ? string.Empty : $"[{{'lang':'zh-CN','name':'{textBox1.Text}'}}]",
+                Name = (AssetType)comboBox1.SelectedItem == AssetType.Share ? string.Empty : $"[{{\"lang\":\"{CultureInfo.CurrentCulture.Name}\",\"name\":\"{textBox1.Text}\"}}]",
                 Amount = checkBox1.Checked ? Fixed8.Parse(textBox2.Text) : -Fixed8.Satoshi,
                 Precision = 8,
                 Issuer = (ECPoint)comboBox2.SelectedItem,

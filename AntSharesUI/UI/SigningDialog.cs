@@ -1,4 +1,5 @@
 ﻿using AntShares.Core;
+using AntShares.Properties;
 using System;
 using System.Windows.Forms;
 
@@ -15,13 +16,13 @@ namespace AntShares.UI
         {
             if (textBox1.Text == "")
             {
-                MessageBox.Show("必须输入一段含有待签名数据的JSON对象。");
+                MessageBox.Show(Strings.SigningFailedNoDataMessage);
                 return;
             }
             SignatureContext context = SignatureContext.Parse(textBox1.Text);
             if (!Program.CurrentWallet.Sign(context))
             {
-                MessageBox.Show("没有足够的私钥对数据进行签名。");
+                MessageBox.Show(Strings.SigningFailedKeyNotFoundMessage);
                 return;
             }
             textBox2.Text = context.ToString();

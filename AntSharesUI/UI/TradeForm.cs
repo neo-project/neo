@@ -1,5 +1,6 @@
 ﻿using AntShares.Core;
 using AntShares.IO.Json;
+using AntShares.Properties;
 using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
@@ -65,7 +66,7 @@ namespace AntShares.UI
         {
             ContractTransaction tx = Program.CurrentWallet.MakeTransaction(new ContractTransaction { Outputs = txOutListBox1.Items.Select(p => p.Output).ToArray() }, Fixed8.Zero);
             textBox3.Text = RequestToJson(tx).ToString();
-            InformationBox.Show(textBox3.Text, "交易请求已生成，请发送给对方，或与对方的请求合并：", "交易请求");
+            InformationBox.Show(textBox3.Text, Strings.TradeRequestCreatedMessage, Strings.TradeRequestCreatedCaption);
             tabControl1.SelectedTab = tabPage2;
         }
 
@@ -90,7 +91,7 @@ namespace AntShares.UI
                     TransactionOutput output_others = outputs_others.FirstOrDefault(p => p.AssetId == output_mine.AssetId && p.Value == output_mine.Value && p.ScriptHash == output_mine.ScriptHash);
                     if (output_others == null)
                     {
-                        MessageBox.Show("验证失败，对方篡改了交易内容！", "失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(Strings.TradeFailedFakeDataMessage, Strings.Failed, MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
                     outputs_others.Remove(output_others);
@@ -107,13 +108,13 @@ namespace AntShares.UI
             {
                 if (inputs.Select(p => Blockchain.Default.GetTransaction(p.PrevHash).Outputs[p.PrevIndex].ScriptHash).Distinct().Any(p => Program.CurrentWallet.ContainsAddress(p)))
                 {
-                    MessageBox.Show("验证失败，对方构造了非法的交易内容！", "失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(Strings.TradeFailedInvalidDataMessage, Strings.Failed, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
             }
             catch
             {
-                MessageBox.Show("验证失败，交易无效或者区块链未同步完成，请同步后再试！", "失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(Strings.TradeFailedNoSyncMessage, Strings.Failed, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
             outputs = outputs.Where(p => Program.CurrentWallet.ContainsAddress(p.ScriptHash));
@@ -149,11 +150,11 @@ namespace AntShares.UI
                 ContractTransaction tx = (ContractTransaction)context.Signable;
                 Program.CurrentWallet.SaveTransaction(tx);
                 Program.LocalNode.Relay(tx);
-                InformationBox.Show(tx.Hash.ToString(), "交易已发送，这是交易编号(TXID)：", "交易成功");
+                InformationBox.Show(tx.Hash.ToString(), Strings.TradeSuccessMessage, Strings.TradeSuccessCaption);
             }
             else
             {
-                InformationBox.Show(context.ToString(), "交易构造完成，请将以下信息发送给对方进行签名：", "签名不完整");
+                InformationBox.Show(context.ToString(), Strings.TradeNeedSignatureMessage, Strings.TradeNeedSignatureCaption);
             }
         }
     }

@@ -151,13 +151,13 @@
     <value>6, 25</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>47, 17</value>
+    <value>46, 17</value>
   </data>
   <data name="label2.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>发行者:</value>
+    <value>Issuer:</value>
   </data>
   <data name="&gt;&gt;label2.Name" xml:space="preserve">
     <value>label2</value>
@@ -202,13 +202,13 @@
     <value>6, 54</value>
   </data>
   <data name="label3.Size" type="System.Drawing.Size, System.Drawing">
-    <value>47, 17</value>
+    <value>48, 17</value>
   </data>
   <data name="label3.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
-    <value>管理员:</value>
+    <value>Admin:</value>
   </data>
   <data name="&gt;&gt;label3.Name" xml:space="preserve">
     <value>label3</value>
@@ -271,16 +271,16 @@
     <value>True</value>
   </data>
   <data name="label4.Location" type="System.Drawing.Point, System.Drawing">
-    <value>18, 83</value>
+    <value>6, 83</value>
   </data>
   <data name="label4.Size" type="System.Drawing.Size, System.Drawing">
-    <value>35, 17</value>
+    <value>34, 17</value>
   </data>
   <data name="label4.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
   </data>
   <data name="label4.Text" xml:space="preserve">
-    <value>总量:</value>
+    <value>Cap:</value>
   </data>
   <data name="&gt;&gt;label4.Name" xml:space="preserve">
     <value>label4</value>
@@ -322,13 +322,13 @@
     <value>6, 112</value>
   </data>
   <data name="label5.Size" type="System.Drawing.Size, System.Drawing">
-    <value>47, 17</value>
+    <value>49, 17</value>
   </data>
   <data name="label5.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
   </data>
   <data name="label5.Text" xml:space="preserve">
-    <value>已发行:</value>
+    <value>Issued:</value>
   </data>
   <data name="&gt;&gt;label5.Name" xml:space="preserve">
     <value>label5</value>
@@ -355,7 +355,7 @@
     <value>10</value>
   </data>
   <data name="groupBox1.Text" xml:space="preserve">
-    <value>资产名称</value>
+    <value>Asset Name</value>
   </data>
   <data name="&gt;&gt;groupBox1.Name" xml:space="preserve">
     <value>groupBox1</value>
@@ -382,7 +382,7 @@
     <value>11</value>
   </data>
   <data name="groupBox2.Text" xml:space="preserve">
-    <value>资产详情</value>
+    <value>Asset Details</value>
   </data>
   <data name="&gt;&gt;groupBox2.Name" xml:space="preserve">
     <value>groupBox2</value>
@@ -442,7 +442,7 @@
     <value>12</value>
   </data>
   <data name="groupBox3.Text" xml:space="preserve">
-    <value>分发</value>
+    <value>Distribution</value>
   </data>
   <data name="&gt;&gt;groupBox3.Name" xml:space="preserve">
     <value>groupBox3</value>
@@ -472,7 +472,7 @@
     <value>13</value>
   </data>
   <data name="button3.Text" xml:space="preserve">
-    <value>确定</value>
+    <value>confirm</value>
   </data>
   <data name="&gt;&gt;button3.Name" xml:space="preserve">
     <value>button3</value>
@@ -499,7 +499,7 @@
     <value>14</value>
   </data>
   <data name="button4.Text" xml:space="preserve">
-    <value>取消</value>
+    <value>cancel</value>
   </data>
   <data name="&gt;&gt;button4.Name" xml:space="preserve">
     <value>button4</value>
@@ -513,9 +513,9 @@
   <data name="&gt;&gt;button4.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
-  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+  <data name="$this.Localizable" type="System.Boolean, mscorlib">
     <value>True</value>
-  </metadata>
+  </data>
   <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
     <value>7, 17</value>
   </data>
@@ -532,7 +532,7 @@
     <value>CenterScreen</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>资产分发</value>
+    <value>Asset Distribution</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>IssueDialog</value>

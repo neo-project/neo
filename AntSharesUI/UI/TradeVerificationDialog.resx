@@ -163,7 +163,7 @@
     <value>0</value>
   </data>
   <data name="groupBox1.Text" xml:space="preserve">
-    <value>你将得到的资产</value>
+    <value>assets you will acquire</value>
   </data>
   <data name="&gt;&gt;groupBox1.Name" xml:space="preserve">
     <value>groupBox1</value>
@@ -190,7 +190,7 @@
     <value>1</value>
   </data>
   <data name="button1.Text" xml:space="preserve">
-    <value>接受</value>
+    <value>accept</value>
   </data>
   <data name="&gt;&gt;button1.Name" xml:space="preserve">
     <value>button1</value>
@@ -217,7 +217,7 @@
     <value>2</value>
   </data>
   <data name="button2.Text" xml:space="preserve">
-    <value>拒绝</value>
+    <value>refuse</value>
   </data>
   <data name="&gt;&gt;button2.Name" xml:space="preserve">
     <value>button2</value>
@@ -231,9 +231,9 @@
   <data name="&gt;&gt;button2.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
-  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+  <data name="$this.Localizable" type="System.Boolean, mscorlib">
     <value>True</value>
-  </metadata>
+  </data>
   <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
     <value>6, 12</value>
   </data>
@@ -244,7 +244,7 @@
     <value>CenterScreen</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>核对交易内容</value>
+    <value>Transaction Verification</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>TradeVerificationDialog</value>
