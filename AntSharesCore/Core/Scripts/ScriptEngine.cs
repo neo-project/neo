@@ -888,28 +888,20 @@ namespace AntShares.Core.Scripts
                         if (nOpCount > MAXSTEPS) return false;
                         byte[][] pubkeys = new byte[n][];
                         for (int i = 0; i < n; i++)
-                        {
                             pubkeys[i] = (byte[])Stack.Pop();
-                        }
                         int m = (int)(BigInteger)Stack.Pop();
                         if (m < 1 || m > n) return false;
                         if (Stack.Count < m) return false;
-                        List<byte[]> signatures = new List<byte[]>();
-                        while (Stack.Count > 0)
-                        {
-                            byte[] signature = (byte[])Stack.Pop();
-                            if (signature.Length == 0) break;
-                            signatures.Add(signature);
-                        }
-                        if (signatures.Count < m || signatures.Count > n) return false;
+                        byte[][] signatures = new byte[m][];
+                        for (int i = 0; i < m; i++)
+                            signatures[i] = (byte[])Stack.Pop();
                         bool fSuccess = true;
-                        for (int i = 0, j = 0; fSuccess && i < signatures.Count && j < n;)
+                        for (int i = 0, j = 0; fSuccess && i < m && j < n;)
                         {
                             if (VerifySignature(hash, signatures[i], pubkeys[j]))
                                 i++;
                             j++;
-                            if (i >= m) break;
-                            if (signatures.Count - i > n - j)
+                            if (m - i > n - j)
                                 fSuccess = false;
                         }
                         Stack.Push(fSuccess);
