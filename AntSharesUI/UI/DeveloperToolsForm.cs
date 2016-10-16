@@ -2,6 +2,7 @@
 using AntShares.Cryptography;
 using AntShares.IO;
 using AntShares.Network;
+using AntShares.Properties;
 using System;
 using System.Linq;
 using System.Windows.Forms;
@@ -25,7 +26,7 @@ namespace AntShares.UI
         {
             SignatureContext context = SignatureContext.Parse(textBox1.Text);
             context.Signable.Scripts = context.GetScripts();
-            InformationBox.Show(context.Signable.ToArray().ToHexString(), "原始数据：");
+            InformationBox.Show(context.Signable.ToArray().ToHexString(), Strings.RelayTitle);
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -34,7 +35,7 @@ namespace AntShares.UI
             context.Signable.Scripts = context.GetScripts();
             IInventory inventory = (IInventory)context.Signable;
             Program.LocalNode.Relay(inventory);
-            InformationBox.Show(inventory.Hash.ToString(), "数据广播成功，这是广播数据的散列值：", "广播成功");
+            InformationBox.Show(inventory.Hash.ToString(), Strings.RelaySuccessText, Strings.RelaySuccessTitle);
         }
     }
 }

@@ -123,16 +123,16 @@
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>69, 15</value>
+    <value>12, 15</value>
   </data>
   <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>35, 17</value>
+    <value>59, 17</value>
   </data>
   <data name="label1.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>地址:</value>
+    <value>Address:</value>
   </data>
   <data name="&gt;&gt;label1.Name" xml:space="preserve">
     <value>label1</value>
@@ -151,10 +151,10 @@
     <value>Top, Left, Right</value>
   </data>
   <data name="textBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>110, 12</value>
+    <value>124, 12</value>
   </data>
   <data name="textBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>402, 23</value>
+    <value>388, 23</value>
   </data>
   <data name="textBox1.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -175,7 +175,7 @@
     <value>True</value>
   </data>
   <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>31, 44</value>
+    <value>12, 50</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
     <value>73, 17</value>
@@ -202,10 +202,10 @@
     <value>Top, Left, Right</value>
   </data>
   <data name="textBox2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>110, 41</value>
+    <value>124, 47</value>
   </data>
   <data name="textBox2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>402, 23</value>
+    <value>388, 23</value>
   </data>
   <data name="textBox2.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -226,7 +226,7 @@
     <value>True</value>
   </data>
   <data name="label4.Location" type="System.Drawing.Point, System.Drawing">
-    <value>12, 73</value>
+    <value>12, 91</value>
   </data>
   <data name="label4.Size" type="System.Drawing.Size, System.Drawing">
     <value>92, 17</value>
@@ -253,7 +253,7 @@
     <value>Top, Left, Right</value>
   </data>
   <data name="textBox3.Location" type="System.Drawing.Point, System.Drawing">
-    <value>110, 70</value>
+    <value>124, 88</value>
   </data>
   <data name="textBox3.Multiline" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -262,7 +262,7 @@
     <value>Vertical</value>
   </data>
   <data name="textBox3.Size" type="System.Drawing.Size, System.Drawing">
-    <value>402, 148</value>
+    <value>388, 148</value>
   </data>
   <data name="textBox3.TabIndex" type="System.Int32, mscorlib">
     <value>7</value>
@@ -283,7 +283,7 @@
     <value>Bottom, Right</value>
   </data>
   <data name="button1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>437, 232</value>
+    <value>437, 251</value>
   </data>
   <data name="button1.Size" type="System.Drawing.Size, System.Drawing">
     <value>75, 23</value>
@@ -292,7 +292,7 @@
     <value>10</value>
   </data>
   <data name="button1.Text" xml:space="preserve">
-    <value>关闭</value>
+    <value>close</value>
   </data>
   <data name="&gt;&gt;button1.Name" xml:space="preserve">
     <value>button1</value>
@@ -306,14 +306,14 @@
   <data name="&gt;&gt;button1.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
-  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+  <data name="$this.Localizable" type="System.Boolean, mscorlib">
     <value>True</value>
-  </metadata>
+  </data>
   <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
     <value>7, 17</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>524, 267</value>
+    <value>524, 295</value>
   </data>
   <data name="$this.Font" type="System.Drawing.Font, System.Drawing">
     <value>微软雅黑, 9pt</value>
@@ -325,7 +325,7 @@
     <value>CenterScreen</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>账户详情</value>
+    <value>Account Details</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>ContractDetailsDialog</value>

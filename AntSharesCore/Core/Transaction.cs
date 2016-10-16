@@ -293,6 +293,7 @@ namespace AntShares.Core
             JObject json = new JObject();
             json["txid"] = Hash.ToString();
             json["type"] = Type;
+            json["version"] = Version;
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["vin"] = Inputs.Select(p => p.ToJson()).ToArray();
             json["vout"] = Outputs.Select((p, i) => p.ToJson((ushort)i)).ToArray();

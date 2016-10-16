@@ -20,69 +20,69 @@ namespace AntShares.Core.Scripts
                     return SystemCurrentTx(engine);
                 case "System.currentScriptHash":
                     return SystemCurrentScriptHash(engine);
-                case "Chain.height":
+                case "AntShares.Chain.height":
                     return ChainHeight(engine);
-                case "Chain.getHeader":
+                case "AntShares.Chain.getHeader":
                     return ChainGetHeader(engine);
-                case "Chain.getBlock":
+                case "AntShares.Chain.getBlock":
                     return ChainGetBlock(engine);
-                case "Chain.getTx":
+                case "AntShares.Chain.getTx":
                     return ChainGetTx(engine);
-                case "Header.hash":
+                case "AntShares.Header.hash":
                     return HeaderHash(engine);
-                case "Header.version":
+                case "AntShares.Header.version":
                     return HeaderVersion(engine);
-                case "Header.prevHash":
+                case "AntShares.Header.prevHash":
                     return HeaderPrevHash(engine);
-                case "Header.merkleRoot":
+                case "AntShares.Header.merkleRoot":
                     return HeaderMerkleRoot(engine);
-                case "Header.timestamp":
+                case "AntShares.Header.timestamp":
                     return HeaderTimestamp(engine);
-                case "Header.nonce":
+                case "AntShares.Header.nonce":
                     return HeaderNonce(engine);
-                case "Header.nextMiner":
+                case "AntShares.Header.nextMiner":
                     return HeaderNextMiner(engine);
-                case "Block.txCount":
+                case "AntShares.Block.txCount":
                     return BlockTxCount(engine);
-                case "Block.tx":
+                case "AntShares.Block.tx":
                     return BlockTx(engine);
-                case "Block.getTx":
+                case "AntShares.Block.getTx":
                     return BlockGetTx(engine);
-                case "TX.hash":
+                case "AntShares.TX.hash":
                     return TxHash(engine);
-                case "TX.type":
+                case "AntShares.TX.type":
                     return TxType(engine);
-                case "Asset.type":
+                case "AntShares.Asset.type":
                     return AssetType(engine);
-                case "Asset.amount":
+                case "AntShares.Asset.amount":
                     return AssetAmount(engine);
-                case "Asset.issuer":
+                case "AntShares.Asset.issuer":
                     return AssetIssuer(engine);
-                case "Asset.admin":
+                case "AntShares.Asset.admin":
                     return AssetAdmin(engine);
-                case "Enroll.pubkey":
+                case "AntShares.Enroll.pubkey":
                     return EnrollPubkey(engine);
-                case "Vote.enrollments":
+                case "AntShares.Vote.enrollments":
                     return VoteEnrollments(engine);
-                case "TX.attributes":
+                case "AntShares.TX.attributes":
                     return TxAttributes(engine);
-                case "TX.inputs":
+                case "AntShares.TX.inputs":
                     return TxInputs(engine);
-                case "TX.outputs":
+                case "AntShares.TX.outputs":
                     return TxOutputs(engine);
-                case "Attribute.usage":
+                case "AntShares.Attribute.usage":
                     return AttrUsage(engine);
-                case "Attribute.data":
+                case "AntShares.Attribute.data":
                     return AttrData(engine);
-                case "Input.hash":
+                case "AntShares.Input.hash":
                     return TxInHash(engine);
-                case "Input.index":
+                case "AntShares.Input.index":
                     return TxInIndex(engine);
-                case "Output.asset":
+                case "AntShares.Output.asset":
                     return TxOutAsset(engine);
-                case "Output.value":
+                case "AntShares.Output.value":
                     return TxOutValue(engine);
-                case "Output.scriptHash":
+                case "AntShares.Output.scriptHash":
                     return TxOutScriptHash(engine);
                 default:
                     return false;
@@ -210,7 +210,7 @@ namespace AntShares.Core.Scripts
         {
             if (engine.AltStack.Count < 1) return false;
             StackItem x = engine.AltStack.Peek();
-            Block[] headers = x.GetArray<Block>();
+            BlockBase[] headers = x.GetArray<BlockBase>();
             if (headers.Any(p => p == null)) return false;
             UInt256[] r = headers.Select(p => p.Hash).ToArray();
             if (x.IsArray)
@@ -224,7 +224,7 @@ namespace AntShares.Core.Scripts
         {
             if (engine.AltStack.Count < 1) return false;
             StackItem x = engine.AltStack.Peek();
-            Block[] headers = x.GetArray<Block>();
+            BlockBase[] headers = x.GetArray<BlockBase>();
             if (headers.Any(p => p == null)) return false;
             uint[] r = headers.Select(p => p.Version).ToArray();
             if (x.IsArray)
@@ -238,7 +238,7 @@ namespace AntShares.Core.Scripts
         {
             if (engine.AltStack.Count < 1) return false;
             StackItem x = engine.AltStack.Peek();
-            Block[] headers = x.GetArray<Block>();
+            BlockBase[] headers = x.GetArray<BlockBase>();
             if (headers.Any(p => p == null)) return false;
             UInt256[] r = headers.Select(p => p.PrevBlock).ToArray();
             if (x.IsArray)
@@ -252,7 +252,7 @@ namespace AntShares.Core.Scripts
         {
             if (engine.AltStack.Count < 1) return false;
             StackItem x = engine.AltStack.Peek();
-            Block[] headers = x.GetArray<Block>();
+            BlockBase[] headers = x.GetArray<BlockBase>();
             if (headers.Any(p => p == null)) return false;
             UInt256[] r = headers.Select(p => p.MerkleRoot).ToArray();
             if (x.IsArray)
@@ -266,7 +266,7 @@ namespace AntShares.Core.Scripts
         {
             if (engine.AltStack.Count < 1) return false;
             StackItem x = engine.AltStack.Peek();
-            Block[] headers = x.GetArray<Block>();
+            BlockBase[] headers = x.GetArray<BlockBase>();
             if (headers.Any(p => p == null)) return false;
             uint[] r = headers.Select(p => p.Timestamp).ToArray();
             if (x.IsArray)
@@ -280,7 +280,7 @@ namespace AntShares.Core.Scripts
         {
             if (engine.AltStack.Count < 1) return false;
             StackItem x = engine.AltStack.Peek();
-            Block[] headers = x.GetArray<Block>();
+            BlockBase[] headers = x.GetArray<BlockBase>();
             if (headers.Any(p => p == null)) return false;
             ulong[] r = headers.Select(p => p.Nonce).ToArray();
             if (x.IsArray)
@@ -294,7 +294,7 @@ namespace AntShares.Core.Scripts
         {
             if (engine.AltStack.Count < 1) return false;
             StackItem x = engine.AltStack.Peek();
-            Block[] headers = x.GetArray<Block>();
+            BlockBase[] headers = x.GetArray<BlockBase>();
             if (headers.Any(p => p == null)) return false;
             UInt160[] r = headers.Select(p => p.NextMiner).ToArray();
             if (x.IsArray)

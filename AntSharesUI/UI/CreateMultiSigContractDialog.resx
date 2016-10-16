@@ -123,7 +123,7 @@
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="button5.Location" type="System.Drawing.Point, System.Drawing">
-    <value>491, 263</value>
+    <value>485, 221</value>
   </data>
   <data name="button5.Size" type="System.Drawing.Size, System.Drawing">
     <value>25, 23</value>
@@ -151,7 +151,7 @@
     <value>Bottom, Right</value>
   </data>
   <data name="button4.Location" type="System.Drawing.Point, System.Drawing">
-    <value>460, 263</value>
+    <value>454, 221</value>
   </data>
   <data name="button4.Size" type="System.Drawing.Size, System.Drawing">
     <value>25, 23</value>
@@ -178,10 +178,10 @@
     <value>Bottom, Left, Right</value>
   </data>
   <data name="textBox5.Location" type="System.Drawing.Point, System.Drawing">
-    <value>99, 263</value>
+    <value>121, 221</value>
   </data>
   <data name="textBox5.Size" type="System.Drawing.Size, System.Drawing">
-    <value>355, 23</value>
+    <value>308, 23</value>
   </data>
   <data name="textBox5.TabIndex" type="System.Int32, mscorlib">
     <value>11</value>
@@ -202,16 +202,16 @@
     <value>True</value>
   </data>
   <data name="label7.Location" type="System.Drawing.Point, System.Drawing">
-    <value>34, 41</value>
+    <value>10, 48</value>
   </data>
   <data name="label7.Size" type="System.Drawing.Size, System.Drawing">
-    <value>59, 17</value>
+    <value>93, 17</value>
   </data>
   <data name="label7.TabIndex" type="System.Int32, mscorlib">
     <value>10</value>
   </data>
   <data name="label7.Text" xml:space="preserve">
-    <value>公钥列表:</value>
+    <value>Public Key List:</value>
   </data>
   <data name="&gt;&gt;label7.Name" xml:space="preserve">
     <value>label7</value>
@@ -235,13 +235,13 @@
     <value>17</value>
   </data>
   <data name="listBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>99, 41</value>
+    <value>121, 48</value>
   </data>
   <data name="listBox1.ScrollAlwaysVisible" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
   <data name="listBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>417, 216</value>
+    <value>389, 156</value>
   </data>
   <data name="listBox1.TabIndex" type="System.Int32, mscorlib">
     <value>9</value>
@@ -259,10 +259,10 @@
     <value>6</value>
   </data>
   <data name="numericUpDown2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>99, 12</value>
+    <value>121, 14</value>
   </data>
   <data name="numericUpDown2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>120, 23</value>
+    <value>197, 23</value>
   </data>
   <data name="numericUpDown2.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
@@ -286,13 +286,13 @@
     <value>10, 14</value>
   </data>
   <data name="label6.Size" type="System.Drawing.Size, System.Drawing">
-    <value>83, 17</value>
+    <value>96, 17</value>
   </data>
   <data name="label6.TabIndex" type="System.Int32, mscorlib">
     <value>7</value>
   </data>
   <data name="label6.Text" xml:space="preserve">
-    <value>最小签名数量:</value>
+    <value>Min. Sig. Num.:</value>
   </data>
   <data name="&gt;&gt;label6.Name" xml:space="preserve">
     <value>label6</value>
@@ -313,7 +313,7 @@
     <value>False</value>
   </data>
   <data name="button6.Location" type="System.Drawing.Point, System.Drawing">
-    <value>360, 292</value>
+    <value>354, 264</value>
   </data>
   <data name="button6.Size" type="System.Drawing.Size, System.Drawing">
     <value>75, 23</value>
@@ -322,7 +322,7 @@
     <value>14</value>
   </data>
   <data name="button6.Text" xml:space="preserve">
-    <value>确定</value>
+    <value>confirm</value>
   </data>
   <data name="&gt;&gt;button6.Name" xml:space="preserve">
     <value>button6</value>
@@ -340,7 +340,7 @@
     <value>Bottom, Right</value>
   </data>
   <data name="button1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>441, 292</value>
+    <value>435, 264</value>
   </data>
   <data name="button1.Size" type="System.Drawing.Size, System.Drawing">
     <value>75, 23</value>
@@ -349,7 +349,7 @@
     <value>15</value>
   </data>
   <data name="button1.Text" xml:space="preserve">
-    <value>取消</value>
+    <value>cancel</value>
   </data>
   <data name="&gt;&gt;button1.Name" xml:space="preserve">
     <value>button1</value>
@@ -363,14 +363,14 @@
   <data name="&gt;&gt;button1.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
-  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+  <data name="$this.Localizable" type="System.Boolean, mscorlib">
     <value>True</value>
-  </metadata>
+  </data>
   <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
     <value>7, 17</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>528, 327</value>
+    <value>551, 310</value>
   </data>
   <data name="$this.Font" type="System.Drawing.Font, System.Drawing">
     <value>微软雅黑, 9pt</value>
@@ -382,7 +382,7 @@
     <value>CenterScreen</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>多方签名</value>
+    <value>Multi-Signature</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>CreateMultiSigContractDialog</value>

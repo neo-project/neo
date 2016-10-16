@@ -32,7 +32,8 @@ namespace AntShares.UI
 
         private void AddContractToListView(Contract contract, bool selected = false)
         {
-            listView1.Items.Add(new ListViewItem(new[] { contract.Address, contract.GetType().ToString() })
+            string type = contract.IsStandard ? Strings.StandardContract : Strings.NonstandardContract;
+            listView1.Items.Add(new ListViewItem(new[] { contract.Address, type })
             {
                 Name = contract.Address,
                 Tag = contract
@@ -115,7 +116,7 @@ namespace AntShares.UI
                             new ListViewItem.ListViewSubItem
                             {
                                 Name = "confirmations",
-                                Text = "未确认"
+                                Text = Strings.Unconfirmed
                             },
                             //add transaction type to list by phinx
                             new ListViewItem.ListViewSubItem
@@ -134,7 +135,7 @@ namespace AntShares.UI
                 }
                 foreach (ListViewItem item in listView3.Items)
                 {
-                    item.SubItems["confirmations"].Text = (Blockchain.Default.Height - ((TransactionInfo)item.Tag).Height + 1)?.ToString() ?? "未确认";
+                    item.SubItems["confirmations"].Text = (Blockchain.Default.Height - ((TransactionInfo)item.Tag).Height + 1)?.ToString() ?? Strings.Unconfirmed;
                 }
             }
         }
@@ -210,7 +211,7 @@ namespace AntShares.UI
                             {
                                 ForeColor = Color.Gray,
                                 Name = "issuer",
-                                Text = $"未知发行者[{asset.Asset.Issuer}]"
+                                Text = $"{Strings.UnknownIssuer}[{asset.Asset.Issuer}]"
                             }
                         }, -1, listView2.Groups["unchecked"])
                         {
@@ -237,15 +238,15 @@ namespace AntShares.UI
                             break;
                         case CertificateQueryResultType.System:
                             subitem.ForeColor = Color.Green;
-                            subitem.Text = "小蚁系统";
+                            subitem.Text = Strings.SystemIssuer;
                             break;
                         case CertificateQueryResultType.Invalid:
                             subitem.ForeColor = Color.Red;
-                            subitem.Text = $"[证书错误][{asset.Issuer}]";
+                            subitem.Text = $"[{Strings.InvalidCertificate}][{asset.Issuer}]";
                             break;
                         case CertificateQueryResultType.Expired:
                             subitem.ForeColor = Color.Yellow;
-                            subitem.Text = $"[证书已过期]{result.Certificate.Subject}[{asset.Issuer}]";
+                            subitem.Text = $"[{Strings.ExpiredCertificate}]{result.Certificate.Subject}[{asset.Issuer}]";
                             break;
                         case CertificateQueryResultType.Good:
                             subitem.ForeColor = Color.Black;
@@ -282,14 +283,14 @@ namespace AntShares.UI
                 if (dialog.ShowDialog() != DialogResult.OK) return;
                 if (UserWallet.GetVersion(dialog.WalletPath) < Version.Parse("0.6.6043.32131"))
                 {
-                    if (MessageBox.Show("正在打开旧版本的钱包文件，是否尝试将文件升级为新版格式？\n注意，升级后将无法用旧版本的客户端打开该文件！", "钱包文件升级", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) != DialogResult.Yes)
+                    if (MessageBox.Show(Strings.MigrateWalletMessage, Strings.MigrateWalletCaption, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) != DialogResult.Yes)
                         return;
                     string path_old = Path.ChangeExtension(dialog.WalletPath, ".old.db3");
                     string path_new = Path.ChangeExtension(dialog.WalletPath, ".new.db3");
                     UserWallet.Migrate(dialog.WalletPath, path_new);
                     File.Move(dialog.WalletPath, path_old);
                     File.Move(path_new, dialog.WalletPath);
-                    MessageBox.Show($"钱包文件迁移成功，旧的文件已经自动保存到以下位置：\n{path_old}");
+                    MessageBox.Show($"{Strings.MigrateWalletSucceedMessage}\n{path_old}");
                 }
                 UserWallet wallet;
                 try
@@ -298,7 +299,7 @@ namespace AntShares.UI
                 }
                 catch (CryptographicException)
                 {
-                    MessageBox.Show("密码错误！");
+                    MessageBox.Show(Strings.PasswordIncorrect);
                     return;
                 }
                 ChangeWallet(wallet);
@@ -400,7 +401,7 @@ namespace AntShares.UI
 
         private void 关于AntSharesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show($"小蚁(AntShares) 版本：{Assembly.GetExecutingAssembly().GetName().Version}", "关于");
+            MessageBox.Show($"{Strings.AboutMessage} {Strings.AboutVersion}{Assembly.GetExecutingAssembly().GetName().Version}", Strings.About);
         }
 
         private void contextMenuStrip1_Opening(object sender, CancelEventArgs e)
@@ -456,7 +457,7 @@ namespace AntShares.UI
                 Contract contract = dialog.GetContract();
                 if (contract == null)
                 {
-                    MessageBox.Show("无法添加智能合约，因为当前钱包中不包含签署该合约的私钥。");
+                    MessageBox.Show(Strings.AddContractFailedMessage);
                     return;
                 }
                 Program.CurrentWallet.AddContract(contract);
@@ -494,7 +495,7 @@ namespace AntShares.UI
 
         private void 删除DToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show("删除地址后，这些地址中的资产将永久性地丢失，确认要继续吗？", "删除地址确认", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+            if (MessageBox.Show(Strings.DeleteAddressConfirmationMessage, Strings.DeleteAddressConfirmationCaption, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
                 return;
             Contract[] contracts = listView1.SelectedItems.OfType<ListViewItem>().Select(p => (Contract)p.Tag).ToArray();
             foreach (Contract contract in contracts)
@@ -518,9 +519,9 @@ namespace AntShares.UI
                 Asset = p,
                 Value = Program.CurrentWallet.GetAvailable(p.Hash)
             }).ToArray();
-            if (MessageBox.Show("资产删除后将无法恢复，您确定要删除以下资产吗？\n"
+            if (MessageBox.Show($"{Strings.DeleteAssetConfirmationMessage}\n"
                 + string.Join("\n", delete.Select(p => $"{p.Asset.GetName()}:{p.Value}"))
-                , "删除确认", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+                , Strings.DeleteConfirmation, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
                 return;
             ContractTransaction tx = Program.CurrentWallet.MakeTransaction(new ContractTransaction
             {

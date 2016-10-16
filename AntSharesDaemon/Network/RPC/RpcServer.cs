@@ -97,7 +97,9 @@ namespace AntShares.Network.RPC
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
                         bool verbose = _params.Count >= 2 && _params[1].AsBooleanOrDefault(false);
-                        Transaction tx = Blockchain.Default.GetTransaction(hash);
+                        Transaction tx = LocalNode.GetTransaction(hash);
+                        if (tx == null)
+                            tx = Blockchain.Default.GetTransaction(hash);
                         if (tx == null)
                             throw new RpcException(-101, "Unknown transaction");
                         if (verbose)
