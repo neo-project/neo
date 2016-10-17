@@ -46,7 +46,6 @@ namespace AntShares
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-#if DEBUG
             Exception ex = (Exception)e.ExceptionObject;
             using (FileStream fs = new FileStream("error.log", FileMode.Create, FileAccess.Write, FileShare.None))
             using (StreamWriter w = new StreamWriter(fs))
@@ -64,7 +63,6 @@ namespace AntShares
                     }
                 }
             }
-#endif
         }
 
         private static bool InstallCertificate()

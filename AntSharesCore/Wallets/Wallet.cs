@@ -98,7 +98,7 @@ namespace AntShares.Wallets
                     throw new InvalidOperationException();
                 lock (contracts)
                 {
-                    contracts.Add(contract.ScriptHash, contract);
+                    contracts[contract.ScriptHash] = contract;
                 }
             }
         }
@@ -216,7 +216,7 @@ namespace AntShares.Wallets
             Account account = new Account(privateKey);
             lock (accounts)
             {
-                accounts.Add(account.PublicKeyHash, account);
+                accounts[account.PublicKeyHash] = account;
             }
             return account;
         }
