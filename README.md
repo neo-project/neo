@@ -11,10 +11,11 @@ Antshares is a decentralized and distributed network protocol which is based on 
 |   | AntSharesUI | AntSharesDaemon | Miner |
 |---|:-----------:|:---------------:|:-----:|
 |**CentOS 7.1**| |:white_check_mark:|:white_check_mark:|
+|**Docker**| |:white_check_mark:|:white_check_mark:|
 |**Red Hat 7.1**| |:white_check_mark:|:white_check_mark:|
 |**Windows 7 SP1 x64**|:white_check_mark:|:white_check_mark:|:white_check_mark:|
 |**Windows Server 2008 R2**| |:white_check_mark:|:white_check_mark:|
-未来将支持Docker、Debian、FreeBSD、Linux Mint、openSUSE、Oracle Linux、OS X、Fedora、Ubuntu等。
+未来将支持Debian、FreeBSD、Linux Mint、openSUSE、Oracle Linux、OS X、Fedora、Ubuntu等。
 
 如何开发
 --------
@@ -29,6 +30,12 @@ Antshares is a decentralized and distributed network protocol which is based on 
 + [C# SDK](https://github.com/AntShares/AntShares/tree/master/AntSharesCore)
 + [JAVA SDK](https://github.com/AntSharesSDK/antshares-java)
 + [JavaScript/TypeScript SDK](https://github.com/AntSharesSDK/antshares-ts)
+
+这里还有几个可以参考的应用案例：
+
++ [AntSharesApp](https://github.com/AntShares/AntSharesApp) 基于Cordova开发的跨平台小蚁钱包APP
++ [AntCha.in](https://github.com/AlexChien/antcha.in) 用于查看小蚁区块链内容的浏览器
++ [antshares-ruby](https://github.com/AntSharesSDK/antshares-ruby) 基于ruby开发的小蚁钱包
 
 项目介绍
 --------
