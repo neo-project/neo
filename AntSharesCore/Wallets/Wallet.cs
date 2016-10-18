@@ -430,12 +430,7 @@ namespace AntShares.Wallets
             return privateKey;
         }
 
-        public abstract IEnumerable<Transaction> GetTransactions();
-
-        public virtual IEnumerable<T> GetTransactions<T>() where T : Transaction
-        {
-            return GetTransactions().OfType<T>();
-        }
+        public abstract IEnumerable<T> GetTransactions<T>() where T : Transaction;
 
         public IEnumerable<Coin> GetUnclaimedCoins()
         {

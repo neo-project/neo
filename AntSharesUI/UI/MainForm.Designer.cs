@@ -61,7 +61,6 @@
             this.关于AntSharesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.listView1 = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.创建新地址NToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.导入私钥IToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -309,11 +308,13 @@
             // 
             resources.ApplyResources(this.listView1, "listView1");
             this.listView1.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.columnHeader1,
-            this.columnHeader4});
+            this.columnHeader1});
             this.listView1.ContextMenuStrip = this.contextMenuStrip1;
             this.listView1.FullRowSelect = true;
             this.listView1.GridLines = true;
+            this.listView1.Groups.AddRange(new System.Windows.Forms.ListViewGroup[] {
+            ((System.Windows.Forms.ListViewGroup)(resources.GetObject("listView1.Groups"))),
+            ((System.Windows.Forms.ListViewGroup)(resources.GetObject("listView1.Groups1")))});
             this.listView1.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.listView1.HideSelection = false;
             this.listView1.Name = "listView1";
@@ -323,10 +324,6 @@
             // columnHeader1
             // 
             resources.ApplyResources(this.columnHeader1, "columnHeader1");
-            // 
-            // columnHeader4
-            // 
-            resources.ApplyResources(this.columnHeader4, "columnHeader4");
             // 
             // contextMenuStrip1
             // 
@@ -666,7 +663,6 @@
         private System.Windows.Forms.ToolStripMenuItem 资产分发IToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 创建智能合约SToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 多方签名MToolStripMenuItem;
-        private System.Windows.Forms.ColumnHeader columnHeader4;
         private System.Windows.Forms.ListView listView1;
         private System.Windows.Forms.ColumnHeader columnHeader5;
         private System.Windows.Forms.ColumnHeader columnHeader6;

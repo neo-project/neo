@@ -11,5 +11,8 @@
     <Setting Name="CertCachePath" Type="System.String" Scope="Application">
       <Value Profile="(Default)">.\Certs</Value>
     </Setting>
+    <Setting Name="LastWalletPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

@@ -49,5 +49,17 @@ namespace AntShares.Properties {
                 return ((string)(this["CertCachePath"]));
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string LastWalletPath {
+            get {
+                return ((string)(this["LastWalletPath"]));
+            }
+            set {
+                this["LastWalletPath"] = value;
+            }
+        }
     }
 }

@@ -23,6 +23,7 @@ namespace AntShares.UI
         private void button1_Click(object sender, EventArgs e)
         {
             TransactionInput[] claims = Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Input).ToArray();
+            if (claims.Length == 0) return;
             Helper.SignAndShowInformation(new ClaimTransaction
             {
                 Claims = claims,

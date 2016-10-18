@@ -177,9 +177,6 @@
   <data name="MigrateWalletSucceedMessage" xml:space="preserve">
     <value>Wallet files relocated. Old files have been auto-saved at: </value>
   </data>
-  <data name="NonstandardContract" xml:space="preserve">
-    <value>Contract Address</value>
-  </data>
   <data name="PasswordIncorrect" xml:space="preserve">
     <value>Password Incorrect</value>
   </data>
@@ -203,9 +200,6 @@
   </data>
   <data name="SigningFailedNoDataMessage" xml:space="preserve">
     <value>You must input JSON object pending signature data.</value>
-  </data>
-  <data name="StandardContract" xml:space="preserve">
-    <value>Standard Account</value>
   </data>
   <data name="SystemIssuer" xml:space="preserve">
     <value>System</value>

@@ -7,9 +7,6 @@ using System.Linq;
 
 namespace AntShares.Wallets
 {
-    /// <summary>
-    /// 所有合约的基类
-    /// </summary>
     public class Contract : IEquatable<Contract>, ISerializable
     {
         /// <summary>

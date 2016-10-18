@@ -50,6 +50,7 @@ namespace AntShares
             using (FileStream fs = new FileStream("error.log", FileMode.Create, FileAccess.Write, FileShare.None))
             using (StreamWriter w = new StreamWriter(fs))
             {
+                w.WriteLine(ex.GetType());
                 w.WriteLine(ex.Message);
                 w.WriteLine(ex.StackTrace);
                 AggregateException ex2 = ex as AggregateException;

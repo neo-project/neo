@@ -117,12 +117,18 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="button2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>384, 77</value>
+  </data>
   <data name="button2.Text" xml:space="preserve">
     <value>确定</value>
   </data>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="textBox2.Location" type="System.Drawing.Point, System.Drawing">
+    <value>101, 41</value>
+  </data>
   <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>60, 45</value>
+    <value>60, 44</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
     <value>35, 17</value>
@@ -130,11 +136,17 @@
   <data name="label2.Text" xml:space="preserve">
     <value>密码:</value>
   </data>
+  <data name="button1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>384, 12</value>
+  </data>
   <data name="button1.Text" xml:space="preserve">
     <value>浏览</value>
   </data>
-  <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>12, 17</value>
+  <data name="textBox1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>101, 12</value>
+  </data>
+  <data name="textBox1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>277, 23</value>
   </data>
   <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
     <value>83, 17</value>
@@ -142,10 +154,22 @@
   <data name="label1.Text" xml:space="preserve">
     <value>钱包文件位置:</value>
   </data>
-  <data name="$this.Text" xml:space="preserve">
-    <value>打开钱包</value>
-  </data>
   <data name="openFileDialog1.Filter" xml:space="preserve">
     <value>钱包数据库|*.db3</value>
+  </data>
+  <data name="checkBox1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>101, 77</value>
+  </data>
+  <data name="checkBox1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>75, 21</value>
+  </data>
+  <data name="checkBox1.Text" xml:space="preserve">
+    <value>修复模式</value>
+  </data>
+  <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
+    <value>471, 108</value>
+  </data>
+  <data name="$this.Text" xml:space="preserve">
+    <value>打开钱包</value>
   </data>
 </root>

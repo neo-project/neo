@@ -241,15 +241,6 @@ namespace AntShares.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Contract Address.
-        /// </summary>
-        internal static string NonstandardContract {
-            get {
-                return ResourceManager.GetString("NonstandardContract", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Password Incorrect.
         /// </summary>
         internal static string PasswordIncorrect {
@@ -318,15 +309,6 @@ namespace AntShares.Properties {
         internal static string SigningFailedNoDataMessage {
             get {
                 return ResourceManager.GetString("SigningFailedNoDataMessage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Standard Account.
-        /// </summary>
-        internal static string StandardContract {
-            get {
-                return ResourceManager.GetString("StandardContract", resourceCulture);
             }
         }
         

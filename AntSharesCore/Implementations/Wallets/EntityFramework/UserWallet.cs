@@ -135,26 +135,17 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             });
         }
 
-        public override IEnumerable<CoreTransaction> GetTransactions()
-        {
-            using (WalletDataContext ctx = new WalletDataContext(DbPath))
-            {
-                foreach (Transaction tx in ctx.Transactions)
-                {
-                    yield return CoreTransaction.DeserializeFrom(tx.RawData);
-                }
-            }
-        }
-
         public override IEnumerable<T> GetTransactions<T>()
         {
-            TransactionType type = (TransactionType)Enum.Parse(typeof(TransactionType), typeof(T).Name);
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
-                foreach (Transaction tx in ctx.Transactions.Where(p => p.Type == type))
+                IQueryable<Transaction> transactions = ctx.Transactions;
+                if (typeof(T).IsSubclassOf(typeof(CoreTransaction)))
                 {
-                    yield return (T)CoreTransaction.DeserializeFrom(tx.RawData);
+                    TransactionType type = (TransactionType)Enum.Parse(typeof(TransactionType), typeof(T).Name);
+                    transactions = transactions.Where(p => p.Type == type);
                 }
+                return transactions.Select(p => p.RawData).AsEnumerable().Select(p => (T)CoreTransaction.DeserializeFrom(p));
             }
         }
 

@@ -32,8 +32,8 @@ namespace AntShares.UI
 
         private void AddContractToListView(Contract contract, bool selected = false)
         {
-            string type = contract.IsStandard ? Strings.StandardContract : Strings.NonstandardContract;
-            listView1.Items.Add(new ListViewItem(new[] { contract.Address, type })
+            ListViewGroup group = contract.IsStandard ? listView1.Groups["standardContractGroup"] : listView1.Groups["nonstandardContractGroup"];
+            listView1.Items.Add(new ListViewItem(contract.Address, group)
             {
                 Name = contract.Address,
                 Tag = contract
@@ -273,6 +273,8 @@ namespace AntShares.UI
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
                 ChangeWallet(UserWallet.Create(dialog.WalletPath, dialog.Password));
+                Settings.Default.LastWalletPath = dialog.WalletPath;
+                Settings.Default.Save();
             }
         }
 
@@ -281,17 +283,17 @@ namespace AntShares.UI
             using (OpenWalletDialog dialog = new OpenWalletDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                if (UserWallet.GetVersion(dialog.WalletPath) < Version.Parse("0.6.6043.32131"))
-                {
-                    if (MessageBox.Show(Strings.MigrateWalletMessage, Strings.MigrateWalletCaption, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) != DialogResult.Yes)
-                        return;
-                    string path_old = Path.ChangeExtension(dialog.WalletPath, ".old.db3");
-                    string path_new = Path.ChangeExtension(dialog.WalletPath, ".new.db3");
-                    UserWallet.Migrate(dialog.WalletPath, path_new);
-                    File.Move(dialog.WalletPath, path_old);
-                    File.Move(path_new, dialog.WalletPath);
-                    MessageBox.Show($"{Strings.MigrateWalletSucceedMessage}\n{path_old}");
-                }
+                //if (UserWallet.GetVersion(dialog.WalletPath) < Version.Parse("0.6.6043.32131"))
+                //{
+                //    if (MessageBox.Show(Strings.MigrateWalletMessage, Strings.MigrateWalletCaption, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) != DialogResult.Yes)
+                //        return;
+                //    string path_old = Path.ChangeExtension(dialog.WalletPath, ".old.db3");
+                //    string path_new = Path.ChangeExtension(dialog.WalletPath, ".new.db3");
+                //    UserWallet.Migrate(dialog.WalletPath, path_new);
+                //    File.Move(dialog.WalletPath, path_old);
+                //    File.Move(path_new, dialog.WalletPath);
+                //    MessageBox.Show($"{Strings.MigrateWalletSucceedMessage}\n{path_old}");
+                //}
                 UserWallet wallet;
                 try
                 {
@@ -302,7 +304,10 @@ namespace AntShares.UI
                     MessageBox.Show(Strings.PasswordIncorrect);
                     return;
                 }
+                if (dialog.RepairMode) wallet.Rebuild();
                 ChangeWallet(wallet);
+                Settings.Default.LastWalletPath = dialog.WalletPath;
+                Settings.Default.Save();
             }
         }
 

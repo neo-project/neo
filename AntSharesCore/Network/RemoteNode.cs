@@ -330,7 +330,8 @@ namespace AntShares.Network
                     OnMemPoolMessageReceived();
                     break;
                 case "tx":
-                    OnInventoryReceived(Transaction.DeserializeFrom(message.Payload));
+                    if (message.Payload.Length <= 1024 * 1024)
+                        OnInventoryReceived(Transaction.DeserializeFrom(message.Payload));
                     break;
                 case "alert":
                 case "merkleblock":
