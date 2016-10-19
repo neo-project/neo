@@ -145,7 +145,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                     TransactionType type = (TransactionType)Enum.Parse(typeof(TransactionType), typeof(T).Name);
                     transactions = transactions.Where(p => p.Type == type);
                 }
-                return transactions.Select(p => p.RawData).AsEnumerable().Select(p => (T)CoreTransaction.DeserializeFrom(p));
+                return transactions.Select(p => p.RawData).ToArray().Select(p => (T)CoreTransaction.DeserializeFrom(p));
             }
         }
 
