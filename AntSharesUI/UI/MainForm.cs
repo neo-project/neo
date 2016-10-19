@@ -43,6 +43,7 @@ namespace AntShares.UI
         private void Blockchain_PersistCompleted(object sender, Block block)
         {
             persistence_time = DateTime.Now;
+            CurrentWallet_TransactionsChanged(null, Enumerable.Empty<TransactionInfo>());
         }
 
         private void ChangeWallet(UserWallet wallet)
@@ -135,7 +136,9 @@ namespace AntShares.UI
                 }
                 foreach (ListViewItem item in listView3.Items)
                 {
-                    item.SubItems["confirmations"].Text = (Blockchain.Default.Height - ((TransactionInfo)item.Tag).Height + 1)?.ToString() ?? Strings.Unconfirmed;
+                    int? confirmations = (int)Blockchain.Default.Height - (int)((TransactionInfo)item.Tag).Height + 1;
+                    if (confirmations <= 0) confirmations = null;
+                    item.SubItems["confirmations"].Text = confirmations?.ToString() ?? Strings.Unconfirmed;
                 }
             }
         }
@@ -166,6 +169,8 @@ namespace AntShares.UI
                 toolStripProgressBar1.Value = persistence_span.Seconds;
                 toolStripProgressBar1.Style = ProgressBarStyle.Blocks;
             }
+            if (Program.CurrentWallet?.WalletHeight > Blockchain.Default.Height + 1)
+                return;
             if (balance_changed)
             {
                 IEnumerable<Coin> coins = Program.CurrentWallet?.FindCoins() ?? Enumerable.Empty<Coin>();

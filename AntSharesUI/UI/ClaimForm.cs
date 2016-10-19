@@ -39,6 +39,7 @@ namespace AntShares.UI
                     }
                 }
             });
+            this.Close();
         }
     }
 }
