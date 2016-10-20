@@ -33,7 +33,7 @@ namespace AntShares.Wallets
 
         protected string DbPath => path;
         protected object SyncRoot { get; } = new object();
-        protected uint WalletHeight => current_height;
+        public uint WalletHeight => current_height;
         protected abstract Version Version { get; }
 
         private Wallet(string path, byte[] passwordKey, bool create)
