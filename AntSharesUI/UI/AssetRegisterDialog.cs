@@ -32,7 +32,7 @@ namespace AntShares.UI
         private void AssetRegisterDialog_Load(object sender, EventArgs e)
         {
             comboBox1.Items.AddRange(new object[] { AssetType.Share, AssetType.Token });
-            comboBox2.Items.AddRange(Program.CurrentWallet.GetAccounts().Select(p => p.PublicKey).ToArray());
+            comboBox2.Items.AddRange(Program.CurrentWallet.GetContracts().Where(p => p.IsStandard).Select(p => Program.CurrentWallet.GetAccount(p.PublicKeyHash)).ToArray());
             comboBox3.Items.AddRange(Program.CurrentWallet.GetContracts().Select(p => p.Address).ToArray());
         }
 

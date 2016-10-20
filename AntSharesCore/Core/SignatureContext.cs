@@ -87,8 +87,7 @@ namespace AntShares.Core
         /// <returns>返回上下文</returns>
         public static SignatureContext FromJson(JObject json)
         {
-            string typename = string.Format("{0}.{1}", typeof(SignatureContext).Namespace, json["type"].AsString());
-            ISignable signable = typeof(SignatureContext).GetTypeInfo().Assembly.CreateInstance(typename) as ISignable;
+            ISignable signable = typeof(SignatureContext).GetTypeInfo().Assembly.CreateInstance(json["type"].AsString()) as ISignable;
             using (MemoryStream ms = new MemoryStream(json["hex"].AsString().HexToBytes(), false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
@@ -153,7 +152,7 @@ namespace AntShares.Core
         public JObject ToJson()
         {
             JObject json = new JObject();
-            json["type"] = Signable.GetType().Name;
+            json["type"] = Signable.GetType().FullName;
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
             {

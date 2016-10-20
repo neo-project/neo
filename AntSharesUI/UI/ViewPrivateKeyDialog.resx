@@ -123,16 +123,16 @@
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>18, 9</value>
+    <value>29, 11</value>
   </data>
   <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>35, 17</value>
+    <value>59, 17</value>
   </data>
   <data name="label1.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>地址:</value>
+    <value>Address:</value>
   </data>
   <data name="&gt;&gt;label1.Name" xml:space="preserve">
     <value>label1</value>
@@ -154,7 +154,7 @@
     <value>47, 22</value>
   </data>
   <data name="textBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>487, 23</value>
+    <value>494, 23</value>
   </data>
   <data name="textBox1.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -181,7 +181,7 @@
     <value>47, 51</value>
   </data>
   <data name="textBox2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>487, 23</value>
+    <value>494, 23</value>
   </data>
   <data name="textBox2.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -253,16 +253,16 @@
     <value>2</value>
   </data>
   <data name="groupBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>12, 53</value>
+    <value>12, 73</value>
   </data>
   <data name="groupBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>540, 85</value>
+    <value>558, 93</value>
   </data>
   <data name="groupBox1.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
   </data>
   <data name="groupBox1.Text" xml:space="preserve">
-    <value>私钥</value>
+    <value>Private Key</value>
   </data>
   <data name="&gt;&gt;groupBox1.Name" xml:space="preserve">
     <value>groupBox1</value>
@@ -280,7 +280,7 @@
     <value>Bottom, Right</value>
   </data>
   <data name="button1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>477, 153</value>
+    <value>495, 172</value>
   </data>
   <data name="button1.Size" type="System.Drawing.Size, System.Drawing">
     <value>75, 23</value>
@@ -289,7 +289,7 @@
     <value>3</value>
   </data>
   <data name="button1.Text" xml:space="preserve">
-    <value>关闭</value>
+    <value>close</value>
   </data>
   <data name="&gt;&gt;button1.Name" xml:space="preserve">
     <value>button1</value>
@@ -307,10 +307,10 @@
     <value>Top, Left, Right</value>
   </data>
   <data name="textBox3.Location" type="System.Drawing.Point, System.Drawing">
-    <value>59, 9</value>
+    <value>94, 11</value>
   </data>
   <data name="textBox3.Size" type="System.Drawing.Size, System.Drawing">
-    <value>493, 16</value>
+    <value>476, 16</value>
   </data>
   <data name="textBox3.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -331,16 +331,16 @@
     <value>True</value>
   </data>
   <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>18, 31</value>
+    <value>18, 36</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>35, 17</value>
+    <value>70, 17</value>
   </data>
   <data name="label2.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>公钥:</value>
+    <value>Public Key:</value>
   </data>
   <data name="&gt;&gt;label2.Name" xml:space="preserve">
     <value>label2</value>
@@ -358,10 +358,10 @@
     <value>Top, Left, Right</value>
   </data>
   <data name="textBox4.Location" type="System.Drawing.Point, System.Drawing">
-    <value>59, 31</value>
+    <value>94, 36</value>
   </data>
   <data name="textBox4.Size" type="System.Drawing.Size, System.Drawing">
-    <value>493, 16</value>
+    <value>476, 16</value>
   </data>
   <data name="textBox4.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
@@ -385,7 +385,7 @@
     <value>7, 17</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>564, 188</value>
+    <value>582, 207</value>
   </data>
   <data name="$this.Font" type="System.Drawing.Font, System.Drawing">
     <value>微软雅黑, 9pt</value>
@@ -397,7 +397,7 @@
     <value>CenterScreen</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>查看私钥</value>
+    <value>View Private Key</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>ViewPrivateKeyDialog</value>

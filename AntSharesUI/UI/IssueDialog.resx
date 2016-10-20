@@ -148,7 +148,7 @@
     <value>True</value>
   </data>
   <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>6, 25</value>
+    <value>9, 25</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
     <value>46, 17</value>
@@ -175,10 +175,10 @@
     <value>Top, Left, Right</value>
   </data>
   <data name="textBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>59, 22</value>
+    <value>61, 22</value>
   </data>
   <data name="textBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>438, 23</value>
+    <value>436, 23</value>
   </data>
   <data name="textBox1.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -199,7 +199,7 @@
     <value>True</value>
   </data>
   <data name="label3.Location" type="System.Drawing.Point, System.Drawing">
-    <value>6, 54</value>
+    <value>7, 54</value>
   </data>
   <data name="label3.Size" type="System.Drawing.Size, System.Drawing">
     <value>48, 17</value>
@@ -226,10 +226,10 @@
     <value>Top, Left, Right</value>
   </data>
   <data name="textBox2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>59, 51</value>
+    <value>61, 51</value>
   </data>
   <data name="textBox2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>438, 23</value>
+    <value>436, 23</value>
   </data>
   <data name="textBox2.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -247,7 +247,7 @@
     <value>4</value>
   </data>
   <data name="textBox3.Location" type="System.Drawing.Point, System.Drawing">
-    <value>59, 80</value>
+    <value>61, 80</value>
   </data>
   <data name="textBox3.Size" type="System.Drawing.Size, System.Drawing">
     <value>150, 23</value>
@@ -271,7 +271,7 @@
     <value>True</value>
   </data>
   <data name="label4.Location" type="System.Drawing.Point, System.Drawing">
-    <value>6, 83</value>
+    <value>21, 83</value>
   </data>
   <data name="label4.Size" type="System.Drawing.Size, System.Drawing">
     <value>34, 17</value>
@@ -295,7 +295,7 @@
     <value>5</value>
   </data>
   <data name="textBox4.Location" type="System.Drawing.Point, System.Drawing">
-    <value>59, 109</value>
+    <value>61, 109</value>
   </data>
   <data name="textBox4.Size" type="System.Drawing.Size, System.Drawing">
     <value>150, 23</value>
@@ -399,20 +399,20 @@
   <data name="groupBox3.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Bottom, Left, Right</value>
   </data>
-  <data name="txOutListBox1.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Bottom, Left, Right</value>
+  <data name="txOutListBox1.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
   </data>
   <data name="txOutListBox1.Font" type="System.Drawing.Font, System.Drawing">
     <value>微软雅黑, 9pt</value>
   </data>
   <data name="txOutListBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>6, 23</value>
+    <value>3, 19</value>
   </data>
   <data name="txOutListBox1.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 4, 3, 4</value>
   </data>
   <data name="txOutListBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>491, 159</value>
+    <value>497, 167</value>
   </data>
   <data name="txOutListBox1.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -421,7 +421,7 @@
     <value>txOutListBox1</value>
   </data>
   <data name="&gt;&gt;txOutListBox1.Type" xml:space="preserve">
-    <value>AntShares.UI.TxOutListBox, AntSharesUI, Version=0.6.6096.32792, Culture=neutral, PublicKeyToken=null</value>
+    <value>AntShares.UI.TxOutListBox, AntSharesUI, Version=1.0.6135.34693, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;txOutListBox1.Parent" xml:space="preserve">
     <value>groupBox3</value>
@@ -513,9 +513,9 @@
   <data name="&gt;&gt;button4.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
-  <data name="$this.Localizable" type="System.Boolean, mscorlib">
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
-  </data>
+  </metadata>
   <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
     <value>7, 17</value>
   </data>

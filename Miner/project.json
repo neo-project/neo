@@ -1,14 +1,14 @@
 {
   "copyright": "© AntShares Project 2015 Released under the MIT license",
   "title": "AntShares",
-  "version": "1.0-coreclr",
+  "version": "1.0.1-coreclr",
   "buildOptions": {
     "emitEntryPoint": true
   },
 
   "dependencies": {
-    "AntSharesCore": "1.0-coreclr",
-    "AntSharesDaemon": "1.0-coreclr",
+    "AntSharesCore": "1.0.1-coreclr",
+    "AntSharesDaemon": "1.0.1-coreclr",
     "Microsoft.NETCore.App": {
       "type": "platform",
       "version": "1.0.1"

@@ -119,60 +119,60 @@
   </resheader>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>18, 11</value>
+    <value>18, 9</value>
   </data>
   <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>59, 17</value>
+    <value>35, 17</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>Address:</value>
+    <value>地址:</value>
   </data>
   <data name="textBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>406, 23</value>
+    <value>487, 23</value>
   </data>
   <data name="textBox2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>406, 23</value>
+    <value>487, 23</value>
   </data>
   <data name="groupBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>12, 73</value>
+    <value>12, 53</value>
   </data>
   <data name="groupBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>470, 87</value>
+    <value>540, 85</value>
   </data>
   <data name="groupBox1.Text" xml:space="preserve">
-    <value>Private Key</value>
+    <value>私钥</value>
   </data>
   <data name="button1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>495, 172</value>
+    <value>477, 153</value>
   </data>
   <data name="button1.Text" xml:space="preserve">
-    <value>close</value>
+    <value>关闭</value>
   </data>
   <data name="textBox3.Location" type="System.Drawing.Point, System.Drawing">
-    <value>119, 11</value>
+    <value>59, 9</value>
   </data>
   <data name="textBox3.Size" type="System.Drawing.Size, System.Drawing">
-    <value>363, 16</value>
+    <value>493, 16</value>
   </data>
   <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>18, 36</value>
+    <value>18, 31</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>70, 17</value>
+    <value>35, 17</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>Public Key:</value>
+    <value>公钥:</value>
   </data>
   <data name="textBox4.Location" type="System.Drawing.Point, System.Drawing">
-    <value>119, 36</value>
+    <value>59, 31</value>
   </data>
   <data name="textBox4.Size" type="System.Drawing.Size, System.Drawing">
-    <value>363, 16</value>
+    <value>493, 16</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>582, 207</value>
+    <value>564, 188</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>View Private Key</value>
+    <value>查看私钥</value>
   </data>
 </root>

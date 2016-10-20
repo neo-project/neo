@@ -51,7 +51,8 @@
             this.资产分发IToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
             this.选举EToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.投票VToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
+            this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.帮助HToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.查看帮助VToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.官网WToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -61,7 +62,6 @@
             this.关于AntSharesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.listView1 = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.创建新地址NToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.导入私钥IToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -217,7 +217,8 @@
             this.资产分发IToolStripMenuItem,
             this.toolStripSeparator8,
             this.选举EToolStripMenuItem,
-            this.投票VToolStripMenuItem});
+            this.toolStripSeparator9,
+            this.optionsToolStripMenuItem});
             this.高级AToolStripMenuItem.Name = "高级AToolStripMenuItem";
             // 
             // 提取小蚁币CToolStripMenuItem
@@ -254,11 +255,16 @@
             this.选举EToolStripMenuItem.Name = "选举EToolStripMenuItem";
             this.选举EToolStripMenuItem.Click += new System.EventHandler(this.选举EToolStripMenuItem_Click);
             // 
-            // 投票VToolStripMenuItem
+            // toolStripSeparator9
             // 
-            resources.ApplyResources(this.投票VToolStripMenuItem, "投票VToolStripMenuItem");
-            this.投票VToolStripMenuItem.Name = "投票VToolStripMenuItem";
-            this.投票VToolStripMenuItem.Click += new System.EventHandler(this.投票VToolStripMenuItem_Click);
+            resources.ApplyResources(this.toolStripSeparator9, "toolStripSeparator9");
+            this.toolStripSeparator9.Name = "toolStripSeparator9";
+            // 
+            // optionsToolStripMenuItem
+            // 
+            resources.ApplyResources(this.optionsToolStripMenuItem, "optionsToolStripMenuItem");
+            this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
+            this.optionsToolStripMenuItem.Click += new System.EventHandler(this.optionsToolStripMenuItem_Click);
             // 
             // 帮助HToolStripMenuItem
             // 
@@ -309,24 +315,23 @@
             // 
             resources.ApplyResources(this.listView1, "listView1");
             this.listView1.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.columnHeader1,
-            this.columnHeader4});
+            this.columnHeader1});
             this.listView1.ContextMenuStrip = this.contextMenuStrip1;
             this.listView1.FullRowSelect = true;
             this.listView1.GridLines = true;
+            this.listView1.Groups.AddRange(new System.Windows.Forms.ListViewGroup[] {
+            ((System.Windows.Forms.ListViewGroup)(resources.GetObject("listView1.Groups"))),
+            ((System.Windows.Forms.ListViewGroup)(resources.GetObject("listView1.Groups1")))});
             this.listView1.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.listView1.HideSelection = false;
             this.listView1.Name = "listView1";
             this.listView1.UseCompatibleStateImageBehavior = false;
             this.listView1.View = System.Windows.Forms.View.Details;
+            this.listView1.DoubleClick += new System.EventHandler(this.listView1_DoubleClick);
             // 
             // columnHeader1
             // 
             resources.ApplyResources(this.columnHeader1, "columnHeader1");
-            // 
-            // columnHeader4
-            // 
-            resources.ApplyResources(this.columnHeader4, "columnHeader4");
             // 
             // contextMenuStrip1
             // 
@@ -508,6 +513,7 @@
             this.listView2.ShowGroups = false;
             this.listView2.UseCompatibleStateImageBehavior = false;
             this.listView2.View = System.Windows.Forms.View.Details;
+            this.listView2.DoubleClick += new System.EventHandler(this.listView2_DoubleClick);
             // 
             // columnHeader2
             // 
@@ -563,6 +569,7 @@
             this.listView3.ShowGroups = false;
             this.listView3.UseCompatibleStateImageBehavior = false;
             this.listView3.View = System.Windows.Forms.View.Details;
+            this.listView3.DoubleClick += new System.EventHandler(this.listView3_DoubleClick);
             // 
             // columnHeader7
             // 
@@ -666,7 +673,6 @@
         private System.Windows.Forms.ToolStripMenuItem 资产分发IToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 创建智能合约SToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 多方签名MToolStripMenuItem;
-        private System.Windows.Forms.ColumnHeader columnHeader4;
         private System.Windows.Forms.ListView listView1;
         private System.Windows.Forms.ColumnHeader columnHeader5;
         private System.Windows.Forms.ColumnHeader columnHeader6;
@@ -676,7 +682,6 @@
         private System.Windows.Forms.ToolStripMenuItem 提取小蚁币CToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
         private System.Windows.Forms.ToolStripMenuItem 选举EToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem 投票VToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 重建钱包数据库RToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 交易TToolStripMenuItem1;
         private System.Windows.Forms.TabPage tabPage3;
@@ -692,6 +697,8 @@
         private System.Windows.Forms.ColumnHeader columnHeader10;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip3;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator9;
+        private System.Windows.Forms.ToolStripMenuItem optionsToolStripMenuItem;
     }
 }
 

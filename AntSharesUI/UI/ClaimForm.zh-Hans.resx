@@ -148,9 +148,6 @@
   <data name="textBox2.Location" type="System.Drawing.Point, System.Drawing">
     <value>86, 48</value>
   </data>
-  <data name="textBox2.Text" xml:space="preserve">
-    <value>未知</value>
-  </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
     <value>257, 127</value>
   </data>

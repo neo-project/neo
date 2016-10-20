@@ -177,9 +177,6 @@
   <data name="MigrateWalletSucceedMessage" xml:space="preserve">
     <value>钱包文件迁移成功，旧的文件已经自动保存到以下位置：</value>
   </data>
-  <data name="NonstandardContract" xml:space="preserve">
-    <value>合约地址</value>
-  </data>
   <data name="PasswordIncorrect" xml:space="preserve">
     <value>密码错误！</value>
   </data>
@@ -203,9 +200,6 @@
   </data>
   <data name="SigningFailedNoDataMessage" xml:space="preserve">
     <value>必须输入一段含有待签名数据的JSON对象。</value>
-  </data>
-  <data name="StandardContract" xml:space="preserve">
-    <value>标准账户</value>
   </data>
   <data name="SystemIssuer" xml:space="preserve">
     <value>小蚁系统</value>

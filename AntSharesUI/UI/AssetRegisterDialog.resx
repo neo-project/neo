@@ -123,7 +123,7 @@
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 18</value>
+    <value>12, 18</value>
   </data>
   <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
     <value>71, 12</value>
@@ -151,10 +151,10 @@
     <value>Top, Left, Right</value>
   </data>
   <data name="comboBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>98, 15</value>
+    <value>89, 15</value>
   </data>
   <data name="comboBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>360, 20</value>
+    <value>369, 20</value>
   </data>
   <data name="comboBox1.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -175,7 +175,7 @@
     <value>True</value>
   </data>
   <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 51</value>
+    <value>48, 51</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
     <value>35, 12</value>
@@ -205,10 +205,10 @@
     <value>False</value>
   </data>
   <data name="textBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>98, 48</value>
+    <value>89, 48</value>
   </data>
   <data name="textBox1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>360, 21</value>
+    <value>369, 21</value>
   </data>
   <data name="textBox1.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -229,7 +229,7 @@
     <value>True</value>
   </data>
   <data name="label3.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 85</value>
+    <value>36, 85</value>
   </data>
   <data name="label3.Size" type="System.Drawing.Size, System.Drawing">
     <value>47, 12</value>
@@ -259,7 +259,7 @@
     <value>False</value>
   </data>
   <data name="checkBox1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>72, 85</value>
+    <value>89, 85</value>
   </data>
   <data name="checkBox1.Size" type="System.Drawing.Size, System.Drawing">
     <value>15, 14</value>
@@ -286,10 +286,10 @@
     <value>False</value>
   </data>
   <data name="textBox2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>98, 82</value>
+    <value>110, 82</value>
   </data>
   <data name="textBox2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>360, 21</value>
+    <value>348, 21</value>
   </data>
   <data name="textBox2.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
@@ -310,7 +310,7 @@
     <value>True</value>
   </data>
   <data name="label4.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 118</value>
+    <value>36, 118</value>
   </data>
   <data name="label4.Size" type="System.Drawing.Size, System.Drawing">
     <value>47, 12</value>
@@ -337,10 +337,10 @@
     <value>Top, Left, Right</value>
   </data>
   <data name="comboBox2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>98, 115</value>
+    <value>89, 115</value>
   </data>
   <data name="comboBox2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>360, 20</value>
+    <value>369, 20</value>
   </data>
   <data name="comboBox2.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
@@ -361,7 +361,7 @@
     <value>True</value>
   </data>
   <data name="label5.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 151</value>
+    <value>42, 151</value>
   </data>
   <data name="label5.Size" type="System.Drawing.Size, System.Drawing">
     <value>41, 12</value>
@@ -388,10 +388,10 @@
     <value>Top, Left, Right</value>
   </data>
   <data name="comboBox3.Location" type="System.Drawing.Point, System.Drawing">
-    <value>98, 148</value>
+    <value>89, 148</value>
   </data>
   <data name="comboBox3.Size" type="System.Drawing.Size, System.Drawing">
-    <value>360, 20</value>
+    <value>369, 20</value>
   </data>
   <data name="comboBox3.TabIndex" type="System.Int32, mscorlib">
     <value>10</value>
@@ -435,9 +435,9 @@
   <data name="&gt;&gt;button1.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
-  <data name="$this.Localizable" type="System.Boolean, mscorlib">
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
-  </data>
+  </metadata>
   <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
     <value>6, 12</value>
   </data>

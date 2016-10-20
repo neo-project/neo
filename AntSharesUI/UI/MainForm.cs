@@ -32,8 +32,8 @@ namespace AntShares.UI
 
         private void AddContractToListView(Contract contract, bool selected = false)
         {
-            string type = contract.IsStandard ? Strings.StandardContract : Strings.NonstandardContract;
-            listView1.Items.Add(new ListViewItem(new[] { contract.Address, type })
+            ListViewGroup group = contract.IsStandard ? listView1.Groups["standardContractGroup"] : listView1.Groups["nonstandardContractGroup"];
+            listView1.Items.Add(new ListViewItem(contract.Address, group)
             {
                 Name = contract.Address,
                 Tag = contract
@@ -43,6 +43,7 @@ namespace AntShares.UI
         private void Blockchain_PersistCompleted(object sender, Block block)
         {
             persistence_time = DateTime.Now;
+            CurrentWallet_TransactionsChanged(null, Enumerable.Empty<TransactionInfo>());
         }
 
         private void ChangeWallet(UserWallet wallet)
@@ -64,7 +65,10 @@ namespace AntShares.UI
             修改密码CToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             重建钱包数据库RToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             交易TToolStripMenuItem.Enabled = Program.CurrentWallet != null;
-            高级AToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            提取小蚁币CToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            注册资产RToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            资产分发IToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            选举EToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             创建新地址NToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             导入私钥IToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             创建智能合约SToolStripMenuItem.Enabled = Program.CurrentWallet != null;
@@ -135,7 +139,9 @@ namespace AntShares.UI
                 }
                 foreach (ListViewItem item in listView3.Items)
                 {
-                    item.SubItems["confirmations"].Text = (Blockchain.Default.Height - ((TransactionInfo)item.Tag).Height + 1)?.ToString() ?? Strings.Unconfirmed;
+                    int? confirmations = (int)Blockchain.Default.Height - (int?)((TransactionInfo)item.Tag).Height + 1;
+                    if (confirmations <= 0) confirmations = null;
+                    item.SubItems["confirmations"].Text = confirmations?.ToString() ?? Strings.Unconfirmed;
                 }
             }
         }
@@ -166,6 +172,8 @@ namespace AntShares.UI
                 toolStripProgressBar1.Value = persistence_span.Seconds;
                 toolStripProgressBar1.Style = ProgressBarStyle.Blocks;
             }
+            if (Program.CurrentWallet?.WalletHeight > Blockchain.Default.Height + 1)
+                return;
             if (balance_changed)
             {
                 IEnumerable<Coin> coins = Program.CurrentWallet?.FindCoins() ?? Enumerable.Empty<Coin>();
@@ -273,6 +281,8 @@ namespace AntShares.UI
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
                 ChangeWallet(UserWallet.Create(dialog.WalletPath, dialog.Password));
+                Settings.Default.LastWalletPath = dialog.WalletPath;
+                Settings.Default.Save();
             }
         }
 
@@ -281,17 +291,17 @@ namespace AntShares.UI
             using (OpenWalletDialog dialog = new OpenWalletDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                if (UserWallet.GetVersion(dialog.WalletPath) < Version.Parse("0.6.6043.32131"))
-                {
-                    if (MessageBox.Show(Strings.MigrateWalletMessage, Strings.MigrateWalletCaption, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) != DialogResult.Yes)
-                        return;
-                    string path_old = Path.ChangeExtension(dialog.WalletPath, ".old.db3");
-                    string path_new = Path.ChangeExtension(dialog.WalletPath, ".new.db3");
-                    UserWallet.Migrate(dialog.WalletPath, path_new);
-                    File.Move(dialog.WalletPath, path_old);
-                    File.Move(path_new, dialog.WalletPath);
-                    MessageBox.Show($"{Strings.MigrateWalletSucceedMessage}\n{path_old}");
-                }
+                //if (UserWallet.GetVersion(dialog.WalletPath) < Version.Parse("0.6.6043.32131"))
+                //{
+                //    if (MessageBox.Show(Strings.MigrateWalletMessage, Strings.MigrateWalletCaption, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) != DialogResult.Yes)
+                //        return;
+                //    string path_old = Path.ChangeExtension(dialog.WalletPath, ".old.db3");
+                //    string path_new = Path.ChangeExtension(dialog.WalletPath, ".new.db3");
+                //    UserWallet.Migrate(dialog.WalletPath, path_new);
+                //    File.Move(dialog.WalletPath, path_old);
+                //    File.Move(path_new, dialog.WalletPath);
+                //    MessageBox.Show($"{Strings.MigrateWalletSucceedMessage}\n{path_old}");
+                //}
                 UserWallet wallet;
                 try
                 {
@@ -302,7 +312,10 @@ namespace AntShares.UI
                     MessageBox.Show(Strings.PasswordIncorrect);
                     return;
                 }
+                if (dialog.RepairMode) wallet.Rebuild();
                 ChangeWallet(wallet);
+                Settings.Default.LastWalletPath = dialog.WalletPath;
+                Settings.Default.Save();
             }
         }
 
@@ -380,12 +393,11 @@ namespace AntShares.UI
             }
         }
 
-        private void 投票VToolStripMenuItem_Click(object sender, EventArgs e)
+        private void optionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (VotingDialog dialog = new VotingDialog())
+            using (OptionsDialog dialog = new OptionsDialog())
             {
-                if (dialog.ShowDialog() != DialogResult.OK) return;
-                Helper.SignAndShowInformation(dialog.GetTransaction());
+                dialog.ShowDialog();
             }
         }
 
@@ -539,6 +551,27 @@ namespace AntShares.UI
         {
             if (listView3.SelectedItems.Count == 0) return;
             Clipboard.SetDataObject(listView3.SelectedItems[0].SubItems[1].Text);
+        }
+
+        private void listView1_DoubleClick(object sender, EventArgs e)
+        {
+            if (listView1.SelectedIndices.Count == 0) return;
+            string url = "http://antcha.in/address/info/" + listView1.SelectedItems[0].Text;
+            Process.Start(url);
+        }
+
+        private void listView2_DoubleClick(object sender, EventArgs e)
+        {
+            if (listView2.SelectedIndices.Count == 0) return;
+            string url = "http://antcha.in/tokens/hash/" + listView2.SelectedItems[0].Name;
+            Process.Start(url);
+        }
+
+        private void listView3_DoubleClick(object sender, EventArgs e)
+        {
+            if (listView3.SelectedIndices.Count == 0) return;
+            string url = "http://antcha.in/tx/hash/" + listView3.SelectedItems[0].Name;
+            Process.Start(url);
         }
     }
 }

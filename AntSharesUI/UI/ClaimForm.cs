@@ -15,14 +15,17 @@ namespace AntShares.UI
 
         private void ClaimForm_Load(object sender, EventArgs e)
         {
-            Fixed8 amount = Wallet.CalculateClaimAmount(Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Input));
-            textBox1.Text = amount.ToString();
-            if (amount == Fixed8.Zero) button1.Enabled = false;
+            Fixed8 amount_available = Wallet.CalculateClaimAmount(Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Input));
+            Fixed8 amount_unavailable = Wallet.CalculateClaimAmountUnavailable(Program.CurrentWallet.FindUnspentCoins().Where(p => p.AssetId.Equals(Blockchain.AntShare.Hash)).Select(p => p.Input), Blockchain.Default.Height);
+            textBox1.Text = amount_available.ToString();
+            textBox2.Text = amount_unavailable.ToString();
+            if (amount_available == Fixed8.Zero) button1.Enabled = false;
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
             TransactionInput[] claims = Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Input).ToArray();
+            if (claims.Length == 0) return;
             Helper.SignAndShowInformation(new ClaimTransaction
             {
                 Claims = claims,
@@ -38,6 +41,7 @@ namespace AntShares.UI
                     }
                 }
             });
+            Close();
         }
     }
 }

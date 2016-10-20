@@ -97,7 +97,15 @@ namespace AntShares.Core
             string name_str = AssetType == AssetType.Share ? ShareName : Name;
             if (_names == null)
             {
-                JObject name_obj = JObject.Parse(name_str);
+                JObject name_obj;
+                try
+                {
+                    name_obj = JObject.Parse(name_str);
+                }
+                catch (FormatException)
+                {
+                    name_obj = name_str;
+                }
                 if (name_obj is JString)
                     _names = new Dictionary<CultureInfo, string> { { new CultureInfo("en"), name_obj.AsString() } };
                 else

@@ -22,10 +22,6 @@
         /// </summary>
         EnrollmentTransaction = 0x20,
         /// <summary>
-        /// 用于投票选出记账人的特殊交易
-        /// </summary>
-        VotingTransaction = 0x24,
-        /// <summary>
         /// 用于资产登记的特殊交易
         /// </summary>
         RegisterTransaction = 0x40,

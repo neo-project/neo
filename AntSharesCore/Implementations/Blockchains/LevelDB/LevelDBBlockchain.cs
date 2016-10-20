@@ -389,19 +389,21 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     UInt256 hash = new UInt256(kv.Key.ToArray().Skip(1).ToArray());
                     ushort[] indexes = kv.Value.ToArray().GetUInt16Array().Except(others.SelectMany(p => p.GetAllInputs()).Where(p => p.PrevHash == hash).Select(p => p.PrevIndex)).ToArray();
                     if (indexes.Length == 0) continue;
-                    VotingTransaction tx = (VotingTransaction)GetTransaction(options, hash, out height);
+                    Transaction tx = GetTransaction(options, hash, out height);
                     yield return new Vote
                     {
-                        Enrollments = tx.Enrollments,
+                        Enrollments = tx.Attributes.Where(p => p.Usage == TransactionAttributeUsage.Vote).Select(p => new UInt256(p.Data)).ToArray(),
                         Count = indexes.Sum(p => tx.Outputs[p].Value)
                     };
                 }
             }
-            foreach (VotingTransaction tx in others.OfType<VotingTransaction>())
+            foreach (Transaction tx in others)
             {
+                UInt256[] enrollments = tx.Attributes.Where(p => p.Usage == TransactionAttributeUsage.Vote).Select(p => new UInt256(p.Data)).ToArray();
+                if (enrollments.Length == 0) continue;
                 yield return new Vote
                 {
-                    Enrollments = tx.Enrollments,
+                    Enrollments = enrollments,
                     Count = tx.Outputs.Where(p => p.AssetId == AntShare.Hash).Sum(p => p.Value)
                 };
             }
@@ -505,6 +507,17 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             foreach (Transaction tx in block.Transactions)
             {
                 batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Transaction).Add(tx.Hash), SliceBuilder.Begin().Add(block.Height).Add(tx.ToArray()));
+                if (tx.Attributes.Any(p => p.Usage == TransactionAttributeUsage.Vote))
+                {
+                    unspent_votes.AddEmpty(tx.Hash);
+                    for (ushort index = 0; index < tx.Outputs.Length; index++)
+                    {
+                        if (tx.Outputs[index].AssetId == AntShare.Hash)
+                        {
+                            unspent_votes.Add(tx.Hash, index);
+                        }
+                    }
+                }
                 switch (tx.Type)
                 {
                     case TransactionType.IssueTransaction:
@@ -530,16 +543,6 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                         {
                             EnrollmentTransaction enroll_tx = (EnrollmentTransaction)tx;
                             batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment).Add(tx.Hash), true);
-                        }
-                        break;
-                    case TransactionType.VotingTransaction:
-                        unspent_votes.AddEmpty(tx.Hash);
-                        for (ushort index = 0; index < tx.Outputs.Length; index++)
-                        {
-                            if (tx.Outputs[index].AssetId == AntShare.Hash)
-                            {
-                                unspent_votes.Add(tx.Hash, index);
-                            }
                         }
                         break;
                     case TransactionType.PublishTransaction:

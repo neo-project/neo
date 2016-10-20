@@ -1,4 +1,6 @@
-﻿using System;
+﻿using AntShares.Properties;
+using System;
+using System.IO;
 using System.Windows.Forms;
 
 namespace AntShares.UI
@@ -8,6 +10,8 @@ namespace AntShares.UI
         public OpenWalletDialog()
         {
             InitializeComponent();
+            if (File.Exists(Settings.Default.LastWalletPath))
+                textBox1.Text = Settings.Default.LastWalletPath;
         }
 
         public string Password
@@ -19,6 +23,18 @@ namespace AntShares.UI
             set
             {
                 textBox2.Text = value;
+            }
+        }
+
+        public bool RepairMode
+        {
+            get
+            {
+                return checkBox1.Checked;
+            }
+            set
+            {
+                checkBox1.Checked = value;
             }
         }
 
