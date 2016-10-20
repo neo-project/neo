@@ -119,6 +119,12 @@
     <Compile Include="UI\IssueDialog.Designer.cs">
       <DependentUpon>IssueDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\OptionsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\OptionsDialog.Designer.cs">
+      <DependentUpon>OptionsDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\TradeForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -218,12 +224,6 @@
     <Compile Include="UI\ViewPrivateKeyDialog.designer.cs">
       <DependentUpon>ViewPrivateKeyDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\VotingDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="UI\VotingDialog.Designer.cs">
-      <DependentUpon>VotingDialog.cs</DependentUpon>
-    </Compile>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -309,6 +309,13 @@
     <EmbeddedResource Include="UI\OpenWalletDialog.zh-Hans.resx">
       <DependentUpon>OpenWalletDialog.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\OptionsDialog.resx">
+      <DependentUpon>OptionsDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\OptionsDialog.zh-Hans.resx">
+      <DependentUpon>OptionsDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\PayToDialog.zh-Hans.resx">
       <DependentUpon>PayToDialog.cs</DependentUpon>
     </EmbeddedResource>
@@ -345,6 +352,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\SigningDialog.resx">
       <DependentUpon>SigningDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\CreateWalletDialog.resx">
       <DependentUpon>CreateWalletDialog.cs</DependentUpon>
@@ -367,12 +375,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\ViewPrivateKeyDialog.zh-Hans.resx">
       <DependentUpon>ViewPrivateKeyDialog.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="UI\VotingDialog.resx">
-      <DependentUpon>VotingDialog.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="UI\VotingDialog.zh-Hans.resx">
-      <DependentUpon>VotingDialog.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

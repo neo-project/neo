@@ -203,7 +203,6 @@
     <Compile Include="Core\TransactionResult.cs" />
     <Compile Include="Core\TransactionType.cs" />
     <Compile Include="Core\Vote.cs" />
-    <Compile Include="Core\VotingTransaction.cs" />
     <Compile Include="Cryptography\Helper.cs" />
     <Compile Include="Cryptography\MerkleTree.cs" />
     <Compile Include="Fixed8.cs" />

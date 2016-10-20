@@ -223,6 +223,15 @@
   <data name="投票VToolStripMenuItem.Text" xml:space="preserve">
     <value>投票(&amp;V)...</value>
   </data>
+  <data name="toolStripSeparator9.Size" type="System.Drawing.Size, System.Drawing">
+    <value>158, 6</value>
+  </data>
+  <data name="optionsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 22</value>
+  </data>
+  <data name="optionsToolStripMenuItem.Text" xml:space="preserve">
+    <value>选项(&amp;O)...</value>
+  </data>
   <data name="高级AToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>60, 21</value>
   </data>

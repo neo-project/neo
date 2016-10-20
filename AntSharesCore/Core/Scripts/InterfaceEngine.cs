@@ -62,8 +62,6 @@ namespace AntShares.Core.Scripts
                     return AssetAdmin(engine);
                 case "AntShares.Enroll.pubkey":
                     return EnrollPubkey(engine);
-                case "AntShares.Vote.enrollments":
-                    return VoteEnrollments(engine);
                 case "AntShares.TX.attributes":
                     return TxAttributes(engine);
                 case "AntShares.TX.inputs":
@@ -444,15 +442,6 @@ namespace AntShares.Core.Scripts
                 engine.Stack.Push(new StackItem(r));
             else
                 engine.Stack.Push(new StackItem(r[0]));
-            return true;
-        }
-
-        private bool VoteEnrollments(ScriptEngine engine)
-        {
-            if (engine.AltStack.Count < 1) return false;
-            VotingTransaction tx = engine.AltStack.Pop().GetInterface<VotingTransaction>();
-            if (tx == null) return false;
-            engine.Stack.Push(new StackItem(tx.Enrollments));
             return true;
         }
 

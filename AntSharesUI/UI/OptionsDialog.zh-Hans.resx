@@ -118,12 +118,15 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="groupBox1.Text" xml:space="preserve">
-    <value>候选人</value>
+    <value>投票</value>
   </data>
   <data name="button1.Text" xml:space="preserve">
     <value>确定</value>
   </data>
+  <data name="button2.Text" xml:space="preserve">
+    <value>取消</value>
+  </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>投票</value>
+    <value>选项</value>
   </data>
 </root>

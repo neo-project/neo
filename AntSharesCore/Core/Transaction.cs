@@ -1,5 +1,6 @@
 ﻿using AntShares.Core.Scripts;
 using AntShares.Cryptography;
+using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using AntShares.IO.Json;
 using AntShares.Network;
@@ -169,7 +170,11 @@ namespace AntShares.Core
                 throw new FormatException();
             DeserializeExclusiveData(reader);
             Attributes = reader.ReadSerializableArray<TransactionAttribute>();
-            if (Attributes.Select(p => p.Usage).Distinct().Count() != Attributes.Length)
+            if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
+                throw new FormatException();
+            if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.Vote) > 1024)
+                throw new FormatException();
+            if (Attributes.Where(p => p.Usage == TransactionAttributeUsage.Vote).Select(p => new UInt256(p.Data)).Distinct().Count() != Attributes.Count(p => p.Usage == TransactionAttributeUsage.Vote))
                 throw new FormatException();
             Inputs = reader.ReadSerializableArray<TransactionInput>();
             TransactionInput[] inputs = GetAllInputs().ToArray();
@@ -177,8 +182,8 @@ namespace AntShares.Core
                 for (int j = 0; j < i; j++)
                     if (inputs[i].PrevHash == inputs[j].PrevHash && inputs[i].PrevIndex == inputs[j].PrevIndex)
                         throw new FormatException();
-            Outputs = reader.ReadSerializableArray<TransactionOutput>();
-            if (Outputs.Length > ushort.MaxValue + 1)
+            Outputs = reader.ReadSerializableArray<TransactionOutput>(ushort.MaxValue + 1);
+            if (Attributes.Any(p => p.Usage == TransactionAttributeUsage.Vote) && Outputs.All(p => !p.AssetId.Equals(Blockchain.AntShare.Hash)))
                 throw new FormatException();
         }
 
@@ -346,8 +351,7 @@ namespace AntShares.Core
                         return false;
                     break;
             }
-            TransactionAttribute script = Attributes.FirstOrDefault(p => p.Usage == TransactionAttributeUsage.Script);
-            if (script != null)
+            foreach (TransactionAttribute script in Attributes.Where(p => p.Usage == TransactionAttributeUsage.Script))
             {
                 ScriptEngine engine = new ScriptEngine(new Script
                 {
@@ -355,6 +359,19 @@ namespace AntShares.Core
                     RedeemScript = script.Data
                 }, this, InterfaceEngine.Default);
                 if (!engine.Execute()) return false;
+            }
+            if (Attributes.Any(p => p.Usage == TransactionAttributeUsage.Vote))
+            {
+                if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
+                    return false;
+                HashSet<ECPoint> pubkeys = new HashSet<ECPoint>();
+                foreach (UInt256 vote in Attributes.Where(p => p.Usage == TransactionAttributeUsage.Vote).Select(p => new UInt256(p.Data)))
+                {
+                    EnrollmentTransaction tx = Blockchain.Default.GetTransaction(vote) as EnrollmentTransaction;
+                    if (tx == null) return false;
+                    if (!Blockchain.Default.ContainsUnspent(vote, 0)) return false;
+                    if (!pubkeys.Add(tx.PublicKey)) return false;
+                }
             }
             return this.VerifySignature();
         }

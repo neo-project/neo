@@ -65,7 +65,10 @@ namespace AntShares.UI
             修改密码CToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             重建钱包数据库RToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             交易TToolStripMenuItem.Enabled = Program.CurrentWallet != null;
-            高级AToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            提取小蚁币CToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            注册资产RToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            资产分发IToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            选举EToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             创建新地址NToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             导入私钥IToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             创建智能合约SToolStripMenuItem.Enabled = Program.CurrentWallet != null;
@@ -136,7 +139,7 @@ namespace AntShares.UI
                 }
                 foreach (ListViewItem item in listView3.Items)
                 {
-                    int? confirmations = (int)Blockchain.Default.Height - (int)((TransactionInfo)item.Tag).Height + 1;
+                    int? confirmations = (int)Blockchain.Default.Height - (int?)((TransactionInfo)item.Tag).Height + 1;
                     if (confirmations <= 0) confirmations = null;
                     item.SubItems["confirmations"].Text = confirmations?.ToString() ?? Strings.Unconfirmed;
                 }
@@ -390,12 +393,11 @@ namespace AntShares.UI
             }
         }
 
-        private void 投票VToolStripMenuItem_Click(object sender, EventArgs e)
+        private void optionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (VotingDialog dialog = new VotingDialog())
+            using (OptionsDialog dialog = new OptionsDialog())
             {
-                if (dialog.ShowDialog() != DialogResult.OK) return;
-                Helper.SignAndShowInformation(dialog.GetTransaction());
+                dialog.ShowDialog();
             }
         }
 
@@ -549,6 +551,27 @@ namespace AntShares.UI
         {
             if (listView3.SelectedItems.Count == 0) return;
             Clipboard.SetDataObject(listView3.SelectedItems[0].SubItems[1].Text);
+        }
+
+        private void listView1_DoubleClick(object sender, EventArgs e)
+        {
+            if (listView1.SelectedIndices.Count == 0) return;
+            string url = "http://antcha.in/address/info/" + listView1.SelectedItems[0].Text;
+            Process.Start(url);
+        }
+
+        private void listView2_DoubleClick(object sender, EventArgs e)
+        {
+            if (listView2.SelectedIndices.Count == 0) return;
+            string url = "http://antcha.in/tokens/hash/" + listView2.SelectedItems[0].Name;
+            Process.Start(url);
+        }
+
+        private void listView3_DoubleClick(object sender, EventArgs e)
+        {
+            if (listView3.SelectedIndices.Count == 0) return;
+            string url = "http://antcha.in/tx/hash/" + listView3.SelectedItems[0].Name;
+            Process.Start(url);
         }
     }
 }

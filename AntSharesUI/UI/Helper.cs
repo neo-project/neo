@@ -2,6 +2,7 @@
 using AntShares.Properties;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace AntShares.UI
@@ -33,6 +34,14 @@ namespace AntShares.UI
             {
                 MessageBox.Show(Strings.InsufficientFunds);
                 return;
+            }
+            if (tx.Attributes.All(p => p.Usage != TransactionAttributeUsage.Vote) && tx.Outputs.Any(p => p.AssetId.Equals(Blockchain.AntShare.Hash)) && Settings.Default.Votes.Count > 0)
+            {
+                tx.Attributes = tx.Attributes.Concat(Settings.Default.Votes.OfType<string>().Select(p => new TransactionAttribute
+                {
+                    Usage = TransactionAttributeUsage.Vote,
+                    Data = UInt256.Parse(p).ToArray()
+                })).ToArray();
             }
             SignatureContext context;
             try

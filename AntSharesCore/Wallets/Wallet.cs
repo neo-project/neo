@@ -124,6 +124,34 @@ namespace AntShares.Wallets
                     unclaimed.Add(claimable[claim.PrevIndex]);
                 }
             }
+            return CalculateClaimAmountInternal(unclaimed);
+        }
+
+        public static Fixed8 CalculateClaimAmountUnavailable(IEnumerable<TransactionInput> inputs, uint height)
+        {
+            List<Claimable> unclaimed = new List<Claimable>();
+            foreach (var group in inputs.GroupBy(p => p.PrevHash))
+            {
+                int height_start;
+                Transaction tx = Blockchain.Default.GetTransaction(group.Key, out height_start);
+                if (tx == null) throw new ArgumentException();
+                foreach (TransactionInput claim in group)
+                {
+                    if (claim.PrevIndex >= tx.Outputs.Length || !tx.Outputs[claim.PrevIndex].AssetId.Equals(Blockchain.AntShare.Hash))
+                        throw new ArgumentException();
+                    unclaimed.Add(new Claimable
+                    {
+                        Output = tx.Outputs[claim.PrevIndex],
+                        StartHeight = (uint)height_start,
+                        EndHeight = height
+                    });
+                }
+            }
+            return CalculateClaimAmountInternal(unclaimed);
+        }
+
+        private static Fixed8 CalculateClaimAmountInternal(IEnumerable<Claimable> unclaimed)
+        {
             Fixed8 amount_claimed = Fixed8.Zero;
             foreach (var group in unclaimed.GroupBy(p => new { p.StartHeight, p.EndHeight }))
             {

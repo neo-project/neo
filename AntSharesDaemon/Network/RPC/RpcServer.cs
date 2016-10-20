@@ -97,15 +97,22 @@ namespace AntShares.Network.RPC
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
                         bool verbose = _params.Count >= 2 && _params[1].AsBooleanOrDefault(false);
+                        int height = -1;
                         Transaction tx = LocalNode.GetTransaction(hash);
                         if (tx == null)
-                            tx = Blockchain.Default.GetTransaction(hash);
+                            tx = Blockchain.Default.GetTransaction(hash, out height);
                         if (tx == null)
                             throw new RpcException(-101, "Unknown transaction");
                         if (verbose)
-                            return tx.ToJson();
+                        {
+                            JObject json = tx.ToJson();
+                            json["height"] = height;
+                            return json;
+                        }
                         else
+                        {
                             return tx.ToArray().ToHexString();
+                        }
                     }
                 case "gettxout":
                     {

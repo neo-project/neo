@@ -23,7 +23,7 @@ namespace AntShares.Core
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Usage = (TransactionAttributeUsage)reader.ReadByte();
-            if (Usage == TransactionAttributeUsage.ContractHash || (Usage >= TransactionAttributeUsage.Hash1 && Usage <= TransactionAttributeUsage.Hash15))
+            if (Usage == TransactionAttributeUsage.ContractHash || Usage == TransactionAttributeUsage.Vote || (Usage >= TransactionAttributeUsage.Hash1 && Usage <= TransactionAttributeUsage.Hash15))
                 Data = reader.ReadBytes(32);
             else if (Usage == TransactionAttributeUsage.ECDH02 || Usage == TransactionAttributeUsage.ECDH03)
                 Data = new[] { (byte)Usage }.Concat(reader.ReadBytes(32)).ToArray();

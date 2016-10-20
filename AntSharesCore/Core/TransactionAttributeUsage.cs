@@ -24,6 +24,8 @@
         /// </summary>
         Script = 0x20,
 
+        Vote = 0x30,
+
         CertUrl = 0x80,
         DescriptionUrl = 0x81,
         Description = 0x90,

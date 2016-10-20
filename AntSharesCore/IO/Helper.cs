@@ -42,9 +42,9 @@ namespace AntShares.IO
             return obj;
         }
 
-        public static T[] ReadSerializableArray<T>(this BinaryReader reader) where T : ISerializable, new()
+        public static T[] ReadSerializableArray<T>(this BinaryReader reader, int max = 0x10000000) where T : ISerializable, new()
         {
-            T[] array = new T[reader.ReadVarInt(0x10000000)];
+            T[] array = new T[reader.ReadVarInt((ulong)max)];
             for (int i = 0; i < array.Length; i++)
             {
                 array[i] = new T();
