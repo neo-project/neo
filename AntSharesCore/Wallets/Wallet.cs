@@ -190,9 +190,7 @@ namespace AntShares.Wallets
 
         public bool ChangePassword(string password_old, string password_new)
         {
-            byte[] passwordHash = LoadStoredData("PasswordHash");
-            if (!passwordHash.SequenceEqual(password_old.ToAesKey().Sha256()))
-                return false;
+            if (!VerifyPassword(password_old)) return false;
             byte[] passwordKey = password_new.ToAesKey();
 #if NET461
             using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
@@ -747,6 +745,16 @@ namespace AntShares.Wallets
             if (!data.Take(21).Sha256().Sha256().Take(4).SequenceEqual(data.Skip(21)))
                 throw new FormatException();
             return new UInt160(data.Skip(1).Take(20).ToArray());
+        }
+
+        public bool VerifyPassword(string password)
+        {
+            return password.ToAesKey().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
+        }
+
+        public bool VerifyPassword(SecureString password)
+        {
+            return password.ToAesKey().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
         }
     }
 }
