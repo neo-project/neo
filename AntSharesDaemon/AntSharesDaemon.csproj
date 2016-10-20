@@ -40,6 +40,7 @@
     <Reference Include="System.ServiceProcess" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Helper.cs" />
     <Compile Include="Network\RPC\RpcException.cs" />
     <Compile Include="Network\RPC\RpcServer.cs" />
     <Compile Include="Program.cs" />
