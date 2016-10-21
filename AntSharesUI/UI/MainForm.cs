@@ -13,6 +13,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Forms;
@@ -502,7 +503,11 @@ namespace AntShares.UI
 
         private void 复制到剪贴板CToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Clipboard.SetText(listView1.SelectedItems[0].Text);
+            try
+            {
+                Clipboard.SetText(listView1.SelectedItems[0].Text);
+            }
+            catch (ExternalException) { }
         }
 
         private void 删除DToolStripMenuItem_Click(object sender, EventArgs e)

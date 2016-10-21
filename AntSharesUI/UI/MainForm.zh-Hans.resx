@@ -143,7 +143,7 @@
     <value>187, 22</value>
   </data>
   <data name="重建钱包数据库RToolStripMenuItem.Text" xml:space="preserve">
-    <value>重建钱包数据库(&amp;R)</value>
+    <value>重建钱包索引(&amp;R)</value>
   </data>
   <data name="toolStripSeparator2.Size" type="System.Drawing.Size, System.Drawing">
     <value>184, 6</value>
