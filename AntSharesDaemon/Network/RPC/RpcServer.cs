@@ -202,13 +202,15 @@ namespace AntShares.Network.RPC
             return response;
         }
 
-        public void Start(string uriPrefix = DEFAULT_URI_PREFIX)
+        public void Start(params string[] uriPrefix)
         {
-            host = new WebHostBuilder()
-                .UseKestrel()
-                .UseUrls(uriPrefix)
-                .Configure(app => app.Run(ProcessAsync))
-                .Build();
+            IWebHostBuilder builder = new WebHostBuilder().UseKestrel();
+            if (uriPrefix.Length == 0)
+                builder = builder.UseUrls(DEFAULT_URI_PREFIX);
+            else
+                builder = builder.UseUrls(uriPrefix);
+            builder = builder.Configure(app => app.Run(ProcessAsync));
+            host = builder.Build();
             host.Start();
         }
     }
