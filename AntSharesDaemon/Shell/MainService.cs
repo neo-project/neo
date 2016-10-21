@@ -17,7 +17,6 @@ namespace AntShares.Shell
 {
     internal class MainService : ConsoleServiceBase
     {
-        private UserWallet wallet;
         private RpcServer rpc;
         private ConsensusService consensus;
 
@@ -67,7 +66,7 @@ namespace AntShares.Shell
 
         private bool OnCreateAddressCommand(string[] args)
         {
-            if (wallet == null)
+            if (Program.Wallet == null)
             {
                 Console.WriteLine("You have to open the wallet first.");
                 return true;
@@ -83,8 +82,8 @@ namespace AntShares.Shell
             List<string> addresses = new List<string>();
             for (int i = 1; i <= count; i++)
             {
-                Account account = wallet.CreateAccount();
-                Contract contract = wallet.GetContracts(account.PublicKeyHash).First(p => p.IsStandard);
+                Account account = Program.Wallet.CreateAccount();
+                Contract contract = Program.Wallet.GetContracts(account.PublicKeyHash).First(p => p.IsStandard);
                 addresses.Add(contract.Address);
                 Console.SetCursorPosition(0, Console.CursorTop);
                 Console.Write($"[{i}/{count}]");
@@ -111,9 +110,9 @@ namespace AntShares.Shell
                     Console.WriteLine("error");
                     return true;
                 }
-                wallet = UserWallet.Create(args[2], password);
-                Contract contract = wallet.GetContracts().First(p => p.IsStandard);
-                Account account = wallet.GetAccount(contract.PublicKeyHash);
+                Program.Wallet = UserWallet.Create(args[2], password);
+                Contract contract = Program.Wallet.GetContracts().First(p => p.IsStandard);
+                Account account = Program.Wallet.GetAccount(contract.PublicKeyHash);
                 Console.WriteLine($"address: {contract.Address}");
                 Console.WriteLine($" pubkey: {account.PublicKey.EncodePoint(true).ToHexString()}");
             }
@@ -165,8 +164,8 @@ namespace AntShares.Shell
                 Console.WriteLine("error");
                 return true;
             }
-            Account account = wallet.Import(args[2]);
-            Contract contract = wallet.GetContracts(account.PublicKeyHash).First(p => p.IsStandard);
+            Account account = Program.Wallet.Import(args[2]);
+            Contract contract = Program.Wallet.GetContracts(account.PublicKeyHash).First(p => p.IsStandard);
             Console.WriteLine($"address: {contract.Address}");
             Console.WriteLine($" pubkey: {account.PublicKey.EncodePoint(true).ToHexString()}");
             return true;
@@ -189,8 +188,8 @@ namespace AntShares.Shell
 
         private bool OnListAccountCommand(string[] args)
         {
-            if (wallet == null) return true;
-            foreach (Account account in wallet.GetAccounts())
+            if (Program.Wallet == null) return true;
+            foreach (Account account in Program.Wallet.GetAccounts())
             {
                 Console.WriteLine(account.PublicKey);
             }
@@ -199,8 +198,8 @@ namespace AntShares.Shell
 
         private bool OnListAddressCommand(string[] args)
         {
-            if (wallet == null) return true;
-            foreach (Contract contract in wallet.GetContracts())
+            if (Program.Wallet == null) return true;
+            foreach (Contract contract in Program.Wallet.GetContracts())
             {
                 Console.WriteLine($"{contract.Address}\t{(contract.IsStandard ? "Standard" : "Nonstandard")}");
             }
@@ -209,8 +208,8 @@ namespace AntShares.Shell
 
         private bool OnListAssetCommand(string[] args)
         {
-            if (wallet == null) return true;
-            foreach (var item in wallet.FindCoins().Where(p => p.State == CoinState.Unspent || p.State == CoinState.Unconfirmed).GroupBy(p => p.AssetId, (k, g) => new
+            if (Program.Wallet == null) return true;
+            foreach (var item in Program.Wallet.FindCoins().Where(p => p.State == CoinState.Unspent || p.State == CoinState.Unconfirmed).GroupBy(p => p.AssetId, (k, g) => new
             {
                 Asset = (RegisterTransaction)Blockchain.Default.GetTransaction(k),
                 Balance = g.Sum(p => p.Value),
@@ -256,7 +255,7 @@ namespace AntShares.Shell
                 }
                 try
                 {
-                    wallet = UserWallet.Open(args[2], password);
+                    Program.Wallet = UserWallet.Open(args[2], password);
                 }
                 catch
                 {
@@ -280,14 +279,14 @@ namespace AntShares.Shell
 
         private bool OnRebuildIndexCommand(string[] args)
         {
-            if (wallet == null) return true;
-            wallet.Rebuild();
+            if (Program.Wallet == null) return true;
+            Program.Wallet.Rebuild();
             return true;
         }
 
         private bool OnSendCommand(string[] args)
         {
-            if (wallet == null)
+            if (Program.Wallet == null)
             {
                 Console.WriteLine("You have to open the wallet first.");
                 return true;
@@ -313,7 +312,7 @@ namespace AntShares.Shell
             UInt160 scriptHash = Wallet.ToScriptHash(args[2]);
             Fixed8 value = Fixed8.Parse(args[3]);
             Fixed8 fee = args.Length >= 5 ? Fixed8.Parse(args[4]) : Fixed8.Zero;
-            ContractTransaction tx = wallet.MakeTransaction(new ContractTransaction
+            ContractTransaction tx = Program.Wallet.MakeTransaction(new ContractTransaction
             {
                 Outputs = new[]
                 {
@@ -337,18 +336,18 @@ namespace AntShares.Shell
                     Console.WriteLine("cancelled");
                     return true;
                 }
-                if (!wallet.VerifyPassword(password))
+                if (!Program.Wallet.VerifyPassword(password))
                 {
                     Console.WriteLine("Incorrect password");
                     return true;
                 }
             }
             SignatureContext context = new SignatureContext(tx);
-            wallet.Sign(context);
+            Program.Wallet.Sign(context);
             if (context.Completed)
             {
                 tx.Scripts = context.GetScripts();
-                wallet.SaveTransaction(tx);
+                Program.Wallet.SaveTransaction(tx);
                 LocalNode.Relay(tx);
                 Console.WriteLine($"TXID: {tx.Hash}");
             }
@@ -425,13 +424,13 @@ namespace AntShares.Shell
 
         private bool OnStartConsensusCommand(string[] args)
         {
-            if (wallet == null)
+            if (Program.Wallet == null)
             {
                 Console.WriteLine("You have to open the wallet first.");
                 return true;
             }
             string log_dictionary = Path.Combine(AppContext.BaseDirectory, "Logs");
-            consensus = new ConsensusService(LocalNode, wallet, log_dictionary);
+            consensus = new ConsensusService(LocalNode, Program.Wallet, log_dictionary);
             ShowPrompt = false;
             consensus.Start();
             return true;
