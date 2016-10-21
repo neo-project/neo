@@ -1,4 +1,5 @@
-﻿using AntShares.Shell;
+﻿using AntShares.Implementations.Wallets.EntityFramework;
+using AntShares.Shell;
 using System;
 using System.IO;
 
@@ -6,6 +7,8 @@ namespace AntShares
 {
     static class Program
     {
+          internal static UserWallet Wallet;
+
 //        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
 //        {
 //#if DEBUG

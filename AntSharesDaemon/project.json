@@ -1,7 +1,7 @@
 {
   "copyright": "© AntShares Project 2016 Released under the MIT license",
   "title": "AntShares",
-  "version": "1.0.2-coreclr",
+  "version": "1.0.3-coreclr",
   "buildOptions": {
     "emitEntryPoint": true,
     "define": [ "DEBUG" ],
@@ -9,7 +9,7 @@
   },
 
   "dependencies": {
-    "AntSharesCore": "1.0.2-coreclr",
+    "AntSharesCore": "1.0.3-coreclr",
     "Microsoft.AspNetCore.Server.Kestrel": "1.0.1",
     "Microsoft.AspNetCore.Server.Kestrel.Https": "1.0.1",
     "Microsoft.Extensions.Configuration.Json": "1.0.0",
