@@ -204,7 +204,11 @@ namespace AntShares.Network.RPC
 
         public void Start(params string[] uriPrefix)
         {
-            IWebHostBuilder builder = new WebHostBuilder().UseKestrel();
+            IWebHostBuilder builder = new WebHostBuilder();
+            if (uriPrefix.Any(p => p.StartsWith("https")))
+                builder = builder.UseKestrel(options => options.UseHttps(Settings.Default.SslCert, Settings.Default.SslCertPassword));
+            else
+                builder = builder.UseKestrel();
             if (uriPrefix.Length == 0)
                 builder = builder.UseUrls(DEFAULT_URI_PREFIX);
             else

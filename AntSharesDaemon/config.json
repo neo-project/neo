@@ -1,6 +1,8 @@
 ﻿{
   "ApplicationConfiguration": {
     "DataDirectoryPath": ".\\Chain",
-    "NodePort": 10333
+    "NodePort": 10333,
+    "SslCert": "",
+    "SslCertPassword": ""
   }
 }

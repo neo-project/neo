@@ -6,6 +6,8 @@ namespace AntShares
     {
         public string DataDirectoryPath { get; private set; }
         public ushort NodePort { get; set; }
+        public string SslCert { get; set; }
+        public string SslCertPassword { get; set; }
 
         public static Settings Default { get; private set; }
 
@@ -15,7 +17,9 @@ namespace AntShares
             Default = new Settings
             {
                 DataDirectoryPath = section.GetSection("DataDirectoryPath").Value,
-                NodePort = ushort.Parse(section.GetSection("NodePort").Value)
+                NodePort = ushort.Parse(section.GetSection("NodePort").Value),
+                SslCert = section.GetSection("SslCert").Value,
+                SslCertPassword = section.GetSection("SslCertPassword").Value
             };
         }
     }

@@ -10,7 +10,8 @@
 
   "dependencies": {
     "AntSharesCore": "1.0.2-coreclr",
-    "Microsoft.AspNetCore.Server.Kestrel": "1.0.0",
+    "Microsoft.AspNetCore.Server.Kestrel": "1.0.1",
+    "Microsoft.AspNetCore.Server.Kestrel.Https": "1.0.1",
     "Microsoft.Extensions.Configuration.Json": "1.0.0",
     "Microsoft.NETCore.App": {
       "type": "platform",
