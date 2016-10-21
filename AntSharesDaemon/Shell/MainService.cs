@@ -7,13 +7,14 @@ using AntShares.Network.RPC;
 using AntShares.Services;
 using AntShares.Wallets;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security;
 
 namespace AntShares.Shell
 {
-    public class MainService : ConsoleServiceBase
+    internal class MainService : ConsoleServiceBase
     {
         private UserWallet wallet;
         private RpcServer rpc;
@@ -29,10 +30,16 @@ namespace AntShares.Shell
             {
                 case "create":
                     return OnCreateCommand(args);
+                case "help":
+                    return OnHelpCommand(args);
+                case "import":
+                    return OnImportCommand(args);
                 case "list":
                     return OnListCommand(args);
                 case "open":
                     return OnOpenCommand(args);
+                case "rebuild":
+                    return OnRebuildCommand(args);
                 case "send":
                     return OnSendCommand(args);
                 case "show":
@@ -48,11 +55,44 @@ namespace AntShares.Shell
         {
             switch (args[1].ToLower())
             {
+                case "address":
+                    return OnCreateAddressCommand(args);
                 case "wallet":
                     return OnCreateWalletCommand(args);
                 default:
                     return base.OnCommand(args);
             }
+        }
+
+        private bool OnCreateAddressCommand(string[] args)
+        {
+            if (wallet == null)
+            {
+                Console.WriteLine("You have to open the wallet first.");
+                return true;
+            }
+            if (args.Length > 3)
+            {
+                Console.WriteLine("error");
+                return true;
+            }
+            ushort count = 1;
+            if (args.Length >= 3)
+                count = ushort.Parse(args[2]);
+            List<string> addresses = new List<string>();
+            for (int i = 1; i <= count; i++)
+            {
+                Account account = wallet.CreateAccount();
+                Contract contract = wallet.GetContracts(account.PublicKeyHash).First(p => p.IsStandard);
+                addresses.Add(contract.Address);
+                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.Write($"[{i}/{count}]");
+            }
+            Console.WriteLine();
+            string path = "address.txt";
+            Console.WriteLine($"export addresses to {path}");
+            File.WriteAllLines(path, addresses);
+            return true;
         }
 
         private bool OnCreateWalletCommand(string[] args)
@@ -72,10 +112,62 @@ namespace AntShares.Shell
                 }
                 wallet = UserWallet.Create(args[2], password);
             }
-            foreach (Account account in wallet.GetAccounts())
+            Contract contract = wallet.GetContracts().First(p => p.IsStandard);
+            Account account = wallet.GetAccount(contract.PublicKeyHash);
+            Console.WriteLine($"address: {contract.Address}");
+            Console.WriteLine($" pubkey: {account.PublicKey.EncodePoint(true).ToHexString()}");
+            return true;
+        }
+
+        private bool OnHelpCommand(string[] args)
+        {
+            Console.Write(
+                "Normal Commands:\n" +
+                "\tversion\n" +
+                "\thelp\n" +
+                "\tclear\n" +
+                "\texit\n" +
+                "Wallet Commands:\n" +
+                "\tcreate wallet <path>\n" +
+                "\topen wallet <path>\n" +
+                "\trebuild index\n" +
+                "\tlist account\n" +
+                "\tlist address\n" +
+                "\tlist asset\n" +
+                "\tcreate address [n=1]\n" +
+                "\timport key <wif>\n" +
+                "\tsend <id|alias> <address> <value> [fee=0]\n" +
+                "Node Commands:\n" +
+                "\tshow state\n" +
+                "\tshow node\n" +
+                "\tshow pool\n" +
+                "Advanced Commands:\n" +
+                "\tstart consensus\n");
+            return true;
+        }
+
+        private bool OnImportCommand(string[] args)
+        {
+            switch (args[1].ToLower())
             {
-                Console.WriteLine(account.PublicKey.EncodePoint(true).ToHexString());
+                case "key":
+                    return OnImportKeyCommand(args);
+                default:
+                    return base.OnCommand(args);
             }
+        }
+
+        private bool OnImportKeyCommand(string[] args)
+        {
+            if (args.Length > 3)
+            {
+                Console.WriteLine("error");
+                return true;
+            }
+            Account account = wallet.Import(args[2]);
+            Contract contract = wallet.GetContracts(account.PublicKeyHash).First(p => p.IsStandard);
+            Console.WriteLine($"address: {contract.Address}");
+            Console.WriteLine($" pubkey: {account.PublicKey.EncodePoint(true).ToHexString()}");
             return true;
         }
 
@@ -109,7 +201,7 @@ namespace AntShares.Shell
             if (wallet == null) return true;
             foreach (Contract contract in wallet.GetContracts())
             {
-                Console.WriteLine($"{contract.Address}\t{contract.GetType()}");
+                Console.WriteLine($"{contract.Address}\t{(contract.IsStandard ? "Standard" : "Nonstandard")}");
             }
             return true;
         }
@@ -171,6 +263,24 @@ namespace AntShares.Shell
                     return true;
                 }
             }
+            return true;
+        }
+
+        private bool OnRebuildCommand(string[] args)
+        {
+            switch (args[1].ToLower())
+            {
+                case "index":
+                    return OnRebuildIndexCommand(args);
+                default:
+                    return base.OnCommand(args);
+            }
+        }
+
+        private bool OnRebuildIndexCommand(string[] args)
+        {
+            if (wallet == null) return true;
+            wallet.Rebuild();
             return true;
         }
 

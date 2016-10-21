@@ -13,6 +13,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Forms;
@@ -502,7 +503,11 @@ namespace AntShares.UI
 
         private void 复制到剪贴板CToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Clipboard.SetText(listView1.SelectedItems[0].Text);
+            try
+            {
+                Clipboard.SetText(listView1.SelectedItems[0].Text);
+            }
+            catch (ExternalException) { }
         }
 
         private void 删除DToolStripMenuItem_Click(object sender, EventArgs e)
@@ -520,7 +525,12 @@ namespace AntShares.UI
 
         private void contextMenuStrip2_Opening(object sender, CancelEventArgs e)
         {
-            删除DToolStripMenuItem1.Enabled = listView2.SelectedIndices.Count > 0;
+            bool enabled = listView2.SelectedIndices.Count > 0;
+            if (enabled)
+            {
+                enabled = listView2.SelectedItems.OfType<ListViewItem>().Select(p => (RegisterTransaction)p.Tag).All(p => p.AssetType != AssetType.AntShare && p.AssetType != AssetType.AntCoin);
+            }
+            删除DToolStripMenuItem1.Enabled = enabled;
         }
 
         private void 删除DToolStripMenuItem1_Click(object sender, EventArgs e)
