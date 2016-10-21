@@ -520,7 +520,12 @@ namespace AntShares.UI
 
         private void contextMenuStrip2_Opening(object sender, CancelEventArgs e)
         {
-            删除DToolStripMenuItem1.Enabled = listView2.SelectedIndices.Count > 0;
+            bool enabled = listView2.SelectedIndices.Count > 0;
+            if (enabled)
+            {
+                enabled = listView2.SelectedItems.OfType<ListViewItem>().Select(p => (RegisterTransaction)p.Tag).All(p => p.AssetType != AssetType.AntShare && p.AssetType != AssetType.AntCoin);
+            }
+            删除DToolStripMenuItem1.Enabled = enabled;
         }
 
         private void 删除DToolStripMenuItem1_Click(object sender, EventArgs e)
