@@ -212,9 +212,13 @@ namespace AntShares.Network.RPC
             return response;
         }
 
-        public async void Start(string uriPrefix = DEFAULT_URI_PREFIX)
+        public async void Start(params string[] uriPrefix)
         {
-            listener.Prefixes.Add(uriPrefix);
+            if (uriPrefix.Length == 0)
+                listener.Prefixes.Add(DEFAULT_URI_PREFIX);
+            else
+                foreach (string prefix in uriPrefix)
+                    listener.Prefixes.Add(prefix);
             listener.Start();
             while (listener.IsListening)
             {
