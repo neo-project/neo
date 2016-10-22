@@ -18,6 +18,8 @@ namespace AntShares.Core
         /// </summary>
         public TransactionInput[] Claims;
 
+        public override int Size => base.Size + Claims.Length.GetVarSize() + Claims.Sum(p => p.Size);
+
         public ClaimTransaction()
             : base(TransactionType.ClaimTransaction)
         {

@@ -15,6 +15,8 @@ namespace AntShares.Core
         /// </summary>
         public uint Nonce;
 
+        public override int Size => base.Size + sizeof(uint);
+
         public MinerTransaction()
             : base(TransactionType.MinerTransaction)
         {

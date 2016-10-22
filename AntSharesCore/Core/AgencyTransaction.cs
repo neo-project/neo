@@ -42,6 +42,8 @@ namespace AntShares.Core
         /// </summary>
         public SplitOrder SplitOrder;
 
+        public override int Size => base.Size + AssetId.Size + ValueAssetId.Size + Agent.Size + Orders.Length.GetVarSize() + Orders.Sum(p => p.SizeInTransaction) + SplitOrder.Size;
+
         public AgencyTransaction()
             : base(TransactionType.AgencyTransaction)
         {

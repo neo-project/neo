@@ -7,6 +7,8 @@ namespace AntShares.Network.Payloads
     {
         public byte[] Data;
 
+        public int Size => Data.Length.GetVarSize() + Data.Length;
+
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Data = reader.ReadVarBytes(520);

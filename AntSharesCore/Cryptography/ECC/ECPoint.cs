@@ -20,6 +20,8 @@ namespace AntShares.Cryptography.ECC
             get { return X == null && Y == null; }
         }
 
+        public int Size => IsInfinity ? 1 : 33;
+
         internal ECPoint(ECFieldElement x, ECFieldElement y, ECCurve curve)
         {
             if ((x != null && y == null) || (x == null && y != null))

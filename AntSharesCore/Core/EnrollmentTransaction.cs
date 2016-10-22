@@ -35,6 +35,8 @@ namespace AntShares.Core
             }
         }
 
+        public override int Size => base.Size + PublicKey.Size;
+
         /// <summary>
         /// 系统费用
         /// </summary>

@@ -48,6 +48,8 @@ namespace AntShares.Network.Payloads
             }
         }
 
+        public int Size => sizeof(uint) + PrevHash.Size + sizeof(uint) + sizeof(ushort) + sizeof(uint) + Data.Length.GetVarSize() + Data.Length + 1 + Script.Size;
+
         void ISerializable.Deserialize(BinaryReader reader)
         {
             ((ISignable)this).DeserializeUnsigned(reader);

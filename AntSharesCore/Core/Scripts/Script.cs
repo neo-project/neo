@@ -12,6 +12,8 @@ namespace AntShares.Core.Scripts
         public byte[] StackScript;
         public byte[] RedeemScript;
 
+        public int Size => StackScript.Length.GetVarSize() + StackScript.Length + RedeemScript.Length.GetVarSize() + RedeemScript.Length;
+
         void ISerializable.Deserialize(BinaryReader reader)
         {
             StackScript = reader.ReadVarBytes();

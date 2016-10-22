@@ -51,6 +51,8 @@ namespace AntShares.Core
         /// </summary>
         InventoryType IInventory.InventoryType => InventoryType.Block;
 
+        public override int Size => base.Size + Transactions.Length.GetVarSize() + Transactions.Sum(p => p.Size);
+
         public static Fixed8 CalculateNetFee(IEnumerable<Transaction> transactions)
         {
             Transaction[] ts = transactions.Where(p => p.Type != TransactionType.MinerTransaction && p.Type != TransactionType.ClaimTransaction).ToArray();

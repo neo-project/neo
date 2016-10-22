@@ -10,6 +10,8 @@ namespace AntShares.Network.Payloads
         public UInt256[] HashStart;
         public UInt256 HashStop;
 
+        public int Size => HashStart.Length.GetVarSize() + HashStart.Sum(p => p.Size) + HashStop.Size;
+
         public static GetBlocksPayload Create(IEnumerable<UInt256> hash_start, UInt256 hash_stop = null)
         {
             return new GetBlocksPayload

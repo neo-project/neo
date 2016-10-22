@@ -43,19 +43,11 @@ namespace AntShares.Core
         /// <summary>
         /// 用于验证该订单的脚本列表
         /// </summary>
-        public Script[] Scripts;
+        public Script[] Scripts { get; set; }
 
-        Script[] ISignable.Scripts
-        {
-            get
-            {
-                return Scripts;
-            }
-            set
-            {
-                Scripts = value;
-            }
-        }
+        public int Size => AssetId.Size + ValueAssetId.Size + Agent.Size + SizeInTransaction;
+
+        public int SizeInTransaction => Amount.Size + Price.Size + Client.Size + Inputs.Length.GetVarSize() + Inputs.Sum(p => p.Size) + Scripts.Length.GetVarSize() + Scripts.Sum(p => p.Size);
 
         void ISerializable.Deserialize(BinaryReader reader)
         {

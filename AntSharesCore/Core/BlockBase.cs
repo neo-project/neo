@@ -70,6 +70,8 @@ namespace AntShares.Core
             }
         }
 
+        public virtual int Size => sizeof(uint) + PrevBlock.Size + MerkleRoot.Size + sizeof(uint) + sizeof(uint) + sizeof(ulong) + NextMiner.Size + 1 + Script.Size;
+
         public virtual void Deserialize(BinaryReader reader)
         {
             ((ISignable)this).DeserializeUnsigned(reader);
@@ -118,6 +120,7 @@ namespace AntShares.Core
         {
             JObject json = new JObject();
             json["hash"] = Hash.ToString();
+            json["size"] = Size;
             json["version"] = Version;
             json["previousblockhash"] = PrevBlock.ToString();
             json["merkleroot"] = MerkleRoot.ToString();

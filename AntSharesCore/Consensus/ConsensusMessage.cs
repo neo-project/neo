@@ -9,6 +9,8 @@ namespace AntShares.Consensus
         public readonly ConsensusMessageType Type;
         public byte ViewNumber;
 
+        public int Size => sizeof(ConsensusMessageType) + sizeof(byte);
+
         protected ConsensusMessage(ConsensusMessageType type)
         {
             this.Type = type;

@@ -407,7 +407,7 @@ namespace AntShares.Shell
             if (args.Length >= 1 && args[0] == "/rpc")
             {
                 rpc = new RpcServer(LocalNode);
-                rpc.Start();
+                rpc.Start(Settings.Default.UriPrefix.OfType<string>().ToArray());
             }
         }
 
