@@ -79,6 +79,7 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.Name = "ClaimForm";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ClaimForm_FormClosing);
             this.Load += new System.EventHandler(this.ClaimForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

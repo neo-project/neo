@@ -155,6 +155,7 @@
     <Compile Include="Core\Scripts\IApiService.cs" />
     <Compile Include="Core\Scripts\InterfaceEngine.cs" />
     <Compile Include="Core\Scripts\Script.cs" />
+    <Compile Include="Core\Scripts\VMState.cs" />
     <Compile Include="Core\Scripts\StackItem.cs" />
     <Compile Include="Cryptography\BloomFilter.cs" />
     <Compile Include="Cryptography\ECC\ECDsa.cs" />
