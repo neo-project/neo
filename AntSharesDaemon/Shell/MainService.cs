@@ -134,7 +134,7 @@ namespace AntShares.Shell
                 "\tlist address\n" +
                 "\tlist asset\n" +
                 "\tcreate address [n=1]\n" +
-                "\timport key <wif>\n" +
+                "\timport key <wif|path>\n" +
                 "\tsend <id|alias> <address> <value> [fee=0]\n" +
                 "Node Commands:\n" +
                 "\tshow state\n" +
@@ -163,10 +163,36 @@ namespace AntShares.Shell
                 Console.WriteLine("error");
                 return true;
             }
-            Account account = Program.Wallet.Import(args[2]);
-            Contract contract = Program.Wallet.GetContracts(account.PublicKeyHash).First(p => p.IsStandard);
-            Console.WriteLine($"address: {contract.Address}");
-            Console.WriteLine($" pubkey: {account.PublicKey.EncodePoint(true).ToHexString()}");
+            byte[] prikey = null;
+            try
+            {
+                prikey = Wallet.GetPrivateKeyFromWIF(args[2]);
+            }
+            catch (FormatException) { }
+            if (prikey == null)
+            {
+                string[] lines = File.ReadAllLines(args[2]);
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    if (lines[i].Length == 64)
+                        prikey = lines[i].HexToBytes();
+                    else
+                        prikey = Wallet.GetPrivateKeyFromWIF(lines[i]);
+                    Program.Wallet.CreateAccount(prikey);
+                    Array.Clear(prikey, 0, prikey.Length);
+                    Console.SetCursorPosition(0, Console.CursorTop);
+                    Console.Write($"[{i + 1}/{lines.Length}]");
+                }
+                Console.WriteLine();
+            }
+            else
+            {
+                Account account = Program.Wallet.CreateAccount(prikey);
+                Array.Clear(prikey, 0, prikey.Length);
+                Contract contract = Program.Wallet.GetContracts(account.PublicKeyHash).First(p => p.IsStandard);
+                Console.WriteLine($"address: {contract.Address}");
+                Console.WriteLine($" pubkey: {account.PublicKey.EncodePoint(true).ToHexString()}");
+            }
             return true;
         }
 

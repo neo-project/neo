@@ -13,13 +13,35 @@ namespace AntShares.UI
             InitializeComponent();
         }
 
+        private void CalculateClaimAmountUnavailable(uint height)
+        {
+            textBox2.Text = Wallet.CalculateClaimAmountUnavailable(Program.CurrentWallet.FindUnspentCoins().Where(p => p.AssetId.Equals(Blockchain.AntShare.Hash)).Select(p => p.Input), height).ToString();
+        }
+
         private void ClaimForm_Load(object sender, EventArgs e)
         {
             Fixed8 amount_available = Wallet.CalculateClaimAmount(Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Input));
-            Fixed8 amount_unavailable = Wallet.CalculateClaimAmountUnavailable(Program.CurrentWallet.FindUnspentCoins().Where(p => p.AssetId.Equals(Blockchain.AntShare.Hash)).Select(p => p.Input), Blockchain.Default.Height);
             textBox1.Text = amount_available.ToString();
-            textBox2.Text = amount_unavailable.ToString();
             if (amount_available == Fixed8.Zero) button1.Enabled = false;
+            CalculateClaimAmountUnavailable(Blockchain.Default.Height);
+            Blockchain.PersistCompleted += Blockchain_PersistCompleted;
+        }
+
+        private void ClaimForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Blockchain.PersistCompleted -= Blockchain_PersistCompleted;
+        }
+
+        private void Blockchain_PersistCompleted(object sender, Block block)
+        {
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action<object, Block>(Blockchain_PersistCompleted), sender, block);
+            }
+            else
+            {
+                CalculateClaimAmountUnavailable(block.Height);
+            }
         }
 
         private void button1_Click(object sender, EventArgs e)
