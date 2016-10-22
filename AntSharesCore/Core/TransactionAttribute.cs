@@ -20,6 +20,17 @@ namespace AntShares.Core
         /// </summary>
         public byte[] Data;
 
+        public int Size
+        {
+            get
+            {
+                if (Usage == TransactionAttributeUsage.ContractHash || Usage == TransactionAttributeUsage.ECDH02 || Usage == TransactionAttributeUsage.ECDH03 || Usage == TransactionAttributeUsage.Vote || (Usage >= TransactionAttributeUsage.Hash1 && Usage <= TransactionAttributeUsage.Hash15))
+                    return sizeof(TransactionAttributeUsage) + 32;
+                else
+                    return sizeof(TransactionAttributeUsage) + Data.Length.GetVarSize() + Data.Length;
+            }
+        }
+
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Usage = (TransactionAttributeUsage)reader.ReadByte();

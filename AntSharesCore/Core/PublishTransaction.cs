@@ -10,6 +10,8 @@ namespace AntShares.Core
     {
         public byte[][] Contracts;
 
+        public override int Size => base.Size + Contracts.Length.GetVarSize() + Contracts.Sum(p => p.Length.GetVarSize() + p.Length);
+
         public override Fixed8 SystemFee => Fixed8.FromDecimal(500 * Contracts.Length);
 
         public PublishTransaction()

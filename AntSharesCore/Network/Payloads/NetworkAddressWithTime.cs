@@ -14,6 +14,8 @@ namespace AntShares.Network.Payloads
         public ulong Services;
         public IPEndPoint EndPoint;
 
+        public int Size => sizeof(uint) + sizeof(ulong) + 16 + sizeof(ushort);
+
         public static NetworkAddressWithTime Create(IPEndPoint endpoint, ulong services, uint timestamp)
         {
             return new NetworkAddressWithTime

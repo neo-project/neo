@@ -91,6 +91,8 @@ namespace AntShares.Core
             }
         }
 
+        public virtual int Size => sizeof(TransactionType) + sizeof(byte) + Attributes.Length.GetVarSize() + Attributes.Sum(p => p.Size) + Inputs.Length.GetVarSize() + Inputs.Sum(p => p.Size) + Outputs.Length.GetVarSize() + Outputs.Sum(p => p.Size) + Scripts.Length.GetVarSize() + Scripts.Sum(p => p.Size);
+
         /// <summary>
         /// 系统费用
         /// </summary>
@@ -297,6 +299,7 @@ namespace AntShares.Core
         {
             JObject json = new JObject();
             json["txid"] = Hash.ToString();
+            json["size"] = Size;
             json["type"] = Type;
             json["version"] = Version;
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();

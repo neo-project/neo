@@ -22,6 +22,8 @@ namespace AntShares.Core
         /// </summary>
         public UInt160 Client;
 
+        public int Size => Amount.Size + Price.Size + Client.Size;
+
         void ISerializable.Deserialize(BinaryReader reader)
         {
             this.Amount = reader.ReadSerializable<Fixed8>();

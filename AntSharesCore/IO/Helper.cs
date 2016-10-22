@@ -30,6 +30,16 @@ namespace AntShares.IO
             return serializable;
         }
 
+        public static int GetVarSize(this int value)
+        {
+            if (value < 0xFD)
+                return sizeof(byte);
+            else if (value <= 0xFFFF)
+                return sizeof(byte) + sizeof(ushort);
+            else
+                return sizeof(byte) + sizeof(uint);
+        }
+
         public static string ReadFixedString(this BinaryReader reader, int length)
         {
             byte[] data = reader.ReadBytes(length);

@@ -1,13 +1,15 @@
 ﻿using Microsoft.Extensions.Configuration;
+using System.Linq;
 
 namespace AntShares
 {
     internal class Settings
     {
         public string DataDirectoryPath { get; private set; }
-        public ushort NodePort { get; set; }
-        public string SslCert { get; set; }
-        public string SslCertPassword { get; set; }
+        public ushort NodePort { get; private set; }
+        public string[] UriPrefix { get; private set; }
+        public string SslCert { get; private set; }
+        public string SslCertPassword { get; private set; }
 
         public static Settings Default { get; private set; }
 
@@ -18,6 +20,7 @@ namespace AntShares
             {
                 DataDirectoryPath = section.GetSection("DataDirectoryPath").Value,
                 NodePort = ushort.Parse(section.GetSection("NodePort").Value),
+                UriPrefix = section.GetSection("UriPrefix").GetChildren().Select(p => p.Value).ToArray(),
                 SslCert = section.GetSection("SslCert").Value,
                 SslCertPassword = section.GetSection("SslCertPassword").Value
             };

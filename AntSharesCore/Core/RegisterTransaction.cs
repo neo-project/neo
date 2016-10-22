@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace AntShares.Core
 {
@@ -41,6 +42,8 @@ namespace AntShares.Core
         public UInt160 Admin;
 
         private static readonly string ShareName = "[{\"lang\":\"zh-CN\",\"name\":\"股权\"},{\"lang\":\"en\",\"name\":\"Share\"}]";
+
+        public override int Size => base.Size + sizeof(AssetType) + Encoding.UTF8.GetByteCount(Name).GetVarSize() + Encoding.UTF8.GetByteCount(Name) + Amount.Size + sizeof(byte) + Issuer.Size + Admin.Size;
 
         /// <summary>
         /// 系统费用

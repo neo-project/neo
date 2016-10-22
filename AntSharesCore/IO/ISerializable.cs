@@ -7,12 +7,14 @@ namespace AntShares.IO
     /// </summary>
     public interface ISerializable
     {
+        int Size { get; }
+
         /// <summary>
         /// 序列化
         /// </summary>
         /// <param name="writer">存放序列化后的结果</param>
         void Serialize(BinaryWriter writer);
-        
+
         /// <summary>
         /// 反序列化
         /// </summary>

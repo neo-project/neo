@@ -67,6 +67,8 @@ namespace AntShares.Wallets
             }
         }
 
+        public int Size => PublicKeyHash.Size + ParameterList.Length.GetVarSize() + ParameterList.Length + RedeemScript.Length.GetVarSize() + RedeemScript.Length;
+
         public static Contract Create(UInt160 publicKeyHash, ContractParameterType[] parameterList, byte[] redeemScript)
         {
             return new Contract

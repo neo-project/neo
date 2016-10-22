@@ -23,6 +23,8 @@ namespace AntShares
 
         public static readonly Fixed8 Zero = new Fixed8();
 
+        public int Size => sizeof(long);
+
         public Fixed8(long data)
         {
             this.value = data;

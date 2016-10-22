@@ -19,6 +19,8 @@ namespace AntShares.Core
         /// </summary>
         public ushort PrevIndex;
 
+        public int Size => PrevHash.Size + sizeof(ushort);
+
         void ISerializable.Deserialize(BinaryReader reader)
         {
             PrevHash = reader.ReadSerializable<UInt256>();

@@ -7,6 +7,8 @@ namespace AntShares.Core
 {
     public class Header : BlockBase, IEquatable<Header>
     {
+        public override int Size => base.Size + 1;
+
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);

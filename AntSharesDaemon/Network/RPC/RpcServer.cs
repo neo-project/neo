@@ -15,12 +15,6 @@ namespace AntShares.Network.RPC
 {
     internal class RpcServer : IDisposable
     {
-#if TESTNET
-        private const string DEFAULT_URI_PREFIX = "http://*:20332";
-#else
-        private const string DEFAULT_URI_PREFIX = "http://*:10332";
-#endif
-
         private LocalNode localNode;
         private IWebHost host;
 
@@ -92,9 +86,18 @@ namespace AntShares.Network.RPC
                             throw new RpcException(-100, "Unknown block");
                         bool verbose = _params.Count >= 2 && _params[1].AsBooleanOrDefault(false);
                         if (verbose)
-                            return block.ToJson();
+                        {
+                            JObject json = block.ToJson();
+                            json["confirmations"] = Blockchain.Default.Height - block.Height + 1;
+                            UInt256 hash = Blockchain.Default.GetNextBlockHash(block.Hash);
+                            if (hash != null)
+                                json["nextblockhash"] = hash.ToString();
+                            return json;
+                        }
                         else
+                        {
                             return block.ToArray().ToHexString();
+                        }
                     }
                 case "getblockcount":
                     return Blockchain.Default.Height + 1;
@@ -120,7 +123,13 @@ namespace AntShares.Network.RPC
                         if (verbose)
                         {
                             JObject json = tx.ToJson();
-                            json["height"] = height;
+                            if (height >= 0)
+                            {
+                                Header header = Blockchain.Default.GetHeader((uint)height);
+                                json["blockhash"] = header.Hash.ToString();
+                                json["confirmations"] = Blockchain.Default.Height - header.Height + 1;
+                                json["blocktime"] = header.Timestamp;
+                            }
                             return json;
                         }
                         else
@@ -255,16 +264,14 @@ namespace AntShares.Network.RPC
 
         public void Start(params string[] uriPrefix)
         {
+            if (uriPrefix.Length == 0)
+                throw new ArgumentException();
             IWebHostBuilder builder = new WebHostBuilder();
             if (uriPrefix.Any(p => p.StartsWith("https")))
                 builder = builder.UseKestrel(options => options.UseHttps(Settings.Default.SslCert, Settings.Default.SslCertPassword));
             else
                 builder = builder.UseKestrel();
-            if (uriPrefix.Length == 0)
-                builder = builder.UseUrls(DEFAULT_URI_PREFIX);
-            else
-                builder = builder.UseUrls(uriPrefix);
-            builder = builder.Configure(app => app.Run(ProcessAsync));
+            builder = builder.UseUrls(uriPrefix).Configure(app => app.Run(ProcessAsync));
             host = builder.Build();
             host.Start();
         }

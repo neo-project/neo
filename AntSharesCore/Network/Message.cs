@@ -12,6 +12,8 @@ namespace AntShares.Network
         public uint Checksum;
         public byte[] Payload;
 
+        public int Size => sizeof(uint) + 12 + sizeof(int) + sizeof(uint) + Payload.Length;
+
         public static Message Create(string command, ISerializable payload = null)
         {
             return Create(command, payload == null ? new byte[0] : payload.ToArray());

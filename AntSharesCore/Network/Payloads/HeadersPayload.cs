@@ -10,6 +10,8 @@ namespace AntShares.Network.Payloads
     {
         public Header[] Headers;
 
+        public int Size => Headers.Length.GetVarSize() + Headers.Sum(p => p.Size);
+
         public static HeadersPayload Create(IEnumerable<Header> headers)
         {
             return new HeadersPayload

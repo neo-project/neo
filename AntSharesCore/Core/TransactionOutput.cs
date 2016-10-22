@@ -24,6 +24,8 @@ namespace AntShares.Core
         /// </summary>
         public UInt160 ScriptHash;
 
+        public int Size => AssetId.Size + Value.Size + ScriptHash.Size;
+
         void ISerializable.Deserialize(BinaryReader reader)
         {
             this.AssetId = reader.ReadSerializable<UInt256>();

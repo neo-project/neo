@@ -9,6 +9,8 @@ namespace AntShares
     {
         private byte[] data_bytes;
 
+        public int Size => data_bytes.Length;
+
         protected UIntBase(int bytes, byte[] value)
         {
             if (value == null)

@@ -11,6 +11,8 @@ namespace AntShares.Network.Payloads
         public byte K;
         public uint Tweak;
 
+        public int Size => Filter.Length.GetVarSize() + Filter.Length + sizeof(byte) + sizeof(uint);
+
         public static FilterLoadPayload Create(BloomFilter filter)
         {
             byte[] buffer = new byte[filter.M / 8];

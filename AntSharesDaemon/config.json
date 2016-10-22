@@ -2,6 +2,7 @@
   "ApplicationConfiguration": {
     "DataDirectoryPath": ".\\Chain",
     "NodePort": 10333,
+    "UriPrefix": [ "http://*:10332" ],
     "SslCert": "",
     "SslCertPassword": ""
   }
