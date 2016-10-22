@@ -22,7 +22,7 @@ namespace AntShares.UI
                 AssetType = (AssetType)comboBox1.SelectedItem,
                 Name = (AssetType)comboBox1.SelectedItem == AssetType.Share ? string.Empty : $"[{{\"lang\":\"{CultureInfo.CurrentCulture.Name}\",\"name\":\"{textBox1.Text}\"}}]",
                 Amount = checkBox1.Checked ? Fixed8.Parse(textBox2.Text) : -Fixed8.Satoshi,
-                Precision = 8,
+                Precision = (AssetType)comboBox1.SelectedItem == AssetType.Share ? (byte)0 : (byte)8,
                 Issuer = (ECPoint)comboBox2.SelectedItem,
                 Admin = Wallet.ToScriptHash(comboBox3.Text),
                 Outputs = new TransactionOutput[0]
@@ -39,8 +39,6 @@ namespace AntShares.UI
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
             textBox1.Enabled = (AssetType)comboBox1.SelectedItem != AssetType.Share;
-            checkBox1.Enabled = (AssetType)comboBox1.SelectedItem == AssetType.Token;
-            if ((AssetType)comboBox1.SelectedItem == AssetType.Share) checkBox1.Checked = true;
         }
 
         private void checkBox1_CheckedChanged(object sender, EventArgs e)

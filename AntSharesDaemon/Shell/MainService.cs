@@ -30,6 +30,8 @@ namespace AntShares.Shell
             {
                 case "create":
                     return OnCreateCommand(args);
+                case "export":
+                    return OnExportCommand(args);
                 case "help":
                     return OnHelpCommand(args);
                 case "import":
@@ -119,6 +121,73 @@ namespace AntShares.Shell
             return true;
         }
 
+        private bool OnExportCommand(string[] args)
+        {
+            switch (args[1].ToLower())
+            {
+                case "key":
+                    return OnExportKeyCommand(args);
+                default:
+                    return base.OnCommand(args);
+            }
+        }
+
+        private bool OnExportKeyCommand(string[] args)
+        {
+            if (Program.Wallet == null)
+            {
+                Console.WriteLine("You have to open the wallet first.");
+                return true;
+            }
+            if (args.Length < 2 || args.Length > 4)
+            {
+                Console.WriteLine("error");
+                return true;
+            }
+            UInt160 scriptHash = null;
+            string path = null;
+            if (args.Length == 3)
+            {
+                try
+                {
+                    scriptHash = Wallet.ToScriptHash(args[2]);
+                }
+                catch (FormatException)
+                {
+                    path = args[2];
+                }
+            }
+            else if (args.Length == 4)
+            {
+                scriptHash = Wallet.ToScriptHash(args[2]);
+                path = args[3];
+            }
+            using (SecureString password = ReadSecureString("password"))
+            {
+                if (password.Length == 0)
+                {
+                    Console.WriteLine("cancelled");
+                    return true;
+                }
+                if (!Program.Wallet.VerifyPassword(password))
+                {
+                    Console.WriteLine("Incorrect password");
+                    return true;
+                }
+            }
+            IEnumerable<Account> accounts;
+            if (scriptHash == null)
+                accounts = Program.Wallet.GetAccounts();
+            else
+                accounts = new[] { Program.Wallet.GetAccountByScriptHash(scriptHash) };
+            if (path == null)
+                foreach (Account account in accounts)
+                    Console.WriteLine(account.Export());
+            else
+                File.WriteAllLines(path, accounts.Select(p => p.Export()));
+            return true;
+        }
+
         private bool OnHelpCommand(string[] args)
         {
             Console.Write(
@@ -136,6 +205,7 @@ namespace AntShares.Shell
                 "\tlist asset\n" +
                 "\tcreate address [n=1]\n" +
                 "\timport key <wif|path>\n" +
+                "\texport key [address] [path]\n" +
                 "\tsend <id|alias> <address> <value> [fee=0]\n" +
                 "Node Commands:\n" +
                 "\tshow state\n" +
