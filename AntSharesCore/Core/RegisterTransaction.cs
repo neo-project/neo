@@ -79,12 +79,12 @@ namespace AntShares.Core
             Name = reader.ReadVarString();
             Amount = reader.ReadSerializable<Fixed8>();
             if (Amount == Fixed8.Zero || Amount < -Fixed8.Satoshi) throw new FormatException();
-            if (AssetType == AssetType.Share && Amount <= Fixed8.Zero)
-                throw new FormatException();
             if (AssetType == AssetType.Invoice && Amount != -Fixed8.Satoshi)
                 throw new FormatException();
             Precision = reader.ReadByte();
             if (Precision > 8) throw new FormatException();
+            if (AssetType == AssetType.Share && Precision != 0)
+                throw new FormatException();
             Issuer = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
             Admin = reader.ReadSerializable<UInt160>();
         }
