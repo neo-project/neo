@@ -41,6 +41,8 @@ namespace AntShares.Shell
                     return OnOpenCommand(args);
                 case "rebuild":
                     return OnRebuildCommand(args);
+                case "refresh":
+                    return OnRefreshCommand(args);
                 case "send":
                     return OnSendCommand(args);
                 case "show":
@@ -376,6 +378,24 @@ namespace AntShares.Shell
         {
             if (Program.Wallet == null) return true;
             Program.Wallet.Rebuild();
+            return true;
+        }
+
+        private bool OnRefreshCommand(string[] args)
+        {
+            switch (args[1].ToLower())
+            {
+                case "policy":
+                    return OnRefreshPolicyCommand(args);
+                default:
+                    return base.OnCommand(args);
+            }
+        }
+
+        private bool OnRefreshPolicyCommand(string[] args)
+        {
+            if (consensus != null) return true;
+            consensus.RefreshPolicy();
             return true;
         }
 

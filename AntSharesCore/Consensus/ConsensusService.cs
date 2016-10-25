@@ -36,7 +36,8 @@ namespace AntShares.Consensus
             Log($"{nameof(AddTransaction)} hash:{tx.Hash}");
             if (context.Transactions.SelectMany(p => p.Value.GetAllInputs()).Intersect(tx.GetAllInputs()).Count() > 0 ||
                 Blockchain.Default.ContainsTransaction(tx.Hash) ||
-                !tx.Verify())
+                !tx.Verify() ||
+                !CheckPolicy(tx))
             {
                 Log($"failed hash:{tx.Hash}");
                 RequestChangeView();
@@ -75,6 +76,21 @@ namespace AntShares.Consensus
             if (context.ExpectedView.Count(p => p == view_number) >= context.M)
             {
                 InitializeConsensus(view_number);
+            }
+        }
+
+        private static bool CheckPolicy(Transaction tx)
+        {
+            switch (Policy.Default.PolicyLevel)
+            {
+                case PolicyLevel.AllowAll:
+                    return true;
+                case PolicyLevel.AllowList:
+                    return tx.Scripts.All(p => Policy.Default.List.Contains(p.RedeemScript.ToScriptHash())) || tx.Outputs.All(p => Policy.Default.List.Contains(p.ScriptHash));
+                case PolicyLevel.DenyList:
+                    return tx.Scripts.All(p => !Policy.Default.List.Contains(p.RedeemScript.ToScriptHash())) && tx.Outputs.All(p => !Policy.Default.List.Contains(p.ScriptHash));
+                default:
+                    return false;
             }
         }
 
@@ -295,7 +311,7 @@ namespace AntShares.Consensus
                     {
                         context.Timestamp = Math.Max(DateTime.Now.ToTimestamp(), Blockchain.Default.GetHeader(context.PrevHash).Timestamp + 1);
                         context.Nonce = GetNonce();
-                        List<Transaction> transactions = LocalNode.GetMemoryPool().ToList();
+                        List<Transaction> transactions = LocalNode.GetMemoryPool().Where(p => CheckPolicy(p)).ToList();
                         transactions.Insert(0, CreateMinerTransaction(transactions, context.Height, context.Nonce));
                         context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
                         context.Transactions = transactions.ToDictionary(p => p.Hash);
@@ -310,6 +326,11 @@ namespace AntShares.Consensus
                     RequestChangeView();
                 }
             }
+        }
+
+        public void RefreshPolicy()
+        {
+            Policy.Default.Refresh();
         }
 
         private void RequestChangeView()
