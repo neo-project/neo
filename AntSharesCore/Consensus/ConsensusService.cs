@@ -86,9 +86,12 @@ namespace AntShares.Consensus
                 Contract contract = Contract.CreateMultiSigContract(context.Miners[context.MinerIndex].EncodePoint(true).ToScriptHash(), context.M, context.Miners);
                 Block block = context.MakeHeader();
                 SignatureContext sc = new SignatureContext(block);
-                for (int i = 0; i < context.Miners.Length; i++)
+                for (int i = 0, j = 0; i < context.Miners.Length && j < context.M; i++)
                     if (context.Signatures[i] != null)
+                    {
                         sc.Add(contract, context.Miners[i], context.Signatures[i]);
+                        j++;
+                    }
                 sc.Signable.Scripts = sc.GetScripts();
                 block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
                 Log($"RelayBlock hash:{block.Hash}");

@@ -44,6 +44,8 @@ namespace AntShares.UI
         private void Blockchain_PersistCompleted(object sender, Block block)
         {
             persistence_time = DateTime.Now;
+            if (Program.CurrentWallet?.FindCoins().Any(p => p.AssetId.Equals(Blockchain.AntShare.Hash)) == true)
+                balance_changed = true;
             CurrentWallet_TransactionsChanged(null, Enumerable.Empty<TransactionInfo>());
         }
 
@@ -178,12 +180,24 @@ namespace AntShares.UI
             if (balance_changed)
             {
                 IEnumerable<Coin> coins = Program.CurrentWallet?.FindCoins() ?? Enumerable.Empty<Coin>();
+                Fixed8 anc_claim_available = Wallet.CalculateClaimAmount(Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Input));
+                Fixed8 anc_claim_unavailable = Wallet.CalculateClaimAmountUnavailable(coins.Where(p => p.AssetId.Equals(Blockchain.AntShare.Hash)).Select(p => p.Input), Blockchain.Default.Height);
+                Fixed8 anc_claim = anc_claim_available + anc_claim_unavailable;
                 var assets = coins.GroupBy(p => p.AssetId, (k, g) => new
                 {
                     Asset = (RegisterTransaction)Blockchain.Default.GetTransaction(k),
                     Value = g.Sum(p => p.Value),
-                    Available = g.Where(p => p.State == CoinState.Unspent).Sum(p => p.Value)
+                    Claim = k.Equals(Blockchain.AntCoin.Hash) ? anc_claim : Fixed8.Zero
                 }).ToDictionary(p => p.Asset.Hash);
+                if (anc_claim != Fixed8.Zero && !assets.ContainsKey(Blockchain.AntCoin.Hash))
+                {
+                    assets[Blockchain.AntCoin.Hash] = new
+                    {
+                        Asset = Blockchain.AntCoin,
+                        Value = Fixed8.Zero,
+                        Claim = anc_claim
+                    };
+                }
                 foreach (RegisterTransaction tx in listView2.Items.OfType<ListViewItem>().Select(p => (RegisterTransaction)p.Tag).ToArray())
                 {
                     if (!assets.ContainsKey(tx.Hash))
@@ -193,9 +207,10 @@ namespace AntShares.UI
                 }
                 foreach (var asset in assets.Values)
                 {
+                    string value_text = asset.Value.ToString() + (asset.Asset.Hash.Equals(Blockchain.AntCoin.Hash) ? $"+({asset.Claim})" : "");
                     if (listView2.Items.ContainsKey(asset.Asset.Hash.ToString()))
                     {
-                        listView2.Items[asset.Asset.Hash.ToString()].SubItems["value"].Text = asset.Value.ToString();
+                        listView2.Items[asset.Asset.Hash.ToString()].SubItems["value"].Text = value_text;
                     }
                     else
                     {
@@ -214,7 +229,7 @@ namespace AntShares.UI
                             new ListViewItem.ListViewSubItem
                             {
                                 Name = "value",
-                                Text = asset.Value.ToString()
+                                Text = value_text
                             },
                             new ListViewItem.ListViewSubItem
                             {

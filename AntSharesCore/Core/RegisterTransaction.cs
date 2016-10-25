@@ -85,6 +85,8 @@ namespace AntShares.Core
             if (Precision > 8) throw new FormatException();
             if (AssetType == AssetType.Share && Precision != 0)
                 throw new FormatException();
+            if (Amount.GetData() % (long)Math.Pow(10, 8 - Precision) != 0)
+                throw new FormatException();
             Issuer = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
             Admin = reader.ReadSerializable<UInt160>();
         }

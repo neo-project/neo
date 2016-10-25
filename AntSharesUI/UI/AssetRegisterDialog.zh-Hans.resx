@@ -164,19 +164,19 @@
     <value>291, 21</value>
   </data>
   <data name="label4.Location" type="System.Drawing.Point, System.Drawing">
-    <value>24, 95</value>
+    <value>24, 122</value>
   </data>
   <data name="label4.Text" xml:space="preserve">
     <value>发行者:</value>
   </data>
   <data name="comboBox2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>77, 92</value>
+    <value>77, 119</value>
   </data>
   <data name="comboBox2.Size" type="System.Drawing.Size, System.Drawing">
     <value>312, 20</value>
   </data>
   <data name="label5.Location" type="System.Drawing.Point, System.Drawing">
-    <value>24, 121</value>
+    <value>24, 148</value>
   </data>
   <data name="label5.Size" type="System.Drawing.Size, System.Drawing">
     <value>47, 12</value>
@@ -185,19 +185,35 @@
     <value>管理员:</value>
   </data>
   <data name="comboBox3.Location" type="System.Drawing.Point, System.Drawing">
-    <value>77, 118</value>
+    <value>77, 145</value>
   </data>
   <data name="comboBox3.Size" type="System.Drawing.Size, System.Drawing">
     <value>312, 20</value>
   </data>
   <data name="button1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>314, 159</value>
+    <value>314, 180</value>
   </data>
   <data name="button1.Text" xml:space="preserve">
     <value>确定</value>
   </data>
+  <data name="label6.Location" type="System.Drawing.Point, System.Drawing">
+    <value>36, 94</value>
+  </data>
+  <data name="label6.Size" type="System.Drawing.Size, System.Drawing">
+    <value>35, 12</value>
+  </data>
+  <data name="label6.Text" xml:space="preserve">
+    <value>精度:</value>
+  </data>
+  <data name="numericUpDown1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>77, 92</value>
+  </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>401, 194</value>
+    <value>401, 215</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="$this.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>Inherit</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
     <value>注册资产</value>

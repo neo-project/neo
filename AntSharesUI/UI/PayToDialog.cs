@@ -79,6 +79,11 @@ namespace AntShares.UI
                 button1.Enabled = false;
                 return;
             }
+            if (amount.GetData() % (long)Math.Pow(10, 8 - (comboBox1.SelectedItem as RegisterTransaction).Precision) != 0)
+            {
+                button1.Enabled = false;
+                return;
+            }
             button1.Enabled = true;
         }
     }
