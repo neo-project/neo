@@ -41,6 +41,9 @@
             this.label5 = new System.Windows.Forms.Label();
             this.comboBox3 = new System.Windows.Forms.ComboBox();
             this.button1 = new System.Windows.Forms.Button();
+            this.label6 = new System.Windows.Forms.Label();
+            this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             this.SuspendLayout();
             // 
             // label1
@@ -113,11 +116,33 @@
             this.button1.Name = "button1";
             this.button1.UseVisualStyleBackColor = true;
             // 
+            // label6
+            // 
+            resources.ApplyResources(this.label6, "label6");
+            this.label6.Name = "label6";
+            // 
+            // numericUpDown1
+            // 
+            resources.ApplyResources(this.numericUpDown1, "numericUpDown1");
+            this.numericUpDown1.Maximum = new decimal(new int[] {
+            8,
+            0,
+            0,
+            0});
+            this.numericUpDown1.Name = "numericUpDown1";
+            this.numericUpDown1.Value = new decimal(new int[] {
+            8,
+            0,
+            0,
+            0});
+            // 
             // AssetRegisterDialog
             // 
             this.AcceptButton = this.button1;
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.numericUpDown1);
+            this.Controls.Add(this.label6);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.comboBox3);
             this.Controls.Add(this.label5);
@@ -136,6 +161,7 @@
             this.Name = "AssetRegisterDialog";
             this.ShowInTaskbar = false;
             this.Load += new System.EventHandler(this.AssetRegisterDialog_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -155,5 +181,7 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.ComboBox comboBox3;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.NumericUpDown numericUpDown1;
     }
 }

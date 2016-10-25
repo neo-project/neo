@@ -122,26 +122,26 @@
   </metadata>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="创建钱包数据库NToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>261, 22</value>
+    <value>216, 22</value>
   </data>
   <data name="创建钱包数据库NToolStripMenuItem.Text" xml:space="preserve">
     <value>&amp;New Wallet Database...</value>
   </data>
   <data name="打开钱包数据库OToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>261, 22</value>
+    <value>216, 22</value>
   </data>
   <data name="打开钱包数据库OToolStripMenuItem.Text" xml:space="preserve">
     <value>&amp;Open Wallet Database...</value>
   </data>
   <data name="toolStripSeparator1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>258, 6</value>
+    <value>213, 6</value>
   </data>
   <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="修改密码CToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
   <data name="修改密码CToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>261, 22</value>
+    <value>216, 22</value>
   </data>
   <data name="修改密码CToolStripMenuItem.Text" xml:space="preserve">
     <value>&amp;Change Password...</value>
@@ -150,16 +150,16 @@
     <value>False</value>
   </data>
   <data name="重建钱包数据库RToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>261, 22</value>
+    <value>216, 22</value>
   </data>
   <data name="重建钱包数据库RToolStripMenuItem.Text" xml:space="preserve">
     <value>&amp;Rebuild Index</value>
   </data>
   <data name="toolStripSeparator2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>258, 6</value>
+    <value>213, 6</value>
   </data>
   <data name="退出XToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>261, 22</value>
+    <value>216, 22</value>
   </data>
   <data name="退出XToolStripMenuItem.Text" xml:space="preserve">
     <value>E&amp;xit</value>
@@ -580,7 +580,7 @@
     <value>Balance</value>
   </data>
   <data name="columnHeader3.Width" type="System.Int32, mscorlib">
-    <value>127</value>
+    <value>192</value>
   </data>
   <data name="columnHeader5.Text" xml:space="preserve">
     <value>Issuer</value>

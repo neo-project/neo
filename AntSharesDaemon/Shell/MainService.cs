@@ -519,6 +519,7 @@ namespace AntShares.Shell
 
         private bool OnStartConsensusCommand(string[] args)
         {
+            if (consensus != null) return true;
             if (Program.Wallet == null)
             {
                 Console.WriteLine("You have to open the wallet first.");
