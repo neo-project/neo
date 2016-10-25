@@ -33,12 +33,17 @@ namespace AntShares.UI
 
         private void AddContractToListView(Contract contract, bool selected = false)
         {
-            ListViewGroup group = contract.IsStandard ? listView1.Groups["standardContractGroup"] : listView1.Groups["nonstandardContractGroup"];
-            listView1.Items.Add(new ListViewItem(contract.Address, group)
+            ListViewItem item = listView1.Items[contract.Address];
+            if (item == null)
             {
-                Name = contract.Address,
-                Tag = contract
-            }).Selected = selected;
+                ListViewGroup group = contract.IsStandard ? listView1.Groups["standardContractGroup"] : listView1.Groups["nonstandardContractGroup"];
+                item = listView1.Items.Add(new ListViewItem(contract.Address, group)
+                {
+                    Name = contract.Address,
+                    Tag = contract
+                });
+            }
+            item.Selected = selected;
         }
 
         private void Blockchain_PersistCompleted(object sender, Block block)
@@ -67,6 +72,7 @@ namespace AntShares.UI
             }
             修改密码CToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             重建钱包数据库RToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            restoreAccountsToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             交易TToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             提取小蚁币CToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             注册资产RToolStripMenuItem.Enabled = Program.CurrentWallet != null;
@@ -345,6 +351,19 @@ namespace AntShares.UI
             listView2.Items.Clear();
             listView3.Items.Clear();
             Program.CurrentWallet.Rebuild();
+        }
+
+        private void restoreAccountsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (RestoreAccountsDialog dialog = new RestoreAccountsDialog())
+            {
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                foreach (Contract contract in dialog.GetContracts())
+                {
+                    Program.CurrentWallet.AddContract(contract);
+                    AddContractToListView(contract, true);
+                }
+            }
         }
 
         private void 退出XToolStripMenuItem_Click(object sender, EventArgs e)

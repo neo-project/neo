@@ -125,6 +125,12 @@
     <Compile Include="UI\OptionsDialog.Designer.cs">
       <DependentUpon>OptionsDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\RestoreAccountsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\RestoreAccountsDialog.Designer.cs">
+      <DependentUpon>RestoreAccountsDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\TradeForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -318,6 +324,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\PayToDialog.zh-Hans.resx">
       <DependentUpon>PayToDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\RestoreAccountsDialog.resx">
+      <DependentUpon>RestoreAccountsDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\RestoreAccountsDialog.zh-Hans.resx">
+      <DependentUpon>RestoreAccountsDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\SelectCertificateDialog.zh-Hans.resx">
       <DependentUpon>SelectCertificateDialog.cs</DependentUpon>

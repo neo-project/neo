@@ -153,7 +153,16 @@
     <value>216, 22</value>
   </data>
   <data name="重建钱包数据库RToolStripMenuItem.Text" xml:space="preserve">
-    <value>&amp;Rebuild Index</value>
+    <value>Rebuild &amp;Index</value>
+  </data>
+  <data name="restoreAccountsToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="restoreAccountsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>216, 22</value>
+  </data>
+  <data name="restoreAccountsToolStripMenuItem.Text" xml:space="preserve">
+    <value>&amp;Restore Accounts...</value>
   </data>
   <data name="toolStripSeparator2.Size" type="System.Drawing.Size, System.Drawing">
     <value>213, 6</value>
@@ -849,6 +858,12 @@
     <value>重建钱包数据库RToolStripMenuItem</value>
   </data>
   <data name="&gt;&gt;重建钱包数据库RToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;restoreAccountsToolStripMenuItem.Name" xml:space="preserve">
+    <value>restoreAccountsToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;restoreAccountsToolStripMenuItem.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;toolStripSeparator2.Name" xml:space="preserve">
