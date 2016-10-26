@@ -3,11 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AntSharesCore", "AntSharesCore\AntSharesCore.csproj", "{BCD6B896-6CD0-4601-AA13-5672A15E0CAD}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{83696BE0-E444-44DD-9C0D-A61CACFC95E1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AntSharesUI", "AntSharesUI\AntSharesUI.csproj", "{CFC243F0-F4E3-4754-8E21-8BA17E1C1788}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3A0A81D5-44F5-45EB-BA2F-E1788CF917C8}"
+	ProjectSection(SolutionItems) = preProject
+		global.json = global.json
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AntSharesDaemon", "AntSharesDaemon\AntSharesDaemon.csproj", "{3E7DD63A-6AD5-41F1-837D-42C11694246C}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "AntShares", "src\AntShares\AntShares.xproj", "{36447A9B-0311-4D4D-A3D5-AECBE9C15BBC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,20 +18,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{BCD6B896-6CD0-4601-AA13-5672A15E0CAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BCD6B896-6CD0-4601-AA13-5672A15E0CAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BCD6B896-6CD0-4601-AA13-5672A15E0CAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BCD6B896-6CD0-4601-AA13-5672A15E0CAD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CFC243F0-F4E3-4754-8E21-8BA17E1C1788}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CFC243F0-F4E3-4754-8E21-8BA17E1C1788}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CFC243F0-F4E3-4754-8E21-8BA17E1C1788}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CFC243F0-F4E3-4754-8E21-8BA17E1C1788}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3E7DD63A-6AD5-41F1-837D-42C11694246C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3E7DD63A-6AD5-41F1-837D-42C11694246C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3E7DD63A-6AD5-41F1-837D-42C11694246C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3E7DD63A-6AD5-41F1-837D-42C11694246C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36447A9B-0311-4D4D-A3D5-AECBE9C15BBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36447A9B-0311-4D4D-A3D5-AECBE9C15BBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36447A9B-0311-4D4D-A3D5-AECBE9C15BBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36447A9B-0311-4D4D-A3D5-AECBE9C15BBC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{36447A9B-0311-4D4D-A3D5-AECBE9C15BBC} = {83696BE0-E444-44DD-9C0D-A61CACFC95E1}
 	EndGlobalSection
 EndGlobal
