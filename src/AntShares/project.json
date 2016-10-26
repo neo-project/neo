@@ -1,0 +1,60 @@
+{
+  "authors": [ "The Antshares team" ],
+  "copyright": "2015-2016 The Antshares team",
+  "title": "AntShares",
+  "version": "1.1.0.4",
+  "buildOptions": {
+    "allowUnsafe": true,
+    "copyToOutput": {
+      "includeFiles": "protocol.json"
+    }
+  },
+  "packOptions": {
+    "owners": [ "The Antshares team" ],
+    "tags": [ "AntShares", "Blockchain", "Smart Contract" ],
+    "projectUrl": "https://github.com/AntShares/AntShares",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/AntShares/AntShares.git"
+    },
+    "files": {
+      "mappings": {
+        "content/protocol.json": {
+          "include": "protocol.json"
+        }
+      }
+    }
+  },
+
+  "dependencies": {
+    "AntShares.VM": "1.0.0",
+    "Microsoft.EntityFrameworkCore.Sqlite": "1.0.0",
+    "Microsoft.Extensions.Configuration.Json": "1.0.0",
+    "System.Net.Sockets": "4.1.0",
+    "System.Security.SecureString": "4.0.0",
+    "System.Text.Encodings.Web": "4.0.0"
+  },
+
+  "frameworks": {
+    "netstandard1.6": {
+      "dependencies": {
+        "NETStandard.Library": "1.6.0",
+        "System.Data.Common": "4.1.0",
+        "System.Linq.Parallel": "4.0.1",
+        "System.Net.NameResolution": "4.0.0",
+        "System.Net.NetworkInformation": "4.1.0",
+        "System.Net.Requests": "4.0.11",
+        "System.Security.Cryptography.Algorithms": "4.2.0",
+        "System.Threading.Thread": "4.0.0",
+        "System.Xml.XPath.XmlDocument": "4.0.1"
+      }
+    },
+    "net461": {
+      "frameworkAssemblies": {
+        "System.Numerics": "4.0.0.0",
+        "System.Security": "4.0.0.0",
+        "System.Xml": "4.0.0.0"
+      }
+    }
+  }
+}
