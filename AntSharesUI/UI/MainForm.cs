@@ -257,9 +257,18 @@ namespace AntShares.UI
             {
                 ListViewItem.ListViewSubItem subitem = item.SubItems["issuer"];
                 RegisterTransaction asset = (RegisterTransaction)item.Tag;
-                byte[] cert_url_data = asset.Attributes.FirstOrDefault(p => p.Usage == TransactionAttributeUsage.CertUrl)?.Data;
-                string cert_url = cert_url_data == null ? null : Encoding.UTF8.GetString(cert_url_data);
-                using (CertificateQueryResult result = CertificateQueryService.Query(asset.Issuer, cert_url))
+                CertificateQueryResult result;
+                if (asset.AssetType == AssetType.AntShare || asset.AssetType == AssetType.AntCoin)
+                {
+                    result = new CertificateQueryResult { Type = CertificateQueryResultType.System };
+                }
+                else
+                {
+                    byte[] cert_url_data = asset.Attributes.FirstOrDefault(p => p.Usage == TransactionAttributeUsage.CertUrl)?.Data;
+                    string cert_url = cert_url_data == null ? null : Encoding.UTF8.GetString(cert_url_data);
+                    result = CertificateQueryService.Query(asset.Issuer, cert_url);
+                }
+                using (result)
                 {
                     switch (result.Type)
                     {
