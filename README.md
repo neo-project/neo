@@ -8,19 +8,26 @@ Antshares is a decentralized and distributed network protocol which is based on 
 支持平台
 --------
 
-|   | AntSharesUI | AntSharesDaemon | Miner |
-|---|:-----------:|:---------------:|:-----:|
-|**CentOS 7.1**| |:white_check_mark:|:white_check_mark:|
-|**Docker**| |:white_check_mark:|:white_check_mark:|
-|**Red Hat 7.1**| |:white_check_mark:|:white_check_mark:|
-|**Windows 7 SP1 x64**|:white_check_mark:|:white_check_mark:|:white_check_mark:|
-|**Windows Server 2008 R2**| |:white_check_mark:|:white_check_mark:|
-未来将支持Debian、FreeBSD、Linux Mint、openSUSE、Oracle Linux、OS X、Fedora、Ubuntu等。
+|   | AntShares |
+|---|:-----------:|
+|**CentOS 7.1**|:white_check_mark:|
+|**Docker**|:white_check_mark:|
+|**Red Hat 7.1**|:white_check_mark:|
+|**Ubuntu**|:white_check_mark:|
+|**Windows 7 SP1**|:white_check_mark:|
+|**Windows Server 2008 R2**|:white_check_mark:|
+未来将支持Debian、FreeBSD、Linux Mint、openSUSE、Oracle Linux、OS X、Fedora等。
 
 如何开发
 --------
 
 在 Windows 下，使用 [Visual Studio 2015](https://www.visualstudio.com/products/visual-studio-community-vs) 来开发和编译本项目是最方便的。
+
+To install AntShares, run the following command in the [Package Manager Console](https://docs.nuget.org/ndocs/tools/package-manager-console):
+
+```
+PM> Install-Package AntShares
+```
 
 在 Linux 或 MAC OS 下，可以使用任何你喜欢的开发工具来开发，然后使用 [.Net Core SDK](https://www.microsoft.com/net/core) 来生成项目。
 
@@ -33,6 +40,7 @@ Antshares is a decentralized and distributed network protocol which is based on 
 
 这里还有几个可以参考的应用案例：
 
++ [AntSharesCore](https://github.com/AntShares/AntSharesCore) 包含命令行及图形界面的小蚁钱包客户端
 + [AntSharesApp](https://github.com/AntShares/AntSharesApp) 基于Cordova开发的跨平台小蚁钱包APP
 + [AntCha.in](https://github.com/AlexChien/antcha.in) 用于查看小蚁区块链内容的浏览器
 + [antshares-ruby](https://github.com/AntSharesSDK/antshares-ruby) 基于ruby开发的小蚁钱包
@@ -42,6 +50,7 @@ Antshares is a decentralized and distributed network protocol which is based on 
 
 + 白皮书：[中文](https://github.com/AntShares/AntShares/wiki/%E7%99%BD%E7%9A%AE%E4%B9%A6-1.1)|[English](https://github.com/AntShares/AntShares/wiki/Whitepaper-1.1)
 + 共识机制：[dBFT](http://www.onchain.com/paper/66c6773b.pdf)
++ 虚拟机：[AntShares.VM](https://github.com/AntShares/AntShares.VM)
 + 部署文档：[记账节点](https://github.com/AntShares/AntShares/wiki/%E8%AE%B0%E8%B4%A6%E8%8A%82%E7%82%B9)
 
 如何贡献
