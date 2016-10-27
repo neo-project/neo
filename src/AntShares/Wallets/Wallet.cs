@@ -117,7 +117,7 @@ namespace AntShares.Wallets
             {
                 Dictionary<ushort, Claimable> claimable = Blockchain.Default.GetUnclaimed(group.Key);
                 if (claimable == null || claimable.Count == 0)
-                    throw new ArgumentException();
+                    continue;
                 foreach (TransactionInput claim in group)
                 {
                     if (!claimable.ContainsKey(claim.PrevIndex))

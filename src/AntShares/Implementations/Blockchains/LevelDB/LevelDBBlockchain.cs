@@ -622,10 +622,10 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             {
                 batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(quantity.Key), (GetQuantityIssued(quantity.Key) + quantity.Value).GetData());
             }
-            current_block_hash = block.Hash;
-            current_block_height = block.Hash == GenesisBlock.Hash ? 0 : current_block_height + 1;
-            batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(block.Hash).Add(current_block_height));
+            batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(block.Hash).Add(block.Height));
             db.Write(WriteOptions.Default, batch);
+            current_block_hash = block.Hash;
+            current_block_height = block.Height;
         }
 
         private void PersistBlocks()
