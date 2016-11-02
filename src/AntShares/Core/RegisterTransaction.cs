@@ -75,7 +75,7 @@ namespace AntShares.Core
             AssetType = (AssetType)reader.ReadByte();
             if (!Enum.IsDefined(typeof(AssetType), AssetType) || AssetType == AssetType.CreditFlag || AssetType == AssetType.DutyFlag)
                 throw new FormatException();
-            Name = reader.ReadVarString();
+            Name = reader.ReadVarString(1024);
             Amount = reader.ReadSerializable<Fixed8>();
             if (Amount == Fixed8.Zero || Amount < -Fixed8.Satoshi) throw new FormatException();
             if (AssetType == AssetType.Invoice && Amount != -Fixed8.Satoshi)

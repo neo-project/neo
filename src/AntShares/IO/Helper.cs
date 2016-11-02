@@ -30,7 +30,7 @@ namespace AntShares.IO
             return serializable;
         }
 
-        public static int GetVarSize(this int value)
+        internal static int GetVarSize(this int value)
         {
             if (value < 0xFD)
                 return sizeof(byte);
@@ -40,20 +40,20 @@ namespace AntShares.IO
                 return sizeof(byte) + sizeof(uint);
         }
 
-        public static string ReadFixedString(this BinaryReader reader, int length)
+        internal static string ReadFixedString(this BinaryReader reader, int length)
         {
             byte[] data = reader.ReadBytes(length);
             return Encoding.UTF8.GetString(data.TakeWhile(p => p != 0).ToArray());
         }
 
-        public static T ReadSerializable<T>(this BinaryReader reader) where T : ISerializable, new()
+        internal static T ReadSerializable<T>(this BinaryReader reader) where T : ISerializable, new()
         {
             T obj = new T();
             obj.Deserialize(reader);
             return obj;
         }
 
-        public static T[] ReadSerializableArray<T>(this BinaryReader reader, int max = 0x10000000) where T : ISerializable, new()
+        internal static T[] ReadSerializableArray<T>(this BinaryReader reader, int max = 0x10000000) where T : ISerializable, new()
         {
             T[] array = new T[reader.ReadVarInt((ulong)max)];
             for (int i = 0; i < array.Length; i++)
@@ -64,12 +64,12 @@ namespace AntShares.IO
             return array;
         }
 
-        public static byte[] ReadVarBytes(this BinaryReader reader, int max = 0X7fffffc7)
+        internal static byte[] ReadVarBytes(this BinaryReader reader, int max = 0X7fffffc7)
         {
             return reader.ReadBytes((int)reader.ReadVarInt((ulong)max));
         }
 
-        public static ulong ReadVarInt(this BinaryReader reader, ulong max = ulong.MaxValue)
+        internal static ulong ReadVarInt(this BinaryReader reader, ulong max = ulong.MaxValue)
         {
             byte fb = reader.ReadByte();
             ulong value;
@@ -85,9 +85,9 @@ namespace AntShares.IO
             return value;
         }
 
-        public static string ReadVarString(this BinaryReader reader)
+        internal static string ReadVarString(this BinaryReader reader, int max = 0X7fffffc7)
         {
-            return Encoding.UTF8.GetString(reader.ReadVarBytes());
+            return Encoding.UTF8.GetString(reader.ReadVarBytes(max));
         }
 
         public static byte[] ToArray(this ISerializable value)
@@ -101,12 +101,12 @@ namespace AntShares.IO
             }
         }
 
-        public static void Write(this BinaryWriter writer, ISerializable value)
+        internal static void Write(this BinaryWriter writer, ISerializable value)
         {
             value.Serialize(writer);
         }
 
-        public static void Write(this BinaryWriter writer, ISerializable[] value)
+        internal static void Write(this BinaryWriter writer, ISerializable[] value)
         {
             writer.WriteVarInt(value.Length);
             for (int i = 0; i < value.Length; i++)
@@ -115,7 +115,7 @@ namespace AntShares.IO
             }
         }
 
-        public static void WriteFixedString(this BinaryWriter writer, string value, int length)
+        internal static void WriteFixedString(this BinaryWriter writer, string value, int length)
         {
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
@@ -129,13 +129,13 @@ namespace AntShares.IO
                 writer.Write(new byte[length - bytes.Length]);
         }
 
-        public static void WriteVarBytes(this BinaryWriter writer, byte[] value)
+        internal static void WriteVarBytes(this BinaryWriter writer, byte[] value)
         {
             writer.WriteVarInt(value.Length);
             writer.Write(value);
         }
 
-        public static void WriteVarInt(this BinaryWriter writer, long value)
+        internal static void WriteVarInt(this BinaryWriter writer, long value)
         {
             if (value < 0)
                 throw new ArgumentOutOfRangeException();
@@ -160,7 +160,7 @@ namespace AntShares.IO
             }
         }
 
-        public static void WriteVarString(this BinaryWriter writer, string value)
+        internal static void WriteVarString(this BinaryWriter writer, string value)
         {
             writer.WriteVarBytes(Encoding.UTF8.GetBytes(value));
         }

@@ -41,7 +41,7 @@ namespace AntShares.Network.Payloads
             Timestamp = reader.ReadUInt32();
             Port = reader.ReadUInt16();
             Nonce = reader.ReadUInt32();
-            UserAgent = reader.ReadVarString();
+            UserAgent = reader.ReadVarString(1024);
             StartHeight = reader.ReadUInt32();
             Relay = reader.ReadBoolean();
         }
