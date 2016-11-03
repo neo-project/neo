@@ -285,8 +285,6 @@ namespace AntShares.Core
             return GetBlock(hash)?.Header;
         }
 
-        public abstract UInt256[] GetLeafHeaderHashes();
-
         /// <summary>
         /// 获取记账人的合约地址
         /// </summary>

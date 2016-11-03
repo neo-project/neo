@@ -1,5 +1,4 @@
 ﻿using AntShares.IO;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -12,11 +11,11 @@ namespace AntShares.Network.Payloads
 
         public int Size => HashStart.Length.GetVarSize() + HashStart.Sum(p => p.Size) + HashStop.Size;
 
-        public static GetBlocksPayload Create(IEnumerable<UInt256> hash_start, UInt256 hash_stop = null)
+        public static GetBlocksPayload Create(UInt256 hash_start, UInt256 hash_stop = null)
         {
             return new GetBlocksPayload
             {
-                HashStart = hash_start.ToArray(),
+                HashStart = new[] { hash_start },
                 HashStop = hash_stop ?? UInt256.Zero
             };
         }

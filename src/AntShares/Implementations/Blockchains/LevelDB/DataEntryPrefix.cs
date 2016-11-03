@@ -2,15 +2,7 @@
 {
     internal enum DataEntryPrefix : byte
     {
-        /// <summary>
-        /// 区块头表
-        /// </summary>
-        DATA_HeaderList = 0x00,
-
-        /// <summary>
-        /// 区块
-        /// </summary>
-        DATA_Block = 0x01,
+        DATA_Header = 0x01,
 
         /// <summary>
         /// 交易
@@ -23,6 +15,10 @@
         /// 当前区块，区块链的当前状态（包括所有的索引、统计信息）由该区块以及所有的前置区块共同决定
         /// </summary>
         SYS_CurrentBlock = 0x40,
+
+        SYS_CurrentHeader = 0x41,
+
+        IX_HeaderHashList = 0x80,
 
         /// <summary>
         /// 候选人索引

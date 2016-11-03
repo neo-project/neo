@@ -242,7 +242,7 @@ namespace AntShares.Network
             Blockchain.Default.AddHeaders(payload.Headers);
             if (Blockchain.Default.HeaderHeight < Version.StartHeight)
             {
-                EnqueueMessage("getheaders", GetBlocksPayload.Create(Blockchain.Default.GetLeafHeaderHashes()), true);
+                EnqueueMessage("getheaders", GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash), true);
             }
         }
 
@@ -465,9 +465,7 @@ namespace AntShares.Network
             }
             if (Blockchain.Default?.HeaderHeight < Version.StartHeight)
             {
-                HashSet<UInt256> hashes = new HashSet<UInt256>(Blockchain.Default.GetLeafHeaderHashes());
-                hashes.UnionWith(hashes.Select(p => Blockchain.Default.GetHeader(p).PrevBlock).ToArray());
-                EnqueueMessage("getheaders", GetBlocksPayload.Create(hashes), true);
+                EnqueueMessage("getheaders", GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash), true);
             }
             sendThread.Start();
             while (disposed == 0)
@@ -476,7 +474,7 @@ namespace AntShares.Network
                 {
                     if (missions.Count == 0 && Blockchain.Default.Height < Version.StartHeight)
                     {
-                        EnqueueMessage("getblocks", GetBlocksPayload.Create(new[] { Blockchain.Default.CurrentBlockHash }), true);
+                        EnqueueMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash), true);
                     }
                 }
                 TimeSpan timeout = missions.Count == 0 ? TimeSpan.FromMinutes(30) : TimeSpan.FromSeconds(60);
