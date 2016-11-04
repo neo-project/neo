@@ -40,8 +40,6 @@ namespace AntShares.Core
         /// </summary>
         public UInt160 Admin;
 
-        private static readonly string ShareName = "[{\"lang\":\"zh-CN\",\"name\":\"股权\"},{\"lang\":\"en\",\"name\":\"Share\"}]";
-
         public override int Size => base.Size + sizeof(AssetType) + Encoding.UTF8.GetByteCount(Name).GetVarSize() + Encoding.UTF8.GetByteCount(Name) + Amount.Size + sizeof(byte) + Issuer.Size + Admin.Size;
 
         /// <summary>
@@ -98,22 +96,21 @@ namespace AntShares.Core
         /// <returns>返回资产名称</returns>
         public string GetName(CultureInfo culture = null)
         {
-            string name_str = AssetType == AssetType.Share ? ShareName : Name;
             if (_names == null)
             {
                 JObject name_obj;
                 try
                 {
-                    name_obj = JObject.Parse(name_str);
+                    name_obj = JObject.Parse(Name);
                 }
                 catch (FormatException)
                 {
-                    name_obj = name_str;
+                    name_obj = Name;
                 }
                 if (name_obj is JString)
                     _names = new Dictionary<CultureInfo, string> { { new CultureInfo("en"), name_obj.AsString() } };
                 else
-                    _names = ((JArray)JObject.Parse(name_str)).ToDictionary(p => new CultureInfo(p["lang"].AsString()), p => p["name"].AsString());
+                    _names = ((JArray)JObject.Parse(Name)).ToDictionary(p => new CultureInfo(p["lang"].AsString()), p => p["name"].AsString());
             }
             if (culture == null) culture = CultureInfo.CurrentCulture;
             if (_names.ContainsKey(culture))

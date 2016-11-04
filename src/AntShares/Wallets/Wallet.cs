@@ -121,7 +121,7 @@ namespace AntShares.Wallets
                 foreach (TransactionInput claim in group)
                 {
                     if (!claimable.ContainsKey(claim.PrevIndex))
-                        throw new ArgumentException();
+                        continue;
                     unclaimed.Add(claimable[claim.PrevIndex]);
                 }
             }
