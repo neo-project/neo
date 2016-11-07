@@ -589,7 +589,24 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_QuantityIssued).Add(quantity.Key), (GetQuantityIssued(quantity.Key) + quantity.Value).GetData());
             }
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(block.Hash).Add(block.Height));
-            db.Write(WriteOptions.Default, batch);
+            // There's a bug in .Net Core.
+            // When calling DB.Write(), it will throw LevelDBException sometimes.
+            // But when you try to catch the exception, the bug disappears.
+            // We shall remove the "try...catch" clause when Microsoft fix the bug.
+            byte retry = 0;
+            while (true)
+            {
+                try
+                {
+                    db.Write(WriteOptions.Default, batch);
+                    break;
+                }
+                catch (LevelDBException ex)
+                {
+                    if (++retry >= 4) throw;
+                    File.AppendAllText("leveldb.log", ex.Message + "\r\n");
+                }
+            }
             current_block_height = block.Height;
         }
 

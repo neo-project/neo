@@ -27,6 +27,8 @@ namespace AntShares.Core
             {
                 if (Usage == TransactionAttributeUsage.ContractHash || Usage == TransactionAttributeUsage.ECDH02 || Usage == TransactionAttributeUsage.ECDH03 || Usage == TransactionAttributeUsage.Vote || (Usage >= TransactionAttributeUsage.Hash1 && Usage <= TransactionAttributeUsage.Hash15))
                     return sizeof(TransactionAttributeUsage) + 32;
+                else if (Usage == TransactionAttributeUsage.CertUrl || Usage == TransactionAttributeUsage.DescriptionUrl)
+                    return sizeof(TransactionAttributeUsage) + sizeof(byte) + Data.Length;
                 else
                     return sizeof(TransactionAttributeUsage) + Data.Length.GetVarSize() + Data.Length;
             }
@@ -42,9 +44,9 @@ namespace AntShares.Core
             else if (Usage == TransactionAttributeUsage.Script)
                 Data = reader.ReadVarBytes(ushort.MaxValue);
             else if (Usage == TransactionAttributeUsage.CertUrl || Usage == TransactionAttributeUsage.DescriptionUrl)
-                Data = reader.ReadVarBytes(byte.MaxValue);
+                Data = reader.ReadBytes(reader.ReadByte());
             else if (Usage == TransactionAttributeUsage.Description || Usage >= TransactionAttributeUsage.Remark)
-                Data = reader.ReadVarBytes(byte.MaxValue);
+                Data = reader.ReadVarBytes(ushort.MaxValue);
             else
                 throw new FormatException();
         }
@@ -57,7 +59,7 @@ namespace AntShares.Core
             else if (Usage == TransactionAttributeUsage.CertUrl || Usage == TransactionAttributeUsage.DescriptionUrl)
                 writer.Write((byte)Data.Length);
             else if (Usage == TransactionAttributeUsage.Description || Usage >= TransactionAttributeUsage.Remark)
-                writer.Write((byte)Data.Length);
+                writer.WriteVarInt(Data.Length);
             if (Usage == TransactionAttributeUsage.ECDH02 || Usage == TransactionAttributeUsage.ECDH03)
                 writer.Write(Data, 1, 32);
             else

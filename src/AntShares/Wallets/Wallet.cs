@@ -197,6 +197,7 @@ namespace AntShares.Wallets
             {
                 try
                 {
+                    SaveStoredData("PasswordHash", passwordKey.Sha256());
                     SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
                     return true;
                 }
