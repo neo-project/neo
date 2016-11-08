@@ -216,7 +216,7 @@ namespace AntShares.IO.Json
 
         public static implicit operator JObject(string value)
         {
-            return new JString(value);
+            return value == null ? null : new JString(value);
         }
     }
 }

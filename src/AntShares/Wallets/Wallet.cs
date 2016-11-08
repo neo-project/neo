@@ -724,7 +724,7 @@ namespace AntShares.Wallets
                 Account account = GetAccountByScriptHash(scriptHash);
                 if (account == null) continue;
                 byte[] signature = context.Signable.Sign(account);
-                fSuccess |= context.Add(contract, account.PublicKey, signature);
+                fSuccess |= context.AddSignature(contract, account.PublicKey, signature);
             }
             return fSuccess;
         }

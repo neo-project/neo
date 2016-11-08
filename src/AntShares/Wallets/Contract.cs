@@ -70,6 +70,16 @@ namespace AntShares.Wallets
 
         public int Size => PublicKeyHash.Size + ParameterList.Length.GetVarSize() + ParameterList.Length + RedeemScript.Length.GetVarSize() + RedeemScript.Length;
 
+        public ContractType Type
+        {
+            get
+            {
+                if (IsStandard) return ContractType.SignatureContract;
+                if (IsMultiSigContract()) return ContractType.MultiSigContract;
+                return ContractType.CustomContract;
+            }
+        }
+
         public static Contract Create(UInt160 publicKeyHash, ContractParameterType[] parameterList, byte[] redeemScript)
         {
             return new Contract
@@ -167,6 +177,54 @@ namespace AntShares.Wallets
         public override int GetHashCode()
         {
             return ScriptHash.GetHashCode();
+        }
+
+        private bool IsMultiSigContract()
+        {
+            int m, n = 0;
+            int i = 0;
+            if (RedeemScript.Length < 37) return false;
+            if (RedeemScript[i] > (byte)ScriptOp.OP_16) return false;
+            if (RedeemScript[i] < (byte)ScriptOp.OP_1 && RedeemScript[i] != 1 && RedeemScript[i] != 2) return false;
+            switch (RedeemScript[i])
+            {
+                case 1:
+                    m = RedeemScript[++i];
+                    ++i;
+                    break;
+                case 2:
+                    m = BitConverter.ToUInt16(RedeemScript, ++i);
+                    i += 2;
+                    break;
+                default:
+                    m = RedeemScript[i++] - 80;
+                    break;
+            }
+            if (m < 1 || m > 1024) return false;
+            while (RedeemScript[i] == 33)
+            {
+                i += 34;
+                if (RedeemScript.Length <= i) return false;
+                ++n;
+            }
+            if (n < m || n > 1024) return false;
+            switch (RedeemScript[i])
+            {
+                case 1:
+                    if (n != RedeemScript[++i]) return false;
+                    ++i;
+                    break;
+                case 2:
+                    if (n != BitConverter.ToUInt16(RedeemScript, ++i)) return false;
+                    i += 2;
+                    break;
+                default:
+                    if (n != RedeemScript[i++] - 80) return false;
+                    break;
+            }
+            if (RedeemScript[i++] != (byte)ScriptOp.OP_CHECKMULTISIG) return false;
+            if (RedeemScript.Length != i) return false;
+            return true;
         }
 
         /// <summary>

@@ -104,7 +104,7 @@ namespace AntShares.Consensus
                 for (int i = 0, j = 0; i < context.Miners.Length && j < context.M; i++)
                     if (context.Signatures[i] != null)
                     {
-                        sc.Add(contract, context.Miners[i], context.Signatures[i]);
+                        sc.AddSignature(contract, context.Miners[i], context.Signatures[i]);
                         j++;
                     }
                 sc.Signable.Scripts = sc.GetScripts();
