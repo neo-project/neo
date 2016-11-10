@@ -55,7 +55,7 @@ namespace AntShares.Wallets
 
         public bool Add(Contract contract, int index, byte[] parameter)
         {
-            int i = GetIndex(contract);
+            int i = GetIndex(contract.ScriptHash);
             if (i < 0) return false;
             if (redeemScripts[i] == null)
                 redeemScripts[i] = contract.RedeemScript;
@@ -69,7 +69,7 @@ namespace AntShares.Wallets
         {
             if (contract.Type == ContractType.MultiSigContract)
             {
-                int index = GetIndex(contract);
+                int index = GetIndex(contract.ScriptHash);
                 if (index < 0) return false;
                 if (redeemScripts[index] == null)
                     redeemScripts[index] = contract.RedeemScript;
@@ -163,12 +163,17 @@ namespace AntShares.Wallets
             return context;
         }
 
-        private int GetIndex(Contract contract)
+        private int GetIndex(UInt160 scriptHash)
         {
             for (int i = 0; i < ScriptHashes.Length; i++)
-                if (ScriptHashes[i].Equals(contract.ScriptHash))
+                if (ScriptHashes[i].Equals(scriptHash))
                     return i;
             return -1;
+        }
+
+        public byte[] GetParameter(UInt160 scriptHash, int index)
+        {
+            return parameters[GetIndex(scriptHash)][index];
         }
 
         /// <summary>
