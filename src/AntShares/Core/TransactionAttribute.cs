@@ -29,7 +29,7 @@ namespace AntShares.Core
                     return sizeof(TransactionAttributeUsage) + 32;
                 else if (Usage == TransactionAttributeUsage.Script)
                     return sizeof(TransactionAttributeUsage) + 20;
-                else if (Usage == TransactionAttributeUsage.CertUrl || Usage == TransactionAttributeUsage.DescriptionUrl)
+                else if (Usage == TransactionAttributeUsage.DescriptionUrl)
                     return sizeof(TransactionAttributeUsage) + sizeof(byte) + Data.Length;
                 else
                     return sizeof(TransactionAttributeUsage) + Data.Length.GetVarSize() + Data.Length;
@@ -45,7 +45,7 @@ namespace AntShares.Core
                 Data = new[] { (byte)Usage }.Concat(reader.ReadBytes(32)).ToArray();
             else if (Usage == TransactionAttributeUsage.Script)
                 Data = reader.ReadBytes(20);
-            else if (Usage == TransactionAttributeUsage.CertUrl || Usage == TransactionAttributeUsage.DescriptionUrl)
+            else if (Usage == TransactionAttributeUsage.DescriptionUrl)
                 Data = reader.ReadBytes(reader.ReadByte());
             else if (Usage == TransactionAttributeUsage.Description || Usage >= TransactionAttributeUsage.Remark)
                 Data = reader.ReadVarBytes(ushort.MaxValue);
@@ -56,7 +56,7 @@ namespace AntShares.Core
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Usage);
-            if (Usage == TransactionAttributeUsage.CertUrl || Usage == TransactionAttributeUsage.DescriptionUrl)
+            if (Usage == TransactionAttributeUsage.DescriptionUrl)
                 writer.Write((byte)Data.Length);
             else if (Usage == TransactionAttributeUsage.Description || Usage >= TransactionAttributeUsage.Remark)
                 writer.WriteVarInt(Data.Length);

@@ -25,7 +25,7 @@ namespace AntShares.Core
         /// <summary>
         /// 版本
         /// </summary>
-        public const byte Version = 0;
+        public byte Version;
         /// <summary>
         /// 该交易所具备的额外特性
         /// </summary>
@@ -167,7 +167,8 @@ namespace AntShares.Core
 
         private void DeserializeUnsignedWithoutType(BinaryReader reader)
         {
-            if (reader.ReadByte() != Version)
+            Version = reader.ReadByte();
+            if (Version != 0)
                 throw new FormatException();
             DeserializeExclusiveData(reader);
             Attributes = reader.ReadSerializableArray<TransactionAttribute>();

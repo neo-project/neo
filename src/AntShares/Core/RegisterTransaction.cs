@@ -39,8 +39,21 @@ namespace AntShares.Core
         /// 资产管理员的合约散列值
         /// </summary>
         public UInt160 Admin;
+        public string CertUrl;
 
-        public override int Size => base.Size + sizeof(AssetType) + Encoding.UTF8.GetByteCount(Name).GetVarSize() + Encoding.UTF8.GetByteCount(Name) + Amount.Size + sizeof(byte) + Issuer.Size + Admin.Size;
+        public override int Size
+        {
+            get
+            {
+                int size = base.Size;
+                size += sizeof(AssetType) + Encoding.UTF8.GetByteCount(Name).GetVarSize() + Encoding.UTF8.GetByteCount(Name) + Amount.Size + sizeof(byte) + Issuer.Size + Admin.Size;
+                if (Version > 0)
+                {
+                    size += sizeof(byte) + Encoding.UTF8.GetByteCount(CertUrl);
+                }
+                return size;
+            }
+        }
 
         /// <summary>
         /// 系统费用
@@ -86,6 +99,10 @@ namespace AntShares.Core
                 throw new FormatException();
             Issuer = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
             Admin = reader.ReadSerializable<UInt160>();
+            if (Version > 0)
+            {
+                CertUrl = reader.ReadVarString(252);
+            }
         }
 
         private Dictionary<CultureInfo, string> _names;
@@ -158,6 +175,10 @@ namespace AntShares.Core
             writer.Write(Precision);
             writer.Write(Issuer);
             writer.Write(Admin);
+            if (Version > 0)
+            {
+                writer.WriteVarString(CertUrl);
+            }
         }
 
         /// <summary>
@@ -183,6 +204,10 @@ namespace AntShares.Core
             json["asset"]["low"] = Amount.GetData() & 0xffffffff;
             json["asset"]["issuer"] = Issuer.ToString();
             json["asset"]["admin"] = Wallet.ToAddress(Admin);
+            if (Version > 0)
+            {
+                json["asset"]["cert"] = CertUrl;
+            }
             return json;
         }
 
