@@ -27,6 +27,8 @@ namespace AntShares.Core
             {
                 if (Usage == TransactionAttributeUsage.ContractHash || Usage == TransactionAttributeUsage.ECDH02 || Usage == TransactionAttributeUsage.ECDH03 || Usage == TransactionAttributeUsage.Vote || (Usage >= TransactionAttributeUsage.Hash1 && Usage <= TransactionAttributeUsage.Hash15))
                     return sizeof(TransactionAttributeUsage) + 32;
+                else if (Usage == TransactionAttributeUsage.Script)
+                    return sizeof(TransactionAttributeUsage) + 20;
                 else if (Usage == TransactionAttributeUsage.CertUrl || Usage == TransactionAttributeUsage.DescriptionUrl)
                     return sizeof(TransactionAttributeUsage) + sizeof(byte) + Data.Length;
                 else
@@ -42,7 +44,7 @@ namespace AntShares.Core
             else if (Usage == TransactionAttributeUsage.ECDH02 || Usage == TransactionAttributeUsage.ECDH03)
                 Data = new[] { (byte)Usage }.Concat(reader.ReadBytes(32)).ToArray();
             else if (Usage == TransactionAttributeUsage.Script)
-                Data = reader.ReadVarBytes(ushort.MaxValue);
+                Data = reader.ReadBytes(20);
             else if (Usage == TransactionAttributeUsage.CertUrl || Usage == TransactionAttributeUsage.DescriptionUrl)
                 Data = reader.ReadBytes(reader.ReadByte());
             else if (Usage == TransactionAttributeUsage.Description || Usage >= TransactionAttributeUsage.Remark)
@@ -54,9 +56,7 @@ namespace AntShares.Core
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Usage);
-            if (Usage == TransactionAttributeUsage.Script)
-                writer.WriteVarInt(Data.Length);
-            else if (Usage == TransactionAttributeUsage.CertUrl || Usage == TransactionAttributeUsage.DescriptionUrl)
+            if (Usage == TransactionAttributeUsage.CertUrl || Usage == TransactionAttributeUsage.DescriptionUrl)
                 writer.Write((byte)Data.Length);
             else if (Usage == TransactionAttributeUsage.Description || Usage >= TransactionAttributeUsage.Remark)
                 writer.WriteVarInt(Data.Length);

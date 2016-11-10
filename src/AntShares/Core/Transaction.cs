@@ -227,6 +227,7 @@ namespace AntShares.Core
         {
             if (References == null) throw new InvalidOperationException();
             HashSet<UInt160> hashes = new HashSet<UInt160>(Inputs.Select(p => References[p].ScriptHash));
+            hashes.UnionWith(Attributes.Where(p => p.Usage == TransactionAttributeUsage.Script).Select(p => new UInt160(p.Data)));
             foreach (var group in Outputs.GroupBy(p => p.AssetId))
             {
                 RegisterTransaction tx = Blockchain.Default.GetTransaction(group.Key) as RegisterTransaction;
@@ -357,12 +358,6 @@ namespace AntShares.Core
                     if (results_issue.Length > 0)
                         return false;
                     break;
-            }
-            foreach (TransactionAttribute script in Attributes.Where(p => p.Usage == TransactionAttributeUsage.Script))
-            {
-                ScriptEngine engine = new ScriptEngine(this, ECDsaCrypto.Default, Blockchain.Default, InterfaceEngine.Default);
-                if (!engine.ExecuteScript(script.Data, false)) return false;
-                if (engine.Stack.Count != 1 || !engine.Stack.Pop()) return false;
             }
             if (Attributes.Any(p => p.Usage == TransactionAttributeUsage.Vote))
             {
