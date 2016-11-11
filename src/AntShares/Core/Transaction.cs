@@ -316,14 +316,21 @@ namespace AntShares.Core
             return json;
         }
 
+        bool IInventory.Verify()
+        {
+            return Verify(Enumerable.Empty<Transaction>());
+        }
+
         /// <summary>
         /// 验证交易
         /// </summary>
         /// <returns>返回验证的结果</returns>
-        public virtual bool Verify()
+        public virtual bool Verify(IEnumerable<Transaction> mempool)
         {
             if (Blockchain.Default.ContainsTransaction(Hash)) return true;
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes))
+                return false;
+            if (mempool.SelectMany(p => p.GetAllInputs()).Intersect(GetAllInputs()).Count() > 0)
                 return false;
             if (Blockchain.Default.IsDoubleSpend(this))
                 return false;

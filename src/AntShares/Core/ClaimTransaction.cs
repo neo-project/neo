@@ -81,9 +81,11 @@ namespace AntShares.Core
         /// 验证交易
         /// </summary>
         /// <returns>返回验证结果</returns>
-        public override bool Verify()
+        public override bool Verify(IEnumerable<Transaction> mempool)
         {
-            if (!base.Verify()) return false;
+            if (!base.Verify(mempool)) return false;
+            if (mempool.OfType<ClaimTransaction>().SelectMany(p => p.Claims).Intersect(Claims).Count() > 0)
+                return false;
             TransactionResult result = GetTransactionResults().FirstOrDefault(p => p.AssetId == Blockchain.AntCoin.Hash);
             if (result == null || result.Amount > Fixed8.Zero) return false;
             try

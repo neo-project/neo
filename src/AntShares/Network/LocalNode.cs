@@ -97,18 +97,8 @@ namespace AntShares.Network
             lock (MemoryPool)
             {
                 if (MemoryPool.ContainsKey(tx.Hash)) return false;
-                if (MemoryPool.Values.SelectMany(p => p.GetAllInputs()).Intersect(tx.GetAllInputs()).Count() > 0)
-                    return false;
                 if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
-                if (tx is IssueTransaction)
-                {
-                    IssueTransaction issue = (IssueTransaction)tx;
-                    if (!issue.Verify(true)) return false;
-                }
-                else
-                {
-                    if (!tx.Verify()) return false;
-                }
+                if (!tx.Verify(MemoryPool.Values)) return false;
                 AddingTransactionEventArgs args = new AddingTransactionEventArgs(tx);
                 AddingTransaction?.Invoke(this, args);
                 if (!args.Cancel) MemoryPool.Add(tx.Hash, tx);

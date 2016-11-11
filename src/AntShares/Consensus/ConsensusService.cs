@@ -34,9 +34,8 @@ namespace AntShares.Consensus
 
         private bool AddTransaction(Transaction tx)
         {
-            if (context.Transactions.SelectMany(p => p.Value.GetAllInputs()).Intersect(tx.GetAllInputs()).Count() > 0 ||
-                Blockchain.Default.ContainsTransaction(tx.Hash) ||
-                !tx.Verify() ||
+            if (Blockchain.Default.ContainsTransaction(tx.Hash) ||
+                !tx.Verify(context.Transactions.Values) ||
                 !CheckPolicy(tx))
             {
                 Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}");

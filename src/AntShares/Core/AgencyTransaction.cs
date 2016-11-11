@@ -141,9 +141,9 @@ namespace AntShares.Core
         /// 验证交易
         /// </summary>
         /// <returns>返回验证的结果</returns>
-        public override bool Verify()
+        public override bool Verify(IEnumerable<Transaction> mempool)
         {
-            if (!base.Verify()) return false;
+            if (!base.Verify(mempool)) return false;
             foreach (Order order in Orders)
                 if (!order.VerifySignature())
                     return false;
