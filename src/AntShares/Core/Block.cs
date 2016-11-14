@@ -68,14 +68,12 @@ namespace AntShares.Core
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Transactions = new Transaction[reader.ReadVarInt(0x10000000)];
+            Transactions = new Transaction[reader.ReadVarInt(0x10000)];
             if (Transactions.Length == 0) throw new FormatException();
             for (int i = 0; i < Transactions.Length; i++)
             {
                 Transactions[i] = Transaction.DeserializeFrom(reader);
             }
-            if (Transactions[0].Type != TransactionType.MinerTransaction || Transactions.Skip(1).Any(p => p.Type == TransactionType.MinerTransaction))
-                throw new FormatException();
             if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
                 throw new FormatException();
         }
@@ -182,6 +180,8 @@ namespace AntShares.Core
         public bool Verify(bool completely)
         {
             if (!Verify()) return false;
+            if (Transactions[0].Type != TransactionType.MinerTransaction || Transactions.Skip(1).Any(p => p.Type == TransactionType.MinerTransaction))
+                return false;
             if (completely)
             {
                 if (NextMiner != Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(Transactions).ToArray()))

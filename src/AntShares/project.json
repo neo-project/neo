@@ -2,7 +2,7 @@
   "authors": [ "The Antshares team" ],
   "copyright": "2015-2016 The Antshares team",
   "title": "AntShares",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "buildOptions": {
     "allowUnsafe": true,
     "copyToOutput": {

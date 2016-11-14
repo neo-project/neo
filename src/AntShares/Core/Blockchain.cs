@@ -56,7 +56,7 @@ namespace AntShares.Core
             Issuer = ECCurve.Secp256r1.Infinity,
             Admin = (new[] { (byte)ScriptOp.OP_TRUE }).ToScriptHash(),
             Attributes = new TransactionAttribute[0],
-            Inputs = new TransactionInput[0],
+            Inputs = new CoinReference[0],
             Outputs = new TransactionOutput[0]
         };
 
@@ -76,7 +76,7 @@ namespace AntShares.Core
             Issuer = ECCurve.Secp256r1.Infinity,
             Admin = (new[] { (byte)ScriptOp.OP_FALSE }).ToScriptHash(),
             Attributes = new TransactionAttribute[0],
-            Inputs = new TransactionInput[0],
+            Inputs = new CoinReference[0],
             Outputs = new TransactionOutput[0]
         };
 
@@ -101,7 +101,7 @@ namespace AntShares.Core
                 {
                     Nonce = 2083236893,
                     Attributes = new TransactionAttribute[0],
-                    Inputs = new TransactionInput[0],
+                    Inputs = new CoinReference[0],
                     Outputs = new TransactionOutput[0],
                     Scripts = new Script[0]
                 },
@@ -110,7 +110,7 @@ namespace AntShares.Core
                 new IssueTransaction
                 {
                     Attributes = new TransactionAttribute[0],
-                    Inputs = new TransactionInput[0],
+                    Inputs = new CoinReference[0],
                     Outputs = new[]
                     {
                         new TransactionOutput
@@ -211,7 +211,7 @@ namespace AntShares.Core
             return GenesisBlock.Transactions.Any(p => p.Hash == hash);
         }
 
-        public bool ContainsUnspent(TransactionInput input)
+        public bool ContainsUnspent(CoinReference input)
         {
             return ContainsUnspent(input.PrevHash, input.PrevIndex);
         }

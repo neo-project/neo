@@ -32,10 +32,17 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             UIntPtr length;
             IntPtr error;
             IntPtr value = Native.leveldb_get(handle, options.handle, key.buffer, (UIntPtr)key.buffer.Length, out length, out error);
-            NativeHelper.CheckError(error);
-            if (value == IntPtr.Zero)
-                throw new LevelDBException("not found");
-            return new Slice(value, length);
+            try
+            {
+                NativeHelper.CheckError(error);
+                if (value == IntPtr.Zero)
+                    throw new LevelDBException("not found");
+                return new Slice(value, length);
+            }
+            finally
+            {
+                if (value != IntPtr.Zero) Native.leveldb_free(value);
+            }
         }
 
         public Snapshot GetSnapshot()
@@ -85,6 +92,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 return false;
             }
             value = new Slice(v, length);
+            Native.leveldb_free(v);
             return true;
         }
 

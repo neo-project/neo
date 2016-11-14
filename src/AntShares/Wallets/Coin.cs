@@ -4,12 +4,10 @@ using System;
 
 namespace AntShares.Wallets
 {
-    public class Coin : IEquatable<Coin>, ITrackable<TransactionInput>
+    public class Coin : IEquatable<Coin>, ITrackable<CoinReference>
     {
-        public TransactionInput Input;
-        public UInt256 AssetId;
-        public Fixed8 Value;
-        public UInt160 ScriptHash;
+        public CoinReference Reference;
+        public TransactionOutput Output;
 
         private string _address = null;
         public string Address
@@ -18,13 +16,13 @@ namespace AntShares.Wallets
             {
                 if (_address == null)
                 {
-                    _address = Wallet.ToAddress(ScriptHash);
+                    _address = Wallet.ToAddress(Output.ScriptHash);
                 }
                 return _address;
             }
         }
 
-        TransactionInput ITrackable<TransactionInput>.Key => Input;
+        CoinReference ITrackable<CoinReference>.Key => Reference;
 
         private CoinState state;
         public CoinState State
@@ -38,20 +36,20 @@ namespace AntShares.Wallets
                 if (state != value)
                 {
                     state = value;
-                    ITrackable<TransactionInput> _this = this;
+                    ITrackable<CoinReference> _this = this;
                     if (_this.TrackState == TrackState.None)
                         _this.TrackState = TrackState.Changed;
                 }
             }
         }
 
-        TrackState ITrackable<TransactionInput>.TrackState { get; set; }
+        TrackState ITrackable<CoinReference>.TrackState { get; set; }
 
         public bool Equals(Coin other)
         {
             if (ReferenceEquals(this, other)) return true;
             if (ReferenceEquals(null, other)) return false;
-            return Input.Equals(other.Input);
+            return Reference.Equals(other.Reference);
         }
 
         public override bool Equals(object obj)
@@ -61,7 +59,7 @@ namespace AntShares.Wallets
 
         public override int GetHashCode()
         {
-            return Input.GetHashCode();
+            return Reference.GetHashCode();
         }
     }
 }

@@ -39,7 +39,7 @@ namespace AntShares.Core
         /// <summary>
         /// 输入列表
         /// </summary>
-        public TransactionInput[] Inputs;
+        public CoinReference[] Inputs;
         /// <summary>
         /// 用于验证该订单的脚本列表
         /// </summary>
@@ -82,7 +82,7 @@ namespace AntShares.Core
             if (Price <= Fixed8.Zero) throw new FormatException();
             if (Price.GetData() % 10000 != 0) throw new FormatException();
             Client = reader.ReadSerializable<UInt160>();
-            Inputs = reader.ReadSerializableArray<TransactionInput>();
+            Inputs = reader.ReadSerializableArray<CoinReference>();
             if (Inputs.Distinct().Count() != Inputs.Length)
                 throw new FormatException();
         }

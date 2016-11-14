@@ -16,7 +16,7 @@ namespace AntShares.Core
         /// <summary>
         /// 将要用于分配小蚁币的小蚁股
         /// </summary>
-        public TransactionInput[] Claims;
+        public CoinReference[] Claims;
 
         public override int Size => base.Size + Claims.Length.GetVarSize() + Claims.Sum(p => p.Size);
 
@@ -31,10 +31,8 @@ namespace AntShares.Core
         /// <param name="reader">数据来源</param>
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
-            Claims = reader.ReadSerializableArray<TransactionInput>();
+            Claims = reader.ReadSerializableArray<CoinReference>();
             if (Claims.Length == 0) throw new FormatException();
-            if (Claims.Length != Claims.Distinct().Count())
-                throw new FormatException();
         }
 
         /// <summary>
@@ -48,7 +46,7 @@ namespace AntShares.Core
             {
                 Transaction tx = Blockchain.Default.GetTransaction(group.Key);
                 if (tx == null) throw new InvalidOperationException();
-                foreach (TransactionInput claim in group)
+                foreach (CoinReference claim in group)
                 {
                     if (tx.Outputs.Length <= claim.PrevIndex) throw new InvalidOperationException();
                     hashes.Add(tx.Outputs[claim.PrevIndex].ScriptHash);
@@ -84,6 +82,8 @@ namespace AntShares.Core
         public override bool Verify(IEnumerable<Transaction> mempool)
         {
             if (!base.Verify(mempool)) return false;
+            if (Claims.Length != Claims.Distinct().Count())
+                return false;
             if (mempool.OfType<ClaimTransaction>().SelectMany(p => p.Claims).Intersect(Claims).Count() > 0)
                 return false;
             TransactionResult result = GetTransactionResults().FirstOrDefault(p => p.AssetId == Blockchain.AntCoin.Hash);

@@ -9,7 +9,7 @@ namespace AntShares.Core
     /// <summary>
     /// 交易输入
     /// </summary>
-    public class TransactionInput : IApiInterface, IEquatable<TransactionInput>, ISerializable
+    public class CoinReference : IApiInterface, IEquatable<CoinReference>, ISerializable
     {
         /// <summary>
         /// 引用交易的散列值
@@ -33,7 +33,7 @@ namespace AntShares.Core
         /// </summary>
         /// <param name="other">要比较的对象</param>
         /// <returns>返回对象是否相等</returns>
-        public bool Equals(TransactionInput other)
+        public bool Equals(CoinReference other)
         {
             if (ReferenceEquals(this, other)) return true;
             if (ReferenceEquals(null, other)) return false;
@@ -49,8 +49,8 @@ namespace AntShares.Core
         {
             if (ReferenceEquals(this, obj)) return true;
             if (ReferenceEquals(null, obj)) return false;
-            if (!(obj is TransactionInput)) return false;
-            return Equals((TransactionInput)obj);
+            if (!(obj is CoinReference)) return false;
+            return Equals((CoinReference)obj);
         }
 
         /// <summary>

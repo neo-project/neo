@@ -404,7 +404,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override bool IsDoubleSpend(Transaction tx)
         {
-            TransactionInput[] inputs = tx.GetAllInputs().ToArray();
+            CoinReference[] inputs = tx.GetAllInputs().ToArray();
             if (inputs.Length == 0) return false;
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
@@ -499,7 +499,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                         }
                         break;
                     case TransactionType.ClaimTransaction:
-                        foreach (TransactionInput input in ((ClaimTransaction)tx).Claims)
+                        foreach (CoinReference input in ((ClaimTransaction)tx).Claims)
                         {
                             unclaimed.Remove(input.PrevHash, input.PrevIndex);
                         }
@@ -527,7 +527,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             {
                 int height;
                 Transaction tx = GetTransaction(ReadOptions.Default, group.Key, out height);
-                foreach (TransactionInput input in group)
+                foreach (CoinReference input in group)
                 {
                     if (input.PrevIndex == 0)
                     {

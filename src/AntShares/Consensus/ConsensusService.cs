@@ -128,7 +128,7 @@ namespace AntShares.Consensus
             {
                 Nonce = (uint)(nonce % (uint.MaxValue + 1ul)),
                 Attributes = new TransactionAttribute[0],
-                Inputs = new TransactionInput[0],
+                Inputs = new CoinReference[0],
                 Outputs = outputs,
                 Scripts = new Script[0]
             };

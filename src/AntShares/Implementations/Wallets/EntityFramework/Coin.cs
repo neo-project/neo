@@ -1,4 +1,4 @@
-﻿using AntShares.Wallets;
+﻿using AntShares.Core;
 
 namespace AntShares.Implementations.Wallets.EntityFramework
 {

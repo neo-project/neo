@@ -33,7 +33,7 @@ namespace AntShares.Core
         /// <summary>
         /// 输入列表
         /// </summary>
-        public TransactionInput[] Inputs;
+        public CoinReference[] Inputs;
         /// <summary>
         /// 输出列表
         /// </summary>
@@ -61,17 +61,17 @@ namespace AntShares.Core
         /// </summary>
         InventoryType IInventory.InventoryType => InventoryType.TX;
 
-        private IReadOnlyDictionary<TransactionInput, TransactionOutput> _references;
+        private IReadOnlyDictionary<CoinReference, TransactionOutput> _references;
         /// <summary>
         /// 每一个交易输入所引用的交易输出
         /// </summary>
-        public IReadOnlyDictionary<TransactionInput, TransactionOutput> References
+        public IReadOnlyDictionary<CoinReference, TransactionOutput> References
         {
             get
             {
                 if (_references == null)
                 {
-                    Dictionary<TransactionInput, TransactionOutput> dictionary = new Dictionary<TransactionInput, TransactionOutput>();
+                    Dictionary<CoinReference, TransactionOutput> dictionary = new Dictionary<CoinReference, TransactionOutput>();
                     foreach (var group in GetAllInputs().GroupBy(p => p.PrevHash))
                     {
                         Transaction tx = Blockchain.Default.GetTransaction(group.Key);
@@ -172,21 +172,8 @@ namespace AntShares.Core
                 throw new FormatException();
             DeserializeExclusiveData(reader);
             Attributes = reader.ReadSerializableArray<TransactionAttribute>();
-            if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
-                throw new FormatException();
-            if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.Vote) > 1024)
-                throw new FormatException();
-            if (Attributes.Where(p => p.Usage == TransactionAttributeUsage.Vote).Select(p => new UInt256(p.Data)).Distinct().Count() != Attributes.Count(p => p.Usage == TransactionAttributeUsage.Vote))
-                throw new FormatException();
-            Inputs = reader.ReadSerializableArray<TransactionInput>();
-            TransactionInput[] inputs = GetAllInputs().ToArray();
-            for (int i = 1; i < inputs.Length; i++)
-                for (int j = 0; j < i; j++)
-                    if (inputs[i].PrevHash == inputs[j].PrevHash && inputs[i].PrevIndex == inputs[j].PrevIndex)
-                        throw new FormatException();
+            Inputs = reader.ReadSerializableArray<CoinReference>();
             Outputs = reader.ReadSerializableArray<TransactionOutput>(ushort.MaxValue + 1);
-            if (Attributes.Any(p => p.Usage == TransactionAttributeUsage.Vote) && Outputs.All(p => !p.AssetId.Equals(Blockchain.AntShare.Hash)))
-                throw new FormatException();
         }
 
         public bool Equals(Transaction other)
@@ -205,7 +192,7 @@ namespace AntShares.Core
         /// 获取交易的所有输入
         /// </summary>
         /// <returns>返回交易的所有输入</returns>
-        public virtual IEnumerable<TransactionInput> GetAllInputs()
+        public virtual IEnumerable<CoinReference> GetAllInputs()
         {
             return Inputs;
         }
@@ -330,6 +317,11 @@ namespace AntShares.Core
             if (Blockchain.Default.ContainsTransaction(Hash)) return true;
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes))
                 return false;
+            CoinReference[] inputs = GetAllInputs().ToArray();
+            for (int i = 1; i < inputs.Length; i++)
+                for (int j = 0; j < i; j++)
+                    if (inputs[i].PrevHash == inputs[j].PrevHash && inputs[i].PrevIndex == inputs[j].PrevIndex)
+                        return false;
             if (mempool.SelectMany(p => p.GetAllInputs()).Intersect(GetAllInputs()).Count() > 0)
                 return false;
             if (Blockchain.Default.IsDoubleSpend(this))
@@ -367,9 +359,17 @@ namespace AntShares.Core
                         return false;
                     break;
             }
+            if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
+                return false;
+            if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.Vote) > 1024)
+                return false;
+            if (Attributes.Where(p => p.Usage == TransactionAttributeUsage.Vote).Select(p => new UInt256(p.Data)).Distinct().Count() != Attributes.Count(p => p.Usage == TransactionAttributeUsage.Vote))
+                return false;
             if (Attributes.Any(p => p.Usage == TransactionAttributeUsage.Vote))
             {
                 if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
+                    return false;
+                if (Outputs.All(p => !p.AssetId.Equals(Blockchain.AntShare.Hash)))
                     return false;
                 HashSet<ECPoint> pubkeys = new HashSet<ECPoint>();
                 foreach (UInt256 vote in Attributes.Where(p => p.Usage == TransactionAttributeUsage.Vote).Select(p => new UInt256(p.Data)))

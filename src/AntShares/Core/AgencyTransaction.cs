@@ -57,9 +57,8 @@ namespace AntShares.Core
         {
             this.AssetId = reader.ReadSerializable<UInt256>();
             this.ValueAssetId = reader.ReadSerializable<UInt256>();
-            if (AssetId == ValueAssetId) throw new FormatException();
             this.Agent = reader.ReadSerializable<UInt160>();
-            this.Orders = new Order[reader.ReadVarInt(0x10000000)];
+            this.Orders = new Order[reader.ReadVarInt(0x1000)];
             for (int i = 0; i < Orders.Length; i++)
             {
                 Orders[i] = new Order();
@@ -79,7 +78,7 @@ namespace AntShares.Core
         /// 获取交易中所有的输入
         /// </summary>
         /// <returns>返回交易中所有的输入以及订单<paramref name="Orders"/>中的所有输入</returns>
-        public override IEnumerable<TransactionInput> GetAllInputs()
+        public override IEnumerable<CoinReference> GetAllInputs()
         {
             return Orders.SelectMany(p => p.Inputs).Concat(base.GetAllInputs());
         }
@@ -147,6 +146,7 @@ namespace AntShares.Core
             foreach (Order order in Orders)
                 if (!order.VerifySignature())
                     return false;
+            if (AssetId == ValueAssetId) return false;
             RegisterTransaction asset_value = Blockchain.Default.GetTransaction(ValueAssetId) as RegisterTransaction;
             if (asset_value?.AssetType != AssetType.Currency)
                 return false;

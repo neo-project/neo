@@ -441,7 +441,7 @@ namespace AntShares.VM
         {
             if (engine.AltStack.Count < 1) return false;
             StackItem x = engine.AltStack.Peek();
-            TransactionInput[] inputs = x.GetArray<TransactionInput>();
+            CoinReference[] inputs = x.GetArray<CoinReference>();
             if (inputs.Any(p => p == null)) return false;
             byte[][] r = inputs.Select(p => p.PrevHash.ToArray()).ToArray();
             engine.Stack.Push(new StackItem(r));
@@ -452,7 +452,7 @@ namespace AntShares.VM
         {
             if (engine.AltStack.Count < 1) return false;
             StackItem x = engine.AltStack.Peek();
-            TransactionInput[] inputs = x.GetArray<TransactionInput>();
+            CoinReference[] inputs = x.GetArray<CoinReference>();
             if (inputs.Any(p => p == null)) return false;
             uint[] r = inputs.Select(p => (uint)p.PrevIndex).ToArray();
             engine.Stack.Push(r);
