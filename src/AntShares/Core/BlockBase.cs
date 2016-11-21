@@ -41,7 +41,7 @@ namespace AntShares.Core
         /// <summary>
         /// 用于验证该区块的脚本
         /// </summary>
-        public Script Script;
+        public Witness Script;
 
         private UInt256 _hash = null;
         public UInt256 Hash
@@ -56,7 +56,7 @@ namespace AntShares.Core
             }
         }
 
-        Script[] ISignable.Scripts
+        Witness[] ISignable.Scripts
         {
             get
             {
@@ -75,7 +75,7 @@ namespace AntShares.Core
         {
             ((ISignable)this).DeserializeUnsigned(reader);
             if (reader.ReadByte() != 1) throw new FormatException();
-            Script = reader.ReadSerializable<Script>();
+            Script = reader.ReadSerializable<Witness>();
         }
 
         void ISignable.DeserializeUnsigned(BinaryReader reader)

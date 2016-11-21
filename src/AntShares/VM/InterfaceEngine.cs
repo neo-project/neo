@@ -89,35 +89,35 @@ namespace AntShares.VM
 
         private bool SystemNow(ScriptEngine engine)
         {
-            engine.Stack.Push(DateTime.Now.ToTimestamp());
+            engine.EvaluationStack.Push(DateTime.Now.ToTimestamp());
             return true;
         }
 
         private bool SystemCurrentTx(ScriptEngine engine)
         {
-            engine.Stack.Push(new StackItem(engine.Signable as Transaction));
+            engine.EvaluationStack.Push(new StackItem(engine.Signable as Transaction));
             return true;
         }
 
         private bool SystemCurrentScriptHash(ScriptEngine engine)
         {
-            engine.Stack.Push(new StackItem(engine.ExecutingScript.ToScriptHash().ToArray()));
+            engine.EvaluationStack.Push(new StackItem(engine.ExecutingScript.ToScriptHash().ToArray()));
             return true;
         }
 
         private bool ChainHeight(ScriptEngine engine)
         {
             if (Blockchain.Default == null)
-                engine.Stack.Push(0);
+                engine.EvaluationStack.Push(0);
             else
-                engine.Stack.Push(Blockchain.Default.Height);
+                engine.EvaluationStack.Push(Blockchain.Default.Height);
             return true;
         }
 
         private bool ChainGetHeader(ScriptEngine engine)
         {
-            if (engine.Stack.Count < 1) return false;
-            StackItem x = engine.Stack.Pop();
+            if (engine.EvaluationStack.Count < 1) return false;
+            StackItem x = engine.EvaluationStack.Pop();
             byte[][] data = x.GetBytesArray();
             List<Header> r = new List<Header>();
             foreach (byte[] d in data)
@@ -146,14 +146,14 @@ namespace AntShares.VM
                         return false;
                 }
             }
-            engine.Stack.Push(new StackItem(r.ToArray()));
+            engine.EvaluationStack.Push(new StackItem(r.ToArray()));
             return true;
         }
 
         private bool ChainGetBlock(ScriptEngine engine)
         {
-            if (engine.Stack.Count < 1) return false;
-            StackItem x = engine.Stack.Pop();
+            if (engine.EvaluationStack.Count < 1) return false;
+            StackItem x = engine.EvaluationStack.Pop();
             byte[][] data = x.GetBytesArray();
             List<Block> r = new List<Block>();
             foreach (byte[] d in data)
@@ -182,16 +182,16 @@ namespace AntShares.VM
                         return false;
                 }
             }
-            engine.Stack.Push(new StackItem(r.ToArray()));
+            engine.EvaluationStack.Push(new StackItem(r.ToArray()));
             return true;
         }
 
         private bool ChainGetTx(ScriptEngine engine)
         {
-            if (engine.Stack.Count < 1) return false;
-            StackItem x = engine.Stack.Pop();
+            if (engine.EvaluationStack.Count < 1) return false;
+            StackItem x = engine.EvaluationStack.Pop();
             Transaction[] r = x.GetBytesArray().Select(p => Blockchain.Default?.GetTransaction(new UInt256(p))).ToArray();
-            engine.Stack.Push(new StackItem(r));
+            engine.EvaluationStack.Push(new StackItem(r));
             return true;
         }
 
@@ -202,7 +202,7 @@ namespace AntShares.VM
             BlockBase[] headers = x.GetArray<BlockBase>();
             if (headers.Any(p => p == null)) return false;
             byte[][] r = headers.Select(p => p.Hash.ToArray()).ToArray();
-            engine.Stack.Push(new StackItem(r));
+            engine.EvaluationStack.Push(new StackItem(r));
             return true;
         }
 
@@ -213,7 +213,7 @@ namespace AntShares.VM
             BlockBase[] headers = x.GetArray<BlockBase>();
             if (headers.Any(p => p == null)) return false;
             uint[] r = headers.Select(p => p.Version).ToArray();
-            engine.Stack.Push(r);
+            engine.EvaluationStack.Push(r);
             return true;
         }
 
@@ -224,7 +224,7 @@ namespace AntShares.VM
             BlockBase[] headers = x.GetArray<BlockBase>();
             if (headers.Any(p => p == null)) return false;
             byte[][] r = headers.Select(p => p.PrevBlock.ToArray()).ToArray();
-            engine.Stack.Push(new StackItem(r));
+            engine.EvaluationStack.Push(new StackItem(r));
             return true;
         }
 
@@ -235,7 +235,7 @@ namespace AntShares.VM
             BlockBase[] headers = x.GetArray<BlockBase>();
             if (headers.Any(p => p == null)) return false;
             byte[][] r = headers.Select(p => p.MerkleRoot.ToArray()).ToArray();
-            engine.Stack.Push(new StackItem(r));
+            engine.EvaluationStack.Push(new StackItem(r));
             return true;
         }
 
@@ -246,7 +246,7 @@ namespace AntShares.VM
             BlockBase[] headers = x.GetArray<BlockBase>();
             if (headers.Any(p => p == null)) return false;
             uint[] r = headers.Select(p => p.Timestamp).ToArray();
-            engine.Stack.Push(r);
+            engine.EvaluationStack.Push(r);
             return true;
         }
 
@@ -257,7 +257,7 @@ namespace AntShares.VM
             BlockBase[] headers = x.GetArray<BlockBase>();
             if (headers.Any(p => p == null)) return false;
             ulong[] r = headers.Select(p => p.Nonce).ToArray();
-            engine.Stack.Push(r);
+            engine.EvaluationStack.Push(r);
             return true;
         }
 
@@ -268,7 +268,7 @@ namespace AntShares.VM
             BlockBase[] headers = x.GetArray<BlockBase>();
             if (headers.Any(p => p == null)) return false;
             byte[][] r = headers.Select(p => p.NextMiner.ToArray()).ToArray();
-            engine.Stack.Push(new StackItem(r));
+            engine.EvaluationStack.Push(new StackItem(r));
             return true;
         }
 
@@ -279,7 +279,7 @@ namespace AntShares.VM
             Block[] blocks = x.GetArray<Block>();
             if (blocks.Any(p => p == null)) return false;
             int[] r = blocks.Select(p => p.Transactions.Length).ToArray();
-            engine.Stack.Push(r);
+            engine.EvaluationStack.Push(r);
             return true;
         }
 
@@ -288,17 +288,17 @@ namespace AntShares.VM
             if (engine.AltStack.Count < 1) return false;
             Block block = engine.AltStack.Peek().GetInterface<Block>();
             if (block == null) return false;
-            engine.Stack.Push(new StackItem(block.Transactions));
+            engine.EvaluationStack.Push(new StackItem(block.Transactions));
             return true;
         }
 
         private bool BlockGetTx(ScriptEngine engine)
         {
-            if (engine.Stack.Count < 1 || engine.AltStack.Count < 1) return false;
+            if (engine.EvaluationStack.Count < 1 || engine.AltStack.Count < 1) return false;
             StackItem block_item = engine.AltStack.Peek();
             Block[] blocks = block_item.GetArray<Block>();
             if (blocks.Any(p => p == null)) return false;
-            StackItem index_item = engine.Stack.Pop();
+            StackItem index_item = engine.EvaluationStack.Pop();
             BigInteger[] indexes = index_item.GetIntArray();
             if (blocks.Length != 1 && indexes.Length != 1 && blocks.Length != indexes.Length)
                 return false;
@@ -307,7 +307,7 @@ namespace AntShares.VM
             else if (indexes.Length == 1)
                 indexes = Enumerable.Repeat(indexes[0], blocks.Length).ToArray();
             Transaction[] tx = blocks.Zip(indexes, (b, i) => i >= b.Transactions.Length ? null : b.Transactions[(int)i]).ToArray();
-            engine.Stack.Push(new StackItem(tx));
+            engine.EvaluationStack.Push(new StackItem(tx));
             return true;
         }
 
@@ -318,7 +318,7 @@ namespace AntShares.VM
             Transaction[] tx = x.GetArray<Transaction>();
             if (tx.Any(p => p == null)) return false;
             byte[][] r = tx.Select(p => p.Hash.ToArray()).ToArray();
-            engine.Stack.Push(new StackItem(r));
+            engine.EvaluationStack.Push(new StackItem(r));
             return true;
         }
 
@@ -329,7 +329,7 @@ namespace AntShares.VM
             Transaction[] tx = x.GetArray<Transaction>();
             if (tx.Any(p => p == null)) return false;
             byte[][] r = tx.Select(p => new[] { (byte)p.Type }).ToArray();
-            engine.Stack.Push(r);
+            engine.EvaluationStack.Push(r);
             return true;
         }
 
@@ -340,7 +340,7 @@ namespace AntShares.VM
             RegisterTransaction[] tx = x.GetArray<RegisterTransaction>();
             if (tx.Any(p => p == null)) return false;
             byte[][] r = tx.Select(p => new[] { (byte)p.AssetType }).ToArray();
-            engine.Stack.Push(r);
+            engine.EvaluationStack.Push(r);
             return true;
         }
 
@@ -351,7 +351,7 @@ namespace AntShares.VM
             RegisterTransaction[] tx = x.GetArray<RegisterTransaction>();
             if (tx.Any(p => p == null)) return false;
             long[] r = tx.Select(p => p.Amount.GetData()).ToArray();
-            engine.Stack.Push(r);
+            engine.EvaluationStack.Push(r);
             return true;
         }
 
@@ -362,7 +362,7 @@ namespace AntShares.VM
             RegisterTransaction[] tx = x.GetArray<RegisterTransaction>();
             if (tx.Any(p => p == null)) return false;
             byte[][] r = tx.Select(p => p.Issuer.EncodePoint(true)).ToArray();
-            engine.Stack.Push(new StackItem(r));
+            engine.EvaluationStack.Push(new StackItem(r));
             return true;
         }
 
@@ -373,7 +373,7 @@ namespace AntShares.VM
             RegisterTransaction[] tx = x.GetArray<RegisterTransaction>();
             if (tx.Any(p => p == null)) return false;
             byte[][] r = tx.Select(p => p.Admin.ToArray()).ToArray();
-            engine.Stack.Push(new StackItem(r));
+            engine.EvaluationStack.Push(new StackItem(r));
             return true;
         }
 
@@ -384,7 +384,7 @@ namespace AntShares.VM
             EnrollmentTransaction[] tx = x.GetArray<EnrollmentTransaction>();
             if (tx.Any(p => p == null)) return false;
             byte[][] r = tx.Select(p => p.PublicKey.EncodePoint(true)).ToArray();
-            engine.Stack.Push(new StackItem(r));
+            engine.EvaluationStack.Push(new StackItem(r));
             return true;
         }
 
@@ -393,7 +393,7 @@ namespace AntShares.VM
             if (engine.AltStack.Count < 1) return false;
             Transaction tx = engine.AltStack.Pop().GetInterface<Transaction>();
             if (tx == null) return false;
-            engine.Stack.Push(new StackItem(tx.Attributes));
+            engine.EvaluationStack.Push(new StackItem(tx.Attributes));
             return true;
         }
 
@@ -402,7 +402,7 @@ namespace AntShares.VM
             if (engine.AltStack.Count < 1) return false;
             Transaction tx = engine.AltStack.Pop().GetInterface<Transaction>();
             if (tx == null) return false;
-            engine.Stack.Push(new StackItem(tx.Inputs));
+            engine.EvaluationStack.Push(new StackItem(tx.Inputs));
             return true;
         }
 
@@ -411,7 +411,7 @@ namespace AntShares.VM
             if (engine.AltStack.Count < 1) return false;
             Transaction tx = engine.AltStack.Pop().GetInterface<Transaction>();
             if (tx == null) return false;
-            engine.Stack.Push(new StackItem(tx.Outputs));
+            engine.EvaluationStack.Push(new StackItem(tx.Outputs));
             return true;
         }
 
@@ -422,7 +422,7 @@ namespace AntShares.VM
             TransactionAttribute[] attr = x.GetArray<TransactionAttribute>();
             if (attr.Any(p => p == null)) return false;
             byte[][] r = attr.Select(p => new[] { (byte)p.Usage }).ToArray();
-            engine.Stack.Push(r);
+            engine.EvaluationStack.Push(r);
             return true;
         }
 
@@ -433,7 +433,7 @@ namespace AntShares.VM
             TransactionAttribute[] attr = x.GetArray<TransactionAttribute>();
             if (attr.Any(p => p == null)) return false;
             byte[][] r = attr.Select(p => p.Data).ToArray();
-            engine.Stack.Push(r);
+            engine.EvaluationStack.Push(r);
             return true;
         }
 
@@ -444,7 +444,7 @@ namespace AntShares.VM
             CoinReference[] inputs = x.GetArray<CoinReference>();
             if (inputs.Any(p => p == null)) return false;
             byte[][] r = inputs.Select(p => p.PrevHash.ToArray()).ToArray();
-            engine.Stack.Push(new StackItem(r));
+            engine.EvaluationStack.Push(new StackItem(r));
             return true;
         }
 
@@ -455,7 +455,7 @@ namespace AntShares.VM
             CoinReference[] inputs = x.GetArray<CoinReference>();
             if (inputs.Any(p => p == null)) return false;
             uint[] r = inputs.Select(p => (uint)p.PrevIndex).ToArray();
-            engine.Stack.Push(r);
+            engine.EvaluationStack.Push(r);
             return true;
         }
 
@@ -466,7 +466,7 @@ namespace AntShares.VM
             TransactionOutput[] outputs = x.GetArray<TransactionOutput>();
             if (outputs.Any(p => p == null)) return false;
             byte[][] r = outputs.Select(p => p.AssetId.ToArray()).ToArray();
-            engine.Stack.Push(new StackItem(r));
+            engine.EvaluationStack.Push(new StackItem(r));
             return true;
         }
 
@@ -477,7 +477,7 @@ namespace AntShares.VM
             TransactionOutput[] outputs = x.GetArray<TransactionOutput>();
             if (outputs.Any(p => p == null)) return false;
             long[] r = outputs.Select(p => p.Value.GetData()).ToArray();
-            engine.Stack.Push(r);
+            engine.EvaluationStack.Push(r);
             return true;
         }
 
@@ -488,7 +488,7 @@ namespace AntShares.VM
             TransactionOutput[] outputs = x.GetArray<TransactionOutput>();
             if (outputs.Any(p => p == null)) return false;
             byte[][] r = outputs.Select(p => p.ScriptHash.ToArray()).ToArray();
-            engine.Stack.Push(new StackItem(r));
+            engine.EvaluationStack.Push(new StackItem(r));
             return true;
         }
     }

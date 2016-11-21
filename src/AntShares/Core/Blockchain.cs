@@ -1,4 +1,5 @@
-﻿using AntShares.Cryptography;
+﻿using AntShares.Compiler;
+using AntShares.Cryptography;
 using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using AntShares.VM;
@@ -90,7 +91,7 @@ namespace AntShares.Core
             Height = 0,
             Nonce = 2083236893, //向比特币致敬
             NextMiner = GetMinerAddress(StandbyMiners),
-            Script = new Script
+            Script = new Witness
             {
                 StackScript = new byte[0],
                 RedeemScript = new[] { (byte)ScriptOp.OP_TRUE }
@@ -103,7 +104,7 @@ namespace AntShares.Core
                     Attributes = new TransactionAttribute[0],
                     Inputs = new CoinReference[0],
                     Outputs = new TransactionOutput[0],
-                    Scripts = new Script[0]
+                    Scripts = new Witness[0]
                 },
                 AntShare,
                 AntCoin,
@@ -122,7 +123,7 @@ namespace AntShares.Core
                     },
                     Scripts = new[]
                     {
-                        new Script
+                        new Witness
                         {
                             StackScript = new byte[0],
                             RedeemScript = new[] { (byte)ScriptOp.OP_TRUE }
@@ -163,13 +164,13 @@ namespace AntShares.Core
 
         static Blockchain()
         {
-            AntShare.Scripts = new[] { new Script { RedeemScript = Contract.CreateSignatureRedeemScript(AntShare.Issuer) } };
+            AntShare.Scripts = new[] { new Witness { RedeemScript = Contract.CreateSignatureRedeemScript(AntShare.Issuer) } };
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.Push(ECCurve.Secp256r1.G.EncodePoint(true).Skip(1).Concat(AntShare.GetHashForSigning()).ToArray());
                 AntShare.Scripts[0].StackScript = sb.ToArray();
             }
-            AntCoin.Scripts = new[] { new Script { RedeemScript = Contract.CreateSignatureRedeemScript(AntCoin.Issuer) } };
+            AntCoin.Scripts = new[] { new Witness { RedeemScript = Contract.CreateSignatureRedeemScript(AntCoin.Issuer) } };
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.Push(ECCurve.Secp256r1.G.EncodePoint(true).Skip(1).Concat(AntCoin.GetHashForSigning()).ToArray());

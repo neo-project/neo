@@ -106,10 +106,12 @@ namespace AntShares.Core
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (hashes[i] != signable.Scripts[i].RedeemScript.ToScriptHash()) return false;
-                ScriptEngine engine = new ScriptEngine(signable, ECDsaCrypto.Default, Blockchain.Default, InterfaceEngine.Default);
-                if (!engine.ExecuteScript(signable.Scripts[i].StackScript, true)) return false;
-                if (!engine.ExecuteScript(signable.Scripts[i].RedeemScript, false)) return false;
-                if (engine.Stack.Count != 1 || !engine.Stack.Pop()) return false;
+                ScriptEngine engine = new ScriptEngine(signable, ECDsaCrypto.Default, 1200, Blockchain.Default, InterfaceEngine.Default);
+                engine.LoadScript(signable.Scripts[i].RedeemScript, false);
+                engine.LoadScript(signable.Scripts[i].StackScript, true);
+                engine.Execute();
+                if (engine.State != VMState.HALT) return false;
+                if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop()) return false;
             }
             return true;
         }

@@ -34,7 +34,7 @@ namespace AntShares.Core
             using (BinaryReader reader = new BinaryReader(ms))
             {
                 ((ISignable)header).DeserializeUnsigned(reader);
-                reader.ReadByte(); header.Script = reader.ReadSerializable<Script>();
+                reader.ReadByte(); header.Script = reader.ReadSerializable<Witness>();
             }
             return header;
         }

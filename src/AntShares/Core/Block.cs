@@ -2,7 +2,6 @@
 using AntShares.IO;
 using AntShares.IO.Json;
 using AntShares.Network;
-using AntShares.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -107,7 +106,7 @@ namespace AntShares.Core
             using (BinaryReader reader = new BinaryReader(ms))
             {
                 ((ISignable)block).DeserializeUnsigned(reader);
-                reader.ReadByte(); block.Script = reader.ReadSerializable<Script>();
+                reader.ReadByte(); block.Script = reader.ReadSerializable<Witness>();
                 block.Transactions = new Transaction[reader.ReadVarInt(0x10000000)];
                 for (int i = 0; i < block.Transactions.Length; i++)
                 {

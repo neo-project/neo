@@ -136,6 +136,7 @@ namespace AntShares.Wallets
                 int height_start;
                 Transaction tx = Blockchain.Default.GetTransaction(group.Key, out height_start);
                 if (tx == null) throw new ArgumentException();
+                if (height_start == height) continue;
                 foreach (CoinReference claim in group)
                 {
                     if (claim.PrevIndex >= tx.Outputs.Length || !tx.Outputs[claim.PrevIndex].AssetId.Equals(Blockchain.AntShare.Hash))

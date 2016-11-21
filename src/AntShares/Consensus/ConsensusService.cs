@@ -2,7 +2,6 @@
 using AntShares.IO;
 using AntShares.Network;
 using AntShares.Network.Payloads;
-using AntShares.VM;
 using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
@@ -130,7 +129,7 @@ namespace AntShares.Consensus
                 Attributes = new TransactionAttribute[0],
                 Inputs = new CoinReference[0],
                 Outputs = outputs,
-                Scripts = new Script[0]
+                Scripts = new Witness[0]
             };
         }
 

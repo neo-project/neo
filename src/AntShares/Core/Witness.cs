@@ -2,12 +2,12 @@
 using AntShares.IO.Json;
 using System.IO;
 
-namespace AntShares.VM
+namespace AntShares.Core
 {
     /// <summary>
     /// 脚本
     /// </summary>
-    public class Script : ISerializable
+    public class Witness : ISerializable
     {
         public byte[] StackScript;
         public byte[] RedeemScript;

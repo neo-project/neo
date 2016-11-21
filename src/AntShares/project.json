@@ -2,7 +2,7 @@
   "authors": [ "The Antshares team" ],
   "copyright": "2015-2016 The Antshares team",
   "title": "AntShares",
-  "version": "1.3.2",
+  "version": "1.3.3.2",
   "buildOptions": {
     "allowUnsafe": true,
     "copyToOutput": {
@@ -27,7 +27,10 @@
   },
 
   "dependencies": {
-    "AntShares.VM": "1.0.0",
+    "AntShares.Compiler": "1.1.0.2",
+    "AntShares.VM": "1.1.0.2",
+    "Microsoft.AspNetCore.Server.Kestrel": "1.0.1",
+    "Microsoft.AspNetCore.Server.Kestrel.Https": "1.0.1",
     "Microsoft.EntityFrameworkCore.Sqlite": "1.0.0",
     "Microsoft.Extensions.Configuration.Json": "1.0.0",
     "System.Net.Sockets": "4.1.0",

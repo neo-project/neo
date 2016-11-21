@@ -12,7 +12,7 @@ namespace AntShares.Core
         /// <summary>
         /// 用于验证该对象的脚本列表
         /// </summary>
-        Script[] Scripts { get; set; }
+        Witness[] Scripts { get; set; }
         
         /// <summary>
         /// 反序列化未签名的数据

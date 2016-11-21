@@ -1,7 +1,7 @@
-﻿using AntShares.Core;
+﻿using AntShares.Compiler;
+using AntShares.Core;
 using AntShares.Cryptography.ECC;
 using AntShares.IO.Json;
-using AntShares.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -180,10 +180,10 @@ namespace AntShares.Wallets
         /// 从签名上下文中获得完整签名的合约脚本
         /// </summary>
         /// <returns>返回合约脚本</returns>
-        public Script[] GetScripts()
+        public Witness[] GetScripts()
         {
             if (!Completed) throw new InvalidOperationException();
-            Script[] scripts = new Script[parameters.Length];
+            Witness[] scripts = new Witness[parameters.Length];
             for (int i = 0; i < scripts.Length; i++)
             {
                 using (ScriptBuilder sb = new ScriptBuilder())
@@ -195,7 +195,7 @@ namespace AntShares.Wallets
                         else
                             sb.Push(parameter);
                     }
-                    scripts[i] = new Script
+                    scripts[i] = new Witness
                     {
                         StackScript = sb.ToArray(),
                         RedeemScript = redeemScripts[i]

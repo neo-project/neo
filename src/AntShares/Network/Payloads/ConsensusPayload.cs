@@ -17,7 +17,7 @@ namespace AntShares.Network.Payloads
         public ushort MinerIndex;
         public uint Timestamp;
         public byte[] Data;
-        public Script Script;
+        public Witness Script;
 
         private UInt256 _hash = null;
         UInt256 IInventory.Hash
@@ -34,7 +34,7 @@ namespace AntShares.Network.Payloads
 
         InventoryType IInventory.InventoryType => InventoryType.Consensus;
 
-        Script[] ISignable.Scripts
+        Witness[] ISignable.Scripts
         {
             get
             {
@@ -53,7 +53,7 @@ namespace AntShares.Network.Payloads
         {
             ((ISignable)this).DeserializeUnsigned(reader);
             if (reader.ReadByte() != 1) throw new FormatException();
-            Script = reader.ReadSerializable<Script>();
+            Script = reader.ReadSerializable<Witness>();
         }
 
         void ISignable.DeserializeUnsigned(BinaryReader reader)

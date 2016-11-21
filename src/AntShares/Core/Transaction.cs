@@ -41,7 +41,7 @@ namespace AntShares.Core
         /// <summary>
         /// 用于验证该交易的脚本列表
         /// </summary>
-        public Script[] Scripts { get; set; }
+        public Witness[] Scripts { get; set; }
 
         private UInt256 _hash = null;
         public UInt256 Hash
@@ -114,7 +114,7 @@ namespace AntShares.Core
         void ISerializable.Deserialize(BinaryReader reader)
         {
             ((ISignable)this).DeserializeUnsigned(reader);
-            Scripts = reader.ReadSerializableArray<Script>();
+            Scripts = reader.ReadSerializableArray<Witness>();
             OnDeserialized();
         }
 
@@ -154,7 +154,7 @@ namespace AntShares.Core
             if (transaction == null)
                 throw new FormatException();
             transaction.DeserializeUnsignedWithoutType(reader);
-            transaction.Scripts = reader.ReadSerializableArray<Script>();
+            transaction.Scripts = reader.ReadSerializableArray<Witness>();
             return transaction;
         }
 

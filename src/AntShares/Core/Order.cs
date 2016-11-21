@@ -43,7 +43,7 @@ namespace AntShares.Core
         /// <summary>
         /// 用于验证该订单的脚本列表
         /// </summary>
-        public Script[] Scripts { get; set; }
+        public Witness[] Scripts { get; set; }
 
         public int Size => AssetId.Size + ValueAssetId.Size + Agent.Size + SizeInTransaction;
 
@@ -52,13 +52,13 @@ namespace AntShares.Core
         void ISerializable.Deserialize(BinaryReader reader)
         {
             ((ISignable)this).DeserializeUnsigned(reader);
-            Scripts = reader.ReadSerializableArray<Script>();
+            Scripts = reader.ReadSerializableArray<Witness>();
         }
 
         internal void DeserializeInTransaction(BinaryReader reader, AgencyTransaction tx)
         {
             DeserializeUnsignedInternal(reader, tx.AssetId, tx.ValueAssetId, tx.Agent);
-            Scripts = reader.ReadSerializableArray<Script>();
+            Scripts = reader.ReadSerializableArray<Witness>();
         }
 
         void ISignable.DeserializeUnsigned(BinaryReader reader)
