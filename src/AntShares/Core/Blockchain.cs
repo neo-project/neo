@@ -89,7 +89,7 @@ namespace AntShares.Core
             PrevBlock = UInt256.Zero,
             Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestamp(),
             Height = 0,
-            Nonce = 2083236893, //向比特币致敬
+            ConsensusData = 2083236893, //向比特币致敬
             NextMiner = GetMinerAddress(StandbyMiners),
             Script = new Witness
             {

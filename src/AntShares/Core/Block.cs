@@ -35,7 +35,7 @@ namespace AntShares.Core
                         MerkleRoot = MerkleRoot,
                         Timestamp = Timestamp,
                         Height = Height,
-                        Nonce = Nonce,
+                        ConsensusData = ConsensusData,
                         NextMiner = NextMiner,
                         Script = Script
                     };

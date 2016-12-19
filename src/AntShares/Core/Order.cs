@@ -87,7 +87,7 @@ namespace AntShares.Core
                 throw new FormatException();
         }
 
-        byte[] ISignableObject.GetMessage()
+        byte[] IScriptContainer.GetMessage()
         {
             return this.GetHashData();
         }

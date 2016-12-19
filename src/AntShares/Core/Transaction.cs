@@ -202,7 +202,7 @@ namespace AntShares.Core
             return Hash.GetHashCode();
         }
 
-        byte[] ISignableObject.GetMessage()
+        byte[] IScriptContainer.GetMessage()
         {
             return this.GetHashData();
         }
@@ -283,6 +283,11 @@ namespace AntShares.Core
             writer.Write(Attributes);
             writer.Write(Inputs);
             writer.Write(Outputs);
+        }
+
+        byte[] IApiInterface.ToArray()
+        {
+            return this.ToArray();
         }
 
         /// <summary>

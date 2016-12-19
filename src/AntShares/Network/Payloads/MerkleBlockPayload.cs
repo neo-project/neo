@@ -35,7 +35,7 @@ namespace AntShares.Network.Payloads
                 MerkleRoot = block.MerkleRoot,
                 Timestamp = block.Timestamp,
                 Height = block.Height,
-                Nonce = block.Nonce,
+                ConsensusData = block.ConsensusData,
                 NextMiner = block.NextMiner,
                 Script = block.Script,
                 TxCount = block.Transactions.Length,

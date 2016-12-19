@@ -5,7 +5,7 @@ using System.IO;
 
 namespace AntShares.Core
 {
-    public class Header : BlockBase, IApiInterface, IEquatable<Header>
+    public class Header : BlockBase, IEquatable<Header>
     {
         public override int Size => base.Size + 1;
 

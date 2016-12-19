@@ -66,6 +66,11 @@ namespace AntShares.Core
                 writer.Write(Data);
         }
 
+        byte[] IApiInterface.ToArray()
+        {
+            return this.ToArray();
+        }
+
         /// <summary>
         /// 变成json对象
         /// </summary>

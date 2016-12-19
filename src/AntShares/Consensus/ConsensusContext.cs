@@ -64,7 +64,7 @@ namespace AntShares.Consensus
                     MerkleRoot = MerkleTree.ComputeRoot(TransactionHashes),
                     Timestamp = Timestamp,
                     Height = Height,
-                    Nonce = Nonce,
+                    ConsensusData = Nonce,
                     NextMiner = NextMiner,
                     Transactions = new Transaction[0]
                 };

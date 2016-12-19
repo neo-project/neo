@@ -66,7 +66,7 @@ namespace AntShares.Network.Payloads
             Data = reader.ReadVarBytes();
         }
 
-        byte[] ISignableObject.GetMessage()
+        byte[] IScriptContainer.GetMessage()
         {
             return this.GetHashData();
         }

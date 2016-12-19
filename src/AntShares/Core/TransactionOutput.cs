@@ -42,6 +42,11 @@ namespace AntShares.Core
             writer.Write(ScriptHash);
         }
 
+        byte[] IApiInterface.ToArray()
+        {
+            return this.ToArray();
+        }
+
         /// <summary>
         /// 将交易输出转变为json对象
         /// </summary>

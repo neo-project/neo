@@ -30,10 +30,7 @@ namespace AntShares.Core
         /// 区块高度
         /// </summary>
         public uint Height;
-        /// <summary>
-        /// 随机数
-        /// </summary>
-        public ulong Nonce;
+        public ulong ConsensusData;
         /// <summary>
         /// 下一个区块的记账合约的散列值
         /// </summary>
@@ -85,11 +82,11 @@ namespace AntShares.Core
             MerkleRoot = reader.ReadSerializable<UInt256>();
             Timestamp = reader.ReadUInt32();
             Height = reader.ReadUInt32();
-            Nonce = reader.ReadUInt64();
+            ConsensusData = reader.ReadUInt64();
             NextMiner = reader.ReadSerializable<UInt160>();
         }
 
-        byte[] ISignableObject.GetMessage()
+        byte[] IScriptContainer.GetMessage()
         {
             return this.GetHashData();
         }
@@ -116,8 +113,13 @@ namespace AntShares.Core
             writer.Write(MerkleRoot);
             writer.Write(Timestamp);
             writer.Write(Height);
-            writer.Write(Nonce);
+            writer.Write(ConsensusData);
             writer.Write(NextMiner);
+        }
+
+        byte[] IApiInterface.ToArray()
+        {
+            return this.ToArray();
         }
 
         public virtual JObject ToJson()
@@ -130,7 +132,7 @@ namespace AntShares.Core
             json["merkleroot"] = MerkleRoot.ToString();
             json["time"] = Timestamp;
             json["height"] = Height;
-            json["nonce"] = Nonce.ToString("x16");
+            json["nonce"] = ConsensusData.ToString("x16");
             json["nextminer"] = Wallet.ToAddress(NextMiner);
             json["script"] = Script.ToJson();
             return json;

@@ -7,7 +7,7 @@ namespace AntShares.Core
     /// <summary>
     /// 为需要签名的数据提供一个接口
     /// </summary>
-    public interface ISignable : ISerializable, ISignableObject
+    public interface ISignable : ISerializable, IScriptContainer
     {
         /// <summary>
         /// 用于验证该对象的脚本列表

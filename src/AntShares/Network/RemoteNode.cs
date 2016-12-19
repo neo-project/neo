@@ -333,18 +333,18 @@ namespace AntShares.Network
                     if (message.Payload.Length <= 1024 * 1024)
                         OnInventoryReceived(Transaction.DeserializeFrom(message.Payload));
                     break;
+                case "verack":
+                case "version":
+                    Disconnect(true);
+                    break;
                 case "alert":
                 case "merkleblock":
                 case "notfound":
                 case "ping":
                 case "pong":
                 case "reject":
-                    //暂时忽略
-                    break;
-                case "verack":
-                case "version":
                 default:
-                    Disconnect(true);
+                    //暂时忽略
                     break;
             }
         }
