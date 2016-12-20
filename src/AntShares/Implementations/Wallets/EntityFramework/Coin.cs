@@ -10,6 +10,6 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         public long Value { get; set; }
         public byte[] ScriptHash { get; set; }
         public CoinState State { get; set; }
-        public Contract Contract { get; set; }
+        public Address Address { get; set; }
     }
 }

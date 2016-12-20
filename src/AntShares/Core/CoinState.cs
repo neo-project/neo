@@ -13,5 +13,6 @@ namespace AntShares.Core
         Claimed = 1 << 3,
         Locked = 1 << 4,
         Frozen = 1 << 5,
+        WatchOnly = 1 << 6,
     }
 }

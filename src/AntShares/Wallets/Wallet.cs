@@ -22,6 +22,7 @@ namespace AntShares.Wallets
         private readonly byte[] masterKey;
         private readonly Dictionary<UInt160, Account> accounts;
         private readonly Dictionary<UInt160, Contract> contracts;
+        private readonly HashSet<UInt160> watchOnly;
         private readonly TrackableCollection<CoinReference, Coin> coins;
         private uint current_height;
 
@@ -42,6 +43,7 @@ namespace AntShares.Wallets
                 this.masterKey = new byte[32];
                 this.accounts = new Dictionary<UInt160, Account>();
                 this.contracts = new Dictionary<UInt160, Contract>();
+                this.watchOnly = new HashSet<UInt160>();
                 this.coins = new TrackableCollection<CoinReference, Coin>();
                 this.current_height = Blockchain.Default?.HeaderHeight + 1 ?? 0;
                 using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
@@ -71,6 +73,7 @@ namespace AntShares.Wallets
 #endif
                 this.accounts = LoadAccounts().ToDictionary(p => p.PublicKeyHash);
                 this.contracts = LoadContracts().ToDictionary(p => p.ScriptHash);
+                this.watchOnly = new HashSet<UInt160>(LoadWatchOnly());
                 this.coins = new TrackableCollection<CoinReference, Coin>(LoadCoins());
                 this.current_height = BitConverter.ToUInt32(LoadStoredData("Height"), 0);
             }
@@ -98,8 +101,23 @@ namespace AntShares.Wallets
                 if (!accounts.ContainsKey(contract.PublicKeyHash))
                     throw new InvalidOperationException();
                 lock (contracts)
+                    lock (watchOnly)
+                    {
+                        contracts[contract.ScriptHash] = contract;
+                        watchOnly.Remove(contract.ScriptHash);
+                    }
+            }
+        }
+
+        public virtual void AddWatchOnly(UInt160 scriptHash)
+        {
+            lock (contracts)
+            {
+                if (contracts.ContainsKey(scriptHash))
+                    return;
+                lock (watchOnly)
                 {
-                    contracts[contract.ScriptHash] = contract;
+                    watchOnly.Add(scriptHash);
                 }
             }
         }
@@ -209,6 +227,21 @@ namespace AntShares.Wallets
             }
         }
 
+        private AddressState CheckAddressState(UInt160 scriptHash)
+        {
+            lock (contracts)
+            {
+                if (contracts.ContainsKey(scriptHash))
+                    return AddressState.InWallet;
+            }
+            lock (watchOnly)
+            {
+                if (watchOnly.Contains(scriptHash))
+                    return AddressState.InWallet | AddressState.WatchOnly;
+            }
+            return AddressState.None;
+        }
+
         public bool ContainsAccount(Cryptography.ECC.ECPoint publicKey)
         {
             return ContainsAccount(publicKey.EncodePoint(true).ToScriptHash());
@@ -224,10 +257,7 @@ namespace AntShares.Wallets
 
         public bool ContainsAddress(UInt160 scriptHash)
         {
-            lock (contracts)
-            {
-                return contracts.ContainsKey(scriptHash);
-            }
+            return CheckAddressState(scriptHash).HasFlag(AddressState.InWallet);
         }
 
         public Account CreateAccount()
@@ -272,25 +302,26 @@ namespace AntShares.Wallets
                 {
                     foreach (Contract contract in contracts.Values.Where(p => p.PublicKeyHash == publicKeyHash).ToArray())
                     {
-                        DeleteContract(contract.ScriptHash);
+                        DeleteAddress(contract.ScriptHash);
                     }
                 }
                 return accounts.Remove(publicKeyHash);
             }
         }
 
-        public virtual bool DeleteContract(UInt160 scriptHash)
+        public virtual bool DeleteAddress(UInt160 scriptHash)
         {
             lock (contracts)
-                lock (coins)
-                {
-                    foreach (CoinReference key in coins.Where(p => p.Output.ScriptHash == scriptHash).Select(p => p.Reference).ToArray())
+                lock (watchOnly)
+                    lock (coins)
                     {
-                        coins.Remove(key);
+                        foreach (CoinReference key in coins.Where(p => p.Output.ScriptHash == scriptHash).Select(p => p.Reference).ToArray())
+                        {
+                            coins.Remove(key);
+                        }
+                        coins.Commit();
+                        return contracts.Remove(scriptHash) || watchOnly.Remove(scriptHash);
                     }
-                    coins.Commit();
-                    return contracts.Remove(scriptHash);
-                }
         }
 
         public virtual void Dispose()
@@ -309,19 +340,9 @@ namespace AntShares.Wallets
             }
         }
 
-        public IEnumerable<Coin> FindCoins()
-        {
-            lock (coins)
-            {
-                foreach (Coin coin in coins)
-                    if (!coin.State.HasFlag(CoinState.Spent))
-                        yield return coin;
-            }
-        }
-
         public IEnumerable<Coin> FindUnspentCoins()
         {
-            return FindCoins().Where(p => p.State.HasFlag(CoinState.Confirmed) && !p.State.HasFlag(CoinState.Locked) && !p.State.HasFlag(CoinState.Frozen));
+            return GetCoins().Where(p => p.State.HasFlag(CoinState.Confirmed) && !p.State.HasFlag(CoinState.Spent) && !p.State.HasFlag(CoinState.Locked) && !p.State.HasFlag(CoinState.Frozen) && !p.State.HasFlag(CoinState.WatchOnly));
         }
 
         public virtual Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount)
@@ -385,9 +406,12 @@ namespace AntShares.Wallets
             lock (contracts)
             {
                 foreach (var pair in contracts)
-                {
                     yield return pair.Key;
-                }
+            }
+            lock (watchOnly)
+            {
+                foreach (UInt160 hash in watchOnly)
+                    yield return hash;
             }
         }
 
@@ -398,7 +422,7 @@ namespace AntShares.Wallets
 
         public Fixed8 GetBalance(UInt256 asset_id)
         {
-            return FindCoins().Where(p => p.Output.AssetId.Equals(asset_id)).Sum(p => p.Output.Value);
+            return GetCoins().Where(p => !p.State.HasFlag(CoinState.Spent) && p.Output.AssetId.Equals(asset_id)).Sum(p => p.Output.Value);
         }
 
         public virtual UInt160 GetChangeAddress()
@@ -406,6 +430,15 @@ namespace AntShares.Wallets
             lock (contracts)
             {
                 return contracts.Values.FirstOrDefault(p => p.IsStandard)?.ScriptHash ?? contracts.Keys.FirstOrDefault();
+            }
+        }
+
+        public IEnumerable<Coin> GetCoins()
+        {
+            lock (coins)
+            {
+                foreach (Coin coin in coins)
+                    yield return coin;
             }
         }
 
@@ -464,9 +497,11 @@ namespace AntShares.Wallets
                 foreach (var coin in coins)
                 {
                     if (!coin.Output.AssetId.Equals(Blockchain.AntShare.Hash)) continue;
-                    if (coin.State.HasFlag(CoinState.Claimed)) continue;
-                    if (!coin.State.HasFlag(CoinState.Spent)) continue;
                     if (!coin.State.HasFlag(CoinState.Confirmed)) continue;
+                    if (!coin.State.HasFlag(CoinState.Spent)) continue;
+                    if (coin.State.HasFlag(CoinState.Claimed)) continue;
+                    if (coin.State.HasFlag(CoinState.Frozen)) continue;
+                    if (coin.State.HasFlag(CoinState.WatchOnly)) continue;
                     yield return coin;
                 }
             }
@@ -505,6 +540,13 @@ namespace AntShares.Wallets
                 if (tx.Scripts.Any(p => contracts.ContainsKey(p.RedeemScript.ToScriptHash())))
                     return true;
             }
+            lock (watchOnly)
+            {
+                if (tx.Outputs.Any(p => watchOnly.Contains(p.ScriptHash)))
+                    return true;
+                if (tx.Scripts.Any(p => watchOnly.Contains(p.RedeemScript.ToScriptHash())))
+                    return true;
+            }
             return false;
         }
 
@@ -515,6 +557,11 @@ namespace AntShares.Wallets
         protected abstract IEnumerable<Contract> LoadContracts();
 
         protected abstract byte[] LoadStoredData(string name);
+
+        protected virtual IEnumerable<UInt160> LoadWatchOnly()
+        {
+            return Enumerable.Empty<UInt160>();
+        }
 
         public T MakeTransaction<T>(T tx, Fixed8 fee) where T : Transaction
         {
@@ -608,7 +655,8 @@ namespace AntShares.Wallets
                         for (ushort index = 0; index < tx.Outputs.Length; index++)
                         {
                             TransactionOutput output = tx.Outputs[index];
-                            if (contracts.ContainsKey(output.ScriptHash))
+                            AddressState state = CheckAddressState(output.ScriptHash);
+                            if (state.HasFlag(AddressState.InWallet))
                             {
                                 CoinReference key = new CoinReference
                                 {
@@ -624,6 +672,8 @@ namespace AntShares.Wallets
                                         Output = output,
                                         State = CoinState.Confirmed
                                     });
+                                if (state.HasFlag(AddressState.WatchOnly))
+                                    coins[key].State |= CoinState.WatchOnly;
                             }
                         }
                     }
@@ -687,8 +737,10 @@ namespace AntShares.Wallets
                     }
                     for (ushort i = 0; i < tx.Outputs.Length; i++)
                     {
-                        if (contracts.ContainsKey(tx.Outputs[i].ScriptHash))
-                            coins.Add(new Coin
+                        AddressState state = CheckAddressState(tx.Outputs[i].ScriptHash);
+                        if (state.HasFlag(AddressState.InWallet))
+                        {
+                            Coin coin = new Coin
                             {
                                 Reference = new CoinReference
                                 {
@@ -697,7 +749,11 @@ namespace AntShares.Wallets
                                 },
                                 Output = tx.Outputs[i],
                                 State = CoinState.Unconfirmed
-                            });
+                            };
+                            if (state.HasFlag(AddressState.WatchOnly))
+                                coin.State |= CoinState.WatchOnly;
+                            coins.Add(coin);
+                        }
                     }
                     if (tx is ClaimTransaction)
                     {

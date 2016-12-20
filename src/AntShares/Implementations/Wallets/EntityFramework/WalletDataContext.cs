@@ -7,6 +7,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
     internal class WalletDataContext : DbContext
     {
         public DbSet<Account> Accounts { get; set; }
+        public DbSet<Address> Addresses { get; set; }
         public DbSet<Contract> Contracts { get; set; }
         public DbSet<Key> Keys { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
@@ -34,10 +35,14 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             modelBuilder.Entity<Account>().HasKey(p => p.PublicKeyHash);
             modelBuilder.Entity<Account>().Property(p => p.PrivateKeyEncrypted).HasColumnType("VarBinary").HasMaxLength(96).IsRequired();
             modelBuilder.Entity<Account>().Property(p => p.PublicKeyHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
+            modelBuilder.Entity<Address>().ToTable(nameof(Address));
+            modelBuilder.Entity<Address>().HasKey(p => p.ScriptHash);
+            modelBuilder.Entity<Address>().Property(p => p.ScriptHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
             modelBuilder.Entity<Contract>().ToTable(nameof(Contract));
             modelBuilder.Entity<Contract>().HasKey(p => p.ScriptHash);
             modelBuilder.Entity<Contract>().HasIndex(p => p.PublicKeyHash);
             modelBuilder.Entity<Contract>().HasOne(p => p.Account).WithMany().HasForeignKey(p => p.PublicKeyHash).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Contract>().HasOne(p => p.Address).WithMany().HasForeignKey(p => p.ScriptHash).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<Contract>().Property(p => p.RawData).HasColumnType("VarBinary").IsRequired();
             modelBuilder.Entity<Contract>().Property(p => p.ScriptHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
             modelBuilder.Entity<Contract>().Property(p => p.PublicKeyHash).HasColumnType("Binary").HasMaxLength(20).IsRequired();
@@ -58,7 +63,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             modelBuilder.Entity<Coin>().HasKey(p => new { p.TxId, p.Index });
             modelBuilder.Entity<Coin>().HasIndex(p => p.AssetId);
             modelBuilder.Entity<Coin>().HasIndex(p => p.ScriptHash);
-            modelBuilder.Entity<Coin>().HasOne(p => p.Contract).WithMany().HasForeignKey(p => p.ScriptHash).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Coin>().HasOne(p => p.Address).WithMany().HasForeignKey(p => p.ScriptHash).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<Coin>().Property(p => p.TxId).HasColumnType("Binary").HasMaxLength(32).IsRequired();
             modelBuilder.Entity<Coin>().Property(p => p.Index).IsRequired();
             modelBuilder.Entity<Coin>().Property(p => p.AssetId).HasColumnType("Binary").HasMaxLength(32).IsRequired();

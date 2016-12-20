@@ -36,20 +36,44 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
                 Contract db_contract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash.SequenceEqual(contract.ScriptHash.ToArray()));
-                if (db_contract == null)
+                if (db_contract != null)
                 {
-                    db_contract = ctx.Contracts.Add(new Contract
+                    db_contract.PublicKeyHash = contract.PublicKeyHash.ToArray();
+                }
+                else
+                {
+                    Address db_address = ctx.Addresses.FirstOrDefault(p => p.ScriptHash.SequenceEqual(contract.ScriptHash.ToArray()));
+                    if (db_address == null)
+                    {
+                        ctx.Addresses.Add(new Address
+                        {
+                            ScriptHash = contract.ScriptHash.ToArray()
+                        });
+                    }
+                    ctx.Contracts.Add(new Contract
                     {
                         RawData = contract.ToArray(),
                         ScriptHash = contract.ScriptHash.ToArray(),
                         PublicKeyHash = contract.PublicKeyHash.ToArray()
-                    }).Entity;
-                }
-                else
-                {
-                    db_contract.PublicKeyHash = contract.PublicKeyHash.ToArray();
+                    });
                 }
                 ctx.SaveChanges();
+            }
+        }
+
+        public override void AddWatchOnly(UInt160 scriptHash)
+        {
+            base.AddWatchOnly(scriptHash);
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
+            {
+                if (ctx.Addresses.All(p => !p.ScriptHash.SequenceEqual(scriptHash.ToArray())))
+                {
+                    ctx.Addresses.Add(new Address
+                    {
+                        ScriptHash = scriptHash.ToArray()
+                    });
+                    ctx.SaveChanges();
+                }
             }
         }
 
@@ -94,6 +118,11 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                     Account account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash.SequenceEqual(publicKeyHash.ToArray()));
                     if (account != null)
                     {
+                        foreach (byte[] hash in ctx.Contracts.Where(p => p.PublicKeyHash.SequenceEqual(publicKeyHash.ToArray())).Select(p => p.ScriptHash))
+                        {
+                            Address address = ctx.Addresses.FirstOrDefault(p => p.ScriptHash.SequenceEqual(hash));
+                            if (address != null) ctx.Addresses.Remove(address);
+                        }
                         ctx.Accounts.Remove(account);
                         ctx.SaveChanges();
                     }
@@ -102,17 +131,17 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             return flag;
         }
 
-        public override bool DeleteContract(UInt160 scriptHash)
+        public override bool DeleteAddress(UInt160 scriptHash)
         {
-            bool flag = base.DeleteContract(scriptHash);
+            bool flag = base.DeleteAddress(scriptHash);
             if (flag)
             {
                 using (WalletDataContext ctx = new WalletDataContext(DbPath))
                 {
-                    Contract contract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash.SequenceEqual(scriptHash.ToArray()));
-                    if (contract != null)
+                    Address address = ctx.Addresses.FirstOrDefault(p => p.ScriptHash.SequenceEqual(scriptHash.ToArray()));
+                    if (address != null)
                     {
-                        ctx.Contracts.Remove(contract);
+                        ctx.Addresses.Remove(address);
                         ctx.SaveChanges();
                     }
                 }
@@ -230,6 +259,15 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             }
         }
 
+        protected override IEnumerable<UInt160> LoadWatchOnly()
+        {
+            using (WalletDataContext ctx = new WalletDataContext(DbPath))
+            {
+                foreach (byte[] hash in ctx.Addresses.Select(p => p.ScriptHash).Except(ctx.Contracts.Select(p => p.ScriptHash)))
+                    yield return new UInt160(hash);
+            }
+        }
+
         public static void Migrate(string path_old, string path_new)
         {
             Version current_version = typeof(UserWallet).GetTypeInfo().Assembly.GetName().Version;
@@ -238,6 +276,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             {
                 ctx_new.Database.EnsureCreated();
                 ctx_new.Accounts.AddRange(ctx_old.Accounts);
+                ctx_new.Addresses.AddRange(ctx_old.Contracts.Select(p => new Address { ScriptHash = p.ScriptHash }));
                 ctx_new.Contracts.AddRange(ctx_old.Contracts);
                 ctx_new.Keys.AddRange(ctx_old.Keys.Where(p => p.Name != "Height" && p.Name != "Version"));
                 SaveStoredData(ctx_new, "Height", BitConverter.GetBytes(0));
