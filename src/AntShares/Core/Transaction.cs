@@ -72,7 +72,7 @@ namespace AntShares.Core
                 if (_references == null)
                 {
                     Dictionary<CoinReference, TransactionOutput> dictionary = new Dictionary<CoinReference, TransactionOutput>();
-                    foreach (var group in GetAllInputs().GroupBy(p => p.PrevHash))
+                    foreach (var group in Inputs.GroupBy(p => p.PrevHash))
                     {
                         Transaction tx = Blockchain.Default.GetTransaction(group.Key);
                         if (tx == null) return null;
@@ -186,15 +186,6 @@ namespace AntShares.Core
         public override bool Equals(object obj)
         {
             return Equals(obj as Transaction);
-        }
-
-        /// <summary>
-        /// 获取交易的所有输入
-        /// </summary>
-        /// <returns>返回交易的所有输入</returns>
-        public virtual IEnumerable<CoinReference> GetAllInputs()
-        {
-            return Inputs;
         }
 
         public override int GetHashCode()
@@ -322,12 +313,11 @@ namespace AntShares.Core
             if (Blockchain.Default.ContainsTransaction(Hash)) return true;
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes))
                 return false;
-            CoinReference[] inputs = GetAllInputs().ToArray();
-            for (int i = 1; i < inputs.Length; i++)
+            for (int i = 1; i < Inputs.Length; i++)
                 for (int j = 0; j < i; j++)
-                    if (inputs[i].PrevHash == inputs[j].PrevHash && inputs[i].PrevIndex == inputs[j].PrevIndex)
+                    if (Inputs[i].PrevHash == Inputs[j].PrevHash && Inputs[i].PrevIndex == Inputs[j].PrevIndex)
                         return false;
-            if (mempool.SelectMany(p => p.GetAllInputs()).Intersect(GetAllInputs()).Count() > 0)
+            if (mempool.SelectMany(p => p.Inputs).Intersect(Inputs).Count() > 0)
                 return false;
             if (Blockchain.Default.IsDoubleSpend(this))
                 return false;

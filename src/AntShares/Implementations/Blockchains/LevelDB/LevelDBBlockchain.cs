@@ -235,7 +235,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 foreach (Slice key in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_Enrollment), (k, v) => k))
                 {
                     UInt256 hash = new UInt256(key.ToArray().Skip(1).Take(32).ToArray());
-                    if (others.SelectMany(p => p.GetAllInputs()).Any(p => p.PrevHash == hash && p.PrevIndex == 0))
+                    if (others.SelectMany(p => p.Inputs).Any(p => p.PrevHash == hash && p.PrevIndex == 0))
                         continue;
                     yield return (EnrollmentTransaction)GetTransaction(options, hash, out height);
                 }
@@ -380,7 +380,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 foreach (var kv in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_Vote), (k, v) => new { Key = k, Value = v }))
                 {
                     UInt256 hash = new UInt256(kv.Key.ToArray().Skip(1).ToArray());
-                    ushort[] indexes = kv.Value.ToArray().GetUInt16Array().Except(others.SelectMany(p => p.GetAllInputs()).Where(p => p.PrevHash == hash).Select(p => p.PrevIndex)).ToArray();
+                    ushort[] indexes = kv.Value.ToArray().GetUInt16Array().Except(others.SelectMany(p => p.Inputs).Where(p => p.PrevHash == hash).Select(p => p.PrevIndex)).ToArray();
                     if (indexes.Length == 0) continue;
                     Transaction tx = GetTransaction(options, hash, out height);
                     yield return new Vote
@@ -404,12 +404,11 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override bool IsDoubleSpend(Transaction tx)
         {
-            CoinReference[] inputs = tx.GetAllInputs().ToArray();
-            if (inputs.Length == 0) return false;
+            if (tx.Inputs.Length == 0) return false;
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
-                foreach (var group in inputs.GroupBy(p => p.PrevHash))
+                foreach (var group in tx.Inputs.GroupBy(p => p.PrevHash))
                 {
                     Slice value;
                     if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.IX_Unspent).Add(group.Key), out value))
@@ -523,7 +522,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     unspents.Add(tx.Hash, index);
                 }
             }
-            foreach (var group in block.Transactions.SelectMany(p => p.GetAllInputs()).GroupBy(p => p.PrevHash))
+            foreach (var group in block.Transactions.SelectMany(p => p.Inputs).GroupBy(p => p.PrevHash))
             {
                 int height;
                 Transaction tx = GetTransaction(ReadOptions.Default, group.Key, out height);

@@ -679,7 +679,7 @@ namespace AntShares.Wallets
                     }
                     foreach (Transaction tx in block.Transactions)
                     {
-                        foreach (CoinReference input in tx.GetAllInputs())
+                        foreach (CoinReference input in tx.Inputs)
                         {
                             if (coins.Contains(input))
                             {
@@ -728,9 +728,9 @@ namespace AntShares.Wallets
             lock (contracts)
                 lock (coins)
                 {
-                    if (tx.GetAllInputs().Any(p => !coins.Contains(p) || coins[p].State.HasFlag(CoinState.Spent) || !coins[p].State.HasFlag(CoinState.Confirmed)))
+                    if (tx.Inputs.Any(p => !coins.Contains(p) || coins[p].State.HasFlag(CoinState.Spent) || !coins[p].State.HasFlag(CoinState.Confirmed)))
                         return false;
-                    foreach (CoinReference input in tx.GetAllInputs())
+                    foreach (CoinReference input in tx.Inputs)
                     {
                         coins[input].State |= CoinState.Spent;
                         coins[input].State &= ~CoinState.Confirmed;

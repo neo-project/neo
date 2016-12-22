@@ -116,7 +116,7 @@ namespace AntShares.Network
 
         private static void Blockchain_PersistCompleted(object sender, Block block)
         {
-            HashSet<CoinReference> inputs = new HashSet<CoinReference>(block.Transactions.SelectMany(p => p.GetAllInputs()));
+            HashSet<CoinReference> inputs = new HashSet<CoinReference>(block.Transactions.SelectMany(p => p.Inputs));
             lock (MemoryPool)
             {
                 foreach (Transaction tx in block.Transactions)
@@ -125,7 +125,7 @@ namespace AntShares.Network
                 }
                 foreach (Transaction tx in MemoryPool.Values.ToArray())
                 {
-                    foreach (CoinReference input in tx.GetAllInputs())
+                    foreach (CoinReference input in tx.Inputs)
                         if (inputs.Contains(input))
                         {
                             MemoryPool.Remove(tx.Hash);
