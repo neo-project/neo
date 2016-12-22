@@ -99,6 +99,11 @@ namespace AntShares.Network.Payloads
             writer.WriteVarBytes(Data);
         }
 
+        byte[] IApiInterface.ToArray()
+        {
+            return this.ToArray();
+        }
+
         public bool Verify()
         {
             if (Blockchain.Default == null) return false;

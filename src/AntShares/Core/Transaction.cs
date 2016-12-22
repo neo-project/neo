@@ -16,7 +16,7 @@ namespace AntShares.Core
     /// <summary>
     /// 一切交易的基类
     /// </summary>
-    public abstract class Transaction : IApiInterface, IInventory
+    public abstract class Transaction : IInventory
     {
         /// <summary>
         /// 交易类型

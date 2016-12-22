@@ -8,7 +8,7 @@ using System.IO;
 
 namespace AntShares.Core
 {
-    public abstract class BlockBase : IApiInterface, ISignable
+    public abstract class BlockBase : ISignable
     {
         /// <summary>
         /// 区块版本
