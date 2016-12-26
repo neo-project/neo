@@ -32,7 +32,7 @@ namespace AntShares.Core
                 else if (Usage == TransactionAttributeUsage.DescriptionUrl)
                     return sizeof(TransactionAttributeUsage) + sizeof(byte) + Data.Length;
                 else
-                    return sizeof(TransactionAttributeUsage) + Data.Length.GetVarSize() + Data.Length;
+                    return sizeof(TransactionAttributeUsage) + Data.GetVarSize();
             }
         }
 

@@ -1,6 +1,5 @@
 ﻿using AntShares.IO;
 using AntShares.IO.Json;
-using System;
 using System.IO;
 using System.Linq;
 
@@ -8,11 +7,18 @@ namespace AntShares.Core
 {
     public class PublishTransaction : Transaction
     {
-        public byte[][] Contracts;
+        public byte[] Script;
+        public ContractParameterType[] ParameterList;
+        public ContractParameterType ReturnType;
+        public string Name;
+        public byte CodeVersion;
+        public string Author;
+        public string Email;
+        public string Description;
 
-        public override int Size => base.Size + Contracts.Length.GetVarSize() + Contracts.Sum(p => p.Length.GetVarSize() + p.Length);
+        public override int Size => base.Size + Script.GetVarSize() + ParameterList.GetVarSize() + sizeof(ContractParameterType) + Name.GetVarSize() + sizeof(byte) + Author.GetVarSize() + Email.GetVarSize() + Description.GetVarSize();
 
-        public override Fixed8 SystemFee => Fixed8.FromDecimal(500 * Contracts.Length);
+        public override Fixed8 SystemFee => Fixed8.FromDecimal(500);
 
         public PublishTransaction()
             : base(TransactionType.PublishTransaction)
@@ -21,23 +27,40 @@ namespace AntShares.Core
 
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
-            Contracts = new byte[reader.ReadByte()][];
-            if (Contracts.Length == 0) throw new FormatException();
-            for (int i = 0; i < Contracts.Length; i++)
-                Contracts[i] = reader.ReadVarBytes();
+            Script = reader.ReadVarBytes(65536);
+            ParameterList = reader.ReadVarBytes(252).Select(p => (ContractParameterType)p).ToArray();
+            ReturnType = (ContractParameterType)reader.ReadByte();
+            Name = reader.ReadVarString(252);
+            CodeVersion = reader.ReadByte();
+            Author = reader.ReadVarString(252);
+            Email = reader.ReadVarString(252);
+            Description = reader.ReadVarString(65536);
         }
 
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
-            writer.Write((byte)Contracts.Length);
-            for (int i = 0; i < Contracts.Length; i++)
-                writer.WriteVarBytes(Contracts[i]);
+            writer.WriteVarBytes(Script);
+            writer.WriteVarBytes(ParameterList.Cast<byte>().ToArray());
+            writer.Write((byte)ReturnType);
+            writer.WriteVarString(Name);
+            writer.Write(CodeVersion);
+            writer.WriteVarString(Author);
+            writer.WriteVarString(Email);
+            writer.WriteVarString(Description);
         }
 
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
-            json["contracts"] = new JArray(Contracts.Select(p => new JString(p.ToHexString())));
+            json["contract"] = new JObject();
+            json["contract"]["script"] = Script.ToHexString();
+            json["contract"]["parameters"] = new JArray(ParameterList.Select(p => (JObject)p));
+            json["contract"]["returntype"] = ReturnType;
+            json["contract"]["name"] = Name;
+            json["contract"]["version"] = CodeVersion;
+            json["contract"]["author"] = Author;
+            json["contract"]["email"] = Email;
+            json["contract"]["description"] = Description;
             return json;
         }
     }

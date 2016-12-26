@@ -2,7 +2,6 @@
 using AntShares.IO;
 using System;
 using System.IO;
-using System.Text;
 
 namespace AntShares.Network.Payloads
 {
@@ -17,7 +16,7 @@ namespace AntShares.Network.Payloads
         public uint StartHeight;
         public bool Relay;
 
-        public int Size => sizeof(uint) + sizeof(ulong) + sizeof(uint) + sizeof(ushort) + sizeof(uint) + Encoding.UTF8.GetByteCount(UserAgent).GetVarSize() + Encoding.UTF8.GetByteCount(UserAgent) + sizeof(uint) + sizeof(bool);
+        public int Size => sizeof(uint) + sizeof(ulong) + sizeof(uint) + sizeof(ushort) + sizeof(uint) + UserAgent.GetVarSize() + sizeof(uint) + sizeof(bool);
 
         public static VersionPayload Create(int port, uint nonce, string userAgent)
         {

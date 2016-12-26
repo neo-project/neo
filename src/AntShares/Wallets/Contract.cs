@@ -69,7 +69,7 @@ namespace AntShares.Wallets
             }
         }
 
-        public int Size => PublicKeyHash.Size + ParameterList.Length.GetVarSize() + ParameterList.Length + RedeemScript.Length.GetVarSize() + RedeemScript.Length;
+        public int Size => PublicKeyHash.Size + ParameterList.GetVarSize() + RedeemScript.GetVarSize();
 
         public ContractType Type
         {

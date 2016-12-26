@@ -91,7 +91,7 @@ namespace AntShares.Core
             }
         }
 
-        public virtual int Size => sizeof(TransactionType) + sizeof(byte) + Attributes.Length.GetVarSize() + Attributes.Sum(p => p.Size) + Inputs.Length.GetVarSize() + Inputs.Sum(p => p.Size) + Outputs.Length.GetVarSize() + Outputs.Sum(p => p.Size) + Scripts.Length.GetVarSize() + Scripts.Sum(p => p.Size);
+        public virtual int Size => sizeof(TransactionType) + sizeof(byte) + Attributes.GetVarSize() + Inputs.GetVarSize() + Outputs.GetVarSize() + Scripts.GetVarSize();
 
         /// <summary>
         /// 系统费用

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace AntShares.IO
@@ -30,7 +31,7 @@ namespace AntShares.IO
             return serializable;
         }
 
-        internal static int GetVarSize(this int value)
+        internal static int GetVarSize(int value)
         {
             if (value < 0xFD)
                 return sizeof(byte);
@@ -38,6 +39,41 @@ namespace AntShares.IO
                 return sizeof(byte) + sizeof(ushort);
             else
                 return sizeof(byte) + sizeof(uint);
+        }
+
+        internal static int GetVarSize<T>(this T[] value)
+        {
+            int value_size;
+            Type t = typeof(T);
+            if (typeof(ISerializable).IsAssignableFrom(t))
+            {
+                value_size = value.OfType<ISerializable>().Sum(p => p.Size);
+            }
+            else if (t.GetTypeInfo().IsEnum)
+            {
+                int element_size;
+                Type u = t.GetTypeInfo().GetEnumUnderlyingType();
+                if (u == typeof(sbyte) || u == typeof(byte))
+                    element_size = 1;
+                else if (u == typeof(short) || u == typeof(ushort))
+                    element_size = 2;
+                else if (u == typeof(int) || u == typeof(uint))
+                    element_size = 4;
+                else //if (u == typeof(long) || u == typeof(ulong))
+                    element_size = 8;
+                value_size = value.Length * element_size;
+            }
+            else
+            {
+                value_size = value.Length * Marshal.SizeOf<T>();
+            }
+            return GetVarSize(value.Length) + value_size;
+        }
+
+        internal static int GetVarSize(this string value)
+        {
+            int size = Encoding.UTF8.GetByteCount(value);
+            return GetVarSize(size) + size;
         }
 
         internal static string ReadFixedString(this BinaryReader reader, int length)

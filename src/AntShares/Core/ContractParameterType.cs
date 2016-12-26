@@ -1,4 +1,4 @@
-﻿namespace AntShares.Wallets
+﻿namespace AntShares.Core
 {
     /// <summary>
     /// 表示智能合约的参数类型

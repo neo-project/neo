@@ -13,7 +13,7 @@ namespace AntShares.Network.Payloads
         public UInt256[] Hashes;
         public byte[] Flags;
 
-        public override int Size => base.Size + sizeof(int) + Hashes.Length.GetVarSize() + Hashes.Sum(p => p.Size) + Flags.Length.GetVarSize() + Flags.Length;
+        public override int Size => base.Size + sizeof(int) + Hashes.GetVarSize() + Flags.GetVarSize();
 
         public static MerkleBlockPayload Create(Block block, BitArray flags)
         {

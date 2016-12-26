@@ -1,6 +1,5 @@
 ﻿using AntShares.IO;
 using System.IO;
-using System.Linq;
 
 namespace AntShares.Network.Payloads
 {
@@ -8,7 +7,7 @@ namespace AntShares.Network.Payloads
     {
         public NetworkAddressWithTime[] AddressList;
 
-        public int Size => AddressList.Length.GetVarSize() + AddressList.Sum(p => p.Size);
+        public int Size => AddressList.GetVarSize();
 
         public static AddrPayload Create(params NetworkAddressWithTime[] addresses)
         {

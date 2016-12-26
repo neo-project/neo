@@ -223,7 +223,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             Slice value;
             if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.DATA_Contract).Add(hash), out value))
                 return null;
-            return value.ToArray();
+            return value.ToArray().Skip(32).ToArray();
         }
 
         public override IEnumerable<EnrollmentTransaction> GetEnrollments(IEnumerable<Transaction> others)
@@ -510,9 +510,9 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                         }
                         break;
                     case TransactionType.PublishTransaction:
-                        foreach (byte[] script in ((PublishTransaction)tx).Contracts)
                         {
-                            batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Contract).Add(script.ToScriptHash()), script);
+                            PublishTransaction publish_tx = (PublishTransaction)tx;
+                            batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Contract).Add(publish_tx.Script.ToScriptHash()), SliceBuilder.Begin().Add(tx.Hash).Add(publish_tx.Script));
                         }
                         break;
                 }

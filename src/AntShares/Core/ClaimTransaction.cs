@@ -18,7 +18,7 @@ namespace AntShares.Core
         /// </summary>
         public CoinReference[] Claims;
 
-        public override int Size => base.Size + Claims.Length.GetVarSize() + Claims.Sum(p => p.Size);
+        public override int Size => base.Size + Claims.GetVarSize();
 
         public ClaimTransaction()
             : base(TransactionType.ClaimTransaction)

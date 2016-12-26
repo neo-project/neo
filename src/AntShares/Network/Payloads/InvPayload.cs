@@ -1,7 +1,6 @@
 ﻿using AntShares.IO;
 using System;
 using System.IO;
-using System.Linq;
 
 namespace AntShares.Network.Payloads
 {
@@ -10,7 +9,7 @@ namespace AntShares.Network.Payloads
         public InventoryType Type;
         public UInt256[] Hashes;
 
-        public int Size => sizeof(InventoryType) + Hashes.Length.GetVarSize() + Hashes.Sum(p => p.Size);
+        public int Size => sizeof(InventoryType) + Hashes.GetVarSize();
 
         public static InvPayload Create(InventoryType type, params UInt256[] hashes)
         {

@@ -49,7 +49,7 @@ namespace AntShares.Core
         /// </summary>
         InventoryType IInventory.InventoryType => InventoryType.Block;
 
-        public override int Size => base.Size + Transactions.Length.GetVarSize() + Transactions.Sum(p => p.Size);
+        public override int Size => base.Size + Transactions.GetVarSize();
 
         public static Fixed8 CalculateNetFee(IEnumerable<Transaction> transactions)
         {
