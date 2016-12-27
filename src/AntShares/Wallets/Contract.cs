@@ -9,18 +9,8 @@ using System.Linq;
 
 namespace AntShares.Wallets
 {
-    public class Contract : IEquatable<Contract>, ISerializable
+    public class Contract : VerificationCode, IEquatable<Contract>, ISerializable
     {
-        /// <summary>
-        /// 合约脚本代码
-        /// </summary>
-        public byte[] RedeemScript;
-
-        /// <summary>
-        /// 合约的形式参数列表
-        /// </summary>
-        public ContractParameterType[] ParameterList;
-
         /// <summary>
         /// 公钥散列值，用于标识该合约在钱包中隶属于哪一个账户
         /// </summary>
@@ -46,30 +36,14 @@ namespace AntShares.Wallets
         {
             get
             {
-                if (RedeemScript.Length != 35) return false;
-                if (RedeemScript[0] != 33 || RedeemScript[34] != (byte)ScriptOp.OP_CHECKSIG)
+                if (Script.Length != 35) return false;
+                if (Script[0] != 33 || Script[34] != (byte)ScriptOp.OP_CHECKSIG)
                     return false;
                 return true;
             }
         }
 
-        private UInt160 _scriptHash;
-        /// <summary>
-        /// 脚本散列值
-        /// </summary>
-        public UInt160 ScriptHash
-        {
-            get
-            {
-                if (_scriptHash == null)
-                {
-                    _scriptHash = RedeemScript.ToScriptHash();
-                }
-                return _scriptHash;
-            }
-        }
-
-        public int Size => PublicKeyHash.Size + ParameterList.GetVarSize() + RedeemScript.GetVarSize();
+        public int Size => PublicKeyHash.Size + ParameterList.GetVarSize() + Script.GetVarSize();
 
         public ContractType Type
         {
@@ -85,7 +59,7 @@ namespace AntShares.Wallets
         {
             return new Contract
             {
-                RedeemScript = redeemScript,
+                Script = redeemScript,
                 ParameterList = parameterList,
                 PublicKeyHash = publicKeyHash
             };
@@ -95,7 +69,7 @@ namespace AntShares.Wallets
         {
             return new Contract
             {
-                RedeemScript = CreateMultiSigRedeemScript(m, publicKeys),
+                Script = CreateMultiSigRedeemScript(m, publicKeys),
                 ParameterList = Enumerable.Repeat(ContractParameterType.Signature, m).ToArray(),
                 PublicKeyHash = publicKeyHash
             };
@@ -122,7 +96,7 @@ namespace AntShares.Wallets
         {
             return new Contract
             {
-                RedeemScript = CreateSignatureRedeemScript(publicKey),
+                Script = CreateSignatureRedeemScript(publicKey),
                 ParameterList = new[] { ContractParameterType.Signature },
                 PublicKeyHash = publicKey.EncodePoint(true).ToScriptHash(),
             };
@@ -146,7 +120,7 @@ namespace AntShares.Wallets
         {
             PublicKeyHash = reader.ReadSerializable<UInt160>();
             ParameterList = reader.ReadVarBytes().Select(p => (ContractParameterType)p).ToArray();
-            RedeemScript = reader.ReadVarBytes();
+            Script = reader.ReadVarBytes();
         }
 
         /// <summary>
@@ -184,47 +158,47 @@ namespace AntShares.Wallets
         {
             int m, n = 0;
             int i = 0;
-            if (RedeemScript.Length < 37) return false;
-            if (RedeemScript[i] > (byte)ScriptOp.OP_16) return false;
-            if (RedeemScript[i] < (byte)ScriptOp.OP_1 && RedeemScript[i] != 1 && RedeemScript[i] != 2) return false;
-            switch (RedeemScript[i])
+            if (Script.Length < 37) return false;
+            if (Script[i] > (byte)ScriptOp.OP_16) return false;
+            if (Script[i] < (byte)ScriptOp.OP_1 && Script[i] != 1 && Script[i] != 2) return false;
+            switch (Script[i])
             {
                 case 1:
-                    m = RedeemScript[++i];
+                    m = Script[++i];
                     ++i;
                     break;
                 case 2:
-                    m = BitConverter.ToUInt16(RedeemScript, ++i);
+                    m = BitConverter.ToUInt16(Script, ++i);
                     i += 2;
                     break;
                 default:
-                    m = RedeemScript[i++] - 80;
+                    m = Script[i++] - 80;
                     break;
             }
             if (m < 1 || m > 1024) return false;
-            while (RedeemScript[i] == 33)
+            while (Script[i] == 33)
             {
                 i += 34;
-                if (RedeemScript.Length <= i) return false;
+                if (Script.Length <= i) return false;
                 ++n;
             }
             if (n < m || n > 1024) return false;
-            switch (RedeemScript[i])
+            switch (Script[i])
             {
                 case 1:
-                    if (n != RedeemScript[++i]) return false;
+                    if (n != Script[++i]) return false;
                     ++i;
                     break;
                 case 2:
-                    if (n != BitConverter.ToUInt16(RedeemScript, ++i)) return false;
+                    if (n != BitConverter.ToUInt16(Script, ++i)) return false;
                     i += 2;
                     break;
                 default:
-                    if (n != RedeemScript[i++] - 80) return false;
+                    if (n != Script[i++] - 80) return false;
                     break;
             }
-            if (RedeemScript[i++] != (byte)ScriptOp.OP_CHECKMULTISIG) return false;
-            if (RedeemScript.Length != i) return false;
+            if (Script[i++] != (byte)ScriptOp.OP_CHECKMULTISIG) return false;
+            if (Script.Length != i) return false;
             return true;
         }
 
@@ -236,7 +210,7 @@ namespace AntShares.Wallets
         {
             writer.Write(PublicKeyHash);
             writer.WriteVarBytes(ParameterList.Cast<byte>().ToArray());
-            writer.WriteVarBytes(RedeemScript);
+            writer.WriteVarBytes(Script);
         }
     }
 }

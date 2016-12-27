@@ -9,6 +9,7 @@
         /// 签名
         /// </summary>
         Signature,
+        Boolean,
         /// <summary>
         /// 整数
         /// </summary>

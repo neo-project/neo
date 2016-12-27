@@ -8,80 +8,43 @@ namespace AntShares.VM
     {
         public static readonly InterfaceEngine Default = new InterfaceEngine();
 
-        public override bool Invoke(string method, ScriptEngine engine)
+        public InterfaceEngine()
         {
-            switch (method)
-            {
-                case "AntShares.Blockchain.GetHeight":
-                    return Blockchain_GetHeight(engine);
-                case "AntShares.Blockchain.GetHeader":
-                    return Blockchain_GetHeader(engine);
-                case "AntShares.Blockchain.GetBlock":
-                    return Blockchain_GetBlock(engine);
-                case "AntShares.Blockchain.GetTransaction":
-                    return Blockchain_GetTransaction(engine);
-                case "AntShares.Header.GetHash":
-                    return Header_GetHash(engine);
-                case "AntShares.Header.GetVersion":
-                    return Header_GetVersion(engine);
-                case "AntShares.Header.GetPrevHash":
-                    return Header_GetPrevHash(engine);
-                case "AntShares.Header.GetMerkleRoot":
-                    return Header_GetMerkleRoot(engine);
-                case "AntShares.Header.GetTimestamp":
-                    return Header_GetTimestamp(engine);
-                case "AntShares.Header.GetNonce":
-                    return Header_GetNonce(engine);
-                case "AntShares.Header.GetNextMiner":
-                    return Header_GetNextMiner(engine);
-                case "AntShares.Block.GetTransactionCount":
-                    return Block_GetTransactionCount(engine);
-                case "AntShares.Block.GetTransactions":
-                    return Block_GetTransactions(engine);
-                case "AntShares.Block.GetTransaction":
-                    return Block_GetTransaction(engine);
-                case "AntShares.Transaction.GetHash":
-                    return Transaction_GetHash(engine);
-                case "AntShares.Transaction.GetType":
-                    return Transaction_GetType(engine);
-                case "AntShares.Asset.GetAssetType":
-                    return Asset_GetAssetType(engine);
-                case "AntShares.Asset.GetAmount":
-                    return Asset_GetAmount(engine);
-                case "AntShares.Asset.GetIssuer":
-                    return Asset_GetIssuer(engine);
-                case "AntShares.Asset.GetAdmin":
-                    return Asset_GetAdmin(engine);
-                case "AntShares.Enrollment.GetPublicKey":
-                    return Enrollment_GetPublicKey(engine);
-                case "AntShares.Transaction.GetAttributes":
-                    return Transaction_GetAttributes(engine);
-                case "AntShares.Transaction.GetInputs":
-                    return Transaction_GetInputs(engine);
-                case "AntShares.Transaction.GetOutputs":
-                    return Transaction_GetOutputs(engine);
-                case "AntShares.Transaction.GetReferences":
-                    return Transaction_GetReferences(engine);
-                case "AntShares.Attribute.GetUsage":
-                    return Attribute_GetUsage(engine);
-                case "AntShares.Attribute.GetData":
-                    return Attribute_GetData(engine);
-                case "AntShares.Input.GetHash":
-                    return Input_GetHash(engine);
-                case "AntShares.Input.GetIndex":
-                    return Input_GetIndex(engine);
-                case "AntShares.Output.GetAssetId":
-                    return Output_GetAssetId(engine);
-                case "AntShares.Output.GetValue":
-                    return Output_GetValue(engine);
-                case "AntShares.Output.GetScriptHash":
-                    return Output_GetScriptHash(engine);
-                default:
-                    return base.Invoke(method, engine);
-            }
+            Register("AntShares.Blockchain.GetHeight", Blockchain_GetHeight);
+            Register("AntShares.Blockchain.GetHeader", Blockchain_GetHeader);
+            Register("AntShares.Blockchain.GetBlock", Blockchain_GetBlock);
+            Register("AntShares.Blockchain.GetTransaction", Blockchain_GetTransaction);
+            Register("AntShares.Header.GetHash", Header_GetHash);
+            Register("AntShares.Header.GetVersion", Header_GetVersion);
+            Register("AntShares.Header.GetPrevHash", Header_GetPrevHash);
+            Register("AntShares.Header.GetMerkleRoot", Header_GetMerkleRoot);
+            Register("AntShares.Header.GetTimestamp", Header_GetTimestamp);
+            Register("AntShares.Header.GetNonce", Header_GetNonce);
+            Register("AntShares.Header.GetNextMiner", Header_GetNextMiner);
+            Register("AntShares.Block.GetTransactionCount", Block_GetTransactionCount);
+            Register("AntShares.Block.GetTransactions", Block_GetTransactions);
+            Register("AntShares.Block.GetTransaction", Block_GetTransaction);
+            Register("AntShares.Transaction.GetHash", Transaction_GetHash);
+            Register("AntShares.Transaction.GetType", Transaction_GetType);
+            Register("AntShares.Asset.GetAssetType", Asset_GetAssetType);
+            Register("AntShares.Asset.GetAmount", Asset_GetAmount);
+            Register("AntShares.Asset.GetIssuer", Asset_GetIssuer);
+            Register("AntShares.Asset.GetAdmin", Asset_GetAdmin);
+            Register("AntShares.Enrollment.GetPublicKey", Enrollment_GetPublicKey);
+            Register("AntShares.Transaction.GetAttributes", Transaction_GetAttributes);
+            Register("AntShares.Transaction.GetInputs", Transaction_GetInputs);
+            Register("AntShares.Transaction.GetOutputs", Transaction_GetOutputs);
+            Register("AntShares.Transaction.GetReferences", Transaction_GetReferences);
+            Register("AntShares.Attribute.GetUsage", Attribute_GetUsage);
+            Register("AntShares.Attribute.GetData", Attribute_GetData);
+            Register("AntShares.Input.GetHash", Input_GetHash);
+            Register("AntShares.Input.GetIndex", Input_GetIndex);
+            Register("AntShares.Output.GetAssetId", Output_GetAssetId);
+            Register("AntShares.Output.GetValue", Output_GetValue);
+            Register("AntShares.Output.GetScriptHash", Output_GetScriptHash);
         }
 
-        private bool Blockchain_GetHeight(ScriptEngine engine)
+        private static bool Blockchain_GetHeight(ScriptEngine engine)
         {
             if (Blockchain.Default == null)
                 engine.EvaluationStack.Push(0);
@@ -90,7 +53,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Blockchain_GetHeader(ScriptEngine engine)
+        private static bool Blockchain_GetHeader(ScriptEngine engine)
         {
             byte[] data = (byte[])engine.EvaluationStack.Pop();
             Header header;
@@ -121,7 +84,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Blockchain_GetBlock(ScriptEngine engine)
+        private static bool Blockchain_GetBlock(ScriptEngine engine)
         {
             byte[] data = (byte[])engine.EvaluationStack.Pop();
             Block block;
@@ -152,7 +115,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Blockchain_GetTransaction(ScriptEngine engine)
+        private static bool Blockchain_GetTransaction(ScriptEngine engine)
         {
             byte[] hash = (byte[])engine.EvaluationStack.Pop();
             Transaction tx = Blockchain.Default?.GetTransaction(new UInt256(hash));
@@ -160,7 +123,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Header_GetHash(ScriptEngine engine)
+        private static bool Header_GetHash(ScriptEngine engine)
         {
             BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
             if (header == null) return false;
@@ -168,7 +131,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Header_GetVersion(ScriptEngine engine)
+        private static bool Header_GetVersion(ScriptEngine engine)
         {
             BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
             if (header == null) return false;
@@ -176,7 +139,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Header_GetPrevHash(ScriptEngine engine)
+        private static bool Header_GetPrevHash(ScriptEngine engine)
         {
             BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
             if (header == null) return false;
@@ -184,7 +147,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Header_GetMerkleRoot(ScriptEngine engine)
+        private static bool Header_GetMerkleRoot(ScriptEngine engine)
         {
             BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
             if (header == null) return false;
@@ -192,7 +155,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Header_GetTimestamp(ScriptEngine engine)
+        private static bool Header_GetTimestamp(ScriptEngine engine)
         {
             BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
             if (header == null) return false;
@@ -200,7 +163,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Header_GetNonce(ScriptEngine engine)
+        private static bool Header_GetNonce(ScriptEngine engine)
         {
             BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
             if (header == null) return false;
@@ -208,7 +171,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Header_GetNextMiner(ScriptEngine engine)
+        private static bool Header_GetNextMiner(ScriptEngine engine)
         {
             BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
             if (header == null) return false;
@@ -216,7 +179,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Block_GetTransactionCount(ScriptEngine engine)
+        private static bool Block_GetTransactionCount(ScriptEngine engine)
         {
             Block block = engine.EvaluationStack.Pop().GetInterface<Block>();
             if (block == null) return false;
@@ -224,7 +187,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Block_GetTransactions(ScriptEngine engine)
+        private static bool Block_GetTransactions(ScriptEngine engine)
         {
             Block block = engine.EvaluationStack.Pop().GetInterface<Block>();
             if (block == null) return false;
@@ -234,7 +197,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Block_GetTransaction(ScriptEngine engine)
+        private static bool Block_GetTransaction(ScriptEngine engine)
         {
             int index = (int)(BigInteger)engine.EvaluationStack.Pop();
             Block block = engine.EvaluationStack.Pop().GetInterface<Block>();
@@ -245,7 +208,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Transaction_GetHash(ScriptEngine engine)
+        private static bool Transaction_GetHash(ScriptEngine engine)
         {
             Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
             if (tx == null) return false;
@@ -253,7 +216,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Transaction_GetType(ScriptEngine engine)
+        private static bool Transaction_GetType(ScriptEngine engine)
         {
             Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
             if (tx == null) return false;
@@ -261,7 +224,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Asset_GetAssetType(ScriptEngine engine)
+        private static bool Asset_GetAssetType(ScriptEngine engine)
         {
             RegisterTransaction asset = engine.EvaluationStack.Pop().GetInterface<RegisterTransaction>();
             if (asset == null) return false;
@@ -269,7 +232,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Asset_GetAmount(ScriptEngine engine)
+        private static bool Asset_GetAmount(ScriptEngine engine)
         {
             RegisterTransaction asset = engine.EvaluationStack.Pop().GetInterface<RegisterTransaction>();
             if (asset == null) return false;
@@ -277,7 +240,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Asset_GetIssuer(ScriptEngine engine)
+        private static bool Asset_GetIssuer(ScriptEngine engine)
         {
             RegisterTransaction asset = engine.EvaluationStack.Pop().GetInterface<RegisterTransaction>();
             if (asset == null) return false;
@@ -285,7 +248,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Asset_GetAdmin(ScriptEngine engine)
+        private static bool Asset_GetAdmin(ScriptEngine engine)
         {
             RegisterTransaction asset = engine.EvaluationStack.Pop().GetInterface<RegisterTransaction>();
             if (asset == null) return false;
@@ -293,7 +256,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Enrollment_GetPublicKey(ScriptEngine engine)
+        private static bool Enrollment_GetPublicKey(ScriptEngine engine)
         {
             EnrollmentTransaction tx = engine.EvaluationStack.Pop().GetInterface<EnrollmentTransaction>();
             if (tx == null) return false;
@@ -301,7 +264,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Transaction_GetAttributes(ScriptEngine engine)
+        private static bool Transaction_GetAttributes(ScriptEngine engine)
         {
             Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
             if (tx == null) return false;
@@ -311,7 +274,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Transaction_GetInputs(ScriptEngine engine)
+        private static bool Transaction_GetInputs(ScriptEngine engine)
         {
             Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
             if (tx == null) return false;
@@ -321,7 +284,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Transaction_GetOutputs(ScriptEngine engine)
+        private static bool Transaction_GetOutputs(ScriptEngine engine)
         {
             Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
             if (tx == null) return false;
@@ -331,7 +294,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Transaction_GetReferences(ScriptEngine engine)
+        private static bool Transaction_GetReferences(ScriptEngine engine)
         {
             Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
             if (tx == null) return false;
@@ -341,7 +304,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Attribute_GetUsage(ScriptEngine engine)
+        private static bool Attribute_GetUsage(ScriptEngine engine)
         {
             TransactionAttribute attr = engine.EvaluationStack.Pop().GetInterface<TransactionAttribute>();
             if (attr == null) return false;
@@ -349,7 +312,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Attribute_GetData(ScriptEngine engine)
+        private static bool Attribute_GetData(ScriptEngine engine)
         {
             TransactionAttribute attr = engine.EvaluationStack.Pop().GetInterface<TransactionAttribute>();
             if (attr == null) return false;
@@ -357,7 +320,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Input_GetHash(ScriptEngine engine)
+        private static bool Input_GetHash(ScriptEngine engine)
         {
             CoinReference input = engine.EvaluationStack.Pop().GetInterface<CoinReference>();
             if (input == null) return false;
@@ -365,7 +328,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Input_GetIndex(ScriptEngine engine)
+        private static bool Input_GetIndex(ScriptEngine engine)
         {
             CoinReference input = engine.EvaluationStack.Pop().GetInterface<CoinReference>();
             if (input == null) return false;
@@ -373,7 +336,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Output_GetAssetId(ScriptEngine engine)
+        private static bool Output_GetAssetId(ScriptEngine engine)
         {
             TransactionOutput output = engine.EvaluationStack.Pop().GetInterface<TransactionOutput>();
             if (output == null) return false;
@@ -381,7 +344,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Output_GetValue(ScriptEngine engine)
+        private static bool Output_GetValue(ScriptEngine engine)
         {
             TransactionOutput output = engine.EvaluationStack.Pop().GetInterface<TransactionOutput>();
             if (output == null) return false;
@@ -389,7 +352,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private bool Output_GetScriptHash(ScriptEngine engine)
+        private static bool Output_GetScriptHash(ScriptEngine engine)
         {
             TransactionOutput output = engine.EvaluationStack.Pop().GetInterface<TransactionOutput>();
             if (output == null) return false;

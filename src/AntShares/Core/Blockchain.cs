@@ -254,7 +254,7 @@ namespace AntShares.Core
             return null;
         }
 
-        public virtual byte[] GetContract(UInt160 hash)
+        public virtual FunctionCode GetContract(UInt160 hash)
         {
             return null;
         }
@@ -366,7 +366,7 @@ namespace AntShares.Core
 
         byte[] IScriptTable.GetScript(byte[] script_hash)
         {
-            return GetContract(new UInt160(script_hash));
+            return GetContract(new UInt160(script_hash)).Script;
         }
 
         /// <summary>

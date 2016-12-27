@@ -58,7 +58,7 @@ namespace AntShares.Wallets
             int i = GetIndex(contract.ScriptHash);
             if (i < 0) return false;
             if (redeemScripts[i] == null)
-                redeemScripts[i] = contract.RedeemScript;
+                redeemScripts[i] = contract.Script;
             if (parameters[i] == null)
                 parameters[i] = new byte[contract.ParameterList.Length][];
             parameters[i][index] = parameter;
@@ -72,7 +72,7 @@ namespace AntShares.Wallets
                 int index = GetIndex(contract.ScriptHash);
                 if (index < 0) return false;
                 if (redeemScripts[index] == null)
-                    redeemScripts[index] = contract.RedeemScript;
+                    redeemScripts[index] = contract.Script;
                 if (parameters[index] == null)
                     parameters[index] = new byte[contract.ParameterList.Length][];
                 if (temp[index] == null) temp[index] = new JArray();
@@ -86,7 +86,7 @@ namespace AntShares.Wallets
                     List<ECPoint> points = new List<ECPoint>();
                     {
                         int i = 0;
-                        switch (contract.RedeemScript[i++])
+                        switch (contract.Script[i++])
                         {
                             case 1:
                                 ++i;
@@ -95,9 +95,9 @@ namespace AntShares.Wallets
                                 i += 2;
                                 break;
                         }
-                        while (contract.RedeemScript[i++] == 33)
+                        while (contract.Script[i++] == 33)
                         {
-                            points.Add(ECPoint.DecodePoint(contract.RedeemScript.Skip(i).Take(33).ToArray(), ECCurve.Secp256r1));
+                            points.Add(ECPoint.DecodePoint(contract.Script.Skip(i).Take(33).ToArray(), ECCurve.Secp256r1));
                             i += 33;
                         }
                     }

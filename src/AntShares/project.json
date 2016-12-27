@@ -27,8 +27,8 @@
   },
 
   "dependencies": {
-    "AntShares.Compiler": "1.2.2",
-    "AntShares.VM": "1.3.0",
+    "AntShares.Compiler": "1.3.1",
+    "AntShares.VM": "1.3.1",
     "Microsoft.AspNetCore.Server.Kestrel": "1.0.1",
     "Microsoft.AspNetCore.Server.Kestrel.Https": "1.0.1",
     "Microsoft.EntityFrameworkCore.Sqlite": "1.0.0",
