@@ -18,11 +18,7 @@ namespace AntShares.Core
             {
                 if (Outputs.All(p => p.AssetId == Blockchain.AntShare.Hash || p.AssetId == Blockchain.AntCoin.Hash))
                     return Fixed8.Zero;
-#if TESTNET
-                return Fixed8.Zero;
-#else
-                return Fixed8.FromDecimal(500);
-#endif
+                return base.SystemFee;
             }
         }
 

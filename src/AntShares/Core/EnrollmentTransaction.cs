@@ -36,11 +36,6 @@ namespace AntShares.Core
 
         public override int Size => base.Size + PublicKey.Size;
 
-        /// <summary>
-        /// 系统费用
-        /// </summary>
-        public override Fixed8 SystemFee => Fixed8.FromDecimal(1000);
-
         public EnrollmentTransaction()
             : base(TransactionType.EnrollmentTransaction)
         {

@@ -47,11 +47,7 @@ namespace AntShares.Core
         public static readonly RegisterTransaction AntShare = new RegisterTransaction
         {
             AssetType = AssetType.AntShare,
-#if TESTNET
-            Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股(测试)\"},{\"lang\":\"en\",\"name\":\"AntShare(TestNet)\"}]",
-#else
             Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]",
-#endif
             Amount = Fixed8.FromDecimal(100000000),
             Precision = 0,
             Issuer = ECCurve.Secp256r1.Infinity,
@@ -67,11 +63,7 @@ namespace AntShares.Core
         public static readonly RegisterTransaction AntCoin = new RegisterTransaction
         {
             AssetType = AssetType.AntCoin,
-#if TESTNET
-            Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币(测试)\"},{\"lang\":\"en\",\"name\":\"AntCoin(TestNet)\"}]",
-#else
             Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币\"},{\"lang\":\"en\",\"name\":\"AntCoin\"}]",
-#endif
             Amount = Fixed8.FromDecimal(MintingAmount.Sum(p => p * DecrementInterval)),
             Precision = 8,
             Issuer = ECCurve.Secp256r1.Infinity,

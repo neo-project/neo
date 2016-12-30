@@ -50,11 +50,7 @@ namespace AntShares.Core
             {
                 if (AssetType == AssetType.AntShare || AssetType == AssetType.AntCoin)
                     return Fixed8.Zero;
-#if TESTNET
-                return Fixed8.FromDecimal(100);
-#else
-                return Fixed8.FromDecimal(10000);
-#endif
+                return base.SystemFee;
             }
         }
 

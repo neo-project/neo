@@ -16,8 +16,6 @@ namespace AntShares.Core
 
         public override int Size => base.Size + Code.Size + Name.GetVarSize() + CodeVersion.GetVarSize() + Author.GetVarSize() + Email.GetVarSize() + Description.GetVarSize();
 
-        public override Fixed8 SystemFee => Fixed8.FromDecimal(500);
-
         public PublishTransaction()
             : base(TransactionType.PublishTransaction)
         {

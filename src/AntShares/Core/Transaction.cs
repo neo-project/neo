@@ -96,7 +96,15 @@ namespace AntShares.Core
         /// <summary>
         /// 系统费用
         /// </summary>
-        public virtual Fixed8 SystemFee => Fixed8.Zero;
+        public virtual Fixed8 SystemFee
+        {
+            get
+            {
+                if (Settings.Default.SystemFee.ContainsKey(Type))
+                    return Settings.Default.SystemFee[Type];
+                return Fixed8.Zero;
+            }
+        }
 
         /// <summary>
         /// 用指定的类型初始化Transaction对象

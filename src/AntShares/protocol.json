@@ -17,6 +17,12 @@
       "seed3.antshares.org:10333",
       "seed4.antshares.org:10333",
       "seed5.antshares.org:10333"
-    ]
+    ],
+    "SystemFee": {
+      "EnrollmentTransaction": 1000,
+      "IssueTransaction": 500,
+      "PublishTransaction": 500,
+      "RegisterTransaction": 10000
+    }
   }
 }
