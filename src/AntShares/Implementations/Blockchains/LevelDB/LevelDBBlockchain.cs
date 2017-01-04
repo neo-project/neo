@@ -303,7 +303,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
         {
             Slice value;
             if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.DATA_Header).Add(hash), out value))
-                return -1;
+                return 0;
             return BitConverter.ToInt64(value.ToArray(), 0);
         }
 
