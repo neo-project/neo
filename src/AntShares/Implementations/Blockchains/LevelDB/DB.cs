@@ -98,9 +98,26 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public void Write(WriteOptions options, WriteBatch write_batch)
         {
-            IntPtr error;
-            Native.leveldb_write(handle, options.handle, write_batch.handle, out error);
-            NativeHelper.CheckError(error);
+            // There's a bug in .Net Core.
+            // When calling DB.Write(), it will throw LevelDBException sometimes.
+            // But when you try to catch the exception, the bug disappears.
+            // We shall remove the "try...catch" clause when Microsoft fix the bug.
+            byte retry = 0;
+            while (true)
+            {
+                try
+                {
+                    IntPtr error;
+                    Native.leveldb_write(handle, options.handle, write_batch.handle, out error);
+                    NativeHelper.CheckError(error);
+                    break;
+                }
+                catch (LevelDBException ex)
+                {
+                    if (++retry >= 4) throw;
+                    System.IO.File.AppendAllText("leveldb.log", ex.Message + "\r\n");
+                }
+            }
         }
     }
 }

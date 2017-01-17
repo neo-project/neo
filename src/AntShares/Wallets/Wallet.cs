@@ -565,7 +565,7 @@ namespace AntShares.Wallets
 
         public T MakeTransaction<T>(T tx, Fixed8 fee) where T : Transaction
         {
-            if (tx.Outputs == null) throw new ArgumentException();
+            if (tx.Outputs == null) tx.Outputs = new TransactionOutput[0];
             if (tx.Attributes == null) tx.Attributes = new TransactionAttribute[0];
             fee += tx.SystemFee;
             var pay_total = (typeof(T) == typeof(IssueTransaction) ? new TransactionOutput[0] : tx.Outputs).GroupBy(p => p.AssetId, (k, g) => new
