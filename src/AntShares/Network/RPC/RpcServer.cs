@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace AntShares.Network.RPC
@@ -147,20 +148,44 @@ namespace AntShares.Network.RPC
         private async Task ProcessAsync(HttpContext context)
         {
             context.Response.Headers["Access-Control-Allow-Origin"] = "*";
-            context.Response.Headers["Access-Control-Allow-Methods"] = "POST";
+            context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST";
             context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type";
             context.Response.Headers["Access-Control-Max-Age"] = "31536000";
-            if (context.Request.Method != "POST") return;
+            if (context.Request.Method != "GET" && context.Request.Method != "POST") return;
             JObject request = null;
-            JObject response;
-            using (StreamReader reader = new StreamReader(context.Request.Body))
+            if (context.Request.Method == "GET")
             {
-                try
+                string jsonrpc = context.Request.Query["jsonrpc"];
+                string id = context.Request.Query["id"];
+                string method = context.Request.Query["method"];
+                string _params = context.Request.Query["params"];
+                if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(method) && !string.IsNullOrEmpty(_params))
                 {
-                    request = JObject.Parse(reader);
+                    try
+                    {
+                        _params = Encoding.UTF8.GetString(Convert.FromBase64String(_params));
+                    }
+                    catch (FormatException) { }
+                    request = new JObject();
+                    if (!string.IsNullOrEmpty(jsonrpc))
+                        request["jsonrpc"] = jsonrpc;
+                    request["id"] = double.Parse(id);
+                    request["method"] = method;
+                    request["params"] = JObject.Parse(_params);
                 }
-                catch (FormatException) { }
             }
+            else if (context.Request.Method == "POST")
+            {
+                using (StreamReader reader = new StreamReader(context.Request.Body))
+                {
+                    try
+                    {
+                        request = JObject.Parse(reader);
+                    }
+                    catch (FormatException) { }
+                }
+            }
+            JObject response;
             if (request == null)
             {
                 response = CreateErrorResponse(null, -32700, "Parse error");
