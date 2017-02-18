@@ -45,6 +45,7 @@ namespace AntShares.Core
         {
             JObject json = base.ToJson();
             json["contract"] = new JObject();
+            json["contract"]["hash"] = Code.ScriptHash.ToString();
             json["contract"]["script"] = Code.Script.ToHexString();
             json["contract"]["parameters"] = new JArray(Code.ParameterList.Select(p => (JObject)p));
             json["contract"]["returntype"] = Code.ReturnType;
