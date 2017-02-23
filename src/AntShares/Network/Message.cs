@@ -5,7 +5,7 @@ using System.IO;
 
 namespace AntShares.Network
 {
-    internal class Message : ISerializable
+    public class Message : ISerializable
     {
         public static readonly uint Magic = Settings.Default.Magic;
         public string Command;

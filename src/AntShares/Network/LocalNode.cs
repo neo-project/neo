@@ -22,7 +22,6 @@ namespace AntShares.Network
 
         public const uint PROTOCOL_VERSION = 0;
         private const int CONNECTED_MAX = 10;
-        private const int PENDING_MAX = CONNECTED_MAX;
         private const int UNCONNECTED_MAX = 1000;
 
         private static readonly Dictionary<UInt256, Transaction> MemoryPool = new Dictionary<UInt256, Transaction>();
@@ -31,7 +30,6 @@ namespace AntShares.Network
 
         private static readonly HashSet<IPEndPoint> unconnectedPeers = new HashSet<IPEndPoint>();
         private static readonly HashSet<IPEndPoint> badPeers = new HashSet<IPEndPoint>();
-        internal readonly Dictionary<IPEndPoint, RemoteNode> pendingPeers = new Dictionary<IPEndPoint, RemoteNode>();
         internal readonly List<RemoteNode> connectedPeers = new List<RemoteNode>();
 
         internal static readonly HashSet<IPAddress> LocalAddresses = new HashSet<IPAddress>();
@@ -83,11 +81,8 @@ namespace AntShares.Network
                 {
                     break;
                 }
-                RemoteNode remoteNode = new RemoteNode(this, socket);
-                remoteNode.Disconnected += RemoteNode_Disconnected;
-                remoteNode.InventoryReceived += RemoteNode_InventoryReceived;
-                remoteNode.PeersReceived += RemoteNode_PeersReceived;
-                remoteNode.StartProtocol();
+                TcpRemoteNode remoteNode = new TcpRemoteNode(this, socket);
+                OnConnected(remoteNode);
             }
         }
 
@@ -162,25 +157,20 @@ namespace AntShares.Network
         public async Task ConnectToPeerAsync(IPEndPoint remoteEndpoint)
         {
             if (remoteEndpoint.Port == Port && LocalAddresses.Contains(remoteEndpoint.Address)) return;
-            RemoteNode remoteNode;
             lock (unconnectedPeers)
             {
                 unconnectedPeers.Remove(remoteEndpoint);
             }
-            lock (pendingPeers)
+            lock (connectedPeers)
             {
-                lock (connectedPeers)
-                {
-                    if (pendingPeers.ContainsKey(remoteEndpoint) || connectedPeers.Any(p => remoteEndpoint.Equals(p.ListenerEndpoint)))
-                        return;
-                }
-                remoteNode = new RemoteNode(this, remoteEndpoint);
-                pendingPeers.Add(remoteEndpoint, remoteNode);
-                remoteNode.Disconnected += RemoteNode_Disconnected;
-                remoteNode.InventoryReceived += RemoteNode_InventoryReceived;
-                remoteNode.PeersReceived += RemoteNode_PeersReceived;
+                if (connectedPeers.Any(p => remoteEndpoint.Equals(p.ListenerEndpoint)))
+                    return;
             }
-            await remoteNode.ConnectAsync();
+            TcpRemoteNode remoteNode = new TcpRemoteNode(this, remoteEndpoint);
+            if (await remoteNode.ConnectAsync())
+            {
+                OnConnected(remoteNode);
+            }
         }
 
         private void ConnectToPeersLoop()
@@ -188,10 +178,8 @@ namespace AntShares.Network
             while (disposed == 0)
             {
                 int connectedCount = connectedPeers.Count;
-                int pendingCount = pendingPeers.Count;
                 int unconnectedCount = unconnectedPeers.Count;
-                int maxConnections = Math.Max(CONNECTED_MAX + CONNECTED_MAX / 5, PENDING_MAX);
-                if (connectedCount < CONNECTED_MAX && pendingCount < PENDING_MAX && (connectedCount + pendingCount) < maxConnections)
+                if (connectedCount < CONNECTED_MAX)
                 {
                     Task[] tasks = { };
                     if (unconnectedCount > 0)
@@ -199,7 +187,7 @@ namespace AntShares.Network
                         IPEndPoint[] endpoints;
                         lock (unconnectedPeers)
                         {
-                            endpoints = unconnectedPeers.Take(maxConnections - (connectedCount + pendingCount)).ToArray();
+                            endpoints = unconnectedPeers.Take(CONNECTED_MAX - connectedCount).ToArray();
                         }
                         tasks = endpoints.Select(p => ConnectToPeerAsync(p)).ToArray();
                     }
@@ -311,6 +299,18 @@ namespace AntShares.Network
             }
         }
 
+        private void OnConnected(RemoteNode remoteNode)
+        {
+            lock (connectedPeers)
+            {
+                connectedPeers.Add(remoteNode);
+            }
+            remoteNode.Disconnected += RemoteNode_Disconnected;
+            remoteNode.InventoryReceived += RemoteNode_InventoryReceived;
+            remoteNode.PeersReceived += RemoteNode_PeersReceived;
+            remoteNode.StartProtocol();
+        }
+
         public bool Relay(IInventory inventory)
         {
             lock (KnownHashes)
@@ -358,17 +358,13 @@ namespace AntShares.Network
             }
             lock (unconnectedPeers)
             {
-                lock (pendingPeers)
+                lock (connectedPeers)
                 {
-                    lock (connectedPeers)
+                    if (remoteNode.ListenerEndpoint != null)
                     {
-                        if (remoteNode.ListenerEndpoint != null)
-                        {
-                            unconnectedPeers.Remove(remoteNode.ListenerEndpoint);
-                            pendingPeers.Remove(remoteNode.ListenerEndpoint);
-                        }
-                        connectedPeers.Remove(remoteNode);
+                        unconnectedPeers.Remove(remoteNode.ListenerEndpoint);
                     }
+                    connectedPeers.Remove(remoteNode);
                 }
             }
         }
@@ -386,15 +382,11 @@ namespace AntShares.Network
                 {
                     lock (badPeers)
                     {
-                        lock (pendingPeers)
+                        lock (connectedPeers)
                         {
-                            lock (connectedPeers)
-                            {
-                                unconnectedPeers.UnionWith(peers);
-                                unconnectedPeers.ExceptWith(badPeers);
-                                unconnectedPeers.ExceptWith(pendingPeers.Keys);
-                                unconnectedPeers.ExceptWith(connectedPeers.Select(p => p.ListenerEndpoint));
-                            }
+                            unconnectedPeers.UnionWith(peers);
+                            unconnectedPeers.ExceptWith(badPeers);
+                            unconnectedPeers.ExceptWith(connectedPeers.Select(p => p.ListenerEndpoint));
                         }
                     }
                 }

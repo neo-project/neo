@@ -191,9 +191,9 @@ namespace AntShares.Wallets
                     foreach (byte[] parameter in parameters[i])
                     {
                         if (parameter.Length <= 2)
-                            sb.Push(new BigInteger(parameter));
+                            sb.EmitPush(new BigInteger(parameter));
                         else
-                            sb.Push(parameter);
+                            sb.EmitPush(parameter);
                     }
                     scripts[i] = new Witness
                     {

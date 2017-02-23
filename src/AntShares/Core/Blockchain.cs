@@ -51,7 +51,7 @@ namespace AntShares.Core
             Amount = Fixed8.FromDecimal(100000000),
             Precision = 0,
             Issuer = ECCurve.Secp256r1.Infinity,
-            Admin = (new[] { (byte)ScriptOp.OP_TRUE }).ToScriptHash(),
+            Admin = (new[] { (byte)OpCode.OP_TRUE }).ToScriptHash(),
             Attributes = new TransactionAttribute[0],
             Inputs = new CoinReference[0],
             Outputs = new TransactionOutput[0]
@@ -67,7 +67,7 @@ namespace AntShares.Core
             Amount = Fixed8.FromDecimal(MintingAmount.Sum(p => p * DecrementInterval)),
             Precision = 8,
             Issuer = ECCurve.Secp256r1.Infinity,
-            Admin = (new[] { (byte)ScriptOp.OP_FALSE }).ToScriptHash(),
+            Admin = (new[] { (byte)OpCode.OP_FALSE }).ToScriptHash(),
             Attributes = new TransactionAttribute[0],
             Inputs = new CoinReference[0],
             Outputs = new TransactionOutput[0]
@@ -86,7 +86,7 @@ namespace AntShares.Core
             Script = new Witness
             {
                 StackScript = new byte[0],
-                RedeemScript = new[] { (byte)ScriptOp.OP_TRUE }
+                RedeemScript = new[] { (byte)OpCode.OP_TRUE }
             },
             Transactions = new Transaction[]
             {
@@ -118,7 +118,7 @@ namespace AntShares.Core
                         new Witness
                         {
                             StackScript = new byte[0],
-                            RedeemScript = new[] { (byte)ScriptOp.OP_TRUE }
+                            RedeemScript = new[] { (byte)OpCode.OP_TRUE }
                         }
                     }
                 }
@@ -159,13 +159,13 @@ namespace AntShares.Core
             AntShare.Scripts = new[] { new Witness { RedeemScript = Contract.CreateSignatureRedeemScript(AntShare.Issuer) } };
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.Push(ECCurve.Secp256r1.G.EncodePoint(true).Skip(1).Concat(AntShare.GetHashForSigning()).ToArray());
+                sb.EmitPush(ECCurve.Secp256r1.G.EncodePoint(true).Skip(1).Concat(AntShare.GetHashForSigning()).ToArray());
                 AntShare.Scripts[0].StackScript = sb.ToArray();
             }
             AntCoin.Scripts = new[] { new Witness { RedeemScript = Contract.CreateSignatureRedeemScript(AntCoin.Issuer) } };
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.Push(ECCurve.Secp256r1.G.EncodePoint(true).Skip(1).Concat(AntCoin.GetHashForSigning()).ToArray());
+                sb.EmitPush(ECCurve.Secp256r1.G.EncodePoint(true).Skip(1).Concat(AntCoin.GetHashForSigning()).ToArray());
                 AntCoin.Scripts[0].StackScript = sb.ToArray();
             }
             GenesisBlock.RebuildMerkleRoot();
@@ -176,7 +176,7 @@ namespace AntShares.Core
         /// </summary>
         /// <param name="block">要添加的区块</param>
         /// <returns>返回是否添加成功</returns>
-        protected internal abstract bool AddBlock(Block block);
+        public abstract bool AddBlock(Block block);
 
         /// <summary>
         /// 将指定的区块头添加到区块头链中

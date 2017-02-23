@@ -1,4 +1,5 @@
-﻿using AntShares.Cryptography;
+﻿using AntShares.Compiler;
+using AntShares.Cryptography;
 using AntShares.VM;
 using AntShares.Wallets;
 using System;
@@ -105,9 +106,21 @@ namespace AntShares.Core
             if (hashes.Length != signable.Scripts.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (hashes[i] != signable.Scripts[i].RedeemScript.ToScriptHash()) return false;
-                ScriptEngine engine = new ScriptEngine(signable, ECDsaCrypto.Default, 1200, Blockchain.Default, InterfaceEngine.Default);
-                engine.LoadScript(signable.Scripts[i].RedeemScript, false);
+                byte[] redeem_script = signable.Scripts[i].RedeemScript;
+                if (redeem_script.Length == 0)
+                {
+                    using (ScriptBuilder sb = new ScriptBuilder())
+                    {
+                        sb.EmitAppCall(hashes[i].ToArray());
+                        redeem_script = sb.ToArray();
+                    }
+                }
+                else
+                {
+                    if (hashes[i] != redeem_script.ToScriptHash()) return false;
+                }
+                ExecutionEngine engine = new ExecutionEngine(signable, ECDsaCrypto.Default, 1200, Blockchain.Default, InterfaceEngine.Default);
+                engine.LoadScript(redeem_script, false);
                 engine.LoadScript(signable.Scripts[i].StackScript, true);
                 engine.Execute();
                 if (engine.State != VMState.HALT) return false;

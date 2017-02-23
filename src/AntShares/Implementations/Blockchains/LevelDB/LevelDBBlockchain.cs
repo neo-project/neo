@@ -104,7 +104,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             thread_persistence.Start();
         }
 
-        protected internal override bool AddBlock(Block block)
+        public override bool AddBlock(Block block)
         {
             lock (block_cache)
             {

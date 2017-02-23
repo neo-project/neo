@@ -8,14 +8,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace AntShares.Network
 {
-    public class RemoteNode : IDisposable
+    public abstract class RemoteNode : IDisposable
     {
         public event EventHandler<bool> Disconnected;
         internal event EventHandler<IInventory> InventoryReceived;
@@ -30,61 +27,24 @@ namespace AntShares.Network
         private LocalNode localNode;
         private Thread protocolThread;
         private Thread sendThread;
-        private Socket socket;
-        private NetworkStream stream;
-        private bool connected = false;
         private int disposed = 0;
         private BloomFilter bloom_filter;
 
         internal VersionPayload Version { get; private set; }
-        public IPEndPoint RemoteEndpoint { get; private set; }
-        public IPEndPoint ListenerEndpoint { get; private set; }
+        public IPEndPoint RemoteEndpoint { get; protected set; }
+        public IPEndPoint ListenerEndpoint { get; protected set; }
 
-        private RemoteNode(LocalNode localNode)
+        protected RemoteNode(LocalNode localNode)
         {
             this.localNode = localNode;
             this.protocolThread = new Thread(RunProtocol) { IsBackground = true };
             this.sendThread = new Thread(SendLoop) { IsBackground = true };
         }
 
-        internal RemoteNode(LocalNode localNode, IPEndPoint remoteEndpoint)
-            : this(localNode)
-        {
-            this.socket = new Socket(remoteEndpoint.Address.IsIPv4MappedToIPv6 ? AddressFamily.InterNetwork : remoteEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            this.ListenerEndpoint = remoteEndpoint;
-        }
-
-        internal RemoteNode(LocalNode localNode, Socket socket)
-            : this(localNode)
-        {
-            this.socket = socket;
-            OnConnected();
-        }
-
-        internal async Task ConnectAsync()
-        {
-            IPAddress address = ListenerEndpoint.Address;
-            if (address.IsIPv4MappedToIPv6)
-                address = address.MapToIPv4();
-            try
-            {
-                await socket.ConnectAsync(address, ListenerEndpoint.Port);
-                OnConnected();
-            }
-            catch (SocketException)
-            {
-                Disconnect(false);
-                return;
-            }
-            StartProtocol();
-        }
-
-        public void Disconnect(bool error)
+        public virtual void Disconnect(bool error)
         {
             if (Interlocked.Exchange(ref disposed, 1) == 0)
             {
-                if (stream != null) stream.Dispose();
-                socket.Dispose();
                 Disconnected?.Invoke(this, error);
                 lock (missions_global)
                 {
@@ -119,17 +79,6 @@ namespace AntShares.Network
         {
             IPEndPoint[] peers = payload.AddressList.Select(p => p.EndPoint).Where(p => p.Port != localNode.Port || !LocalNode.LocalAddresses.Contains(p.Address)).ToArray();
             if (peers.Length > 0) PeersReceived?.Invoke(this, peers);
-        }
-
-        private void OnConnected()
-        {
-            IPEndPoint remoteEndpoint = (IPEndPoint)socket.RemoteEndPoint;
-            RemoteEndpoint = new IPEndPoint(remoteEndpoint.Address.MapToIPv6(), remoteEndpoint.Port);
-            protocolThread.Name = $"RemoteNode.RunProtocol@{RemoteEndpoint}";
-            sendThread.Name = $"RemoteNode.SendLoop@{RemoteEndpoint}";
-            socket.SendTimeout = 10000;
-            stream = new NetworkStream(socket);
-            connected = true;
         }
 
         private void OnFilterAddMessageReceived(FilterAddPayload payload)
@@ -349,32 +298,7 @@ namespace AntShares.Network
             }
         }
 
-        private Message ReceiveMessage(TimeSpan timeout)
-        {
-            if (timeout == Timeout.InfiniteTimeSpan) timeout = TimeSpan.Zero;
-            BinaryReader reader = null;
-            try
-            {
-                reader = new BinaryReader(stream, Encoding.UTF8, true);
-                socket.ReceiveTimeout = (int)timeout.TotalMilliseconds;
-                return reader.ReadSerializable<Message>();
-            }
-            catch (ArgumentException) { }
-            catch (ObjectDisposedException) { }
-            catch (FormatException)
-            {
-                Disconnect(true);
-            }
-            catch (IOException)
-            {
-                Disconnect(false);
-            }
-            finally
-            {
-                if (reader != null) reader.Dispose();
-            }
-            return null;
-        }
+        protected abstract Message ReceiveMessage(TimeSpan timeout);
 
         internal bool Relay(IInventory data)
         {
@@ -429,19 +353,13 @@ namespace AntShares.Network
                 Disconnect(true);
                 return;
             }
-            lock (localNode.pendingPeers)
+            lock (localNode.connectedPeers)
             {
-                lock (localNode.connectedPeers)
+                if (localNode.connectedPeers.Where(p => p != this).Any(p => p.RemoteEndpoint.Address.Equals(RemoteEndpoint.Address) && p.Version.Nonce == Version.Nonce))
                 {
-                    if (localNode.connectedPeers.Any(p => p.RemoteEndpoint.Address.Equals(RemoteEndpoint.Address) && p.Version.Nonce == Version.Nonce))
-                    {
-                        Disconnect(false);
-                        return;
-                    }
-                    localNode.connectedPeers.Add(this);
+                    Disconnect(false);
+                    return;
                 }
-                if (ListenerEndpoint != null)
-                    localNode.pendingPeers.Remove(ListenerEndpoint);
             }
             if (ListenerEndpoint != null)
             {
@@ -467,6 +385,7 @@ namespace AntShares.Network
             {
                 EnqueueMessage("getheaders", GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash), true);
             }
+            sendThread.Name = $"RemoteNode.SendLoop@{RemoteEndpoint}";
             sendThread.Start();
             while (disposed == 0)
             {
@@ -523,26 +442,11 @@ namespace AntShares.Network
             }
         }
 
-        private bool SendMessage(Message message)
-        {
-            if (!connected) throw new InvalidOperationException();
-            if (disposed > 0) return false;
-            byte[] buffer = message.ToArray();
-            try
-            {
-                stream.Write(buffer, 0, buffer.Length);
-                return true;
-            }
-            catch (ObjectDisposedException) { }
-            catch (IOException)
-            {
-                Disconnect(false);
-            }
-            return false;
-        }
+        protected abstract bool SendMessage(Message message);
 
         internal void StartProtocol()
         {
+            protocolThread.Name = $"RemoteNode.RunProtocol@{RemoteEndpoint}";
             protocolThread.Start();
         }
 
