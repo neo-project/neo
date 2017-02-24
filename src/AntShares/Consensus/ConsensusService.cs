@@ -31,10 +31,10 @@ namespace AntShares.Consensus
             this.log_dictionary = log_dictionary;
         }
 
-        private bool AddTransaction(Transaction tx)
+        private bool AddTransaction(Transaction tx, bool verify)
         {
             if (Blockchain.Default.ContainsTransaction(tx.Hash) ||
-                !tx.Verify(context.Transactions.Values) ||
+                (verify && !tx.Verify(context.Transactions.Values)) ||
                 !CheckPolicy(tx))
             {
                 Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}");
@@ -149,7 +149,7 @@ namespace AntShares.Consensus
             byte[] nonce = new byte[sizeof(ulong)];
             Random rand = new Random();
             rand.NextBytes(nonce);
-            return BitConverter.ToUInt64(nonce, 0);
+            return nonce.ToUInt64(0);
         }
 
         private void InitializeConsensus(byte view_number)
@@ -220,7 +220,7 @@ namespace AntShares.Consensus
                         return;
                     if (context.Transactions.ContainsKey(tx.Hash)) return;
                     if (!context.TransactionHashes.Contains(tx.Hash)) return;
-                    AddTransaction(tx);
+                    AddTransaction(tx, true);
                 }
             }
         }
@@ -268,12 +268,12 @@ namespace AntShares.Consensus
             if (!context.MakeHeader().VerifySignature(context.Miners[payload.MinerIndex], message.Signature)) return;
             context.Signatures = new byte[context.Miners.Length][];
             context.Signatures[payload.MinerIndex] = message.Signature;
-            if (!AddTransaction(message.MinerTransaction)) return;
             Dictionary<UInt256, Transaction> mempool = LocalNode.GetMemoryPool().ToDictionary(p => p.Hash);
             foreach (UInt256 hash in context.TransactionHashes.Skip(1))
                 if (mempool.ContainsKey(hash))
-                    if (!AddTransaction(mempool[hash]))
+                    if (!AddTransaction(mempool[hash], false))
                         return;
+            if (!AddTransaction(message.MinerTransaction, true)) return;
             LocalNode.AllowHashes(context.TransactionHashes.Except(context.Transactions.Keys));
             if (context.Transactions.Count < context.TransactionHashes.Length)
                 localNode.SynchronizeMemoryPool();
@@ -348,7 +348,7 @@ namespace AntShares.Consensus
             }
             wallet.Sign(sc);
             sc.Signable.Scripts = sc.GetScripts();
-            localNode.Relay(payload);
+            localNode.RelayDirectly(payload);
         }
 
         public void Start()

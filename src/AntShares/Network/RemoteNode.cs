@@ -30,7 +30,7 @@ namespace AntShares.Network
         private int disposed = 0;
         private BloomFilter bloom_filter;
 
-        internal VersionPayload Version { get; private set; }
+        public VersionPayload Version { get; private set; }
         public IPEndPoint RemoteEndpoint { get; protected set; }
         public IPEndPoint ListenerEndpoint { get; protected set; }
 
@@ -48,10 +48,7 @@ namespace AntShares.Network
                 Disconnected?.Invoke(this, error);
                 lock (missions_global)
                 {
-                    foreach (UInt256 hash in missions)
-                    {
-                        missions_global.Remove(hash);
-                    }
+                    missions_global.ExceptWith(missions);
                 }
                 if (protocolThread != Thread.CurrentThread && !protocolThread.ThreadState.HasFlag(ThreadState.Unstarted))
                     protocolThread.Join();
@@ -64,7 +61,12 @@ namespace AntShares.Network
             Disconnect(false);
         }
 
-        private void EnqueueMessage(string command, ISerializable payload = null, bool is_single = false)
+        public void EnqueueMessage(string command, ISerializable payload = null)
+        {
+            EnqueueMessage(command, payload, false);
+        }
+
+        private void EnqueueMessage(string command, ISerializable payload, bool is_single)
         {
             lock (message_queue)
             {
@@ -103,7 +105,7 @@ namespace AntShares.Network
             AddrPayload payload;
             lock (localNode.connectedPeers)
             {
-                payload = AddrPayload.Create(localNode.connectedPeers.Where(p => p.ListenerEndpoint != null).Take(100).Select(p => NetworkAddressWithTime.Create(p.ListenerEndpoint, p.Version.Services, p.Version.Timestamp)).ToArray());
+                payload = AddrPayload.Create(localNode.connectedPeers.Where(p => p.ListenerEndpoint != null && p.Version != null).Take(100).Select(p => NetworkAddressWithTime.Create(p.ListenerEndpoint, p.Version.Services, p.Version.Timestamp)).ToArray());
             }
             EnqueueMessage("addr", payload, true);
         }
@@ -220,12 +222,9 @@ namespace AntShares.Network
             {
                 if (localNode.GlobalMissionsEnabled)
                     hashes = hashes.Where(p => !missions_global.Contains(p)).ToArray();
-                foreach (UInt256 hash in hashes)
-                {
-                    missions_global.Add(hash);
-                    missions.Add(hash);
-                }
+                missions_global.UnionWith(hashes);
             }
+            missions.UnionWith(hashes);
             if (hashes.Length == 0) return;
             EnqueueMessage("getdata", InvPayload.Create(payload.Type, hashes));
         }
@@ -302,7 +301,7 @@ namespace AntShares.Network
 
         internal bool Relay(IInventory data)
         {
-            if (!Version.Relay) return false;
+            if (Version?.Relay != true) return false;
             if (data.InventoryType == InventoryType.TX)
             {
                 BloomFilter filter = bloom_filter;
@@ -389,7 +388,7 @@ namespace AntShares.Network
             sendThread.Start();
             while (disposed == 0)
             {
-                if (Blockchain.Default != null && !Blockchain.Default.IsReadOnly)
+                if (Blockchain.Default?.IsReadOnly == false)
                 {
                     if (missions.Count == 0 && Blockchain.Default.Height < Version.StartHeight)
                     {

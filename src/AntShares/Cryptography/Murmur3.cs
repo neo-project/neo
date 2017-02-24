@@ -31,7 +31,7 @@ namespace AntShares.Cryptography
             int alignedLength = ibStart + (cbSize - remainder);
             for (int i = ibStart; i < alignedLength; i += 4)
             {
-                uint k = ToUInt32(array, i);
+                uint k = array.ToUInt32(i);
                 k *= c1;
                 k = RotateLeft(k, r1);
                 k *= c2;
@@ -76,15 +76,6 @@ namespace AntShares.Cryptography
         private static uint RotateLeft(uint x, byte n)
         {
             return (x << n) | (x >> (32 - n));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        unsafe private static uint ToUInt32(byte[] value, int startIndex)
-        {
-            fixed (byte* pbyte = &value[startIndex])
-            {
-                return *((uint*)pbyte);
-            }
         }
     }
 }

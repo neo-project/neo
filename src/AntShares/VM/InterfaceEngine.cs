@@ -1,5 +1,4 @@
 ﻿using AntShares.Core;
-using System;
 using System.Numerics;
 
 namespace AntShares.VM
@@ -60,7 +59,7 @@ namespace AntShares.VM
             switch (data.Length)
             {
                 case sizeof(uint):
-                    uint height = BitConverter.ToUInt32(data, 0);
+                    uint height = data.ToUInt32(0);
                     if (Blockchain.Default != null)
                         header = Blockchain.Default.GetHeader(height);
                     else if (height == 0)
@@ -91,7 +90,7 @@ namespace AntShares.VM
             switch (data.Length)
             {
                 case sizeof(uint):
-                    uint height = BitConverter.ToUInt32(data, 0);
+                    uint height = data.ToUInt32(0);
                     if (Blockchain.Default != null)
                         block = Blockchain.Default.GetBlock(height);
                     else if (height == 0)

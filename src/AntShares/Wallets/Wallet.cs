@@ -75,7 +75,7 @@ namespace AntShares.Wallets
                 this.contracts = LoadContracts().ToDictionary(p => p.ScriptHash);
                 this.watchOnly = new HashSet<UInt160>(LoadWatchOnly());
                 this.coins = new TrackableCollection<CoinReference, Coin>(LoadCoins());
-                this.current_height = BitConverter.ToUInt32(LoadStoredData("Height"), 0);
+                this.current_height = LoadStoredData("Height").ToUInt32(0);
             }
             Array.Clear(passwordKey, 0, passwordKey.Length);
             this.thread = new Thread(ProcessBlocks);

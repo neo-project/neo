@@ -59,7 +59,7 @@ namespace AntShares.Cryptography
         {
             using (Murmur3 murmur = new Murmur3(seed))
             {
-                return BitConverter.ToUInt32(murmur.ComputeHash(value.ToArray()), 0);
+                return murmur.ComputeHash(value.ToArray()).ToUInt32(0);
             }
         }
 

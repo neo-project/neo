@@ -41,7 +41,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override int GetHashCode()
         {
-            return BitConverter.ToInt32(buffer.Sha256(), 0);
+            return buffer.Sha256().ToInt32(0);
         }
 
         public byte[] ToArray()
@@ -49,11 +49,14 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             return buffer ?? new byte[0];
         }
 
-        public bool ToBoolean()
+        unsafe public bool ToBoolean()
         {
             if (buffer.Length != sizeof(bool))
                 throw new InvalidCastException();
-            return BitConverter.ToBoolean(buffer, 0);
+            fixed (byte* pbyte = &buffer[0])
+            {
+                return *((bool*)pbyte);
+            }
         }
 
         public byte ToByte()
@@ -63,39 +66,54 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             return buffer[0];
         }
 
-        public double ToDouble()
+        unsafe public double ToDouble()
         {
             if (buffer.Length != sizeof(double))
                 throw new InvalidCastException();
-            return BitConverter.ToDouble(buffer, 0);
+            fixed (byte* pbyte = &buffer[0])
+            {
+                return *((double*)pbyte);
+            }
         }
 
-        public short ToInt16()
+        unsafe public short ToInt16()
         {
             if (buffer.Length != sizeof(short))
                 throw new InvalidCastException();
-            return BitConverter.ToInt16(buffer, 0);
+            fixed (byte* pbyte = &buffer[0])
+            {
+                return *((short*)pbyte);
+            }
         }
 
-        public int ToInt32()
+        unsafe public int ToInt32()
         {
             if (buffer.Length != sizeof(int))
                 throw new InvalidCastException();
-            return BitConverter.ToInt32(buffer, 0);
+            fixed (byte* pbyte = &buffer[0])
+            {
+                return *((int*)pbyte);
+            }
         }
 
-        public long ToInt64()
+        unsafe public long ToInt64()
         {
             if (buffer.Length != sizeof(long))
                 throw new InvalidCastException();
-            return BitConverter.ToInt64(buffer, 0);
+            fixed (byte* pbyte = &buffer[0])
+            {
+                return *((long*)pbyte);
+            }
         }
 
-        public float ToSingle()
+        unsafe public float ToSingle()
         {
             if (buffer.Length != sizeof(float))
                 throw new InvalidCastException();
-            return BitConverter.ToSingle(buffer, 0);
+            fixed (byte* pbyte = &buffer[0])
+            {
+                return *((float*)pbyte);
+            }
         }
 
         public override string ToString()
@@ -103,25 +121,34 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             return Encoding.UTF8.GetString(buffer);
         }
 
-        public ushort ToUInt16()
+        unsafe public ushort ToUInt16()
         {
             if (buffer.Length != sizeof(ushort))
                 throw new InvalidCastException();
-            return BitConverter.ToUInt16(buffer, 0);
+            fixed (byte* pbyte = &buffer[0])
+            {
+                return *((ushort*)pbyte);
+            }
         }
 
-        public uint ToUInt32()
+        unsafe public uint ToUInt32()
         {
             if (buffer.Length != sizeof(uint))
                 throw new InvalidCastException();
-            return BitConverter.ToUInt32(buffer, 0);
+            fixed (byte* pbyte = &buffer[0])
+            {
+                return *((uint*)pbyte);
+            }
         }
 
-        public ulong ToUInt64()
+        unsafe public ulong ToUInt64()
         {
             if (buffer.Length != sizeof(ulong))
                 throw new InvalidCastException();
-            return BitConverter.ToUInt64(buffer, 0);
+            fixed (byte* pbyte = &buffer[0])
+            {
+                return *((ulong*)pbyte);
+            }
         }
 
         public static implicit operator Slice(byte[] data)

@@ -40,12 +40,12 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 ReadOptions options = new ReadOptions { FillCache = false };
                 value = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock));
                 UInt256 current_header_hash = new UInt256(value.ToArray().Take(32).ToArray());
-                this.current_block_height = BitConverter.ToUInt32(value.ToArray(), 32);
+                this.current_block_height = value.ToArray().ToUInt32(32);
                 uint current_header_height = current_block_height;
                 if (db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentHeader), out value))
                 {
                     current_header_hash = new UInt256(value.ToArray().Take(32).ToArray());
-                    current_header_height = BitConverter.ToUInt32(value.ToArray(), 32);
+                    current_header_height = value.ToArray().ToUInt32(32);
                 }
                 foreach (UInt256 hash in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_HeaderHashList), (k, v) =>
                 {
@@ -54,7 +54,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     {
                         return new
                         {
-                            Index = BitConverter.ToUInt32(k.ToArray(), 1),
+                            Index = k.ToArray().ToUInt32(1),
                             Hashes = r.ReadSerializableArray<UInt256>()
                         };
                     }
@@ -304,7 +304,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             Slice value;
             if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.DATA_Header).Add(hash), out value))
                 return 0;
-            return BitConverter.ToInt64(value.ToArray(), 0);
+            return value.ToArray().ToInt64(0);
         }
 
         public override Transaction GetTransaction(UInt256 hash, out int height)
@@ -323,7 +323,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             if (db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Transaction).Add(hash), out value))
             {
                 byte[] data = value.ToArray();
-                height = BitConverter.ToInt32(data, 0);
+                height = data.ToInt32(0);
                 return Transaction.DeserializeFrom(data, sizeof(uint));
             }
             else
@@ -343,11 +343,11 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             {
                 const int UnclaimedItemSize = sizeof(ushort) + sizeof(uint);
                 byte[] data = value.ToArray();
-                return Enumerable.Range(0, data.Length / UnclaimedItemSize).ToDictionary(i => BitConverter.ToUInt16(data, i * UnclaimedItemSize), i => new Claimable
+                return Enumerable.Range(0, data.Length / UnclaimedItemSize).ToDictionary(i => data.ToUInt16(i * UnclaimedItemSize), i => new Claimable
                 {
-                    Output = tx.Outputs[BitConverter.ToUInt16(data, i * UnclaimedItemSize)],
+                    Output = tx.Outputs[data.ToUInt16(i * UnclaimedItemSize)],
                     StartHeight = (uint)height,
-                    EndHeight = BitConverter.ToUInt32(data, i * UnclaimedItemSize + sizeof(ushort))
+                    EndHeight = data.ToUInt32(i * UnclaimedItemSize + sizeof(ushort))
                 });
             }
             else
@@ -455,7 +455,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Unclaimed).Add(p), out value))
                     value = new byte[0];
                 byte[] data = value.ToArray();
-                return Enumerable.Range(0, data.Length / UnclaimedItemSize).ToDictionary(i => BitConverter.ToUInt16(data, i * UnclaimedItemSize), i => BitConverter.ToUInt32(data, i * UnclaimedItemSize + sizeof(ushort)));
+                return Enumerable.Range(0, data.Length / UnclaimedItemSize).ToDictionary(i => data.ToUInt16(i * UnclaimedItemSize), i => data.ToUInt32(i * UnclaimedItemSize + sizeof(ushort)));
             });
             MultiValueDictionary<UInt256, ushort> unspent_votes = new MultiValueDictionary<UInt256, ushort>(p =>
             {

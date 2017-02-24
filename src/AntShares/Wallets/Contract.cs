@@ -168,7 +168,7 @@ namespace AntShares.Wallets
                     ++i;
                     break;
                 case 2:
-                    m = BitConverter.ToUInt16(Script, ++i);
+                    m = Script.ToUInt16(++i);
                     i += 2;
                     break;
                 default:
@@ -190,7 +190,7 @@ namespace AntShares.Wallets
                     ++i;
                     break;
                 case 2:
-                    if (n != BitConverter.ToUInt16(Script, ++i)) return false;
+                    if (n != Script.ToUInt16(++i)) return false;
                     i += 2;
                     break;
                 default:

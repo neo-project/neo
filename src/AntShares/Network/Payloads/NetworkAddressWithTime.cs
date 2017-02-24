@@ -31,7 +31,7 @@ namespace AntShares.Network.Payloads
             Timestamp = reader.ReadUInt32();
             Services = reader.ReadUInt64();
             IPAddress address = new IPAddress(reader.ReadBytes(16));
-            ushort port = BitConverter.ToUInt16(reader.ReadBytes(2).Reverse().ToArray(), 0);
+            ushort port = reader.ReadBytes(2).Reverse().ToArray().ToUInt16(0);
             EndPoint = new IPEndPoint(address, port);
         }
 

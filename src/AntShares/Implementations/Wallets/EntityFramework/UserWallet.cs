@@ -186,10 +186,10 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                 buffer = ctx.Keys.FirstOrDefault(p => p.Name == "Version")?.Value;
             }
             if (buffer == null) return new Version(0, 0);
-            int major = BitConverter.ToInt32(buffer, 0);
-            int minor = BitConverter.ToInt32(buffer, 4);
-            int build = BitConverter.ToInt32(buffer, 8);
-            int revision = BitConverter.ToInt32(buffer, 12);
+            int major = buffer.ToInt32(0);
+            int minor = buffer.ToInt32(4);
+            int build = buffer.ToInt32(8);
+            int revision = buffer.ToInt32(12);
             return new Version(major, minor, build, revision);
         }
 
@@ -279,7 +279,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                 ctx_new.Addresses.AddRange(ctx_old.Contracts.Select(p => new Address { ScriptHash = p.ScriptHash }));
                 ctx_new.Contracts.AddRange(ctx_old.Contracts);
                 ctx_new.Keys.AddRange(ctx_old.Keys.Where(p => p.Name != "Height" && p.Name != "Version"));
-                SaveStoredData(ctx_new, "Height", BitConverter.GetBytes(0));
+                SaveStoredData(ctx_new, "Height", new byte[sizeof(int)]);
                 SaveStoredData(ctx_new, "Version", new[] { current_version.Major, current_version.Minor, current_version.Build, current_version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
                 ctx_new.SaveChanges();
             }

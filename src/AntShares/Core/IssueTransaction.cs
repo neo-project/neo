@@ -60,7 +60,7 @@ namespace AntShares.Core
                 if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.Statistics))
                     return false;
                 Fixed8 quantity_issued = Blockchain.Default.GetQuantityIssued(r.AssetId);
-                quantity_issued += mempool.OfType<IssueTransaction>().SelectMany(p => p.Outputs).Where(p => p.AssetId == r.AssetId).Sum(p => p.Value);
+                quantity_issued += mempool.OfType<IssueTransaction>().Where(p => p != this).SelectMany(p => p.Outputs).Where(p => p.AssetId == r.AssetId).Sum(p => p.Value);
                 if (tx.Amount - quantity_issued < -r.Amount) return false;
             }
             return true;

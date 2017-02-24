@@ -30,9 +30,9 @@ namespace AntShares
 
         public bool Equals(UIntBase other)
         {
-            if (object.ReferenceEquals(other, null))
+            if (ReferenceEquals(other, null))
                 return false;
-            if (object.ReferenceEquals(this, other))
+            if (ReferenceEquals(this, other))
                 return true;
             if (data_bytes.Length != other.data_bytes.Length)
                 return false;
@@ -41,7 +41,7 @@ namespace AntShares
 
         public override bool Equals(object obj)
         {
-            if (object.ReferenceEquals(obj, null))
+            if (ReferenceEquals(obj, null))
                 return false;
             if (!(obj is UIntBase))
                 return false;
@@ -50,7 +50,7 @@ namespace AntShares
 
         public override int GetHashCode()
         {
-            return BitConverter.ToInt32(data_bytes, 0);
+            return data_bytes.ToInt32(0);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -74,9 +74,9 @@ namespace AntShares
 
         public static bool operator ==(UIntBase left, UIntBase right)
         {
-            if (object.ReferenceEquals(left, right))
+            if (ReferenceEquals(left, right))
                 return true;
-            if (object.ReferenceEquals(left, null) || object.ReferenceEquals(right, null))
+            if (ReferenceEquals(left, null) || ReferenceEquals(right, null))
                 return false;
             return left.Equals(right);
         }

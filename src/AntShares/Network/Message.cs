@@ -45,7 +45,7 @@ namespace AntShares.Network
 
         private static uint GetChecksum(byte[] value)
         {
-            return BitConverter.ToUInt32(value.Sha256().Sha256(), 0);
+            return value.Sha256().Sha256().ToUInt32(0);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

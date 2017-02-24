@@ -2,6 +2,7 @@
 using AntShares.IO;
 using AntShares.IO.Caching;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -17,14 +18,14 @@ namespace AntShares.Network
 {
     public class LocalNode : IDisposable
     {
-        public static event EventHandler<AddingTransactionEventArgs> AddingTransaction;
         public static event EventHandler<IInventory> NewInventory;
 
         public const uint PROTOCOL_VERSION = 0;
         private const int CONNECTED_MAX = 10;
         private const int UNCONNECTED_MAX = 1000;
 
-        private static readonly Dictionary<UInt256, Transaction> MemoryPool = new Dictionary<UInt256, Transaction>();
+        private static readonly Dictionary<UInt256, Transaction> mem_pool = new Dictionary<UInt256, Transaction>();
+        private readonly HashSet<Transaction> temp_pool = new HashSet<Transaction>();
         internal static readonly HashSet<UInt256> KnownHashes = new HashSet<UInt256>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
 
@@ -37,6 +38,8 @@ namespace AntShares.Network
         internal readonly uint Nonce;
         private TcpListener listener;
         private Thread connectThread;
+        private Thread poolThread;
+        private readonly AutoResetEvent new_tx_event = new AutoResetEvent(false);
         private int started = 0;
         private int disposed = 0;
 
@@ -61,6 +64,14 @@ namespace AntShares.Network
                 IsBackground = true,
                 Name = "LocalNode.ConnectToPeersLoop"
             };
+            if (Blockchain.Default != null)
+            {
+                this.poolThread = new Thread(AddTransactionLoop)
+                {
+                    IsBackground = true,
+                    Name = "LocalNode.AddTransactionLoop"
+                };
+            }
             this.UserAgent = string.Format("/AntSharesCore:{0}/", GetType().GetTypeInfo().Assembly.GetName().Version.ToString(3));
         }
 
@@ -86,18 +97,42 @@ namespace AntShares.Network
             }
         }
 
-        private bool AddTransaction(Transaction tx)
+        private static bool AddTransaction(Transaction tx)
         {
             if (Blockchain.Default == null) return false;
-            lock (MemoryPool)
+            lock (mem_pool)
             {
-                if (MemoryPool.ContainsKey(tx.Hash)) return false;
+                if (mem_pool.ContainsKey(tx.Hash)) return false;
                 if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
-                if (!tx.Verify(MemoryPool.Values)) return false;
-                AddingTransactionEventArgs args = new AddingTransactionEventArgs(tx);
-                AddingTransaction?.Invoke(this, args);
-                if (!args.Cancel) MemoryPool.Add(tx.Hash, tx);
-                return !args.Cancel;
+                if (!tx.Verify(mem_pool.Values)) return false;
+                mem_pool.Add(tx.Hash, tx);
+            }
+            return true;
+        }
+
+        private void AddTransactionLoop()
+        {
+            while (disposed == 0)
+            {
+                new_tx_event.WaitOne();
+                Transaction[] transactions;
+                lock (temp_pool)
+                {
+                    transactions = temp_pool.ToArray();
+                    temp_pool.Clear();
+                }
+                lock (mem_pool)
+                {
+                    transactions = transactions.Where(p => !mem_pool.ContainsKey(p.Hash) && !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
+                    ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
+                    transactions.AsParallel().ForAll(tx =>
+                    {
+                        if (tx.Verify(mem_pool.Values.Concat(transactions)))
+                            verified.Add(tx);
+                    });
+                    foreach (Transaction tx in verified)
+                        mem_pool.Add(tx.Hash, tx);
+                }
             }
         }
 
@@ -111,21 +146,18 @@ namespace AntShares.Network
 
         private static void Blockchain_PersistCompleted(object sender, Block block)
         {
-            HashSet<CoinReference> inputs = new HashSet<CoinReference>(block.Transactions.SelectMany(p => p.Inputs));
-            lock (MemoryPool)
+            lock (mem_pool)
             {
                 foreach (Transaction tx in block.Transactions)
                 {
-                    MemoryPool.Remove(tx.Hash);
+                    mem_pool.Remove(tx.Hash);
                 }
-                foreach (Transaction tx in MemoryPool.Values.ToArray())
+                if (mem_pool.Count == 0) return;
+                Transaction[] remain = mem_pool.Values.ToArray();
+                mem_pool.Clear();
+                foreach (Transaction tx in remain)
                 {
-                    foreach (CoinReference input in tx.Inputs)
-                        if (inputs.Contains(input))
-                        {
-                            MemoryPool.Remove(tx.Hash);
-                            break;
-                        }
+                    AddTransaction(tx);
                 }
             }
         }
@@ -214,9 +246,9 @@ namespace AntShares.Network
 
         public static bool ContainsTransaction(UInt256 hash)
         {
-            lock (MemoryPool)
+            lock (mem_pool)
             {
-                return MemoryPool.ContainsKey(hash);
+                return mem_pool.ContainsKey(hash);
             }
         }
 
@@ -244,15 +276,19 @@ namespace AntShares.Network
                         nodes = connectedPeers.ToArray();
                     }
                     Task.WaitAll(nodes.Select(p => Task.Run(() => p.Disconnect(false))).ToArray());
+                    new_tx_event.Set();
+                    if (poolThread?.ThreadState.HasFlag(ThreadState.Unstarted) == false)
+                        poolThread.Join();
+                    new_tx_event.Dispose();
                 }
             }
         }
 
         public static IEnumerable<Transaction> GetMemoryPool()
         {
-            lock (MemoryPool)
+            lock (mem_pool)
             {
-                foreach (Transaction tx in MemoryPool.Values)
+                foreach (Transaction tx in mem_pool.Values)
                     yield return tx;
             }
         }
@@ -267,10 +303,10 @@ namespace AntShares.Network
 
         public static Transaction GetTransaction(UInt256 hash)
         {
-            lock (MemoryPool)
+            lock (mem_pool)
             {
                 Transaction tx;
-                if (!MemoryPool.TryGetValue(hash, out tx))
+                if (!mem_pool.TryGetValue(hash, out tx))
                     return null;
                 return tx;
             }
@@ -280,7 +316,7 @@ namespace AntShares.Network
         {
             byte[] data = address.MapToIPv4().GetAddressBytes();
             Array.Reverse(data);
-            uint value = BitConverter.ToUInt32(data, 0);
+            uint value = data.ToUInt32(0);
             return (value & 0xff000000) == 0x0a000000 || (value & 0xfff00000) == 0xac100000 || (value & 0xffff0000) == 0xc0a80000;
         }
 
@@ -313,6 +349,7 @@ namespace AntShares.Network
 
         public bool Relay(IInventory inventory)
         {
+            if (inventory is MinerTransaction) return false;
             lock (KnownHashes)
             {
                 if (!KnownHashes.Add(inventory.Hash)) return false;
@@ -332,6 +369,13 @@ namespace AntShares.Network
             {
                 if (!inventory.Verify()) return false;
             }
+            bool relayed = RelayDirectly(inventory);
+            NewInventory?.Invoke(this, inventory);
+            return relayed;
+        }
+
+        public bool RelayDirectly(IInventory inventory)
+        {
             bool relayed = false;
             lock (connectedPeers)
             {
@@ -339,7 +383,6 @@ namespace AntShares.Network
                 foreach (RemoteNode node in connectedPeers)
                     relayed |= node.Relay(inventory);
             }
-            NewInventory?.Invoke(this, inventory);
             return relayed;
         }
 
@@ -371,7 +414,23 @@ namespace AntShares.Network
 
         private void RemoteNode_InventoryReceived(object sender, IInventory inventory)
         {
-            Relay(inventory);
+            if (inventory is Transaction)
+            {
+                if (Blockchain.Default == null) return;
+                lock (KnownHashes)
+                {
+                    if (!KnownHashes.Add(inventory.Hash)) return;
+                }
+                lock (temp_pool)
+                {
+                    temp_pool.Add((Transaction)inventory);
+                }
+                new_tx_event.Set();
+            }
+            else
+            {
+                Relay(inventory);
+            }
         }
 
         private void RemoteNode_PeersReceived(object sender, IPEndPoint[] peers)
@@ -411,30 +470,34 @@ namespace AntShares.Network
             }
         }
 
-        public async void Start(int port)
+        public void Start(int port)
         {
             if (Interlocked.Exchange(ref started, 1) == 0)
             {
-                IPAddress address = LocalAddresses.FirstOrDefault(p => p.IsIPv4MappedToIPv6 && !IsIntranetAddress(p));
-                if (address == null && UpnpEnabled && await UPnP.DiscoverAsync())
+                Task.Run(async () =>
                 {
+                    IPAddress address = LocalAddresses.FirstOrDefault(p => p.IsIPv4MappedToIPv6 && !IsIntranetAddress(p));
+                    if (address == null && UpnpEnabled && await UPnP.DiscoverAsync())
+                    {
+                        try
+                        {
+                            address = await UPnP.GetExternalIPAsync();
+                            await UPnP.ForwardPortAsync(port, ProtocolType.Tcp, "AntShares");
+                            LocalAddresses.Add(address);
+                        }
+                        catch { }
+                    }
+                    listener = new TcpListener(IPAddress.Any, port);
                     try
                     {
-                        address = await UPnP.GetExternalIPAsync();
-                        await UPnP.ForwardPortAsync(port, ProtocolType.Tcp, "AntShares");
-                        LocalAddresses.Add(address);
+                        listener.Start();
+                        Port = (ushort)port;
                     }
-                    catch { }
-                }
-                listener = new TcpListener(IPAddress.Any, port);
-                try
-                {
-                    listener.Start();
-                    Port = (ushort)port;
-                }
-                catch (SocketException) { }
-                connectThread.Start();
-                if (Port > 0) await AcceptPeersAsync();
+                    catch (SocketException) { }
+                    connectThread.Start();
+                    poolThread?.Start();
+                    if (Port > 0) await AcceptPeersAsync();
+                });
             }
         }
 
