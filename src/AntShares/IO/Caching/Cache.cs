@@ -68,21 +68,38 @@ namespace AntShares.IO.Caching
             TKey key = GetKeyForItem(item);
             lock (SyncRoot)
             {
-                if (InnerDictionary.ContainsKey(key))
+                AddInternal(key, item);
+            }
+        }
+
+        private void AddInternal(TKey key, TValue item)
+        {
+            if (InnerDictionary.ContainsKey(key))
+            {
+                OnAccess(InnerDictionary[key]);
+            }
+            else
+            {
+                if (InnerDictionary.Count >= max_capacity)
                 {
-                    OnAccess(InnerDictionary[key]);
-                }
-                else
-                {
-                    if (InnerDictionary.Count >= max_capacity)
+                    //TODO: 对PLINQ查询进行性能测试，以便确定此处使用何种算法更优（并行或串行）
+                    foreach (CacheItem item_del in InnerDictionary.Values.AsParallel().OrderBy(p => p.Time).Take(InnerDictionary.Count - max_capacity + 1))
                     {
-                        //TODO: 对PLINQ查询进行性能测试，以便确定此处使用何种算法更优（并行或串行）
-                        foreach (CacheItem item_del in InnerDictionary.Values.AsParallel().OrderBy(p => p.Time).Take(InnerDictionary.Count - max_capacity + 1))
-                        {
-                            RemoveInternal(item_del);
-                        }
+                        RemoveInternal(item_del);
                     }
-                    InnerDictionary.Add(key, new CacheItem(key, item));
+                }
+                InnerDictionary.Add(key, new CacheItem(key, item));
+            }
+        }
+
+        public void AddRange(IEnumerable<TValue> items)
+        {
+            lock (SyncRoot)
+            {
+                foreach (TValue item in items)
+                {
+                    TKey key = GetKeyForItem(item);
+                    AddInternal(key, item);
                 }
             }
         }

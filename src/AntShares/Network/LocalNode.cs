@@ -23,6 +23,7 @@ namespace AntShares.Network
         public const uint PROTOCOL_VERSION = 0;
         private const int CONNECTED_MAX = 10;
         private const int UNCONNECTED_MAX = 1000;
+        public const int MemoryPoolSize = 15000;
 
         private static readonly Dictionary<UInt256, Transaction> mem_pool = new Dictionary<UInt256, Transaction>();
         private readonly HashSet<Transaction> temp_pool = new HashSet<Transaction>();
@@ -72,7 +73,7 @@ namespace AntShares.Network
                     Name = "LocalNode.AddTransactionLoop"
                 };
             }
-            this.UserAgent = string.Format("/AntSharesCore:{0}/", GetType().GetTypeInfo().Assembly.GetName().Version.ToString(3));
+            this.UserAgent = string.Format("/AntShares:{0}/", GetType().GetTypeInfo().Assembly.GetName().Version.ToString(3));
         }
 
         private async Task AcceptPeersAsync()
@@ -106,6 +107,7 @@ namespace AntShares.Network
                 if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
                 if (!tx.Verify(mem_pool.Values)) return false;
                 mem_pool.Add(tx.Hash, tx);
+                CheckMemPool();
             }
             return true;
         }
@@ -121,10 +123,10 @@ namespace AntShares.Network
                     transactions = temp_pool.ToArray();
                     temp_pool.Clear();
                 }
+                ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
                 lock (mem_pool)
                 {
                     transactions = transactions.Where(p => !mem_pool.ContainsKey(p.Hash) && !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
-                    ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
                     transactions.AsParallel().ForAll(tx =>
                     {
                         if (tx.Verify(mem_pool.Values.Concat(transactions)))
@@ -132,7 +134,9 @@ namespace AntShares.Network
                     });
                     foreach (Transaction tx in verified)
                         mem_pool.Add(tx.Hash, tx);
+                    CheckMemPool();
                 }
+                RelayDirectly(verified);
             }
         }
 
@@ -160,6 +164,18 @@ namespace AntShares.Network
                     AddTransaction(tx);
                 }
             }
+        }
+
+        private static void CheckMemPool()
+        {
+            if (mem_pool.Count <= MemoryPoolSize) return;
+            UInt256[] hashes = mem_pool.Values.AsParallel().Select(tx => new
+            {
+                Hash = tx.Hash,
+                Fee = (tx.References.Values.Where(p => p.AssetId.Equals(Blockchain.AntCoin.Hash)).Sum(p => p.Value) - tx.Outputs.Where(p => p.AssetId.Equals(Blockchain.AntCoin.Hash)).Sum(p => p.Value) - tx.SystemFee) / tx.Size
+            }).OrderBy(p => p.Fee).Take(mem_pool.Count - MemoryPoolSize).Select(p => p.Hash).ToArray();
+            foreach (UInt256 hash in hashes)
+                mem_pool.Remove(hash);
         }
 
         public async Task ConnectToPeerAsync(string hostNameOrAddress, int port)
@@ -384,6 +400,15 @@ namespace AntShares.Network
                     relayed |= node.Relay(inventory);
             }
             return relayed;
+        }
+
+        private void RelayDirectly(IReadOnlyCollection<Transaction> transactions)
+        {
+            lock (connectedPeers)
+            {
+                foreach (RemoteNode node in connectedPeers)
+                    node.Relay(transactions);
+            }
         }
 
         private void RemoteNode_Disconnected(object sender, bool error)

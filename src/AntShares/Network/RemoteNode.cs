@@ -312,6 +312,17 @@ namespace AntShares.Network
             return true;
         }
 
+        internal void Relay(IEnumerable<Transaction> transactions)
+        {
+            if (Version?.Relay != true) return;
+            BloomFilter filter = bloom_filter;
+            if (filter != null)
+                transactions = transactions.Where(p => TestFilter(filter, p));
+            UInt256[] hashes = transactions.Select(p => p.Hash).ToArray();
+            if (hashes.Length == 0) return;
+            EnqueueMessage("inv", InvPayload.Create(InventoryType.TX, hashes));
+        }
+
         internal void RequestMemoryPool()
         {
             EnqueueMessage("mempool", null, true);
