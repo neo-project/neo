@@ -18,12 +18,13 @@ namespace AntShares.Network
 {
     public class LocalNode : IDisposable
     {
-        public static event EventHandler<IInventory> NewInventory;
+        public static event EventHandler<InventoryReceivingEventArgs> InventoryReceiving;
+        public static event EventHandler<IInventory> InventoryReceived;
 
         public const uint PROTOCOL_VERSION = 0;
         private const int CONNECTED_MAX = 10;
         private const int UNCONNECTED_MAX = 1000;
-        public const int MemoryPoolSize = 15000;
+        public const int MemoryPoolSize = 30000;
 
         private static readonly Dictionary<UInt256, Transaction> mem_pool = new Dictionary<UInt256, Transaction>();
         private readonly HashSet<Transaction> temp_pool = new HashSet<Transaction>();
@@ -120,6 +121,7 @@ namespace AntShares.Network
                 Transaction[] transactions;
                 lock (temp_pool)
                 {
+                    if (temp_pool.Count == 0) continue;
                     transactions = temp_pool.ToArray();
                     temp_pool.Clear();
                 }
@@ -127,16 +129,21 @@ namespace AntShares.Network
                 lock (mem_pool)
                 {
                     transactions = transactions.Where(p => !mem_pool.ContainsKey(p.Hash) && !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
+                    if (transactions.Length == 0) continue;
                     transactions.AsParallel().ForAll(tx =>
                     {
                         if (tx.Verify(mem_pool.Values.Concat(transactions)))
                             verified.Add(tx);
                     });
+                    if (verified.Count == 0) continue;
                     foreach (Transaction tx in verified)
                         mem_pool.Add(tx.Hash, tx);
                     CheckMemPool();
                 }
                 RelayDirectly(verified);
+                if (InventoryReceived != null)
+                    foreach (Transaction tx in verified)
+                        InventoryReceived(this, tx);
             }
         }
 
@@ -169,11 +176,7 @@ namespace AntShares.Network
         private static void CheckMemPool()
         {
             if (mem_pool.Count <= MemoryPoolSize) return;
-            UInt256[] hashes = mem_pool.Values.AsParallel().Select(tx => new
-            {
-                Hash = tx.Hash,
-                Fee = (tx.References.Values.Where(p => p.AssetId.Equals(Blockchain.AntCoin.Hash)).Sum(p => p.Value) - tx.Outputs.Where(p => p.AssetId.Equals(Blockchain.AntCoin.Hash)).Sum(p => p.Value) - tx.SystemFee) / tx.Size
-            }).OrderBy(p => p.Fee).Take(mem_pool.Count - MemoryPoolSize).Select(p => p.Hash).ToArray();
+            UInt256[] hashes = mem_pool.Values.AsParallel().OrderBy(p => p.NetworkFee / p.Size).Take(mem_pool.Count - MemoryPoolSize).Select(p => p.Hash).ToArray();
             foreach (UInt256 hash in hashes)
                 mem_pool.Remove(hash);
         }
@@ -370,6 +373,9 @@ namespace AntShares.Network
             {
                 if (!KnownHashes.Add(inventory.Hash)) return false;
             }
+            InventoryReceivingEventArgs args = new InventoryReceivingEventArgs(inventory);
+            InventoryReceiving?.Invoke(this, args);
+            if (args.Cancel) return false;
             if (inventory is Block)
             {
                 if (Blockchain.Default == null) return false;
@@ -386,7 +392,7 @@ namespace AntShares.Network
                 if (!inventory.Verify()) return false;
             }
             bool relayed = RelayDirectly(inventory);
-            NewInventory?.Invoke(this, inventory);
+            InventoryReceived?.Invoke(this, inventory);
             return relayed;
         }
 
@@ -446,6 +452,9 @@ namespace AntShares.Network
                 {
                     if (!KnownHashes.Add(inventory.Hash)) return;
                 }
+                InventoryReceivingEventArgs args = new InventoryReceivingEventArgs(inventory);
+                InventoryReceiving?.Invoke(this, args);
+                if (args.Cancel) return;
                 lock (temp_pool)
                 {
                     temp_pool.Add((Transaction)inventory);

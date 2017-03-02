@@ -13,6 +13,8 @@ namespace AntShares.Consensus
 {
     public class ConsensusService : IDisposable
     {
+        public const int MaxTransactionsPerBlock = 15000;
+
         private ConsensusContext context = new ConsensusContext();
         private LocalNode localNode;
         private Wallet wallet;
@@ -140,7 +142,8 @@ namespace AntShares.Consensus
             if (started)
             {
                 Blockchain.PersistCompleted -= Blockchain_PersistCompleted;
-                LocalNode.NewInventory -= LocalNode_NewInventory;
+                LocalNode.InventoryReceiving -= LocalNode_InventoryReceiving;
+                LocalNode.InventoryReceived -= LocalNode_InventoryReceived;
             }
         }
 
@@ -183,7 +186,7 @@ namespace AntShares.Consensus
             }
         }
 
-        private void LocalNode_NewInventory(object sender, IInventory inventory)
+        private void LocalNode_InventoryReceived(object sender, IInventory inventory)
         {
             ConsensusPayload payload = inventory as ConsensusPayload;
             if (payload != null)
@@ -211,7 +214,11 @@ namespace AntShares.Consensus
                     }
                 }
             }
-            Transaction tx = inventory as Transaction;
+        }
+
+        private void LocalNode_InventoryReceiving(object sender, InventoryReceivingEventArgs e)
+        {
+            Transaction tx = e.Inventory as Transaction;
             if (tx != null)
             {
                 lock (context)
@@ -221,6 +228,7 @@ namespace AntShares.Consensus
                     if (context.Transactions.ContainsKey(tx.Hash)) return;
                     if (!context.TransactionHashes.Contains(tx.Hash)) return;
                     AddTransaction(tx, true);
+                    e.Cancel = true;
                 }
             }
         }
@@ -305,6 +313,8 @@ namespace AntShares.Consensus
                         context.Timestamp = Math.Max(DateTime.Now.ToTimestamp(), Blockchain.Default.GetHeader(context.PrevHash).Timestamp + 1);
                         context.Nonce = GetNonce();
                         List<Transaction> transactions = LocalNode.GetMemoryPool().Where(p => CheckPolicy(p)).ToList();
+                        if (transactions.Count >= MaxTransactionsPerBlock)
+                            transactions = transactions.OrderByDescending(p => p.NetworkFee / p.Size).Take(MaxTransactionsPerBlock - 1).ToList();
                         transactions.Insert(0, CreateMinerTransaction(transactions, context.Height, context.Nonce));
                         context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
                         context.Transactions = transactions.ToDictionary(p => p.Hash);
@@ -356,7 +366,8 @@ namespace AntShares.Consensus
             Log("OnStart");
             started = true;
             Blockchain.PersistCompleted += Blockchain_PersistCompleted;
-            LocalNode.NewInventory += LocalNode_NewInventory;
+            LocalNode.InventoryReceiving += LocalNode_InventoryReceiving;
+            LocalNode.InventoryReceived += LocalNode_InventoryReceived;
             InitializeConsensus(0);
         }
     }

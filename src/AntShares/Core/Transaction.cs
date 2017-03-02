@@ -61,6 +61,21 @@ namespace AntShares.Core
         /// </summary>
         InventoryType IInventory.InventoryType => InventoryType.TX;
 
+        private Fixed8 _network_fee = -Fixed8.Satoshi;
+        public Fixed8 NetworkFee
+        {
+            get
+            {
+                if (_network_fee == -Fixed8.Satoshi)
+                {
+                    Fixed8 input = References.Values.Where(p => p.AssetId.Equals(Blockchain.AntCoin.Hash)).Sum(p => p.Value);
+                    Fixed8 output = Outputs.Where(p => p.AssetId.Equals(Blockchain.AntCoin.Hash)).Sum(p => p.Value);
+                    _network_fee = input - output - SystemFee;
+                }
+                return _network_fee;
+            }
+        }
+
         private IReadOnlyDictionary<CoinReference, TransactionOutput> _references;
         /// <summary>
         /// 每一个交易输入所引用的交易输出
@@ -303,6 +318,8 @@ namespace AntShares.Core
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["vin"] = Inputs.Select(p => p.ToJson()).ToArray();
             json["vout"] = Outputs.Select((p, i) => p.ToJson((ushort)i)).ToArray();
+            json["sys_fee"] = SystemFee.ToString();
+            json["net_fee"] = NetworkFee.ToString();
             json["scripts"] = Scripts.Select(p => p.ToJson()).ToArray();
             return json;
         }

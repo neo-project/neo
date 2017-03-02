@@ -365,7 +365,7 @@ namespace AntShares.Network
             }
             lock (localNode.connectedPeers)
             {
-                if (localNode.connectedPeers.Where(p => p != this).Any(p => p.RemoteEndpoint.Address.Equals(RemoteEndpoint.Address) && p.Version.Nonce == Version.Nonce))
+                if (localNode.connectedPeers.Where(p => p != this).Any(p => p.RemoteEndpoint.Address.Equals(RemoteEndpoint.Address) && p.Version?.Nonce == Version.Nonce))
                 {
                     Disconnect(false);
                     return;
