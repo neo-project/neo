@@ -40,10 +40,9 @@ PM> Install-Package AntShares
 
 这里还有几个可以参考的应用案例：
 
-+ [AntSharesCore](https://github.com/AntShares/AntSharesCore) 包含命令行及图形界面的小蚁钱包客户端
-+ [AntSharesApp](https://github.com/AntShares/AntSharesApp) 基于Cordova开发的跨平台小蚁钱包APP
-+ [AntCha.in](https://github.com/AlexChien/antcha.in) 用于查看小蚁区块链内容的浏览器
-+ [antshares-ruby](https://github.com/AntSharesSDK/antshares-ruby) 基于ruby开发的小蚁钱包
++ [AntSharesCore](https://github.com/AntShares/AntSharesCore) 包含命令行及图形界面的小蚁客户端
++ [AntSharesApp](https://github.com/AntShares/AntSharesApp) 基于Cordova开发的跨平台小蚁APP
++ [AntChain.xyz](https://github.com/lcux/antchain.xyz) 用于查看小蚁区块链内容的浏览器
 
 项目介绍
 --------
