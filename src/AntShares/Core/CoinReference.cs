@@ -9,7 +9,7 @@ namespace AntShares.Core
     /// <summary>
     /// 交易输入
     /// </summary>
-    public class CoinReference : IApiInterface, IEquatable<CoinReference>, ISerializable
+    public class CoinReference : IEquatable<CoinReference>, IInteropInterface, ISerializable
     {
         /// <summary>
         /// 引用交易的散列值
@@ -68,7 +68,7 @@ namespace AntShares.Core
             writer.Write(PrevIndex);
         }
 
-        byte[] IApiInterface.ToArray()
+        byte[] IInteropInterface.ToArray()
         {
             return this.ToArray();
         }

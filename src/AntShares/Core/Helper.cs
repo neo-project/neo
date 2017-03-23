@@ -124,7 +124,7 @@ namespace AntShares.Core
                 engine.LoadScript(signable.Scripts[i].StackScript, true);
                 engine.Execute();
                 if (engine.State != VMState.HALT) return false;
-                if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop()) return false;
+                if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
             }
             return true;
         }

@@ -99,7 +99,7 @@ namespace AntShares.Network.Payloads
             writer.WriteVarBytes(Data);
         }
 
-        byte[] IApiInterface.ToArray()
+        byte[] IInteropInterface.ToArray()
         {
             return this.ToArray();
         }

@@ -299,7 +299,7 @@ namespace AntShares.Core
             writer.Write(Outputs);
         }
 
-        byte[] IApiInterface.ToArray()
+        byte[] IInteropInterface.ToArray()
         {
             return this.ToArray();
         }

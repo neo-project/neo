@@ -37,7 +37,7 @@ namespace AntShares.Wallets
             get
             {
                 if (Script.Length != 35) return false;
-                if (Script[0] != 33 || Script[34] != (byte)OpCode.OP_CHECKSIG)
+                if (Script[0] != 33 || Script[34] != (byte)OpCode.CHECKSIG)
                     return false;
                 return true;
             }
@@ -87,7 +87,7 @@ namespace AntShares.Wallets
                     sb.EmitPush(publicKey.EncodePoint(true));
                 }
                 sb.EmitPush(publicKeys.Length);
-                sb.Emit(OpCode.OP_CHECKMULTISIG);
+                sb.Emit(OpCode.CHECKMULTISIG);
                 return sb.ToArray();
             }
         }
@@ -107,7 +107,7 @@ namespace AntShares.Wallets
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.EmitPush(publicKey.EncodePoint(true));
-                sb.Emit(OpCode.OP_CHECKSIG);
+                sb.Emit(OpCode.CHECKSIG);
                 return sb.ToArray();
             }
         }
@@ -159,8 +159,8 @@ namespace AntShares.Wallets
             int m, n = 0;
             int i = 0;
             if (Script.Length < 37) return false;
-            if (Script[i] > (byte)OpCode.OP_16) return false;
-            if (Script[i] < (byte)OpCode.OP_1 && Script[i] != 1 && Script[i] != 2) return false;
+            if (Script[i] > (byte)OpCode.PUSH16) return false;
+            if (Script[i] < (byte)OpCode.PUSH1 && Script[i] != 1 && Script[i] != 2) return false;
             switch (Script[i])
             {
                 case 1:
@@ -197,7 +197,7 @@ namespace AntShares.Wallets
                     if (n != Script[i++] - 80) return false;
                     break;
             }
-            if (Script[i++] != (byte)OpCode.OP_CHECKMULTISIG) return false;
+            if (Script[i++] != (byte)OpCode.CHECKMULTISIG) return false;
             if (Script.Length != i) return false;
             return true;
         }

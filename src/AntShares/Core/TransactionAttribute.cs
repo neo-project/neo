@@ -10,7 +10,7 @@ namespace AntShares.Core
     /// <summary>
     /// 交易特性
     /// </summary>
-    public class TransactionAttribute : IApiInterface, ISerializable
+    public class TransactionAttribute : IInteropInterface, ISerializable
     {
         /// <summary>
         /// 用途
@@ -66,7 +66,7 @@ namespace AntShares.Core
                 writer.Write(Data);
         }
 
-        byte[] IApiInterface.ToArray()
+        byte[] IInteropInterface.ToArray()
         {
             return this.ToArray();
         }

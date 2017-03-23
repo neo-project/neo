@@ -117,7 +117,7 @@ namespace AntShares.Core
             writer.Write(NextMiner);
         }
 
-        byte[] IApiInterface.ToArray()
+        byte[] IInteropInterface.ToArray()
         {
             return this.ToArray();
         }

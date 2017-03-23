@@ -1,9 +1,9 @@
 ﻿using AntShares.Core;
-using System.Numerics;
+using System.Linq;
 
 namespace AntShares.VM
 {
-    internal class InterfaceEngine : ApiService
+    internal class InterfaceEngine : InteropService
     {
         public static readonly InterfaceEngine Default = new InterfaceEngine();
 
@@ -54,7 +54,7 @@ namespace AntShares.VM
 
         private static bool Blockchain_GetHeader(ExecutionEngine engine)
         {
-            byte[] data = (byte[])engine.EvaluationStack.Pop();
+            byte[] data = engine.EvaluationStack.Pop().GetByteArray();
             Header header;
             switch (data.Length)
             {
@@ -79,13 +79,13 @@ namespace AntShares.VM
                 default:
                     return false;
             }
-            engine.EvaluationStack.Push(new StackItem(header));
+            engine.EvaluationStack.Push(StackItem.FromInterface(header));
             return true;
         }
 
         private static bool Blockchain_GetBlock(ExecutionEngine engine)
         {
-            byte[] data = (byte[])engine.EvaluationStack.Pop();
+            byte[] data = engine.EvaluationStack.Pop().GetByteArray();
             Block block;
             switch (data.Length)
             {
@@ -110,15 +110,15 @@ namespace AntShares.VM
                 default:
                     return false;
             }
-            engine.EvaluationStack.Push(new StackItem(block));
+            engine.EvaluationStack.Push(StackItem.FromInterface(block));
             return true;
         }
 
         private static bool Blockchain_GetTransaction(ExecutionEngine engine)
         {
-            byte[] hash = (byte[])engine.EvaluationStack.Pop();
+            byte[] hash = engine.EvaluationStack.Pop().GetByteArray();
             Transaction tx = Blockchain.Default?.GetTransaction(new UInt256(hash));
-            engine.EvaluationStack.Push(new StackItem(tx));
+            engine.EvaluationStack.Push(StackItem.FromInterface(tx));
             return true;
         }
 
@@ -190,20 +190,18 @@ namespace AntShares.VM
         {
             Block block = engine.EvaluationStack.Pop().GetInterface<Block>();
             if (block == null) return false;
-            for (int i = block.Transactions.Length - 1; i >= 0; i--)
-                engine.EvaluationStack.Push(new StackItem(block.Transactions[i]));
-            engine.EvaluationStack.Push(block.Transactions.Length);
+            engine.EvaluationStack.Push(block.Transactions.Select(p => StackItem.FromInterface(p)).ToArray());
             return true;
         }
 
         private static bool Block_GetTransaction(ExecutionEngine engine)
         {
-            int index = (int)(BigInteger)engine.EvaluationStack.Pop();
             Block block = engine.EvaluationStack.Pop().GetInterface<Block>();
+            int index = (int)engine.EvaluationStack.Pop().GetBigInteger();
             if (block == null) return false;
             if (index < 0 || index >= block.Transactions.Length) return false;
             Transaction tx = block.Transactions[index];
-            engine.EvaluationStack.Push(new StackItem(tx));
+            engine.EvaluationStack.Push(StackItem.FromInterface(tx));
             return true;
         }
 
@@ -267,9 +265,7 @@ namespace AntShares.VM
         {
             Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
             if (tx == null) return false;
-            for (int i = tx.Attributes.Length - 1; i >= 0; i--)
-                engine.EvaluationStack.Push(new StackItem(tx.Attributes[i]));
-            engine.EvaluationStack.Push(tx.Attributes.Length);
+            engine.EvaluationStack.Push(tx.Attributes.Select(p => StackItem.FromInterface(p)).ToArray());
             return true;
         }
 
@@ -277,9 +273,7 @@ namespace AntShares.VM
         {
             Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
             if (tx == null) return false;
-            for (int i = tx.Inputs.Length - 1; i >= 0; i--)
-                engine.EvaluationStack.Push(new StackItem(tx.Inputs[i]));
-            engine.EvaluationStack.Push(tx.Inputs.Length);
+            engine.EvaluationStack.Push(tx.Inputs.Select(p => StackItem.FromInterface(p)).ToArray());
             return true;
         }
 
@@ -287,9 +281,7 @@ namespace AntShares.VM
         {
             Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
             if (tx == null) return false;
-            for (int i = tx.Outputs.Length - 1; i >= 0; i--)
-                engine.EvaluationStack.Push(new StackItem(tx.Outputs[i]));
-            engine.EvaluationStack.Push(tx.Outputs.Length);
+            engine.EvaluationStack.Push(tx.Outputs.Select(p => StackItem.FromInterface(p)).ToArray());
             return true;
         }
 
@@ -297,9 +289,7 @@ namespace AntShares.VM
         {
             Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
             if (tx == null) return false;
-            for (int i = tx.Inputs.Length - 1; i >= 0; i--)
-                engine.EvaluationStack.Push(new StackItem(tx.References[tx.Inputs[i]]));
-            engine.EvaluationStack.Push(tx.Inputs.Length);
+            engine.EvaluationStack.Push(tx.Inputs.Select(p => StackItem.FromInterface(tx.References[p])).ToArray());
             return true;
         }
 

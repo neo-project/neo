@@ -10,7 +10,7 @@ namespace AntShares.Core
     /// <summary>
     /// 交易输出
     /// </summary>
-    public class TransactionOutput : IApiInterface, ISerializable
+    public class TransactionOutput : IInteropInterface, ISerializable
     {
         /// <summary>
         /// 资产编号
@@ -42,7 +42,7 @@ namespace AntShares.Core
             writer.Write(ScriptHash);
         }
 
-        byte[] IApiInterface.ToArray()
+        byte[] IInteropInterface.ToArray()
         {
             return this.ToArray();
         }

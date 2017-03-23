@@ -51,7 +51,7 @@ namespace AntShares.Core
             Amount = Fixed8.FromDecimal(100000000),
             Precision = 0,
             Issuer = ECCurve.Secp256r1.Infinity,
-            Admin = (new[] { (byte)OpCode.OP_TRUE }).ToScriptHash(),
+            Admin = (new[] { (byte)OpCode.PUSHT }).ToScriptHash(),
             Attributes = new TransactionAttribute[0],
             Inputs = new CoinReference[0],
             Outputs = new TransactionOutput[0]
@@ -67,7 +67,7 @@ namespace AntShares.Core
             Amount = Fixed8.FromDecimal(MintingAmount.Sum(p => p * DecrementInterval)),
             Precision = 8,
             Issuer = ECCurve.Secp256r1.Infinity,
-            Admin = (new[] { (byte)OpCode.OP_FALSE }).ToScriptHash(),
+            Admin = (new[] { (byte)OpCode.PUSHF }).ToScriptHash(),
             Attributes = new TransactionAttribute[0],
             Inputs = new CoinReference[0],
             Outputs = new TransactionOutput[0]
@@ -86,7 +86,7 @@ namespace AntShares.Core
             Script = new Witness
             {
                 StackScript = new byte[0],
-                RedeemScript = new[] { (byte)OpCode.OP_TRUE }
+                RedeemScript = new[] { (byte)OpCode.PUSHT }
             },
             Transactions = new Transaction[]
             {
@@ -118,7 +118,7 @@ namespace AntShares.Core
                         new Witness
                         {
                             StackScript = new byte[0],
-                            RedeemScript = new[] { (byte)OpCode.OP_TRUE }
+                            RedeemScript = new[] { (byte)OpCode.PUSHT }
                         }
                     }
                 }
