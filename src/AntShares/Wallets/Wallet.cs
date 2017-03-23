@@ -126,7 +126,7 @@ namespace AntShares.Wallets
         {
         }
 
-        public static Fixed8 CalculateClaimAmount(IEnumerable<CoinReference> inputs)
+        public static Fixed8 CalculateClaimAmount(IEnumerable<CoinReference> inputs, bool ignoreClaimed = true)
         {
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
                 throw new NotSupportedException();
@@ -135,11 +135,17 @@ namespace AntShares.Wallets
             {
                 Dictionary<ushort, Claimable> claimable = Blockchain.Default.GetUnclaimed(group.Key);
                 if (claimable == null || claimable.Count == 0)
-                    continue;
+                    if (ignoreClaimed)
+                        continue;
+                    else
+                        throw new ArgumentException();
                 foreach (CoinReference claim in group)
                 {
                     if (!claimable.ContainsKey(claim.PrevIndex))
-                        continue;
+                        if (ignoreClaimed)
+                            continue;
+                        else
+                            throw new ArgumentException();
                     unclaimed.Add(claimable[claim.PrevIndex]);
                 }
             }

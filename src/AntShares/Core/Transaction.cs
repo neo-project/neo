@@ -62,7 +62,7 @@ namespace AntShares.Core
         InventoryType IInventory.InventoryType => InventoryType.TX;
 
         private Fixed8 _network_fee = -Fixed8.Satoshi;
-        public Fixed8 NetworkFee
+        public virtual Fixed8 NetworkFee
         {
             get
             {

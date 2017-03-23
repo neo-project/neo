@@ -12,5 +12,6 @@ namespace AntShares.Consensus
         RequestReceived = 0x08,
         SignatureSent = 0x10,
         BlockSent = 0x20,
+        ViewChanging = 0x40,
     }
 }

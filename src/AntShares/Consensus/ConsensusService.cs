@@ -223,7 +223,7 @@ namespace AntShares.Consensus
             {
                 lock (context)
                 {
-                    if (!context.State.HasFlag(ConsensusState.Backup) || !context.State.HasFlag(ConsensusState.RequestReceived) || context.State.HasFlag(ConsensusState.SignatureSent))
+                    if (!context.State.HasFlag(ConsensusState.Backup) || !context.State.HasFlag(ConsensusState.RequestReceived) || context.State.HasFlag(ConsensusState.SignatureSent) || context.State.HasFlag(ConsensusState.ViewChanging))
                         return;
                     if (context.Transactions.ContainsKey(tx.Hash)) return;
                     if (!context.TransactionHashes.Contains(tx.Hash)) return;
@@ -338,6 +338,7 @@ namespace AntShares.Consensus
 
         private void RequestChangeView()
         {
+            context.State |= ConsensusState.ViewChanging;
             context.ExpectedView[context.MinerIndex]++;
             Log($"request change view: height={context.Height} view={context.ViewNumber} nv={context.ExpectedView[context.MinerIndex]} state={context.State}");
             timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MinerIndex] + 1)), Timeout.InfiniteTimeSpan);

@@ -18,6 +18,8 @@ namespace AntShares.Core
         /// </summary>
         public CoinReference[] Claims;
 
+        public override Fixed8 NetworkFee => Fixed8.Zero;
+
         public override int Size => base.Size + Claims.GetVarSize();
 
         public ClaimTransaction()
@@ -90,7 +92,7 @@ namespace AntShares.Core
             if (result == null || result.Amount > Fixed8.Zero) return false;
             try
             {
-                return Wallet.CalculateClaimAmount(Claims) == -result.Amount;
+                return Wallet.CalculateClaimAmount(Claims, false) == -result.Amount;
             }
             catch (ArgumentException)
             {

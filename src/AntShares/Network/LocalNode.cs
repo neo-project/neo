@@ -54,7 +54,6 @@ namespace AntShares.Network
         static LocalNode()
         {
             LocalAddresses.UnionWith(NetworkInterface.GetAllNetworkInterfaces().SelectMany(p => p.GetIPProperties().UnicastAddresses).Select(p => p.Address.MapToIPv6()));
-            Blockchain.PersistCompleted += Blockchain_PersistCompleted;
         }
 
         public LocalNode()
@@ -75,6 +74,7 @@ namespace AntShares.Network
                 };
             }
             this.UserAgent = string.Format("/AntShares:{0}/", GetType().GetTypeInfo().Assembly.GetName().Version.ToString(3));
+            Blockchain.PersistCompleted += Blockchain_PersistCompleted;
         }
 
         private async Task AcceptPeersAsync()
@@ -155,7 +155,7 @@ namespace AntShares.Network
             }
         }
 
-        private static void Blockchain_PersistCompleted(object sender, Block block)
+        private void Blockchain_PersistCompleted(object sender, Block block)
         {
             lock (mem_pool)
             {
@@ -166,10 +166,11 @@ namespace AntShares.Network
                 if (mem_pool.Count == 0) return;
                 Transaction[] remain = mem_pool.Values.ToArray();
                 mem_pool.Clear();
-                foreach (Transaction tx in remain)
+                lock (temp_pool)
                 {
-                    AddTransaction(tx);
+                    temp_pool.UnionWith(remain);
                 }
+                new_tx_event.Set();
             }
         }
 
@@ -277,6 +278,7 @@ namespace AntShares.Network
             {
                 if (started > 0)
                 {
+                    Blockchain.PersistCompleted -= Blockchain_PersistCompleted;
                     if (listener != null) listener.Stop();
                     if (!connectThread.ThreadState.HasFlag(ThreadState.Unstarted)) connectThread.Join();
                     lock (unconnectedPeers)
