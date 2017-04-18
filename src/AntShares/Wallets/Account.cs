@@ -1,6 +1,7 @@
 ﻿using AntShares.Core;
 using AntShares.Cryptography;
 using System;
+using System.Linq;
 using System.Security.Cryptography;
 
 namespace AntShares.Wallets
@@ -60,7 +61,7 @@ namespace AntShares.Wallets
                 data[0] = 0x80;
                 Buffer.BlockCopy(PrivateKey, 0, data, 1, 32);
                 data[33] = 0x01;
-                byte[] checksum = data.Sha256(0, data.Length - 4).Sha256();
+                byte[] checksum = Crypto.Default.Hash256(data.Take(data.Length - 4).ToArray());
                 Buffer.BlockCopy(checksum, 0, data, data.Length - 4, 4);
                 string wif = Base58.Encode(data);
                 Array.Clear(data, 0, data.Length);

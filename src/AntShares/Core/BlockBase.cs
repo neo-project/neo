@@ -47,7 +47,7 @@ namespace AntShares.Core
             {
                 if (_hash == null)
                 {
-                    _hash = new UInt256(this.GetHashData().Sha256().Sha256());
+                    _hash = new UInt256(Crypto.Default.Hash256(this.GetHashData()));
                 }
                 return _hash;
             }
@@ -148,7 +148,7 @@ namespace AntShares.Core
             if (prev_header == null) return false;
             if (prev_header.Height + 1 != Height) return false;
             if (prev_header.Timestamp >= Timestamp) return false;
-            if (!this.VerifySignature()) return false;
+            if (!this.VerifyScripts()) return false;
             return true;
         }
     }

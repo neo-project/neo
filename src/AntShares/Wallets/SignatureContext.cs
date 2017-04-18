@@ -1,7 +1,7 @@
-﻿using AntShares.Compiler;
-using AntShares.Core;
+﻿using AntShares.Core;
 using AntShares.Cryptography.ECC;
 using AntShares.IO.Json;
+using AntShares.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;

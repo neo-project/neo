@@ -1,6 +1,9 @@
 ﻿using AntShares.Core;
 using AntShares.IO;
 using AntShares.IO.Caching;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -9,6 +12,7 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Net.WebSockets;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -39,6 +43,7 @@ namespace AntShares.Network
         internal ushort Port;
         internal readonly uint Nonce;
         private TcpListener listener;
+        private IWebHost ws_host;
         private Thread connectThread;
         private Thread poolThread;
         private readonly AutoResetEvent new_tx_event = new AutoResetEvent(false);
@@ -77,7 +82,7 @@ namespace AntShares.Network
             Blockchain.PersistCompleted += Blockchain_PersistCompleted;
         }
 
-        private async Task AcceptPeersAsync()
+        private async void AcceptPeersAsync()
         {
             while (disposed == 0)
             {
@@ -368,6 +373,14 @@ namespace AntShares.Network
             remoteNode.StartProtocol();
         }
 
+        private async Task ProcessWebSocketAsync(HttpContext context)
+        {
+            if (!context.WebSockets.IsWebSocketRequest) return;
+            WebSocket ws = await context.WebSockets.AcceptWebSocketAsync();
+            WebSocketRemoteNode remoteNode = new WebSocketRemoteNode(this, ws, new IPEndPoint(context.Connection.RemoteIpAddress, context.Connection.RemotePort));
+            OnConnected(remoteNode);
+        }
+
         public bool Relay(IInventory inventory)
         {
             if (inventory is MinerTransaction) return false;
@@ -506,33 +519,47 @@ namespace AntShares.Network
             }
         }
 
-        public void Start(int port)
+        public void Start(int port = 0, int ws_port = 0)
         {
             if (Interlocked.Exchange(ref started, 1) == 0)
             {
                 Task.Run(async () =>
                 {
-                    IPAddress address = LocalAddresses.FirstOrDefault(p => p.IsIPv4MappedToIPv6 && !IsIntranetAddress(p));
-                    if (address == null && UpnpEnabled && await UPnP.DiscoverAsync())
+                    if (port > 0 || ws_port > 0)
                     {
-                        try
+                        IPAddress address = LocalAddresses.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork && !IsIntranetAddress(p));
+                        if (address == null && UpnpEnabled && await UPnP.DiscoverAsync())
                         {
-                            address = await UPnP.GetExternalIPAsync();
-                            await UPnP.ForwardPortAsync(port, ProtocolType.Tcp, "AntShares");
-                            LocalAddresses.Add(address);
+                            try
+                            {
+                                address = await UPnP.GetExternalIPAsync();
+                                if (port > 0)
+                                    await UPnP.ForwardPortAsync(port, ProtocolType.Tcp, "AntShares");
+                                if (ws_port > 0)
+                                    await UPnP.ForwardPortAsync(ws_port, ProtocolType.Tcp, "AntShares WebSocket");
+                                LocalAddresses.Add(address);
+                            }
+                            catch { }
                         }
-                        catch { }
                     }
-                    listener = new TcpListener(IPAddress.Any, port);
-                    try
-                    {
-                        listener.Start();
-                        Port = (ushort)port;
-                    }
-                    catch (SocketException) { }
                     connectThread.Start();
                     poolThread?.Start();
-                    if (Port > 0) await AcceptPeersAsync();
+                    if (port > 0)
+                    {
+                        listener = new TcpListener(IPAddress.Any, port);
+                        try
+                        {
+                            listener.Start();
+                            Port = (ushort)port;
+                            AcceptPeersAsync();
+                        }
+                        catch (SocketException) { }
+                    }
+                    if (ws_port > 0)
+                    {
+                        ws_host = new WebHostBuilder().UseKestrel().UseUrls($"http://*:{ws_port}").Configure(app => app.UseWebSockets().Run(ProcessWebSocketAsync)).Build();
+                        ws_host.Start();
+                    }
                 });
             }
         }

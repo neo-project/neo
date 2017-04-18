@@ -26,7 +26,7 @@ namespace AntShares.Network.Payloads
             {
                 if (_hash == null)
                 {
-                    _hash = new UInt256(this.GetHashData().Sha256().Sha256());
+                    _hash = new UInt256(Crypto.Default.Hash256(this.GetHashData()));
                 }
                 return _hash;
             }
@@ -113,7 +113,7 @@ namespace AntShares.Network.Payloads
                 return false;
             if (Height != Blockchain.Default.Height + 1)
                 return false;
-            return this.VerifySignature();
+            return this.VerifyScripts();
         }
     }
 }

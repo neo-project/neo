@@ -50,7 +50,7 @@ namespace AntShares.Core
             {
                 if (_hash == null)
                 {
-                    _hash = new UInt256(this.GetHashData().Sha256().Sha256());
+                    _hash = new UInt256(Crypto.Default.Hash256(this.GetHashData()));
                 }
                 return _hash;
             }
@@ -399,7 +399,7 @@ namespace AntShares.Core
                     if (!pubkeys.Add(tx.PublicKey)) return false;
                 }
             }
-            return this.VerifySignature();
+            return this.VerifyScripts();
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using AntShares.Compiler;
-using AntShares.Core;
+﻿using AntShares.Core;
 using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using AntShares.VM;

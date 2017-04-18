@@ -1,5 +1,4 @@
-﻿using AntShares.Compiler;
-using AntShares.Cryptography;
+﻿using AntShares.Cryptography;
 using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using AntShares.VM;
@@ -54,7 +53,8 @@ namespace AntShares.Core
             Admin = (new[] { (byte)OpCode.PUSHT }).ToScriptHash(),
             Attributes = new TransactionAttribute[0],
             Inputs = new CoinReference[0],
-            Outputs = new TransactionOutput[0]
+            Outputs = new TransactionOutput[0],
+            Scripts = new Witness[0]
         };
 
         /// <summary>
@@ -70,7 +70,8 @@ namespace AntShares.Core
             Admin = (new[] { (byte)OpCode.PUSHF }).ToScriptHash(),
             Attributes = new TransactionAttribute[0],
             Inputs = new CoinReference[0],
-            Outputs = new TransactionOutput[0]
+            Outputs = new TransactionOutput[0],
+            Scripts = new Witness[0]
         };
 
         /// <summary>
@@ -156,18 +157,6 @@ namespace AntShares.Core
 
         static Blockchain()
         {
-            AntShare.Scripts = new[] { new Witness { RedeemScript = Contract.CreateSignatureRedeemScript(AntShare.Issuer) } };
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.EmitPush(ECCurve.Secp256r1.G.EncodePoint(true).Skip(1).Concat(AntShare.GetHashForSigning()).ToArray());
-                AntShare.Scripts[0].StackScript = sb.ToArray();
-            }
-            AntCoin.Scripts = new[] { new Witness { RedeemScript = Contract.CreateSignatureRedeemScript(AntCoin.Issuer) } };
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.EmitPush(ECCurve.Secp256r1.G.EncodePoint(true).Skip(1).Concat(AntCoin.GetHashForSigning()).ToArray());
-                AntCoin.Scripts[0].StackScript = sb.ToArray();
-            }
             GenesisBlock.RebuildMerkleRoot();
         }
 

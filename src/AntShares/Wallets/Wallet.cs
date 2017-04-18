@@ -485,7 +485,7 @@ namespace AntShares.Wallets
             byte[] data = Base58.Decode(wif);
             if (data.Length != 38 || data[0] != 0x80 || data[33] != 0x01)
                 throw new FormatException();
-            byte[] checksum = data.Sha256(0, data.Length - 4).Sha256();
+            byte[] checksum = Crypto.Default.Hash256(data.Take(data.Length - 4).ToArray());
             if (!data.Skip(data.Length - 4).SequenceEqual(checksum.Take(4)))
                 throw new FormatException();
             byte[] privateKey = new byte[32];
@@ -796,7 +796,7 @@ namespace AntShares.Wallets
         public static string ToAddress(UInt160 scriptHash)
         {
             byte[] data = new byte[] { CoinVersion }.Concat(scriptHash.ToArray()).ToArray();
-            return Base58.Encode(data.Concat(data.Sha256().Sha256().Take(4)).ToArray());
+            return Base58.Encode(data.Concat(Crypto.Default.Hash256(data).Take(4)).ToArray());
         }
 
         public static UInt160 ToScriptHash(string address)
@@ -806,7 +806,7 @@ namespace AntShares.Wallets
                 throw new FormatException();
             if (data[0] != CoinVersion)
                 throw new FormatException();
-            if (!data.Take(21).Sha256().Sha256().Take(4).SequenceEqual(data.Skip(21)))
+            if (!Crypto.Default.Hash256(data.Take(21).ToArray()).Take(4).SequenceEqual(data.Skip(21)))
                 throw new FormatException();
             return new UInt160(data.Skip(1).Take(20).ToArray());
         }

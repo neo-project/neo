@@ -3,7 +3,6 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -62,52 +61,49 @@ namespace AntShares.Network
         {
             IPEndPoint remoteEndpoint = (IPEndPoint)socket.RemoteEndPoint;
             RemoteEndpoint = new IPEndPoint(remoteEndpoint.Address.MapToIPv6(), remoteEndpoint.Port);
-            socket.SendTimeout = 10000;
             stream = new NetworkStream(socket);
             connected = true;
         }
 
-        protected override Message ReceiveMessage(TimeSpan timeout)
+        protected override async Task<Message> ReceiveMessageAsync(TimeSpan timeout)
         {
-            if (timeout == Timeout.InfiniteTimeSpan) timeout = TimeSpan.Zero;
-            BinaryReader reader = null;
+            CancellationTokenSource source = new CancellationTokenSource(timeout);
             try
             {
-                reader = new BinaryReader(stream, Encoding.UTF8, true);
-                socket.ReceiveTimeout = (int)timeout.TotalMilliseconds;
-                return reader.ReadSerializable<Message>();
+                return await Message.DeserializeFromAsync(stream, source.Token);
             }
             catch (ArgumentException) { }
             catch (ObjectDisposedException) { }
-            catch (FormatException)
+            catch (Exception ex) when (ex is FormatException || ex is IOException || ex is OperationCanceledException)
             {
                 Disconnect(true);
             }
-            catch (IOException)
+            finally
+            {
+                source.Dispose();
+            }
+            return null;
+        }
+
+        protected override async Task<bool> SendMessageAsync(Message message)
+        {
+            if (!connected) throw new InvalidOperationException();
+            if (disposed > 0) return false;
+            byte[] buffer = message.ToArray();
+            CancellationTokenSource source = new CancellationTokenSource(10000);
+            try
+            {
+                await stream.WriteAsync(buffer, 0, buffer.Length, source.Token);
+                return true;
+            }
+            catch (ObjectDisposedException) { }
+            catch (Exception ex) when (ex is IOException || ex is OperationCanceledException)
             {
                 Disconnect(false);
             }
             finally
             {
-                if (reader != null) reader.Dispose();
-            }
-            return null;
-        }
-
-        protected override bool SendMessage(Message message)
-        {
-            if (!connected) throw new InvalidOperationException();
-            if (disposed > 0) return false;
-            byte[] buffer = message.ToArray();
-            try
-            {
-                stream.Write(buffer, 0, buffer.Length);
-                return true;
-            }
-            catch (ObjectDisposedException) { }
-            catch (IOException)
-            {
-                Disconnect(false);
+                source.Dispose();
             }
             return false;
         }

@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace AntShares.Network
 {
@@ -25,8 +26,6 @@ namespace AntShares.Network
         private HashSet<UInt256> missions = new HashSet<UInt256>();
 
         private LocalNode localNode;
-        private Thread protocolThread;
-        private Thread sendThread;
         private int disposed = 0;
         private BloomFilter bloom_filter;
 
@@ -37,8 +36,6 @@ namespace AntShares.Network
         protected RemoteNode(LocalNode localNode)
         {
             this.localNode = localNode;
-            this.protocolThread = new Thread(RunProtocol) { IsBackground = true };
-            this.sendThread = new Thread(SendLoop) { IsBackground = true };
         }
 
         public virtual void Disconnect(bool error)
@@ -50,9 +47,6 @@ namespace AntShares.Network
                 {
                     missions_global.ExceptWith(missions);
                 }
-                if (protocolThread != Thread.CurrentThread && !protocolThread.ThreadState.HasFlag(ThreadState.Unstarted))
-                    protocolThread.Join();
-                if (!sendThread.ThreadState.HasFlag(ThreadState.Unstarted)) sendThread.Join();
             }
         }
 
@@ -297,7 +291,7 @@ namespace AntShares.Network
             }
         }
 
-        protected abstract Message ReceiveMessage(TimeSpan timeout);
+        protected abstract Task<Message> ReceiveMessageAsync(TimeSpan timeout);
 
         internal bool Relay(IInventory data)
         {
@@ -333,11 +327,13 @@ namespace AntShares.Network
             EnqueueMessage("getaddr", null, true);
         }
 
-        private void RunProtocol()
+        protected abstract Task<bool> SendMessageAsync(Message message);
+
+        internal async void StartProtocol()
         {
-            if (!SendMessage(Message.Create("version", VersionPayload.Create(localNode.Port, localNode.Nonce, localNode.UserAgent))))
+            if (!await SendMessageAsync(Message.Create("version", VersionPayload.Create(localNode.Port, localNode.Nonce, localNode.UserAgent))))
                 return;
-            Message message = ReceiveMessage(TimeSpan.FromSeconds(30));
+            Message message = await ReceiveMessageAsync(TimeSpan.FromSeconds(30));
             if (message == null) return;
             if (message.Command != "version")
             {
@@ -383,8 +379,8 @@ namespace AntShares.Network
             {
                 ListenerEndpoint = new IPEndPoint(RemoteEndpoint.Address, Version.Port);
             }
-            if (!SendMessage(Message.Create("verack"))) return;
-            message = ReceiveMessage(TimeSpan.FromSeconds(30));
+            if (!await SendMessageAsync(Message.Create("verack"))) return;
+            message = await ReceiveMessageAsync(TimeSpan.FromSeconds(30));
             if (message == null) return;
             if (message.Command != "verack")
             {
@@ -395,8 +391,7 @@ namespace AntShares.Network
             {
                 EnqueueMessage("getheaders", GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash), true);
             }
-            sendThread.Name = $"RemoteNode.SendLoop@{RemoteEndpoint}";
-            sendThread.Start();
+            StartSendLoop();
             while (disposed == 0)
             {
                 if (Blockchain.Default?.IsReadOnly == false)
@@ -407,7 +402,7 @@ namespace AntShares.Network
                     }
                 }
                 TimeSpan timeout = missions.Count == 0 ? TimeSpan.FromMinutes(30) : TimeSpan.FromSeconds(60);
-                message = ReceiveMessage(timeout);
+                message = await ReceiveMessageAsync(timeout);
                 if (message == null) break;
                 try
                 {
@@ -426,7 +421,7 @@ namespace AntShares.Network
             }
         }
 
-        private void SendLoop()
+        private async void StartSendLoop()
         {
             while (disposed == 0)
             {
@@ -447,17 +442,9 @@ namespace AntShares.Network
                 }
                 else
                 {
-                    SendMessage(message);
+                    await SendMessageAsync(message);
                 }
             }
-        }
-
-        protected abstract bool SendMessage(Message message);
-
-        internal void StartProtocol()
-        {
-            protocolThread.Name = $"RemoteNode.RunProtocol@{RemoteEndpoint}";
-            protocolThread.Start();
         }
 
         private bool TestFilter(BloomFilter filter, Transaction tx)

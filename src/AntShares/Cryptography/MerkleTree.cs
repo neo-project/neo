@@ -43,7 +43,7 @@ namespace AntShares.Cryptography
                     parents[i].RightChild = leaves[i * 2 + 1];
                     leaves[i * 2 + 1].Parent = parents[i];
                 }
-                parents[i].Hash = new UInt256(parents[i].LeftChild.Hash.ToArray().Concat(parents[i].RightChild.Hash.ToArray()).Sha256().Sha256());
+                parents[i].Hash = new UInt256(Crypto.Default.Hash256(parents[i].LeftChild.Hash.ToArray().Concat(parents[i].RightChild.Hash.ToArray()).ToArray()));
             }
             return Build(parents); //TailCall
         }

@@ -1,12 +1,9 @@
-﻿using AntShares.Compiler;
-using AntShares.Cryptography;
+﻿using AntShares.Cryptography;
 using AntShares.VM;
 using AntShares.Wallets;
 using System;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace AntShares.Core
 {
@@ -27,53 +24,6 @@ namespace AntShares.Core
         }
 
         /// <summary>
-        /// 获取需要签名的散列值
-        /// </summary>
-        /// <param name="signable">要签名的数据</param>
-        /// <returns>返回需要签名的散列值</returns>
-        public static byte[] GetHashForSigning(this ISignable signable)
-        {
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
-            {
-                signable.SerializeUnsigned(writer);
-                writer.Flush();
-                return ms.ToArray().Sha256();
-            }
-        }
-
-        /// <summary>
-        /// 根据传入的公私钥，对可签名的对象进行签名
-        /// </summary>
-        /// <param name="signable">要签名的数据</param>
-        /// <param name="prikey">私钥</param>
-        /// <param name="pubkey">公钥</param>
-        /// <returns>返回签名后的结果</returns>
-        internal static byte[] Sign(this ISignable signable, byte[] prikey, byte[] pubkey)
-        {
-#if NET461
-            const int ECDSA_PRIVATE_P256_MAGIC = 0x32534345;
-            prikey = BitConverter.GetBytes(ECDSA_PRIVATE_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey).Concat(prikey).ToArray();
-            using (CngKey key = CngKey.Import(prikey, CngKeyBlobFormat.EccPrivateBlob))
-            using (ECDsaCng ecdsa = new ECDsaCng(key))
-#else
-            using (var ecdsa = ECDsa.Create(new ECParameters
-            {
-                Curve = ECCurve.NamedCurves.nistP256,
-                D = prikey,
-                Q = new ECPoint
-                {
-                    X = pubkey.Take(32).ToArray(),
-                    Y = pubkey.Skip(32).ToArray()
-                }
-            }))
-#endif
-            {
-                return ecdsa.SignHash(signable.GetHashForSigning());
-            }
-        }
-
-        /// <summary>
         /// 根据传入的账户信息，对可签名的对象进行签名
         /// </summary>
         /// <param name="signable">要签名的数据</param>
@@ -83,17 +33,18 @@ namespace AntShares.Core
         {
             using (account.Decrypt())
             {
-                return signable.Sign(account.PrivateKey, account.PublicKey.EncodePoint(false).Skip(1).ToArray());
+                return Crypto.Default.Sign(signable.GetHashData(), account.PrivateKey, account.PublicKey.EncodePoint(false).Skip(1).ToArray());
             }
         }
 
         public static UInt160 ToScriptHash(this byte[] script)
         {
-            return new UInt160(script.Sha256().RIPEMD160());
+            return new UInt160(Crypto.Default.Hash160(script));
         }
 
-        internal static bool VerifySignature(this ISignable signable)
+        internal static bool VerifyScripts(this ISignable signable)
         {
+            const int max_steps = 1200;
             UInt160[] hashes;
             try
             {
@@ -119,45 +70,30 @@ namespace AntShares.Core
                 {
                     if (hashes[i] != redeem_script.ToScriptHash()) return false;
                 }
-                ExecutionEngine engine = new ExecutionEngine(signable, ECDsaCrypto.Default, 1200, Blockchain.Default, InterfaceEngine.Default);
+                int nOpCount = 0;
+                ExecutionEngine engine = new ExecutionEngine(signable, Crypto.Default, Blockchain.Default, InterfaceEngine.Default);
                 engine.LoadScript(redeem_script, false);
                 engine.LoadScript(signable.Scripts[i].StackScript, true);
-                engine.Execute();
-                if (engine.State != VMState.HALT) return false;
+                while (!engine.State.HasFlag(VMState.HALT) && !engine.State.HasFlag(VMState.FAULT))
+                {
+                    if (engine.CurrentContext.InstructionPointer < engine.CurrentContext.Script.Length)
+                    {
+                        if (++nOpCount > max_steps) return false;
+                        if (engine.CurrentContext.NextInstruction == OpCode.CHECKMULTISIG)
+                        {
+                            if (engine.EvaluationStack.Count == 0) return false;
+                            int n = (int)engine.EvaluationStack.Peek().GetBigInteger();
+                            if (n < 1) return false;
+                            nOpCount += n;
+                            if (nOpCount > max_steps) return false;
+                        }
+                    }
+                    engine.StepInto();
+                }
+                if (engine.State.HasFlag(VMState.FAULT)) return false;
                 if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
             }
             return true;
-        }
-
-        /// <summary>
-        /// 根据传入的公钥与签名，对可签名对象的签名进行验证
-        /// </summary>
-        /// <param name="signable">要验证的数据</param>
-        /// <param name="pubkey">公钥</param>
-        /// <param name="signature">签名</param>
-        /// <returns>返回验证结果</returns>
-        public static bool VerifySignature(this ISignable signable, Cryptography.ECC.ECPoint pubkey, byte[] signature)
-        {
-            byte[] pubk = pubkey.EncodePoint(false).Skip(1).ToArray();
-#if NET461
-            const int ECDSA_PUBLIC_P256_MAGIC = 0x31534345;
-            pubk = BitConverter.GetBytes(ECDSA_PUBLIC_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubk).ToArray();
-            using (CngKey key = CngKey.Import(pubk, CngKeyBlobFormat.EccPublicBlob))
-            using (ECDsaCng ecdsa = new ECDsaCng(key))
-#else
-            using (var ecdsa = ECDsa.Create(new ECParameters
-            {
-                Curve = ECCurve.NamedCurves.nistP256,
-                Q = new ECPoint
-                {
-                    X = pubk.Take(32).ToArray(),
-                    Y = pubk.Skip(32).ToArray()
-                }
-            }))
-#endif
-            {
-                return ecdsa.VerifyHash(signable.GetHashForSigning(), signature);
-            }
         }
     }
 }
