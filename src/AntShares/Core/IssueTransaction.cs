@@ -36,9 +36,9 @@ namespace AntShares.Core
             HashSet<UInt160> hashes = new HashSet<UInt160>(base.GetScriptHashesForVerifying());
             foreach (TransactionResult result in GetTransactionResults().Where(p => p.Amount < Fixed8.Zero))
             {
-                RegisterTransaction tx = Blockchain.Default.GetTransaction(result.AssetId) as RegisterTransaction;
-                if (tx == null) throw new InvalidOperationException();
-                hashes.Add(tx.Admin);
+                AssetState asset = Blockchain.Default.GetAssetState(result.AssetId);
+                if (asset == null) throw new InvalidOperationException();
+                hashes.Add(asset.Issuer);
             }
             return hashes.OrderBy(p => p).ToArray();
         }
@@ -54,14 +54,13 @@ namespace AntShares.Core
             if (results == null) return false;
             foreach (TransactionResult r in results)
             {
-                RegisterTransaction tx = Blockchain.Default.GetTransaction(r.AssetId) as RegisterTransaction;
-                if (tx == null) return false;
-                if (tx.Amount < Fixed8.Zero) continue;
+                AssetState asset = Blockchain.Default.GetAssetState(r.AssetId);
+                if (asset == null) return false;
+                if (asset.Amount < Fixed8.Zero) continue;
                 if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.Statistics))
                     return false;
-                Fixed8 quantity_issued = Blockchain.Default.GetQuantityIssued(r.AssetId);
-                quantity_issued += mempool.OfType<IssueTransaction>().Where(p => p != this).SelectMany(p => p.Outputs).Where(p => p.AssetId == r.AssetId).Sum(p => p.Value);
-                if (tx.Amount - quantity_issued < -r.Amount) return false;
+                Fixed8 quantity_issued = asset.Available + mempool.OfType<IssueTransaction>().Where(p => p != this).SelectMany(p => p.Outputs).Where(p => p.AssetId == r.AssetId).Sum(p => p.Value);
+                if (asset.Amount - quantity_issued < -r.Amount) return false;
             }
             return true;
         }

@@ -4,7 +4,6 @@ using AntShares.IO.Json;
 using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -33,13 +32,13 @@ namespace AntShares.Core
         /// <summary>
         /// 发行者的公钥
         /// </summary>
-        public ECPoint Issuer;
+        public ECPoint Owner;
         /// <summary>
         /// 资产管理员的合约散列值
         /// </summary>
         public UInt160 Admin;
 
-        public override int Size => base.Size + sizeof(AssetType) + Name.GetVarSize() + Amount.Size + sizeof(byte) + Issuer.Size + Admin.Size;
+        public override int Size => base.Size + sizeof(AssetType) + Name.GetVarSize() + Amount.Size + sizeof(byte) + Owner.Size + Admin.Size;
 
         /// <summary>
         /// 系统费用
@@ -69,47 +68,8 @@ namespace AntShares.Core
             Name = reader.ReadVarString(1024);
             Amount = reader.ReadSerializable<Fixed8>();
             Precision = reader.ReadByte();
-            Issuer = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
+            Owner = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
             Admin = reader.ReadSerializable<UInt160>();
-        }
-
-        private Dictionary<CultureInfo, string> _names;
-        /// <summary>
-        /// 获取资产的本地化名称
-        /// </summary>
-        /// <param name="culture">区域性/语言名称</param>
-        /// <returns>返回资产名称</returns>
-        public string GetName(CultureInfo culture = null)
-        {
-            if (_names == null)
-            {
-                JObject name_obj;
-                try
-                {
-                    name_obj = JObject.Parse(Name);
-                }
-                catch (FormatException)
-                {
-                    name_obj = Name;
-                }
-                if (name_obj is JString)
-                    _names = new Dictionary<CultureInfo, string> { { new CultureInfo("en"), name_obj.AsString() } };
-                else
-                    _names = ((JArray)JObject.Parse(Name)).ToDictionary(p => new CultureInfo(p["lang"].AsString()), p => p["name"].AsString());
-            }
-            if (culture == null) culture = CultureInfo.CurrentCulture;
-            if (_names.ContainsKey(culture))
-            {
-                return _names[culture];
-            }
-            else if (_names.ContainsKey(new CultureInfo("en")))
-            {
-                return _names[new CultureInfo("en")];
-            }
-            else
-            {
-                return _names.Values.First();
-            }
         }
 
         /// <summary>
@@ -118,8 +78,8 @@ namespace AntShares.Core
         /// <returns>返回需要校验的脚本Hash值</returns>
         public override UInt160[] GetScriptHashesForVerifying()
         {
-            UInt160 issuer = Contract.CreateSignatureRedeemScript(Issuer).ToScriptHash();
-            return base.GetScriptHashesForVerifying().Union(new[] { issuer }).OrderBy(p => p).ToArray();
+            UInt160 owner = Contract.CreateSignatureRedeemScript(Owner).ToScriptHash();
+            return base.GetScriptHashesForVerifying().Union(new[] { owner }).OrderBy(p => p).ToArray();
         }
 
         protected override void OnDeserialized()
@@ -141,7 +101,7 @@ namespace AntShares.Core
             writer.WriteVarString(Name);
             writer.Write(Amount);
             writer.Write(Precision);
-            writer.Write(Issuer);
+            writer.Write(Owner);
             writer.Write(Admin);
         }
 
@@ -166,18 +126,9 @@ namespace AntShares.Core
             json["asset"]["precision"] = Precision;
             json["asset"]["high"] = Amount.GetData() >> 32;
             json["asset"]["low"] = Amount.GetData() & 0xffffffff;
-            json["asset"]["issuer"] = Issuer.ToString();
+            json["asset"]["owner"] = Owner.ToString();
             json["asset"]["admin"] = Wallet.ToAddress(Admin);
             return json;
-        }
-
-        /// <summary>
-        /// 返回资产的本地化名称
-        /// </summary>
-        /// <returns>返回资产的本地化名称</returns>
-        public override string ToString()
-        {
-            return GetName();
         }
 
         public override bool Verify(IEnumerable<Transaction> mempool)

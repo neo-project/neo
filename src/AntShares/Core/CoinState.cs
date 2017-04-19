@@ -9,7 +9,7 @@ namespace AntShares.Core
 
         Confirmed = 1 << 0,
         Spent = 1 << 1,
-        Vote = 1 << 2,
+        //Vote = 1 << 2,
         Claimed = 1 << 3,
         Locked = 1 << 4,
         Frozen = 1 << 5,
