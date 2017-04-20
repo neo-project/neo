@@ -241,7 +241,7 @@ namespace AntShares.VM
         {
             RegisterTransaction asset = engine.EvaluationStack.Pop().GetInterface<RegisterTransaction>();
             if (asset == null) return false;
-            engine.EvaluationStack.Push(asset.Issuer.EncodePoint(true));
+            engine.EvaluationStack.Push(asset.Owner.EncodePoint(true));
             return true;
         }
 

@@ -1,5 +1,4 @@
 ﻿using AntShares.Cryptography;
-using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using AntShares.IO.Json;
 using AntShares.Network;
@@ -232,9 +231,9 @@ namespace AntShares.Core
             hashes.UnionWith(Attributes.Where(p => p.Usage == TransactionAttributeUsage.Script).Select(p => new UInt160(p.Data)));
             foreach (var group in Outputs.GroupBy(p => p.AssetId))
             {
-                RegisterTransaction tx = Blockchain.Default.GetTransaction(group.Key) as RegisterTransaction;
-                if (tx == null) throw new InvalidOperationException();
-                if (tx.AssetType.HasFlag(AssetType.DutyFlag))
+                AssetState asset = Blockchain.Default.GetAssetState(group.Key);
+                if (asset == null) throw new InvalidOperationException();
+                if (asset.AssetType.HasFlag(AssetType.DutyFlag))
                 {
                     hashes.UnionWith(group.Select(p => p.ScriptHash));
                 }
@@ -347,7 +346,7 @@ namespace AntShares.Core
                 return false;
             foreach (var group in Outputs.GroupBy(p => p.AssetId))
             {
-                RegisterTransaction asset = Blockchain.Default.GetTransaction(group.Key) as RegisterTransaction;
+                AssetState asset = Blockchain.Default.GetAssetState(group.Key);
                 if (asset == null) return false;
                 foreach (TransactionOutput output in group)
                     if (output.Value.GetData() % (long)Math.Pow(10, 8 - asset.Precision) != 0)
@@ -380,25 +379,6 @@ namespace AntShares.Core
             }
             if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
                 return false;
-            if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.Vote) > 1024)
-                return false;
-            if (Attributes.Where(p => p.Usage == TransactionAttributeUsage.Vote).Select(p => new UInt256(p.Data)).Distinct().Count() != Attributes.Count(p => p.Usage == TransactionAttributeUsage.Vote))
-                return false;
-            if (Attributes.Any(p => p.Usage == TransactionAttributeUsage.Vote))
-            {
-                if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
-                    return false;
-                if (Outputs.All(p => !p.AssetId.Equals(Blockchain.AntShare.Hash)))
-                    return false;
-                HashSet<ECPoint> pubkeys = new HashSet<ECPoint>();
-                foreach (UInt256 vote in Attributes.Where(p => p.Usage == TransactionAttributeUsage.Vote).Select(p => new UInt256(p.Data)))
-                {
-                    EnrollmentTransaction tx = Blockchain.Default.GetTransaction(vote) as EnrollmentTransaction;
-                    if (tx == null) return false;
-                    if (!Blockchain.Default.ContainsUnspent(vote, 0)) return false;
-                    if (!pubkeys.Add(tx.PublicKey)) return false;
-                }
-            }
             return this.VerifyScripts();
         }
     }

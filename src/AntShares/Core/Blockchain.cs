@@ -49,7 +49,7 @@ namespace AntShares.Core
             Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]",
             Amount = Fixed8.FromDecimal(100000000),
             Precision = 0,
-            Issuer = ECCurve.Secp256r1.Infinity,
+            Owner = ECCurve.Secp256r1.Infinity,
             Admin = (new[] { (byte)OpCode.PUSHT }).ToScriptHash(),
             Attributes = new TransactionAttribute[0],
             Inputs = new CoinReference[0],
@@ -66,7 +66,7 @@ namespace AntShares.Core
             Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币\"},{\"lang\":\"en\",\"name\":\"AntCoin\"}]",
             Amount = Fixed8.FromDecimal(MintingAmount.Sum(p => p * DecrementInterval)),
             Precision = 8,
-            Issuer = ECCurve.Secp256r1.Infinity,
+            Owner = ECCurve.Secp256r1.Infinity,
             Admin = (new[] { (byte)OpCode.PUSHF }).ToScriptHash(),
             Attributes = new TransactionAttribute[0],
             Inputs = new CoinReference[0],
@@ -202,6 +202,10 @@ namespace AntShares.Core
 
         public abstract void Dispose();
 
+        public abstract AccountState GetAccountState(UInt160 script_hash);
+
+        public abstract AssetState GetAssetState(UInt256 asset_id);
+
         /// <summary>
         /// 根据指定的高度，返回对应的区块信息
         /// </summary>
@@ -235,17 +239,17 @@ namespace AntShares.Core
             return null;
         }
 
-        public virtual FunctionCode GetContract(UInt160 hash)
+        public virtual ContractState GetContract(UInt160 hash)
         {
             return null;
         }
 
-        public IEnumerable<EnrollmentTransaction> GetEnrollments()
+        public IEnumerable<ValidatorState> GetEnrollments()
         {
             return GetEnrollments(Enumerable.Empty<Transaction>());
         }
 
-        public abstract IEnumerable<EnrollmentTransaction> GetEnrollments(IEnumerable<Transaction> others);
+        public abstract IEnumerable<ValidatorState> GetEnrollments(IEnumerable<Transaction> others);
 
         /// <summary>
         /// 根据指定的高度，返回对应的区块头信息
@@ -299,26 +303,20 @@ namespace AntShares.Core
             if (!Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Ability.HasFlag(BlockchainAbility.UnspentIndexes))
                 throw new NotSupportedException();
             //TODO: 此处排序可能将耗费大量内存，考虑是否采用其它机制
-            Vote[] votes = GetVotes(others).OrderBy(p => p.Enrollments.Length).ToArray();
+            VoteState[] votes = GetVotes(others).OrderBy(p => p.PublicKeys.Length).ToArray();
             int miner_count = (int)votes.WeightedFilter(0.25, 0.75, p => p.Count.GetData(), (p, w) => new
             {
-                MinerCount = p.Enrollments.Length,
+                MinerCount = p.PublicKeys.Length,
                 Weight = w
             }).WeightedAverage(p => p.MinerCount, p => p.Weight);
             miner_count = Math.Max(miner_count, StandbyMiners.Length);
-            Dictionary<ECPoint, Fixed8> miners = new Dictionary<ECPoint, Fixed8>();
-            Dictionary<UInt256, ECPoint> enrollments = GetEnrollments(others).ToDictionary(p => p.Hash, p => p.PublicKey);
+            Dictionary<ECPoint, Fixed8> miners = GetEnrollments(others).ToDictionary(p => p.PublicKey, p => Fixed8.Zero);
             foreach (var vote in votes)
             {
-                foreach (UInt256 hash in vote.Enrollments.Take(miner_count))
+                foreach (ECPoint pubkey in vote.PublicKeys.Take(miner_count))
                 {
-                    if (!enrollments.ContainsKey(hash)) continue;
-                    ECPoint pubkey = enrollments[hash];
-                    if (!miners.ContainsKey(pubkey))
-                    {
-                        miners.Add(pubkey, Fixed8.Zero);
-                    }
-                    miners[pubkey] += vote.Count;
+                    if (miners.ContainsKey(pubkey))
+                        miners[pubkey] += vote.Count;
                 }
             }
             return miners.OrderByDescending(p => p.Value).ThenBy(p => p.Key).Select(p => p.Key).Concat(StandbyMiners).Take(miner_count);
@@ -337,13 +335,6 @@ namespace AntShares.Core
         /// <param name="hash">散列值</param>
         /// <returns>返回下一个区块的散列值</returns>
         public abstract UInt256 GetNextBlockHash(UInt256 hash);
-
-        /// <summary>
-        /// 根据指定的资产编号，返回对应资产的发行量
-        /// </summary>
-        /// <param name="asset_id">资产编号</param>
-        /// <returns>返回对应资产的当前已经发行的数量</returns>
-        public abstract Fixed8 GetQuantityIssued(UInt256 asset_id);
 
         byte[] IScriptTable.GetScript(byte[] script_hash)
         {
@@ -396,7 +387,7 @@ namespace AntShares.Core
             return null;
         }
 
-        public abstract Dictionary<ushort, Claimable> GetUnclaimed(UInt256 hash);
+        public abstract Dictionary<ushort, SpentCoin> GetUnclaimed(UInt256 hash);
 
         /// <summary>
         /// 根据指定的散列值和索引，获取对应的未花费的资产
@@ -410,12 +401,12 @@ namespace AntShares.Core
         /// 获取选票信息
         /// </summary>
         /// <returns>返回一个选票列表，包含当前区块链中所有有效的选票</returns>
-        public IEnumerable<Vote> GetVotes()
+        public IEnumerable<VoteState> GetVotes()
         {
             return GetVotes(Enumerable.Empty<Transaction>());
         }
 
-        public abstract IEnumerable<Vote> GetVotes(IEnumerable<Transaction> others);
+        public abstract IEnumerable<VoteState> GetVotes(IEnumerable<Transaction> others);
 
         /// <summary>
         /// 判断交易是否双花

@@ -130,10 +130,10 @@ namespace AntShares.Wallets
         {
             if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
                 throw new NotSupportedException();
-            List<Claimable> unclaimed = new List<Claimable>();
+            List<SpentCoin> unclaimed = new List<SpentCoin>();
             foreach (var group in inputs.GroupBy(p => p.PrevHash))
             {
-                Dictionary<ushort, Claimable> claimable = Blockchain.Default.GetUnclaimed(group.Key);
+                Dictionary<ushort, SpentCoin> claimable = Blockchain.Default.GetUnclaimed(group.Key);
                 if (claimable == null || claimable.Count == 0)
                     if (ignoreClaimed)
                         continue;
@@ -154,7 +154,7 @@ namespace AntShares.Wallets
 
         public static Fixed8 CalculateClaimAmountUnavailable(IEnumerable<CoinReference> inputs, uint height)
         {
-            List<Claimable> unclaimed = new List<Claimable>();
+            List<SpentCoin> unclaimed = new List<SpentCoin>();
             foreach (var group in inputs.GroupBy(p => p.PrevHash))
             {
                 int height_start;
@@ -165,7 +165,7 @@ namespace AntShares.Wallets
                 {
                     if (claim.PrevIndex >= tx.Outputs.Length || !tx.Outputs[claim.PrevIndex].AssetId.Equals(Blockchain.AntShare.Hash))
                         throw new ArgumentException();
-                    unclaimed.Add(new Claimable
+                    unclaimed.Add(new SpentCoin
                     {
                         Output = tx.Outputs[claim.PrevIndex],
                         StartHeight = (uint)height_start,
@@ -176,7 +176,7 @@ namespace AntShares.Wallets
             return CalculateClaimAmountInternal(unclaimed);
         }
 
-        private static Fixed8 CalculateClaimAmountInternal(IEnumerable<Claimable> unclaimed)
+        private static Fixed8 CalculateClaimAmountInternal(IEnumerable<SpentCoin> unclaimed)
         {
             Fixed8 amount_claimed = Fixed8.Zero;
             foreach (var group in unclaimed.GroupBy(p => new { p.StartHeight, p.EndHeight }))

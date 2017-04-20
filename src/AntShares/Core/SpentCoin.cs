@@ -1,6 +1,6 @@
 ﻿namespace AntShares.Core
 {
-    public class Claimable
+    public class SpentCoin
     {
         public TransactionOutput Output;
         public uint StartHeight;

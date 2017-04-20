@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AntShares.IO;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -48,7 +49,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             return this;
         }
 
-        public SliceBuilder Add(UIntBase value)
+        public SliceBuilder Add(ISerializable value)
         {
             data.AddRange(value.ToArray());
             return this;

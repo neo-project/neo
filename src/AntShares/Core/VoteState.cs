@@ -1,14 +1,13 @@
-﻿namespace AntShares.Core
+﻿using AntShares.Cryptography.ECC;
+
+namespace AntShares.Core
 {
     /// <summary>
     /// 投票信息
     /// </summary>
-    public class Vote
+    public class VoteState
     {
-        /// <summary>
-        /// 报名表的散列值列表
-        /// </summary>
-        public UInt256[] Enrollments;
+        public ECPoint[] PublicKeys;
         /// <summary>
         /// 选票的数目
         /// </summary>
