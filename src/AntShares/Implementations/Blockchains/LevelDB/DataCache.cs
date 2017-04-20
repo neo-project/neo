@@ -7,7 +7,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 {
     internal class DataCache<TKey, TValue>
         where TKey : ISerializable
-        where TValue : ISerializable, new()
+        where TValue : class, ISerializable, new()
     {
         private DB db;
         private DataEntryPrefix prefix;
@@ -20,7 +20,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             {
                 if (dictionary.ContainsKey(key)) return dictionary[key];
                 if (deleted.Contains(key)) throw new KeyNotFoundException();
-                TValue value = db.Get(ReadOptions.Default, SliceBuilder.Begin(prefix).Add(key)).ToArray().AsSerializable<TValue>();
+                TValue value = db.Get<TValue>(ReadOptions.Default, prefix, key);
                 dictionary.Add(key, value);
                 return value;
             }
@@ -41,9 +41,9 @@ namespace AntShares.Implementations.Blockchains.LevelDB
         public void Commit(WriteBatch batch)
         {
             foreach (var pair in dictionary)
-                batch.Put(SliceBuilder.Begin(prefix).Add(pair.Key), pair.Value.ToArray());
+                batch.Put(prefix, pair.Key, pair.Value);
             foreach (TKey key in deleted)
-                batch.Delete(SliceBuilder.Begin(prefix).Add(key));
+                batch.Delete(prefix, key);
         }
 
         public void Delete(TKey key)
@@ -70,12 +70,20 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             }
             else
             {
-                Slice result;
-                if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(prefix).Add(key), out result))
-                    value = result.ToArray().AsSerializable<TValue>();
-                else
-                    value = factory();
+                value = db.TryGet<TValue>(ReadOptions.Default, prefix, key);
+                if (value == null) value = factory();
             }
+            dictionary.Add(key, value);
+            return value;
+        }
+
+        public TValue TryGet(TKey key)
+        {
+            if (dictionary.ContainsKey(key)) return dictionary[key];
+            if (deleted.Contains(key)) return null;
+            TValue value = db.TryGet<TValue>(ReadOptions.Default, prefix, key);
+            if (value == null)
+                return null;
             dictionary.Add(key, value);
             return value;
         }

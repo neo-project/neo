@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AntShares.IO;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,6 +7,16 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 {
     internal static class Helper
     {
+        public static void Delete(this WriteBatch batch, DataEntryPrefix prefix, ISerializable key)
+        {
+            batch.Delete(SliceBuilder.Begin(prefix).Add(key));
+        }
+
+        public static IEnumerable<T> Find<T>(this DB db, ReadOptions options, DataEntryPrefix prefix) where T : class, ISerializable, new()
+        {
+            return Find(db, options, SliceBuilder.Begin(prefix), (k, v) => v.ToArray().AsSerializable<T>());
+        }
+
         public static IEnumerable<T> Find<T>(this DB db, ReadOptions options, Slice prefix, Func<Slice, Slice, T> resultSelector)
         {
             using (Iterator it = db.NewIterator(options))
@@ -22,29 +33,35 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             }
         }
 
-        public static ushort[] GetUInt16Array(this byte[] source)
+        public static T Get<T>(this DB db, ReadOptions options, DataEntryPrefix prefix, ISerializable key) where T : class, ISerializable, new()
         {
-            if (source == null) throw new ArgumentNullException();
-            if (source.Length % sizeof(ushort) != 0) throw new ArgumentException();
-            ushort[] dst = new ushort[source.Length / sizeof(ushort)];
-            Buffer.BlockCopy(source, 0, dst, 0, source.Length);
-            return dst;
+            return db.Get(options, SliceBuilder.Begin(prefix).Add(key)).ToArray().AsSerializable<T>();
         }
 
-        public static IEnumerable<ushort> Range(ushort start, int count)
+        public static T Get<T>(this DB db, ReadOptions options, DataEntryPrefix prefix, ISerializable key, Func<Slice, T> resultSelector)
         {
-            if (count < 0 || start + count > ushort.MaxValue)
-                throw new ArgumentOutOfRangeException(nameof(count));
-            for (ushort i = 0; i < count; i++)
-                yield return (ushort)(i + start);
+            return resultSelector(db.Get(options, SliceBuilder.Begin(prefix).Add(key)));
         }
 
-        public static byte[] ToByteArray(this IEnumerable<ushort> source)
+        public static void Put(this WriteBatch batch, DataEntryPrefix prefix, ISerializable key, ISerializable value)
         {
-            ushort[] src = source.ToArray();
-            byte[] dst = new byte[src.Length * sizeof(ushort)];
-            Buffer.BlockCopy(src, 0, dst, 0, dst.Length);
-            return dst;
+            batch.Put(SliceBuilder.Begin(prefix).Add(key), value.ToArray());
+        }
+
+        public static T TryGet<T>(this DB db, ReadOptions options, DataEntryPrefix prefix, ISerializable key) where T : class, ISerializable, new()
+        {
+            Slice slice;
+            if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out slice))
+                return null;
+            return slice.ToArray().AsSerializable<T>();
+        }
+
+        public static T TryGet<T>(this DB db, ReadOptions options, DataEntryPrefix prefix, ISerializable key, Func<Slice, T> resultSelector) where T : class
+        {
+            Slice slice;
+            if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out slice))
+                return null;
+            return resultSelector(slice);
         }
     }
 }

@@ -166,10 +166,8 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override bool ContainsUnspent(UInt256 hash, ushort index)
         {
-            Slice value;
-            if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_Coin).Add(hash), out value))
-                return false;
-            UnspentCoinState state = value.ToArray().AsSerializable<UnspentCoinState>();
+            UnspentCoinState state = db.TryGet<UnspentCoinState>(ReadOptions.Default, DataEntryPrefix.ST_Coin, hash);
+            if (state == null) return false;
             if (index >= state.Items.Length) return false;
             return !state.Items[index].HasFlag(CoinState.Spent);
         }
@@ -188,12 +186,14 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             }
         }
 
+        public override AccountState GetAccountState(UInt160 script_hash)
+        {
+            return db.TryGet<AccountState>(ReadOptions.Default, DataEntryPrefix.ST_Account, script_hash);
+        }
+
         public override AssetState GetAssetState(UInt256 asset_id)
         {
-            Slice slice;
-            if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_Asset).Add(asset_id), out slice))
-                return null;
-            return slice.ToArray().AsSerializable<AssetState>();
+            return db.TryGet<AssetState>(ReadOptions.Default, DataEntryPrefix.ST_Asset, asset_id);
         }
 
         public override Block GetBlock(UInt256 hash)
@@ -231,10 +231,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override ContractState GetContract(UInt160 hash)
         {
-            Slice value;
-            if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_Contract).Add(hash), out value))
-                return null;
-            return value.ToArray().AsSerializable<ContractState>();
+            return db.TryGet<ContractState>(ReadOptions.Default, DataEntryPrefix.ST_Contract, hash);
         }
 
         public override IEnumerable<ValidatorState> GetEnrollments(IEnumerable<Transaction> others)
@@ -243,7 +240,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
-                foreach (ValidatorState validator in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.ST_Validator), (k, v) => v.ToArray().AsSerializable<ValidatorState>()))
+                foreach (ValidatorState validator in db.Find<ValidatorState>(options, DataEntryPrefix.ST_Validator))
                 {
                     dictionary.Add(validator.PublicKey, validator);
                 }
@@ -343,10 +340,9 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             int height;
             Transaction tx = GetTransaction(ReadOptions.Default, hash, out height);
             if (tx == null) return null;
-            Slice value;
-            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_SpentCoin).Add(hash), out value))
+            SpentCoinState state = db.TryGet<SpentCoinState>(ReadOptions.Default, DataEntryPrefix.ST_SpentCoin, hash);
+            if (state != null)
             {
-                SpentCoinState state = value.ToArray().AsSerializable<SpentCoinState>();
                 return state.Items.ToDictionary(p => p.Key, p => new SpentCoin
                 {
                     Output = tx.Outputs[p.Key],
@@ -365,10 +361,8 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
-                Slice value;
-                if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.ST_Coin).Add(hash), out value))
-                    return null;
-                UnspentCoinState state = value.ToArray().AsSerializable<UnspentCoinState>();
+                UnspentCoinState state = db.TryGet<UnspentCoinState>(options, DataEntryPrefix.ST_Coin, hash);
+                if (state == null) return null;
                 if (index >= state.Items.Length) return null;
                 if (state.Items[index].HasFlag(CoinState.Spent)) return null;
                 int height;
@@ -397,7 +391,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     p.Value
                 });
                 var changes = inputs.Concat(outputs).GroupBy(p => p.ScriptHash).ToDictionary(p => p.Key, p => p.Sum(i => i.Value));
-                var accounts = db.Find(options, SliceBuilder.Begin(DataEntryPrefix.ST_Account), (k, v) => v.ToArray().AsSerializable<AccountState>()).Where(p => p.Votes.Length > 0);
+                var accounts = db.Find<AccountState>(options, DataEntryPrefix.ST_Account).Where(p => p.Votes.Length > 0);
                 foreach (AccountState account in accounts)
                 {
                     Fixed8 balance = account.Balances.ContainsKey(AntShare.Hash) ? account.Balances[AntShare.Hash] : Fixed8.Zero;
@@ -421,10 +415,8 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             {
                 foreach (var group in tx.Inputs.GroupBy(p => p.PrevHash))
                 {
-                    Slice value;
-                    if (!db.TryGet(options, SliceBuilder.Begin(DataEntryPrefix.ST_Coin).Add(group.Key), out value))
-                        return true;
-                    UnspentCoinState state = value.ToArray().AsSerializable<UnspentCoinState>();
+                    UnspentCoinState state = db.TryGet<UnspentCoinState>(options, DataEntryPrefix.ST_Coin, group.Key);
+                    if (state == null) return true;
                     if (group.Any(p => p.PrevIndex >= state.Items.Length || state.Items[p.PrevIndex].HasFlag(CoinState.Spent)))
                         return true;
                 }
@@ -494,7 +486,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     case TransactionType.ClaimTransaction:
                         foreach (CoinReference input in ((ClaimTransaction)tx).Claims)
                         {
-                            spentcoins[input.PrevHash].Items.Remove(input.PrevIndex);
+                            spentcoins.TryGet(input.PrevHash)?.Items.Remove(input.PrevIndex);
                         }
                         break;
                     case TransactionType.EnrollmentTransaction:

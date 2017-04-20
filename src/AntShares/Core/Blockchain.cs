@@ -202,6 +202,8 @@ namespace AntShares.Core
 
         public abstract void Dispose();
 
+        public abstract AccountState GetAccountState(UInt160 script_hash);
+
         public abstract AssetState GetAssetState(UInt256 asset_id);
 
         /// <summary>
