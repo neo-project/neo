@@ -47,7 +47,7 @@ namespace AntShares.Core
         {
             get
             {
-                if (AssetType == AssetType.AntShare || AssetType == AssetType.AntCoin)
+                if (AssetType == AssetType.SystemShare || AssetType == AssetType.SystemCoin)
                     return Fixed8.Zero;
                 return base.SystemFee;
             }
@@ -85,9 +85,9 @@ namespace AntShares.Core
         protected override void OnDeserialized()
         {
             base.OnDeserialized();
-            if (AssetType == AssetType.AntShare && !Hash.Equals(Blockchain.AntShare.Hash))
+            if (AssetType == AssetType.SystemShare && !Hash.Equals(Blockchain.SystemShare.Hash))
                 throw new FormatException();
-            if (AssetType == AssetType.AntCoin && !Hash.Equals(Blockchain.AntCoin.Hash))
+            if (AssetType == AssetType.SystemCoin && !Hash.Equals(Blockchain.SystemCoin.Hash))
                 throw new FormatException();
         }
 
@@ -124,8 +124,6 @@ namespace AntShares.Core
             }
             json["asset"]["amount"] = Amount.ToString();
             json["asset"]["precision"] = Precision;
-            json["asset"]["high"] = Amount.GetData() >> 32;
-            json["asset"]["low"] = Amount.GetData() & 0xffffffff;
             json["asset"]["owner"] = Owner.ToString();
             json["asset"]["admin"] = Wallet.ToAddress(Admin);
             return json;
@@ -136,7 +134,6 @@ namespace AntShares.Core
             if (!base.Verify(mempool)) return false;
             if (!Enum.IsDefined(typeof(AssetType), AssetType) || AssetType == AssetType.CreditFlag || AssetType == AssetType.DutyFlag)
                 return false;
-            if (AssetType == AssetType.AntShare || AssetType == AssetType.AntCoin) return false;
             if (Amount == Fixed8.Zero || Amount < -Fixed8.Satoshi) return false;
             if (AssetType == AssetType.Invoice && Amount != -Fixed8.Satoshi)
                 return false;

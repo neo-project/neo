@@ -33,7 +33,7 @@ namespace AntShares.Core
             using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
             using (BinaryReader reader = new BinaryReader(ms))
             {
-                ((ISignable)header).DeserializeUnsigned(reader);
+                ((IVerifiable)header).DeserializeUnsigned(reader);
                 reader.ReadByte(); header.Script = reader.ReadSerializable<Witness>();
             }
             return header;

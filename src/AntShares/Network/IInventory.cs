@@ -2,7 +2,7 @@
 
 namespace AntShares.Network
 {
-    public interface IInventory : ISignable
+    public interface IInventory : IVerifiable
     {
         UInt256 Hash { get; }
 

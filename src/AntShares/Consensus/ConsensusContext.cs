@@ -14,31 +14,31 @@ namespace AntShares.Consensus
         public const uint Version = 0;
         public ConsensusState State;
         public UInt256 PrevHash;
-        public uint Height;
+        public uint BlockIndex;
         public byte ViewNumber;
-        public ECPoint[] Miners;
-        public int MinerIndex;
+        public ECPoint[] Validators;
+        public int BackupIndex;
         public uint PrimaryIndex;
         public uint Timestamp;
         public ulong Nonce;
-        public UInt160 NextMiner;
+        public UInt160 NextConsensus;
         public UInt256[] TransactionHashes;
         public Dictionary<UInt256, Transaction> Transactions;
         public byte[][] Signatures;
         public byte[] ExpectedView;
 
-        public int M => Miners.Length - (Miners.Length - 1) / 3;
+        public int M => Validators.Length - (Validators.Length - 1) / 3;
 
         public void ChangeView(byte view_number)
         {
-            int p = ((int)Height - view_number) % Miners.Length;
+            int p = ((int)BlockIndex - view_number) % Validators.Length;
             State &= ConsensusState.SignatureSent;
             ViewNumber = view_number;
-            PrimaryIndex = p >= 0 ? (uint)p : (uint)(p + Miners.Length);
+            PrimaryIndex = p >= 0 ? (uint)p : (uint)(p + Validators.Length);
             if (State == ConsensusState.Initial)
             {
                 TransactionHashes = null;
-                Signatures = new byte[Miners.Length][];
+                Signatures = new byte[Validators.Length][];
             }
             _header = null;
         }
@@ -47,7 +47,7 @@ namespace AntShares.Consensus
         {
             return MakePayload(new ChangeView
             {
-                NewViewNumber = ExpectedView[MinerIndex]
+                NewViewNumber = ExpectedView[BackupIndex]
             });
         }
 
@@ -60,12 +60,12 @@ namespace AntShares.Consensus
                 _header = new Block
                 {
                     Version = Version,
-                    PrevBlock = PrevHash,
+                    PrevHash = PrevHash,
                     MerkleRoot = MerkleTree.ComputeRoot(TransactionHashes),
                     Timestamp = Timestamp,
-                    Height = Height,
+                    Index = BlockIndex,
                     ConsensusData = Nonce,
-                    NextMiner = NextMiner,
+                    NextConsensus = NextConsensus,
                     Transactions = new Transaction[0]
                 };
             }
@@ -79,8 +79,8 @@ namespace AntShares.Consensus
             {
                 Version = Version,
                 PrevHash = PrevHash,
-                Height = Height,
-                MinerIndex = (ushort)MinerIndex,
+                BlockIndex = BlockIndex,
+                MinerIndex = (ushort)BackupIndex,
                 Timestamp = Timestamp,
                 Data = message.ToArray()
             };
@@ -91,10 +91,10 @@ namespace AntShares.Consensus
             return MakePayload(new PerpareRequest
             {
                 Nonce = Nonce,
-                NextMiner = NextMiner,
+                NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                Signature = Signatures[MinerIndex]
+                Signature = Signatures[BackupIndex]
             });
         }
 
@@ -110,19 +110,19 @@ namespace AntShares.Consensus
         {
             State = ConsensusState.Initial;
             PrevHash = Blockchain.Default.CurrentBlockHash;
-            Height = Blockchain.Default.Height + 1;
+            BlockIndex = Blockchain.Default.Height + 1;
             ViewNumber = 0;
-            Miners = Blockchain.Default.GetMiners();
-            MinerIndex = -1;
-            PrimaryIndex = Height % (uint)Miners.Length;
+            Validators = Blockchain.Default.GetMiners();
+            BackupIndex = -1;
+            PrimaryIndex = BlockIndex % (uint)Validators.Length;
             TransactionHashes = null;
-            Signatures = new byte[Miners.Length][];
-            ExpectedView = new byte[Miners.Length];
-            for (int i = 0; i < Miners.Length; i++)
+            Signatures = new byte[Validators.Length][];
+            ExpectedView = new byte[Validators.Length];
+            for (int i = 0; i < Validators.Length; i++)
             {
-                if (wallet.ContainsAccount(Miners[i]))
+                if (wallet.ContainsKey(Validators[i]))
                 {
-                    MinerIndex = i;
+                    BackupIndex = i;
                     break;
                 }
             }

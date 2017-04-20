@@ -18,8 +18,8 @@ namespace AntShares.VM
             Register("AntShares.Header.GetPrevHash", Header_GetPrevHash);
             Register("AntShares.Header.GetMerkleRoot", Header_GetMerkleRoot);
             Register("AntShares.Header.GetTimestamp", Header_GetTimestamp);
-            Register("AntShares.Header.GetNonce", Header_GetNonce);
-            Register("AntShares.Header.GetNextMiner", Header_GetNextMiner);
+            Register("AntShares.Header.GetConsensusData", Header_GetConsensusData);
+            Register("AntShares.Header.GetNextConsensus", Header_GetNextConsensus);
             Register("AntShares.Block.GetTransactionCount", Block_GetTransactionCount);
             Register("AntShares.Block.GetTransactions", Block_GetTransactions);
             Register("AntShares.Block.GetTransaction", Block_GetTransaction);
@@ -27,7 +27,7 @@ namespace AntShares.VM
             Register("AntShares.Transaction.GetType", Transaction_GetType);
             Register("AntShares.Asset.GetAssetType", Asset_GetAssetType);
             Register("AntShares.Asset.GetAmount", Asset_GetAmount);
-            Register("AntShares.Asset.GetIssuer", Asset_GetIssuer);
+            Register("AntShares.Asset.GetOwner", Asset_GetOwner);
             Register("AntShares.Asset.GetAdmin", Asset_GetAdmin);
             Register("AntShares.Enrollment.GetPublicKey", Enrollment_GetPublicKey);
             Register("AntShares.Transaction.GetAttributes", Transaction_GetAttributes);
@@ -142,7 +142,7 @@ namespace AntShares.VM
         {
             BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
             if (header == null) return false;
-            engine.EvaluationStack.Push(header.PrevBlock.ToArray());
+            engine.EvaluationStack.Push(header.PrevHash.ToArray());
             return true;
         }
 
@@ -162,7 +162,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private static bool Header_GetNonce(ExecutionEngine engine)
+        private static bool Header_GetConsensusData(ExecutionEngine engine)
         {
             BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
             if (header == null) return false;
@@ -170,11 +170,11 @@ namespace AntShares.VM
             return true;
         }
 
-        private static bool Header_GetNextMiner(ExecutionEngine engine)
+        private static bool Header_GetNextConsensus(ExecutionEngine engine)
         {
             BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
             if (header == null) return false;
-            engine.EvaluationStack.Push(header.NextMiner.ToArray());
+            engine.EvaluationStack.Push(header.NextConsensus.ToArray());
             return true;
         }
 
@@ -237,7 +237,7 @@ namespace AntShares.VM
             return true;
         }
 
-        private static bool Asset_GetIssuer(ExecutionEngine engine)
+        private static bool Asset_GetOwner(ExecutionEngine engine)
         {
             RegisterTransaction asset = engine.EvaluationStack.Pop().GetInterface<RegisterTransaction>();
             if (asset == null) return false;

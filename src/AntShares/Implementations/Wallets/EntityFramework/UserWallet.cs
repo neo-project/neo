@@ -8,9 +8,9 @@ using System.Linq;
 using System.Reflection;
 using System.Security;
 using CoreTransaction = AntShares.Core.Transaction;
-using WalletAccount = AntShares.Wallets.Account;
 using WalletCoin = AntShares.Wallets.Coin;
 using WalletContract = AntShares.Wallets.Contract;
+using WalletKeyPair = AntShares.Wallets.KeyPair;
 
 namespace AntShares.Implementations.Wallets.EntityFramework
 {
@@ -89,28 +89,28 @@ namespace AntShares.Implementations.Wallets.EntityFramework
         public static UserWallet Create(string path, string password)
         {
             UserWallet wallet = new UserWallet(path, password, true);
-            wallet.CreateAccount();
+            wallet.CreateKey();
             return wallet;
         }
 
         public static UserWallet Create(string path, SecureString password)
         {
             UserWallet wallet = new UserWallet(path, password, true);
-            wallet.CreateAccount();
+            wallet.CreateKey();
             return wallet;
         }
 
-        public override WalletAccount CreateAccount(byte[] privateKey)
+        public override WalletKeyPair CreateKey(byte[] privateKey)
         {
-            WalletAccount account = base.CreateAccount(privateKey);
+            WalletKeyPair account = base.CreateKey(privateKey);
             OnCreateAccount(account);
             AddContract(WalletContract.CreateSignatureContract(account.PublicKey));
             return account;
         }
 
-        public override bool DeleteAccount(UInt160 publicKeyHash)
+        public override bool DeleteKey(UInt160 publicKeyHash)
         {
-            bool flag = base.DeleteAccount(publicKeyHash);
+            bool flag = base.DeleteKey(publicKeyHash);
             if (flag)
             {
                 using (WalletDataContext ctx = new WalletDataContext(DbPath))
@@ -193,14 +193,14 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             return new Version(major, minor, build, revision);
         }
 
-        protected override IEnumerable<WalletAccount> LoadAccounts()
+        protected override IEnumerable<WalletKeyPair> LoadKeyPairs()
         {
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
                 foreach (byte[] encryptedPrivateKey in ctx.Accounts.Select(p => p.PrivateKeyEncrypted))
                 {
                     byte[] decryptedPrivateKey = DecryptPrivateKey(encryptedPrivateKey);
-                    WalletAccount account = new WalletAccount(decryptedPrivateKey);
+                    WalletKeyPair account = new WalletKeyPair(decryptedPrivateKey);
                     Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
                     yield return account;
                 }
@@ -310,7 +310,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
             }
         }
 
-        private void OnCreateAccount(WalletAccount account)
+        private void OnCreateAccount(WalletKeyPair account)
         {
             byte[] decryptedPrivateKey = new byte[96];
             Buffer.BlockCopy(account.PublicKey.EncodePoint(false), 1, decryptedPrivateKey, 0, 64);
@@ -354,21 +354,21 @@ namespace AntShares.Implementations.Wallets.EntityFramework
                             Hash = tx.Hash.ToArray(),
                             Type = tx.Type,
                             RawData = tx.ToArray(),
-                            Height = block.Height,
+                            Height = block.Index,
                             Time = block.Timestamp.ToDateTime()
                         });
                     }
                     else
                     {
-                        db_tx.Height = block.Height;
+                        db_tx.Height = block.Index;
                     }
                 }
                 OnCoinsChanged(ctx, added, changed, deleted);
-                if (block.Height == Blockchain.Default.Height || ctx.ChangeTracker.Entries().Any())
+                if (block.Index == Blockchain.Default.Height || ctx.ChangeTracker.Entries().Any())
                 {
                     foreach (Transaction db_tx in ctx.Transactions.Where(p => !p.Height.HasValue))
                         if (block.Transactions.Any(p => p.Hash == new UInt256(db_tx.Hash)))
-                            db_tx.Height = block.Height;
+                            db_tx.Height = block.Index;
                     ctx.Keys.First(p => p.Name == "Height").Value = BitConverter.GetBytes(WalletHeight);
                     tx_changed = ctx.ChangeTracker.Entries<Transaction>().Where(p => p.State != EntityState.Unchanged).Select(p => p.Entity).ToArray();
                     ctx.SaveChanges();

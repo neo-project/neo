@@ -4,26 +4,23 @@ using System.IO;
 
 namespace AntShares.Core
 {
-    /// <summary>
-    /// 脚本
-    /// </summary>
     public class Witness : ISerializable
     {
-        public byte[] StackScript;
-        public byte[] RedeemScript;
+        public byte[] InvocationScript;
+        public byte[] VerificationScript;
 
-        public int Size => StackScript.GetVarSize() + RedeemScript.GetVarSize();
+        public int Size => InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            StackScript = reader.ReadVarBytes();
-            RedeemScript = reader.ReadVarBytes();
+            InvocationScript = reader.ReadVarBytes();
+            VerificationScript = reader.ReadVarBytes();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.WriteVarBytes(StackScript);
-            writer.WriteVarBytes(RedeemScript);
+            writer.WriteVarBytes(InvocationScript);
+            writer.WriteVarBytes(VerificationScript);
         }
 
         /// <summary>
@@ -33,8 +30,8 @@ namespace AntShares.Core
         public JObject ToJson()
         {
             JObject json = new JObject();
-            json["stack"] = StackScript.ToHexString();
-            json["redeem"] = RedeemScript.ToHexString();
+            json["invocation"] = InvocationScript.ToHexString();
+            json["verification"] = VerificationScript.ToHexString();
             return json;
         }
     }

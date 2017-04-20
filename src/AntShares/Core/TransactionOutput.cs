@@ -58,8 +58,6 @@ namespace AntShares.Core
             json["n"] = index;
             json["asset"] = AssetId.ToString();
             json["value"] = Value.ToString();
-            json["high"] = Value.GetData() >> 32;
-            json["low"] = Value.GetData() & 0xffffffff;
             json["address"] = Wallet.ToAddress(ScriptHash);
             return json;
         }

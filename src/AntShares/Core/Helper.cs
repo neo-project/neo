@@ -12,12 +12,12 @@ namespace AntShares.Core
     /// </summary>
     public static class Helper
     {
-        public static byte[] GetHashData(this ISignable signable)
+        public static byte[] GetHashData(this IVerifiable verifiable)
         {
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms))
             {
-                signable.SerializeUnsigned(writer);
+                verifiable.SerializeUnsigned(writer);
                 writer.Flush();
                 return ms.ToArray();
             }
@@ -26,14 +26,14 @@ namespace AntShares.Core
         /// <summary>
         /// 根据传入的账户信息，对可签名的对象进行签名
         /// </summary>
-        /// <param name="signable">要签名的数据</param>
-        /// <param name="account">用于签名的账户</param>
+        /// <param name="verifiable">要签名的数据</param>
+        /// <param name="key">用于签名的账户</param>
         /// <returns>返回签名后的结果</returns>
-        public static byte[] Sign(this ISignable signable, Account account)
+        public static byte[] Sign(this IVerifiable verifiable, KeyPair key)
         {
-            using (account.Decrypt())
+            using (key.Decrypt())
             {
-                return Crypto.Default.Sign(signable.GetHashData(), account.PrivateKey, account.PublicKey.EncodePoint(false).Skip(1).ToArray());
+                return Crypto.Default.Sign(verifiable.GetHashData(), key.PrivateKey, key.PublicKey.EncodePoint(false).Skip(1).ToArray());
             }
         }
 
@@ -42,38 +42,38 @@ namespace AntShares.Core
             return new UInt160(Crypto.Default.Hash160(script));
         }
 
-        internal static bool VerifyScripts(this ISignable signable)
+        internal static bool VerifyScripts(this IVerifiable verifiable)
         {
             const int max_steps = 1200;
             UInt160[] hashes;
             try
             {
-                hashes = signable.GetScriptHashesForVerifying();
+                hashes = verifiable.GetScriptHashesForVerifying();
             }
             catch (InvalidOperationException)
             {
                 return false;
             }
-            if (hashes.Length != signable.Scripts.Length) return false;
+            if (hashes.Length != verifiable.Scripts.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
-                byte[] redeem_script = signable.Scripts[i].RedeemScript;
-                if (redeem_script.Length == 0)
+                byte[] verification = verifiable.Scripts[i].VerificationScript;
+                if (verification.Length == 0)
                 {
                     using (ScriptBuilder sb = new ScriptBuilder())
                     {
                         sb.EmitAppCall(hashes[i].ToArray());
-                        redeem_script = sb.ToArray();
+                        verification = sb.ToArray();
                     }
                 }
                 else
                 {
-                    if (hashes[i] != redeem_script.ToScriptHash()) return false;
+                    if (hashes[i] != verification.ToScriptHash()) return false;
                 }
                 int nOpCount = 0;
-                ExecutionEngine engine = new ExecutionEngine(signable, Crypto.Default, Blockchain.Default, InterfaceEngine.Default);
-                engine.LoadScript(redeem_script, false);
-                engine.LoadScript(signable.Scripts[i].StackScript, true);
+                ExecutionEngine engine = new ExecutionEngine(verifiable, Crypto.Default, Blockchain.Default, InterfaceEngine.Default);
+                engine.LoadScript(verification, false);
+                engine.LoadScript(verifiable.Scripts[i].InvocationScript, true);
                 while (!engine.State.HasFlag(VMState.HALT) && !engine.State.HasFlag(VMState.FAULT))
                 {
                     if (engine.CurrentContext.InstructionPointer < engine.CurrentContext.Script.Length)

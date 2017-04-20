@@ -13,7 +13,7 @@ namespace AntShares.Network.Payloads
     {
         public uint Version;
         public UInt256 PrevHash;
-        public uint Height;
+        public uint BlockIndex;
         public ushort MinerIndex;
         public uint Timestamp;
         public byte[] Data;
@@ -34,7 +34,7 @@ namespace AntShares.Network.Payloads
 
         InventoryType IInventory.InventoryType => InventoryType.Consensus;
 
-        Witness[] ISignable.Scripts
+        Witness[] IVerifiable.Scripts
         {
             get
             {
@@ -51,16 +51,16 @@ namespace AntShares.Network.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            ((ISignable)this).DeserializeUnsigned(reader);
+            ((IVerifiable)this).DeserializeUnsigned(reader);
             if (reader.ReadByte() != 1) throw new FormatException();
             Script = reader.ReadSerializable<Witness>();
         }
 
-        void ISignable.DeserializeUnsigned(BinaryReader reader)
+        void IVerifiable.DeserializeUnsigned(BinaryReader reader)
         {
             Version = reader.ReadUInt32();
             PrevHash = reader.ReadSerializable<UInt256>();
-            Height = reader.ReadUInt32();
+            BlockIndex = reader.ReadUInt32();
             MinerIndex = reader.ReadUInt16();
             Timestamp = reader.ReadUInt32();
             Data = reader.ReadVarBytes();
@@ -71,7 +71,7 @@ namespace AntShares.Network.Payloads
             return this.GetHashData();
         }
 
-        UInt160[] ISignable.GetScriptHashesForVerifying()
+        UInt160[] IVerifiable.GetScriptHashesForVerifying()
         {
             if (Blockchain.Default == null)
                 throw new InvalidOperationException();
@@ -85,15 +85,15 @@ namespace AntShares.Network.Payloads
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            ((ISignable)this).SerializeUnsigned(writer);
+            ((IVerifiable)this).SerializeUnsigned(writer);
             writer.Write((byte)1); writer.Write(Script);
         }
 
-        void ISignable.SerializeUnsigned(BinaryWriter writer)
+        void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write(Version);
             writer.Write(PrevHash);
-            writer.Write(Height);
+            writer.Write(BlockIndex);
             writer.Write(MinerIndex);
             writer.Write(Timestamp);
             writer.WriteVarBytes(Data);
@@ -107,11 +107,9 @@ namespace AntShares.Network.Payloads
         public bool Verify()
         {
             if (Blockchain.Default == null) return false;
-            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
-                return false;
             if (PrevHash != Blockchain.Default.CurrentBlockHash)
                 return false;
-            if (Height != Blockchain.Default.Height + 1)
+            if (BlockIndex != Blockchain.Default.Height + 1)
                 return false;
             return this.VerifyScripts();
         }

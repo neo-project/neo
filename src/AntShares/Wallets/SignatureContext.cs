@@ -20,12 +20,12 @@ namespace AntShares.Wallets
         /// <summary>
         /// 要签名的数据
         /// </summary>
-        public readonly ISignable Signable;
+        public readonly IVerifiable Verifiable;
         /// <summary>
         /// 要验证的脚本散列值
         /// </summary>
         public readonly UInt160[] ScriptHashes;
-        private readonly byte[][] redeemScripts;
+        private readonly byte[][] verifications;
         private readonly byte[][][] parameters;
         private readonly JObject[] temp;
 
@@ -43,12 +43,12 @@ namespace AntShares.Wallets
         /// <summary>
         /// 对指定的数据构造签名上下文
         /// </summary>
-        /// <param name="signable">要签名的数据</param>
-        public SignatureContext(ISignable signable)
+        /// <param name="verifiable">要签名的数据</param>
+        public SignatureContext(IVerifiable verifiable)
         {
-            this.Signable = signable;
-            this.ScriptHashes = signable.GetScriptHashesForVerifying();
-            this.redeemScripts = new byte[ScriptHashes.Length][];
+            this.Verifiable = verifiable;
+            this.ScriptHashes = verifiable.GetScriptHashesForVerifying();
+            this.verifications = new byte[ScriptHashes.Length][];
             this.parameters = new byte[ScriptHashes.Length][][];
             this.temp = new JObject[ScriptHashes.Length];
         }
@@ -57,8 +57,8 @@ namespace AntShares.Wallets
         {
             int i = GetIndex(contract.ScriptHash);
             if (i < 0) return false;
-            if (redeemScripts[i] == null)
-                redeemScripts[i] = contract.Script;
+            if (verifications[i] == null)
+                verifications[i] = contract.Script;
             if (parameters[i] == null)
                 parameters[i] = new byte[contract.ParameterList.Length][];
             parameters[i][index] = parameter;
@@ -71,8 +71,8 @@ namespace AntShares.Wallets
             {
                 int index = GetIndex(contract.ScriptHash);
                 if (index < 0) return false;
-                if (redeemScripts[index] == null)
-                    redeemScripts[index] = contract.Script;
+                if (verifications[index] == null)
+                    verifications[index] = contract.Script;
                 if (parameters[index] == null)
                     parameters[index] = new byte[contract.ParameterList.Length][];
                 if (temp[index] == null) temp[index] = new JArray();
@@ -138,19 +138,19 @@ namespace AntShares.Wallets
         /// <returns>返回上下文</returns>
         public static SignatureContext FromJson(JObject json)
         {
-            ISignable signable = typeof(SignatureContext).GetTypeInfo().Assembly.CreateInstance(json["type"].AsString()) as ISignable;
+            IVerifiable verifiable = typeof(SignatureContext).GetTypeInfo().Assembly.CreateInstance(json["type"].AsString()) as IVerifiable;
             using (MemoryStream ms = new MemoryStream(json["hex"].AsString().HexToBytes(), false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
-                signable.DeserializeUnsigned(reader);
+                verifiable.DeserializeUnsigned(reader);
             }
-            SignatureContext context = new SignatureContext(signable);
+            SignatureContext context = new SignatureContext(verifiable);
             JArray scripts = (JArray)json["scripts"];
             for (int i = 0; i < scripts.Count; i++)
             {
                 if (scripts[i] != null)
                 {
-                    context.redeemScripts[i] = scripts[i]["redeem_script"].AsString().HexToBytes();
+                    context.verifications[i] = scripts[i]["verification"].AsString().HexToBytes();
                     JArray ps = (JArray)scripts[i]["parameters"];
                     context.parameters[i] = new byte[ps.Count][];
                     for (int j = 0; j < ps.Count; j++)
@@ -197,8 +197,8 @@ namespace AntShares.Wallets
                     }
                     scripts[i] = new Witness
                     {
-                        StackScript = sb.ToArray(),
-                        RedeemScript = redeemScripts[i]
+                        InvocationScript = sb.ToArray(),
+                        VerificationScript = verifications[i]
                     };
                 }
             }
@@ -217,25 +217,25 @@ namespace AntShares.Wallets
         public JObject ToJson()
         {
             JObject json = new JObject();
-            json["type"] = Signable.GetType().FullName;
+            json["type"] = Verifiable.GetType().FullName;
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
             {
-                Signable.SerializeUnsigned(writer);
+                Verifiable.SerializeUnsigned(writer);
                 writer.Flush();
                 json["hex"] = ms.ToArray().ToHexString();
             }
             JArray scripts = new JArray();
-            for (int i = 0; i < redeemScripts.Length; i++)
+            for (int i = 0; i < verifications.Length; i++)
             {
-                if (redeemScripts[i] == null)
+                if (verifications[i] == null)
                 {
                     scripts.Add(null);
                 }
                 else
                 {
                     scripts.Add(new JObject());
-                    scripts[i]["redeem_script"] = redeemScripts[i].ToHexString();
+                    scripts[i]["verification"] = verifications[i].ToHexString();
                     JArray ps = new JArray();
                     foreach (byte[] parameter in parameters[i])
                     {

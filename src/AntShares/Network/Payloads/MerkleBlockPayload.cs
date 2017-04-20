@@ -31,12 +31,12 @@ namespace AntShares.Network.Payloads
             return new MerkleBlockPayload
             {
                 Version = block.Version,
-                PrevBlock = block.PrevBlock,
+                PrevHash = block.PrevHash,
                 MerkleRoot = block.MerkleRoot,
                 Timestamp = block.Timestamp,
-                Height = block.Height,
+                Index = block.Index,
                 ConsensusData = block.ConsensusData,
-                NextMiner = block.NextMiner,
+                NextConsensus = block.NextConsensus,
                 Script = block.Script,
                 TxCount = block.Transactions.Length,
                 Hashes = tree.ToHashArray(),

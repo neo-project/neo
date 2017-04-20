@@ -8,7 +8,7 @@ using System.IO;
 
 namespace AntShares.Core
 {
-    public abstract class BlockBase : ISignable
+    public abstract class BlockBase : IVerifiable
     {
         /// <summary>
         /// 区块版本
@@ -17,7 +17,7 @@ namespace AntShares.Core
         /// <summary>
         /// 前一个区块的散列值
         /// </summary>
-        public UInt256 PrevBlock;
+        public UInt256 PrevHash;
         /// <summary>
         /// 该区块中所有交易的Merkle树的根
         /// </summary>
@@ -29,12 +29,12 @@ namespace AntShares.Core
         /// <summary>
         /// 区块高度
         /// </summary>
-        public uint Height;
+        public uint Index;
         public ulong ConsensusData;
         /// <summary>
         /// 下一个区块的记账合约的散列值
         /// </summary>
-        public UInt160 NextMiner;
+        public UInt160 NextConsensus;
         /// <summary>
         /// 用于验证该区块的脚本
         /// </summary>
@@ -53,7 +53,7 @@ namespace AntShares.Core
             }
         }
 
-        Witness[] ISignable.Scripts
+        Witness[] IVerifiable.Scripts
         {
             get
             {
@@ -66,24 +66,24 @@ namespace AntShares.Core
             }
         }
 
-        public virtual int Size => sizeof(uint) + PrevBlock.Size + MerkleRoot.Size + sizeof(uint) + sizeof(uint) + sizeof(ulong) + NextMiner.Size + 1 + Script.Size;
+        public virtual int Size => sizeof(uint) + PrevHash.Size + MerkleRoot.Size + sizeof(uint) + sizeof(uint) + sizeof(ulong) + NextConsensus.Size + 1 + Script.Size;
 
         public virtual void Deserialize(BinaryReader reader)
         {
-            ((ISignable)this).DeserializeUnsigned(reader);
+            ((IVerifiable)this).DeserializeUnsigned(reader);
             if (reader.ReadByte() != 1) throw new FormatException();
             Script = reader.ReadSerializable<Witness>();
         }
 
-        void ISignable.DeserializeUnsigned(BinaryReader reader)
+        void IVerifiable.DeserializeUnsigned(BinaryReader reader)
         {
             Version = reader.ReadUInt32();
-            PrevBlock = reader.ReadSerializable<UInt256>();
+            PrevHash = reader.ReadSerializable<UInt256>();
             MerkleRoot = reader.ReadSerializable<UInt256>();
             Timestamp = reader.ReadUInt32();
-            Height = reader.ReadUInt32();
+            Index = reader.ReadUInt32();
             ConsensusData = reader.ReadUInt64();
-            NextMiner = reader.ReadSerializable<UInt160>();
+            NextConsensus = reader.ReadSerializable<UInt160>();
         }
 
         byte[] IScriptContainer.GetMessage()
@@ -91,30 +91,30 @@ namespace AntShares.Core
             return this.GetHashData();
         }
 
-        UInt160[] ISignable.GetScriptHashesForVerifying()
+        UInt160[] IVerifiable.GetScriptHashesForVerifying()
         {
-            if (PrevBlock == UInt256.Zero)
-                return new[] { Script.RedeemScript.ToScriptHash() };
-            Header prev_header = Blockchain.Default.GetHeader(PrevBlock);
+            if (PrevHash == UInt256.Zero)
+                return new[] { Script.VerificationScript.ToScriptHash() };
+            Header prev_header = Blockchain.Default.GetHeader(PrevHash);
             if (prev_header == null) throw new InvalidOperationException();
-            return new UInt160[] { prev_header.NextMiner };
+            return new UInt160[] { prev_header.NextConsensus };
         }
 
         public virtual void Serialize(BinaryWriter writer)
         {
-            ((ISignable)this).SerializeUnsigned(writer);
+            ((IVerifiable)this).SerializeUnsigned(writer);
             writer.Write((byte)1); writer.Write(Script);
         }
 
-        void ISignable.SerializeUnsigned(BinaryWriter writer)
+        void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write(Version);
-            writer.Write(PrevBlock);
+            writer.Write(PrevHash);
             writer.Write(MerkleRoot);
             writer.Write(Timestamp);
-            writer.Write(Height);
+            writer.Write(Index);
             writer.Write(ConsensusData);
-            writer.Write(NextMiner);
+            writer.Write(NextConsensus);
         }
 
         byte[] IInteropInterface.ToArray()
@@ -128,12 +128,12 @@ namespace AntShares.Core
             json["hash"] = Hash.ToString();
             json["size"] = Size;
             json["version"] = Version;
-            json["previousblockhash"] = PrevBlock.ToString();
+            json["previousblockhash"] = PrevHash.ToString();
             json["merkleroot"] = MerkleRoot.ToString();
             json["time"] = Timestamp;
-            json["height"] = Height;
+            json["index"] = Index;
             json["nonce"] = ConsensusData.ToString("x16");
-            json["nextminer"] = Wallet.ToAddress(NextMiner);
+            json["nextconsensus"] = Wallet.ToAddress(NextConsensus);
             json["script"] = Script.ToJson();
             return json;
         }
@@ -142,11 +142,9 @@ namespace AntShares.Core
         {
             if (Hash == Blockchain.GenesisBlock.Hash) return true;
             if (Blockchain.Default.ContainsBlock(Hash)) return true;
-            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
-                return false;
-            Header prev_header = Blockchain.Default.GetHeader(PrevBlock);
+            Header prev_header = Blockchain.Default.GetHeader(PrevHash);
             if (prev_header == null) return false;
-            if (prev_header.Height + 1 != Height) return false;
+            if (prev_header.Index + 1 != Index) return false;
             if (prev_header.Timestamp >= Timestamp) return false;
             if (!this.VerifyScripts()) return false;
             return true;

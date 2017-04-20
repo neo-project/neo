@@ -25,9 +25,9 @@ namespace AntShares.Network
         public static event EventHandler<InventoryReceivingEventArgs> InventoryReceiving;
         public static event EventHandler<IInventory> InventoryReceived;
 
-        public const uint PROTOCOL_VERSION = 0;
-        private const int CONNECTED_MAX = 10;
-        private const int UNCONNECTED_MAX = 1000;
+        public const uint ProtocolVersion = 0;
+        private const int ConnectedMax = 10;
+        private const int UnconnectedMax = 1000;
         public const int MemoryPoolSize = 30000;
 
         private static readonly Dictionary<UInt256, Transaction> mem_pool = new Dictionary<UInt256, Transaction>();
@@ -236,7 +236,7 @@ namespace AntShares.Network
             {
                 int connectedCount = connectedPeers.Count;
                 int unconnectedCount = unconnectedPeers.Count;
-                if (connectedCount < CONNECTED_MAX)
+                if (connectedCount < ConnectedMax)
                 {
                     Task[] tasks = { };
                     if (unconnectedCount > 0)
@@ -244,7 +244,7 @@ namespace AntShares.Network
                         IPEndPoint[] endpoints;
                         lock (unconnectedPeers)
                         {
-                            endpoints = unconnectedPeers.Take(CONNECTED_MAX - connectedCount).ToArray();
+                            endpoints = unconnectedPeers.Take(ConnectedMax - connectedCount).ToArray();
                         }
                         tasks = endpoints.Select(p => ConnectToPeerAsync(p)).ToArray();
                     }
@@ -288,11 +288,11 @@ namespace AntShares.Network
                     if (!connectThread.ThreadState.HasFlag(ThreadState.Unstarted)) connectThread.Join();
                     lock (unconnectedPeers)
                     {
-                        if (unconnectedPeers.Count < UNCONNECTED_MAX)
+                        if (unconnectedPeers.Count < UnconnectedMax)
                         {
                             lock (connectedPeers)
                             {
-                                unconnectedPeers.UnionWith(connectedPeers.Select(p => p.ListenerEndpoint).Where(p => p != null).Take(UNCONNECTED_MAX - unconnectedPeers.Count));
+                                unconnectedPeers.UnionWith(connectedPeers.Select(p => p.ListenerEndpoint).Where(p => p != null).Take(UnconnectedMax - unconnectedPeers.Count));
                             }
                         }
                     }
@@ -486,7 +486,7 @@ namespace AntShares.Network
         {
             lock (unconnectedPeers)
             {
-                if (unconnectedPeers.Count < UNCONNECTED_MAX)
+                if (unconnectedPeers.Count < UnconnectedMax)
                 {
                     lock (badPeers)
                     {
@@ -506,7 +506,7 @@ namespace AntShares.Network
             IPEndPoint[] peers;
             lock (unconnectedPeers)
             {
-                peers = unconnectedPeers.Take(UNCONNECTED_MAX).ToArray();
+                peers = unconnectedPeers.Take(UnconnectedMax).ToArray();
             }
             using (BinaryWriter writer = new BinaryWriter(stream, Encoding.ASCII, true))
             {

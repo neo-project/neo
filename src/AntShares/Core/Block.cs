@@ -31,12 +31,12 @@ namespace AntShares.Core
                 {
                     _header = new Header
                     {
-                        PrevBlock = PrevBlock,
+                        PrevHash = PrevHash,
                         MerkleRoot = MerkleRoot,
                         Timestamp = Timestamp,
-                        Height = Height,
+                        Index = Index,
                         ConsensusData = ConsensusData,
-                        NextMiner = NextMiner,
+                        NextConsensus = NextConsensus,
                         Script = Script
                     };
                 }
@@ -54,8 +54,8 @@ namespace AntShares.Core
         public static Fixed8 CalculateNetFee(IEnumerable<Transaction> transactions)
         {
             Transaction[] ts = transactions.Where(p => p.Type != TransactionType.MinerTransaction && p.Type != TransactionType.ClaimTransaction).ToArray();
-            Fixed8 amount_in = ts.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
-            Fixed8 amount_out = ts.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.AntCoin.Hash)).Sum(p => p.Value);
+            Fixed8 amount_in = ts.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.SystemCoin.Hash)).Sum(p => p.Value);
+            Fixed8 amount_out = ts.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.SystemCoin.Hash)).Sum(p => p.Value);
             Fixed8 amount_sysfee = ts.Sum(p => p.SystemFee);
             return amount_in - amount_out - amount_sysfee;
         }
@@ -105,7 +105,7 @@ namespace AntShares.Core
             using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
             using (BinaryReader reader = new BinaryReader(ms))
             {
-                ((ISignable)block).DeserializeUnsigned(reader);
+                ((IVerifiable)block).DeserializeUnsigned(reader);
                 reader.ReadByte(); block.Script = reader.ReadSerializable<Witness>();
                 block.Transactions = new Transaction[reader.ReadVarInt(0x10000000)];
                 for (int i = 0; i < block.Transactions.Length; i++)
@@ -163,7 +163,7 @@ namespace AntShares.Core
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter writer = new BinaryWriter(ms))
             {
-                ((ISignable)this).SerializeUnsigned(writer);
+                ((IVerifiable)this).SerializeUnsigned(writer);
                 writer.Write((byte)1); writer.Write(Script);
                 writer.Write(Transactions.Select(p => p.Hash).ToArray());
                 writer.Flush();
@@ -183,7 +183,7 @@ namespace AntShares.Core
                 return false;
             if (completely)
             {
-                if (NextMiner != Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(Transactions).ToArray()))
+                if (NextConsensus != Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(Transactions).ToArray()))
                     return false;
                 foreach (Transaction tx in Transactions)
                     if (!tx.Verify(Transactions.Where(p => !p.Hash.Equals(tx.Hash)))) return false;

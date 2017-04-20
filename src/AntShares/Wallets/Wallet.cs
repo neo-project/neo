@@ -15,12 +15,12 @@ namespace AntShares.Wallets
     {
         public event EventHandler BalanceChanged;
 
-        public static readonly byte CoinVersion = Settings.Default.CoinVersion;
+        public static readonly byte AddressVersion = Settings.Default.AddressVersion;
 
         private readonly string path;
         private readonly byte[] iv;
         private readonly byte[] masterKey;
-        private readonly Dictionary<UInt160, Account> accounts;
+        private readonly Dictionary<UInt160, KeyPair> keys;
         private readonly Dictionary<UInt160, Contract> contracts;
         private readonly HashSet<UInt160> watchOnly;
         private readonly TrackableCollection<CoinReference, Coin> coins;
@@ -41,7 +41,7 @@ namespace AntShares.Wallets
             {
                 this.iv = new byte[16];
                 this.masterKey = new byte[32];
-                this.accounts = new Dictionary<UInt160, Account>();
+                this.keys = new Dictionary<UInt160, KeyPair>();
                 this.contracts = new Dictionary<UInt160, Contract>();
                 this.watchOnly = new HashSet<UInt160>();
                 this.coins = new TrackableCollection<CoinReference, Coin>();
@@ -71,7 +71,7 @@ namespace AntShares.Wallets
 #if NET461
                 ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
 #endif
-                this.accounts = LoadAccounts().ToDictionary(p => p.PublicKeyHash);
+                this.keys = LoadKeyPairs().ToDictionary(p => p.PublicKeyHash);
                 this.contracts = LoadContracts().ToDictionary(p => p.ScriptHash);
                 this.watchOnly = new HashSet<UInt160>(LoadWatchOnly());
                 this.coins = new TrackableCollection<CoinReference, Coin>(LoadCoins());
@@ -96,9 +96,9 @@ namespace AntShares.Wallets
 
         public virtual void AddContract(Contract contract)
         {
-            lock (accounts)
+            lock (keys)
             {
-                if (!accounts.ContainsKey(contract.PublicKeyHash))
+                if (!keys.ContainsKey(contract.PublicKeyHash))
                     throw new InvalidOperationException();
                 lock (contracts)
                     lock (watchOnly)
@@ -124,92 +124,6 @@ namespace AntShares.Wallets
 
         protected virtual void BuildDatabase()
         {
-        }
-
-        public static Fixed8 CalculateClaimAmount(IEnumerable<CoinReference> inputs, bool ignoreClaimed = true)
-        {
-            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes))
-                throw new NotSupportedException();
-            List<SpentCoin> unclaimed = new List<SpentCoin>();
-            foreach (var group in inputs.GroupBy(p => p.PrevHash))
-            {
-                Dictionary<ushort, SpentCoin> claimable = Blockchain.Default.GetUnclaimed(group.Key);
-                if (claimable == null || claimable.Count == 0)
-                    if (ignoreClaimed)
-                        continue;
-                    else
-                        throw new ArgumentException();
-                foreach (CoinReference claim in group)
-                {
-                    if (!claimable.ContainsKey(claim.PrevIndex))
-                        if (ignoreClaimed)
-                            continue;
-                        else
-                            throw new ArgumentException();
-                    unclaimed.Add(claimable[claim.PrevIndex]);
-                }
-            }
-            return CalculateClaimAmountInternal(unclaimed);
-        }
-
-        public static Fixed8 CalculateClaimAmountUnavailable(IEnumerable<CoinReference> inputs, uint height)
-        {
-            List<SpentCoin> unclaimed = new List<SpentCoin>();
-            foreach (var group in inputs.GroupBy(p => p.PrevHash))
-            {
-                int height_start;
-                Transaction tx = Blockchain.Default.GetTransaction(group.Key, out height_start);
-                if (tx == null) throw new ArgumentException();
-                if (height_start == height) continue;
-                foreach (CoinReference claim in group)
-                {
-                    if (claim.PrevIndex >= tx.Outputs.Length || !tx.Outputs[claim.PrevIndex].AssetId.Equals(Blockchain.AntShare.Hash))
-                        throw new ArgumentException();
-                    unclaimed.Add(new SpentCoin
-                    {
-                        Output = tx.Outputs[claim.PrevIndex],
-                        StartHeight = (uint)height_start,
-                        EndHeight = height
-                    });
-                }
-            }
-            return CalculateClaimAmountInternal(unclaimed);
-        }
-
-        private static Fixed8 CalculateClaimAmountInternal(IEnumerable<SpentCoin> unclaimed)
-        {
-            Fixed8 amount_claimed = Fixed8.Zero;
-            foreach (var group in unclaimed.GroupBy(p => new { p.StartHeight, p.EndHeight }))
-            {
-                uint amount = 0;
-                uint ustart = group.Key.StartHeight / Blockchain.DecrementInterval;
-                if (ustart < Blockchain.MintingAmount.Length)
-                {
-                    uint istart = group.Key.StartHeight % Blockchain.DecrementInterval;
-                    uint uend = group.Key.EndHeight / Blockchain.DecrementInterval;
-                    uint iend = group.Key.EndHeight % Blockchain.DecrementInterval;
-                    if (uend >= Blockchain.MintingAmount.Length)
-                    {
-                        uend = (uint)Blockchain.MintingAmount.Length;
-                        iend = 0;
-                    }
-                    if (iend == 0)
-                    {
-                        uend--;
-                        iend = Blockchain.DecrementInterval;
-                    }
-                    while (ustart < uend)
-                    {
-                        amount += (Blockchain.DecrementInterval - istart) * Blockchain.MintingAmount[ustart];
-                        ustart++;
-                        istart = 0;
-                    }
-                    amount += (iend - istart) * Blockchain.MintingAmount[ustart];
-                }
-                amount += (uint)(Blockchain.Default.GetSysFeeAmount(group.Key.EndHeight - 1) - (group.Key.StartHeight == 0 ? 0 : Blockchain.Default.GetSysFeeAmount(group.Key.StartHeight - 1)));
-                amount_claimed += group.Sum(p => p.Value) / 100000000 * amount;
-            }
-            return amount_claimed;
         }
 
         public bool ChangePassword(string password_old, string password_new)
@@ -248,16 +162,16 @@ namespace AntShares.Wallets
             return AddressState.None;
         }
 
-        public bool ContainsAccount(Cryptography.ECC.ECPoint publicKey)
+        public bool ContainsKey(Cryptography.ECC.ECPoint publicKey)
         {
-            return ContainsAccount(publicKey.EncodePoint(true).ToScriptHash());
+            return ContainsKey(publicKey.EncodePoint(true).ToScriptHash());
         }
 
-        public bool ContainsAccount(UInt160 publicKeyHash)
+        public bool ContainsKey(UInt160 publicKeyHash)
         {
-            lock (accounts)
+            lock (keys)
             {
-                return accounts.ContainsKey(publicKeyHash);
+                return keys.ContainsKey(publicKeyHash);
             }
         }
 
@@ -266,26 +180,26 @@ namespace AntShares.Wallets
             return CheckAddressState(scriptHash).HasFlag(AddressState.InWallet);
         }
 
-        public Account CreateAccount()
+        public KeyPair CreateKey()
         {
             byte[] privateKey = new byte[32];
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
                 rng.GetBytes(privateKey);
             }
-            Account account = CreateAccount(privateKey);
+            KeyPair key = CreateKey(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
-            return account;
+            return key;
         }
 
-        public virtual Account CreateAccount(byte[] privateKey)
+        public virtual KeyPair CreateKey(byte[] privateKey)
         {
-            Account account = new Account(privateKey);
-            lock (accounts)
+            KeyPair key = new KeyPair(privateKey);
+            lock (keys)
             {
-                accounts[account.PublicKeyHash] = account;
+                keys[key.PublicKeyHash] = key;
             }
-            return account;
+            return key;
         }
 
         protected byte[] DecryptPrivateKey(byte[] encryptedPrivateKey)
@@ -300,9 +214,9 @@ namespace AntShares.Wallets
             }
         }
 
-        public virtual bool DeleteAccount(UInt160 publicKeyHash)
+        public virtual bool DeleteKey(UInt160 publicKeyHash)
         {
-            lock (accounts)
+            lock (keys)
             {
                 lock (contracts)
                 {
@@ -311,7 +225,7 @@ namespace AntShares.Wallets
                         DeleteAddress(contract.ScriptHash);
                     }
                 }
-                return accounts.Remove(publicKeyHash);
+                return keys.Remove(publicKeyHash);
             }
         }
 
@@ -372,35 +286,35 @@ namespace AntShares.Wallets
                 return unspents_ordered.Take(i).Concat(new[] { unspents_ordered.Last(p => p.Output.Value >= amount) }).ToArray();
         }
 
-        public Account GetAccount(Cryptography.ECC.ECPoint publicKey)
+        public KeyPair GetKey(Cryptography.ECC.ECPoint publicKey)
         {
-            return GetAccount(publicKey.EncodePoint(true).ToScriptHash());
+            return GetKey(publicKey.EncodePoint(true).ToScriptHash());
         }
 
-        public Account GetAccount(UInt160 publicKeyHash)
+        public KeyPair GetKey(UInt160 publicKeyHash)
         {
-            lock (accounts)
+            lock (keys)
             {
-                if (!accounts.ContainsKey(publicKeyHash)) return null;
-                return accounts[publicKeyHash];
+                if (!keys.ContainsKey(publicKeyHash)) return null;
+                return keys[publicKeyHash];
             }
         }
 
-        public Account GetAccountByScriptHash(UInt160 scriptHash)
+        public KeyPair GetKeyByScriptHash(UInt160 scriptHash)
         {
-            lock (accounts)
+            lock (keys)
                 lock (contracts)
                 {
                     if (!contracts.ContainsKey(scriptHash)) return null;
-                    return accounts[contracts[scriptHash].PublicKeyHash];
+                    return keys[contracts[scriptHash].PublicKeyHash];
                 }
         }
 
-        public IEnumerable<Account> GetAccounts()
+        public IEnumerable<KeyPair> GetKeys()
         {
-            lock (accounts)
+            lock (keys)
             {
-                foreach (var pair in accounts)
+                foreach (var pair in keys)
                 {
                     yield return pair.Value;
                 }
@@ -502,7 +416,7 @@ namespace AntShares.Wallets
             {
                 foreach (var coin in coins)
                 {
-                    if (!coin.Output.AssetId.Equals(Blockchain.AntShare.Hash)) continue;
+                    if (!coin.Output.AssetId.Equals(Blockchain.SystemShare.Hash)) continue;
                     if (!coin.State.HasFlag(CoinState.Confirmed)) continue;
                     if (!coin.State.HasFlag(CoinState.Spent)) continue;
                     if (coin.State.HasFlag(CoinState.Claimed)) continue;
@@ -513,7 +427,7 @@ namespace AntShares.Wallets
             }
         }
 
-        public Account Import(X509Certificate2 cert)
+        public KeyPair Import(X509Certificate2 cert)
         {
             byte[] privateKey;
             using (ECDsa ecdsa = cert.GetECDsaPrivateKey())
@@ -524,17 +438,17 @@ namespace AntShares.Wallets
                 privateKey = ecdsa.ExportParameters(true).D;
 #endif
             }
-            Account account = CreateAccount(privateKey);
+            KeyPair key = CreateKey(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
-            return account;
+            return key;
         }
 
-        public Account Import(string wif)
+        public KeyPair Import(string wif)
         {
             byte[] privateKey = GetPrivateKeyFromWIF(wif);
-            Account account = CreateAccount(privateKey);
+            KeyPair key = CreateKey(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
-            return account;
+            return key;
         }
 
         protected bool IsWalletTransaction(Transaction tx)
@@ -543,20 +457,20 @@ namespace AntShares.Wallets
             {
                 if (tx.Outputs.Any(p => contracts.ContainsKey(p.ScriptHash)))
                     return true;
-                if (tx.Scripts.Any(p => contracts.ContainsKey(p.RedeemScript.ToScriptHash())))
+                if (tx.Scripts.Any(p => contracts.ContainsKey(p.VerificationScript.ToScriptHash())))
                     return true;
             }
             lock (watchOnly)
             {
                 if (tx.Outputs.Any(p => watchOnly.Contains(p.ScriptHash)))
                     return true;
-                if (tx.Scripts.Any(p => watchOnly.Contains(p.RedeemScript.ToScriptHash())))
+                if (tx.Scripts.Any(p => watchOnly.Contains(p.VerificationScript.ToScriptHash())))
                     return true;
             }
             return false;
         }
 
-        protected abstract IEnumerable<Account> LoadAccounts();
+        protected abstract IEnumerable<KeyPair> LoadKeyPairs();
 
         protected abstract IEnumerable<Coin> LoadCoins();
 
@@ -569,7 +483,7 @@ namespace AntShares.Wallets
             return Enumerable.Empty<UInt160>();
         }
 
-        public T MakeTransaction<T>(T tx, Fixed8 fee) where T : Transaction
+        public T MakeTransaction<T>(T tx, UInt160 change_address = null, Fixed8 fee = default(Fixed8)) where T : Transaction
         {
             if (tx.Outputs == null) tx.Outputs = new TransactionOutput[0];
             if (tx.Attributes == null) tx.Attributes = new TransactionAttribute[0];
@@ -581,19 +495,19 @@ namespace AntShares.Wallets
             }).ToDictionary(p => p.AssetId);
             if (fee > Fixed8.Zero)
             {
-                if (pay_total.ContainsKey(Blockchain.AntCoin.Hash))
+                if (pay_total.ContainsKey(Blockchain.SystemCoin.Hash))
                 {
-                    pay_total[Blockchain.AntCoin.Hash] = new
+                    pay_total[Blockchain.SystemCoin.Hash] = new
                     {
-                        AssetId = Blockchain.AntCoin.Hash,
-                        Value = pay_total[Blockchain.AntCoin.Hash].Value + fee
+                        AssetId = Blockchain.SystemCoin.Hash,
+                        Value = pay_total[Blockchain.SystemCoin.Hash].Value + fee
                     };
                 }
                 else
                 {
-                    pay_total.Add(Blockchain.AntCoin.Hash, new
+                    pay_total.Add(Blockchain.SystemCoin.Hash, new
                     {
-                        AssetId = Blockchain.AntCoin.Hash,
+                        AssetId = Blockchain.SystemCoin.Hash,
                         Value = fee
                     });
                 }
@@ -609,7 +523,7 @@ namespace AntShares.Wallets
                 AssetId = p.AssetId,
                 Value = p.Unspents.Sum(q => q.Output.Value)
             });
-            UInt160 change_address = GetChangeAddress();
+            if (change_address == null) change_address = GetChangeAddress();
             List<TransactionOutput> outputs_new = new List<TransactionOutput>(tx.Outputs);
             foreach (UInt256 asset_id in input_sum.Keys)
             {
@@ -689,7 +603,7 @@ namespace AntShares.Wallets
                         {
                             if (coins.Contains(input))
                             {
-                                if (coins[input].Output.AssetId.Equals(Blockchain.AntShare.Hash))
+                                if (coins[input].Output.AssetId.Equals(Blockchain.SystemShare.Hash))
                                     coins[input].State |= CoinState.Spent | CoinState.Confirmed;
                                 else
                                     coins.Remove(input);
@@ -785,17 +699,17 @@ namespace AntShares.Wallets
             {
                 Contract contract = GetContract(scriptHash);
                 if (contract == null) continue;
-                Account account = GetAccountByScriptHash(scriptHash);
-                if (account == null) continue;
-                byte[] signature = context.Signable.Sign(account);
-                fSuccess |= context.AddSignature(contract, account.PublicKey, signature);
+                KeyPair key = GetKeyByScriptHash(scriptHash);
+                if (key == null) continue;
+                byte[] signature = context.Verifiable.Sign(key);
+                fSuccess |= context.AddSignature(contract, key.PublicKey, signature);
             }
             return fSuccess;
         }
 
         public static string ToAddress(UInt160 scriptHash)
         {
-            byte[] data = new byte[] { CoinVersion }.Concat(scriptHash.ToArray()).ToArray();
+            byte[] data = new byte[] { AddressVersion }.Concat(scriptHash.ToArray()).ToArray();
             return Base58.Encode(data.Concat(Crypto.Default.Hash256(data).Take(4)).ToArray());
         }
 
@@ -804,7 +718,7 @@ namespace AntShares.Wallets
             byte[] data = Base58.Decode(address);
             if (data.Length != 25)
                 throw new FormatException();
-            if (data[0] != CoinVersion)
+            if (data[0] != AddressVersion)
                 throw new FormatException();
             if (!Crypto.Default.Hash256(data.Take(21).ToArray()).Take(4).SequenceEqual(data.Skip(21)))
                 throw new FormatException();

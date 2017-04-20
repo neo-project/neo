@@ -16,7 +16,7 @@ namespace AntShares.Core
         {
             get
             {
-                if (Outputs.All(p => p.AssetId == Blockchain.AntShare.Hash || p.AssetId == Blockchain.AntCoin.Hash))
+                if (Outputs.All(p => p.AssetId == Blockchain.SystemShare.Hash || p.AssetId == Blockchain.SystemCoin.Hash))
                     return Fixed8.Zero;
                 return base.SystemFee;
             }
@@ -57,8 +57,6 @@ namespace AntShares.Core
                 AssetState asset = Blockchain.Default.GetAssetState(r.AssetId);
                 if (asset == null) return false;
                 if (asset.Amount < Fixed8.Zero) continue;
-                if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.Statistics))
-                    return false;
                 Fixed8 quantity_issued = asset.Available + mempool.OfType<IssueTransaction>().Where(p => p != this).SelectMany(p => p.Outputs).Where(p => p.AssetId == r.AssetId).Sum(p => p.Value);
                 if (asset.Amount - quantity_issued < -r.Amount) return false;
             }

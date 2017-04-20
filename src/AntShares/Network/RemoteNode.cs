@@ -19,7 +19,9 @@ namespace AntShares.Network
         internal event EventHandler<IInventory> InventoryReceived;
         internal event EventHandler<IPEndPoint[]> PeersReceived;
 
+        private static readonly TimeSpan HalfMinute = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan OneMinute = TimeSpan.FromMinutes(1);
+        private static readonly TimeSpan HalfHour = TimeSpan.FromMinutes(30);
 
         private Queue<Message> message_queue = new Queue<Message>();
         private static HashSet<UInt256> missions_global = new HashSet<UInt256>();
@@ -108,8 +110,7 @@ namespace AntShares.Network
         {
             if (!localNode.ServiceEnabled) return;
             if (Blockchain.Default == null) return;
-            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.BlockIndexes)) return;
-            UInt256 hash = payload.HashStart.Select(p => Blockchain.Default.GetHeader(p)).Where(p => p != null).OrderBy(p => p.Height).Select(p => p.Hash).FirstOrDefault();
+            UInt256 hash = payload.HashStart.Select(p => Blockchain.Default.GetHeader(p)).Where(p => p != null).OrderBy(p => p.Index).Select(p => p.Hash).FirstOrDefault();
             if (hash == null || hash == payload.HashStop) return;
             List<UInt256> hashes = new List<UInt256>();
             do
@@ -168,8 +169,7 @@ namespace AntShares.Network
         {
             if (!localNode.ServiceEnabled) return;
             if (Blockchain.Default == null) return;
-            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.BlockIndexes)) return;
-            UInt256 hash = payload.HashStart.Select(p => Blockchain.Default.GetHeader(p)).Where(p => p != null).OrderBy(p => p.Height).Select(p => p.Hash).FirstOrDefault();
+            UInt256 hash = payload.HashStart.Select(p => Blockchain.Default.GetHeader(p)).Where(p => p != null).OrderBy(p => p.Index).Select(p => p.Hash).FirstOrDefault();
             if (hash == null || hash == payload.HashStop) return;
             List<Header> headers = new List<Header>();
             do
@@ -333,7 +333,7 @@ namespace AntShares.Network
         {
             if (!await SendMessageAsync(Message.Create("version", VersionPayload.Create(localNode.Port, localNode.Nonce, localNode.UserAgent))))
                 return;
-            Message message = await ReceiveMessageAsync(TimeSpan.FromSeconds(30));
+            Message message = await ReceiveMessageAsync(HalfMinute);
             if (message == null) return;
             if (message.Command != "version")
             {
@@ -380,7 +380,7 @@ namespace AntShares.Network
                 ListenerEndpoint = new IPEndPoint(RemoteEndpoint.Address, Version.Port);
             }
             if (!await SendMessageAsync(Message.Create("verack"))) return;
-            message = await ReceiveMessageAsync(TimeSpan.FromSeconds(30));
+            message = await ReceiveMessageAsync(HalfMinute);
             if (message == null) return;
             if (message.Command != "verack")
             {
@@ -394,14 +394,14 @@ namespace AntShares.Network
             StartSendLoop();
             while (disposed == 0)
             {
-                if (Blockchain.Default?.IsReadOnly == false)
+                if (Blockchain.Default != null)
                 {
                     if (missions.Count == 0 && Blockchain.Default.Height < Version.StartHeight)
                     {
                         EnqueueMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash), true);
                     }
                 }
-                TimeSpan timeout = missions.Count == 0 ? TimeSpan.FromMinutes(30) : TimeSpan.FromSeconds(60);
+                TimeSpan timeout = missions.Count == 0 ? HalfHour : OneMinute;
                 message = await ReceiveMessageAsync(timeout);
                 if (message == null) break;
                 try
@@ -452,7 +452,7 @@ namespace AntShares.Network
             if (filter.Check(tx.Hash.ToArray())) return true;
             if (tx.Outputs.Any(p => filter.Check(p.ScriptHash.ToArray()))) return true;
             if (tx.Inputs.Any(p => filter.Check(p.ToArray()))) return true;
-            if (tx.Scripts.Any(p => filter.Check(p.RedeemScript.ToScriptHash().ToArray())))
+            if (tx.Scripts.Any(p => filter.Check(p.VerificationScript.ToScriptHash().ToArray())))
                 return true;
             if (tx.Type == TransactionType.RegisterTransaction)
             {

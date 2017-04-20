@@ -41,7 +41,7 @@ namespace AntShares.Core
             base.OnDeserialized();
             if (Inputs.Length != 0)
                 throw new FormatException();
-            if (Outputs.Any(p => p.AssetId != Blockchain.AntCoin.Hash))
+            if (Outputs.Any(p => p.AssetId != Blockchain.SystemCoin.Hash))
                 throw new FormatException();
         }
 

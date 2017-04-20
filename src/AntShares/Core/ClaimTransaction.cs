@@ -1,6 +1,5 @@
 ﻿using AntShares.IO;
 using AntShares.IO.Json;
-using AntShares.Wallets;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -88,11 +87,11 @@ namespace AntShares.Core
                 return false;
             if (mempool.OfType<ClaimTransaction>().Where(p => p != this).SelectMany(p => p.Claims).Intersect(Claims).Count() > 0)
                 return false;
-            TransactionResult result = GetTransactionResults().FirstOrDefault(p => p.AssetId == Blockchain.AntCoin.Hash);
+            TransactionResult result = GetTransactionResults().FirstOrDefault(p => p.AssetId == Blockchain.SystemCoin.Hash);
             if (result == null || result.Amount > Fixed8.Zero) return false;
             try
             {
-                return Wallet.CalculateClaimAmount(Claims, false) == -result.Amount;
+                return Blockchain.CalculateClaimAmount(Claims, false) == -result.Amount;
             }
             catch (ArgumentException)
             {

@@ -22,7 +22,7 @@ namespace AntShares.Network.Payloads
         {
             return new VersionPayload
             {
-                Version = LocalNode.PROTOCOL_VERSION,
+                Version = LocalNode.ProtocolVersion,
                 Services = NetworkAddressWithTime.NODE_NETWORK,
                 Timestamp = DateTime.Now.ToTimestamp(),
                 Port = (ushort)port,

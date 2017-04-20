@@ -67,8 +67,8 @@ namespace AntShares.Core
             {
                 if (_network_fee == -Fixed8.Satoshi)
                 {
-                    Fixed8 input = References.Values.Where(p => p.AssetId.Equals(Blockchain.AntCoin.Hash)).Sum(p => p.Value);
-                    Fixed8 output = Outputs.Where(p => p.AssetId.Equals(Blockchain.AntCoin.Hash)).Sum(p => p.Value);
+                    Fixed8 input = References.Values.Where(p => p.AssetId.Equals(Blockchain.SystemCoin.Hash)).Sum(p => p.Value);
+                    Fixed8 output = Outputs.Where(p => p.AssetId.Equals(Blockchain.SystemCoin.Hash)).Sum(p => p.Value);
                     _network_fee = input - output - SystemFee;
                 }
                 return _network_fee;
@@ -135,7 +135,7 @@ namespace AntShares.Core
         /// <param name="reader">数据来源</param>
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            ((ISignable)this).DeserializeUnsigned(reader);
+            ((IVerifiable)this).DeserializeUnsigned(reader);
             Scripts = reader.ReadSerializableArray<Witness>();
             OnDeserialized();
         }
@@ -177,10 +177,11 @@ namespace AntShares.Core
                 throw new FormatException();
             transaction.DeserializeUnsignedWithoutType(reader);
             transaction.Scripts = reader.ReadSerializableArray<Witness>();
+            transaction.OnDeserialized();
             return transaction;
         }
 
-        void ISignable.DeserializeUnsigned(BinaryReader reader)
+        void IVerifiable.DeserializeUnsigned(BinaryReader reader)
         {
             if ((TransactionType)reader.ReadByte() != Type)
                 throw new FormatException();
@@ -276,7 +277,7 @@ namespace AntShares.Core
         /// <param name="writer">存放序列化后的结果</param>
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            ((ISignable)this).SerializeUnsigned(writer);
+            ((IVerifiable)this).SerializeUnsigned(writer);
             writer.Write(Scripts);
         }
 
@@ -288,7 +289,7 @@ namespace AntShares.Core
         {
         }
 
-        void ISignable.SerializeUnsigned(BinaryWriter writer)
+        void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write((byte)Type);
             writer.Write(Version);
@@ -334,8 +335,6 @@ namespace AntShares.Core
         /// <returns>返回验证的结果</returns>
         public virtual bool Verify(IEnumerable<Transaction> mempool)
         {
-            if (!Blockchain.Default.Ability.HasFlag(BlockchainAbility.UnspentIndexes) || !Blockchain.Default.Ability.HasFlag(BlockchainAbility.TransactionIndexes))
-                return false;
             for (int i = 1; i < Inputs.Length; i++)
                 for (int j = 0; j < i; j++)
                     if (Inputs[i].PrevHash == Inputs[j].PrevHash && Inputs[i].PrevIndex == Inputs[j].PrevIndex)
@@ -356,7 +355,7 @@ namespace AntShares.Core
             if (results == null) return false;
             TransactionResult[] results_destroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
             if (results_destroy.Length > 1) return false;
-            if (results_destroy.Length == 1 && results_destroy[0].AssetId != Blockchain.AntCoin.Hash)
+            if (results_destroy.Length == 1 && results_destroy[0].AssetId != Blockchain.SystemCoin.Hash)
                 return false;
             if (SystemFee > Fixed8.Zero && (results_destroy.Length == 0 || results_destroy[0].Amount < SystemFee))
                 return false;
@@ -365,11 +364,11 @@ namespace AntShares.Core
             {
                 case TransactionType.MinerTransaction:
                 case TransactionType.ClaimTransaction:
-                    if (results_issue.Any(p => p.AssetId != Blockchain.AntCoin.Hash))
+                    if (results_issue.Any(p => p.AssetId != Blockchain.SystemCoin.Hash))
                         return false;
                     break;
                 case TransactionType.IssueTransaction:
-                    if (results_issue.Any(p => p.AssetId == Blockchain.AntCoin.Hash))
+                    if (results_issue.Any(p => p.AssetId == Blockchain.SystemCoin.Hash))
                         return false;
                     break;
                 default:

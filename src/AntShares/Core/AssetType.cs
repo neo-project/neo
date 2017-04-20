@@ -8,28 +8,11 @@
         CreditFlag = 0x40,
         DutyFlag = 0x80,
 
-        /// <summary>
-        /// 小蚁股
-        /// </summary>
-        AntShare = 0x00,
-
-        /// <summary>
-        /// 小蚁币
-        /// </summary>
-        AntCoin = 0x01,
-
-        /// <summary>
-        /// 法币
-        /// </summary>
+        SystemShare = 0x00,
+        SystemCoin = 0x01,
         Currency = 0x08,
-
-        /// <summary>
-        /// 股权
-        /// </summary>
         Share = DutyFlag | 0x10,
-
         Invoice = DutyFlag | 0x18,
-
         Token = CreditFlag | 0x20,
     }
 }

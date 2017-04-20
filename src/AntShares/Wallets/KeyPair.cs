@@ -6,13 +6,13 @@ using System.Security.Cryptography;
 
 namespace AntShares.Wallets
 {
-    public class Account : IEquatable<Account>
+    public class KeyPair : IEquatable<KeyPair>
     {
         public readonly byte[] PrivateKey;
         public readonly Cryptography.ECC.ECPoint PublicKey;
         public readonly UInt160 PublicKeyHash;
 
-        public Account(byte[] privateKey)
+        public KeyPair(byte[] privateKey)
         {
             if (privateKey.Length != 32 && privateKey.Length != 96 && privateKey.Length != 104)
                 throw new ArgumentException();
@@ -41,7 +41,7 @@ namespace AntShares.Wallets
 #endif
         }
 
-        public bool Equals(Account other)
+        public bool Equals(KeyPair other)
         {
             if (ReferenceEquals(this, other)) return true;
             if (ReferenceEquals(null, other)) return false;
@@ -50,7 +50,7 @@ namespace AntShares.Wallets
 
         public override bool Equals(object obj)
         {
-            return Equals(obj as Account);
+            return Equals(obj as KeyPair);
         }
 
         public string Export()

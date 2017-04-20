@@ -21,7 +21,7 @@ namespace AntShares
 
         public static readonly Fixed8 Satoshi = new Fixed8 { value = 1 };
 
-        public static readonly Fixed8 Zero = new Fixed8();
+        public static readonly Fixed8 Zero = default(Fixed8);
 
         public int Size => sizeof(long);
 

@@ -22,12 +22,10 @@ namespace AntShares.Implementations.Blockchains.LevelDB
         private AutoResetEvent new_block_event = new AutoResetEvent(false);
         private bool disposed = false;
 
-        public override BlockchainAbility Ability => BlockchainAbility.All;
         public override UInt256 CurrentBlockHash => header_index[(int)current_block_height];
         public override UInt256 CurrentHeaderHash => header_index[header_index.Count - 1];
         public override uint HeaderHeight => (uint)header_index.Count - 1;
         public override uint Height => current_block_height;
-        public override bool IsReadOnly => false;
         public bool VerifyBlocks { get; set; } = true;
 
         public LevelDBBlockchain(string path)
@@ -36,7 +34,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             Version version;
             Slice value;
             db = DB.Open(path, new Options { CreateIfMissing = true });
-            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.SYS_Version), out value) && Version.TryParse(value.ToString(), out version) && version >= Version.Parse("0.6.6043.32131"))
+            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.SYS_Version), out value) && Version.TryParse(value.ToString(), out version) && version >= Version.Parse("1.5"))
             {
                 ReadOptions options = new ReadOptions { FillCache = false };
                 value = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock));
@@ -69,7 +67,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 }
                 if (stored_header_count == 0)
                 {
-                    Header[] headers = db.Find(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block), (k, v) => Header.FromTrimmedData(v.ToArray(), sizeof(long))).OrderBy(p => p.Height).ToArray();
+                    Header[] headers = db.Find(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block), (k, v) => Header.FromTrimmedData(v.ToArray(), sizeof(long))).OrderBy(p => p.Index).ToArray();
                     for (int i = 1; i < headers.Length; i++)
                     {
                         header_index.Add(headers[i].Hash);
@@ -81,7 +79,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     {
                         Header header = Header.FromTrimmedData(db.Get(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash)).ToArray(), sizeof(long));
                         header_index.Insert((int)stored_header_count, hash);
-                        hash = header.PrevBlock;
+                        hash = header.PrevHash;
                     }
                 }
             }
@@ -116,15 +114,15 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             }
             lock (header_index)
             {
-                if (block.Height - 1 >= header_index.Count) return false;
-                if (block.Height == header_index.Count)
+                if (block.Index - 1 >= header_index.Count) return false;
+                if (block.Index == header_index.Count)
                 {
                     if (VerifyBlocks && !block.Verify()) return false;
                     WriteBatch batch = new WriteBatch();
                     OnAddHeader(block.Header, batch);
                     db.Write(WriteOptions.Default, batch);
                 }
-                if (block.Height < header_index.Count)
+                if (block.Index < header_index.Count)
                     new_block_event.Set();
             }
             return true;
@@ -139,8 +137,8 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     WriteBatch batch = new WriteBatch();
                     foreach (Header header in headers)
                     {
-                        if (header.Height - 1 >= header_index.Count) break;
-                        if (header.Height < header_index.Count) continue;
+                        if (header.Index - 1 >= header_index.Count) break;
+                        if (header.Index < header_index.Count) continue;
                         if (VerifyBlocks && !header.Verify()) break;
                         OnAddHeader(header, batch);
                         header_cache.Add(header.Hash, header);
@@ -153,13 +151,11 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override bool ContainsBlock(UInt256 hash)
         {
-            if (base.ContainsBlock(hash)) return true;
-            return GetHeader(hash)?.Height <= current_block_height;
+            return GetHeader(hash)?.Index <= current_block_height;
         }
 
         public override bool ContainsTransaction(UInt256 hash)
         {
-            if (base.ContainsTransaction(hash)) return true;
             Slice value;
             return db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.DATA_Transaction).Add(hash), out value);
         }
@@ -198,18 +194,11 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override Block GetBlock(UInt256 hash)
         {
-            Block block = base.GetBlock(hash);
-            if (block == null)
-            {
-                block = GetBlockInternal(ReadOptions.Default, hash);
-            }
-            return block;
+            return GetBlockInternal(ReadOptions.Default, hash);
         }
 
         public override UInt256 GetBlockHash(uint height)
         {
-            UInt256 hash = base.GetBlockHash(height);
-            if (hash != null) return hash;
             if (current_block_height < height) return null;
             lock (header_index)
             {
@@ -258,8 +247,6 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override Header GetHeader(uint height)
         {
-            Header header = base.GetHeader(height);
-            if (header != null) return header;
             UInt256 hash;
             lock (header_index)
             {
@@ -271,8 +258,6 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override Header GetHeader(UInt256 hash)
         {
-            Header header = base.GetHeader(hash);
-            if (header != null) return header;
             lock (header_cache)
             {
                 if (header_cache.ContainsKey(hash))
@@ -295,9 +280,9 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             if (header == null) return null;
             lock (header_index)
             {
-                if (header.Height + 1 >= header_index.Count)
+                if (header.Index + 1 >= header_index.Count)
                     return null;
-                return header_index[(int)header.Height + 1];
+                return header_index[(int)header.Index + 1];
             }
         }
 
@@ -311,12 +296,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override Transaction GetTransaction(UInt256 hash, out int height)
         {
-            Transaction tx = base.GetTransaction(hash, out height);
-            if (tx == null)
-            {
-                tx = GetTransaction(ReadOptions.Default, hash, out height);
-            }
-            return tx;
+            return GetTransaction(ReadOptions.Default, hash, out height);
         }
 
         private Transaction GetTransaction(ReadOptions options, UInt256 hash, out int height)
@@ -380,12 +360,12 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     int height;
                     Transaction tx = GetTransaction(options, k, out height);
                     return g.Select(p => tx.Outputs[p.PrevIndex]);
-                }).SelectMany(p => p).Where(p => p.AssetId.Equals(AntShare.Hash)).Select(p => new
+                }).SelectMany(p => p).Where(p => p.AssetId.Equals(SystemShare.Hash)).Select(p => new
                 {
                     p.ScriptHash,
                     Value = -p.Value
                 });
-                var outputs = others.SelectMany(p => p.Outputs).Where(p => p.AssetId.Equals(AntShare.Hash)).Select(p => new
+                var outputs = others.SelectMany(p => p.Outputs).Where(p => p.AssetId.Equals(SystemShare.Hash)).Select(p => new
                 {
                     p.ScriptHash,
                     p.Value
@@ -394,7 +374,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 var accounts = db.Find<AccountState>(options, DataEntryPrefix.ST_Account).Where(p => p.Votes.Length > 0);
                 foreach (AccountState account in accounts)
                 {
-                    Fixed8 balance = account.Balances.ContainsKey(AntShare.Hash) ? account.Balances[AntShare.Hash] : Fixed8.Zero;
+                    Fixed8 balance = account.Balances.ContainsKey(SystemShare.Hash) ? account.Balances[SystemShare.Hash] : Fixed8.Zero;
                     if (changes.ContainsKey(account.ScriptHash))
                         balance += changes[account.ScriptHash];
                     if (balance <= Fixed8.Zero) continue;
@@ -427,7 +407,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
         private void OnAddHeader(Header header, WriteBatch batch)
         {
             header_index.Add(header.Hash);
-            while ((int)header.Height - 2000 >= stored_header_count)
+            while ((int)header.Index - 2000 >= stored_header_count)
             {
                 using (MemoryStream ms = new MemoryStream())
                 using (BinaryWriter w = new BinaryWriter(ms))
@@ -439,7 +419,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 stored_header_count += 2000;
             }
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(header.Hash), SliceBuilder.Begin().Add(0L).Add(header.ToArray()));
-            batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentHeader), SliceBuilder.Begin().Add(header.Hash).Add(header.Height));
+            batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentHeader), SliceBuilder.Begin().Add(header.Hash).Add(header.Index));
         }
 
         private void Persist(Block block)
@@ -451,11 +431,11 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             DataCache<UInt256, AssetState> assets = new DataCache<UInt256, AssetState>(db, DataEntryPrefix.ST_Asset);
             DataCache<UInt160, ContractState> contracts = new DataCache<UInt160, ContractState>(db, DataEntryPrefix.ST_Contract);
             WriteBatch batch = new WriteBatch();
-            long amount_sysfee = GetSysFeeAmount(block.PrevBlock) + (long)block.Transactions.Sum(p => p.SystemFee);
+            long amount_sysfee = GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.SystemFee);
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(block.Hash), SliceBuilder.Begin().Add(amount_sysfee).Add(block.Trim()));
             foreach (Transaction tx in block.Transactions)
             {
-                batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Transaction).Add(tx.Hash), SliceBuilder.Begin().Add(block.Height).Add(tx.ToArray()));
+                batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Transaction).Add(tx.Hash), SliceBuilder.Begin().Add(block.Index).Add(tx.ToArray()));
                 switch (tx.Type)
                 {
                     case TransactionType.RegisterTransaction:
@@ -474,7 +454,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                                 Owner = rtx.Owner,
                                 Admin = rtx.Admin,
                                 Issuer = rtx.Admin,
-                                Expiration = block.Height + 2000000,
+                                Expiration = block.Index + 2000000,
                                 IsFrozen = false
                             });
                         }
@@ -534,14 +514,14 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 foreach (CoinReference input in group)
                 {
                     unspentcoins[input.PrevHash].Items[input.PrevIndex] |= CoinState.Spent;
-                    if (tx.Outputs[input.PrevIndex].AssetId.Equals(AntShare.Hash))
+                    if (tx.Outputs[input.PrevIndex].AssetId.Equals(SystemShare.Hash))
                     {
                         spentcoins.GetOrAdd(input.PrevHash, () => new SpentCoinState
                         {
                             TransactionHash = input.PrevHash,
                             TransactionHeight = (uint)height,
                             Items = new Dictionary<ushort, uint>()
-                        }).Items.Add(input.PrevIndex, block.Height);
+                        }).Items.Add(input.PrevIndex, block.Index);
                     }
                     accounts[tx.Outputs[input.PrevIndex].ScriptHash].Balances[tx.Outputs[input.PrevIndex].AssetId] -= tx.Outputs[input.PrevIndex].Value;
                 }
@@ -555,9 +535,9 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             validators.Commit(batch);
             assets.Commit(batch);
             contracts.Commit(batch);
-            batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(block.Hash).Add(block.Height));
+            batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(block.Hash).Add(block.Index));
             db.Write(WriteOptions.Default, batch);
-            current_block_height = block.Height;
+            current_block_height = block.Index;
         }
 
         private void PersistBlocks()

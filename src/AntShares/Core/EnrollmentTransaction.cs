@@ -2,7 +2,6 @@
 using AntShares.IO;
 using AntShares.IO.Json;
 using AntShares.Wallets;
-using System;
 using System.IO;
 using System.Linq;
 
@@ -18,19 +17,19 @@ namespace AntShares.Core
         /// </summary>
         public ECPoint PublicKey;
 
-        private UInt160 _miner = null;
+        private UInt160 _script_hash = null;
         /// <summary>
         /// 记账人的抵押地址
         /// </summary>
-        public UInt160 Miner
+        private UInt160 ScriptHash
         {
             get
             {
-                if (_miner == null)
+                if (_script_hash == null)
                 {
-                    _miner = Contract.CreateSignatureContract(PublicKey).ScriptHash;
+                    _script_hash = Contract.CreateSignatureContract(PublicKey).ScriptHash;
                 }
-                return _miner;
+                return _script_hash;
             }
         }
 
@@ -56,17 +55,7 @@ namespace AntShares.Core
         /// <returns>返回需要校验的脚本Hash</returns>
         public override UInt160[] GetScriptHashesForVerifying()
         {
-            return base.GetScriptHashesForVerifying().Union(new UInt160[] { Miner }).OrderBy(p => p).ToArray();
-        }
-
-        /// <summary>
-        /// 反序列化进行完毕时触发
-        /// </summary>
-        protected override void OnDeserialized()
-        {
-            base.OnDeserialized();
-            if (Outputs.Length == 0 || Outputs[0].AssetId != Blockchain.AntCoin.Hash || Outputs[0].ScriptHash != Miner)
-                throw new FormatException();
+            return base.GetScriptHashesForVerifying().Union(new UInt160[] { ScriptHash }).OrderBy(p => p).ToArray();
         }
 
         /// <summary>

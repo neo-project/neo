@@ -75,7 +75,7 @@ namespace AntShares.Network.RPC
                         if (verbose)
                         {
                             JObject json = block.ToJson();
-                            json["confirmations"] = Blockchain.Default.Height - block.Height + 1;
+                            json["confirmations"] = Blockchain.Default.Height - block.Index + 1;
                             UInt256 hash = Blockchain.Default.GetNextBlockHash(block.Hash);
                             if (hash != null)
                                 json["nextblockhash"] = hash.ToString();
@@ -114,7 +114,7 @@ namespace AntShares.Network.RPC
                             {
                                 Header header = Blockchain.Default.GetHeader((uint)height);
                                 json["blockhash"] = header.Hash.ToString();
-                                json["confirmations"] = Blockchain.Default.Height - header.Height + 1;
+                                json["confirmations"] = Blockchain.Default.Height - header.Index + 1;
                                 json["blocktime"] = header.Timestamp;
                             }
                             return json;
