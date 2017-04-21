@@ -1,5 +1,6 @@
 ﻿using AntShares.Cryptography.ECC;
 using AntShares.IO;
+using AntShares.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,7 +8,7 @@ using System.Linq;
 
 namespace AntShares.Core
 {
-    public class AccountState : ISerializable
+    public class AccountState : IInteropInterface, ISerializable
     {
         public const byte StateVersion = 0;
         public UInt160 ScriptHash;
@@ -49,6 +50,11 @@ namespace AntShares.Core
                 writer.Write(pair.Key);
                 writer.Write(pair.Value);
             }
+        }
+
+        byte[] IInteropInterface.ToArray()
+        {
+            return this.ToArray();
         }
     }
 }

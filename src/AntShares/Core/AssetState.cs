@@ -1,6 +1,7 @@
 ﻿using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using AntShares.IO.Json;
+using AntShares.VM;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -9,7 +10,7 @@ using System.Linq;
 
 namespace AntShares.Core
 {
-    public class AssetState : ISerializable
+    public class AssetState : IInteropInterface, ISerializable
     {
         public const byte StateVersion = 0;
         public UInt256 AssetId;
@@ -99,6 +100,11 @@ namespace AntShares.Core
             writer.Write(Issuer);
             writer.Write(Expiration);
             writer.Write(IsFrozen);
+        }
+
+        byte[] IInteropInterface.ToArray()
+        {
+            return this.ToArray();
         }
 
         public override string ToString()

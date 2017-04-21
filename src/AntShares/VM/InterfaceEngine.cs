@@ -13,6 +13,9 @@ namespace AntShares.VM
             Register("AntShares.Blockchain.GetHeader", Blockchain_GetHeader);
             Register("AntShares.Blockchain.GetBlock", Blockchain_GetBlock);
             Register("AntShares.Blockchain.GetTransaction", Blockchain_GetTransaction);
+            Register("AntShares.Blockchain.GetAccount", Blockchain_GetAccount);
+            Register("AntShares.Blockchain.GetAsset", Blockchain_GetAsset);
+
             Register("AntShares.Header.GetHash", Header_GetHash);
             Register("AntShares.Header.GetVersion", Header_GetVersion);
             Register("AntShares.Header.GetPrevHash", Header_GetPrevHash);
@@ -23,12 +26,9 @@ namespace AntShares.VM
             Register("AntShares.Block.GetTransactionCount", Block_GetTransactionCount);
             Register("AntShares.Block.GetTransactions", Block_GetTransactions);
             Register("AntShares.Block.GetTransaction", Block_GetTransaction);
+
             Register("AntShares.Transaction.GetHash", Transaction_GetHash);
             Register("AntShares.Transaction.GetType", Transaction_GetType);
-            Register("AntShares.Asset.GetAssetType", Asset_GetAssetType);
-            Register("AntShares.Asset.GetAmount", Asset_GetAmount);
-            Register("AntShares.Asset.GetOwner", Asset_GetOwner);
-            Register("AntShares.Asset.GetAdmin", Asset_GetAdmin);
             Register("AntShares.Enrollment.GetPublicKey", Enrollment_GetPublicKey);
             Register("AntShares.Transaction.GetAttributes", Transaction_GetAttributes);
             Register("AntShares.Transaction.GetInputs", Transaction_GetInputs);
@@ -41,6 +41,19 @@ namespace AntShares.VM
             Register("AntShares.Output.GetAssetId", Output_GetAssetId);
             Register("AntShares.Output.GetValue", Output_GetValue);
             Register("AntShares.Output.GetScriptHash", Output_GetScriptHash);
+
+            Register("AntShares.Account.GetScriptHash", Account_GetScriptHash);
+            Register("AntShares.Account.GetVotes", Account_GetVotes);
+            Register("AntShares.Account.GetBalance", Account_GetBalance);
+
+            Register("AntShares.Asset.GetAssetId", Asset_GetAssetId);
+            Register("AntShares.Asset.GetAssetType", Asset_GetAssetType);
+            Register("AntShares.Asset.GetAmount", Asset_GetAmount);
+            Register("AntShares.Asset.GetAvailable", Asset_GetAvailable);
+            Register("AntShares.Asset.GetPrecision", Asset_GetPrecision);
+            Register("AntShares.Asset.GetOwner", Asset_GetOwner);
+            Register("AntShares.Asset.GetAdmin", Asset_GetAdmin);
+            Register("AntShares.Asset.GetIssuer", Asset_GetIssuer);
         }
 
         private static bool Blockchain_GetHeight(ExecutionEngine engine)
@@ -119,6 +132,22 @@ namespace AntShares.VM
             byte[] hash = engine.EvaluationStack.Pop().GetByteArray();
             Transaction tx = Blockchain.Default?.GetTransaction(new UInt256(hash));
             engine.EvaluationStack.Push(StackItem.FromInterface(tx));
+            return true;
+        }
+
+        private static bool Blockchain_GetAccount(ExecutionEngine engine)
+        {
+            byte[] hash = engine.EvaluationStack.Pop().GetByteArray();
+            AccountState account = Blockchain.Default?.GetAccountState(new UInt160(hash));
+            engine.EvaluationStack.Push(StackItem.FromInterface(account));
+            return true;
+        }
+
+        private static bool Blockchain_GetAsset(ExecutionEngine engine)
+        {
+            byte[] hash = engine.EvaluationStack.Pop().GetByteArray();
+            AssetState asset = Blockchain.Default?.GetAssetState(new UInt256(hash));
+            engine.EvaluationStack.Push(StackItem.FromInterface(asset));
             return true;
         }
 
@@ -221,38 +250,6 @@ namespace AntShares.VM
             return true;
         }
 
-        private static bool Asset_GetAssetType(ExecutionEngine engine)
-        {
-            RegisterTransaction asset = engine.EvaluationStack.Pop().GetInterface<RegisterTransaction>();
-            if (asset == null) return false;
-            engine.EvaluationStack.Push((int)asset.AssetType);
-            return true;
-        }
-
-        private static bool Asset_GetAmount(ExecutionEngine engine)
-        {
-            RegisterTransaction asset = engine.EvaluationStack.Pop().GetInterface<RegisterTransaction>();
-            if (asset == null) return false;
-            engine.EvaluationStack.Push(asset.Amount.GetData());
-            return true;
-        }
-
-        private static bool Asset_GetOwner(ExecutionEngine engine)
-        {
-            RegisterTransaction asset = engine.EvaluationStack.Pop().GetInterface<RegisterTransaction>();
-            if (asset == null) return false;
-            engine.EvaluationStack.Push(asset.Owner.EncodePoint(true));
-            return true;
-        }
-
-        private static bool Asset_GetAdmin(ExecutionEngine engine)
-        {
-            RegisterTransaction asset = engine.EvaluationStack.Pop().GetInterface<RegisterTransaction>();
-            if (asset == null) return false;
-            engine.EvaluationStack.Push(asset.Admin.ToArray());
-            return true;
-        }
-
         private static bool Enrollment_GetPublicKey(ExecutionEngine engine)
         {
             EnrollmentTransaction tx = engine.EvaluationStack.Pop().GetInterface<EnrollmentTransaction>();
@@ -346,6 +343,96 @@ namespace AntShares.VM
             TransactionOutput output = engine.EvaluationStack.Pop().GetInterface<TransactionOutput>();
             if (output == null) return false;
             engine.EvaluationStack.Push(output.ScriptHash.ToArray());
+            return true;
+        }
+
+        private static bool Account_GetScriptHash(ExecutionEngine engine)
+        {
+            AccountState account = engine.EvaluationStack.Pop().GetInterface<AccountState>();
+            if (account == null) return false;
+            engine.EvaluationStack.Push(account.ScriptHash.ToArray());
+            return true;
+        }
+
+        private static bool Account_GetVotes(ExecutionEngine engine)
+        {
+            AccountState account = engine.EvaluationStack.Pop().GetInterface<AccountState>();
+            if (account == null) return false;
+            engine.EvaluationStack.Push(account.Votes.Select(p => (StackItem)p.EncodePoint(true)).ToArray());
+            return true;
+        }
+
+        private static bool Account_GetBalance(ExecutionEngine engine)
+        {
+            AccountState account = engine.EvaluationStack.Pop().GetInterface<AccountState>();
+            UInt256 asset_id = new UInt256(engine.EvaluationStack.Pop().GetByteArray());
+            if (account == null) return false;
+            Fixed8 balance = account.Balances.ContainsKey(asset_id) ? account.Balances[asset_id] : Fixed8.Zero;
+            engine.EvaluationStack.Push(balance.GetData());
+            return true;
+        }
+
+        private static bool Asset_GetAssetId(ExecutionEngine engine)
+        {
+            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
+            if (asset == null) return false;
+            engine.EvaluationStack.Push(asset.AssetId.ToArray());
+            return true;
+        }
+
+        private static bool Asset_GetAssetType(ExecutionEngine engine)
+        {
+            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
+            if (asset == null) return false;
+            engine.EvaluationStack.Push((int)asset.AssetType);
+            return true;
+        }
+
+        private static bool Asset_GetAmount(ExecutionEngine engine)
+        {
+            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
+            if (asset == null) return false;
+            engine.EvaluationStack.Push(asset.Amount.GetData());
+            return true;
+        }
+
+        private static bool Asset_GetAvailable(ExecutionEngine engine)
+        {
+            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
+            if (asset == null) return false;
+            engine.EvaluationStack.Push(asset.Available.GetData());
+            return true;
+        }
+
+        private static bool Asset_GetPrecision(ExecutionEngine engine)
+        {
+            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
+            if (asset == null) return false;
+            engine.EvaluationStack.Push((int)asset.Precision);
+            return true;
+        }
+
+        private static bool Asset_GetOwner(ExecutionEngine engine)
+        {
+            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
+            if (asset == null) return false;
+            engine.EvaluationStack.Push(asset.Owner.EncodePoint(true));
+            return true;
+        }
+
+        private static bool Asset_GetAdmin(ExecutionEngine engine)
+        {
+            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
+            if (asset == null) return false;
+            engine.EvaluationStack.Push(asset.Admin.ToArray());
+            return true;
+        }
+
+        private static bool Asset_GetIssuer(ExecutionEngine engine)
+        {
+            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
+            if (asset == null) return false;
+            engine.EvaluationStack.Push(asset.Issuer.ToArray());
             return true;
         }
     }
