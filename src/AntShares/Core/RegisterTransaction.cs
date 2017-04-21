@@ -69,6 +69,8 @@ namespace AntShares.Core
             Amount = reader.ReadSerializable<Fixed8>();
             Precision = reader.ReadByte();
             Owner = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
+            if (Owner.IsInfinity && AssetType != AssetType.SystemShare && AssetType != AssetType.SystemCoin)
+                throw new FormatException();
             Admin = reader.ReadSerializable<UInt160>();
         }
 

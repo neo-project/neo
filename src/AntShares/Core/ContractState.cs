@@ -8,7 +8,7 @@ namespace AntShares.Core
     {
         public const byte StateVersion = 0;
         public byte[] Script;
-        public const bool HasStorage = false;
+        public bool HasStorage;
 
         private UInt160 _scriptHash;
         public UInt160 ScriptHash
@@ -29,7 +29,7 @@ namespace AntShares.Core
         {
             if (reader.ReadByte() != StateVersion) throw new FormatException();
             Script = reader.ReadVarBytes();
-            reader.ReadBoolean(); //HasStorage
+            HasStorage = reader.ReadBoolean();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

@@ -481,9 +481,10 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                     case TransactionType.PublishTransaction:
                         {
                             PublishTransaction publish_tx = (PublishTransaction)tx;
-                            contracts.Add(publish_tx.Code.ScriptHash, new ContractState
+                            contracts.GetOrAdd(publish_tx.Code.ScriptHash, () => new ContractState
                             {
-                                Script = publish_tx.Code.Script
+                                Script = publish_tx.Code.Script,
+                                HasStorage = false
                             });
                         }
                         break;

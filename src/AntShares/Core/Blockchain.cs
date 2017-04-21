@@ -64,7 +64,7 @@ namespace AntShares.Core
         {
             AssetType = AssetType.SystemCoin,
             Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币\"},{\"lang\":\"en\",\"name\":\"AntCoin\"}]",
-            Amount = Fixed8.FromDecimal(GenerationAmount.Sum(p => p * DecrementInterval)),
+            Amount = Fixed8.FromDecimal(GenerationAmount.Sum(p => p) * DecrementInterval),
             Precision = 8,
             Owner = ECCurve.Secp256r1.Infinity,
             Admin = (new[] { (byte)OpCode.PUSHF }).ToScriptHash(),
@@ -165,12 +165,12 @@ namespace AntShares.Core
         /// <param name="headers">要添加的区块头列表</param>
         protected internal abstract void AddHeaders(IEnumerable<Header> headers);
 
-        public static Fixed8 CalculateClaimAmount(IEnumerable<CoinReference> inputs, bool ignoreClaimed = true)
+        public static Fixed8 CalculateBonus(IEnumerable<CoinReference> inputs, bool ignoreClaimed = true)
         {
             List<SpentCoin> unclaimed = new List<SpentCoin>();
             foreach (var group in inputs.GroupBy(p => p.PrevHash))
             {
-                Dictionary<ushort, SpentCoin> claimable = Blockchain.Default.GetUnclaimed(group.Key);
+                Dictionary<ushort, SpentCoin> claimable = Default.GetUnclaimed(group.Key);
                 if (claimable == null || claimable.Count == 0)
                     if (ignoreClaimed)
                         continue;
@@ -186,64 +186,64 @@ namespace AntShares.Core
                     unclaimed.Add(claimable[claim.PrevIndex]);
                 }
             }
-            return CalculateClaimAmountInternal(unclaimed);
+            return CalculateBonusInternal(unclaimed);
         }
 
-        public static Fixed8 CalculateClaimAmountUnavailable(IEnumerable<CoinReference> inputs, uint height)
+        public static Fixed8 CalculateBonus(IEnumerable<CoinReference> inputs, uint height_end)
         {
             List<SpentCoin> unclaimed = new List<SpentCoin>();
             foreach (var group in inputs.GroupBy(p => p.PrevHash))
             {
                 int height_start;
-                Transaction tx = Blockchain.Default.GetTransaction(group.Key, out height_start);
+                Transaction tx = Default.GetTransaction(group.Key, out height_start);
                 if (tx == null) throw new ArgumentException();
-                if (height_start == height) continue;
+                if (height_start == height_end) continue;
                 foreach (CoinReference claim in group)
                 {
-                    if (claim.PrevIndex >= tx.Outputs.Length || !tx.Outputs[claim.PrevIndex].AssetId.Equals(Blockchain.SystemShare.Hash))
+                    if (claim.PrevIndex >= tx.Outputs.Length || !tx.Outputs[claim.PrevIndex].AssetId.Equals(SystemShare.Hash))
                         throw new ArgumentException();
                     unclaimed.Add(new SpentCoin
                     {
                         Output = tx.Outputs[claim.PrevIndex],
                         StartHeight = (uint)height_start,
-                        EndHeight = height
+                        EndHeight = height_end
                     });
                 }
             }
-            return CalculateClaimAmountInternal(unclaimed);
+            return CalculateBonusInternal(unclaimed);
         }
 
-        private static Fixed8 CalculateClaimAmountInternal(IEnumerable<SpentCoin> unclaimed)
+        private static Fixed8 CalculateBonusInternal(IEnumerable<SpentCoin> unclaimed)
         {
             Fixed8 amount_claimed = Fixed8.Zero;
             foreach (var group in unclaimed.GroupBy(p => new { p.StartHeight, p.EndHeight }))
             {
                 uint amount = 0;
-                uint ustart = group.Key.StartHeight / Blockchain.DecrementInterval;
-                if (ustart < Blockchain.GenerationAmount.Length)
+                uint ustart = group.Key.StartHeight / DecrementInterval;
+                if (ustart < GenerationAmount.Length)
                 {
-                    uint istart = group.Key.StartHeight % Blockchain.DecrementInterval;
-                    uint uend = group.Key.EndHeight / Blockchain.DecrementInterval;
-                    uint iend = group.Key.EndHeight % Blockchain.DecrementInterval;
-                    if (uend >= Blockchain.GenerationAmount.Length)
+                    uint istart = group.Key.StartHeight % DecrementInterval;
+                    uint uend = group.Key.EndHeight / DecrementInterval;
+                    uint iend = group.Key.EndHeight % DecrementInterval;
+                    if (uend >= GenerationAmount.Length)
                     {
-                        uend = (uint)Blockchain.GenerationAmount.Length;
+                        uend = (uint)GenerationAmount.Length;
                         iend = 0;
                     }
                     if (iend == 0)
                     {
                         uend--;
-                        iend = Blockchain.DecrementInterval;
+                        iend = DecrementInterval;
                     }
                     while (ustart < uend)
                     {
-                        amount += (Blockchain.DecrementInterval - istart) * Blockchain.GenerationAmount[ustart];
+                        amount += (DecrementInterval - istart) * GenerationAmount[ustart];
                         ustart++;
                         istart = 0;
                     }
-                    amount += (iend - istart) * Blockchain.GenerationAmount[ustart];
+                    amount += (iend - istart) * GenerationAmount[ustart];
                 }
-                amount += (uint)(Blockchain.Default.GetSysFeeAmount(group.Key.EndHeight - 1) - (group.Key.StartHeight == 0 ? 0 : Blockchain.Default.GetSysFeeAmount(group.Key.StartHeight - 1)));
+                amount += (uint)(Default.GetSysFeeAmount(group.Key.EndHeight - 1) - (group.Key.StartHeight == 0 ? 0 : Default.GetSysFeeAmount(group.Key.StartHeight - 1)));
                 amount_claimed += group.Sum(p => p.Value) / 100000000 * amount;
             }
             return amount_claimed;
