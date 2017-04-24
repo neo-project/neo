@@ -251,7 +251,7 @@ namespace AntShares.Consensus
             context.NextConsensus = message.NextConsensus;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
-            if (!Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), context.Validators[payload.MinerIndex].EncodePoint(false), message.Signature)) return;
+            if (!Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), message.Signature, context.Validators[payload.MinerIndex].EncodePoint(false))) return;
             context.Signatures = new byte[context.Validators.Length][];
             context.Signatures[payload.MinerIndex] = message.Signature;
             Dictionary<UInt256, Transaction> mempool = LocalNode.GetMemoryPool().ToDictionary(p => p.Hash);
@@ -271,7 +271,7 @@ namespace AntShares.Consensus
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (context.Signatures[payload.MinerIndex] != null) return;
             Block header = context.MakeHeader();
-            if (header == null || !Crypto.Default.VerifySignature(header.GetHashData(), context.Validators[payload.MinerIndex].EncodePoint(false), message.Signature)) return;
+            if (header == null || !Crypto.Default.VerifySignature(header.GetHashData(), message.Signature, context.Validators[payload.MinerIndex].EncodePoint(false))) return;
             context.Signatures[payload.MinerIndex] = message.Signature;
             CheckSignatures();
         }
