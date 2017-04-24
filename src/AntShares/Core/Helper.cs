@@ -71,7 +71,7 @@ namespace AntShares.Core
                     if (hashes[i] != verification.ToScriptHash()) return false;
                 }
                 int nOpCount = 0;
-                ExecutionEngine engine = new ExecutionEngine(verifiable, Crypto.Default, Blockchain.Default, InterfaceEngine.Default);
+                ExecutionEngine engine = new ExecutionEngine(verifiable, Crypto.Default, Blockchain.Default, StateReader.Default);
                 engine.LoadScript(verification, false);
                 engine.LoadScript(verifiable.Scripts[i].InvocationScript, true);
                 while (!engine.State.HasFlag(VMState.HALT) && !engine.State.HasFlag(VMState.FAULT))

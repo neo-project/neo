@@ -3,11 +3,11 @@ using System.Linq;
 
 namespace AntShares.VM
 {
-    internal class InterfaceEngine : InteropService
+    internal class StateReader : InteropService
     {
-        public static readonly InterfaceEngine Default = new InterfaceEngine();
+        public static readonly StateReader Default = new StateReader();
 
-        public InterfaceEngine()
+        public StateReader()
         {
             Register("AntShares.Blockchain.GetHeight", Blockchain_GetHeight);
             Register("AntShares.Blockchain.GetHeader", Blockchain_GetHeader);
