@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace AntShares.Core
 {
-    public class AccountState : IInteropInterface, ISerializable
+    public class AccountState : ICloneable<AccountState>, IInteropInterface, ISerializable
     {
         public const byte StateVersion = 0;
         public UInt160 ScriptHash;
@@ -18,6 +18,17 @@ namespace AntShares.Core
 
         int ISerializable.Size => sizeof(byte) + ScriptHash.Size + sizeof(bool) + Votes.GetVarSize()
             + IO.Helper.GetVarSize(Balances.Count) + Balances.Count * (32 + 8);
+
+        AccountState ICloneable<AccountState>.Clone()
+        {
+            return new AccountState
+            {
+                ScriptHash = ScriptHash,
+                IsFrozen = IsFrozen,
+                Votes = Votes,
+                Balances = Balances.ToDictionary(p => p.Key, p => p.Value)
+            };
+        }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
@@ -35,6 +46,13 @@ namespace AntShares.Core
                 Fixed8 value = reader.ReadSerializable<Fixed8>();
                 Balances.Add(assetId, value);
             }
+        }
+
+        void ICloneable<AccountState>.FromReplica(AccountState replica)
+        {
+            IsFrozen = replica.IsFrozen;
+            Votes = replica.Votes;
+            Balances = replica.Balances;
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

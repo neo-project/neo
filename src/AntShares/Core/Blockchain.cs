@@ -302,12 +302,7 @@ namespace AntShares.Core
 
         public abstract ContractState GetContract(UInt160 hash);
 
-        public IEnumerable<ValidatorState> GetEnrollments()
-        {
-            return GetEnrollments(Enumerable.Empty<Transaction>());
-        }
-
-        public abstract IEnumerable<ValidatorState> GetEnrollments(IEnumerable<Transaction> others);
+        public abstract IEnumerable<ValidatorState> GetEnrollments();
 
         /// <summary>
         /// 根据指定的高度，返回对应的区块头信息
@@ -360,7 +355,7 @@ namespace AntShares.Core
                 Weight = w
             }).WeightedAverage(p => p.MinerCount, p => p.Weight);
             miner_count = Math.Max(miner_count, StandbyValidators.Length);
-            Dictionary<ECPoint, Fixed8> miners = GetEnrollments(others).ToDictionary(p => p.PublicKey, p => Fixed8.Zero);
+            Dictionary<ECPoint, Fixed8> miners = GetEnrollments().ToDictionary(p => p.PublicKey, p => Fixed8.Zero);
             foreach (var vote in votes)
             {
                 foreach (ECPoint pubkey in vote.PublicKeys.Take(miner_count))
