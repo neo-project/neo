@@ -337,46 +337,46 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override IEnumerable<VoteState> GetVotes(IEnumerable<Transaction> others)
         {
-            ReadOptions options = new ReadOptions();
-            using (options.Snapshot = db.GetSnapshot())
-            {
-                var inputs = others.SelectMany(p => p.Inputs).GroupBy(p => p.PrevHash, (k, g) =>
-                {
-                    int height;
-                    Transaction tx = GetTransaction(options, k, out height);
-                    return g.Select(p => tx.Outputs[p.PrevIndex]);
-                }).SelectMany(p => p).Where(p => p.AssetId.Equals(SystemShare.Hash)).Select(p => new
-                {
-                    p.ScriptHash,
-                    Value = -p.Value
-                });
-                var outputs = others.SelectMany(p => p.Outputs).Where(p => p.AssetId.Equals(SystemShare.Hash)).Select(p => new
-                {
-                    p.ScriptHash,
-                    p.Value
-                });
-                var changes = inputs.Concat(outputs).GroupBy(p => p.ScriptHash).ToDictionary(p => p.Key, p => p.Sum(i => i.Value));
-                var accounts = db.Find<AccountState>(options, DataEntryPrefix.ST_Account).Where(p => p.Votes.Length > 0).ToArray();
-                if (accounts.Length > 0)
-                    foreach (AccountState account in accounts)
-                    {
-                        Fixed8 balance = account.Balances.ContainsKey(SystemShare.Hash) ? account.Balances[SystemShare.Hash] : Fixed8.Zero;
-                        if (changes.ContainsKey(account.ScriptHash))
-                            balance += changes[account.ScriptHash];
-                        if (balance <= Fixed8.Zero) continue;
-                        yield return new VoteState
-                        {
-                            PublicKeys = account.Votes,
-                            Count = balance
-                        };
-                    }
-                else
+            //ReadOptions options = new ReadOptions();
+            //using (options.Snapshot = db.GetSnapshot())
+            //{
+            //    var inputs = others.SelectMany(p => p.Inputs).GroupBy(p => p.PrevHash, (k, g) =>
+            //    {
+            //        int height;
+            //        Transaction tx = GetTransaction(options, k, out height);
+            //        return g.Select(p => tx.Outputs[p.PrevIndex]);
+            //    }).SelectMany(p => p).Where(p => p.AssetId.Equals(SystemShare.Hash)).Select(p => new
+            //    {
+            //        p.ScriptHash,
+            //        Value = -p.Value
+            //    });
+            //    var outputs = others.SelectMany(p => p.Outputs).Where(p => p.AssetId.Equals(SystemShare.Hash)).Select(p => new
+            //    {
+            //        p.ScriptHash,
+            //        p.Value
+            //    });
+            //    var changes = inputs.Concat(outputs).GroupBy(p => p.ScriptHash).ToDictionary(p => p.Key, p => p.Sum(i => i.Value));
+            //    var accounts = db.Find<AccountState>(options, DataEntryPrefix.ST_Account).Where(p => p.Votes.Length > 0).ToArray();
+            //    if (accounts.Length > 0)
+            //        foreach (AccountState account in accounts)
+            //        {
+            //            Fixed8 balance = account.Balances.ContainsKey(SystemShare.Hash) ? account.Balances[SystemShare.Hash] : Fixed8.Zero;
+            //            if (changes.ContainsKey(account.ScriptHash))
+            //                balance += changes[account.ScriptHash];
+            //            if (balance <= Fixed8.Zero) continue;
+            //            yield return new VoteState
+            //            {
+            //                PublicKeys = account.Votes,
+            //                Count = balance
+            //            };
+            //        }
+            //    else
                     yield return new VoteState
                     {
                         PublicKeys = StandbyValidators,
                         Count = SystemShare.Amount
                     };
-            }
+            //}
         }
 
         public override bool IsDoubleSpend(Transaction tx)
