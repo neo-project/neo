@@ -1,10 +1,11 @@
 ﻿using AntShares.IO;
 using AntShares.IO.Caching;
+using System;
 
 namespace AntShares.Implementations.Blockchains.LevelDB
 {
     internal class DbCache<TKey, TValue> : DataCache<TKey, TValue>
-        where TKey : ISerializable
+        where TKey : IEquatable<TKey>, ISerializable
         where TValue : class, ISerializable, new()
     {
         private DB db;

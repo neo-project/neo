@@ -1,7 +1,8 @@
 ﻿using AntShares.Core;
+using AntShares.VM;
 using System.Linq;
 
-namespace AntShares.VM
+namespace AntShares.SmartContract
 {
     internal class StateReader : InteropService
     {

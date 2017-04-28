@@ -1,4 +1,5 @@
 ﻿using AntShares.Cryptography;
+using AntShares.SmartContract;
 using AntShares.VM;
 using AntShares.Wallets;
 using System;

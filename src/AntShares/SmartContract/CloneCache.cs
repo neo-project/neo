@@ -1,11 +1,12 @@
 ﻿using AntShares.Core;
 using AntShares.IO;
 using AntShares.IO.Caching;
+using System;
 
-namespace AntShares.VM
+namespace AntShares.SmartContract
 {
     internal class CloneCache<TKey, TValue> : DataCache<TKey, TValue>
-        where TKey : ISerializable
+        where TKey : IEquatable<TKey>, ISerializable
         where TValue : class, ICloneable<TValue>, ISerializable, new()
     {
         private DataCache<TKey, TValue> innerCache;

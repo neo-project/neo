@@ -10,9 +10,8 @@ using System.Linq;
 
 namespace AntShares.Core
 {
-    public class AssetState : IInteropInterface, ISerializable
+    public class AssetState : StateBase, ICloneable<AssetState>
     {
-        public const byte StateVersion = 0;
         public UInt256 AssetId;
         public AssetType AssetType;
         public string Name;
@@ -28,11 +27,33 @@ namespace AntShares.Core
         public uint Expiration;
         public bool IsFrozen;
 
-        int ISerializable.Size => sizeof(byte) + AssetId.Size + sizeof(AssetType) + Name.GetVarSize() + Amount.Size + Available.Size + sizeof(byte) + sizeof(byte) + Fee.Size + FeeAddress.Size + Owner.Size + Admin.Size + Issuer.Size + sizeof(uint) + sizeof(bool);
+        public override int Size => base.Size + AssetId.Size + sizeof(AssetType) + Name.GetVarSize() + Amount.Size + Available.Size + sizeof(byte) + sizeof(byte) + Fee.Size + FeeAddress.Size + Owner.Size + Admin.Size + Issuer.Size + sizeof(uint) + sizeof(bool);
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        AssetState ICloneable<AssetState>.Clone()
         {
-            if (reader.ReadByte() != StateVersion) throw new FormatException();
+            return new AssetState
+            {
+                AssetId = AssetId,
+                AssetType = AssetType,
+                Name = Name,
+                Amount = Amount,
+                Available = Available,
+                Precision = Precision,
+                //FeeMode = FeeMode,
+                Fee = Fee,
+                FeeAddress = FeeAddress,
+                Owner = Owner,
+                Admin = Admin,
+                Issuer = Issuer,
+                Expiration = Expiration,
+                IsFrozen = IsFrozen,
+                _names = _names
+            };
+        }
+
+        public override void Deserialize(BinaryReader reader)
+        {
+            base.Deserialize(reader);
             AssetId = reader.ReadSerializable<UInt256>();
             AssetType = (AssetType)reader.ReadByte();
             Name = reader.ReadVarString();
@@ -47,6 +68,25 @@ namespace AntShares.Core
             Issuer = reader.ReadSerializable<UInt160>();
             Expiration = reader.ReadUInt32();
             IsFrozen = reader.ReadBoolean();
+        }
+
+        void ICloneable<AssetState>.FromReplica(AssetState replica)
+        {
+            AssetId = replica.AssetId;
+            AssetType = replica.AssetType;
+            Name = replica.Name;
+            Amount = replica.Amount;
+            Available = replica.Available;
+            Precision = replica.Precision;
+            //FeeMode = replica.FeeMode;
+            Fee = replica.Fee;
+            FeeAddress = replica.FeeAddress;
+            Owner = replica.Owner;
+            Admin = replica.Admin;
+            Issuer = replica.Issuer;
+            Expiration = replica.Expiration;
+            IsFrozen = replica.IsFrozen;
+            _names = replica._names;
         }
 
         private Dictionary<CultureInfo, string> _names;
@@ -83,9 +123,9 @@ namespace AntShares.Core
             }
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
+        public override void Serialize(BinaryWriter writer)
         {
-            writer.Write(StateVersion);
+            base.Serialize(writer);
             writer.Write(AssetId);
             writer.Write((byte)AssetType);
             writer.WriteVarString(Name);
@@ -100,11 +140,6 @@ namespace AntShares.Core
             writer.Write(Issuer);
             writer.Write(Expiration);
             writer.Write(IsFrozen);
-        }
-
-        byte[] IInteropInterface.ToArray()
-        {
-            return this.ToArray();
         }
 
         public override string ToString()

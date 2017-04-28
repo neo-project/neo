@@ -1,12 +1,10 @@
 ﻿using AntShares.IO;
-using System;
 using System.IO;
 
 namespace AntShares.Core
 {
-    public class ContractState : ISerializable
+    public class ContractState : StateBase, ICloneable<ContractState>
     {
-        public const byte StateVersion = 0;
         public byte[] Script;
         public bool HasStorage;
 
@@ -23,18 +21,35 @@ namespace AntShares.Core
             }
         }
 
-        int ISerializable.Size => sizeof(byte) + Script.GetVarSize() + sizeof(bool);
+        public override int Size => base.Size + Script.GetVarSize() + sizeof(bool);
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        ContractState ICloneable<ContractState>.Clone()
         {
-            if (reader.ReadByte() != StateVersion) throw new FormatException();
+            return new ContractState
+            {
+                Script = Script,
+                HasStorage = HasStorage,
+                _scriptHash = _scriptHash
+            };
+        }
+
+        public override void Deserialize(BinaryReader reader)
+        {
+            base.Deserialize(reader);
             Script = reader.ReadVarBytes();
             HasStorage = reader.ReadBoolean();
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
+        void ICloneable<ContractState>.FromReplica(ContractState replica)
         {
-            writer.Write(StateVersion);
+            Script = replica.Script;
+            HasStorage = replica.HasStorage;
+            _scriptHash = replica._scriptHash;
+        }
+
+        public override void Serialize(BinaryWriter writer)
+        {
+            base.Serialize(writer);
             writer.WriteVarBytes(Script);
             writer.Write(HasStorage);
         }

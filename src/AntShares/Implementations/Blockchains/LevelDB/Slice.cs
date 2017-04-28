@@ -41,7 +41,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override int GetHashCode()
         {
-            return buffer.Sha256().ToInt32(0);
+            return (int)buffer.Murmur32(0);
         }
 
         public byte[] ToArray()

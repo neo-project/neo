@@ -1,22 +1,20 @@
 ﻿using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using AntShares.VM;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
 namespace AntShares.Core
 {
-    public class AccountState : ICloneable<AccountState>, IInteropInterface, ISerializable
+    public class AccountState : StateBase, ICloneable<AccountState>
     {
-        public const byte StateVersion = 0;
         public UInt160 ScriptHash;
         public bool IsFrozen;
         public ECPoint[] Votes;
         public Dictionary<UInt256, Fixed8> Balances;
 
-        int ISerializable.Size => sizeof(byte) + ScriptHash.Size + sizeof(bool) + Votes.GetVarSize()
+        public override int Size => base.Size + ScriptHash.Size + sizeof(bool) + Votes.GetVarSize()
             + IO.Helper.GetVarSize(Balances.Count) + Balances.Count * (32 + 8);
 
         AccountState ICloneable<AccountState>.Clone()
@@ -30,9 +28,9 @@ namespace AntShares.Core
             };
         }
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        public override void Deserialize(BinaryReader reader)
         {
-            if (reader.ReadByte() != StateVersion) throw new FormatException();
+            base.Deserialize(reader);
             ScriptHash = reader.ReadSerializable<UInt160>();
             IsFrozen = reader.ReadBoolean();
             Votes = new ECPoint[reader.ReadVarInt()];
@@ -50,14 +48,15 @@ namespace AntShares.Core
 
         void ICloneable<AccountState>.FromReplica(AccountState replica)
         {
+            ScriptHash = replica.ScriptHash;
             IsFrozen = replica.IsFrozen;
             Votes = replica.Votes;
             Balances = replica.Balances;
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
+        public override void Serialize(BinaryWriter writer)
         {
-            writer.Write(StateVersion);
+            base.Serialize(writer);
             writer.Write(ScriptHash);
             writer.Write(IsFrozen);
             writer.Write(Votes);
@@ -68,11 +67,6 @@ namespace AntShares.Core
                 writer.Write(pair.Key);
                 writer.Write(pair.Value);
             }
-        }
-
-        byte[] IInteropInterface.ToArray()
-        {
-            return this.ToArray();
         }
     }
 }

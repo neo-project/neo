@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace AntShares
 {
-    public class UInt256 : UIntBase, IComparable<UInt256>
+    public class UInt256 : UIntBase, IComparable<UInt256>, IEquatable<UInt256>
     {
         public static readonly UInt256 Zero = new UInt256();
 
@@ -30,6 +30,11 @@ namespace AntShares
                     return -1;
             }
             return 0;
+        }
+
+        bool IEquatable<UInt256>.Equals(UInt256 other)
+        {
+            return Equals(other);
         }
 
         public static UInt256 Parse(string s)

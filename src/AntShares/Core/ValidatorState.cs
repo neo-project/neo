@@ -1,26 +1,37 @@
 ﻿using AntShares.Cryptography.ECC;
 using AntShares.IO;
-using System;
 using System.IO;
 
 namespace AntShares.Core
 {
-    public class ValidatorState : ISerializable
+    public class ValidatorState : StateBase, ICloneable<ValidatorState>
     {
-        public const byte StateVersion = 0;
         public ECPoint PublicKey;
 
-        int ISerializable.Size => sizeof(byte) + PublicKey.Size;
+        public override int Size => base.Size + PublicKey.Size;
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        ValidatorState ICloneable<ValidatorState>.Clone()
         {
-            if (reader.ReadByte() != StateVersion) throw new FormatException();
+            return new ValidatorState
+            {
+                PublicKey = PublicKey
+            };
+        }
+
+        public override void Deserialize(BinaryReader reader)
+        {
+            base.Deserialize(reader);
             PublicKey = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
+        void ICloneable<ValidatorState>.FromReplica(ValidatorState replica)
         {
-            writer.Write(StateVersion);
+            PublicKey = replica.PublicKey;
+        }
+
+        public override void Serialize(BinaryWriter writer)
+        {
+            base.Serialize(writer);
             writer.Write(PublicKey);
         }
     }

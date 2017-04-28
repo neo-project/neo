@@ -2,6 +2,7 @@
 using AntShares.Cryptography;
 using AntShares.Cryptography.ECC;
 using AntShares.IO;
+using AntShares.SmartContract;
 using AntShares.VM;
 using System;
 using System.Collections.Generic;
@@ -371,11 +372,11 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             //            };
             //        }
             //    else
-                    yield return new VoteState
-                    {
-                        PublicKeys = StandbyValidators,
-                        Count = SystemShare.Amount
-                    };
+            yield return new VoteState
+            {
+                PublicKeys = StandbyValidators,
+                Count = SystemShare.Amount
+            };
             //}
         }
 
@@ -423,6 +424,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             DbCache<ECPoint, ValidatorState> validators = new DbCache<ECPoint, ValidatorState>(db, DataEntryPrefix.ST_Validator);
             DbCache<UInt256, AssetState> assets = new DbCache<UInt256, AssetState>(db, DataEntryPrefix.ST_Asset);
             DbCache<UInt160, ContractState> contracts = new DbCache<UInt160, ContractState>(db, DataEntryPrefix.ST_Contract);
+            DbCache<StorageKey, StorageItem> storages = new DbCache<StorageKey, StorageItem>(db, DataEntryPrefix.ST_Storage);
             long amount_sysfee = GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.SystemFee);
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(block.Hash), SliceBuilder.Begin().Add(amount_sysfee).Add(block.Trim()));
             foreach (Transaction tx in block.Transactions)
@@ -514,15 +516,16 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                             contracts.GetOrAdd(publish_tx.Code.ScriptHash, () => new ContractState
                             {
                                 Script = publish_tx.Code.Script,
-                                HasStorage = false
+                                HasStorage = publish_tx.NeedStorage
                             });
                         }
                         break;
                     case TransactionType.InvocationTransaction:
                         {
                             InvocationTransaction itx = (InvocationTransaction)tx;
-                            StateMachine service = new StateMachine(accounts);
-                            ExecutionEngine engine = new ExecutionEngine(itx, Crypto.Default, this, service);
+                            CachedScriptTable script_table = new CachedScriptTable(contracts);
+                            StateMachine service = new StateMachine(accounts, validators, assets, contracts, storages);
+                            ExecutionEngine engine = new ExecutionEngine(itx, Crypto.Default, script_table, service);
                             engine.LoadScript(itx.Script, false);
                             engine.Execute();
                             if (!engine.State.HasFlag(VMState.FAULT)) service.Commit();
@@ -539,6 +542,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             validators.Commit(batch);
             assets.Commit(batch);
             contracts.Commit(batch);
+            storages.Commit(batch);
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(block.Hash).Add(block.Index));
             db.Write(WriteOptions.Default, batch);
             current_block_height = block.Index;

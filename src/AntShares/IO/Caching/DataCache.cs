@@ -5,7 +5,7 @@ using System.Linq;
 namespace AntShares.IO.Caching
 {
     internal abstract class DataCache<TKey, TValue>
-        where TKey : ISerializable
+        where TKey : IEquatable<TKey>, ISerializable
         where TValue : class, ISerializable, new()
     {
         protected class Trackable
