@@ -24,7 +24,7 @@ namespace AntShares.SmartContract
             this.storages = new CloneCache<StorageKey, StorageItem>(storages);
             Register("AntShares.Account.SetVotes", Account_SetVotes);
             Register("AntShares.Storage.Get", Storage_Get);
-            Register("AntShares.Storage.Set", Storage_Set);
+            Register("AntShares.Storage.Put", Storage_Put);
             Register("AntShares.Storage.Delete", Storage_Delete);
         }
 
@@ -108,7 +108,7 @@ namespace AntShares.SmartContract
             return true;
         }
 
-        private bool Storage_Set(ExecutionEngine engine)
+        private bool Storage_Put(ExecutionEngine engine)
         {
             StorageContext context = (StorageContext)(byte)engine.EvaluationStack.Pop().GetBigInteger();
             UInt160 script_hash = CheckStorageContext(engine, context);
