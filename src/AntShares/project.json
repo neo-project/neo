@@ -2,7 +2,7 @@
   "authors": [ "The Antshares team" ],
   "copyright": "2015-2017 The Antshares team",
   "title": "AntShares",
-  "version": "1.6.0-preview3",
+  "version": "1.6.0-preview4",
   "buildOptions": {
     "allowUnsafe": true,
     "copyToOutput": {
@@ -27,7 +27,7 @@
   },
 
   "dependencies": {
-    "AntShares.VM": "1.6.1",
+    "AntShares.VM": "1.6.2",
     "Microsoft.AspNetCore.Server.Kestrel": "1.1.1",
     "Microsoft.AspNetCore.Server.Kestrel.Https": "1.1.1",
 	"Microsoft.AspNetCore.WebSockets": "1.0.1",
