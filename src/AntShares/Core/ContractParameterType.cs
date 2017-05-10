@@ -8,23 +8,24 @@
         /// <summary>
         /// 签名
         /// </summary>
-        Signature,
-        Boolean,
+        Signature = 0,
+        Boolean = 1,
         /// <summary>
         /// 整数
         /// </summary>
-        Integer,
+        Integer = 2,
         /// <summary>
         /// 160位散列值
         /// </summary>
-        Hash160,
+        Hash160 = 3,
         /// <summary>
         /// 256位散列值
         /// </summary>
-        Hash256,
+        Hash256 = 4,
         /// <summary>
         /// 字节数组
         /// </summary>
-        ByteArray
+        ByteArray = 5,
+        PublicKey = 6
     }
 }
