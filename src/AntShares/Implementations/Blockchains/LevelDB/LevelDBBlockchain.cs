@@ -515,8 +515,13 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                             PublishTransaction publish_tx = (PublishTransaction)tx;
                             contracts.GetOrAdd(publish_tx.Code.ScriptHash, () => new ContractState
                             {
-                                Script = publish_tx.Code.Script,
-                                HasStorage = publish_tx.NeedStorage
+                                Code = publish_tx.Code,
+                                HasStorage = publish_tx.NeedStorage,
+                                Name = publish_tx.Name,
+                                CodeVersion = publish_tx.CodeVersion,
+                                Author = publish_tx.Author,
+                                Email = publish_tx.Email,
+                                Description = publish_tx.Description
                             });
                         }
                         break;

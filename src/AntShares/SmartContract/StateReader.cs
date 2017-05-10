@@ -1,6 +1,7 @@
 ﻿using AntShares.Core;
 using AntShares.VM;
 using System.Linq;
+using System.Numerics;
 
 namespace AntShares.SmartContract
 {
@@ -70,28 +71,29 @@ namespace AntShares.SmartContract
         {
             byte[] data = engine.EvaluationStack.Pop().GetByteArray();
             Header header;
-            switch (data.Length)
+            if (data.Length <= 5)
             {
-                case sizeof(uint):
-                    uint height = data.ToUInt32(0);
-                    if (Blockchain.Default != null)
-                        header = Blockchain.Default.GetHeader(height);
-                    else if (height == 0)
-                        header = Blockchain.GenesisBlock.Header;
-                    else
-                        header = null;
-                    break;
-                case 32:
-                    UInt256 hash = new UInt256(data);
-                    if (Blockchain.Default != null)
-                        header = Blockchain.Default.GetHeader(hash);
-                    else if (hash == Blockchain.GenesisBlock.Hash)
-                        header = Blockchain.GenesisBlock.Header;
-                    else
-                        header = null;
-                    break;
-                default:
-                    return false;
+                uint height = (uint)new BigInteger(data);
+                if (Blockchain.Default != null)
+                    header = Blockchain.Default.GetHeader(height);
+                else if (height == 0)
+                    header = Blockchain.GenesisBlock.Header;
+                else
+                    header = null;
+            }
+            else if (data.Length == 32)
+            {
+                UInt256 hash = new UInt256(data);
+                if (Blockchain.Default != null)
+                    header = Blockchain.Default.GetHeader(hash);
+                else if (hash == Blockchain.GenesisBlock.Hash)
+                    header = Blockchain.GenesisBlock.Header;
+                else
+                    header = null;
+            }
+            else
+            {
+                return false;
             }
             engine.EvaluationStack.Push(StackItem.FromInterface(header));
             return true;
@@ -101,28 +103,29 @@ namespace AntShares.SmartContract
         {
             byte[] data = engine.EvaluationStack.Pop().GetByteArray();
             Block block;
-            switch (data.Length)
+            if (data.Length <= 5)
             {
-                case sizeof(uint):
-                    uint height = data.ToUInt32(0);
-                    if (Blockchain.Default != null)
-                        block = Blockchain.Default.GetBlock(height);
-                    else if (height == 0)
-                        block = Blockchain.GenesisBlock;
-                    else
-                        block = null;
-                    break;
-                case 32:
-                    UInt256 hash = new UInt256(data);
-                    if (Blockchain.Default != null)
-                        block = Blockchain.Default.GetBlock(hash);
-                    else if (hash == Blockchain.GenesisBlock.Hash)
-                        block = Blockchain.GenesisBlock;
-                    else
-                        block = null;
-                    break;
-                default:
-                    return false;
+                uint height = (uint)new BigInteger(data);
+                if (Blockchain.Default != null)
+                    block = Blockchain.Default.GetBlock(height);
+                else if (height == 0)
+                    block = Blockchain.GenesisBlock;
+                else
+                    block = null;
+            }
+            else if (data.Length == 32)
+            {
+                UInt256 hash = new UInt256(data);
+                if (Blockchain.Default != null)
+                    block = Blockchain.Default.GetBlock(hash);
+                else if (hash == Blockchain.GenesisBlock.Hash)
+                    block = Blockchain.GenesisBlock;
+                else
+                    block = null;
+            }
+            else
+            {
+                return false;
             }
             engine.EvaluationStack.Push(StackItem.FromInterface(block));
             return true;

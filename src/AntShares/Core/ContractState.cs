@@ -5,53 +5,65 @@ namespace AntShares.Core
 {
     public class ContractState : StateBase, ICloneable<ContractState>
     {
-        public byte[] Script;
+        public FunctionCode Code;
         public bool HasStorage;
+        public string Name;
+        public string CodeVersion;
+        public string Author;
+        public string Email;
+        public string Description;
 
-        private UInt160 _scriptHash;
-        public UInt160 ScriptHash
-        {
-            get
-            {
-                if (_scriptHash == null)
-                {
-                    _scriptHash = Script.ToScriptHash();
-                }
-                return _scriptHash;
-            }
-        }
+        public UInt160 ScriptHash => Code.ScriptHash;
 
-        public override int Size => base.Size + Script.GetVarSize() + sizeof(bool);
+        public override int Size => base.Size + Code.Size + sizeof(bool) + Name.GetVarSize() + CodeVersion.GetVarSize() + Author.GetVarSize() + Email.GetVarSize() + Description.GetVarSize();
 
         ContractState ICloneable<ContractState>.Clone()
         {
             return new ContractState
             {
-                Script = Script,
+                Code = Code,
                 HasStorage = HasStorage,
-                _scriptHash = _scriptHash
+                Name = Name,
+                CodeVersion = CodeVersion,
+                Author = Author,
+                Email = Email,
+                Description = Description
             };
         }
 
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Script = reader.ReadVarBytes();
+            Code = reader.ReadSerializable<FunctionCode>();
             HasStorage = reader.ReadBoolean();
+            Name = reader.ReadVarString();
+            CodeVersion = reader.ReadVarString();
+            Author = reader.ReadVarString();
+            Email = reader.ReadVarString();
+            Description = reader.ReadVarString();
         }
 
         void ICloneable<ContractState>.FromReplica(ContractState replica)
         {
-            Script = replica.Script;
+            Code = replica.Code;
             HasStorage = replica.HasStorage;
-            _scriptHash = replica._scriptHash;
+            Name = replica.Name;
+            CodeVersion = replica.CodeVersion;
+            Author = replica.Author;
+            Email = replica.Email;
+            Description = replica.Description;
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.WriteVarBytes(Script);
+            writer.Write(Code);
             writer.Write(HasStorage);
+            writer.WriteVarString(Name);
+            writer.WriteVarString(CodeVersion);
+            writer.WriteVarString(Author);
+            writer.WriteVarString(Email);
+            writer.WriteVarString(Description);
         }
     }
 }

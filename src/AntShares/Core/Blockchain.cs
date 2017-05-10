@@ -383,7 +383,7 @@ namespace AntShares.Core
 
         byte[] IScriptTable.GetScript(byte[] script_hash)
         {
-            return GetContract(new UInt160(script_hash)).Script;
+            return GetContract(new UInt160(script_hash)).Code.Script;
         }
 
         /// <summary>
