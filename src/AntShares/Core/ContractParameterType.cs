@@ -26,6 +26,8 @@
         /// 字节数组
         /// </summary>
         ByteArray = 5,
-        PublicKey = 6
+        PublicKey = 6,
+
+        Void = 0xff
     }
 }

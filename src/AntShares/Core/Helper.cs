@@ -45,7 +45,7 @@ namespace AntShares.Core
 
         internal static bool VerifyScripts(this IVerifiable verifiable)
         {
-            const int max_steps = 1200;
+            const int max_steps = 3000;
             UInt160[] hashes;
             try
             {
