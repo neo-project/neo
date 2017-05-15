@@ -527,13 +527,47 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                         break;
                     case TransactionType.InvocationTransaction:
                         {
+                            const int max_steps = 3000;
                             InvocationTransaction itx = (InvocationTransaction)tx;
                             CachedScriptTable script_table = new CachedScriptTable(contracts);
                             StateMachine service = new StateMachine(accounts, validators, assets, contracts, storages);
+                            int nOpCount = 0;
+                            bool fault = false;
                             ExecutionEngine engine = new ExecutionEngine(itx, Crypto.Default, script_table, service);
                             engine.LoadScript(itx.Script, false);
-                            engine.Execute();
-                            if (!engine.State.HasFlag(VMState.FAULT)) service.Commit();
+                            while (!engine.State.HasFlag(VMState.HALT) && !engine.State.HasFlag(VMState.FAULT))
+                            {
+                                if (engine.CurrentContext.InstructionPointer < engine.CurrentContext.Script.Length)
+                                {
+                                    if (++nOpCount > max_steps)
+                                    {
+                                        fault = true;
+                                        break;
+                                    }
+                                    if (engine.CurrentContext.NextInstruction == OpCode.CHECKMULTISIG)
+                                    {
+                                        if (engine.EvaluationStack.Count == 0)
+                                        {
+                                            fault = true;
+                                            break;
+                                        }
+                                        int n = (int)engine.EvaluationStack.Peek().GetBigInteger();
+                                        if (n < 1)
+                                        {
+                                            fault = true;
+                                            break;
+                                        }
+                                        nOpCount += n;
+                                        if (nOpCount > max_steps)
+                                        {
+                                            fault = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                engine.StepInto();
+                            }
+                            if (!fault && !engine.State.HasFlag(VMState.FAULT)) service.Commit();
                         }
                         break;
                 }
