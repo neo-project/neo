@@ -103,8 +103,7 @@ namespace AntShares.SmartContract
                 ScriptHash = script_hash,
                 Key = key
             });
-            if (item == null) return false;
-            engine.EvaluationStack.Push(item.Value);
+            engine.EvaluationStack.Push(item?.Value ?? new byte[0]);
             return true;
         }
 

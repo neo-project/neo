@@ -183,7 +183,7 @@ namespace AntShares.Core
                 return false;
             if (completely)
             {
-                if (NextConsensus != Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(Transactions).ToArray()))
+                if (NextConsensus != Blockchain.GetConsensusAddress(Blockchain.Default.GetValidators(Transactions).ToArray()))
                     return false;
                 foreach (Transaction tx in Transactions)
                     if (!tx.Verify(Transactions.Where(p => !p.Hash.Equals(tx.Hash)))) return false;

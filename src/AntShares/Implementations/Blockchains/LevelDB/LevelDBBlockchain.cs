@@ -228,7 +228,10 @@ namespace AntShares.Implementations.Blockchains.LevelDB
 
         public override IEnumerable<ValidatorState> GetEnrollments()
         {
-            return db.Find<ValidatorState>(ReadOptions.Default, DataEntryPrefix.ST_Validator);
+            return db.Find<ValidatorState>(ReadOptions.Default, DataEntryPrefix.ST_Validator).Union(StandbyValidators.Select(p => new ValidatorState
+            {
+                PublicKey = p
+            }));
         }
 
         public override Header GetHeader(uint height)

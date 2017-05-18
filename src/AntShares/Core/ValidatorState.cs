@@ -1,10 +1,11 @@
 ﻿using AntShares.Cryptography.ECC;
 using AntShares.IO;
+using System;
 using System.IO;
 
 namespace AntShares.Core
 {
-    public class ValidatorState : StateBase, ICloneable<ValidatorState>
+    public class ValidatorState : StateBase, ICloneable<ValidatorState>, IEquatable<ValidatorState>
     {
         public ECPoint PublicKey;
 
@@ -24,9 +25,28 @@ namespace AntShares.Core
             PublicKey = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
         }
 
+        public bool Equals(ValidatorState other)
+        {
+            if (ReferenceEquals(this, other)) return true;
+            if (ReferenceEquals(null, other)) return false;
+            return PublicKey.Equals(other.PublicKey);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(this, obj)) return true;
+            if (ReferenceEquals(null, obj)) return false;
+            return Equals(obj as ValidatorState);
+        }
+
         void ICloneable<ValidatorState>.FromReplica(ValidatorState replica)
         {
             PublicKey = replica.PublicKey;
+        }
+
+        public override int GetHashCode()
+        {
+            return PublicKey.GetHashCode();
         }
 
         public override void Serialize(BinaryWriter writer)

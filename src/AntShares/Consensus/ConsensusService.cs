@@ -44,12 +44,12 @@ namespace AntShares.Consensus
             context.Transactions[tx.Hash] = tx;
             if (context.TransactionHashes.Length == context.Transactions.Count)
             {
-                if (Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(context.Transactions.Values).ToArray()).Equals(context.NextConsensus))
+                if (Blockchain.GetConsensusAddress(Blockchain.Default.GetValidators(context.Transactions.Values).ToArray()).Equals(context.NextConsensus))
                 {
                     Log($"send perpare response");
                     context.State |= ConsensusState.SignatureSent;
-                    context.Signatures[context.BackupIndex] = context.MakeHeader().Sign(wallet.GetKey(context.Validators[context.BackupIndex]));
-                    SignAndRelay(context.MakePerpareResponse(context.Signatures[context.BackupIndex]));
+                    context.Signatures[context.MyIndex] = context.MakeHeader().Sign(wallet.GetKey(context.Validators[context.MyIndex]));
+                    SignAndRelay(context.MakePerpareResponse(context.Signatures[context.MyIndex]));
                     CheckSignatures();
                 }
                 else
@@ -86,7 +86,7 @@ namespace AntShares.Consensus
         {
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                Contract contract = Contract.CreateMultiSigContract(context.Validators[context.BackupIndex].EncodePoint(true).ToScriptHash(), context.M, context.Validators);
+                Contract contract = Contract.CreateMultiSigContract(context.Validators[context.MyIndex].EncodePoint(true).ToScriptHash(), context.M, context.Validators);
                 Block block = context.MakeHeader();
                 SignatureContext sc = new SignatureContext(block);
                 for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
@@ -151,9 +151,9 @@ namespace AntShares.Consensus
                     context.Reset(wallet);
                 else
                     context.ChangeView(view_number);
-                if (context.BackupIndex < 0) return;
-                Log($"initialize: height={context.BlockIndex} view={view_number} index={context.BackupIndex} role={(context.BackupIndex == context.PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup)}");
-                if (context.BackupIndex == context.PrimaryIndex)
+                if (context.MyIndex < 0) return;
+                Log($"initialize: height={context.BlockIndex} view={view_number} index={context.MyIndex} role={(context.MyIndex == context.PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup)}");
+                if (context.MyIndex == context.PrimaryIndex)
                 {
                     context.State |= ConsensusState.Primary;
                     timer_height = context.BlockIndex;
@@ -181,10 +181,10 @@ namespace AntShares.Consensus
             {
                 lock (context)
                 {
-                    if (payload.MinerIndex == context.BackupIndex) return;
+                    if (payload.ValidatorIndex == context.MyIndex) return;
                     if (payload.Version != ConsensusContext.Version || payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
                         return;
-                    if (payload.MinerIndex >= context.Validators.Length) return;
+                    if (payload.ValidatorIndex >= context.Validators.Length) return;
                     ConsensusMessage message = ConsensusMessage.DeserializeFrom(payload.Data);
                     if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView)
                         return;
@@ -227,19 +227,19 @@ namespace AntShares.Consensus
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
-            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.MinerIndex} nv={message.NewViewNumber}");
-            if (message.NewViewNumber <= context.ExpectedView[payload.MinerIndex])
+            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
+            if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
                 return;
-            context.ExpectedView[payload.MinerIndex] = message.NewViewNumber;
+            context.ExpectedView[payload.ValidatorIndex] = message.NewViewNumber;
             CheckExpectedView(message.NewViewNumber);
         }
 
         private void OnPerpareRequestReceived(ConsensusPayload payload, PerpareRequest message)
         {
-            Log($"{nameof(OnPerpareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.MinerIndex} tx={message.TransactionHashes.Length}");
+            Log($"{nameof(OnPerpareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (!context.State.HasFlag(ConsensusState.Backup) || context.State.HasFlag(ConsensusState.RequestReceived))
                 return;
-            if (payload.MinerIndex != context.PrimaryIndex) return;
+            if (payload.ValidatorIndex != context.PrimaryIndex) return;
             if (payload.Timestamp <= Blockchain.Default.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.Now.AddMinutes(10).ToTimestamp())
             {
                 Log($"Timestamp incorrect: {payload.Timestamp}");
@@ -251,9 +251,9 @@ namespace AntShares.Consensus
             context.NextConsensus = message.NextConsensus;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
-            if (!Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), message.Signature, context.Validators[payload.MinerIndex].EncodePoint(false))) return;
+            if (!Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
             context.Signatures = new byte[context.Validators.Length][];
-            context.Signatures[payload.MinerIndex] = message.Signature;
+            context.Signatures[payload.ValidatorIndex] = message.Signature;
             Dictionary<UInt256, Transaction> mempool = LocalNode.GetMemoryPool().ToDictionary(p => p.Hash);
             foreach (UInt256 hash in context.TransactionHashes.Skip(1))
                 if (mempool.ContainsKey(hash))
@@ -267,12 +267,12 @@ namespace AntShares.Consensus
 
         private void OnPerpareResponseReceived(ConsensusPayload payload, PerpareResponse message)
         {
-            Log($"{nameof(OnPerpareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.MinerIndex}");
+            Log($"{nameof(OnPerpareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
-            if (context.Signatures[payload.MinerIndex] != null) return;
+            if (context.Signatures[payload.ValidatorIndex] != null) return;
             Block header = context.MakeHeader();
-            if (header == null || !Crypto.Default.VerifySignature(header.GetHashData(), message.Signature, context.Validators[payload.MinerIndex].EncodePoint(false))) return;
-            context.Signatures[payload.MinerIndex] = message.Signature;
+            if (header == null || !Crypto.Default.VerifySignature(header.GetHashData(), message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
+            context.Signatures[payload.ValidatorIndex] = message.Signature;
             CheckSignatures();
         }
 
@@ -296,8 +296,8 @@ namespace AntShares.Consensus
                         transactions.Insert(0, CreateMinerTransaction(transactions, context.BlockIndex, context.Nonce));
                         context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
                         context.Transactions = transactions.ToDictionary(p => p.Hash);
-                        context.NextConsensus = Blockchain.GetMinerAddress(Blockchain.Default.GetMiners(transactions).ToArray());
-                        context.Signatures[context.BackupIndex] = context.MakeHeader().Sign(wallet.GetKey(context.Validators[context.BackupIndex]));
+                        context.NextConsensus = Blockchain.GetConsensusAddress(Blockchain.Default.GetValidators(transactions).ToArray());
+                        context.Signatures[context.MyIndex] = context.MakeHeader().Sign(wallet.GetKey(context.Validators[context.MyIndex]));
                     }
                     SignAndRelay(context.MakePerpareRequest());
                     timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer_view + 1)), Timeout.InfiniteTimeSpan);
@@ -312,11 +312,11 @@ namespace AntShares.Consensus
         private void RequestChangeView()
         {
             context.State |= ConsensusState.ViewChanging;
-            context.ExpectedView[context.BackupIndex]++;
-            Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.BackupIndex]} state={context.State}");
-            timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.BackupIndex] + 1)), Timeout.InfiniteTimeSpan);
+            context.ExpectedView[context.MyIndex]++;
+            Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
+            timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)), Timeout.InfiniteTimeSpan);
             SignAndRelay(context.MakeChangeView());
-            CheckExpectedView(context.ExpectedView[context.BackupIndex]);
+            CheckExpectedView(context.ExpectedView[context.MyIndex]);
         }
 
         private void SignAndRelay(ConsensusPayload payload)

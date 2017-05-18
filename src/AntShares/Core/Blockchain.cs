@@ -83,7 +83,7 @@ namespace AntShares.Core
             Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestamp(),
             Index = 0,
             ConsensusData = 2083236893, //向比特币致敬
-            NextConsensus = GetMinerAddress(StandbyValidators),
+            NextConsensus = GetConsensusAddress(StandbyValidators),
             Script = new Witness
             {
                 InvocationScript = new byte[0],
@@ -321,50 +321,50 @@ namespace AntShares.Core
         /// <summary>
         /// 获取记账人的合约地址
         /// </summary>
-        /// <param name="miners">记账人的公钥列表</param>
+        /// <param name="validators">记账人的公钥列表</param>
         /// <returns>返回记账人的合约地址</returns>
-        public static UInt160 GetMinerAddress(ECPoint[] miners)
+        public static UInt160 GetConsensusAddress(ECPoint[] validators)
         {
-            return Contract.CreateMultiSigRedeemScript(miners.Length - (miners.Length - 1) / 3, miners).ToScriptHash();
+            return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
         }
 
-        private List<ECPoint> _miners = new List<ECPoint>();
+        private List<ECPoint> _validators = new List<ECPoint>();
         /// <summary>
         /// 获取下一个区块的记账人列表
         /// </summary>
         /// <returns>返回一组公钥，表示下一个区块的记账人列表</returns>
-        public ECPoint[] GetMiners()
+        public ECPoint[] GetValidators()
         {
-            lock (_miners)
+            lock (_validators)
             {
-                if (_miners.Count == 0)
+                if (_validators.Count == 0)
                 {
-                    _miners.AddRange(GetMiners(Enumerable.Empty<Transaction>()));
+                    _validators.AddRange(GetValidators(Enumerable.Empty<Transaction>()));
                 }
-                return _miners.ToArray();
+                return _validators.ToArray();
             }
         }
 
-        public virtual IEnumerable<ECPoint> GetMiners(IEnumerable<Transaction> others)
+        public virtual IEnumerable<ECPoint> GetValidators(IEnumerable<Transaction> others)
         {
             //TODO: 此处排序可能将耗费大量内存，考虑是否采用其它机制
             VoteState[] votes = GetVotes(others).OrderBy(p => p.PublicKeys.Length).ToArray();
-            int miner_count = (int)votes.WeightedFilter(0.25, 0.75, p => p.Count.GetData(), (p, w) => new
+            int validators_count = (int)votes.WeightedFilter(0.25, 0.75, p => p.Count.GetData(), (p, w) => new
             {
-                MinerCount = p.PublicKeys.Length,
+                ValidatorsCount = p.PublicKeys.Length,
                 Weight = w
-            }).WeightedAverage(p => p.MinerCount, p => p.Weight);
-            miner_count = Math.Max(miner_count, StandbyValidators.Length);
-            Dictionary<ECPoint, Fixed8> miners = GetEnrollments().ToDictionary(p => p.PublicKey, p => Fixed8.Zero);
+            }).WeightedAverage(p => p.ValidatorsCount, p => p.Weight);
+            validators_count = Math.Max(validators_count, StandbyValidators.Length);
+            Dictionary<ECPoint, Fixed8> validators = GetEnrollments().ToDictionary(p => p.PublicKey, p => Fixed8.Zero);
             foreach (var vote in votes)
             {
-                foreach (ECPoint pubkey in vote.PublicKeys.Take(miner_count))
+                foreach (ECPoint pubkey in vote.PublicKeys.Take(validators_count))
                 {
-                    if (miners.ContainsKey(pubkey))
-                        miners[pubkey] += vote.Count;
+                    if (validators.ContainsKey(pubkey))
+                        validators[pubkey] += vote.Count;
                 }
             }
-            return miners.OrderByDescending(p => p.Value).ThenBy(p => p.Key).Select(p => p.Key).Concat(StandbyValidators).Take(miner_count);
+            return validators.OrderByDescending(p => p.Value).ThenBy(p => p.Key).Select(p => p.Key).Concat(StandbyValidators).Take(validators_count);
         }
 
         /// <summary>
@@ -456,9 +456,9 @@ namespace AntShares.Core
         /// <param name="block">区块</param>
         protected void OnPersistCompleted(Block block)
         {
-            lock (_miners)
+            lock (_validators)
             {
-                _miners.Clear();
+                _validators.Clear();
             }
             if (PersistCompleted != null) PersistCompleted(this, block);
         }
