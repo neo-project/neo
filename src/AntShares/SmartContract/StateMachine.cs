@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace AntShares.SmartContract
 {
-    internal class StateMachine : StateReader
+    public class StateMachine : StateReader
     {
         private CloneCache<UInt160, AccountState> accounts;
         private CloneCache<ECPoint, ValidatorState> validators;

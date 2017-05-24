@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace AntShares.Core
 {
-    internal class StorageKey : IEquatable<StorageKey>, ISerializable
+    public class StorageKey : IEquatable<StorageKey>, ISerializable
     {
         public UInt160 ScriptHash;
         public byte[] Key;

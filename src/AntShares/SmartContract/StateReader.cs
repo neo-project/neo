@@ -5,7 +5,7 @@ using System.Numerics;
 
 namespace AntShares.SmartContract
 {
-    internal class StateReader : InteropService
+    public class StateReader : InteropService
     {
         public static readonly StateReader Default = new StateReader();
 
