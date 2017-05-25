@@ -1,16 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.6
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{83696BE0-E444-44DD-9C0D-A61CACFC95E1}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3A0A81D5-44F5-45EB-BA2F-E1788CF917C8}"
-	ProjectSection(SolutionItems) = preProject
-		global.json = global.json
-	EndProjectSection
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "AntShares", "src\AntShares\AntShares.xproj", "{36447A9B-0311-4D4D-A3D5-AECBE9C15BBC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AntShares", "src\AntShares\AntShares.csproj", "{36447A9B-0311-4D4D-A3D5-AECBE9C15BBC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
