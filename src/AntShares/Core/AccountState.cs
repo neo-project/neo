@@ -1,27 +1,36 @@
 ﻿using AntShares.Cryptography.ECC;
 using AntShares.IO;
 using AntShares.VM;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
 namespace AntShares.Core
 {
-    public class AccountState : IInteropInterface, ISerializable
+    public class AccountState : StateBase, ICloneable<AccountState>
     {
-        public const byte StateVersion = 0;
         public UInt160 ScriptHash;
         public bool IsFrozen;
         public ECPoint[] Votes;
         public Dictionary<UInt256, Fixed8> Balances;
 
-        int ISerializable.Size => sizeof(byte) + ScriptHash.Size + sizeof(bool) + Votes.GetVarSize()
+        public override int Size => base.Size + ScriptHash.Size + sizeof(bool) + Votes.GetVarSize()
             + IO.Helper.GetVarSize(Balances.Count) + Balances.Count * (32 + 8);
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        AccountState ICloneable<AccountState>.Clone()
         {
-            if (reader.ReadByte() != StateVersion) throw new FormatException();
+            return new AccountState
+            {
+                ScriptHash = ScriptHash,
+                IsFrozen = IsFrozen,
+                Votes = Votes,
+                Balances = Balances.ToDictionary(p => p.Key, p => p.Value)
+            };
+        }
+
+        public override void Deserialize(BinaryReader reader)
+        {
+            base.Deserialize(reader);
             ScriptHash = reader.ReadSerializable<UInt160>();
             IsFrozen = reader.ReadBoolean();
             Votes = new ECPoint[reader.ReadVarInt()];
@@ -37,9 +46,17 @@ namespace AntShares.Core
             }
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
+        void ICloneable<AccountState>.FromReplica(AccountState replica)
         {
-            writer.Write(StateVersion);
+            ScriptHash = replica.ScriptHash;
+            IsFrozen = replica.IsFrozen;
+            Votes = replica.Votes;
+            Balances = replica.Balances;
+        }
+
+        public override void Serialize(BinaryWriter writer)
+        {
+            base.Serialize(writer);
             writer.Write(ScriptHash);
             writer.Write(IsFrozen);
             writer.Write(Votes);
@@ -50,11 +67,6 @@ namespace AntShares.Core
                 writer.Write(pair.Key);
                 writer.Write(pair.Value);
             }
-        }
-
-        byte[] IInteropInterface.ToArray()
-        {
-            return this.ToArray();
         }
     }
 }

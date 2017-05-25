@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace AntShares
 {
-    public class UInt160 : UIntBase, IComparable<UInt160>
+    public class UInt160 : UIntBase, IComparable<UInt160>, IEquatable<UInt160>
     {
         public static readonly UInt160 Zero = new UInt160();
 
@@ -30,6 +30,11 @@ namespace AntShares
                     return -1;
             }
             return 0;
+        }
+
+        bool IEquatable<UInt160>.Equals(UInt160 other)
+        {
+            return Equals(other);
         }
 
         public static UInt160 Parse(string value)

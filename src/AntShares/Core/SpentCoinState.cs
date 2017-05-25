@@ -1,23 +1,21 @@
 ﻿using AntShares.IO;
-using System;
 using System.Collections.Generic;
 using System.IO;
 
 namespace AntShares.Core
 {
-    public class SpentCoinState : ISerializable
+    public class SpentCoinState : StateBase
     {
-        public const byte StateVersion = 0;
         public UInt256 TransactionHash;
         public uint TransactionHeight;
         public Dictionary<ushort, uint> Items;
 
-        int ISerializable.Size => sizeof(byte) + TransactionHash.Size + sizeof(uint)
+        public override int Size => base.Size + TransactionHash.Size + sizeof(uint)
             + IO.Helper.GetVarSize(Items.Count) + Items.Count * (sizeof(ushort) + sizeof(uint));
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        public override void Deserialize(BinaryReader reader)
         {
-            if (reader.ReadByte() != StateVersion) throw new FormatException();
+            base.Deserialize(reader);
             TransactionHash = reader.ReadSerializable<UInt256>();
             TransactionHeight = reader.ReadUInt32();
             int count = (int)reader.ReadVarInt();
@@ -30,9 +28,9 @@ namespace AntShares.Core
             }
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
+        public override void Serialize(BinaryWriter writer)
         {
-            writer.Write(StateVersion);
+            base.Serialize(writer);
             writer.Write(TransactionHash);
             writer.Write(TransactionHeight);
             writer.WriteVarInt(Items.Count);

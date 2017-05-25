@@ -8,6 +8,7 @@ namespace AntShares.Core
     public class PublishTransaction : Transaction
     {
         public FunctionCode Code;
+        public bool NeedStorage;
         public string Name;
         public string CodeVersion;
         public string Author;
@@ -24,6 +25,10 @@ namespace AntShares.Core
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             Code = reader.ReadSerializable<FunctionCode>();
+            if (Version == 0)
+                NeedStorage = false;
+            else
+                NeedStorage = reader.ReadBoolean();
             Name = reader.ReadVarString(252);
             CodeVersion = reader.ReadVarString(252);
             Author = reader.ReadVarString(252);
@@ -34,6 +39,7 @@ namespace AntShares.Core
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(Code);
+            if (Version >= 1) writer.Write(NeedStorage);
             writer.WriteVarString(Name);
             writer.WriteVarString(CodeVersion);
             writer.WriteVarString(Author);
@@ -49,6 +55,7 @@ namespace AntShares.Core
             json["contract"]["script"] = Code.Script.ToHexString();
             json["contract"]["parameters"] = new JArray(Code.ParameterList.Select(p => (JObject)p));
             json["contract"]["returntype"] = Code.ReturnType;
+            json["contract"]["needstorage"] = NeedStorage;
             json["contract"]["name"] = Name;
             json["contract"]["version"] = CodeVersion;
             json["contract"]["author"] = Author;

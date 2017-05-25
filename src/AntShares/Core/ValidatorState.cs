@@ -5,22 +5,53 @@ using System.IO;
 
 namespace AntShares.Core
 {
-    public class ValidatorState : ISerializable
+    public class ValidatorState : StateBase, ICloneable<ValidatorState>, IEquatable<ValidatorState>
     {
-        public const byte StateVersion = 0;
         public ECPoint PublicKey;
 
-        int ISerializable.Size => sizeof(byte) + PublicKey.Size;
+        public override int Size => base.Size + PublicKey.Size;
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        ValidatorState ICloneable<ValidatorState>.Clone()
         {
-            if (reader.ReadByte() != StateVersion) throw new FormatException();
+            return new ValidatorState
+            {
+                PublicKey = PublicKey
+            };
+        }
+
+        public override void Deserialize(BinaryReader reader)
+        {
+            base.Deserialize(reader);
             PublicKey = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
+        public bool Equals(ValidatorState other)
         {
-            writer.Write(StateVersion);
+            if (ReferenceEquals(this, other)) return true;
+            if (ReferenceEquals(null, other)) return false;
+            return PublicKey.Equals(other.PublicKey);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(this, obj)) return true;
+            if (ReferenceEquals(null, obj)) return false;
+            return Equals(obj as ValidatorState);
+        }
+
+        void ICloneable<ValidatorState>.FromReplica(ValidatorState replica)
+        {
+            PublicKey = replica.PublicKey;
+        }
+
+        public override int GetHashCode()
+        {
+            return PublicKey.GetHashCode();
+        }
+
+        public override void Serialize(BinaryWriter writer)
+        {
+            base.Serialize(writer);
             writer.Write(PublicKey);
         }
     }

@@ -1,26 +1,24 @@
 ﻿using AntShares.IO;
-using System;
 using System.IO;
 using System.Linq;
 
 namespace AntShares.Core
 {
-    public class UnspentCoinState : ISerializable
+    public class UnspentCoinState : StateBase
     {
-        public const byte StateVersion = 0;
         public CoinState[] Items;
 
-        int ISerializable.Size => sizeof(byte) + Items.GetVarSize();
+        public override int Size => base.Size + Items.GetVarSize();
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        public override void Deserialize(BinaryReader reader)
         {
-            if (reader.ReadByte() != StateVersion) throw new FormatException();
+            base.Deserialize(reader);
             Items = reader.ReadVarBytes().Select(p => (CoinState)p).ToArray();
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
+        public override void Serialize(BinaryWriter writer)
         {
-            writer.Write(StateVersion);
+            base.Serialize(writer);
             writer.WriteVarBytes(Items.Cast<byte>().ToArray());
         }
     }

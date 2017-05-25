@@ -1,6 +1,6 @@
 ﻿namespace AntShares.IO.Caching
 {
-    internal enum TrackState : byte
+    public enum TrackState : byte
     {
         None,
         Added,

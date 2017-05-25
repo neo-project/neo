@@ -110,7 +110,7 @@ namespace AntShares.Wallets
                     {
                         Signature = p["signature"].AsString().HexToBytes(),
                         Index = dic[ECPoint.DecodePoint(p["pubkey"].AsString().HexToBytes(), ECCurve.Secp256r1)]
-                    }).OrderBy(p => p.Index).Select(p => p.Signature).ToArray();
+                    }).OrderByDescending(p => p.Index).Select(p => p.Signature).ToArray();
                     for (int i = 0; i < sigs.Length; i++)
                         if (!Add(contract, i, sigs[i]))
                             throw new InvalidOperationException();
@@ -188,7 +188,7 @@ namespace AntShares.Wallets
             {
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
-                    foreach (byte[] parameter in parameters[i])
+                    foreach (byte[] parameter in parameters[i].Reverse())
                     {
                         if (parameter.Length <= 2)
                             sb.EmitPush(new BigInteger(parameter));

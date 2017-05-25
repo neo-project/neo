@@ -36,6 +36,7 @@
         /// <summary>
         /// Publish scripts to the blockchain for being invoked later.
         /// </summary>
-        PublishTransaction = 0xd0
+        PublishTransaction = 0xd0,
+        InvocationTransaction = 0xd1
     }
 }

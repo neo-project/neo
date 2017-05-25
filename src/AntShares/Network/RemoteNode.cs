@@ -46,9 +46,10 @@ namespace AntShares.Network
             {
                 Disconnected?.Invoke(this, error);
                 lock (missions_global)
-                {
-                    missions_global.ExceptWith(missions);
-                }
+                    lock (missions)
+                    {
+                        missions_global.ExceptWith(missions);
+                    }
             }
         }
 
@@ -197,7 +198,10 @@ namespace AntShares.Network
             {
                 missions_global.Remove(inventory.Hash);
             }
-            missions.Remove(inventory.Hash);
+            lock (missions)
+            {
+                missions.Remove(inventory.Hash);
+            }
             if (inventory is MinerTransaction) return;
             InventoryReceived?.Invoke(this, inventory);
         }
@@ -218,7 +222,10 @@ namespace AntShares.Network
                     hashes = hashes.Where(p => !missions_global.Contains(p)).ToArray();
                 missions_global.UnionWith(hashes);
             }
-            missions.UnionWith(hashes);
+            lock (missions)
+            {
+                missions.UnionWith(hashes);
+            }
             if (hashes.Length == 0) return;
             EnqueueMessage("getdata", InvPayload.Create(payload.Type, hashes));
         }

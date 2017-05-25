@@ -457,14 +457,14 @@ namespace AntShares.Wallets
             {
                 if (tx.Outputs.Any(p => contracts.ContainsKey(p.ScriptHash)))
                     return true;
-                if (tx.Scripts.Any(p => contracts.ContainsKey(p.VerificationScript.ToScriptHash())))
+                if (tx.Scripts.Any(p => p.VerificationScript != null && contracts.ContainsKey(p.VerificationScript.ToScriptHash())))
                     return true;
             }
             lock (watchOnly)
             {
                 if (tx.Outputs.Any(p => watchOnly.Contains(p.ScriptHash)))
                     return true;
-                if (tx.Scripts.Any(p => watchOnly.Contains(p.VerificationScript.ToScriptHash())))
+                if (tx.Scripts.Any(p => p.VerificationScript != null && watchOnly.Contains(p.VerificationScript.ToScriptHash())))
                     return true;
             }
             return false;

@@ -14,7 +14,7 @@ namespace AntShares.Network.Payloads
         public uint Version;
         public UInt256 PrevHash;
         public uint BlockIndex;
-        public ushort MinerIndex;
+        public ushort ValidatorIndex;
         public uint Timestamp;
         public byte[] Data;
         public Witness Script;
@@ -61,7 +61,7 @@ namespace AntShares.Network.Payloads
             Version = reader.ReadUInt32();
             PrevHash = reader.ReadSerializable<UInt256>();
             BlockIndex = reader.ReadUInt32();
-            MinerIndex = reader.ReadUInt16();
+            ValidatorIndex = reader.ReadUInt16();
             Timestamp = reader.ReadUInt32();
             Data = reader.ReadVarBytes();
         }
@@ -77,10 +77,10 @@ namespace AntShares.Network.Payloads
                 throw new InvalidOperationException();
             if (PrevHash != Blockchain.Default.CurrentBlockHash)
                 throw new InvalidOperationException();
-            ECPoint[] miners = Blockchain.Default.GetMiners();
-            if (miners.Length <= MinerIndex)
+            ECPoint[] validators = Blockchain.Default.GetValidators();
+            if (validators.Length <= ValidatorIndex)
                 throw new InvalidOperationException();
-            return new[] { Contract.CreateSignatureContract(miners[MinerIndex]).ScriptHash };
+            return new[] { Contract.CreateSignatureContract(validators[ValidatorIndex]).ScriptHash };
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -94,7 +94,7 @@ namespace AntShares.Network.Payloads
             writer.Write(Version);
             writer.Write(PrevHash);
             writer.Write(BlockIndex);
-            writer.Write(MinerIndex);
+            writer.Write(ValidatorIndex);
             writer.Write(Timestamp);
             writer.WriteVarBytes(Data);
         }

@@ -17,7 +17,7 @@ namespace AntShares.Consensus
         public uint BlockIndex;
         public byte ViewNumber;
         public ECPoint[] Validators;
-        public int BackupIndex;
+        public int MyIndex;
         public uint PrimaryIndex;
         public uint Timestamp;
         public ulong Nonce;
@@ -47,7 +47,7 @@ namespace AntShares.Consensus
         {
             return MakePayload(new ChangeView
             {
-                NewViewNumber = ExpectedView[BackupIndex]
+                NewViewNumber = ExpectedView[MyIndex]
             });
         }
 
@@ -80,7 +80,7 @@ namespace AntShares.Consensus
                 Version = Version,
                 PrevHash = PrevHash,
                 BlockIndex = BlockIndex,
-                MinerIndex = (ushort)BackupIndex,
+                ValidatorIndex = (ushort)MyIndex,
                 Timestamp = Timestamp,
                 Data = message.ToArray()
             };
@@ -94,7 +94,7 @@ namespace AntShares.Consensus
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                Signature = Signatures[BackupIndex]
+                Signature = Signatures[MyIndex]
             });
         }
 
@@ -112,8 +112,8 @@ namespace AntShares.Consensus
             PrevHash = Blockchain.Default.CurrentBlockHash;
             BlockIndex = Blockchain.Default.Height + 1;
             ViewNumber = 0;
-            Validators = Blockchain.Default.GetMiners();
-            BackupIndex = -1;
+            Validators = Blockchain.Default.GetValidators();
+            MyIndex = -1;
             PrimaryIndex = BlockIndex % (uint)Validators.Length;
             TransactionHashes = null;
             Signatures = new byte[Validators.Length][];
@@ -122,7 +122,7 @@ namespace AntShares.Consensus
             {
                 if (wallet.ContainsKey(Validators[i]))
                 {
-                    BackupIndex = i;
+                    MyIndex = i;
                     break;
                 }
             }

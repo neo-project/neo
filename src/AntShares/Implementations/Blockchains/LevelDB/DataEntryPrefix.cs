@@ -11,6 +11,7 @@
         ST_Validator = 0x48,
         ST_Asset = 0x4c,
         ST_Contract = 0x50,
+        ST_Storage = 0x70,
 
         IX_HeaderHashList = 0x80,
 
