@@ -151,7 +151,7 @@ namespace AntShares.Implementations.Wallets.EntityFramework
 
         public override WalletCoin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount)
         {
-            return FindUnspentCoins(FindUnspentCoins().Where(p => GetContract(p.Output.ScriptHash).IsStandard), asset_id, amount) ?? base.FindUnspentCoins(asset_id, amount);
+            return FindUnspentCoins(FindUnspentCoins().ToArray().Where(p => GetContract(p.Output.ScriptHash).IsStandard), asset_id, amount) ?? base.FindUnspentCoins(asset_id, amount);
         }
 
         private static IEnumerable<TransactionInfo> GetTransactionInfo(IEnumerable<Transaction> transactions)

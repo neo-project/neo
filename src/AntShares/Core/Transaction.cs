@@ -191,8 +191,6 @@ namespace AntShares.Core
         private void DeserializeUnsignedWithoutType(BinaryReader reader)
         {
             Version = reader.ReadByte();
-            if (Version != 0)
-                throw new FormatException();
             DeserializeExclusiveData(reader);
             Attributes = reader.ReadSerializableArray<TransactionAttribute>();
             Inputs = reader.ReadSerializableArray<CoinReference>();
