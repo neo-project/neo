@@ -463,8 +463,10 @@ namespace AntShares.Network
                 return true;
             if (tx.Type == TransactionType.RegisterTransaction)
             {
+#pragma warning disable CS0612
                 RegisterTransaction asset = (RegisterTransaction)tx;
                 if (filter.Check(asset.Admin.ToArray())) return true;
+#pragma warning restore CS0612
             }
             return false;
         }

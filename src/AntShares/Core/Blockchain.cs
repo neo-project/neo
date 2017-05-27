@@ -40,9 +40,7 @@ namespace AntShares.Core
         /// </summary>
         public static readonly ECPoint[] StandbyValidators = Settings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
 
-        /// <summary>
-        /// 小蚁股
-        /// </summary>
+#pragma warning disable CS0612
         public static readonly RegisterTransaction SystemShare = new RegisterTransaction
         {
             AssetType = AssetType.SystemShare,
@@ -57,9 +55,6 @@ namespace AntShares.Core
             Scripts = new Witness[0]
         };
 
-        /// <summary>
-        /// 小蚁币
-        /// </summary>
         public static readonly RegisterTransaction SystemCoin = new RegisterTransaction
         {
             AssetType = AssetType.SystemCoin,
@@ -73,6 +68,7 @@ namespace AntShares.Core
             Outputs = new TransactionOutput[0],
             Scripts = new Witness[0]
         };
+#pragma warning restore CS0612
 
         /// <summary>
         /// 创世区块

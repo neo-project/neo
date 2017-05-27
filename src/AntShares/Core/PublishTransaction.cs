@@ -1,10 +1,13 @@
 ﻿using AntShares.IO;
 using AntShares.IO.Json;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
 namespace AntShares.Core
 {
+    [Obsolete]
     public class PublishTransaction : Transaction
     {
         public FunctionCode Code;
@@ -62,6 +65,11 @@ namespace AntShares.Core
             json["contract"]["email"] = Email;
             json["contract"]["description"] = Description;
             return json;
+        }
+
+        public override bool Verify(IEnumerable<Transaction> mempool)
+        {
+            return false;
         }
     }
 }

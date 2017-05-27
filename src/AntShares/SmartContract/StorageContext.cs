@@ -1,12 +1,14 @@
-﻿using System;
+﻿using AntShares.VM;
 
 namespace AntShares.SmartContract
 {
-    [Flags]
-    internal enum StorageContext : byte
+    internal class StorageContext : IInteropInterface
     {
-        Current = 1,
-        CallingContract = 2,
-        EntryContract = 4
+        public UInt160 ScriptHash;
+
+        public byte[] ToArray()
+        {
+            return ScriptHash.ToArray();
+        }
     }
 }

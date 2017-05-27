@@ -479,6 +479,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                 {
                     case TransactionType.RegisterTransaction:
                         {
+#pragma warning disable CS0612
                             RegisterTransaction rtx = (RegisterTransaction)tx;
                             assets.Add(tx.Hash, new AssetState
                             {
@@ -496,6 +497,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                                 Expiration = block.Index + 2000000,
                                 IsFrozen = false
                             });
+#pragma warning restore CS0612
                         }
                         break;
                     case TransactionType.IssueTransaction:
@@ -520,6 +522,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                         break;
                     case TransactionType.PublishTransaction:
                         {
+#pragma warning disable CS0612
                             PublishTransaction publish_tx = (PublishTransaction)tx;
                             contracts.GetOrAdd(publish_tx.Code.ScriptHash, () => new ContractState
                             {
@@ -531,6 +534,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                                 Email = publish_tx.Email,
                                 Description = publish_tx.Description
                             });
+#pragma warning restore CS0612
                         }
                         break;
                     case TransactionType.InvocationTransaction:

@@ -17,6 +17,7 @@ namespace AntShares.SmartContract
             Register("AntShares.Blockchain.GetTransaction", Blockchain_GetTransaction);
             Register("AntShares.Blockchain.GetAccount", Blockchain_GetAccount);
             Register("AntShares.Blockchain.GetAsset", Blockchain_GetAsset);
+            Register("AntShares.Blockchain.GetContract", Blockchain_GetContract);
 
             Register("AntShares.Header.GetHash", Header_GetHash);
             Register("AntShares.Header.GetVersion", Header_GetVersion);
@@ -56,6 +57,11 @@ namespace AntShares.SmartContract
             Register("AntShares.Asset.GetOwner", Asset_GetOwner);
             Register("AntShares.Asset.GetAdmin", Asset_GetAdmin);
             Register("AntShares.Asset.GetIssuer", Asset_GetIssuer);
+
+            Register("AntShares.Contract.GetScript", Contract_GetScript);
+
+            Register("AntShares.Storage.GetContext", Storage_GetContext);
+            Register("AntShares.Storage.Get", Storage_Get);
         }
 
         protected virtual bool Blockchain_GetHeight(ExecutionEngine engine)
@@ -152,6 +158,15 @@ namespace AntShares.SmartContract
             byte[] hash = engine.EvaluationStack.Pop().GetByteArray();
             AssetState asset = Blockchain.Default?.GetAssetState(new UInt256(hash));
             engine.EvaluationStack.Push(StackItem.FromInterface(asset));
+            return true;
+        }
+
+        protected virtual bool Blockchain_GetContract(ExecutionEngine engine)
+        {
+            UInt160 hash = new UInt160(engine.EvaluationStack.Pop().GetByteArray());
+            ContractState contract = Blockchain.Default.GetContract(hash);
+            if (contract == null) return false;
+            engine.EvaluationStack.Push(StackItem.FromInterface(contract));
             return true;
         }
 
@@ -437,6 +452,39 @@ namespace AntShares.SmartContract
             AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
             if (asset == null) return false;
             engine.EvaluationStack.Push(asset.Issuer.ToArray());
+            return true;
+        }
+
+        protected virtual bool Contract_GetScript(ExecutionEngine engine)
+        {
+            ContractState contract = engine.EvaluationStack.Pop().GetInterface<ContractState>();
+            if (contract == null) return false;
+            engine.EvaluationStack.Push(contract.Code.Script);
+            return true;
+        }
+
+        protected virtual bool Storage_GetContext(ExecutionEngine engine)
+        {
+            engine.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
+            {
+                ScriptHash = new UInt160(engine.CurrentContext.ScriptHash)
+            }));
+            return true;
+        }
+
+        protected virtual bool Storage_Get(ExecutionEngine engine)
+        {
+            StorageContext context = engine.EvaluationStack.Pop().GetInterface<StorageContext>();
+            ContractState contract = Blockchain.Default.GetContract(context.ScriptHash);
+            if (contract == null) return false;
+            if (!contract.HasStorage) return false;
+            byte[] key = engine.EvaluationStack.Pop().GetByteArray();
+            StorageItem item = Blockchain.Default.GetStorageItem(new StorageKey
+            {
+                ScriptHash = context.ScriptHash,
+                Key = key
+            });
+            engine.EvaluationStack.Push(item?.Value ?? new byte[0]);
             return true;
         }
     }

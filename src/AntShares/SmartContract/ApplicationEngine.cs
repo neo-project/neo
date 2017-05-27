@@ -74,9 +74,13 @@ namespace AntShares.SmartContract
                 case "AntShares.Blockchain.GetBlock": return 200;
                 case "AntShares.Blockchain.GetTransaction": return 100;
                 case "AntShares.Blockchain.GetAccount": return 100;
+                case "AntShares.Blockchain.CreateAsset": return 5000L * 100000000L / ratio;
                 case "AntShares.Blockchain.GetAsset": return 100;
+                case "AntShares.Blockchain.CreateContract": return 500L * 100000000L / ratio;
+                case "AntShares.Blockchain.GetContract": return 100;
                 case "AntShares.Transaction.GetReferences": return 200;
                 case "AntShares.Account.SetVotes": return 1000;
+                case "AntShares.Asset.Renew": return (byte)EvaluationStack.Peek(1).GetBigInteger() * 5000L * 100000000L / ratio;
                 case "AntShares.Storage.Get": return 100;
                 case "AntShares.Storage.Put": return 1000;
                 case "AntShares.Storage.Delete": return 100;
