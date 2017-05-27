@@ -386,6 +386,8 @@ namespace AntShares.Core
             return GetContract(new UInt160(script_hash)).Code.Script;
         }
 
+        public abstract StorageItem GetStorageItem(StorageKey key);
+
         /// <summary>
         /// 根据指定的区块高度，返回对应区块及之前所有区块中包含的系统费用的总量
         /// </summary>

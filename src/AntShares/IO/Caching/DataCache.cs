@@ -8,7 +8,7 @@ namespace AntShares.IO.Caching
         where TKey : IEquatable<TKey>, ISerializable
         where TValue : class, ISerializable, new()
     {
-        protected class Trackable
+        protected internal class Trackable
         {
             public TKey Key;
             public TValue Item;
@@ -73,7 +73,7 @@ namespace AntShares.IO.Caching
                 trackable.State = TrackState.Deleted;
         }
 
-        protected IEnumerable<Trackable> GetChangeSet()
+        protected internal IEnumerable<Trackable> GetChangeSet()
         {
             return dictionary.Values.Where(p => p.State != TrackState.None);
         }

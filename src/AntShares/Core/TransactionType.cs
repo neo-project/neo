@@ -30,10 +30,6 @@
         /// </summary>
         ContractTransaction = 0x80,
         /// <summary>
-        /// 委托交易
-        /// </summary>
-        AgencyTransaction = 0xb0,
-        /// <summary>
         /// Publish scripts to the blockchain for being invoked later.
         /// </summary>
         PublishTransaction = 0xd0,

@@ -1,6 +1,7 @@
 ﻿using AntShares.Core;
 using AntShares.IO;
 using AntShares.IO.Json;
+using AntShares.Wallets;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -139,6 +140,22 @@ namespace AntShares.Network.RPC
                     {
                         Block block = _params[0].AsString().HexToBytes().AsSerializable<Block>();
                         return LocalNode.Relay(block);
+                    }
+                case "validateaddress":
+                    {
+                        JObject json = new JObject();
+                        UInt160 scriptHash;
+                        try
+                        {
+                            scriptHash = Wallet.ToScriptHash(_params[0].AsString());
+                        }
+                        catch
+                        {
+                            scriptHash = null;
+                        }
+                        json["address"] = _params[0];
+                        json["isvalid"] = scriptHash != null;
+                        return json;
                     }
                 default:
                     throw new RpcException(-32601, "Method not found");

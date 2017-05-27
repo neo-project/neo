@@ -78,6 +78,15 @@ namespace AntShares.SmartContract
             return true;
         }
 
+        protected override bool Blockchain_GetAsset(ExecutionEngine engine)
+        {
+            UInt256 hash = new UInt256(engine.EvaluationStack.Pop().GetByteArray());
+            AssetState asset = assets.TryGet(hash);
+            if (asset == null) return false;
+            engine.EvaluationStack.Push(StackItem.FromInterface(asset));
+            return true;
+        }
+
         private bool Account_SetVotes(ExecutionEngine engine)
         {
             AccountState account = engine.EvaluationStack.Pop().GetInterface<AccountState>();
