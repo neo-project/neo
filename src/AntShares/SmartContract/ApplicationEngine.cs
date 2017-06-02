@@ -9,8 +9,8 @@ namespace AntShares.SmartContract
         private const long gas_free = 10 * 100000000;
         private long gas;
 
-        public ApplicationEngine(IScriptContainer container, IScriptTable table, StateMachine state, Fixed8 gas)
-            : base(container, Cryptography.Crypto.Default, table, state)
+        public ApplicationEngine(IScriptContainer container, IScriptTable table, InteropService service, Fixed8 gas)
+            : base(container, Cryptography.Crypto.Default, table, service)
         {
             this.gas = gas_free + gas.GetData();
         }

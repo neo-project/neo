@@ -45,7 +45,6 @@ namespace AntShares.Core
 
         internal static bool VerifyScripts(this IVerifiable verifiable)
         {
-            const int max_steps = 3000;
             UInt160[] hashes;
             try
             {
@@ -71,27 +70,10 @@ namespace AntShares.Core
                 {
                     if (hashes[i] != verification.ToScriptHash()) return false;
                 }
-                int nOpCount = 0;
-                ExecutionEngine engine = new ExecutionEngine(verifiable, Crypto.Default, Blockchain.Default, StateReader.Default);
+                ApplicationEngine engine = new ApplicationEngine(verifiable, Blockchain.Default, StateReader.Default, Fixed8.Zero);
                 engine.LoadScript(verification, false);
                 engine.LoadScript(verifiable.Scripts[i].InvocationScript, true);
-                while (!engine.State.HasFlag(VMState.HALT) && !engine.State.HasFlag(VMState.FAULT))
-                {
-                    if (engine.CurrentContext.InstructionPointer < engine.CurrentContext.Script.Length)
-                    {
-                        if (++nOpCount > max_steps) return false;
-                        if (engine.CurrentContext.NextInstruction == OpCode.CHECKMULTISIG)
-                        {
-                            if (engine.EvaluationStack.Count == 0) return false;
-                            int n = (int)engine.EvaluationStack.Peek().GetBigInteger();
-                            if (n < 1) return false;
-                            nOpCount += n;
-                            if (nOpCount > max_steps) return false;
-                        }
-                    }
-                    engine.StepInto();
-                }
-                if (engine.State.HasFlag(VMState.FAULT)) return false;
+                if (!engine.Execute()) return false;
                 if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
             }
             return true;
