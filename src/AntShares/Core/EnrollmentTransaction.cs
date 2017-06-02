@@ -2,14 +2,14 @@
 using AntShares.IO;
 using AntShares.IO.Json;
 using AntShares.Wallets;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
 namespace AntShares.Core
 {
-    /// <summary>
-    /// 用于报名成为记账候选人的特殊交易
-    /// </summary>
+    [Obsolete]
     public class EnrollmentTransaction : Transaction
     {
         /// <summary>
@@ -18,9 +18,6 @@ namespace AntShares.Core
         public ECPoint PublicKey;
 
         private UInt160 _script_hash = null;
-        /// <summary>
-        /// 记账人的抵押地址
-        /// </summary>
         private UInt160 ScriptHash
         {
             get
@@ -76,6 +73,11 @@ namespace AntShares.Core
             JObject json = base.ToJson();
             json["pubkey"] = PublicKey.ToString();
             return json;
+        }
+
+        public override bool Verify(IEnumerable<Transaction> mempool)
+        {
+            return false;
         }
     }
 }

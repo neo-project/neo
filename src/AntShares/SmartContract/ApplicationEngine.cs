@@ -74,6 +74,8 @@ namespace AntShares.SmartContract
                 case "AntShares.Blockchain.GetBlock": return 200;
                 case "AntShares.Blockchain.GetTransaction": return 100;
                 case "AntShares.Blockchain.GetAccount": return 100;
+                case "AntShares.Blockchain.RegisterValidator": return 1000L * 100000000L / ratio;
+                case "AntShares.Blockchain.GetValidators": return 200;
                 case "AntShares.Blockchain.CreateAsset": return 5000L * 100000000L / ratio;
                 case "AntShares.Blockchain.GetAsset": return 100;
                 case "AntShares.Blockchain.CreateContract": return 500L * 100000000L / ratio;

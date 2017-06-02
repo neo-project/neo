@@ -1,4 +1,5 @@
 ﻿using AntShares.Core;
+using AntShares.Cryptography.ECC;
 using AntShares.VM;
 using System.Linq;
 using System.Numerics;
@@ -16,6 +17,7 @@ namespace AntShares.SmartContract
             Register("AntShares.Blockchain.GetBlock", Blockchain_GetBlock);
             Register("AntShares.Blockchain.GetTransaction", Blockchain_GetTransaction);
             Register("AntShares.Blockchain.GetAccount", Blockchain_GetAccount);
+            Register("AntShares.Blockchain.GetValidators", Blockchain_GetValidators);
             Register("AntShares.Blockchain.GetAsset", Blockchain_GetAsset);
             Register("AntShares.Blockchain.GetContract", Blockchain_GetContract);
 
@@ -32,7 +34,6 @@ namespace AntShares.SmartContract
 
             Register("AntShares.Transaction.GetHash", Transaction_GetHash);
             Register("AntShares.Transaction.GetType", Transaction_GetType);
-            Register("AntShares.Enrollment.GetPublicKey", Enrollment_GetPublicKey);
             Register("AntShares.Transaction.GetAttributes", Transaction_GetAttributes);
             Register("AntShares.Transaction.GetInputs", Transaction_GetInputs);
             Register("AntShares.Transaction.GetOutputs", Transaction_GetOutputs);
@@ -153,6 +154,13 @@ namespace AntShares.SmartContract
             return true;
         }
 
+        protected virtual bool Blockchain_GetValidators(ExecutionEngine engine)
+        {
+            ECPoint[] validators = Blockchain.Default.GetValidators();
+            engine.EvaluationStack.Push(validators.Select(p => (StackItem)p.EncodePoint(true)).ToArray());
+            return true;
+        }
+
         protected virtual bool Blockchain_GetAsset(ExecutionEngine engine)
         {
             byte[] hash = engine.EvaluationStack.Pop().GetByteArray();
@@ -266,14 +274,6 @@ namespace AntShares.SmartContract
             Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
             if (tx == null) return false;
             engine.EvaluationStack.Push((int)tx.Type);
-            return true;
-        }
-
-        protected virtual bool Enrollment_GetPublicKey(ExecutionEngine engine)
-        {
-            EnrollmentTransaction tx = engine.EvaluationStack.Pop().GetInterface<EnrollmentTransaction>();
-            if (tx == null) return false;
-            engine.EvaluationStack.Push(tx.PublicKey.EncodePoint(true));
             return true;
         }
 

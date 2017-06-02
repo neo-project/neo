@@ -360,7 +360,7 @@ namespace AntShares.Core
                         validators[pubkey] += vote.Count;
                 }
             }
-            return validators.OrderByDescending(p => p.Value).ThenBy(p => p.Key).Select(p => p.Key).Concat(StandbyValidators).Take(validators_count);
+            return validators.OrderByDescending(p => p.Value).ThenBy(p => p.Key).Select(p => p.Key).Take(validators_count);
         }
 
         /// <summary>

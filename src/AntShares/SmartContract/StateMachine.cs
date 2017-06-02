@@ -24,6 +24,7 @@ namespace AntShares.SmartContract
             this.assets = new CloneCache<UInt256, AssetState>(assets);
             this.contracts = new CloneCache<UInt160, ContractState>(contracts);
             this.storages = new CloneCache<StorageKey, StorageItem>(storages);
+            Register("AntShares.Blockchain.RegisterValidator", Blockchain_RegisterValidator);
             Register("AntShares.Blockchain.CreateAsset", Blockchain_CreateAsset);
             Register("AntShares.Blockchain.CreateContract", Blockchain_CreateContract);
             Register("AntShares.Account.SetVotes", Account_SetVotes);
@@ -65,6 +66,18 @@ namespace AntShares.SmartContract
         {
             UInt160 hash = new UInt160(engine.EvaluationStack.Pop().GetByteArray());
             engine.EvaluationStack.Push(StackItem.FromInterface(accounts[hash]));
+            return true;
+        }
+
+        private bool Blockchain_RegisterValidator(ExecutionEngine engine)
+        {
+            ECPoint pubkey = ECPoint.DecodePoint(engine.EvaluationStack.Pop().GetByteArray(), ECCurve.Secp256r1);
+            if (!GetScriptHashesForVerifying(engine).Contains(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash())) return false;
+            ValidatorState validator = validators.GetOrAdd(pubkey, () => new ValidatorState
+            {
+                PublicKey = pubkey
+            });
+            engine.EvaluationStack.Push(StackItem.FromInterface(validator));
             return true;
         }
 

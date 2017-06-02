@@ -513,11 +513,13 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                         break;
                     case TransactionType.EnrollmentTransaction:
                         {
+#pragma warning disable CS0612
                             EnrollmentTransaction enroll_tx = (EnrollmentTransaction)tx;
-                            validators.Add(enroll_tx.PublicKey, new ValidatorState
+                            validators.GetOrAdd(enroll_tx.PublicKey, () => new ValidatorState
                             {
                                 PublicKey = enroll_tx.PublicKey
                             });
+#pragma warning restore CS0612
                         }
                         break;
                     case TransactionType.PublishTransaction:
