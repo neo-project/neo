@@ -1,4 +1,5 @@
 ﻿using AntShares.VM;
+using System;
 using System.Text;
 
 namespace AntShares.SmartContract
@@ -15,12 +16,87 @@ namespace AntShares.SmartContract
             this.gas = gas_free + gas.GetData();
         }
 
+        private bool CheckItemSize()
+        {
+            const uint MaxSize = 1024 * 1024;
+            if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
+                return true;
+            OpCode opcode = CurrentContext.NextInstruction;
+            switch (opcode)
+            {
+                case OpCode.PUSHDATA4:
+                    {
+                        if (CurrentContext.InstructionPointer + 4 >= CurrentContext.Script.Length)
+                            return false;
+                        uint length = CurrentContext.Script.ToUInt32(CurrentContext.InstructionPointer + 1);
+                        if (length > MaxSize) return false;
+                        return true;
+                    }
+                case OpCode.CAT:
+                    {
+                        if (EvaluationStack.Count < 2) return false;
+                        int length;
+                        try
+                        {
+                            length = EvaluationStack.Peek(0).GetByteArray().Length + EvaluationStack.Peek(1).GetByteArray().Length;
+                        }
+                        catch (NotSupportedException)
+                        {
+                            return false;
+                        }
+                        if (length > MaxSize) return false;
+                        return true;
+                    }
+                default:
+                    return true;
+            }
+        }
+
+        private bool CheckStackSize()
+        {
+            const uint MaxSize = 2 * 1024;
+            if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
+                return true;
+            int size = 0;
+            OpCode opcode = CurrentContext.NextInstruction;
+            if (opcode <= OpCode.PUSH16)
+                size = 1;
+            else
+                switch (opcode)
+                {
+                    case OpCode.DEPTH:
+                    case OpCode.DUP:
+                    case OpCode.OVER:
+                    case OpCode.TUCK:
+                        size = 1;
+                        break;
+                    case OpCode.UNPACK:
+                        StackItem item = EvaluationStack.Peek();
+                        if (!item.IsArray) return false;
+                        size = item.GetArray().Length;
+                        break;
+                }
+            if (size == 0) return true;
+            size += EvaluationStack.Count + AltStack.Count;
+            if (size > MaxSize) return false;
+            return true;
+        }
+
         public new bool Execute()
         {
             while (!State.HasFlag(VMState.HALT) && !State.HasFlag(VMState.FAULT))
             {
-                gas = checked(gas - GetPrice() * ratio);
+                try
+                {
+                    gas = checked(gas - GetPrice() * ratio);
+                }
+                catch (OverflowException)
+                {
+                    return false;
+                }
                 if (gas < 0) return false;
+                if (!CheckItemSize()) return false;
+                if (!CheckStackSize()) return false;
                 StepInto();
             }
             return !State.HasFlag(VMState.FAULT);
