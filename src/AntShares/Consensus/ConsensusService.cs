@@ -13,7 +13,7 @@ namespace AntShares.Consensus
 {
     public class ConsensusService : IDisposable
     {
-        public const int MaxTransactionsPerBlock = 15000;
+        public const int MaxTransactionsPerBlock = 500;
 
         private ConsensusContext context = new ConsensusContext();
         private LocalNode localNode;
@@ -250,6 +250,7 @@ namespace AntShares.Consensus
             context.Nonce = message.Nonce;
             context.NextConsensus = message.NextConsensus;
             context.TransactionHashes = message.TransactionHashes;
+            if (context.TransactionHashes.Length > MaxTransactionsPerBlock) return;
             context.Transactions = new Dictionary<UInt256, Transaction>();
             if (!Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
             context.Signatures = new byte[context.Validators.Length][];

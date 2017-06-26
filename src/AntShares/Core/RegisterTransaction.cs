@@ -131,18 +131,6 @@ namespace AntShares.Core
 
         public override bool Verify(IEnumerable<Transaction> mempool)
         {
-            //if (!base.Verify(mempool)) return false;
-            //if (!Enum.IsDefined(typeof(AssetType), AssetType) || AssetType == AssetType.CreditFlag || AssetType == AssetType.DutyFlag)
-            //    return false;
-            //if (Amount == Fixed8.Zero || Amount < -Fixed8.Satoshi) return false;
-            //if (AssetType == AssetType.Invoice && Amount != -Fixed8.Satoshi)
-            //    return false;
-            //if (Precision > 8) return false;
-            //if (AssetType == AssetType.Share && Precision != 0)
-            //    return false;
-            //if (Amount != -Fixed8.Satoshi && Amount.GetData() % (long)Math.Pow(10, 8 - Precision) != 0)
-            //    return false;
-            //return true;
             return false;
         }
     }

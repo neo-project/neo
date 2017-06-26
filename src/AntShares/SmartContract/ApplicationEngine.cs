@@ -16,9 +16,46 @@ namespace AntShares.SmartContract
             this.gas = gas_free + gas.GetData();
         }
 
+        private bool CheckArraySize()
+        {
+            const uint MaxArraySize = 1024;
+            if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
+                return true;
+            OpCode opcode = CurrentContext.NextInstruction;
+            switch (opcode)
+            {
+                case OpCode.PACK:
+                case OpCode.NEWARRAY:
+                    {
+                        int size = (int)EvaluationStack.Peek().GetBigInteger();
+                        if (size > MaxArraySize) return false;
+                        return true;
+                    }
+                default:
+                    return true;
+            }
+        }
+
+        private bool CheckInvocationStack()
+        {
+            const uint MaxStackSize = 1024;
+            if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
+                return true;
+            OpCode opcode = CurrentContext.NextInstruction;
+            switch (opcode)
+            {
+                case OpCode.CALL:
+                case OpCode.APPCALL:
+                    if (InvocationStack.Count >= MaxStackSize) return false;
+                    return true;
+                default:
+                    return true;
+            }
+        }
+
         private bool CheckItemSize()
         {
-            const uint MaxSize = 1024 * 1024;
+            const uint MaxItemSize = 1024 * 1024;
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
                 return true;
             OpCode opcode = CurrentContext.NextInstruction;
@@ -29,7 +66,7 @@ namespace AntShares.SmartContract
                         if (CurrentContext.InstructionPointer + 4 >= CurrentContext.Script.Length)
                             return false;
                         uint length = CurrentContext.Script.ToUInt32(CurrentContext.InstructionPointer + 1);
-                        if (length > MaxSize) return false;
+                        if (length > MaxItemSize) return false;
                         return true;
                     }
                 case OpCode.CAT:
@@ -44,7 +81,7 @@ namespace AntShares.SmartContract
                         {
                             return false;
                         }
-                        if (length > MaxSize) return false;
+                        if (length > MaxItemSize) return false;
                         return true;
                     }
                 default:
@@ -54,7 +91,7 @@ namespace AntShares.SmartContract
 
         private bool CheckStackSize()
         {
-            const uint MaxSize = 2 * 1024;
+            const uint MaxStackSize = 2 * 1024;
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
                 return true;
             int size = 0;
@@ -78,7 +115,7 @@ namespace AntShares.SmartContract
                 }
             if (size == 0) return true;
             size += EvaluationStack.Count + AltStack.Count;
-            if (size > MaxSize) return false;
+            if (size > MaxStackSize) return false;
             return true;
         }
 
@@ -97,6 +134,8 @@ namespace AntShares.SmartContract
                 if (gas < 0) return false;
                 if (!CheckItemSize()) return false;
                 if (!CheckStackSize()) return false;
+                if (!CheckArraySize()) return false;
+                if (!CheckInvocationStack()) return false;
                 StepInto();
             }
             return !State.HasFlag(VMState.FAULT);
@@ -146,21 +185,23 @@ namespace AntShares.SmartContract
             string api_name = Encoding.ASCII.GetString(CurrentContext.Script, CurrentContext.InstructionPointer + 2, length);
             switch (api_name)
             {
+                case "AntShares.Runtime.CheckWitness": return 200;
                 case "AntShares.Blockchain.GetHeader": return 100;
                 case "AntShares.Blockchain.GetBlock": return 200;
                 case "AntShares.Blockchain.GetTransaction": return 100;
                 case "AntShares.Blockchain.GetAccount": return 100;
-                case "AntShares.Blockchain.RegisterValidator": return 1000L * 100000000L / ratio;
                 case "AntShares.Blockchain.GetValidators": return 200;
-                case "AntShares.Blockchain.CreateAsset": return 5000L * 100000000L / ratio;
                 case "AntShares.Blockchain.GetAsset": return 100;
-                case "AntShares.Blockchain.CreateContract": return 500L * 100000000L / ratio;
                 case "AntShares.Blockchain.GetContract": return 100;
                 case "AntShares.Transaction.GetReferences": return 200;
                 case "AntShares.Account.SetVotes": return 1000;
+                case "AntShares.Validator.Register": return 1000L * 100000000L / ratio;
+                case "AntShares.Asset.Create": return 5000L * 100000000L / ratio;
                 case "AntShares.Asset.Renew": return (byte)EvaluationStack.Peek(1).GetBigInteger() * 5000L * 100000000L / ratio;
+                case "AntShares.Contract.Create":
+                case "AntShares.Contract.Migrate": return 500L * 100000000L / ratio;
                 case "AntShares.Storage.Get": return 100;
-                case "AntShares.Storage.Put": return 1000;
+                case "AntShares.Storage.Put": return ((EvaluationStack.Peek(1).GetByteArray().Length + EvaluationStack.Peek(2).GetByteArray().Length - 1) / 1024 + 1) * 1000;
                 case "AntShares.Storage.Delete": return 100;
                 default: return 1;
             }

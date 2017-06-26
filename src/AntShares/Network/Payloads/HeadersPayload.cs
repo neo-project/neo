@@ -22,7 +22,7 @@ namespace AntShares.Network.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Headers = reader.ReadSerializableArray<Header>();
+            Headers = reader.ReadSerializableArray<Header>(2000);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

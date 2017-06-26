@@ -297,11 +297,6 @@ namespace AntShares.Core
             writer.Write(Outputs);
         }
 
-        byte[] IInteropInterface.ToArray()
-        {
-            return this.ToArray();
-        }
-
         /// <summary>
         /// 变成json对象
         /// </summary>

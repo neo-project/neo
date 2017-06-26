@@ -68,11 +68,6 @@ namespace AntShares.Core
             writer.Write(PrevIndex);
         }
 
-        byte[] IInteropInterface.ToArray()
-        {
-            return this.ToArray();
-        }
-
         /// <summary>
         /// 将交易输入转变为json对象
         /// </summary>

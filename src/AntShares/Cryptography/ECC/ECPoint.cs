@@ -9,9 +9,9 @@ namespace AntShares.Cryptography.ECC
 {
     public class ECPoint : IComparable<ECPoint>, IEquatable<ECPoint>, ISerializable
     {
-        internal readonly ECFieldElement X, Y;
+        internal ECFieldElement X, Y;
         internal readonly ECCurve Curve;
-        
+
         /// <summary>
         /// 判断是否为无穷远点
         /// </summary>
@@ -21,6 +21,11 @@ namespace AntShares.Cryptography.ECC
         }
 
         public int Size => IsInfinity ? 1 : 33;
+
+        public ECPoint()
+            : this(null, null, ECCurve.Secp256r1)
+        {
+        }
 
         internal ECPoint(ECFieldElement x, ECFieldElement y, ECCurve curve)
         {
@@ -117,7 +122,9 @@ namespace AntShares.Cryptography.ECC
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            throw new NotSupportedException();
+            ECPoint p = DeserializeFrom(reader, Curve);
+            X = p.X;
+            Y = p.Y;
         }
 
         /// <summary>

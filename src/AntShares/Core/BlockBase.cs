@@ -117,11 +117,6 @@ namespace AntShares.Core
             writer.Write(NextConsensus);
         }
 
-        byte[] IInteropInterface.ToArray()
-        {
-            return this.ToArray();
-        }
-
         public virtual JObject ToJson()
         {
             JObject json = new JObject();

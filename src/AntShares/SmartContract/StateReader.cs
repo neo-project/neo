@@ -1,6 +1,8 @@
 ﻿using AntShares.Core;
 using AntShares.Cryptography.ECC;
 using AntShares.VM;
+using AntShares.Wallets;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -12,6 +14,8 @@ namespace AntShares.SmartContract
 
         public StateReader()
         {
+            Register("AntShares.Runtime.CheckWitness", Runtime_CheckWitness);
+
             Register("AntShares.Blockchain.GetHeight", Blockchain_GetHeight);
             Register("AntShares.Blockchain.GetHeader", Blockchain_GetHeader);
             Register("AntShares.Blockchain.GetBlock", Blockchain_GetBlock);
@@ -63,6 +67,36 @@ namespace AntShares.SmartContract
 
             Register("AntShares.Storage.GetContext", Storage_GetContext);
             Register("AntShares.Storage.Get", Storage_Get);
+        }
+
+        private HashSet<UInt160> _hashes_for_verifying = null;
+        protected bool CheckWitness(ExecutionEngine engine, UInt160 hash)
+        {
+            if (_hashes_for_verifying == null)
+            {
+                IVerifiable container = (IVerifiable)engine.ScriptContainer;
+                _hashes_for_verifying = new HashSet<UInt160>(container.GetScriptHashesForVerifying());
+            }
+            return _hashes_for_verifying.Contains(hash);
+        }
+
+        protected bool CheckWitness(ExecutionEngine engine, ECPoint pubkey)
+        {
+            return CheckWitness(engine, Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash());
+        }
+
+        protected virtual bool Runtime_CheckWitness(ExecutionEngine engine)
+        {
+            byte[] hashOrPubkey = engine.EvaluationStack.Pop().GetByteArray();
+            bool result;
+            if (hashOrPubkey.Length == 20)
+                result = CheckWitness(engine, new UInt160(hashOrPubkey));
+            else if (hashOrPubkey.Length == 33)
+                result = CheckWitness(engine, ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1));
+            else
+                return false;
+            engine.EvaluationStack.Push(result);
+            return true;
         }
 
         protected virtual bool Blockchain_GetHeight(ExecutionEngine engine)

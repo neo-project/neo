@@ -21,7 +21,7 @@ namespace AntShares.Network.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            HashStart = reader.ReadSerializableArray<UInt256>();
+            HashStart = reader.ReadSerializableArray<UInt256>(16);
             HashStop = reader.ReadSerializable<UInt256>();
         }
 

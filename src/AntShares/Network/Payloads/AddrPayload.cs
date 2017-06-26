@@ -19,7 +19,7 @@ namespace AntShares.Network.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            this.AddressList = reader.ReadSerializableArray<NetworkAddressWithTime>();
+            this.AddressList = reader.ReadSerializableArray<NetworkAddressWithTime>(200);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

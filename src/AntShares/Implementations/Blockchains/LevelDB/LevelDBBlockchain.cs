@@ -2,7 +2,6 @@
 using AntShares.Cryptography;
 using AntShares.Cryptography.ECC;
 using AntShares.IO;
-using AntShares.IO.Caching;
 using AntShares.SmartContract;
 using System;
 using System.Collections.Generic;
@@ -494,7 +493,7 @@ namespace AntShares.Implementations.Blockchains.LevelDB
                                 Owner = rtx.Owner,
                                 Admin = rtx.Admin,
                                 Issuer = rtx.Admin,
-                                Expiration = block.Index + 2000000,
+                                Expiration = block.Index + 2 * 2000000,
                                 IsFrozen = false
                             });
 #pragma warning restore CS0612
@@ -559,14 +558,8 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             spentcoins.Commit(batch);
             validators.Commit(batch);
             assets.Commit(batch);
-            HashSet<UInt160> contracts_deleted = new HashSet<UInt160>(contracts.GetChangeSet().Where(p => p.State == TrackState.Deleted).Select(p => p.Key));
             contracts.Commit(batch);
-            if (contracts_deleted.Count > 0)
-                storages.DeleteWhere((k, v) => contracts_deleted.Contains(k.ScriptHash));
             storages.Commit(batch);
-            foreach (UInt160 script_hash in contracts_deleted)
-                foreach (Slice key in db.Find(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.ST_Storage).Add(script_hash), (k, v) => k))
-                    batch.Delete(key);
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(block.Hash).Add(block.Index));
             db.Write(WriteOptions.Default, batch);
             current_block_height = block.Index;

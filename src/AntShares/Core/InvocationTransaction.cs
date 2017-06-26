@@ -23,6 +23,7 @@ namespace AntShares.Core
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             Script = reader.ReadVarBytes(65536);
+            if (Script.Length == 0) throw new FormatException();
             if (Version >= 1)
             {
                 Gas = reader.ReadSerializable<Fixed8>();

@@ -73,6 +73,23 @@ namespace AntShares.IO.Caching
                 trackable.State = TrackState.Deleted;
         }
 
+        public IEnumerable<KeyValuePair<TKey, TValue>> Find(byte[] key_prefix)
+        {
+            foreach (var pair in FindInternal(key_prefix))
+                if (!dictionary.ContainsKey(pair.Key))
+                    dictionary.Add(pair.Key, new Trackable
+                    {
+                        Key = pair.Key,
+                        Item = pair.Value,
+                        State = TrackState.None
+                    });
+            foreach (var pair in dictionary)
+                if (pair.Value.State != TrackState.Deleted && pair.Key.ToArray().Take(key_prefix.Length).SequenceEqual(key_prefix))
+                    yield return new KeyValuePair<TKey, TValue>(pair.Key, pair.Value.Item);
+        }
+
+        protected abstract IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix);
+
         protected internal IEnumerable<Trackable> GetChangeSet()
         {
             return dictionary.Values.Where(p => p.State != TrackState.None);

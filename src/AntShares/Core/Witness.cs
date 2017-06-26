@@ -13,8 +13,8 @@ namespace AntShares.Core
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            InvocationScript = reader.ReadVarBytes();
-            VerificationScript = reader.ReadVarBytes();
+            InvocationScript = reader.ReadVarBytes(65536);
+            VerificationScript = reader.ReadVarBytes(65536);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

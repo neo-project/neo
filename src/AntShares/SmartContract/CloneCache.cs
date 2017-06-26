@@ -2,6 +2,7 @@
 using AntShares.IO;
 using AntShares.IO.Caching;
 using System;
+using System.Collections.Generic;
 
 namespace AntShares.SmartContract
 {
@@ -14,11 +15,6 @@ namespace AntShares.SmartContract
         public CloneCache(DataCache<TKey, TValue> innerCache)
         {
             this.innerCache = innerCache;
-        }
-
-        protected override TValue GetInternal(TKey key)
-        {
-            return innerCache[key].Clone();
         }
 
         public void Commit()
@@ -36,6 +32,17 @@ namespace AntShares.SmartContract
                         innerCache.Delete(trackable.Key);
                         break;
                 }
+        }
+
+        protected override IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix)
+        {
+            foreach (KeyValuePair<TKey, TValue> pair in innerCache.Find(key_prefix))
+                yield return new KeyValuePair<TKey, TValue>(pair.Key, pair.Value.Clone());
+        }
+
+        protected override TValue GetInternal(TKey key)
+        {
+            return innerCache[key].Clone();
         }
 
         protected override TValue TryGetInternal(TKey key)

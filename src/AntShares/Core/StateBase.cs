@@ -2,7 +2,6 @@
 using AntShares.VM;
 using System;
 using System.IO;
-using System.Linq;
 
 namespace AntShares.Core
 {
@@ -20,11 +19,6 @@ namespace AntShares.Core
         public virtual void Serialize(BinaryWriter writer)
         {
             writer.Write(StateVersion);
-        }
-
-        byte[] IInteropInterface.ToArray()
-        {
-            return this.ToArray();
         }
     }
 }
