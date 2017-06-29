@@ -2,6 +2,7 @@
 using AntShares.Cryptography;
 using AntShares.Cryptography.ECC;
 using AntShares.IO;
+using AntShares.IO.Caching;
 using AntShares.SmartContract;
 using System;
 using System.Collections.Generic;
@@ -285,6 +286,21 @@ namespace AntShares.Implementations.Blockchains.LevelDB
             if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash), out value))
                 return 0;
             return value.ToArray().ToInt64(0);
+        }
+
+        public DataCache<TKey, TValue> GetTable<TKey, TValue>()
+            where TKey : IEquatable<TKey>, ISerializable, new()
+            where TValue : class, ISerializable, new()
+        {
+            Type t = typeof(TValue);
+            if (t == typeof(AccountState)) return new DbCache<TKey, TValue>(db, DataEntryPrefix.ST_Account);
+            if (t == typeof(UnspentCoinState)) return new DbCache<TKey, TValue>(db, DataEntryPrefix.ST_Coin);
+            if (t == typeof(SpentCoinState)) return new DbCache<TKey, TValue>(db, DataEntryPrefix.ST_SpentCoin);
+            if (t == typeof(ValidatorState)) return new DbCache<TKey, TValue>(db, DataEntryPrefix.ST_Validator);
+            if (t == typeof(AssetState)) return new DbCache<TKey, TValue>(db, DataEntryPrefix.ST_Asset);
+            if (t == typeof(ContractState)) return new DbCache<TKey, TValue>(db, DataEntryPrefix.ST_Contract);
+            if (t == typeof(StorageItem)) return new DbCache<TKey, TValue>(db, DataEntryPrefix.ST_Storage);
+            throw new NotSupportedException();
         }
 
         public override Transaction GetTransaction(UInt256 hash, out int height)

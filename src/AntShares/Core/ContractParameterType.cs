@@ -28,6 +28,8 @@
         ByteArray = 5,
         PublicKey = 6,
 
+        Array = 16,
+
         Void = 0xff
     }
 }

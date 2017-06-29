@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace AntShares.Implementations.Blockchains.LevelDB
 {
-    public enum CompressionType : byte
+    internal enum CompressionType : byte
     {
         kNoCompression = 0x0,
         kSnappyCompression = 0x1

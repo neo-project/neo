@@ -22,6 +22,7 @@ namespace AntShares.Core
 
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
+            if (Version > 1) throw new FormatException();
             Script = reader.ReadVarBytes(65536);
             if (Script.Length == 0) throw new FormatException();
             if (Version >= 1)
@@ -54,7 +55,6 @@ namespace AntShares.Core
         {
             // Not available in MAINNET until tested
             if (Settings.Default.Magic != 1953787457) return false;
-            if (Version == 0) return false;
             return base.Verify(mempool);
         }
     }

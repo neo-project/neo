@@ -8,12 +8,17 @@ namespace AntShares.SmartContract
     {
         private const long ratio = 100000;
         private const long gas_free = 10 * 100000000;
-        private long gas;
+        private readonly long gas_amount;
+        private long gas_consumed = 0;
+        private readonly bool testMode;
 
-        public ApplicationEngine(IScriptContainer container, IScriptTable table, InteropService service, Fixed8 gas)
+        public Fixed8 GasConsumed => new Fixed8(gas_consumed);
+
+        public ApplicationEngine(IScriptContainer container, IScriptTable table, InteropService service, Fixed8 gas, bool testMode = false)
             : base(container, Cryptography.Crypto.Default, table, service)
         {
-            this.gas = gas_free + gas.GetData();
+            this.gas_amount = gas_free + gas.GetData();
+            this.testMode = testMode;
         }
 
         private bool CheckArraySize()
@@ -125,13 +130,13 @@ namespace AntShares.SmartContract
             {
                 try
                 {
-                    gas = checked(gas - GetPrice() * ratio);
+                    gas_consumed = checked(gas_consumed + GetPrice() * ratio);
                 }
                 catch (OverflowException)
                 {
                     return false;
                 }
-                if (gas < 0) return false;
+                if (!testMode && gas_consumed > gas_amount) return false;
                 if (!CheckItemSize()) return false;
                 if (!CheckStackSize()) return false;
                 if (!CheckArraySize()) return false;
