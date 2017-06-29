@@ -13,7 +13,7 @@ namespace AntShares.Core
 
         public override int Size => base.Size + Script.GetVarSize();
 
-        public override Fixed8 NetworkFee => Gas;
+        public override Fixed8 SystemFee => Gas;
 
         public InvocationTransaction()
             : base(TransactionType.InvocationTransaction)

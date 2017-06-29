@@ -185,7 +185,7 @@ namespace AntShares.SmartContract
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length - 3)
                 return 1;
             byte length = CurrentContext.Script[CurrentContext.InstructionPointer + 1];
-            if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length - length - 2)
+            if (CurrentContext.InstructionPointer > CurrentContext.Script.Length - length - 2)
                 return 1;
             string api_name = Encoding.ASCII.GetString(CurrentContext.Script, CurrentContext.InstructionPointer + 2, length);
             switch (api_name)
