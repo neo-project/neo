@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Copyright>2015-2017 The Antshares team</Copyright>
     <AssemblyTitle>AntShares</AssemblyTitle>
-    <Version>2.0.0-preview2-04</Version>
+    <Version>2.0.0-preview2-06</Version>
     <Authors>The Antshares team</Authors>
     <TargetFrameworks>netstandard1.6;net461</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

@@ -39,6 +39,22 @@ namespace AntShares
             };
         }
 
+        public Fixed8 Ceiling()
+        {
+            long remainder = value % D;
+            if (remainder == 0) return this;
+            if (remainder > 0)
+                return new Fixed8
+                {
+                    value = value - remainder + D
+                };
+            else
+                return new Fixed8
+                {
+                    value = value - remainder
+                };
+        }
+
         public int CompareTo(Fixed8 other)
         {
             return value.CompareTo(other.value);
