@@ -2,19 +2,26 @@
 using AntShares.Cryptography.ECC;
 using AntShares.VM;
 using AntShares.Wallets;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 
 namespace AntShares.SmartContract
 {
     public class StateReader : InteropService
     {
+        public static event EventHandler<NotifyEventArgs> Notify;
+        public static event EventHandler<LogEventArgs> Log;
+
         public static readonly StateReader Default = new StateReader();
 
         public StateReader()
         {
             Register("AntShares.Runtime.CheckWitness", Runtime_CheckWitness);
+            Register("AntShares.Runtime.Notify", Runtime_Notify);
+            Register("AntShares.Runtime.Log", Runtime_Log);
 
             Register("AntShares.Blockchain.GetHeight", Blockchain_GetHeight);
             Register("AntShares.Blockchain.GetHeader", Blockchain_GetHeader);
@@ -96,6 +103,20 @@ namespace AntShares.SmartContract
             else
                 return false;
             engine.EvaluationStack.Push(result);
+            return true;
+        }
+
+        protected virtual bool Runtime_Notify(ExecutionEngine engine)
+        {
+            StackItem state = engine.EvaluationStack.Pop();
+            Notify?.Invoke(this, new NotifyEventArgs(engine.ScriptContainer, new UInt160(engine.CurrentContext.ScriptHash), state));
+            return true;
+        }
+
+        protected virtual bool Runtime_Log(ExecutionEngine engine)
+        {
+            string message = Encoding.UTF8.GetString(engine.EvaluationStack.Pop().GetByteArray());
+            Log?.Invoke(this, new LogEventArgs(engine.ScriptContainer, new UInt160(engine.CurrentContext.ScriptHash), message));
             return true;
         }
 
