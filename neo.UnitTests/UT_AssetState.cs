@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace Neo.UnitTest
 {
@@ -441,8 +442,84 @@ namespace Neo.UnitTest
 
             uut.GetName(new CultureInfo("zh-CN")).Should().Be("小蚁股");
             uut.GetName(new CultureInfo("en")).Should().Be("Neo");
+        }
+
+        [TestMethod]
+        public void GetName_Culture_En()
+        {
+            UInt256 assetId;
+            AssetType assetType;
+            string name;
+            Fixed8 amount, available, fee;
+            byte precision;
+            UInt160 feeAddress, admin, issuer;
+            ECPoint owner;
+            uint expiration;
+            bool isFrozen;
+            setupAssetStateWithValues(uut, out assetId, out assetType, out name, out amount, out available, out precision, out fee, out feeAddress, out owner, out admin, out issuer, out expiration, out isFrozen);
+            uut.Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"Neo\"}]";
+
+            CultureInfo.CurrentCulture = new CultureInfo("en");
             uut.GetName().Should().Be("Neo");
         }
+
+        [TestMethod]
+        public void GetName_Culture_Cn()
+        {
+            UInt256 assetId;
+            AssetType assetType;
+            string name;
+            Fixed8 amount, available, fee;
+            byte precision;
+            UInt160 feeAddress, admin, issuer;
+            ECPoint owner;
+            uint expiration;
+            bool isFrozen;
+            setupAssetStateWithValues(uut, out assetId, out assetType, out name, out amount, out available, out precision, out fee, out feeAddress, out owner, out admin, out issuer, out expiration, out isFrozen);
+            uut.Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"Neo\"}]";
+
+            CultureInfo.CurrentCulture = new CultureInfo("zh-CN");
+            uut.GetName().Should().Be("小蚁股");
+        }
+
+        [TestMethod]
+        public void GetName_Culture_Unknown()
+        {
+            UInt256 assetId;
+            AssetType assetType;
+            string name;
+            Fixed8 amount, available, fee;
+            byte precision;
+            UInt160 feeAddress, admin, issuer;
+            ECPoint owner;
+            uint expiration;
+            bool isFrozen;
+            setupAssetStateWithValues(uut, out assetId, out assetType, out name, out amount, out available, out precision, out fee, out feeAddress, out owner, out admin, out issuer, out expiration, out isFrozen);
+            uut.Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"Neo\"}]";
+
+            CultureInfo.CurrentCulture = new CultureInfo("de-DE");
+            uut.GetName().Should().Be("Neo"); // defaults to english IF english is in the name
+        }
+
+        [TestMethod]
+        public void GetName_Culture_Unknown_NoEn()
+        {
+            UInt256 assetId;
+            AssetType assetType;
+            string name;
+            Fixed8 amount, available, fee;
+            byte precision;
+            UInt160 feeAddress, admin, issuer;
+            ECPoint owner;
+            uint expiration;
+            bool isFrozen;
+            setupAssetStateWithValues(uut, out assetId, out assetType, out name, out amount, out available, out precision, out fee, out feeAddress, out owner, out admin, out issuer, out expiration, out isFrozen);
+            uut.Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"foo\",\"name\":\"bar\"}]";
+
+            CultureInfo.CurrentCulture = new CultureInfo("de-DE");
+            uut.GetName().Should().Be("小蚁股"); // defaults to first name IF english is not in the name
+        }
+
 
     }
 }
