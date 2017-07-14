@@ -276,7 +276,7 @@ namespace Neo.Core
         void ISerializable.Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
-            writer.Write(Scripts);
+            writer.Write(Scripts.OfType<ISerializable>().ToArray());
         }
 
         /// <summary>
@@ -292,9 +292,9 @@ namespace Neo.Core
             writer.Write((byte)Type);
             writer.Write(Version);
             SerializeExclusiveData(writer);
-            writer.Write(Attributes);
-            writer.Write(Inputs);
-            writer.Write(Outputs);
+            writer.Write(Attributes.OfType<ISerializable>().ToArray());
+            writer.Write(Inputs.OfType<ISerializable>().ToArray());
+            writer.Write(Outputs.OfType<ISerializable>().ToArray());
         }
 
         /// <summary>
