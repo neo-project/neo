@@ -447,7 +447,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                     using (MemoryStream ms = new MemoryStream())
                     using (BinaryWriter w = new BinaryWriter(ms))
                     {
-                        w.Write(header_index.Skip((int) stored_header_count).Take(2000).ToArray());
+                        w.Write(header_index.Skip((int) stored_header_count).Take(2000).ToArray<ISerializable>());
                         w.Flush();
                         batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_HeaderHashList).Add(stored_header_count),
                             ms.ToArray());
