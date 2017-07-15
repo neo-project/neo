@@ -7,7 +7,7 @@ os:
 mono: none
 dotnet: 1.0.4
 dist: trusty
-before_script: cd neo.UnitTest
+before_script: cd neo.UnitTests
 
 script:
  - dotnet restore
