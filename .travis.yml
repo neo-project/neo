@@ -1,0 +1,14 @@
+language: csharp
+
+os:
+ - linux
+ - osx
+
+mono: none
+dotnet: 1.0.4
+dist: trusty
+before_script: cd src/AntShares.UnitTest
+
+script:
+ - dotnet restore
+ - dotnet test
