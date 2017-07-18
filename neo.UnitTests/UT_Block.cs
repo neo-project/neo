@@ -539,5 +539,25 @@ namespace Neo.UnitTests
             uut.Transactions[1].Should().Be(getMinerTransaction());
             uut.Transactions[2].Should().Be(getMinerTransaction());
         }        
+
+        [TestMethod]
+        public void RebuildMerkleRoot_Updates()
+        {
+            UInt256 val256 = UInt256.Zero;
+            UInt256 merkRoot;
+            UInt160 val160;
+            uint timestampVal, indexVal;
+            ulong consensusDataVal;
+            Witness scriptVal;
+            Transaction[] transactionsVal;
+            setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+
+            UInt256 merkleRoot = uut.MerkleRoot;
+
+            setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 3);
+            uut.RebuildMerkleRoot();
+
+            uut.MerkleRoot.Should().NotBe(merkleRoot);
+        }
     }
 }
