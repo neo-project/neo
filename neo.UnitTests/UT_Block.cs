@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
 using System.Text;
+using Neo.IO.Json;
 
 namespace Neo.UnitTests
 {
@@ -559,5 +560,99 @@ namespace Neo.UnitTests
 
             uut.MerkleRoot.Should().NotBe(merkleRoot);
         }
+
+        [TestMethod]
+        public void ToJson()
+        {
+            UInt256 val256 = UInt256.Zero;
+            UInt256 merkRoot;
+            UInt160 val160;
+            uint timestampVal, indexVal;
+            ulong consensusDataVal;
+            Witness scriptVal;
+            Transaction[] transactionsVal;
+            setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+
+            JObject jObj = uut.ToJson();
+            jObj.Should().NotBeNull();
+            jObj["hash"].AsString().Should().Be("4520462a8c80056291f871da523bff0eb17e29d44ab4317e69ff7a42083cb39d");
+            jObj["size"].AsNumber().Should().Be(119);
+            jObj["version"].AsNumber().Should().Be(0);
+            jObj["previousblockhash"].AsString().Should().Be("0000000000000000000000000000000000000000000000000000000000000000");
+            jObj["merkleroot"].AsString().Should().Be("fb5bd72b2d6792d75dc2f1084ffa9e9f70ca85543c717a6b13d9959b452a57d6");
+            jObj["time"].AsNumber().Should().Be(4244941696);
+            jObj["index"].AsNumber().Should().Be(0);
+            jObj["nonce"].AsString().Should().Be("000000000000001e");
+            jObj["nextconsensus"].AsString().Should().Be("AFmseVrdL9f9oyCzZefL9tG6UbvhPbdYzM");
+
+            JObject scObj = jObj["script"];
+            scObj["invocation"].AsString().Should().Be("");
+            scObj["verification"].AsString().Should().Be("51");
+
+            jObj["tx"].Should().NotBeNull();
+            JArray txObj = (JArray) jObj["tx"];
+            txObj[0]["txid"].AsString().Should().Be("fb5bd72b2d6792d75dc2f1084ffa9e9f70ca85543c717a6b13d9959b452a57d6");
+            txObj[0]["size"].AsNumber().Should().Be(10);
+            txObj[0]["type"].AsString().Should().Be("MinerTransaction");
+            txObj[0]["version"].AsNumber().Should().Be(0);
+            ((JArray)txObj[0]["attributes"]).Count.Should().Be(0);
+            ((JArray)txObj[0]["vin"]).Count.Should().Be(0);
+            ((JArray)txObj[0]["vout"]).Count.Should().Be(0);
+            txObj[0]["sys_fee"].AsString().Should().Be("0");
+            txObj[0]["net_fee"].AsString().Should().Be("0");
+            ((JArray)txObj[0]["scripts"]).Count.Should().Be(0);
+            txObj[0]["nonce"].AsNumber().Should().Be(2083236893);
+        }
+
+        [TestMethod]
+        public void Verify_CompletelyFalse()
+        {
+            UInt256 val256 = UInt256.Zero;
+            UInt256 merkRoot;
+            UInt160 val160;
+            uint timestampVal, indexVal;
+            ulong consensusDataVal;
+            Witness scriptVal;
+            Transaction[] transactionsVal;
+            setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+
+            setupTestBlockchain(UInt256.Zero);
+
+            uut.Verify(false).Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void Verify_CompletelyFalse_MinerTransaction_After_First()
+        {
+            UInt256 val256 = UInt256.Zero;
+            UInt256 merkRoot;
+            UInt160 val160;
+            uint timestampVal, indexVal;
+            ulong consensusDataVal;
+            Witness scriptVal;
+            Transaction[] transactionsVal;
+            setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 3);
+
+            setupTestBlockchain(UInt256.Zero);
+
+            uut.Verify(false).Should().BeFalse();
+        }
+
+        //[TestMethod]
+        //public void Verify_CompletelyTrue()
+        //{
+        //    UInt256 val256 = UInt256.Zero;
+        //    UInt256 merkRoot;
+        //    UInt160 val160;
+        //    uint timestampVal, indexVal;
+        //    ulong consensusDataVal;
+        //    Witness scriptVal;
+        //    Transaction[] transactionsVal;
+        //    setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+
+        //    setupTestBlockchain(UInt256.Zero);
+
+        //    uut.Verify(true).Should().BeTrue();
+        //}
     }
 }

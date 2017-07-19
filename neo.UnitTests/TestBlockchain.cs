@@ -28,7 +28,7 @@ namespace Neo.UnitTests
 
         public override bool ContainsBlock(UInt256 hash)
         {
-            throw new NotImplementedException();
+            return true; // for verify in UT_Block
         }
 
         public override bool ContainsTransaction(UInt256 hash)
