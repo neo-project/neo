@@ -92,6 +92,8 @@ namespace Neo.Core
         private Dictionary<CultureInfo, string> _names;
         public string GetName(CultureInfo culture = null)
         {
+            if (AssetType == AssetType.SystemShare) return "NEO";
+            if (AssetType == AssetType.SystemCoin) return "NeoGas";
             if (_names == null)
             {
                 JObject name_obj;
