@@ -1,4 +1,5 @@
 ﻿using Neo.IO;
+using Neo.IO.Json;
 using Neo.VM;
 using System;
 using System.IO;
@@ -19,6 +20,13 @@ namespace Neo.Core
         public virtual void Serialize(BinaryWriter writer)
         {
             writer.Write(StateVersion);
+        }
+
+        public virtual JObject ToJson()
+        {
+            JObject json = new JObject();
+            json["version"] = StateVersion;
+            return json;
         }
     }
 }

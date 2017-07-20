@@ -3,7 +3,6 @@ using Neo.IO.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace Neo.Core
 {
@@ -55,10 +54,7 @@ namespace Neo.Core
         {
             JObject json = base.ToJson();
             json["contract"] = new JObject();
-            json["contract"]["hash"] = Code.ScriptHash.ToString();
-            json["contract"]["script"] = Code.Script.ToHexString();
-            json["contract"]["parameters"] = new JArray(Code.ParameterList.Select(p => (JObject)p));
-            json["contract"]["returntype"] = Code.ReturnType;
+            json["contract"]["code"] = Code.ToJson();
             json["contract"]["needstorage"] = NeedStorage;
             json["contract"]["name"] = Name;
             json["contract"]["version"] = CodeVersion;
