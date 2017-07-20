@@ -73,9 +73,9 @@ namespace Neo.Cryptography
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint RotateLeft(uint x, byte n)
+        private static uint RotateLeft(uint x, byte b)
         {
-            return (x << n) | (x >> (32 - n));
+            return (x << b) | (x >> (32 - b));
         }
     }
 }
