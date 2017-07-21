@@ -124,8 +124,7 @@ namespace Neo.UnitTests
                 Claims = new CoinReference[0]
             };
         }
-
-        private readonly ECPoint[] StandbyValidators = new ECPoint[] { ECPoint.DecodePoint("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c".HexToBytes(), ECCurve.Secp256r1) };
+        
         private IssueTransaction getIssueTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
         {
             setupTestBlockchain(assetId);
@@ -158,7 +157,7 @@ namespace Neo.UnitTests
                     {
                         AssetId = assetId,
                         Value = Fixed8.FromDecimal(outputVal),
-                        ScriptHash = Contract.CreateMultiSigRedeemScript(1, new ECPoint[] { ECPoint.DecodePoint("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c".HexToBytes(), ECCurve.Secp256r1)  }).ToScriptHash()
+                        ScriptHash = Contract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
                     }
                 },
                 Scripts = new[]
@@ -638,21 +637,23 @@ namespace Neo.UnitTests
             uut.Verify(false).Should().BeFalse();
         }
 
-        //[TestMethod]
-        //public void Verify_CompletelyTrue()
-        //{
-        //    UInt256 val256 = UInt256.Zero;
-        //    UInt256 merkRoot;
-        //    UInt160 val160;
-        //    uint timestampVal, indexVal;
-        //    ulong consensusDataVal;
-        //    Witness scriptVal;
-        //    Transaction[] transactionsVal;
-        //    setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+        [TestMethod]
+        public void Verify_CompletelyTrue_NextConsensus_Fail()
+        {
+            UInt256 val256 = UInt256.Zero;
+            UInt256 merkRoot;
+            UInt160 val160;
+            uint timestampVal, indexVal;
+            ulong consensusDataVal;
+            Witness scriptVal;
+            Transaction[] transactionsVal;
+            setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+            // passing NextConsensus below 
+            // uut.NextConsensus = new UInt160(new byte[] { 23, 52, 98, 203, 0, 206, 138, 37, 140, 16, 251, 231, 61, 120, 218, 200, 182, 125, 120, 73 });
 
-        //    setupTestBlockchain(UInt256.Zero);
+            setupTestBlockchain(UInt256.Zero);
 
-        //    uut.Verify(true).Should().BeTrue();
-        //}
+            uut.Verify(true).Should().BeFalse();
+        }         
     }
 }

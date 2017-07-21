@@ -1,6 +1,7 @@
 ﻿using Neo.Core;
 using System;
 using System.Collections.Generic;
+using Neo.Cryptography.ECC;
 
 namespace Neo.UnitTests
 {
@@ -73,7 +74,8 @@ namespace Neo.UnitTests
 
         public override IEnumerable<ValidatorState> GetEnrollments()
         {
-            throw new NotImplementedException();
+            ECPoint ecp = TestUtils.StandbyValidators[0];
+            return new ValidatorState[] { new ValidatorState() { PublicKey = ecp } };
         }
 
         public override Header GetHeader(uint height)
@@ -124,7 +126,11 @@ namespace Neo.UnitTests
 
         public override IEnumerable<VoteState> GetVotes(IEnumerable<Transaction> others)
         {
-            throw new NotImplementedException();
+            VoteState vs = new VoteState() { Count = Fixed8.FromDecimal(1), PublicKeys = TestUtils.StandbyValidators};            
+            return new VoteState[]
+            {
+                vs
+            };
         }
 
         public override bool IsDoubleSpend(Transaction tx)
