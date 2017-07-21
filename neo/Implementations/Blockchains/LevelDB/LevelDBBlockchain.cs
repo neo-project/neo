@@ -18,6 +18,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
         private DB db;
         private Thread thread_persistence;
         private List<UInt256> header_index = new List<UInt256>();
+        private readonly object headerLock = new object();
         private Dictionary<UInt256, Header> header_cache = new Dictionary<UInt256, Header>();
         private Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private uint current_block_height = 0;
@@ -33,7 +34,10 @@ namespace Neo.Implementations.Blockchains.LevelDB
 
         public LevelDBBlockchain(string path)
         {
-            header_index.Add(GenesisBlock.Hash);
+            lock (headerLock)
+            {
+                header_index.Add(GenesisBlock.Hash);
+            }
             Version version;
             Slice value;
             db = DB.Open(path, new Options { CreateIfMissing = true });
@@ -64,25 +68,37 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 {
                     if (!hash.Equals(GenesisBlock.Hash))
                     {
-                        header_index.Add(hash);
+                        lock (headerLock)
+                        {
+                            header_index.Add(hash);
+                        }
                     }
                     stored_header_count++;
                 }
                 if (stored_header_count == 0)
                 {
                     Header[] headers = db.Find(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block), (k, v) => Header.FromTrimmedData(v.ToArray(), sizeof(long))).OrderBy(p => p.Index).ToArray();
-                    for (int i = 1; i < headers.Length; i++)
+                    lock (headerLock)
                     {
-                        header_index.Add(headers[i].Hash);
+                        for (int i = 1; i < headers.Length; i++)
+                        {
+                            header_index.Add(headers[i].Hash);
+                        }
                     }
                 }
                 else if (current_header_height >= stored_header_count)
                 {
-                    for (UInt256 hash = current_header_hash; hash != header_index[(int)stored_header_count - 1];)
+                    lock (headerLock)
                     {
-                        Header header = Header.FromTrimmedData(db.Get(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash)).ToArray(), sizeof(long));
-                        header_index.Insert((int)stored_header_count, hash);
-                        hash = header.PrevHash;
+                        for (UInt256 hash = current_header_hash; hash != header_index[(int) stored_header_count - 1];)
+                        {
+                            Header header =
+                                Header.FromTrimmedData(
+                                    db.Get(options, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash)).ToArray(),
+                                    sizeof(long));
+                            header_index.Insert((int) stored_header_count, hash);
+                            hash = header.PrevHash;
+                        }
                     }
                 }
             }
@@ -115,7 +131,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                     block_cache.Add(block.Hash, block);
                 }
             }
-            lock (header_index)
+            lock (headerLock)
             {
                 if (block.Index - 1 >= header_index.Count) return false;
                 if (block.Index == header_index.Count)
@@ -133,7 +149,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
 
         protected internal override void AddHeaders(IEnumerable<Header> headers)
         {
-            lock (header_index)
+            lock (headerLock)
             {
                 lock (header_cache)
                 {
@@ -203,7 +219,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
         public override UInt256 GetBlockHash(uint height)
         {
             if (current_block_height < height) return null;
-            lock (header_index)
+            lock (headerLock)
             {
                 if (header_index.Count <= height) return null;
                 return header_index[(int)height];
@@ -237,7 +253,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
         public override Header GetHeader(uint height)
         {
             UInt256 hash;
-            lock (header_index)
+            lock (headerLock)
             {
                 if (header_index.Count <= height) return null;
                 hash = header_index[(int)height];
@@ -267,7 +283,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
         {
             Header header = GetHeader(hash);
             if (header == null) return null;
-            lock (header_index)
+            lock (headerLock)
             {
                 if (header.Index + 1 >= header_index.Count)
                     return null;
@@ -364,7 +380,8 @@ namespace Neo.Implementations.Blockchains.LevelDB
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
-                var inputs = others.SelectMany(p => p.Inputs).GroupBy(p => p.PrevHash, (k, g) =>
+                IEnumerable<Transaction> transactions = others as IList<Transaction> ?? others.ToList();
+                var inputs = transactions.SelectMany(p => p.Inputs).GroupBy(p => p.PrevHash, (k, g) =>
                 {
                     int height;
                     Transaction tx = GetTransaction(options, k, out height);
@@ -374,7 +391,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                     p.ScriptHash,
                     Value = -p.Value
                 });
-                var outputs = others.SelectMany(p => p.Outputs).Where(p => p.AssetId.Equals(SystemShare.Hash)).Select(p => new
+                var outputs = transactions.SelectMany(p => p.Outputs).Where(p => p.AssetId.Equals(SystemShare.Hash)).Select(p => new
                 {
                     p.ScriptHash,
                     p.Value
@@ -422,17 +439,21 @@ namespace Neo.Implementations.Blockchains.LevelDB
 
         private void OnAddHeader(Header header, WriteBatch batch)
         {
-            header_index.Add(header.Hash);
-            while ((int)header.Index - 2000 >= stored_header_count)
+            lock (headerLock)
             {
-                using (MemoryStream ms = new MemoryStream())
-                using (BinaryWriter w = new BinaryWriter(ms))
+                header_index.Add(header.Hash);
+                while ((int) header.Index - 2000 >= stored_header_count)
                 {
-                    w.Write(header_index.Skip((int)stored_header_count).Take(2000).ToArray());
-                    w.Flush();
-                    batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_HeaderHashList).Add(stored_header_count), ms.ToArray());
+                    using (MemoryStream ms = new MemoryStream())
+                    using (BinaryWriter w = new BinaryWriter(ms))
+                    {
+                        w.Write(header_index.Skip((int) stored_header_count).Take(2000).ToArray<ISerializable>());
+                        w.Flush();
+                        batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_HeaderHashList).Add(stored_header_count),
+                            ms.ToArray());
+                    }
+                    stored_header_count += 2000;
                 }
-                stored_header_count += 2000;
             }
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(header.Hash), SliceBuilder.Begin().Add(0L).Add(header.ToArray()));
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentHeader), SliceBuilder.Begin().Add(header.Hash).Add(header.Index));
@@ -589,7 +610,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 while (!disposed)
                 {
                     UInt256 hash;
-                    lock (header_index)
+                    lock (headerLock)
                     {
                         if (header_index.Count <= current_block_height + 1) break;
                         hash = header_index[(int)current_block_height + 1];

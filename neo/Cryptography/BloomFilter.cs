@@ -35,10 +35,11 @@ namespace Neo.Cryptography
                     return false;
             return true;
         }
-
-        public void GetBits(byte[] bits)
+        
+        // TODO check this, it doesn't seem correct to be copying over itself.
+        public void GetBits(byte[] newBits)
         {
-            bits.CopyTo(bits, 0);
+            newBits.CopyTo(newBits, 0);
         }
     }
 }
