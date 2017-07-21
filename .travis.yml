@@ -1,0 +1,17 @@
+language: csharp
+
+os:
+ - linux
+ - osx
+
+mono: none
+dotnet: 1.0.4
+dist: trusty
+
+before_install:
+  - cd neo.UnitTests
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 2048; fi
+
+script:
+ - dotnet restore
+ - dotnet test
