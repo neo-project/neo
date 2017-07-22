@@ -459,13 +459,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 });
                 foreach (TransactionOutput output in tx.Outputs)
                 {
-                    AccountState account = accounts.GetAndChange(output.ScriptHash, () => new AccountState
-                    {
-                        ScriptHash = output.ScriptHash,
-                        IsFrozen = false,
-                        Votes = new ECPoint[0],
-                        Balances = new Dictionary<UInt256, Fixed8>()
-                    });
+                    AccountState account = accounts.GetAndChange(output.ScriptHash, () => new AccountState(output.ScriptHash));
                     if (account.Balances.ContainsKey(output.AssetId))
                         account.Balances[output.AssetId] += output.Value;
                     else
