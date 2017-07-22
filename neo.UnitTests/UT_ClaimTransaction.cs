@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -57,7 +58,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Size__Get_1_Claims()
         {
-            CoinReference[] refs = new[] { TestUtils.GetCoinReference() };
+            CoinReference[] refs = new[] { TestUtils.GetCoinReference(null) };
             uut.Claims = refs;
             uut.Attributes = new TransactionAttribute[0];
             uut.Inputs = new CoinReference[0];
@@ -70,7 +71,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Size__Get_3_Claims()
         {
-            CoinReference[] refs = new[] { TestUtils.GetCoinReference(), TestUtils.GetCoinReference(), TestUtils.GetCoinReference() };
+            CoinReference[] refs = new[] { TestUtils.GetCoinReference(null), TestUtils.GetCoinReference(null), TestUtils.GetCoinReference(null) };
             uut.Claims = refs;
             uut.Attributes = new TransactionAttribute[0];
             uut.Inputs = new CoinReference[0];
@@ -80,6 +81,50 @@ namespace Neo.UnitTests
             uut.Size.Should().Be(109); // 1, 1, 1, 1, 1, 1 + claims 103
         }
 
-       
+        [TestMethod]
+        public void GetScriptHashesForVerifying_0_Claims()
+        {            
+            uut.Claims = new CoinReference[0];
+            uut.Attributes = new TransactionAttribute[0];
+            uut.Inputs = new CoinReference[0];
+            uut.Outputs = new TransactionOutput[0];
+            uut.Scripts = new Witness[0];
+
+            uut.GetScriptHashesForVerifying().Length.Should().Be(0);
+        }
+
+        [TestMethod]
+        public void GetScriptHashesForVerifying_1_Claim()
+        {
+            CoinReference[] refs = new[] { TestUtils.GetCoinReference(new UInt256(TestUtils.GetByteArray(32, 0x42))) };
+            uut.Claims = refs;
+            uut.Attributes = new TransactionAttribute[0];
+            uut.Inputs = new CoinReference[0];
+            uut.Outputs = new TransactionOutput[0];
+            uut.Scripts = new Witness[0];
+
+            TestUtils.SetupTestBlockchain(UInt256.Zero);
+
+            UInt160[] res = uut.GetScriptHashesForVerifying();
+            res.Length.Should().Be(1);
+        }
+
+
+        [TestMethod]
+        public void GetScriptHashesForVerifying_2_Claim()
+        {
+            CoinReference[] refs = new[] { TestUtils.GetCoinReference(new UInt256(TestUtils.GetByteArray(32, 0x42))), TestUtils.GetCoinReference(new UInt256(TestUtils.GetByteArray(32, 0x48))) };
+            uut.Claims = refs;
+            uut.Attributes = new TransactionAttribute[0];
+            uut.Inputs = new CoinReference[0];
+            uut.Outputs = new TransactionOutput[0];
+            uut.Scripts = new Witness[0];
+
+            TestUtils.SetupTestBlockchain(UInt256.Zero);
+
+            UInt160[] res = uut.GetScriptHashesForVerifying();
+            res.Length.Should().Be(2);
+        }
+
     }
 }

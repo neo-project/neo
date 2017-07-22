@@ -42,13 +42,20 @@ namespace Neo.UnitTests
             };
         }
 
-        public static CoinReference GetCoinReference()
+        public static CoinReference GetCoinReference(UInt256 prevHash)
         {
+            if (prevHash == null) prevHash = UInt256.Zero;
             return new CoinReference
             {
-                PrevHash = UInt256.Zero,
+                PrevHash = prevHash,
                 PrevIndex = 0
             };
+        }
+
+        public static void SetupTestBlockchain(UInt256 assetId)
+        {
+            Blockchain testBlockchain = new TestBlockchain(assetId);
+            Blockchain.RegisterBlockchain(testBlockchain);
         }
     }    
 }

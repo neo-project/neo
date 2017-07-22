@@ -107,14 +107,14 @@ namespace Neo.UnitTests
         
         private IssueTransaction getIssueTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
         {
-            setupTestBlockchain(assetId);
+            TestUtils.SetupTestBlockchain(assetId);
 
             CoinReference[] inputsVal;
             if (inputVal)
             {
                 inputsVal = new[]
                 {
-                    TestUtils.GetCoinReference()
+                    TestUtils.GetCoinReference(null)
                 };
             }
             else
@@ -147,11 +147,7 @@ namespace Neo.UnitTests
             };
         }
 
-        private void setupTestBlockchain(UInt256 assetId)
-        {
-            Blockchain testBlockchain = new TestBlockchain(assetId);
-            Blockchain.RegisterBlockchain(testBlockchain);
-        }
+
 
         [TestMethod]
         public void Size_Get_1_Transaction()
@@ -591,7 +587,7 @@ namespace Neo.UnitTests
             Transaction[] transactionsVal;
             setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
 
-            setupTestBlockchain(UInt256.Zero);
+            TestUtils.SetupTestBlockchain(UInt256.Zero);            
 
             uut.Verify(false).Should().BeTrue();
         }
@@ -608,7 +604,7 @@ namespace Neo.UnitTests
             Transaction[] transactionsVal;
             setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 3);
 
-            setupTestBlockchain(UInt256.Zero);
+            TestUtils.SetupTestBlockchain(UInt256.Zero);
 
             uut.Verify(false).Should().BeFalse();
         }
@@ -627,7 +623,7 @@ namespace Neo.UnitTests
             // passing NextConsensus below 
             // uut.NextConsensus = new UInt160(new byte[] { 23, 52, 98, 203, 0, 206, 138, 37, 140, 16, 251, 231, 61, 120, 218, 200, 182, 125, 120, 73 });
 
-            setupTestBlockchain(UInt256.Zero);
+            TestUtils.SetupTestBlockchain(UInt256.Zero);
 
             uut.Verify(true).Should().BeFalse();
         }         
