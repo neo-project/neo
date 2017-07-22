@@ -61,7 +61,7 @@ namespace Neo.UnitTests
             {
                 for (int i = 0; i < numberOfTransactions; i++)
                 {
-                    transactionsVal[i] = getMinerTransaction();
+                    transactionsVal[i] = TestUtils.GetMinerTransaction();
                 }                
             }
             
@@ -103,27 +103,7 @@ namespace Neo.UnitTests
             // blockbase 4 + 32 + 32 + 4 + 4 + 8 + 20 + 1 + 3
             // block 1
             uut.Size.Should().Be(109);
-        }
-
-        private MinerTransaction getMinerTransaction()
-        {
-            return new MinerTransaction
-            {
-                Nonce = 2083236893,
-                Attributes = new TransactionAttribute[0],
-                Inputs = new CoinReference[0],
-                Outputs = new TransactionOutput[0],
-                Scripts = new Witness[0]
-            };
-        }
-
-        private ClaimTransaction getClaimTransaction()
-        {
-            return new ClaimTransaction
-            {
-                Claims = new CoinReference[0]
-            };
-        }
+        }        
         
         private IssueTransaction getIssueTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
         {
@@ -134,11 +114,7 @@ namespace Neo.UnitTests
             {
                 inputsVal = new[]
                 {
-                    new CoinReference
-                    {
-                        PrevHash = UInt256.Zero,
-                        PrevIndex = 0
-                    }
+                    TestUtils.GetCoinReference()
                 };
             }
             else
@@ -190,7 +166,7 @@ namespace Neo.UnitTests
             setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
-                getMinerTransaction()
+                TestUtils.GetMinerTransaction()
             };
 
             // blockbase 4 + 32 + 32 + 4 + 4 + 8 + 20 + 1 + 3
@@ -211,9 +187,9 @@ namespace Neo.UnitTests
             setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[3] {
-                getMinerTransaction(),
-                getMinerTransaction(),
-                getMinerTransaction()
+                TestUtils.GetMinerTransaction(),
+                TestUtils.GetMinerTransaction(),
+                TestUtils.GetMinerTransaction()
             };
 
             // blockbase 4 + 32 + 32 + 4 + 4 + 8 + 20 + 1 + 3
@@ -249,7 +225,7 @@ namespace Neo.UnitTests
             setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
-                getMinerTransaction()
+                TestUtils.GetMinerTransaction()
             };
 
             Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.Zero);
@@ -268,7 +244,7 @@ namespace Neo.UnitTests
             setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
-                getClaimTransaction()
+                TestUtils.GetClaimTransaction()
             };
 
             Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.Zero);
@@ -511,10 +487,10 @@ namespace Neo.UnitTests
 
             byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 1, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251 };
 
-            uut = Block.FromTrimmedData(data, 0, x => getMinerTransaction());
+            uut = Block.FromTrimmedData(data, 0, x => TestUtils.GetMinerTransaction());
 
             assertStandardBlockTestVals(val256, merkRoot, val160, timestampVal, indexVal, consensusDataVal, scriptVal, transactionsVal);
-            uut.Transactions[0].Should().Be(getMinerTransaction());
+            uut.Transactions[0].Should().Be(TestUtils.GetMinerTransaction());
         }
 
         [TestMethod]
@@ -531,13 +507,13 @@ namespace Neo.UnitTests
 
             byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 3, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251 };
 
-            uut = Block.FromTrimmedData(data, 0, x => getMinerTransaction() );
+            uut = Block.FromTrimmedData(data, 0, x => TestUtils.GetMinerTransaction());
 
             assertStandardBlockTestVals(val256, merkRoot, val160, timestampVal, indexVal, consensusDataVal, scriptVal, transactionsVal, testTransactions: false);
             uut.Transactions.Length.Should().Be(3);
-            uut.Transactions[0].Should().Be(getMinerTransaction());
-            uut.Transactions[1].Should().Be(getMinerTransaction());
-            uut.Transactions[2].Should().Be(getMinerTransaction());
+            uut.Transactions[0].Should().Be(TestUtils.GetMinerTransaction());
+            uut.Transactions[1].Should().Be(TestUtils.GetMinerTransaction());
+            uut.Transactions[2].Should().Be(TestUtils.GetMinerTransaction());
         }        
 
         [TestMethod]
