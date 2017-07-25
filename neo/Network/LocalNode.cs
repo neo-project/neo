@@ -1,9 +1,9 @@
-﻿using Neo.Core;
-using Neo.IO;
-using Neo.IO.Caching;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Neo.Core;
+using Neo.IO;
+using Neo.IO.Caching;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -460,7 +460,7 @@ namespace Neo.Network
 
         private void RemoteNode_InventoryReceived(object sender, IInventory inventory)
         {
-            if (inventory is Transaction)
+            if (inventory is Transaction tx && tx.Type != TransactionType.ClaimTransaction && tx.Type != TransactionType.IssueTransaction)
             {
                 if (Blockchain.Default == null) return;
                 lock (KnownHashes)
@@ -472,7 +472,7 @@ namespace Neo.Network
                 if (args.Cancel) return;
                 lock (temp_pool)
                 {
-                    temp_pool.Add((Transaction)inventory);
+                    temp_pool.Add(tx);
                 }
                 new_tx_event.Set();
             }

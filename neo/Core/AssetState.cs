@@ -2,6 +2,7 @@
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.VM;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -92,6 +93,8 @@ namespace Neo.Core
         private Dictionary<CultureInfo, string> _names;
         public string GetName(CultureInfo culture = null)
         {
+            if (AssetType == AssetType.SystemShare) return "NEO";
+            if (AssetType == AssetType.SystemCoin) return "NeoGas";
             if (_names == null)
             {
                 JObject name_obj;
@@ -140,6 +143,30 @@ namespace Neo.Core
             writer.Write(Issuer);
             writer.Write(Expiration);
             writer.Write(IsFrozen);
+        }
+
+        public override JObject ToJson()
+        {
+            JObject json = base.ToJson();
+            json["id"] = AssetId.ToString();
+            json["type"] = AssetType;
+            try
+            {
+                json["name"] = Name == "" ? null : JObject.Parse(Name);
+            }
+            catch (FormatException)
+            {
+                json["name"] = Name;
+            }
+            json["amount"] = Amount.ToString();
+            json["available"] = Available.ToString();
+            json["precision"] = Precision;
+            json["owner"] = Owner.ToString();
+            json["admin"] = Wallet.ToAddress(Admin);
+            json["issuer"] = Wallet.ToAddress(Issuer);
+            json["expiration"] = Expiration;
+            json["frozen"] = IsFrozen;
+            return json;
         }
 
         public override string ToString()

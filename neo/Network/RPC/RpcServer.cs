@@ -1,10 +1,10 @@
-﻿using Neo.Core;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Neo.Core;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Wallets;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using System;
 using System.IO;
 using System.Linq;
@@ -55,6 +55,18 @@ namespace Neo.Network.RPC
         {
             switch (method)
             {
+                case "getaccountstate":
+                    {
+                        UInt160 script_hash = Wallet.ToScriptHash(_params[0].AsString());
+                        AccountState account = Blockchain.Default.GetAccountState(script_hash) ?? new AccountState(script_hash);
+                        return account.ToJson();
+                    }
+                case "getassetstate":
+                    {
+                        UInt256 asset_id = UInt256.Parse(_params[0].AsString());
+                        AssetState asset = Blockchain.Default.GetAssetState(asset_id);
+                        return asset?.ToJson() ?? throw new RpcException(-100, "Unknown asset");
+                    }
                 case "getbestblockhash":
                     return Blockchain.Default.CurrentBlockHash.ToString();
                 case "getblock":
@@ -96,6 +108,12 @@ namespace Neo.Network.RPC
                     }
                 case "getconnectioncount":
                     return LocalNode.RemoteNodeCount;
+                case "getcontractstate":
+                    {
+                        UInt160 script_hash = UInt160.Parse(_params[0].AsString());
+                        ContractState contract = Blockchain.Default.GetContract(script_hash);
+                        return contract?.ToJson() ?? throw new RpcException(-100, "Unknown contract");
+                    }
                 case "getrawmempool":
                     return new JArray(LocalNode.GetMemoryPool().Select(p => (JObject)p.Hash.ToString()));
                 case "getrawtransaction":
@@ -107,7 +125,7 @@ namespace Neo.Network.RPC
                         if (tx == null)
                             tx = Blockchain.Default.GetTransaction(hash, out height);
                         if (tx == null)
-                            throw new RpcException(-101, "Unknown transaction");
+                            throw new RpcException(-100, "Unknown transaction");
                         if (verbose)
                         {
                             JObject json = tx.ToJson();
@@ -124,6 +142,17 @@ namespace Neo.Network.RPC
                         {
                             return tx.ToArray().ToHexString();
                         }
+                    }
+                case "getstorage":
+                    {
+                        UInt160 script_hash = UInt160.Parse(_params[0].AsString());
+                        byte[] key = _params[1].AsString().HexToBytes();
+                        StorageItem item = Blockchain.Default.GetStorageItem(new StorageKey
+                        {
+                            ScriptHash = script_hash,
+                            Key = key
+                        }) ?? new StorageItem();
+                        return item.Value?.ToHexString();
                     }
                 case "gettxout":
                     {
