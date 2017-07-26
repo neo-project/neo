@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Neo.Cryptography.ECC;
 
-namespace Neo.UnitTest
+namespace Neo.UnitTests
 {
     public static class TestUtils
     {
@@ -18,5 +14,7 @@ namespace Neo.UnitTest
             }
             return array;
         }
-    }
+
+        public static readonly ECPoint[] StandbyValidators = new ECPoint[] { ECPoint.DecodePoint("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c".HexToBytes(), ECCurve.Secp256r1) };
+    }    
 }

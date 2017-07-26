@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Neo.Core;
-using Neo.UnitTest;
 
 namespace Neo.UnitTests
 {
