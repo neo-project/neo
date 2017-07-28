@@ -24,7 +24,8 @@ namespace Neo.Core
             {
                 ushort index = reader.ReadUInt16();
                 uint height = reader.ReadUInt32();
-                Items.Add(index, height);
+                if (!Items.ContainsKey(index))
+                    Items.Add(index, height);
             }
         }
 
