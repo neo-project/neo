@@ -32,7 +32,7 @@ namespace Neo.Consensus
             using (MemoryStream ms = new MemoryStream(data, false))
             using (BinaryReader r = new BinaryReader(ms))
             {
-                message.Deserialize(r);
+                message?.Deserialize(r);
             }
             return message;
         }

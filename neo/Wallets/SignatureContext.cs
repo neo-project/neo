@@ -142,7 +142,7 @@ namespace Neo.Wallets
             using (MemoryStream ms = new MemoryStream(json["hex"].AsString().HexToBytes(), false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
-                verifiable.DeserializeUnsigned(reader);
+                verifiable?.DeserializeUnsigned(reader);
             }
             SignatureContext context = new SignatureContext(verifiable);
             JArray scripts = (JArray)json["scripts"];

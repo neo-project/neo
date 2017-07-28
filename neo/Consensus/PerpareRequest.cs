@@ -38,7 +38,7 @@ namespace Neo.Consensus
             base.Serialize(writer);
             writer.Write(Nonce);
             writer.Write(NextConsensus);
-            writer.Write(TransactionHashes);
+            writer.Write(TransactionHashes.OfType<ISerializable>().ToArray());
             writer.Write(MinerTransaction);
             writer.Write(Signature);
         }
