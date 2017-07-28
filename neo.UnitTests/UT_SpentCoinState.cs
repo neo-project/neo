@@ -3,6 +3,8 @@ using FluentAssertions;
 using System.Collections.Generic;
 using System.IO;
 using Neo.Core;
+using System.Text;
+using System;
 
 namespace Neo.UnitTests
 {
@@ -72,7 +74,7 @@ namespace Neo.UnitTests
             spentCoinState.Items = dict;
         }
         [TestMethod]
-        public void DeserializeTest()
+        public void DeserializeSCS()
         {
             UInt256 transactionHash;
             uint transactionHeight;
@@ -80,19 +82,43 @@ namespace Neo.UnitTests
             uint dictVal;
             setupSpentCoinStateWithValues(new SpentCoinState(), out transactionHash, out transactionHeight, out key, out dictVal);
 
-            byte[] data = new byte[] { 0, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 42, 3, 44, 45, 48, 42, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 0, 0, 66, 0, 44, 0, 0, 0, 0, 0, 0, 0, 33, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
-            int index = 0;
-            using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
+            byte[] dataArray = new byte[] { 0, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 42, 3, 44, 45, 48, 42, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 0, 0, 66, 0, 44, 0, 0, 0, 0, 0, 0, 0, 33, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
+            Stream stream = new MemoryStream(dataArray);
+            using (BinaryReader reader = new BinaryReader(stream))
             {
-                using (BinaryReader reader = new BinaryReader(ms))
-                {
-                    scs.Deserialize(reader);
-                }
+                scs.Deserialize(reader);
             }
             scs.TransactionHash.Should().Be(transactionHash);
-            scs.TransactionHeight.Should().Be(transactionHeight);
         }
+        [TestMethod]
+        public void SerializeSCS()
+        {
+            UInt256 transactionHash;
+            uint transactionHeight;
+            ushort key;
+            uint dictVal;
+            setupSpentCoinStateWithValues(scs, out transactionHash, out transactionHeight, out key, out dictVal);
+
+            byte[] dataArray;
+            using (MemoryStream stream = new MemoryStream())
+            {
+                using (BinaryWriter writer = new BinaryWriter(stream, Encoding.ASCII, true))
+                {
+                    scs.Serialize(writer);
+                    dataArray = stream.ToArray();
+                }
+            }
+
+            byte[] requiredData = new byte[] { 0, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 42, 3, 44, 45, 48, 42, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 0, 0, 66, 0, 44, 0, 0, 0, 0, 0, 0, 0, 33, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
+            dataArray.Length.Should().Be(44);
+            for (int i = 0; i < 44; i++)
+            {
+                dataArray[i].Should().Be(requiredData[i]);
+            }
+        }
+
     }
+
 
 }
 

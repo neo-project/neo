@@ -20,7 +20,9 @@ namespace Neo.Core
             TransactionHeight = reader.ReadUInt32();
             int count = (int)reader.ReadVarInt();
             Items = new Dictionary<ushort, uint>(count);
-            for (int i = 0; i < count; i++)
+            //for (int i = 0; i < count; i++)
+            //{
+            while (reader.BaseStream.Position != reader.BaseStream.Length)
             {
                 ushort index = reader.ReadUInt16();
                 uint height = reader.ReadUInt32();
