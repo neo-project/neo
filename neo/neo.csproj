@@ -5,7 +5,7 @@
     <AssemblyTitle>Neo</AssemblyTitle>
     <Version>2.0.1</Version>
     <Authors>The Neo Project</Authors>
-    <TargetFrameworks>net461;netcoreapp1.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp1.1;net461</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>Neo</AssemblyName>
     <PackageId>Neo</PackageId>
