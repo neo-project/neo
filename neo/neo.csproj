@@ -5,7 +5,7 @@
     <AssemblyTitle>Neo</AssemblyTitle>
     <Version>2.0.1</Version>
     <Authors>The Neo Project</Authors>
-    <TargetFrameworks>netstandard1.6;net461;netcoreapp1.1</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp1.1</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>Neo</AssemblyName>
     <PackageId>Neo</PackageId>
@@ -34,7 +34,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Neo.VM" Version="2.0.0" />
     <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
     <PackageReference Include="System.ValueTuple" Version="4.3.1" />
     <PackageReference Include="System.Linq.Parallel" Version="4.3.0" />
@@ -48,6 +47,7 @@
     <PackageReference Include="System.Net.NetworkInformation" Version="4.3.0" />
     <PackageReference Include="System.Net.Requests" Version="4.3.0" />
     <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.3.0" />
+    <PackageReference Include="Neo.VM" Version="2.0.1" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
@@ -62,4 +62,7 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="bin\" />
+  </ItemGroup>
 </Project>
