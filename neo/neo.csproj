@@ -5,7 +5,7 @@
     <AssemblyTitle>Neo</AssemblyTitle>
     <Version>2.0.1</Version>
     <Authors>The Neo Project</Authors>
-    <TargetFrameworks>netcoreapp1.1;net461</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp1.1;netstandard1.6</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>Neo</AssemblyName>
     <PackageId>Neo</PackageId>
@@ -48,10 +48,11 @@
     <PackageReference Include="System.Net.Requests" Version="4.3.0" />
     <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.3.0" />
     <PackageReference Include="Neo.VM" Version="2.0.1" />
+    <PackageReference Include="NuGet.Build.Tasks.Pack" Version="4.2.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
-    <PackageReference Include="NuGet.Build.Tasks.Pack" Version="4.2.0" />
+    <PackageReference Include="NETStandard.Library" Version="1.6.1" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
@@ -62,7 +63,4 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="bin\" />
-  </ItemGroup>
 </Project>
