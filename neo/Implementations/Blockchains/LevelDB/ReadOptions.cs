@@ -1,8 +1,9 @@
 ﻿using System;
+using Neo.Implementations.Blockchains.Utilities;
 
 namespace Neo.Implementations.Blockchains.LevelDB
 {
-    internal class ReadOptions
+    internal class ReadOptions : AbstractReadOptions
     {
         public static readonly ReadOptions Default = new ReadOptions();
         internal readonly IntPtr handle = Native.leveldb_readoptions_create();
@@ -15,7 +16,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             }
         }
 
-        public bool FillCache
+        public override bool FillCache
         {
             set
             {
@@ -23,11 +24,11 @@ namespace Neo.Implementations.Blockchains.LevelDB
             }
         }
 
-        public Snapshot Snapshot
+        public override AbstractSnapshot Snapshot
         {
             set
             {
-                Native.leveldb_readoptions_set_snapshot(handle, value.handle);
+                Native.leveldb_readoptions_set_snapshot(handle, ((Snapshot)value).handle);
             }
         }
 

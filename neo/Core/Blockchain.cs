@@ -19,6 +19,8 @@ namespace Neo.Core
         /// </summary>
         public static event EventHandler<Block> PersistCompleted;
 
+		public abstract bool VerifyBlocks { get; set; }
+
         /// <summary>
         /// 产生每个区块的时间间隔，已秒为单位
         /// </summary>

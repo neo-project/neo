@@ -1,8 +1,9 @@
 ﻿using System;
+using Neo.Implementations.Blockchains.Utilities;
 
 namespace Neo.Implementations.Blockchains.LevelDB
 {
-    internal class Iterator : IDisposable
+    internal class Iterator : AbstractIterator
     {
         private IntPtr handle;
 
@@ -18,7 +19,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             NativeHelper.CheckError(error);
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             if (handle != IntPtr.Zero)
             {
@@ -27,7 +28,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             }
         }
 
-        public Slice Key()
+        public override Slice Key()
         {
             UIntPtr length;
             IntPtr key = Native.leveldb_iter_key(handle, out length);
@@ -35,7 +36,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             return new Slice(key, length);
         }
 
-        public void Next()
+        public override void Next()
         {
             Native.leveldb_iter_next(handle);
             CheckError();
@@ -47,12 +48,12 @@ namespace Neo.Implementations.Blockchains.LevelDB
             CheckError();
         }
 
-        public void Seek(Slice target)
+        public override void Seek(Slice target)
         {
             Native.leveldb_iter_seek(handle, target.buffer, (UIntPtr)target.buffer.Length);
         }
 
-        public void SeekToFirst()
+        public override void SeekToFirst()
         {
             Native.leveldb_iter_seek_to_first(handle);
         }
@@ -62,12 +63,12 @@ namespace Neo.Implementations.Blockchains.LevelDB
             Native.leveldb_iter_seek_to_last(handle);
         }
 
-        public bool Valid()
+        public override bool Valid()
         {
             return Native.leveldb_iter_valid(handle);
         }
 
-        public Slice Value()
+        public override Slice Value()
         {
             UIntPtr length;
             IntPtr value = Native.leveldb_iter_value(handle, out length);

@@ -1,13 +1,14 @@
 ﻿using System;
+using Neo.Implementations.Blockchains.Utilities;
 
 namespace Neo.Implementations.Blockchains.LevelDB
 {
-    internal class Options
+    internal class Options : AbstractOptions
     {
         public static readonly Options Default = new Options();
         internal readonly IntPtr handle = Native.leveldb_options_create();
 
-        public bool CreateIfMissing
+        public override bool CreateIfMissing
         {
             set
             {

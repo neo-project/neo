@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using Neo.Implementations.Blockchains.Utilities;
 
 namespace Neo.Implementations.Blockchains.LevelDB
 {
@@ -253,7 +254,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             {
                 string message = Marshal.PtrToStringAnsi(error);
                 Native.leveldb_free(error);
-                throw new LevelDBException(message);
+                throw new DBException(message);
             }
         }
     }

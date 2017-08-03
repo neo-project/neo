@@ -1,8 +1,9 @@
 ﻿using System;
+using Neo.Implementations.Blockchains.Utilities;
 
 namespace Neo.Implementations.Blockchains.LevelDB
 {
-    internal class DB : IDisposable
+    internal class DB : AbstractDB
     {
         private IntPtr handle;
 
@@ -11,7 +12,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             this.handle = handle;
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             if (handle != IntPtr.Zero)
             {
@@ -23,20 +24,20 @@ namespace Neo.Implementations.Blockchains.LevelDB
         public void Delete(WriteOptions options, Slice key)
         {
             IntPtr error;
-            Native.leveldb_delete(handle, options.handle, key.buffer, (UIntPtr)key.buffer.Length, out error);
+            Native.leveldb_delete(handle, getHandle(options), key.buffer, (UIntPtr)key.buffer.Length, out error);
             NativeHelper.CheckError(error);
         }
 
-        public Slice Get(ReadOptions options, Slice key)
+        public override Slice Get(AbstractReadOptions options, Slice key)
         {
             UIntPtr length;
             IntPtr error;
-            IntPtr value = Native.leveldb_get(handle, options.handle, key.buffer, (UIntPtr)key.buffer.Length, out length, out error);
+            IntPtr value = Native.leveldb_get(handle, getHandle(options), key.buffer, (UIntPtr)key.buffer.Length, out length, out error);
             try
             {
                 NativeHelper.CheckError(error);
                 if (value == IntPtr.Zero)
-                    throw new LevelDBException("not found");
+                    throw new DBException("not found");
                 return new Slice(value, length);
             }
             finally
@@ -45,14 +46,14 @@ namespace Neo.Implementations.Blockchains.LevelDB
             }
         }
 
-        public Snapshot GetSnapshot()
+        public override AbstractSnapshot GetSnapshot()
         {
             return new Snapshot(handle);
         }
 
-        public Iterator NewIterator(ReadOptions options)
+        public override AbstractIterator NewIterator(AbstractReadOptions options)
         {
-            return new Iterator(Native.leveldb_create_iterator(handle, options.handle));
+            return new Iterator(Native.leveldb_create_iterator(handle, getHandle(options)));
         }
 
         public static DB Open(string name)
@@ -68,18 +69,33 @@ namespace Neo.Implementations.Blockchains.LevelDB
             return new DB(handle);
         }
 
-        public void Put(WriteOptions options, Slice key, Slice value)
+        public override void Put(AbstractWriteOptions options, Slice key, Slice value)
         {
             IntPtr error;
-            Native.leveldb_put(handle, options.handle, key.buffer, (UIntPtr)key.buffer.Length, value.buffer, (UIntPtr)value.buffer.Length, out error);
+            Native.leveldb_put(handle, getHandle(options), key.buffer, (UIntPtr)key.buffer.Length, value.buffer, (UIntPtr)value.buffer.Length, out error);
             NativeHelper.CheckError(error);
         }
 
-        public bool TryGet(ReadOptions options, Slice key, out Slice value)
+		private IntPtr getHandle(AbstractWriteBatch write_batch)
+		{
+			return ((WriteBatch)write_batch).handle;
+		}
+
+		private IntPtr getHandle(AbstractReadOptions options)
+		{
+			return ((ReadOptions)options).handle;
+		}
+
+		private IntPtr getHandle(AbstractWriteOptions options)
+		{
+			return ((WriteOptions)options).handle;
+		}
+		
+        public override bool TryGet(AbstractReadOptions options, Slice key, out Slice value)
         {
             UIntPtr length;
             IntPtr error;
-            IntPtr v = Native.leveldb_get(handle, options.handle, key.buffer, (UIntPtr)key.buffer.Length, out length, out error);
+            IntPtr v = Native.leveldb_get(handle, getHandle(options), key.buffer, (UIntPtr)key.buffer.Length, out length, out error);
             if (error != IntPtr.Zero)
             {
                 Native.leveldb_free(error);
@@ -96,7 +112,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             return true;
         }
 
-        public void Write(WriteOptions options, WriteBatch write_batch)
+        public override void Write(AbstractWriteOptions options, AbstractWriteBatch write_batch)
         {
             // There's a bug in .Net Core.
             // When calling DB.Write(), it will throw LevelDBException sometimes.
@@ -108,11 +124,11 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 try
                 {
                     IntPtr error;
-                    Native.leveldb_write(handle, options.handle, write_batch.handle, out error);
+                    Native.leveldb_write(handle, getHandle(options), getHandle(write_batch), out error);
                     NativeHelper.CheckError(error);
                     break;
                 }
-                catch (LevelDBException ex)
+                catch (DBException ex)
                 {
                     if (++retry >= 4) throw;
                     System.IO.File.AppendAllText("leveldb.log", ex.Message + "\r\n");

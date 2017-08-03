@@ -1,8 +1,9 @@
 ﻿using System;
+using Neo.Implementations.Blockchains.Utilities;
 
 namespace Neo.Implementations.Blockchains.LevelDB
 {
-    internal class WriteOptions
+    internal class WriteOptions : AbstractWriteOptions
     {
         public static readonly WriteOptions Default = new WriteOptions();
         internal readonly IntPtr handle = Native.leveldb_writeoptions_create();
