@@ -49,6 +49,7 @@
     <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.3.0" />
     <PackageReference Include="Neo.VM" Version="2.0.1" />
     <PackageReference Include="NuGet.Build.Tasks.Pack" Version="4.2.0" />
+    <PackageReference Include="LiteDB" Version="3.1.1" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
