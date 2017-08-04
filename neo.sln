@@ -8,7 +8,7 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "neo.UnitTests", "neo.UnitTests\neo.UnitTests.csproj", "{5B783B30-B422-4C2F-AC22-187A8D1993F4}"
 EndProject
 Global
-        GlobalSection(SolutionConfigurationPlatforms) = preSolution
+    GlobalSection(SolutionConfigurationPlatforms) = preSolution
             Debug|Any CPU = Debug|Any CPU
             Release|Any CPU = Release|Any CPU
         EndGlobalSection
