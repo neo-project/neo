@@ -27,7 +27,7 @@ namespace Neo.Network
 
         public const uint ProtocolVersion = 0;
         private const int ConnectedMax = 10;
-        private const int UnconnectedMax = 2000;
+        private const int UnconnectedMax = 1000;
         public const int MemoryPoolSize = 30000;
 
         private static readonly Dictionary<UInt256, Transaction> mem_pool = new Dictionary<UInt256, Transaction>();
