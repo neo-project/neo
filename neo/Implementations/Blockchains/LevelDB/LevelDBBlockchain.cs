@@ -36,7 +36,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             header_index.Add(GenesisBlock.Hash);
             Version version;
             Slice value;
-            db = DB.Open(path, new Options { CreateIfMissing = true, ParanoidChecks = true });
+            db = DB.Open(path, new Options { CreateIfMissing = true });
             if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.SYS_Version), out value) && Version.TryParse(value.ToString(), out version) && version >= Version.Parse("1.5"))
             {
                 ReadOptions options = new ReadOptions { FillCache = false };
