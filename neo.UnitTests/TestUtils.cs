@@ -1,5 +1,7 @@
-﻿using Neo.Core;
+﻿using System;
+using Neo.Core;
 using Neo.Cryptography.ECC;
+using Neo.VM;
 
 namespace Neo.UnitTests
 {
@@ -56,6 +58,48 @@ namespace Neo.UnitTests
         {
             Blockchain testBlockchain = new TestBlockchain(assetId);
             Blockchain.RegisterBlockchain(testBlockchain);
+        }
+
+        public static void SetupHeaderWithValues(Header header, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal)
+        {
+            setupBlockBaseWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
+        }
+
+        public static void SetupBlockWithValues(Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
+        {
+            setupBlockBaseWithValues(block, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
+
+            transactionsVal = new Transaction[numberOfTransactions];
+            if (numberOfTransactions > 0)
+            {
+                for (int i = 0; i < numberOfTransactions; i++)
+                {
+                    transactionsVal[i] = TestUtils.GetMinerTransaction();
+                }
+            }
+
+            block.Transactions = transactionsVal;
+        }
+
+        private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal)
+        {
+            bb.PrevHash = val256;
+            merkRootVal = new UInt256(new byte[] { 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251 });
+            bb.MerkleRoot = merkRootVal;
+            timestampVal = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp();
+            bb.Timestamp = timestampVal;
+            indexVal = 0;
+            bb.Index = indexVal;
+            consensusDataVal = 30;
+            bb.ConsensusData = consensusDataVal;
+            val160 = UInt160.Zero;
+            bb.NextConsensus = val160;
+            scriptVal = new Witness
+            {
+                InvocationScript = new byte[0],
+                VerificationScript = new[] { (byte)OpCode.PUSHT }
+            };
+            bb.Script = scriptVal;
         }
     }    
 }

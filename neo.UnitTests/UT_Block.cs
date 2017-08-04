@@ -36,37 +36,7 @@ namespace Neo.UnitTests
             uut.Transactions.Length.Should().Be(10);
         }
 
-        private void setupBlockWithValues(Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
-        {
-            block.PrevHash = val256;
-            merkRootVal = new UInt256(new byte[] { 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251 });
-            block.MerkleRoot = merkRootVal;
-            timestampVal = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp();
-            block.Timestamp = timestampVal;
-            indexVal = 0;
-            block.Index = indexVal;
-            consensusDataVal = 30;
-            block.ConsensusData = consensusDataVal;
-            val160 = UInt160.Zero;
-            block.NextConsensus = val160;
-            scriptVal = new Witness
-            {
-                InvocationScript = new byte[0],
-                VerificationScript = new[] { (byte)OpCode.PUSHT }
-            };
-            block.Script = scriptVal;
-
-            transactionsVal = new Transaction[numberOfTransactions];            
-            if (numberOfTransactions > 0)
-            {
-                for (int i = 0; i < numberOfTransactions; i++)
-                {
-                    transactionsVal[i] = TestUtils.GetMinerTransaction();
-                }                
-            }
-            
-            block.Transactions = transactionsVal;
-        }
+        
 
         [TestMethod]
         public void Header_Get()
@@ -78,7 +48,7 @@ namespace Neo.UnitTests
             ulong consensusDataVal;
             Witness scriptVal;
             Transaction[] transactionsVal;            
-            setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Header.Should().NotBeNull();
             uut.Header.PrevHash.Should().Be(val256);
@@ -98,8 +68,8 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
             // blockbase 4 + 32 + 32 + 4 + 4 + 8 + 20 + 1 + 3
             // block 1
             uut.Size.Should().Be(109);
@@ -158,8 +128,8 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
                 TestUtils.GetMinerTransaction()
@@ -179,8 +149,8 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[3] {
                 TestUtils.GetMinerTransaction(),
@@ -202,8 +172,8 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.Zero);
         }
@@ -217,8 +187,8 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
                 TestUtils.GetMinerTransaction()
@@ -236,8 +206,8 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
                 TestUtils.GetClaimTransaction()
@@ -256,8 +226,8 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
                 getIssueTransaction(false, 100, Blockchain.SystemCoin.Hash)
@@ -275,8 +245,8 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
                 getIssueTransaction(true, 0, Blockchain.SystemCoin.Hash)
@@ -294,8 +264,8 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
                 getIssueTransaction(true, 100, Blockchain.SystemCoin.Hash)
@@ -313,8 +283,8 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
                 getIssueTransaction(true, 0, new UInt256(TestUtils.GetByteArray(32, 0x42)))
@@ -332,8 +302,8 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
 
             byte[] data;
             using (MemoryStream stream = new MemoryStream())
@@ -363,8 +333,8 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(new Block(), val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(new Block(), val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
 
             uut.MerkleRoot = merkRoot; // need to set for deserialise to be valid
 
@@ -416,9 +386,9 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(newBlock, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
-            setupBlockWithValues(uut, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(newBlock, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+            TestUtils.SetupBlockWithValues(uut, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Equals(newBlock).Should().BeFalse();
         }
@@ -440,9 +410,9 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(newBlock, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
-            setupBlockWithValues(uut, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(newBlock, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+            TestUtils.SetupBlockWithValues(uut, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
 
             uut.Equals(newBlock).Should().BeTrue();
         }
@@ -456,8 +426,8 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
 
             byte[] data = uut.Trim();
             byte[] requiredData = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 1, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251 };
@@ -478,8 +448,8 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(new Block(), val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(new Block(), val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
 
             byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 1, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251 };
 
@@ -498,8 +468,8 @@ namespace Neo.UnitTests
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
-            Transaction[] transactionsVal;            
-            setupBlockWithValues(new Block(), val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 3);
+            Transaction[] transactionsVal;
+            TestUtils.SetupBlockWithValues(new Block(), val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 3);
 
             byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 3, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251 };
 
@@ -522,11 +492,11 @@ namespace Neo.UnitTests
             ulong consensusDataVal;
             Witness scriptVal;
             Transaction[] transactionsVal;
-            setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
 
             UInt256 merkleRoot = uut.MerkleRoot;
 
-            setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 3);
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 3);
             uut.RebuildMerkleRoot();
 
             uut.MerkleRoot.Should().NotBe(merkleRoot);
@@ -542,7 +512,7 @@ namespace Neo.UnitTests
             ulong consensusDataVal;
             Witness scriptVal;
             Transaction[] transactionsVal;
-            setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
@@ -585,7 +555,7 @@ namespace Neo.UnitTests
             ulong consensusDataVal;
             Witness scriptVal;
             Transaction[] transactionsVal;
-            setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
 
             TestUtils.SetupTestBlockchain(UInt256.Zero);            
 
@@ -602,7 +572,7 @@ namespace Neo.UnitTests
             ulong consensusDataVal;
             Witness scriptVal;
             Transaction[] transactionsVal;
-            setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 3);
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 3);
 
             TestUtils.SetupTestBlockchain(UInt256.Zero);
 
@@ -619,7 +589,7 @@ namespace Neo.UnitTests
             ulong consensusDataVal;
             Witness scriptVal;
             Transaction[] transactionsVal;
-            setupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
             // passing NextConsensus below 
             // uut.NextConsensus = new UInt160(new byte[] { 23, 52, 98, 203, 0, 206, 138, 37, 140, 16, 251, 231, 61, 120, 218, 200, 182, 125, 120, 73 });
 
