@@ -238,11 +238,10 @@ namespace Neo.Network.RPC
                             JArray connectedPeers = new JArray();
                             foreach (RemoteNode node in LocalNode.GetRemoteNodes())
                             {
-                                IPEndPoint peer = node.RemoteEndpoint;
-                                JObject peerJson = new JObject();
-                                peerJson["address"] = peer.Address.ToString();
-                                peerJson["port"] = peer.Port;
-                                connectedPeers.Add(peerJson);
+								JObject peerJson = new JObject();
+								peerJson["address"] = node.RemoteEndpoint.Address.ToString();
+								peerJson["port"] = node.ListenerEndpoint.Port;
+								connectedPeers.Add(peerJson);
                             }
                             json["connected"] = connectedPeers;
                         }
