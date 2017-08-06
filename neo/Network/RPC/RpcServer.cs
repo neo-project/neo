@@ -205,10 +205,10 @@ namespace Neo.Network.RPC
                         json["address"] = _params[0];
                         json["isvalid"] = scriptHash != null;
                         return json;
-					}
-				case "listpeers":
-					{
-						JObject json = new JObject();
+                }
+                case "getpeers":
+                    {
+                        JObject json = new JObject();
 
                         {
                             JArray unconnectedPeers = new JArray();
