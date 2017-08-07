@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net;
 
 namespace Neo.Network.RPC
 {
@@ -203,6 +204,48 @@ namespace Neo.Network.RPC
                         }
                         json["address"] = _params[0];
                         json["isvalid"] = scriptHash != null;
+                        return json;
+                }
+                case "getpeers":
+                    {
+                        JObject json = new JObject();
+
+                        {
+                            JArray unconnectedPeers = new JArray();
+                            foreach (IPEndPoint peer in LocalNode.GetUnconnectedPeers())
+                            {
+                                JObject peerJson = new JObject();
+                                peerJson["address"] = peer.Address.ToString();
+                                peerJson["port"] = peer.Port;
+                                unconnectedPeers.Add(peerJson);
+                            }
+                            json["unconnected"] = unconnectedPeers;
+                        }
+
+                        {
+                            JArray badPeers = new JArray();
+                            foreach (IPEndPoint peer in LocalNode.GetBadPeers())
+                            {
+                                JObject peerJson = new JObject();
+                                peerJson["address"] = peer.Address.ToString();
+                                peerJson["port"] = peer.Port;
+                                badPeers.Add(peerJson);
+                            }
+                            json["bad"] = badPeers;
+                        }
+
+                        {
+                            JArray connectedPeers = new JArray();
+                            foreach (RemoteNode node in LocalNode.GetRemoteNodes())
+                            {
+                                JObject peerJson = new JObject();
+                                peerJson["address"] = node.RemoteEndpoint.Address.ToString();
+                                peerJson["port"] = node.ListenerEndpoint.Port;
+                                connectedPeers.Add(peerJson);
+                            }
+                            json["connected"] = connectedPeers;
+                        }
+
                         return json;
                     }
                 default:
