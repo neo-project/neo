@@ -501,6 +501,22 @@ namespace Neo.Network
             }
         }
 
+        public IPEndPoint[] GetUnconnectedPeers()
+		{
+			lock (unconnectedPeers)
+			{
+				return unconnectedPeers.ToArray();
+			}
+		}
+
+        public IPEndPoint[] GetBadPeers()
+        {
+            lock (badPeers)
+            {
+                return badPeers.ToArray();
+            }
+        }
+
         public static void SaveState(Stream stream)
         {
             IPEndPoint[] peers;
