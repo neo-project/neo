@@ -237,36 +237,36 @@ namespace Neo.Network
             while (disposed == 0)
             {
                 int connectedCount = connectedPeers.Count;
-                lock (unconnectedPeersLock)
+                int unconnectedCount = unconnectedPeers.Count;
+                if (connectedCount < ConnectedMax)
                 {
-                    int unconnectedCount = unconnectedPeers.Count;
-                    if (connectedCount < ConnectedMax)
+                    Task[] tasks = { };
+                    if (unconnectedCount > 0)
                     {
-                        Task[] tasks = { };
-                        if (unconnectedCount > 0)
+                        IPEndPoint[] endpoints;
+                        lock(unconnectedPeersLock)
                         {
-                            IPEndPoint[] endpoints;
+							endpoints = unconnectedPeers.Take(ConnectedMax - connectedCount).ToArray();
+                        }
 
-                            endpoints = unconnectedPeers.Take(ConnectedMax - connectedCount).ToArray();
-
-                            tasks = endpoints.Select(p => ConnectToPeerAsync(p)).ToArray();
-                        }
-                        else if (connectedCount > 0)
-                        {
-                            lock (connectedPeers)
-                            {
-                                foreach (RemoteNode node in connectedPeers)
-                                    node.RequestPeers();
-                            }
-                        }
-                        else
-                        {
-                            tasks = Settings.Default.SeedList.OfType<string>().Select(p => p.Split(':'))
-                                .Select(p => ConnectToPeerAsync(p[0], int.Parse(p[1]))).ToArray();
-                        }
-                        Task.WaitAll(tasks);
+                        tasks = endpoints.Select(p => ConnectToPeerAsync(p)).ToArray();
                     }
+                    else if (connectedCount > 0)
+                    {
+                        lock (connectedPeers)
+                        {
+                            foreach (RemoteNode node in connectedPeers)
+                                node.RequestPeers();
+                        }
+                    }
+                    else
+                    {
+                        tasks = Settings.Default.SeedList.OfType<string>().Select(p => p.Split(':'))
+                            .Select(p => ConnectToPeerAsync(p[0], int.Parse(p[1]))).ToArray();
+                    }
+                    Task.WaitAll(tasks);
                 }
+
                 for (int i = 0; i < 50 && disposed == 0; i++)
                 {
                     Thread.Sleep(100);
