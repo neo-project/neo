@@ -20,3 +20,4 @@ Coverage
 * Core
 	* AccountState.cs
 	* AssetState.cs
+	* SpentCoinState.cs
