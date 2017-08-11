@@ -205,10 +205,10 @@ namespace Neo.Network.RPC
                         json["address"] = _params[0];
                         json["isvalid"] = scriptHash != null;
                         return json;
-					}
-				case "listpeers":
-					{
-						JObject json = new JObject();
+                    }
+                case "listpeers":
+                    {
+                        JObject json = new JObject();
 
                         {
                             JArray unconnectedPeers = new JArray();
@@ -238,18 +238,63 @@ namespace Neo.Network.RPC
                             JArray connectedPeers = new JArray();
                             foreach (RemoteNode node in LocalNode.GetRemoteNodes())
                             {
-								JObject peerJson = new JObject();
-								peerJson["address"] = node.RemoteEndpoint.Address.ToString();
-								peerJson["port"] = node.ListenerEndpoint.Port;
-								connectedPeers.Add(peerJson);
+                                JObject peerJson = new JObject();
+                                peerJson["address"] = node.RemoteEndpoint.Address.ToString();
+                                peerJson["port"] = node.ListenerEndpoint.Port;
+                                connectedPeers.Add(peerJson);
                             }
                             json["connected"] = connectedPeers;
                         }
 
                         return json;
                     }
+                case "gettxcount":
+                    {
+                        uint fromTs = (uint)_params[0].AsNumber();
+                        uint toTs = (uint)_params[0].AsNumber();
+
+                        uint minHeight = 0;
+
+                        uint maxHeight = Blockchain.Default.Height;
+
+                        uint fromHeight = getHeightOfTs(minHeight, maxHeight, fromTs);
+
+                        uint toHeight = getHeightOfTs(fromHeight, maxHeight, toTs);
+
+                        uint count = 0;
+
+                        for (uint index = fromHeight; index < toHeight; index++)
+                        {
+                            Block block = Blockchain.Default.GetBlock(index);
+                            count += (uint)block.Transactions.Length;
+                        }
+
+                        return count;
+                    }
                 default:
                     throw new RpcException(-32601, "Method not found");
+            }
+        }
+
+        private uint getHeightOfTs(uint minHeight, uint maxHeight, uint ts)
+        {
+            uint midHeight = minHeight + ((maxHeight - minHeight) / 2);
+            if ((midHeight == minHeight) || (midHeight == maxHeight))
+            {
+                return minHeight;
+            }
+            Block midBlock = Blockchain.Default.GetBlock(midHeight);
+            if (ts == midBlock.Timestamp)
+            {
+                return midHeight;
+            }
+            else if (ts < midBlock.Timestamp)
+            {
+                return getHeightOfTs(minHeight, midHeight, ts);
+            }
+            else
+            {
+                return getHeightOfTs(midHeight, maxHeight, ts);
             }
         }
 
