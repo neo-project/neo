@@ -252,21 +252,29 @@ namespace Neo.Network.RPC
                     {
                         uint fromTs = (uint)_params[0].AsNumber();
                         uint toTs = (uint)_params[1].AsNumber();
-
+#if DEBUG
+                        Console.WriteLine($"fromTs:{fromTs};toTs:{toTs};");
+#endif
                         uint minHeight = 0;
 
                         uint maxHeight = Blockchain.Default.Height;
 
-                        uint fromHeight = getHeightOfTs(minHeight, maxHeight, fromTs);
+                        uint fromHeight = getHeightOfTs(0, minHeight, maxHeight, fromTs);
 
-                        uint toHeight = getHeightOfTs(fromHeight, maxHeight, toTs);
+                        uint toHeight = getHeightOfTs(0, fromHeight, maxHeight, toTs);
 
+#if DEBUG
+                        Console.WriteLine($"fromHeight:{fromHeight};toHeight:{toHeight};");
+#endif
                         uint count = 0;
 
                         for (uint index = fromHeight; index < toHeight; index++)
                         {
                             Block block = Blockchain.Default.GetBlock(index);
                             count += (uint)block.Transactions.Length;
+#if DEBUG
+                            Console.WriteLine($"fromHeight:{fromHeight};toHeight:{toHeight};index:{index};count:{count};");
+#endif
                         }
 
                         return count;
@@ -276,7 +284,7 @@ namespace Neo.Network.RPC
             }
         }
 
-        private uint getHeightOfTs(uint minHeight, uint maxHeight, uint ts)
+        private uint getHeightOfTs(uint level, uint minHeight, uint maxHeight, uint ts)
         {
             uint midHeight = minHeight + ((maxHeight - minHeight) / 2);
             if ((midHeight == minHeight) || (midHeight == maxHeight))
@@ -290,11 +298,17 @@ namespace Neo.Network.RPC
             }
             else if (ts < midBlock.Timestamp)
             {
-                return getHeightOfTs(minHeight, midHeight, ts);
+#if DEBUG
+                Console.WriteLine($"level:{level};minHeight:{minHeight};midHeight:{midHeight};midBlock.Timestamp:{midBlock.Timestamp};");
+#endif
+                return getHeightOfTs(level + 1, minHeight, midHeight, ts);
             }
             else
             {
-                return getHeightOfTs(midHeight, maxHeight, ts);
+#if DEBUG
+                Console.WriteLine($"level:{level};midHeight:{midHeight};maxHeight:{maxHeight};midBlock.Timestamp:{midBlock.Timestamp};");
+#endif
+                return getHeightOfTs(level + 1, midHeight, maxHeight, ts);
             }
         }
 
