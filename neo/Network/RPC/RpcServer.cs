@@ -251,7 +251,7 @@ namespace Neo.Network.RPC
                 case "gettxcount":
                     {
                         uint fromTs = (uint)_params[0].AsNumber();
-                        uint toTs = (uint)_params[0].AsNumber();
+                        uint toTs = (uint)_params[1].AsNumber();
 
                         uint minHeight = 0;
 
