@@ -111,7 +111,7 @@ namespace Neo.Consensus
             {
                 AssetId = Blockchain.SystemCoin.Hash,
                 Value = amount_netfee,
-                ScriptHash = wallet.GetContracts().First().ScriptHash
+                ScriptHash = wallet.GetChangeAddress()
             } };
             return new MinerTransaction
             {

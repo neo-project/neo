@@ -49,6 +49,7 @@ namespace Neo.Network
         private readonly AutoResetEvent new_tx_event = new AutoResetEvent(false);
         private int started = 0;
         private int disposed = 0;
+        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         public bool GlobalMissionsEnabled { get; set; } = true;
         public int RemoteNodeCount => connectedPeers.Count;
@@ -82,9 +83,9 @@ namespace Neo.Network
             Blockchain.PersistCompleted += Blockchain_PersistCompleted;
         }
 
-        private async void AcceptPeersAsync()
+        private async void AcceptPeers()
         {
-            while (disposed == 0)
+            while (!cancellationTokenSource.IsCancellationRequested)
             {
                 Socket socket;
                 try
@@ -120,7 +121,7 @@ namespace Neo.Network
 
         private void AddTransactionLoop()
         {
-            while (disposed == 0)
+            while (!cancellationTokenSource.IsCancellationRequested)
             {
                 new_tx_event.WaitOne();
                 Transaction[] transactions;
@@ -232,7 +233,7 @@ namespace Neo.Network
 
         private void ConnectToPeersLoop()
         {
-            while (disposed == 0)
+            while (!cancellationTokenSource.IsCancellationRequested)
             {
                 int connectedCount = connectedPeers.Count;
                 int unconnectedCount = unconnectedPeers.Count;
@@ -260,9 +261,9 @@ namespace Neo.Network
                     {
                         tasks = Settings.Default.SeedList.OfType<string>().Select(p => p.Split(':')).Select(p => ConnectToPeerAsync(p[0], int.Parse(p[1]))).ToArray();
                     }
-                    Task.WaitAll(tasks);
+                    Task.WaitAll(tasks, cancellationTokenSource.Token);
                 }
-                for (int i = 0; i < 50 && disposed == 0; i++)
+                for (int i = 0; i < 50 && !cancellationTokenSource.IsCancellationRequested; i++)
                 {
                     Thread.Sleep(100);
                 }
@@ -281,6 +282,7 @@ namespace Neo.Network
         {
             if (Interlocked.Exchange(ref disposed, 1) == 0)
             {
+                cancellationTokenSource.Cancel();
                 if (started > 0)
                 {
                     Blockchain.PersistCompleted -= Blockchain_PersistCompleted;
@@ -343,7 +345,7 @@ namespace Neo.Network
             byte[] data = address.MapToIPv4().GetAddressBytes();
             Array.Reverse(data);
             uint value = data.ToUInt32(0);
-            return (value & 0xff000000) == 0x0a000000 || (value & 0xfff00000) == 0xac100000 || (value & 0xffff0000) == 0xc0a80000;
+            return (value & 0xff000000) == 0x0a000000 || (value & 0xff000000) == 0x7f000000 || (value & 0xfff00000) == 0xac100000 || (value & 0xffff0000) == 0xc0a80000 || (value & 0xffff0000) == 0xa9fe0000;
         }
 
         public static void LoadState(Stream stream)
@@ -502,12 +504,12 @@ namespace Neo.Network
         }
 
         public IPEndPoint[] GetUnconnectedPeers()
-		{
-			lock (unconnectedPeers)
-			{
-				return unconnectedPeers.ToArray();
-			}
-		}
+        {
+            lock (unconnectedPeers)
+            {
+                return unconnectedPeers.ToArray();
+            }
+        }
 
         public IPEndPoint[] GetBadPeers()
         {
@@ -541,22 +543,20 @@ namespace Neo.Network
             {
                 Task.Run(async () =>
                 {
-                    if (port > 0 || ws_port > 0)
+                    if ((port > 0 || ws_port > 0)
+                        && UpnpEnabled
+                        && LocalAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
+                        && await UPnP.DiscoverAsync())
                     {
-                        IPAddress address = LocalAddresses.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork && !IsIntranetAddress(p));
-                        if (address == null && UpnpEnabled && await UPnP.DiscoverAsync())
+                        try
                         {
-                            try
-                            {
-                                address = await UPnP.GetExternalIPAsync();
-                                if (port > 0)
-                                    await UPnP.ForwardPortAsync(port, ProtocolType.Tcp, "NEO");
-                                if (ws_port > 0)
-                                    await UPnP.ForwardPortAsync(ws_port, ProtocolType.Tcp, "NEO WebSocket");
-                                LocalAddresses.Add(address);
-                            }
-                            catch { }
+                            LocalAddresses.Add(await UPnP.GetExternalIPAsync());
+                            if (port > 0)
+                                await UPnP.ForwardPortAsync(port, ProtocolType.Tcp, "NEO");
+                            if (ws_port > 0)
+                                await UPnP.ForwardPortAsync(ws_port, ProtocolType.Tcp, "NEO WebSocket");
                         }
+                        catch { }
                     }
                     connectThread.Start();
                     poolThread?.Start();
@@ -567,7 +567,7 @@ namespace Neo.Network
                         {
                             listener.Start();
                             Port = (ushort)port;
-                            AcceptPeersAsync();
+                            AcceptPeers();
                         }
                         catch (SocketException) { }
                     }
