@@ -26,6 +26,7 @@ namespace Neo.Network
         private Queue<Message> message_queue = new Queue<Message>();
         private static HashSet<UInt256> missions_global = new HashSet<UInt256>();
         private HashSet<UInt256> missions = new HashSet<UInt256>();
+        private DateTime mission_start = DateTime.Now.AddYears(100);
 
         private LocalNode localNode;
         private int disposed = 0;
@@ -215,6 +216,10 @@ namespace Neo.Network
                 {
                     missions_global.Remove(inventory.Hash);
                     missions.Remove(inventory.Hash);
+                    if (missions.Count == 0)
+                        mission_start = DateTime.Now.AddYears(100);
+                    else
+                        mission_start = DateTime.Now;
                 }
             }
             if (inventory is MinerTransaction) return;
@@ -237,8 +242,12 @@ namespace Neo.Network
                 {
                     if (localNode.GlobalMissionsEnabled)
                         hashes = hashes.Where(p => !missions_global.Contains(p)).ToArray();
-                    missions_global.UnionWith(hashes);
-                    missions.UnionWith(hashes);
+                    if (hashes.Length > 0)
+                    {
+                        if (missions.Count == 0) mission_start = DateTime.Now;
+                        missions_global.UnionWith(hashes);
+                        missions.UnionWith(hashes);
+                    }
                 }
             }
             if (hashes.Length == 0) return;
@@ -428,6 +437,12 @@ namespace Neo.Network
                 TimeSpan timeout = missions.Count == 0 ? HalfHour : OneMinute;
                 message = await ReceiveMessageAsync(timeout);
                 if (message == null) break;
+                if (DateTime.Now - mission_start > OneMinute
+                    && message.Command != "block" && message.Command != "consensus" && message.Command != "tx")
+                {
+                    Disconnect(false);
+                    break;
+                }
                 try
                 {
                     OnMessageReceived(message);

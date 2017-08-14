@@ -261,7 +261,14 @@ namespace Neo.Network
                     {
                         tasks = Settings.Default.SeedList.OfType<string>().Select(p => p.Split(':')).Select(p => ConnectToPeerAsync(p[0], int.Parse(p[1]))).ToArray();
                     }
-                    Task.WaitAll(tasks, cancellationTokenSource.Token);
+                    try
+                    {
+                        Task.WaitAll(tasks, cancellationTokenSource.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
                 }
                 for (int i = 0; i < 50 && !cancellationTokenSource.IsCancellationRequested; i++)
                 {
