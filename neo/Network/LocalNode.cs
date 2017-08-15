@@ -340,8 +340,7 @@ namespace Neo.Network
         {
             lock (mem_pool)
             {
-                Transaction tx;
-                if (!mem_pool.TryGetValue(hash, out tx))
+                if (!mem_pool.TryGetValue(hash, out Transaction tx))
                     return null;
                 return tx;
             }

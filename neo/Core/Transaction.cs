@@ -110,14 +110,7 @@ namespace Neo.Core
         /// <summary>
         /// 系统费用
         /// </summary>
-        public virtual Fixed8 SystemFee
-        {
-            get
-            {
-                Fixed8 fee;
-                return Settings.Default.SystemFee.TryGetValue(Type, out fee) ? fee : Fixed8.Zero;
-            }
-        }
+        public virtual Fixed8 SystemFee => Settings.Default.SystemFee.TryGetValue(Type, out Fixed8 fee) ? fee : Fixed8.Zero;
 
         /// <summary>
         /// 用指定的类型初始化Transaction对象

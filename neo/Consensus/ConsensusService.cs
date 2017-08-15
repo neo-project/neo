@@ -258,8 +258,7 @@ namespace Neo.Consensus
             Dictionary<UInt256, Transaction> mempool = LocalNode.GetMemoryPool().ToDictionary(p => p.Hash);
             foreach (UInt256 hash in context.TransactionHashes.Skip(1))
             {
-                Transaction tx;
-                if (mempool.TryGetValue(hash, out tx))
+                if (mempool.TryGetValue(hash, out Transaction tx))
                     if (!AddTransaction(tx, false))
                         return;
             }

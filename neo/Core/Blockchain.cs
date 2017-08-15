@@ -168,8 +168,7 @@ namespace Neo.Core
                         throw new ArgumentException();
                 foreach (CoinReference claim in group)
                 {
-                    SpentCoin claimed;
-                    if (!claimable.TryGetValue(claim.PrevIndex, out claimed))
+                    if (!claimable.TryGetValue(claim.PrevIndex, out SpentCoin claimed))
                         if (ignoreClaimed)
                             continue;
                         else

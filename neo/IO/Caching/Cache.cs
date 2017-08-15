@@ -31,8 +31,7 @@ namespace Neo.IO.Caching
             {
                 lock (SyncRoot)
                 {
-                    CacheItem item;
-                    if (!InnerDictionary.TryGetValue(key, out item)) throw new KeyNotFoundException();
+                    if (!InnerDictionary.TryGetValue(key, out CacheItem item)) throw new KeyNotFoundException();
                     OnAccess(item);
                     return item.Value;
                 }
@@ -74,8 +73,7 @@ namespace Neo.IO.Caching
 
         private void AddInternal(TKey key, TValue item)
         {
-            CacheItem cacheItem;
-            if (InnerDictionary.TryGetValue(key, out cacheItem))
+            if (InnerDictionary.TryGetValue(key, out CacheItem cacheItem))
             {
                 OnAccess(cacheItem);
             }
@@ -120,8 +118,7 @@ namespace Neo.IO.Caching
         {
             lock (SyncRoot)
             {
-                CacheItem cacheItem;
-                if (!InnerDictionary.TryGetValue(key, out cacheItem)) return false;
+                if (!InnerDictionary.TryGetValue(key, out CacheItem cacheItem)) return false;
                 OnAccess(cacheItem);
                 return true;
             }
@@ -170,8 +167,7 @@ namespace Neo.IO.Caching
         {
             lock (SyncRoot)
             {
-                CacheItem cacheItem;
-                if (!InnerDictionary.TryGetValue(key, out cacheItem)) return false;
+                if (!InnerDictionary.TryGetValue(key, out CacheItem cacheItem)) return false;
                 RemoveInternal(cacheItem);
                 return true;
             }
@@ -198,8 +194,7 @@ namespace Neo.IO.Caching
         {
             lock (SyncRoot)
             {
-                CacheItem cacheItem;
-                if (InnerDictionary.TryGetValue(key, out cacheItem))
+                if (InnerDictionary.TryGetValue(key, out CacheItem cacheItem))
                 {
                     OnAccess(cacheItem);
                     item = cacheItem.Value;

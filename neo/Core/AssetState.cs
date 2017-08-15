@@ -112,8 +112,7 @@ namespace Neo.Core
                     _names = ((JArray)JObject.Parse(Name)).ToDictionary(p => new CultureInfo(p["lang"].AsString()), p => p["name"].AsString());
             }
             if (culture == null) culture = CultureInfo.CurrentCulture;
-            string name;
-            if (_names.TryGetValue(culture, out name))
+            if (_names.TryGetValue(culture, out string name))
             {
                 return name;
             }

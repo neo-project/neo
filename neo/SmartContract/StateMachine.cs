@@ -100,8 +100,7 @@ namespace Neo.SmartContract
             if (votes.Length > 1024) return false;
             account = accounts[account.ScriptHash];
             if (account.IsFrozen) return false;
-            Fixed8 balance;
-            if ((!account.Balances.TryGetValue(Blockchain.SystemShare.Hash, out balance) || balance.Equals(Fixed8.Zero)) && votes.Length > 0)
+            if ((!account.Balances.TryGetValue(Blockchain.SystemShare.Hash, out Fixed8 balance) || balance.Equals(Fixed8.Zero)) && votes.Length > 0)
                 return false;
             if (!CheckWitness(engine, account.ScriptHash)) return false;
             account = accounts.GetAndChange(account.ScriptHash);
@@ -291,8 +290,7 @@ namespace Neo.SmartContract
         private bool Contract_GetStorageContext(ExecutionEngine engine)
         {
             ContractState contract = engine.EvaluationStack.Pop().GetInterface<ContractState>();
-            UInt160 created;
-            if (!contracts_created.TryGetValue(contract.ScriptHash, out created)) return false;
+            if (!contracts_created.TryGetValue(contract.ScriptHash, out UInt160 created)) return false;
             if (!created.Equals(new UInt160(engine.CurrentContext.ScriptHash))) return false;
             engine.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
             {

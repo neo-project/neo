@@ -14,8 +14,7 @@ namespace Neo.IO.Json
         {
             get
             {
-                JObject value;
-                properties.TryGetValue(name, out value);
+                properties.TryGetValue(name, out JObject value);
                 return value;
             }
             set

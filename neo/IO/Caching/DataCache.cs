@@ -21,8 +21,7 @@ namespace Neo.IO.Caching
         {
             get
             {
-                Trackable trackable;
-                if (dictionary.TryGetValue(key, out trackable))
+                if (dictionary.TryGetValue(key, out Trackable trackable))
                 {
                     if (trackable.State == TrackState.Deleted)
                         throw new KeyNotFoundException();
@@ -43,8 +42,7 @@ namespace Neo.IO.Caching
 
         public void Add(TKey key, TValue value)
         {
-            Trackable trackable;
-            if (dictionary.TryGetValue(key, out trackable) && trackable.State != TrackState.Deleted)
+            if (dictionary.TryGetValue(key, out Trackable trackable) && trackable.State != TrackState.Deleted)
                 throw new ArgumentException();
             dictionary[key] = new Trackable
             {
@@ -100,8 +98,7 @@ namespace Neo.IO.Caching
 
         public TValue GetAndChange(TKey key, Func<TValue> factory = null)
         {
-            Trackable trackable;
-            if (dictionary.TryGetValue(key, out trackable))
+            if (dictionary.TryGetValue(key, out Trackable trackable))
             {
                 if (trackable.State == TrackState.Deleted)
                 {
@@ -138,8 +135,7 @@ namespace Neo.IO.Caching
 
         public TValue GetOrAdd(TKey key, Func<TValue> factory)
         {
-            Trackable trackable;
-            if (dictionary.TryGetValue(key, out trackable))
+            if (dictionary.TryGetValue(key, out Trackable trackable))
             {
                 if (trackable.State == TrackState.Deleted)
                 {
@@ -170,8 +166,7 @@ namespace Neo.IO.Caching
 
         public TValue TryGet(TKey key)
         {
-            Trackable trackable;
-            if (dictionary.TryGetValue(key, out trackable))
+            if (dictionary.TryGetValue(key, out Trackable trackable))
             {
                 if (trackable.State == TrackState.Deleted) return null;
                 return trackable.Item;
