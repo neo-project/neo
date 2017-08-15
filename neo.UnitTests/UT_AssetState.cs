@@ -37,7 +37,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void AssetType_Get()
         {
-            uut.AssetType.Should().Be(AssetType.SystemShare); // Uninitialised AssetType defaults to this enum value, be careful
+            uut.AssetType.Should().Be(AssetType.GoverningToken); // Uninitialised AssetType defaults to this enum value, be careful
         }
 
         [TestMethod]

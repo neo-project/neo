@@ -98,7 +98,7 @@ namespace Neo.Network
                 }
                 catch (SocketException)
                 {
-                    break;
+                    continue;
                 }
                 TcpRemoteNode remoteNode = new TcpRemoteNode(this, socket);
                 OnConnected(remoteNode);

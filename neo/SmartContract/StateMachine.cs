@@ -126,7 +126,7 @@ namespace Neo.SmartContract
         {
             InvocationTransaction tx = (InvocationTransaction)engine.ScriptContainer;
             AssetType asset_type = (AssetType)(byte)engine.EvaluationStack.Pop().GetBigInteger();
-            if (!Enum.IsDefined(typeof(AssetType), asset_type) || asset_type == AssetType.CreditFlag || asset_type == AssetType.DutyFlag || asset_type == AssetType.SystemShare || asset_type == AssetType.SystemCoin)
+            if (!Enum.IsDefined(typeof(AssetType), asset_type) || asset_type == AssetType.CreditFlag || asset_type == AssetType.DutyFlag || asset_type == AssetType.GoverningToken || asset_type == AssetType.UtilityToken)
                 return false;
             if (engine.EvaluationStack.Peek().GetByteArray().Length > 1024)
                 return false;
