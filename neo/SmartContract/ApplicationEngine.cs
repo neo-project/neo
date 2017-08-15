@@ -12,13 +12,15 @@ namespace Neo.SmartContract
         private long gas_consumed = 0;
         private readonly bool testMode;
 
+        public TriggerType Trigger { get; }
         public Fixed8 GasConsumed => new Fixed8(gas_consumed);
 
-        public ApplicationEngine(IScriptContainer container, IScriptTable table, InteropService service, Fixed8 gas, bool testMode = false)
+        public ApplicationEngine(TriggerType trigger, IScriptContainer container, IScriptTable table, InteropService service, Fixed8 gas, bool testMode = false)
             : base(container, Cryptography.Crypto.Default, table, service)
         {
             this.gas_amount = gas_free + gas.GetData();
             this.testMode = testMode;
+            this.Trigger = trigger;
         }
 
         private bool CheckArraySize()

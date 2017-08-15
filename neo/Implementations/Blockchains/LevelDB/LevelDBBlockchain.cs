@@ -249,8 +249,8 @@ namespace Neo.Implementations.Blockchains.LevelDB
         {
             lock (header_cache)
             {
-                if (header_cache.ContainsKey(hash))
-                    return header_cache[hash];
+                if (header_cache.TryGetValue(hash, out Header header))
+                    return header;
             }
             Slice value;
             if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash), out value))
@@ -384,9 +384,9 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 if (accounts.Length > 0)
                     foreach (AccountState account in accounts)
                     {
-                        Fixed8 balance = account.Balances.ContainsKey(SystemShare.Hash) ? account.Balances[SystemShare.Hash] : Fixed8.Zero;
-                        if (changes.ContainsKey(account.ScriptHash))
-                            balance += changes[account.ScriptHash];
+                        Fixed8 balance = account.Balances.TryGetValue(SystemShare.Hash, out Fixed8 value) ? value : Fixed8.Zero;
+                        if (changes.TryGetValue(account.ScriptHash, out Fixed8 change))
+                            balance += change;
                         if (balance <= Fixed8.Zero) continue;
                         yield return new VoteState
                         {
@@ -553,7 +553,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                             InvocationTransaction itx = (InvocationTransaction)tx;
                             CachedScriptTable script_table = new CachedScriptTable(contracts);
                             StateMachine service = new StateMachine(accounts, validators, assets, contracts, storages);
-                            ApplicationEngine engine = new ApplicationEngine(itx, script_table, service, itx.Gas);
+                            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, itx, script_table, service, itx.Gas);
                             engine.LoadScript(itx.Script, false);
                             if (engine.Execute()) service.Commit();
                         }
