@@ -112,19 +112,21 @@ namespace Neo.Core
                     _names = ((JArray)JObject.Parse(Name)).ToDictionary(p => new CultureInfo(p["lang"].AsString()), p => p["name"].AsString());
             }
             if (culture == null) culture = CultureInfo.CurrentCulture;
-            if (_names.ContainsKey(culture))
+            if (_names.TryGetValue(culture, out string name))
             {
-                return _names[culture];
+                return name;
             }
-            else if (_names.ContainsKey(new CultureInfo("en")))
+            else if (_names.TryGetValue(en, out name))
             {
-                return _names[new CultureInfo("en")];
+                return name;
             }
             else
             {
                 return _names.Values.First();
             }
         }
+
+        private static readonly CultureInfo en = new CultureInfo("en");
 
         public override void Serialize(BinaryWriter writer)
         {

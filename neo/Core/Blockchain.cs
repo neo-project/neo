@@ -168,12 +168,12 @@ namespace Neo.Core
                         throw new ArgumentException();
                 foreach (CoinReference claim in group)
                 {
-                    if (!claimable.ContainsKey(claim.PrevIndex))
+                    if (!claimable.TryGetValue(claim.PrevIndex, out SpentCoin claimed))
                         if (ignoreClaimed)
                             continue;
                         else
                             throw new ArgumentException();
-                    unclaimed.Add(claimable[claim.PrevIndex]);
+                    unclaimed.Add(claimed);
                 }
             }
             return CalculateBonusInternal(unclaimed);

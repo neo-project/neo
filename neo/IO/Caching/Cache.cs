@@ -31,8 +31,7 @@ namespace Neo.IO.Caching
             {
                 lock (SyncRoot)
                 {
-                    if (!InnerDictionary.ContainsKey(key)) throw new KeyNotFoundException();
-                    CacheItem item = InnerDictionary[key];
+                    if (!InnerDictionary.TryGetValue(key, out CacheItem item)) throw new KeyNotFoundException();
                     OnAccess(item);
                     return item.Value;
                 }
@@ -74,9 +73,9 @@ namespace Neo.IO.Caching
 
         private void AddInternal(TKey key, TValue item)
         {
-            if (InnerDictionary.ContainsKey(key))
+            if (InnerDictionary.TryGetValue(key, out CacheItem cacheItem))
             {
-                OnAccess(InnerDictionary[key]);
+                OnAccess(cacheItem);
             }
             else
             {
@@ -119,8 +118,8 @@ namespace Neo.IO.Caching
         {
             lock (SyncRoot)
             {
-                if (!InnerDictionary.ContainsKey(key)) return false;
-                OnAccess(InnerDictionary[key]);
+                if (!InnerDictionary.TryGetValue(key, out CacheItem cacheItem)) return false;
+                OnAccess(cacheItem);
                 return true;
             }
         }
@@ -168,8 +167,8 @@ namespace Neo.IO.Caching
         {
             lock (SyncRoot)
             {
-                if (!InnerDictionary.ContainsKey(key)) return false;
-                RemoveInternal(InnerDictionary[key]);
+                if (!InnerDictionary.TryGetValue(key, out CacheItem cacheItem)) return false;
+                RemoveInternal(cacheItem);
                 return true;
             }
         }
@@ -195,10 +194,10 @@ namespace Neo.IO.Caching
         {
             lock (SyncRoot)
             {
-                if (InnerDictionary.ContainsKey(key))
+                if (InnerDictionary.TryGetValue(key, out CacheItem cacheItem))
                 {
-                    OnAccess(InnerDictionary[key]);
-                    item = InnerDictionary[key].Value;
+                    OnAccess(cacheItem);
+                    item = cacheItem.Value;
                     return true;
                 }
             }
