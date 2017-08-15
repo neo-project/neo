@@ -32,7 +32,7 @@ namespace Neo.Core
         /// <summary>
         /// 后备记账人列表
         /// </summary>
-        public static readonly ECPoint[] StandbyValidators = Settings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+        public static readonly ECPoint[] StandbyValidators = Settings.Default.StandbyValidators.Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
 
 #pragma warning disable CS0612
         public static readonly RegisterTransaction SystemShare = new RegisterTransaction
@@ -168,12 +168,13 @@ namespace Neo.Core
                         throw new ArgumentException();
                 foreach (CoinReference claim in group)
                 {
-                    if (!claimable.ContainsKey(claim.PrevIndex))
+                    SpentCoin claimed;
+                    if (!claimable.TryGetValue(claim.PrevIndex, out claimed))
                         if (ignoreClaimed)
                             continue;
                         else
                             throw new ArgumentException();
-                    unclaimed.Add(claimable[claim.PrevIndex]);
+                    unclaimed.Add(claimed);
                 }
             }
             return CalculateBonusInternal(unclaimed);

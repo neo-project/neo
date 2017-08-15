@@ -31,8 +31,8 @@ namespace Neo.IO.Caching
             {
                 lock (SyncRoot)
                 {
-                    if (!InnerDictionary.ContainsKey(key)) throw new KeyNotFoundException();
-                    CacheItem item = InnerDictionary[key];
+                    CacheItem item;
+                    if (!InnerDictionary.TryGetValue(key, out item)) throw new KeyNotFoundException();
                     OnAccess(item);
                     return item.Value;
                 }
@@ -74,9 +74,10 @@ namespace Neo.IO.Caching
 
         private void AddInternal(TKey key, TValue item)
         {
-            if (InnerDictionary.ContainsKey(key))
+            CacheItem cacheItem;
+            if (InnerDictionary.TryGetValue(key, out cacheItem))
             {
-                OnAccess(InnerDictionary[key]);
+                OnAccess(cacheItem);
             }
             else
             {
@@ -119,8 +120,9 @@ namespace Neo.IO.Caching
         {
             lock (SyncRoot)
             {
-                if (!InnerDictionary.ContainsKey(key)) return false;
-                OnAccess(InnerDictionary[key]);
+                CacheItem cacheItem;
+                if (!InnerDictionary.TryGetValue(key, out cacheItem)) return false;
+                OnAccess(cacheItem);
                 return true;
             }
         }
@@ -168,8 +170,9 @@ namespace Neo.IO.Caching
         {
             lock (SyncRoot)
             {
-                if (!InnerDictionary.ContainsKey(key)) return false;
-                RemoveInternal(InnerDictionary[key]);
+                CacheItem cacheItem;
+                if (!InnerDictionary.TryGetValue(key, out cacheItem)) return false;
+                RemoveInternal(cacheItem);
                 return true;
             }
         }
@@ -195,10 +198,11 @@ namespace Neo.IO.Caching
         {
             lock (SyncRoot)
             {
-                if (InnerDictionary.ContainsKey(key))
+                CacheItem cacheItem;
+                if (InnerDictionary.TryGetValue(key, out cacheItem))
                 {
-                    OnAccess(InnerDictionary[key]);
-                    item = InnerDictionary[key].Value;
+                    OnAccess(cacheItem);
+                    item = cacheItem.Value;
                     return true;
                 }
             }

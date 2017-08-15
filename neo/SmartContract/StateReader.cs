@@ -484,7 +484,8 @@ namespace Neo.SmartContract
             AccountState account = engine.EvaluationStack.Pop().GetInterface<AccountState>();
             UInt256 asset_id = new UInt256(engine.EvaluationStack.Pop().GetByteArray());
             if (account == null) return false;
-            Fixed8 balance = account.Balances.ContainsKey(asset_id) ? account.Balances[asset_id] : Fixed8.Zero;
+            Fixed8 bal;
+            Fixed8 balance = account.Balances.TryGetValue(asset_id, out bal) ? bal : Fixed8.Zero;
             engine.EvaluationStack.Push(balance.GetData());
             return true;
         }

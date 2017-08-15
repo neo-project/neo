@@ -114,9 +114,8 @@ namespace Neo.Core
         {
             get
             {
-                if (Settings.Default.SystemFee.ContainsKey(Type))
-                    return Settings.Default.SystemFee[Type];
-                return Fixed8.Zero;
+                Fixed8 fee;
+                return Settings.Default.SystemFee.TryGetValue(Type, out fee) ? fee : Fixed8.Zero;
             }
         }
 

@@ -249,8 +249,9 @@ namespace Neo.Implementations.Blockchains.LevelDB
         {
             lock (header_cache)
             {
-                if (header_cache.ContainsKey(hash))
-                    return header_cache[hash];
+                Header header;
+                if (header_cache.TryGetValue(hash, out header))
+                    return header;
             }
             Slice value;
             if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash), out value))
@@ -384,9 +385,11 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 if (accounts.Length > 0)
                     foreach (AccountState account in accounts)
                     {
-                        Fixed8 balance = account.Balances.ContainsKey(SystemShare.Hash) ? account.Balances[SystemShare.Hash] : Fixed8.Zero;
-                        if (changes.ContainsKey(account.ScriptHash))
-                            balance += changes[account.ScriptHash];
+                        Fixed8 value;
+                        Fixed8 balance = account.Balances.TryGetValue(SystemShare.Hash, out value) ? value : Fixed8.Zero;
+                        Fixed8 change;
+                        if (changes.TryGetValue(account.ScriptHash, out change))
+                            balance += change;
                         if (balance <= Fixed8.Zero) continue;
                         yield return new VoteState
                         {

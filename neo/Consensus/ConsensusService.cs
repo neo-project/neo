@@ -257,9 +257,12 @@ namespace Neo.Consensus
             context.Signatures[payload.ValidatorIndex] = message.Signature;
             Dictionary<UInt256, Transaction> mempool = LocalNode.GetMemoryPool().ToDictionary(p => p.Hash);
             foreach (UInt256 hash in context.TransactionHashes.Skip(1))
-                if (mempool.ContainsKey(hash))
-                    if (!AddTransaction(mempool[hash], false))
+            {
+                Transaction tx;
+                if (mempool.TryGetValue(hash, out tx))
+                    if (!AddTransaction(tx, false))
                         return;
+            }
             if (!AddTransaction(message.MinerTransaction, true)) return;
             LocalNode.AllowHashes(context.TransactionHashes.Except(context.Transactions.Keys));
             if (context.Transactions.Count < context.TransactionHashes.Length)
