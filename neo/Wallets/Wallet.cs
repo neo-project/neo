@@ -485,9 +485,7 @@ namespace Neo.Wallets
 
         public T MakeTransaction<T>(T tx, UInt160 change_address = null, Fixed8 fee = default(Fixed8)) where T : Transaction
         {
-            if (tx.Outputs == null) tx.Outputs = new TransactionOutput[0];
-            if (tx.Attributes == null) tx.Attributes = new TransactionAttribute[0];
-            fee += tx.SystemFee;
+            if (change_address == null) change_address = GetChangeAddress();
             var pay_total = (typeof(T) == typeof(IssueTransaction) ? new TransactionOutput[0] : tx.Outputs).GroupBy(p => p.AssetId, (k, g) => new
             {
                 AssetId = k,
@@ -523,7 +521,6 @@ namespace Neo.Wallets
                 AssetId = p.AssetId,
                 Value = p.Unspents.Sum(q => q.Output.Value)
             });
-            if (change_address == null) change_address = GetChangeAddress();
             List<TransactionOutput> outputs_new = new List<TransactionOutput>(tx.Outputs);
             foreach (UInt256 asset_id in input_sum.Keys)
             {
@@ -537,8 +534,17 @@ namespace Neo.Wallets
                     });
                 }
             }
-            tx.Inputs = pay_coins.Values.SelectMany(p => p.Unspents).Select(p => p.Reference).ToArray();
-            tx.Outputs = outputs_new.ToArray();
+            CoinReference[] inputs_new = pay_coins.Values.SelectMany(p => p.Unspents).Select(p => p.Reference).ToArray();
+            return StaticMakeTransaction(tx, inputs_new, outputs_new.ToArray(), change_address, fee);
+        }
+
+        public static T StaticMakeTransaction<T>(T tx, CoinReference[] inputs_new, TransactionOutput[] outputs_new, UInt160 change_address = null, Fixed8 fee = default(Fixed8)) where T : Transaction
+        {
+            if (tx.Outputs == null) tx.Outputs = new TransactionOutput[0];
+            if (tx.Attributes == null) tx.Attributes = new TransactionAttribute[0];
+            fee += tx.SystemFee;
+            tx.Inputs = inputs_new;
+            tx.Outputs = outputs_new;
             return tx;
         }
 

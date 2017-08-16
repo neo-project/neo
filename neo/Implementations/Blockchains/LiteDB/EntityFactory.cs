@@ -1,11 +1,11 @@
 ﻿using System;
 using Neo.Implementations.Blockchains.Utilities;
 
-
 namespace Neo.Implementations.Blockchains.LiteDB
 {
-    public class EntityFactory : AbstractEntityFactory
+    public partial class EntityFactory : AbstractEntityFactory
     {
+
         public override AbstractDB Open(String path, AbstractOptions options)
         {
             return new DB(path);
@@ -13,32 +13,33 @@ namespace Neo.Implementations.Blockchains.LiteDB
 
         public override AbstractOptions newOptions()
         {
-            throw new NotImplementedException();
+            return new Options();
         }
 
         public override AbstractReadOptions newReadOptions()
         {
-            throw new NotImplementedException();
+            return new ReadOptions();
         }
 
         public override AbstractReadOptions getDefaultReadOptions()
         {
-            throw new NotImplementedException();
+            return new ReadOptions();
         }
 
         public override AbstractWriteBatch newWriteBatch()
         {
-            throw new NotImplementedException();
-        }
+            return new WriteBatch();
+
+		 }
 
         public override AbstractWriteOptions getDefaultWriteOptions()
         {
-            throw new NotImplementedException();
+            return new WriteOptions();
         }
 
         public override AbstractWriteOptions newWriteOptions()
-        {
-            throw new NotImplementedException();
+		{
+			return new WriteOptions();
         }
     }
 }

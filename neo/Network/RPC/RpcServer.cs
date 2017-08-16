@@ -182,8 +182,12 @@ namespace Neo.Network.RPC
                     }
                 case "sendrawtransaction":
                     {
+						Console.WriteLine("sendrawtransaction 0");
                         Transaction tx = Transaction.DeserializeFrom(_params[0].AsString().HexToBytes());
-                        return LocalNode.Relay(tx);
+						Console.WriteLine("sendrawtransaction 1");
+						bool retval = LocalNode.Relay(tx);
+						Console.WriteLine("sendrawtransaction 2");
+						return retval;
                     }
                 case "submitblock":
                     {
@@ -413,10 +417,7 @@ namespace Neo.Network.RPC
             if (uriPrefix.Length == 0)
                 throw new ArgumentException();
             IWebHostBuilder builder = new WebHostBuilder();
-            if (uriPrefix.Any(p => p.StartsWith("https")))
-                builder = builder.UseKestrel(options => options.UseHttps(sslCert, password));
-            else
-                builder = builder.UseKestrel();
+            builder = builder.UseKestrel();
             builder = builder.UseUrls(uriPrefix).Configure(app => app.Run(ProcessAsync));
             host = builder.Build();
             host.Start();

@@ -77,7 +77,8 @@ namespace Neo.Implementations.Blockchains.LiteDB
 
         public override void Write(AbstractWriteOptions options, AbstractWriteBatch write_batch)
         {
-            throw new NotImplementedException();
+            WriteBatch wb = (WriteBatch)write_batch;
+			getSlices().InsertBulk(wb.asSliceKeyValueList());
         }
     }
 }

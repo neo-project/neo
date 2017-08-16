@@ -1,15 +1,15 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>net461;netcoreapp1.1;netstandard1.6</TargetFrameworks>
+		<TargetFrameworks>netcoreapp2.0</TargetFrameworks>
 		<AssemblyName>Neo.UnitTests</AssemblyName>
 		<RootNamespace>Neo.UnitTests</RootNamespace>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="FluentAssertions" Version="4.19.3" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
 		<PackageReference Include="MSTest.TestAdapter" Version="1.1.18" />
 		<PackageReference Include="MSTest.TestFramework" Version="1.1.18" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\neo\neo.csproj" />

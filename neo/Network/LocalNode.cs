@@ -105,14 +105,20 @@ namespace Neo.Network
         }
 
         private static bool AddTransaction(Transaction tx)
-        {
-            if (Blockchain.Default == null) return false;
-            lock (mem_pool)
+		{
+			Console.WriteLine("AddTransaction 0");
+			if (Blockchain.Default == null) return false;
+			Console.WriteLine("AddTransaction 1");
+			lock (mem_pool)
             {
-                if (mem_pool.ContainsKey(tx.Hash)) return false;
-                if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
-                if (!tx.Verify(mem_pool.Values)) return false;
-                mem_pool.Add(tx.Hash, tx);
+				Console.WriteLine("AddTransaction 2");
+				if (mem_pool.ContainsKey(tx.Hash)) return false;
+				Console.WriteLine("AddTransaction 3");
+				if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
+				Console.WriteLine("AddTransaction 4");
+				if (!tx.Verify(mem_pool.Values)) return false;
+				Console.WriteLine("AddTransaction 5");
+				mem_pool.Add(tx.Hash, tx);
                 CheckMemPool();
             }
             return true;
@@ -383,14 +389,18 @@ namespace Neo.Network
 
         public bool Relay(IInventory inventory)
         {
+			Console.WriteLine("Relay 0");
             if (inventory is MinerTransaction) return false;
-            lock (KnownHashes)
+			Console.WriteLine("Relay 1");
+			lock (KnownHashes)
             {
                 if (!KnownHashes.Add(inventory.Hash)) return false;
             }
-            InventoryReceivingEventArgs args = new InventoryReceivingEventArgs(inventory);
+			Console.WriteLine("Relay 2");
+			InventoryReceivingEventArgs args = new InventoryReceivingEventArgs(inventory);
             InventoryReceiving?.Invoke(this, args);
-            if (args.Cancel) return false;
+			Console.WriteLine("Relay 3");
+			if (args.Cancel) return false;
             if (inventory is Block)
             {
                 if (Blockchain.Default == null) return false;
@@ -399,8 +409,9 @@ namespace Neo.Network
                 if (!Blockchain.Default.AddBlock(block)) return false;
             }
             else if (inventory is Transaction)
-            {
-                if (!AddTransaction((Transaction)inventory)) return false;
+			{
+				Console.WriteLine("Relay Transaction 4");
+				if (!AddTransaction((Transaction)inventory)) return false;
             }
             else //if (inventory is Consensus)
             {

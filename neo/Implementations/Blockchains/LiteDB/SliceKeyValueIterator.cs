@@ -15,7 +15,7 @@ namespace Neo.Implementations.Blockchains.LiteDB
         {
             this.slices = slices;
             iEnum = slices.FindAll();
-            it = iEnum.GetEnumerator(); ;
+            it = iEnum.GetEnumerator();
         }
 
         public override void Dispose() { }
@@ -53,6 +53,9 @@ namespace Neo.Implementations.Blockchains.LiteDB
 
         public override Slice Value() { return getCurrent().Value; }
 
-        public override void SeekToFirst() { it.Reset(); }
+        public override void SeekToFirst()
+        {
+            it = iEnum.GetEnumerator();
+        }
     }
 }

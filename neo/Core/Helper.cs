@@ -45,17 +45,21 @@ namespace Neo.Core
 
         internal static bool VerifyScripts(this IVerifiable verifiable)
         {
-            UInt160[] hashes;
+			Console.WriteLine("VerifyScripts 0");
+			UInt160[] hashes;
             try
             {
                 hashes = verifiable.GetScriptHashesForVerifying();
             }
             catch (InvalidOperationException)
             {
-                return false;
+				Console.WriteLine("VerifyScripts 1");
+				return false;
             }
-            if (hashes.Length != verifiable.Scripts.Length) return false;
-            for (int i = 0; i < hashes.Length; i++)
+			Console.WriteLine("VerifyScripts 2");
+			if (hashes.Length != verifiable.Scripts.Length) return false;
+			Console.WriteLine("VerifyScripts 3");
+			for (int i = 0; i < hashes.Length; i++)
             {
                 byte[] verification = verifiable.Scripts[i].VerificationScript;
                 if (verification.Length == 0)
@@ -67,16 +71,22 @@ namespace Neo.Core
                     }
                 }
                 else
-                {
-                    if (hashes[i] != verification.ToScriptHash()) return false;
+				{
+                    Console.WriteLine($"VerifyScripts 4 {i}");
+
+					if (hashes[i] != verification.ToScriptHash()) return false;
                 }
                 ApplicationEngine engine = new ApplicationEngine(verifiable, Blockchain.Default, StateReader.Default, Fixed8.Zero);
                 engine.LoadScript(verification, false);
                 engine.LoadScript(verifiable.Scripts[i].InvocationScript, true);
-                if (!engine.Execute()) return false;
-                if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
-            }
-            return true;
+				Console.WriteLine("VerifyScripts 5");
+				if (!engine.Execute()) return false;
+				Console.WriteLine("VerifyScripts 6");
+				if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
+				Console.WriteLine("VerifyScripts 7");
+			}
+			Console.WriteLine("VerifyScripts 8");
+			return true;
         }
     }
 }
