@@ -21,3 +21,4 @@ Coverage
 	* AccountState.cs
 	* AssetState.cs
 	* SpentCoinState.cs
+	* Witness.cs
