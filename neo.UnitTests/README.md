@@ -24,3 +24,4 @@ Coverage
 	* ClaimTransaction.cs
 	* CoinReference.cs
 	* SpentCoinState.cs
+	* Witness.cs
