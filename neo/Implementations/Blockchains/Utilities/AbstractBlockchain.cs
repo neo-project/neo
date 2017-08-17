@@ -117,6 +117,7 @@ namespace Neo.Implementations.Blockchains.Utilities
 
         public override bool AddBlock(Block block)
         {
+			Console.WriteLine($"AddBlock[0] block.Hash{block.Hash}");
             lock (block_cache)
             {
                 if (!block_cache.ContainsKey(block.Hash))
@@ -580,8 +581,12 @@ namespace Neo.Implementations.Blockchains.Utilities
             contracts.Commit(batch);
             storages.Commit(batch);
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(block.Hash).Add(block.Index));
+
+
+			Console.WriteLine($"Persist[0]  batch.Count{batch}");
             db.Write(f.getDefaultWriteOptions(), batch);
-            current_block_height = block.Index;
+            Console.WriteLine($"Persist[1]  batch.Count{batch.Count()}");
+			current_block_height = block.Index;
         }
 
         private void PersistBlocks()
@@ -597,19 +602,31 @@ namespace Neo.Implementations.Blockchains.Utilities
                         if (header_index.Count <= current_block_height + 1) break;
                         hash = header_index[(int)current_block_height + 1];
                     }
+
+
+					Console.WriteLine($"PersistBlocks[0] hash{hash}");
+
                     Block block;
                     lock (block_cache)
                     {
                         if (!block_cache.ContainsKey(hash)) break;
                         block = block_cache[hash];
                     }
-                    Persist(block);
+					Console.WriteLine($"PersistBlocks[1] hash{hash}");
+
+					Persist(block);
                     OnPersistCompleted(block);
-                    lock (block_cache)
+
+					Console.WriteLine($"PersistBlocks[2] hash{hash}");
+
+					lock (block_cache)
                     {
                         block_cache.Remove(hash);
                     }
-                }
+
+                    Console.WriteLine($"PersistBlocks[3] block_cache.Count{block_cache.Count}");
+
+				}
             }
         }
     }

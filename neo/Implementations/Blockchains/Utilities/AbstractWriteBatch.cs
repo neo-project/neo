@@ -8,5 +8,7 @@ namespace Neo.Implementations.Blockchains.Utilities
         public abstract void Delete(Slice key);
 
         public abstract void Put(Slice key, Slice value);
+
+        public abstract int Count();
     }
 }

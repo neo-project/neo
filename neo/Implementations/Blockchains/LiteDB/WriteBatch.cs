@@ -23,6 +23,10 @@ namespace Neo.Implementations.Blockchains.LiteDB
             batch.Add(key, value);
         }
 
+        public override int Count() {
+            return batch.Count;
+        }
+
         public List<SliceKeyValue> asSliceKeyValueList()
         {
             List<SliceKeyValue> list = new List<SliceKeyValue>();

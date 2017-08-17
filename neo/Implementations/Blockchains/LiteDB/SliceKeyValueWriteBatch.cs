@@ -23,5 +23,10 @@ namespace Neo.Implementations.Blockchains.LiteDB
             SliceKeyValue entry = new SliceKeyValue(key, value);
             batch.Add(key, entry);
         }
+
+        public override int Count()
+        {
+            return batch.Count;
+        }
     }
 }

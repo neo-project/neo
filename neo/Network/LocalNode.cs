@@ -63,6 +63,7 @@ namespace Neo.Network
 
         public LocalNode()
         {
+            Console.WriteLine($"LocalNode()[0]");
             Random rand = new Random();
             this.Nonce = (uint)rand.Next();
             this.connectThread = new Thread(ConnectToPeersLoop)
@@ -72,6 +73,7 @@ namespace Neo.Network
             };
             if (Blockchain.Default != null)
             {
+
                 this.poolThread = new Thread(AddTransactionLoop)
                 {
                     IsBackground = true,
@@ -79,6 +81,9 @@ namespace Neo.Network
                 };
             }
             this.UserAgent = string.Format("/NEO:{0}/", GetType().GetTypeInfo().Assembly.GetName().Version.ToString(3));
+
+            Console.WriteLine($"LocalNode()[1] {this.connectThread != null} {this.poolThread != null} {this.UserAgent}");
+
             Blockchain.PersistCompleted += Blockchain_PersistCompleted;
         }
 
@@ -105,20 +110,20 @@ namespace Neo.Network
         }
 
         private static bool AddTransaction(Transaction tx)
-		{
-			Console.WriteLine("AddTransaction 0");
-			if (Blockchain.Default == null) return false;
-			Console.WriteLine("AddTransaction 1");
-			lock (mem_pool)
+        {
+            Console.WriteLine("AddTransaction 0");
+            if (Blockchain.Default == null) return false;
+            Console.WriteLine("AddTransaction 1");
+            lock (mem_pool)
             {
-				Console.WriteLine("AddTransaction 2");
-				if (mem_pool.ContainsKey(tx.Hash)) return false;
-				Console.WriteLine("AddTransaction 3");
-				if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
-				Console.WriteLine("AddTransaction 4");
-				if (!tx.Verify(mem_pool.Values)) return false;
-				Console.WriteLine("AddTransaction 5");
-				mem_pool.Add(tx.Hash, tx);
+                Console.WriteLine("AddTransaction 2");
+                if (mem_pool.ContainsKey(tx.Hash)) return false;
+                Console.WriteLine("AddTransaction 3");
+                if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
+                Console.WriteLine("AddTransaction 4");
+                if (!tx.Verify(mem_pool.Values)) return false;
+                Console.WriteLine("AddTransaction 5");
+                mem_pool.Add(tx.Hash, tx);
                 CheckMemPool();
             }
             return true;
@@ -389,18 +394,18 @@ namespace Neo.Network
 
         public bool Relay(IInventory inventory)
         {
-			Console.WriteLine("Relay 0");
+            Console.WriteLine("Relay 0");
             if (inventory is MinerTransaction) return false;
-			Console.WriteLine("Relay 1");
-			lock (KnownHashes)
+            Console.WriteLine("Relay 1");
+            lock (KnownHashes)
             {
                 if (!KnownHashes.Add(inventory.Hash)) return false;
             }
-			Console.WriteLine("Relay 2");
-			InventoryReceivingEventArgs args = new InventoryReceivingEventArgs(inventory);
+            Console.WriteLine("Relay 2");
+            InventoryReceivingEventArgs args = new InventoryReceivingEventArgs(inventory);
             InventoryReceiving?.Invoke(this, args);
-			Console.WriteLine("Relay 3");
-			if (args.Cancel) return false;
+            Console.WriteLine("Relay 3");
+            if (args.Cancel) return false;
             if (inventory is Block)
             {
                 if (Blockchain.Default == null) return false;
@@ -409,9 +414,9 @@ namespace Neo.Network
                 if (!Blockchain.Default.AddBlock(block)) return false;
             }
             else if (inventory is Transaction)
-			{
-				Console.WriteLine("Relay Transaction 4");
-				if (!AddTransaction((Transaction)inventory)) return false;
+            {
+                Console.WriteLine("Relay Transaction 4");
+                if (!AddTransaction((Transaction)inventory)) return false;
             }
             else //if (inventory is Consensus)
             {
@@ -513,12 +518,12 @@ namespace Neo.Network
         }
 
         public IPEndPoint[] GetUnconnectedPeers()
-		{
-			lock (unconnectedPeers)
-			{
-				return unconnectedPeers.ToArray();
-			}
-		}
+        {
+            lock (unconnectedPeers)
+            {
+                return unconnectedPeers.ToArray();
+            }
+        }
 
         public IPEndPoint[] GetBadPeers()
         {
@@ -548,6 +553,8 @@ namespace Neo.Network
 
         public void Start(int port = 0, int ws_port = 0)
         {
+
+            Console.WriteLine($"LocalNode.Start[0]{port} {ws_port}");
             if (Interlocked.Exchange(ref started, 1) == 0)
             {
                 Task.Run(async () =>
@@ -569,6 +576,7 @@ namespace Neo.Network
                             catch { }
                         }
                     }
+                    Console.WriteLine($"LocalNode.Start[1] connectThread, poolThread");
                     connectThread.Start();
                     poolThread?.Start();
                     if (port > 0)

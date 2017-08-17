@@ -35,6 +35,8 @@ namespace Neo.Network
         public IPEndPoint RemoteEndpoint { get; protected set; }
         public IPEndPoint ListenerEndpoint { get; protected set; }
 
+		private Thread sendLoopThread;
+
         protected RemoteNode(LocalNode localNode)
         {
             this.localNode = localNode;
@@ -338,16 +340,20 @@ namespace Neo.Network
 
         internal async void StartProtocol()
         {
-            if (!await SendMessageAsync(Message.Create("version", VersionPayload.Create(localNode.Port, localNode.Nonce, localNode.UserAgent))))
+            Console.WriteLine($"StartProtocol[0] {localNode.Port}, {localNode.Nonce}, {localNode.UserAgent}");
+			if (!await SendMessageAsync(Message.Create("version", VersionPayload.Create(localNode.Port, localNode.Nonce, localNode.UserAgent))))
                 return;
             Message message = await ReceiveMessageAsync(HalfMinute);
-            if (message == null) return;
-            if (message.Command != "version")
+			Console.WriteLine($"StartProtocol[1]");
+			if (message == null) return;
+			Console.WriteLine($"StartProtocol[2] {message.Command}");
+			if (message.Command != "version")
             {
                 Disconnect(true);
                 return;
             }
-            try
+			Console.WriteLine($"StartProtocol[3]");
+			try
             {
                 Version = message.Payload.AsSerializable<VersionPayload>();
             }
@@ -361,7 +367,8 @@ namespace Neo.Network
                 Disconnect(true);
                 return;
             }
-            if (Version.Nonce == localNode.Nonce)
+            Console.WriteLine($"StartProtocol[4] {Version.UserAgent} {Version.Nonce}");
+			if (Version.Nonce == localNode.Nonce)
             {
                 Disconnect(true);
                 return;
@@ -386,32 +393,44 @@ namespace Neo.Network
             {
                 ListenerEndpoint = new IPEndPoint(RemoteEndpoint.Address, Version.Port);
             }
-            if (!await SendMessageAsync(Message.Create("verack"))) return;
+			Console.WriteLine($"StartProtocol[5] verack");
+			if (!await SendMessageAsync(Message.Create("verack"))) return;
             message = await ReceiveMessageAsync(HalfMinute);
-            if (message == null) return;
-            if (message.Command != "verack")
+			Console.WriteLine($"StartProtocol[6] verack");
+			if (message == null) return;
+			Console.WriteLine($"StartProtocol[7] verack");
+			if (message.Command != "verack")
             {
                 Disconnect(true);
                 return;
-            }
-            if (Blockchain.Default?.HeaderHeight < Version.StartHeight)
+			}
+			Console.WriteLine($"StartProtocol[8] verack");
+			if (Blockchain.Default?.HeaderHeight < Version.StartHeight)
             {
                 EnqueueMessage("getheaders", GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash), true);
             }
-            StartSendLoop();
-            while (disposed == 0)
+			Console.WriteLine($"StartProtocol[09] StartSendLoop called");
+            sendLoopThread = new Thread(StartSendLoop);
+			sendLoopThread.Start();
+			Console.WriteLine($"StartProtocol[10] StartSendLoop return");
+			while (disposed == 0)
             {
-                if (Blockchain.Default != null)
+				Console.WriteLine($"StartProtocol[11] StartSendLoop return");
+				if (Blockchain.Default != null)
                 {
                     if (missions.Count == 0 && Blockchain.Default.Height < Version.StartHeight)
                     {
-                        EnqueueMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash), true);
+						Console.WriteLine($"StartProtocol[12] getblocks");
+						EnqueueMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash), true);
                     }
                 }
-                TimeSpan timeout = missions.Count == 0 ? HalfHour : OneMinute;
-                message = await ReceiveMessageAsync(timeout);
+                TimeSpan timeout = OneMinute;
+				//Console.WriteLine($"StartProtocol[13] ReceiveMessageAsync");
+				message = await ReceiveMessageAsync(timeout);
+				//Console.WriteLine($"StartProtocol[14] ReceiveMessageAsync");
                 if (message == null) break;
-                try
+                Console.WriteLine($"StartProtocol[15] ReceiveMessageAsync {message.Command}");
+				try
                 {
                     OnMessageReceived(message);
                 }
@@ -428,10 +447,11 @@ namespace Neo.Network
             }
         }
 
-        private async void StartSendLoop()
+        private void StartSendLoop()
         {
             while (disposed == 0)
-            {
+			{
+				//Console.WriteLine($"StartSendLoop[0]");
                 Message message = null;
                 lock (message_queue)
                 {
@@ -439,17 +459,21 @@ namespace Neo.Network
                     {
                         message = message_queue.Dequeue();
                     }
-                }
+				}
+				//Console.WriteLine($"StartSendLoop[1] message is null {message == null}");
                 if (message == null)
                 {
                     for (int i = 0; i < 10 && disposed == 0; i++)
-                    {
+					{
+						//Console.WriteLine($"StartSendLoop[1] sleep ({i}/10)");
                         Thread.Sleep(100);
                     }
                 }
                 else
                 {
-                    await SendMessageAsync(message);
+                    Console.WriteLine($"StartSendLoop {message.Command}");
+
+					SendMessageAsync(message);
                 }
             }
         }

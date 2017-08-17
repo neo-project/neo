@@ -78,7 +78,11 @@ namespace Neo.Implementations.Blockchains.LiteDB
         public override void Write(AbstractWriteOptions options, AbstractWriteBatch write_batch)
         {
             WriteBatch wb = (WriteBatch)write_batch;
-			getSlices().InsertBulk(wb.asSliceKeyValueList());
-        }
+            System.Collections.Generic.List<SliceKeyValue> list = wb.asSliceKeyValueList();
+            Console.WriteLine($"started Write for batch size {wb.Count()} as bulk list size {list.Count}");
+            LiteCollection<SliceKeyValue> slices = getSlices();
+			slices.InsertBulk(list);
+            Console.WriteLine($"success Write for batch size {wb.Count()} as bulk list size {list.Count} size is {slices.Count()}");
+		}
     }
 }
