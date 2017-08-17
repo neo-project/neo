@@ -1,84 +1,72 @@
-小蚁 AntShares
+NEO: A distributed network for the Smart Economy
 ================
 
-小蚁是基于区块链技术，将实体世界的资产和权益进行数字化，通过点对点网络进行登记发行、转让交易、清算交割等金融业务的去中心化网络协议。
+NEO is the use of blockchain technology and digital identity to digitize assets, the use of smart contracts for digital assets to be self-managed, to achieve "smart economy" with a distributed network.
 
-Antshares is a decentralized and distributed network protocol which is based on blockchain technology. People can use it to digitalize assets or shares, and accomplish some financial business through peer-to-peer network such as registration and issuing, make transactions, settlement and payment.
+For more information about NEO, please read the [White Paper](http://docs.neo.org/en-us/index.html)|[白皮书](http://docs.neo.org/zh-cn/index.html).
 
-支持平台
+Supported Platforms
 --------
 
-|   | AntShares |
-|---|:-----------:|
-|**CentOS 7.1**|:white_check_mark:|
-|**Docker**|:white_check_mark:|
-|**Red Hat 7.1**|:white_check_mark:|
-|**Ubuntu**|:white_check_mark:|
-|**Windows 7 SP1**|:white_check_mark:|
-|**Windows Server 2008 R2**|:white_check_mark:|
-未来将支持Debian、FreeBSD、Linux Mint、openSUSE、Oracle Linux、OS X、Fedora等。
+We have already supported the following platforms:
 
-如何开发
+* CentOS 7
+* Docker
+* macOS 10 +
+* Red Hat Enterprise Linux 7.0 +
+* Ubuntu 14.04, Ubuntu 14.10, Ubuntu 15.04, Ubuntu 15.10, Ubuntu 16.04, Ubuntu 16.10
+* Windows 7 SP1 +, Windows Server 2008 R2 +
+
+We will support the following platforms in the future:
+
+* Debian
+* Fedora
+* FreeBSD
+* Linux Mint
+* OpenSUSE
+* Oracle Linux
+
+Development
 --------
 
-在 Windows 下，使用 [Visual Studio 2015](https://www.visualstudio.com/products/visual-studio-community-vs) 来开发和编译本项目是最方便的。
+To start building peer applications for NEO on Windows, you need to download [Visual Studio 2017](https://www.visualstudio.com/products/visual-studio-community-vs) and install the [.NET Core SDK](https://www.microsoft.com/net/core).
 
-To install AntShares, run the following command in the [Package Manager Console](https://docs.nuget.org/ndocs/tools/package-manager-console):
+If you need to develop on Linux or macOS, just install the [.NET Core SDK](https://www.microsoft.com/net/core).
+
+To install Neo SDK to your project, run the following command in the [Package Manager Console](https://docs.nuget.org/ndocs/tools/package-manager-console):
 
 ```
-PM> Install-Package AntShares
+PM> Install-Package Neo
 ```
 
-在 Linux 或 MAC OS 下，可以使用任何你喜欢的开发工具来开发，然后使用 [.Net Core SDK](https://www.microsoft.com/net/core) 来生成项目。
+For more information about how to build DAPPs for NEO, please read the [documentation](http://docs.neo.org/en-us/sc/introduction.html)|[文档](http://docs.neo.org/zh-cn/sc/introduction.html).
 
-此外，你还可以通过调用 API 或者 SDK 的方式来开发基于小蚁的应用：
-
-+ [JSON-RPC](https://github.com/AntShares/AntShares/wiki/API%E5%8F%82%E8%80%83)
-+ [C# SDK](https://github.com/AntShares/AntShares/tree/master/AntSharesCore)
-+ [JAVA SDK](https://github.com/AntSharesSDK/antshares-java)
-+ [JavaScript/TypeScript SDK](https://github.com/AntSharesSDK/antshares-ts)
-
-这里还有几个可以参考的应用案例：
-
-+ [AntSharesCore](https://github.com/AntShares/AntSharesCore) 包含命令行及图形界面的小蚁客户端
-+ [AntSharesApp](https://github.com/AntShares/AntSharesApp) 基于Cordova开发的跨平台小蚁APP
-+ [AntChain.xyz](https://github.com/lcux/antchain.xyz) 用于查看小蚁区块链内容的浏览器
-
-项目介绍
+How to Contribute
 --------
 
-+ 白皮书：[中文](https://github.com/AntShares/AntShares/wiki/%E7%99%BD%E7%9A%AE%E4%B9%A6-1.1)|[English](https://github.com/AntShares/AntShares/wiki/Whitepaper-1.1)
-+ 共识机制：[dBFT](http://www.onchain.com/paper/66c6773b.pdf)
-+ 虚拟机：[AntShares.VM](https://github.com/AntShares/AntShares.VM)
-+ 部署文档：[记账节点](https://github.com/AntShares/AntShares/wiki/%E8%AE%B0%E8%B4%A6%E8%8A%82%E7%82%B9)
+You can contribute to NEO with [issues](https://github.com/neo-project/neo/issues) and [PRs](https://github.com/neo-project/neo/pulls). Simply filing issues for problems you encounter is a great way to contribute. Contributing implementations is greatly appreciated.
 
-如何贡献
---------
+We use and recommend the following workflow:
 
-小蚁项目非常欢迎贡献者。
+1. Create an issue for your work.
+    * You can skip this step for trivial changes.
+	* Reuse an existing issue on the topic, if there is one.
+	* Clearly state that you are going to take on implementing it, if that's the case. You can request that the issue be assigned to you. Note: The issue filer and the implementer don't have to be the same person.
+1. Create a personal fork of the repository on GitHub (if you don't already have one).
+1. Create a branch off of master(`git checkout -b mybranch`).
+    * Name the branch so that it clearly communicates your intentions, such as issue-123 or githubhandle-issue.
+	* Branches are useful since they isolate your changes from incoming changes from upstream. They also enable you to create multiple PRs from the same fork.
+1. Make and commit your changes.
+1. Add new tests corresponding to your change, if applicable.
+1. Build the repository with your changes.
+    * Make sure that the builds are clean.
+	* Make sure that the tests are all passing, including your new tests.
+1. Create a pull request (PR) against the upstream repository's master branch.
+    * Push your changes to your fork on GitHub.
 
-最简单的贡献方式，就是参与讨论，并向我们提出产品的改进意见。此外，我们也非常欢迎测试和提交BUG。
+Note: It is OK for your PR to include a large number of commits. Once your change is accepted, you will be asked to squash your commits into one or some appropriately small number of commits before your PR is merged.
 
-如果你希望提交代码，请通过 Pull Request 的方式提交，并确保你的代码符合以下要求：
-
-1. 具有详细的功能说明
-1. 具有完整的单元测试
-1. 具有充分的注释
-
-我们会在收到请求后，及时处理提交。
-
-许可证
+License
 ------
 
-小蚁项目基于 MIT 协议开发和发布，详细条款请见 [LICENSE](https://github.com/AntShares/AntShares/blob/master/LICENSE) 文件。
-
-联系我们
-------------
-
-[![Join the chat at https://gitter.im/AntShares/Lobby](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/AntShares/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-官网：https://www.antshares.org/
-
-论坛：http://8btc.com/antshares
-
-QQ群：23917224
+The NEO project is licensed under the [MIT license](LICENSE).

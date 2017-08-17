@@ -74,7 +74,89 @@ namespace Neo.UnitTests
             // block 1
             uut.Size.Should().Be(109);
         }
-        
+  private IssueTransaction getIssueTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
+        {
+            TestUtils.SetupTestBlockchain(assetId);
+
+            CoinReference[] inputsVal;
+            if (inputVal)
+            {
+                inputsVal = new[]
+                {
+                    TestUtils.GetCoinReference(null)
+                };
+            }
+            else
+            {
+                inputsVal = new CoinReference[0];
+            }
+
+
+            return new IssueTransaction
+            {
+                Attributes = new TransactionAttribute[0],
+                Inputs = inputsVal,
+                Outputs = new[]
+                {
+                    new TransactionOutput
+                    {
+                        AssetId = assetId,
+                        Value = Fixed8.FromDecimal(outputVal),
+                        ScriptHash = Contract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
+                    }
+                },
+                Scripts = new[]
+                {
+                    new Witness
+                    {
+                        InvocationScript = new byte[0],
+                        VerificationScript = new[] { (byte)OpCode.PUSHT }
+                    }
+                }
+            };
+        }
+
+        private ContractTransaction getContractTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
+        {
+            TestUtils.SetupTestBlockchain(assetId);
+
+            CoinReference[] inputsVal;
+            if (inputVal)
+            {
+                inputsVal = new[]
+                {
+                    TestUtils.GetCoinReference(null)
+                };
+            }
+            else
+            {
+                inputsVal = new CoinReference[0];
+            }
+
+            return new ContractTransaction
+            {
+                Attributes = new TransactionAttribute[0],
+                Inputs = inputsVal,
+                Outputs = new[]
+                {
+                    new TransactionOutput
+                    {
+                        AssetId = assetId,
+                        Value = Fixed8.FromDecimal(outputVal),
+                        ScriptHash = Contract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
+                    }
+                },
+                Scripts = new[]
+                {
+                    new Witness
+                    {
+                        InvocationScript = new byte[0],
+                        VerificationScript = new[] { (byte)OpCode.PUSHT }
+                    }
+                }
+            };
+        }
+
 
 
         [TestMethod]
@@ -188,7 +270,7 @@ namespace Neo.UnitTests
             TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
-                TestUtils.GetIssueTransaction(false, 100, Blockchain.SystemCoin.Hash)
+                getIssueTransaction(false, 100, Blockchain.SystemCoin.Hash)
             };
 
             Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.FromDecimal(-100));
@@ -207,7 +289,7 @@ namespace Neo.UnitTests
             TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
-                TestUtils.GetIssueTransaction(true, 0, Blockchain.SystemCoin.Hash)
+                getIssueTransaction(true, 0, Blockchain.SystemCoin.Hash)
             };
 
             Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.FromDecimal(50));
@@ -226,7 +308,7 @@ namespace Neo.UnitTests
             TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
-                TestUtils.GetIssueTransaction(true, 100, Blockchain.SystemCoin.Hash)
+                getIssueTransaction(true, 100, Blockchain.SystemCoin.Hash)
             };
 
             Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.FromDecimal(-50));

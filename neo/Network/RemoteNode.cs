@@ -26,6 +26,7 @@ namespace Neo.Network
         private Queue<Message> message_queue = new Queue<Message>();
         private static HashSet<UInt256> missions_global = new HashSet<UInt256>();
         private HashSet<UInt256> missions = new HashSet<UInt256>();
+        private DateTime mission_start = DateTime.Now.AddYears(100);
 
         private LocalNode localNode;
         private int disposed = 0;
@@ -45,11 +46,18 @@ namespace Neo.Network
             if (Interlocked.Exchange(ref disposed, 1) == 0)
             {
                 Disconnected?.Invoke(this, error);
+                bool needSync = false;
                 lock (missions_global)
                     lock (missions)
-                    {
-                        missions_global.ExceptWith(missions);
-                    }
+                        if (missions.Count > 0)
+                        {
+                            missions_global.ExceptWith(missions);
+                            needSync = true;
+                        }
+                if (needSync)
+                    lock (localNode.connectedPeers)
+                        foreach (RemoteNode node in localNode.connectedPeers)
+                            node.EnqueueMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash), true);
             }
         }
 
@@ -102,7 +110,15 @@ namespace Neo.Network
             AddrPayload payload;
             lock (localNode.connectedPeers)
             {
-                payload = AddrPayload.Create(localNode.connectedPeers.Where(p => p.ListenerEndpoint != null && p.Version != null).Take(100).Select(p => NetworkAddressWithTime.Create(p.ListenerEndpoint, p.Version.Services, p.Version.Timestamp)).ToArray());
+                const int MaxCountToSend = 200;
+                IEnumerable<RemoteNode> peers = localNode.connectedPeers.Where(p => p.ListenerEndpoint != null && p.Version != null);
+                if (localNode.connectedPeers.Count > MaxCountToSend)
+                {
+                    Random rand = new Random();
+                    peers = peers.OrderBy(p => rand.Next());
+                }
+                peers = peers.Take(MaxCountToSend);
+                payload = AddrPayload.Create(peers.Select(p => NetworkAddressWithTime.Create(p.ListenerEndpoint, p.Version.Services, p.Version.Timestamp)).ToArray());
             }
             EnqueueMessage("addr", payload, true);
         }
@@ -196,11 +212,15 @@ namespace Neo.Network
         {
             lock (missions_global)
             {
-                missions_global.Remove(inventory.Hash);
-            }
-            lock (missions)
-            {
-                missions.Remove(inventory.Hash);
+                lock (missions)
+                {
+                    missions_global.Remove(inventory.Hash);
+                    missions.Remove(inventory.Hash);
+                    if (missions.Count == 0)
+                        mission_start = DateTime.Now.AddYears(100);
+                    else
+                        mission_start = DateTime.Now;
+                }
             }
             if (inventory is MinerTransaction) return;
             InventoryReceived?.Invoke(this, inventory);
@@ -218,13 +238,17 @@ namespace Neo.Network
             if (hashes.Length == 0) return;
             lock (missions_global)
             {
-                if (localNode.GlobalMissionsEnabled)
-                    hashes = hashes.Where(p => !missions_global.Contains(p)).ToArray();
-                missions_global.UnionWith(hashes);
-            }
-            lock (missions)
-            {
-                missions.UnionWith(hashes);
+                lock (missions)
+                {
+                    if (localNode.GlobalMissionsEnabled)
+                        hashes = hashes.Where(p => !missions_global.Contains(p)).ToArray();
+                    if (hashes.Length > 0)
+                    {
+                        if (missions.Count == 0) mission_start = DateTime.Now;
+                        missions_global.UnionWith(hashes);
+                        missions.UnionWith(hashes);
+                    }
+                }
             }
             if (hashes.Length == 0) return;
             EnqueueMessage("getdata", InvPayload.Create(payload.Type, hashes));
@@ -366,13 +390,15 @@ namespace Neo.Network
                 Disconnect(true);
                 return;
             }
+            bool isSelf;
             lock (localNode.connectedPeers)
             {
-                if (localNode.connectedPeers.Where(p => p != this).Any(p => p.RemoteEndpoint.Address.Equals(RemoteEndpoint.Address) && p.Version?.Nonce == Version.Nonce))
-                {
-                    Disconnect(false);
-                    return;
-                }
+                isSelf = localNode.connectedPeers.Where(p => p != this).Any(p => p.RemoteEndpoint.Address.Equals(RemoteEndpoint.Address) && p.Version?.Nonce == Version.Nonce);
+            }
+            if (isSelf)
+            {
+                Disconnect(false);
+                return;
             }
             if (ListenerEndpoint != null)
             {
@@ -411,6 +437,12 @@ namespace Neo.Network
                 TimeSpan timeout = missions.Count == 0 ? HalfHour : OneMinute;
                 message = await ReceiveMessageAsync(timeout);
                 if (message == null) break;
+                if (DateTime.Now - mission_start > OneMinute
+                    && message.Command != "block" && message.Command != "consensus" && message.Command != "tx")
+                {
+                    Disconnect(false);
+                    break;
+                }
                 try
                 {
                     OnMessageReceived(message);

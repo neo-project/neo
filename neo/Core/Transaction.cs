@@ -110,15 +110,7 @@ namespace Neo.Core
         /// <summary>
         /// 系统费用
         /// </summary>
-        public virtual Fixed8 SystemFee
-        {
-            get
-            {
-                if (Settings.Default.SystemFee.ContainsKey(Type))
-                    return Settings.Default.SystemFee[Type];
-                return Fixed8.Zero;
-            }
-        }
+        public virtual Fixed8 SystemFee => Settings.Default.SystemFee.TryGetValue(Type, out Fixed8 fee) ? fee : Fixed8.Zero;
 
         /// <summary>
         /// 用指定的类型初始化Transaction对象
@@ -340,7 +332,7 @@ namespace Neo.Core
             {
                 AssetState asset = Blockchain.Default.GetAssetState(group.Key);
                 if (asset == null) return false;
-                if (asset.Expiration <= Blockchain.Default.Height + 1 && asset.AssetType != AssetType.SystemShare && asset.AssetType != AssetType.SystemCoin)
+                if (asset.Expiration <= Blockchain.Default.Height + 1 && asset.AssetType != AssetType.GoverningToken && asset.AssetType != AssetType.UtilityToken)
                     return false;
                 foreach (TransactionOutput output in group)
                     if (output.Value.GetData() % (long)Math.Pow(10, 8 - asset.Precision) != 0)
