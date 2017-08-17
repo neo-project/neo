@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using Neo.Cryptography.ECC;
+using Neo.IO;
 
 namespace Neo.UnitTests
 {
@@ -111,7 +112,8 @@ namespace Neo.UnitTests
         public override Transaction GetTransaction(UInt256 hash, out int height)
         {
             height = 0;
-            return new TestTransaction(_assetId, TransactionType.ClaimTransaction);
+            // take part of the trans hash and use that for the scripthash of the testtransaction
+            return new TestTransaction(_assetId, TransactionType.ClaimTransaction, new UInt160(TestUtils.GetByteArray(20,hash.ToArray()[0])));
         }
 
         public override Dictionary<ushort, SpentCoin> GetUnclaimed(UInt256 hash)
