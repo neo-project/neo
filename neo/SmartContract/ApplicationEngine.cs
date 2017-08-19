@@ -12,6 +12,8 @@ namespace Neo.SmartContract
         private long gas_consumed = 0;
         private readonly bool testMode;
 
+        public Boolean Print = false;
+
         public Fixed8 GasConsumed => new Fixed8(gas_consumed);
 
         public ApplicationEngine(IScriptContainer container, IScriptTable table, InteropService service, Fixed8 gas, bool testMode = false)
@@ -126,8 +128,19 @@ namespace Neo.SmartContract
 
         public new bool Execute()
         {
+            if (Print)
+            {
+                Console.WriteLine($"Execute 0 {CurrentContext.Script.ToHexString()}");
+            }
             while (!State.HasFlag(VMState.HALT) && !State.HasFlag(VMState.FAULT))
             {
+                if (Print)
+                {
+                    if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
+                    {
+                        Console.WriteLine($"Execute 1 {CurrentContext.NextInstruction}");
+                    }
+                }
                 try
                 {
                     gas_consumed = checked(gas_consumed + GetPrice() * ratio);
@@ -136,13 +149,22 @@ namespace Neo.SmartContract
                 {
                     return false;
                 }
+                //Console.WriteLine($"Execute 2");
                 if (!testMode && gas_consumed > gas_amount) return false;
+                //Console.WriteLine($"Execute 3");
                 if (!CheckItemSize()) return false;
+                //Console.WriteLine($"Execute 4");
                 if (!CheckStackSize()) return false;
+                //Console.WriteLine($"Execute 5");
                 if (!CheckArraySize()) return false;
+                //Console.WriteLine($"Execute 6");
                 if (!CheckInvocationStack()) return false;
+                //Console.WriteLine($"Execute 7");
                 StepInto();
             }
+            if(Print) {
+                Console.WriteLine($"Execute 8 {!State.HasFlag(VMState.FAULT)}");
+			}
             return !State.HasFlag(VMState.FAULT);
         }
 

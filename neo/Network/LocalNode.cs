@@ -415,15 +415,18 @@ namespace Neo.Network
             }
             else if (inventory is Transaction)
             {
-                Console.WriteLine("Relay Transaction 4");
+                Console.WriteLine("Relay 4 : Transaction");
                 if (!AddTransaction((Transaction)inventory)) return false;
             }
             else //if (inventory is Consensus)
             {
-                if (!inventory.Verify()) return false;
+				Console.WriteLine("Relay 4.1 : inventory");
+				if (!inventory.Verify()) return false;
             }
-            bool relayed = RelayDirectly(inventory);
-            InventoryReceived?.Invoke(this, inventory);
+			Console.WriteLine("Relay 5");
+			bool relayed = RelayDirectly(inventory);
+			Console.WriteLine("Relay 6");
+			InventoryReceived?.Invoke(this, inventory);
             return relayed;
         }
 

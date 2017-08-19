@@ -17,6 +17,7 @@ namespace Neo.Core
     /// </summary>
     public abstract class Transaction : IEquatable<Transaction>, IInventory
     {
+		public Boolean Print = false;
         /// <summary>
         /// 交易类型
         /// </summary>
@@ -346,16 +347,26 @@ namespace Neo.Core
                 Console.WriteLine($"Verify 4 {group.Key}");
                 if (asset == null) return false;
                 Console.WriteLine($"Verify 5 {group.Key}");
-                //if (asset.Expiration <= Blockchain.Default.Height + 1 && asset.AssetType != AssetType.SystemShare && asset.AssetType != AssetType.SystemCoin)
-                return false;
+                if (asset.Expiration <= Blockchain.Default.Height + 1 && asset.AssetType != AssetType.SystemShare && asset.AssetType != AssetType.SystemCoin)
+                    return false;
                 Console.WriteLine($"Verify 6 {group.Key}");
                 foreach (TransactionOutput output in group)
                     if (output.Value.GetData() % (long)Math.Pow(10, 8 - asset.Precision) != 0)
                         return false;
                 Console.WriteLine($"Verify 7 {group.Key}");
             }
-            TransactionResult[] results = GetTransactionResults()?.ToArray();
-            Console.WriteLine($"Verify 8");
+			Console.WriteLine($"Verify 8.0");
+			foreach (TransactionOutput tr in References.Values)
+			{
+				Console.WriteLine($"Verify 8.1 {tr.AssetId} {tr.Value.value}");
+			}
+			foreach (TransactionOutput tr in Outputs)
+			{
+				Console.WriteLine($"Verify 8.2 {tr.AssetId} {tr.Value.value}");
+			}
+			Console.WriteLine($"Verify 8.3");
+			TransactionResult[] results = GetTransactionResults()?.ToArray();
+            Console.WriteLine($"Verify 8.4");
             if (results == null) return false;
             TransactionResult[] results_destroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
             Console.WriteLine($"Verify 9");
@@ -388,7 +399,10 @@ namespace Neo.Core
                 default:
                     if (results_issue.Length > 0)
                     {
-                        Console.WriteLine($"Verify 15");
+                        Console.WriteLine($"Verify 15 {results_issue.Length}");
+                        foreach(TransactionResult tr in results_issue) {
+                            Console.WriteLine($"Verify 15 {tr.AssetId} {tr.Amount}");
+						}
                         return false;
                     }
                     break;
@@ -396,7 +410,7 @@ namespace Neo.Core
             Console.WriteLine($"Verify 16");
             if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
                 return false;
-            Console.WriteLine($"Verify 17");
+            Console.WriteLine($"Verify 17 end -> VerifyScripts");
             return this.VerifyScripts();
         }
     }

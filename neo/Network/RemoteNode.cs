@@ -48,11 +48,14 @@ namespace Neo.Network
             {
                 Disconnected?.Invoke(this, error);
                 lock (missions_global)
+                {
                     lock (missions)
                     {
                         missions_global.ExceptWith(missions);
                     }
+                }
             }
+            sendLoopThread?.Join();
         }
 
         public void Dispose()
@@ -239,6 +242,8 @@ namespace Neo.Network
 
         private void OnMessageReceived(Message message)
         {
+
+			Console.WriteLine($"OnMessageReceived {message.Command}");
             switch (message.Command)
             {
                 case "addr":
@@ -340,19 +345,19 @@ namespace Neo.Network
 
         internal async void StartProtocol()
         {
-            Console.WriteLine($"StartProtocol[0] {localNode.Port}, {localNode.Nonce}, {localNode.UserAgent}");
+            //Console.WriteLine($"StartProtocol[0] {localNode.Port}, {localNode.Nonce}, {localNode.UserAgent}");
 			if (!await SendMessageAsync(Message.Create("version", VersionPayload.Create(localNode.Port, localNode.Nonce, localNode.UserAgent))))
                 return;
             Message message = await ReceiveMessageAsync(HalfMinute);
-			Console.WriteLine($"StartProtocol[1]");
+			//Console.WriteLine($"StartProtocol[1]");
 			if (message == null) return;
-			Console.WriteLine($"StartProtocol[2] {message.Command}");
+			//Console.WriteLine($"StartProtocol[2] {message.Command}");
 			if (message.Command != "version")
             {
                 Disconnect(true);
                 return;
             }
-			Console.WriteLine($"StartProtocol[3]");
+			//Console.WriteLine($"StartProtocol[3]");
 			try
             {
                 Version = message.Payload.AsSerializable<VersionPayload>();
@@ -367,7 +372,7 @@ namespace Neo.Network
                 Disconnect(true);
                 return;
             }
-            Console.WriteLine($"StartProtocol[4] {Version.UserAgent} {Version.Nonce}");
+            //Console.WriteLine($"StartProtocol[4] {Version.UserAgent} {Version.Nonce}");
 			if (Version.Nonce == localNode.Nonce)
             {
                 Disconnect(true);
@@ -393,34 +398,34 @@ namespace Neo.Network
             {
                 ListenerEndpoint = new IPEndPoint(RemoteEndpoint.Address, Version.Port);
             }
-			Console.WriteLine($"StartProtocol[5] verack");
+			//Console.WriteLine($"StartProtocol[5] verack");
 			if (!await SendMessageAsync(Message.Create("verack"))) return;
             message = await ReceiveMessageAsync(HalfMinute);
-			Console.WriteLine($"StartProtocol[6] verack");
+			//Console.WriteLine($"StartProtocol[6] verack");
 			if (message == null) return;
-			Console.WriteLine($"StartProtocol[7] verack");
+			//Console.WriteLine($"StartProtocol[7] verack");
 			if (message.Command != "verack")
             {
                 Disconnect(true);
                 return;
 			}
-			Console.WriteLine($"StartProtocol[8] verack");
+			//Console.WriteLine($"StartProtocol[8] verack");
 			if (Blockchain.Default?.HeaderHeight < Version.StartHeight)
             {
                 EnqueueMessage("getheaders", GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash), true);
             }
-			Console.WriteLine($"StartProtocol[09] StartSendLoop called");
+			//Console.WriteLine($"StartProtocol[09] StartSendLoop called");
             sendLoopThread = new Thread(StartSendLoop);
 			sendLoopThread.Start();
-			Console.WriteLine($"StartProtocol[10] StartSendLoop return");
+			//Console.WriteLine($"StartProtocol[10] StartSendLoop return");
 			while (disposed == 0)
             {
-				Console.WriteLine($"StartProtocol[11] StartSendLoop return");
+				//Console.WriteLine($"StartProtocol[11] StartSendLoop return");
 				if (Blockchain.Default != null)
                 {
                     if (missions.Count == 0 && Blockchain.Default.Height < Version.StartHeight)
                     {
-						Console.WriteLine($"StartProtocol[12] getblocks");
+						//Console.WriteLine($"StartProtocol[12] getblocks");
 						EnqueueMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash), true);
                     }
                 }
@@ -429,7 +434,7 @@ namespace Neo.Network
 				message = await ReceiveMessageAsync(timeout);
 				//Console.WriteLine($"StartProtocol[14] ReceiveMessageAsync");
                 if (message == null) break;
-                Console.WriteLine($"StartProtocol[15] ReceiveMessageAsync {message.Command}");
+                //Console.WriteLine($"StartProtocol[15] ReceiveMessageAsync {message.Command}");
 				try
                 {
                     OnMessageReceived(message);
@@ -471,12 +476,12 @@ namespace Neo.Network
                 }
                 else
                 {
-                    Console.WriteLine($"StartSendLoop {message.Command}");
-
+                    Console.WriteLine($"SendMessageAsync {message.Command}");
 					SendMessageAsync(message);
                 }
             }
-        }
+			Console.WriteLine($"StartSendLoop stopped");
+		}
 
         private bool TestFilter(BloomFilter filter, Transaction tx)
         {

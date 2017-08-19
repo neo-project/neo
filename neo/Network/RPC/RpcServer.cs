@@ -184,6 +184,7 @@ namespace Neo.Network.RPC
                     {
 						Console.WriteLine("sendrawtransaction 0");
                         Transaction tx = Transaction.DeserializeFrom(_params[0].AsString().HexToBytes());
+                        tx.Print = true;
 						Console.WriteLine("sendrawtransaction 1");
 						bool retval = LocalNode.Relay(tx);
 						Console.WriteLine("sendrawtransaction 2");

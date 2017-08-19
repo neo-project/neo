@@ -45,21 +45,21 @@ namespace Neo.Core
 
         internal static bool VerifyScripts(this IVerifiable verifiable)
         {
-			//Console.WriteLine("VerifyScripts 0");
-			UInt160[] hashes;
+            Console.WriteLine("VerifyScripts 0");
+            UInt160[] hashes;
             try
             {
                 hashes = verifiable.GetScriptHashesForVerifying();
             }
             catch (InvalidOperationException)
             {
-				//Console.WriteLine("VerifyScripts 1");
-				return false;
+                Console.WriteLine("VerifyScripts 1");
+                return false;
             }
-			//Console.WriteLine("VerifyScripts 2");
-			if (hashes.Length != verifiable.Scripts.Length) return false;
-			//Console.WriteLine("VerifyScripts 3");
-			for (int i = 0; i < hashes.Length; i++)
+            Console.WriteLine($"VerifyScripts 2 hashes.Length:{hashes.Length}; verifiable.Scripts.Length:{verifiable.Scripts.Length};");
+            if (hashes.Length != verifiable.Scripts.Length) return false;
+            Console.WriteLine("VerifyScripts 3");
+            for (int i = 0; i < hashes.Length; i++)
             {
                 byte[] verification = verifiable.Scripts[i].VerificationScript;
                 if (verification.Length == 0)
@@ -71,22 +71,32 @@ namespace Neo.Core
                     }
                 }
                 else
-				{
-                    //Console.WriteLine($"VerifyScripts 4 {i}");
+                {
+                    Console.WriteLine($"VerifyScripts 4 {i} hash:{hashes[i]};(==?)ScriptHash:{verification.ToScriptHash()}; vs:{verification.ToHexString()};");
 
-					if (hashes[i] != verification.ToScriptHash()) return false;
+                    if (hashes[i] != verification.ToScriptHash()) return false;
                 }
                 ApplicationEngine engine = new ApplicationEngine(verifiable, Blockchain.Default, StateReader.Default, Fixed8.Zero);
+                if (verifiable is Transaction)
+                {
+                    Transaction tx = (Transaction)verifiable;
+                    if (tx.Print)
+                    {
+                        engine.Print = true;
+                    }
+                }
+                Console.WriteLine($"VerifyScripts 5 LoadScript {verification.ToHexString()}");
                 engine.LoadScript(verification, false);
+                Console.WriteLine($"VerifyScripts 5 LoadScript {verifiable.Scripts[i].InvocationScript.ToHexString()}");
                 engine.LoadScript(verifiable.Scripts[i].InvocationScript, true);
-				//Console.WriteLine("VerifyScripts 5");
-				if (!engine.Execute()) return false;
-				//Console.WriteLine("VerifyScripts 6");
-				if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
-				//Console.WriteLine("VerifyScripts 7");
-			}
-			//Console.WriteLine("VerifyScripts 8");
-			return true;
+                Console.WriteLine("VerifyScripts 5");
+                if (!engine.Execute()) return false;
+                Console.WriteLine("VerifyScripts 6");
+                if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
+                Console.WriteLine("VerifyScripts 7");
+            }
+            Console.WriteLine("VerifyScripts 8 return true");
+            return true;
         }
     }
 }

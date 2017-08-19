@@ -415,19 +415,25 @@ namespace Neo.Implementations.Blockchains.Utilities
 
         public override bool IsDoubleSpend(Transaction tx)
         {
+            Console.WriteLine("IsDoubleSpend 0");
             if (tx.Inputs.Length == 0) return false;
-            AbstractReadOptions options = f.newReadOptions();
+			Console.WriteLine("IsDoubleSpend 1");
+			AbstractReadOptions options = f.newReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
                 foreach (var group in tx.Inputs.GroupBy(p => p.PrevHash))
                 {
-                    UnspentCoinState state = db.TryGet<UnspentCoinState>(options, DataEntryPrefix.ST_Coin, group.Key);
+					UnspentCoinState state = db.TryGet<UnspentCoinState>(options, DataEntryPrefix.ST_Coin, group.Key);
+                    Console.WriteLine($"IsDoubleSpend 2 {group.Key}");
                     if (state == null) return true;
-                    if (group.Any(p => p.PrevIndex >= state.Items.Length || state.Items[p.PrevIndex].HasFlag(CoinState.Spent)))
+					Console.WriteLine($"IsDoubleSpend 3 {group.Key}");
+					if (group.Any(p => p.PrevIndex >= state.Items.Length || state.Items[p.PrevIndex].HasFlag(CoinState.Spent)))
                         return true;
-                }
+					Console.WriteLine($"IsDoubleSpend 4 {group.Key}");
+				}
             }
-            return false;
+			Console.WriteLine($"IsDoubleSpend 5");
+			return false;
         }
 
         private void OnAddHeader(Header header, AbstractWriteBatch batch)
