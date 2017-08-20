@@ -228,13 +228,14 @@ namespace Neo.UnitTests
         [TestMethod]
         public void CalculateNetFee_EmptyTransactions()
         {
+            UInt256 val256 = UInt256.Zero;
             UInt256 merkRootVal;
             UInt160 val160;
             uint timestampVal, indexVal;
             ulong consensusDataVal;
             Witness scriptVal;
             Transaction[] transactionsVal;
-            bool populateTransactions = false;
+            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.Zero);
         }

@@ -77,7 +77,6 @@ namespace Neo.Network
                 if (node == null)
                     return null;
                 XmlNode eventnode = desc.SelectSingleNode("//tns:service[contains(tns:serviceType,\"WANIPConnection\")]/tns:eventSubURL/text()", nsMgr);
-                _eventUrl = CombineUrls(resp, eventnode.Value);
                 return CombineUrls(resp, node.Value);
             }
             catch { return null; }
