@@ -53,8 +53,6 @@ namespace Neo.Core
 
         public override bool Verify(IEnumerable<Transaction> mempool)
         {
-            // Not available in MAINNET until tested
-            if (Settings.Default.Magic != 1953787457) return false;
             if (Gas.GetData() % 100000000 != 0) return false;
             return base.Verify(mempool);
         }

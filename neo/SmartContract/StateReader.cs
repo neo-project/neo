@@ -19,6 +19,7 @@ namespace Neo.SmartContract
 
         public StateReader()
         {
+            Register("Neo.Runtime.GetTrigger", Runtime_GetTrigger);
             Register("Neo.Runtime.CheckWitness", Runtime_CheckWitness);
             Register("Neo.Runtime.Notify", Runtime_Notify);
             Register("Neo.Runtime.Log", Runtime_Log);
@@ -117,6 +118,13 @@ namespace Neo.SmartContract
             Register("AntShares.Storage.GetContext", Storage_GetContext);
             Register("AntShares.Storage.Get", Storage_Get);
             #endregion
+        }
+
+        protected virtual bool Runtime_GetTrigger(ExecutionEngine engine)
+        {
+            ApplicationEngine app_engine = (ApplicationEngine)engine;
+            engine.EvaluationStack.Push((int)app_engine.Trigger);
+            return true;
         }
 
         private HashSet<UInt160> _hashes_for_verifying = null;
@@ -484,7 +492,7 @@ namespace Neo.SmartContract
             AccountState account = engine.EvaluationStack.Pop().GetInterface<AccountState>();
             UInt256 asset_id = new UInt256(engine.EvaluationStack.Pop().GetByteArray());
             if (account == null) return false;
-            Fixed8 balance = account.Balances.ContainsKey(asset_id) ? account.Balances[asset_id] : Fixed8.Zero;
+            Fixed8 balance = account.Balances.TryGetValue(asset_id, out Fixed8 value) ? value : Fixed8.Zero;
             engine.EvaluationStack.Push(balance.GetData());
             return true;
         }

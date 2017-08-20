@@ -1,4 +1,5 @@
 ﻿using Neo.IO;
+using Neo.IO.Json;
 using System.IO;
 
 namespace Neo.Core
@@ -64,6 +65,19 @@ namespace Neo.Core
             writer.WriteVarString(Author);
             writer.WriteVarString(Email);
             writer.WriteVarString(Description);
+        }
+
+        public override JObject ToJson()
+        {
+            JObject json = base.ToJson();
+            json["code"] = Code.ToJson();
+            json["storage"] = HasStorage;
+            json["name"] = Name;
+            json["code_version"] = CodeVersion;
+            json["author"] = Author;
+            json["email"] = Email;
+            json["description"] = Description;
+            return json;
         }
     }
 }

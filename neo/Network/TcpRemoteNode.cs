@@ -68,6 +68,9 @@ namespace Neo.Network
         protected override async Task<Message> ReceiveMessageAsync(TimeSpan timeout)
         {
             CancellationTokenSource source = new CancellationTokenSource(timeout);
+            //Stream.ReadAsync doesn't support CancellationToken
+            //see: https://stackoverflow.com/questions/20131434/cancel-networkstream-readasync-using-tcplistener
+            source.Token.Register(() => Disconnect(true));
             try
             {
                 return await Message.DeserializeFromAsync(stream, source.Token);
@@ -91,6 +94,9 @@ namespace Neo.Network
             if (disposed > 0) return false;
             byte[] buffer = message.ToArray();
             CancellationTokenSource source = new CancellationTokenSource(10000);
+            //Stream.WriteAsync doesn't support CancellationToken
+            //see: https://stackoverflow.com/questions/20131434/cancel-networkstream-readasync-using-tcplistener
+            source.Token.Register(() => Disconnect(true));
             try
             {
                 await stream.WriteAsync(buffer, 0, buffer.Length, source.Token);
