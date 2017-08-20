@@ -356,15 +356,18 @@ namespace Neo.Network
 
         public static void LoadState(Stream stream)
         {
-            unconnectedPeers.Clear();
-            using (BinaryReader reader = new BinaryReader(stream, Encoding.ASCII, true))
+            lock (unconnectedPeers)
             {
-                int count = reader.ReadInt32();
-                for (int i = 0; i < count; i++)
+                unconnectedPeers.Clear();
+                using (BinaryReader reader = new BinaryReader(stream, Encoding.ASCII, true))
                 {
-                    IPAddress address = new IPAddress(reader.ReadBytes(4));
-                    int port = reader.ReadUInt16();
-                    unconnectedPeers.Add(new IPEndPoint(address.MapToIPv6(), port));
+                    int count = reader.ReadInt32();
+                    for (int i = 0; i < count; i++)
+                    {
+                        IPAddress address = new IPAddress(reader.ReadBytes(4));
+                        int port = reader.ReadUInt16();
+                        unconnectedPeers.Add(new IPEndPoint(address.MapToIPv6(), port));
+                    }
                 }
             }
         }
@@ -399,10 +402,9 @@ namespace Neo.Network
             InventoryReceivingEventArgs args = new InventoryReceivingEventArgs(inventory);
             InventoryReceiving?.Invoke(this, args);
             if (args.Cancel) return false;
-            if (inventory is Block)
+            if (inventory is Block block)
             {
                 if (Blockchain.Default == null) return false;
-                Block block = (Block)inventory;
                 if (Blockchain.Default.ContainsBlock(block.Hash)) return false;
                 if (!Blockchain.Default.AddBlock(block)) return false;
             }

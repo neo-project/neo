@@ -364,7 +364,8 @@ namespace Neo.Implementations.Blockchains.LevelDB
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
-                var inputs = others.SelectMany(p => p.Inputs).GroupBy(p => p.PrevHash, (k, g) =>
+                IList<Transaction> transactions = others as IList<Transaction> ?? others.ToList();
+                var inputs = transactions.SelectMany(p => p.Inputs).GroupBy(p => p.PrevHash, (k, g) =>
                 {
                     int height;
                     Transaction tx = GetTransaction(options, k, out height);
@@ -374,7 +375,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                     p.ScriptHash,
                     Value = -p.Value
                 });
-                var outputs = others.SelectMany(p => p.Outputs).Where(p => p.AssetId.Equals(GoverningToken.Hash)).Select(p => new
+                var outputs = transactions.SelectMany(p => p.Outputs).Where(p => p.AssetId.Equals(GoverningToken.Hash)).Select(p => new
                 {
                     p.ScriptHash,
                     p.Value
