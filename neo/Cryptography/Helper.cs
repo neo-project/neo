@@ -17,6 +17,34 @@ namespace Neo.Cryptography
         private static ThreadLocal<SHA256> _sha256 = new ThreadLocal<SHA256>(() => SHA256.Create());
         private static ThreadLocal<RIPEMD160Managed> _ripemd160 = new ThreadLocal<RIPEMD160Managed>(() => new RIPEMD160Managed());
 
+        internal static byte[] AES256Decrypt(this byte[] block, byte[] key)
+        {
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = key;
+                aes.Mode = CipherMode.ECB;
+                aes.Padding = PaddingMode.None;
+                using (ICryptoTransform decryptor = aes.CreateDecryptor())
+                {
+                    return decryptor.TransformFinalBlock(block, 0, block.Length);
+                }
+            }
+        }
+
+        internal static byte[] AES256Encrypt(this byte[] block, byte[] key)
+        {
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = key;
+                aes.Mode = CipherMode.ECB;
+                aes.Padding = PaddingMode.None;
+                using (ICryptoTransform encryptor = aes.CreateEncryptor())
+                {
+                    return encryptor.TransformFinalBlock(block, 0, block.Length);
+                }
+            }
+        }
+
         internal static byte[] AesDecrypt(this byte[] data, byte[] key, byte[] iv)
         {
             if (data == null || key == null || iv == null) throw new ArgumentNullException();
@@ -43,6 +71,25 @@ namespace Neo.Cryptography
                     return encryptor.TransformFinalBlock(data, 0, data.Length);
                 }
             }
+        }
+
+        public static byte[] Base58CheckDecode(this string input)
+        {
+            byte[] buffer = Base58.Decode(input);
+            if (buffer.Length < 4) throw new FormatException();
+            byte[] checksum = buffer.Sha256(0, buffer.Length - 4).Sha256();
+            if (!buffer.Skip(buffer.Length - 4).SequenceEqual(checksum.Take(4)))
+                throw new FormatException();
+            return buffer.Take(buffer.Length - 4).ToArray();
+        }
+
+        public static string Base58CheckEncode(this byte[] data)
+        {
+            byte[] checksum = data.Sha256().Sha256();
+            byte[] buffer = new byte[data.Length + 4];
+            Buffer.BlockCopy(data, 0, buffer, 0, data.Length);
+            Buffer.BlockCopy(checksum, 0, buffer, data.Length, 4);
+            return Base58.Encode(buffer);
         }
 
         /// <summary>

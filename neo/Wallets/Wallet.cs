@@ -7,6 +7,7 @@ using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading;
 
 namespace Neo.Wallets
@@ -392,14 +393,34 @@ namespace Neo.Wallets
             }
         }
 
+        public static byte[] GetPrivateKeyFromNEP2(string nep2, string passphrase)
+        {
+            if (nep2 == null) throw new ArgumentNullException(nameof(nep2));
+            if (passphrase == null) throw new ArgumentNullException(nameof(passphrase));
+            byte[] data = nep2.Base58CheckDecode();
+            if (data.Length != 39 || data[0] != 0x01 || data[1] != 0x42 || data[2] != 0xe0)
+                throw new FormatException();
+            byte[] addresshash = new byte[4];
+            Buffer.BlockCopy(data, 3, addresshash, 0, 4);
+            byte[] derivedkey = SCrypt.DeriveKey(Encoding.UTF8.GetBytes(passphrase), addresshash, 16384, 8, 8, 64);
+            byte[] derivedhalf1 = derivedkey.Take(32).ToArray();
+            byte[] derivedhalf2 = derivedkey.Skip(32).ToArray();
+            byte[] encryptedkey = new byte[32];
+            Buffer.BlockCopy(data, 7, encryptedkey, 0, 32);
+            byte[] prikey = XOR(encryptedkey.AES256Decrypt(derivedhalf2), derivedhalf1);
+            Cryptography.ECC.ECPoint pubkey = Cryptography.ECC.ECCurve.Secp256r1.G * prikey;
+            UInt160 script_hash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
+            string address = ToAddress(script_hash);
+            if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().Take(4).SequenceEqual(addresshash))
+                throw new FormatException();
+            return prikey;
+        }
+
         public static byte[] GetPrivateKeyFromWIF(string wif)
         {
             if (wif == null) throw new ArgumentNullException();
-            byte[] data = Base58.Decode(wif);
-            if (data.Length != 38 || data[0] != 0x80 || data[33] != 0x01)
-                throw new FormatException();
-            byte[] checksum = Crypto.Default.Hash256(data.Take(data.Length - 4).ToArray());
-            if (!data.Skip(data.Length - 4).SequenceEqual(checksum.Take(4)))
+            byte[] data = wif.Base58CheckDecode();
+            if (data.Length != 34 || data[0] != 0x80 || data[33] != 0x01)
                 throw new FormatException();
             byte[] privateKey = new byte[32];
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
@@ -415,7 +436,7 @@ namespace Neo.Wallets
             {
                 foreach (var coin in coins)
                 {
-                    if (!coin.Output.AssetId.Equals(Blockchain.SystemShare.Hash)) continue;
+                    if (!coin.Output.AssetId.Equals(Blockchain.GoverningToken.Hash)) continue;
                     if (!coin.State.HasFlag(CoinState.Confirmed)) continue;
                     if (!coin.State.HasFlag(CoinState.Spent)) continue;
                     if (coin.State.HasFlag(CoinState.Claimed)) continue;
@@ -445,6 +466,14 @@ namespace Neo.Wallets
         public KeyPair Import(string wif)
         {
             byte[] privateKey = GetPrivateKeyFromWIF(wif);
+            KeyPair key = CreateKey(privateKey);
+            Array.Clear(privateKey, 0, privateKey.Length);
+            return key;
+        }
+
+        public KeyPair Import(string nep2, string passphrase)
+        {
+            byte[] privateKey = GetPrivateKeyFromNEP2(nep2, passphrase);
             KeyPair key = CreateKey(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
             return key;
@@ -494,19 +523,19 @@ namespace Neo.Wallets
             }).ToDictionary(p => p.AssetId);
             if (fee > Fixed8.Zero)
             {
-                if (pay_total.ContainsKey(Blockchain.SystemCoin.Hash))
+                if (pay_total.ContainsKey(Blockchain.UtilityToken.Hash))
                 {
-                    pay_total[Blockchain.SystemCoin.Hash] = new
+                    pay_total[Blockchain.UtilityToken.Hash] = new
                     {
-                        AssetId = Blockchain.SystemCoin.Hash,
-                        Value = pay_total[Blockchain.SystemCoin.Hash].Value + fee
+                        AssetId = Blockchain.UtilityToken.Hash,
+                        Value = pay_total[Blockchain.UtilityToken.Hash].Value + fee
                     };
                 }
                 else
                 {
-                    pay_total.Add(Blockchain.SystemCoin.Hash, new
+                    pay_total.Add(Blockchain.UtilityToken.Hash, new
                     {
-                        AssetId = Blockchain.SystemCoin.Hash,
+                        AssetId = Blockchain.UtilityToken.Hash,
                         Value = fee
                     });
                 }
@@ -602,7 +631,7 @@ namespace Neo.Wallets
                         {
                             if (coins.Contains(input))
                             {
-                                if (coins[input].Output.AssetId.Equals(Blockchain.SystemShare.Hash))
+                                if (coins[input].Output.AssetId.Equals(Blockchain.GoverningToken.Hash))
                                     coins[input].State |= CoinState.Spent | CoinState.Confirmed;
                                 else
                                     coins.Remove(input);
@@ -708,20 +737,20 @@ namespace Neo.Wallets
 
         public static string ToAddress(UInt160 scriptHash)
         {
-            byte[] data = new byte[] { AddressVersion }.Concat(scriptHash.ToArray()).ToArray();
-            return Base58.Encode(data.Concat(Crypto.Default.Hash256(data).Take(4)).ToArray());
+            byte[] data = new byte[21];
+            data[0] = AddressVersion;
+            Buffer.BlockCopy(scriptHash.ToArray(), 0, data, 1, 20);
+            return data.Base58CheckEncode();
         }
 
         public static UInt160 ToScriptHash(string address)
         {
-            byte[] data = Base58.Decode(address);
-            if (data.Length != 25)
+            byte[] data = address.Base58CheckDecode();
+            if (data.Length != 21)
                 throw new FormatException();
             if (data[0] != AddressVersion)
                 throw new FormatException();
-            if (!Crypto.Default.Hash256(data.Take(21).ToArray()).Take(4).SequenceEqual(data.Skip(21)))
-                throw new FormatException();
-            return new UInt160(data.Skip(1).Take(20).ToArray());
+            return new UInt160(data.Skip(1).ToArray());
         }
 
         public bool VerifyPassword(string password)
@@ -732,6 +761,12 @@ namespace Neo.Wallets
         public bool VerifyPassword(SecureString password)
         {
             return password.ToAesKey().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
+        }
+
+        private static byte[] XOR(byte[] x, byte[] y)
+        {
+            if (x.Length != y.Length) throw new ArgumentException();
+            return x.Zip(y, (a, b) => (byte)(a ^ b)).ToArray();
         }
     }
 }

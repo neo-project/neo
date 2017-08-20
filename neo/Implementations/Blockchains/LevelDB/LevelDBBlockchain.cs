@@ -369,12 +369,12 @@ namespace Neo.Implementations.Blockchains.LevelDB
                     int height;
                     Transaction tx = GetTransaction(options, k, out height);
                     return g.Select(p => tx.Outputs[p.PrevIndex]);
-                }).SelectMany(p => p).Where(p => p.AssetId.Equals(SystemShare.Hash)).Select(p => new
+                }).SelectMany(p => p).Where(p => p.AssetId.Equals(GoverningToken.Hash)).Select(p => new
                 {
                     p.ScriptHash,
                     Value = -p.Value
                 });
-                var outputs = others.SelectMany(p => p.Outputs).Where(p => p.AssetId.Equals(SystemShare.Hash)).Select(p => new
+                var outputs = others.SelectMany(p => p.Outputs).Where(p => p.AssetId.Equals(GoverningToken.Hash)).Select(p => new
                 {
                     p.ScriptHash,
                     p.Value
@@ -384,7 +384,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 if (accounts.Length > 0)
                     foreach (AccountState account in accounts)
                     {
-                        Fixed8 balance = account.Balances.TryGetValue(SystemShare.Hash, out Fixed8 value) ? value : Fixed8.Zero;
+                        Fixed8 balance = account.Balances.TryGetValue(GoverningToken.Hash, out Fixed8 value) ? value : Fixed8.Zero;
                         if (changes.TryGetValue(account.ScriptHash, out Fixed8 change))
                             balance += change;
                         if (balance <= Fixed8.Zero) continue;
@@ -398,7 +398,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                     yield return new VoteState
                     {
                         PublicKeys = StandbyValidators,
-                        Count = SystemShare.Amount
+                        Count = GoverningToken.Amount
                     };
             }
         }
@@ -472,7 +472,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                     foreach (CoinReference input in group)
                     {
                         unspentcoins.GetAndChange(input.PrevHash).Items[input.PrevIndex] |= CoinState.Spent;
-                        if (tx_prev.Outputs[input.PrevIndex].AssetId.Equals(SystemShare.Hash))
+                        if (tx_prev.Outputs[input.PrevIndex].AssetId.Equals(GoverningToken.Hash))
                         {
                             spentcoins.GetAndChange(input.PrevHash, () => new SpentCoinState
                             {
