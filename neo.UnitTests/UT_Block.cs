@@ -271,7 +271,7 @@ namespace Neo.UnitTests
             TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
-                getContractTransaction(false, 100, Blockchain.SystemCoin.Hash)
+                getContractTransaction(false, 100, Blockchain.UtilityToken.Hash)
             };
 
             Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.FromDecimal(-100));
@@ -290,7 +290,7 @@ namespace Neo.UnitTests
             TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
-                getContractTransaction(true, 0, Blockchain.SystemCoin.Hash)
+                getContractTransaction(true, 0, Blockchain.UtilityToken.Hash)
             };
 
             Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.FromDecimal(50));
@@ -309,7 +309,7 @@ namespace Neo.UnitTests
             TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
-                getContractTransaction(true, 100, Blockchain.SystemCoin.Hash)
+                getContractTransaction(true, 100, Blockchain.UtilityToken.Hash)
             };
 
             Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.FromDecimal(-50));

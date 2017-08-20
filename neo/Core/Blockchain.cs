@@ -35,7 +35,7 @@ namespace Neo.Core
         public static readonly ECPoint[] StandbyValidators = Settings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
 
 #pragma warning disable CS0612
-        public static readonly RegisterTransaction SystemShare = new RegisterTransaction
+        public static readonly RegisterTransaction GoverningToken = new RegisterTransaction
         {
             AssetType = AssetType.GoverningToken,
             Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]",
@@ -49,7 +49,7 @@ namespace Neo.Core
             Scripts = new Witness[0]
         };
 
-        public static readonly RegisterTransaction SystemCoin = new RegisterTransaction
+        public static readonly RegisterTransaction UtilityToken = new RegisterTransaction
         {
             AssetType = AssetType.UtilityToken,
             Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币\"},{\"lang\":\"en\",\"name\":\"AntCoin\"}]",
@@ -89,8 +89,8 @@ namespace Neo.Core
                     Outputs = new TransactionOutput[0],
                     Scripts = new Witness[0]
                 },
-                SystemShare,
-                SystemCoin,
+                GoverningToken,
+                UtilityToken,
                 new IssueTransaction
                 {
                     Attributes = new TransactionAttribute[0],
@@ -99,8 +99,8 @@ namespace Neo.Core
                     {
                         new TransactionOutput
                         {
-                            AssetId = SystemShare.Hash,
-                            Value = SystemShare.Amount,
+                            AssetId = GoverningToken.Hash,
+                            Value = GoverningToken.Amount,
                             ScriptHash = Contract.CreateMultiSigRedeemScript(StandbyValidators.Length / 2 + 1, StandbyValidators).ToScriptHash()
                         }
                     },
@@ -190,7 +190,7 @@ namespace Neo.Core
                 if (height_start == height_end) continue;
                 foreach (CoinReference claim in group)
                 {
-                    if (claim.PrevIndex >= tx.Outputs.Length || !tx.Outputs[claim.PrevIndex].AssetId.Equals(SystemShare.Hash))
+                    if (claim.PrevIndex >= tx.Outputs.Length || !tx.Outputs[claim.PrevIndex].AssetId.Equals(GoverningToken.Hash))
                         throw new ArgumentException();
                     unclaimed.Add(new SpentCoin
                     {

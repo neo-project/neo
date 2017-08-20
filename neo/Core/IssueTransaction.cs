@@ -18,7 +18,7 @@ namespace Neo.Core
             get
             {
                 if (Version >= 1) return Fixed8.Zero;
-                if (Outputs.All(p => p.AssetId == Blockchain.SystemShare.Hash || p.AssetId == Blockchain.SystemCoin.Hash))
+                if (Outputs.All(p => p.AssetId == Blockchain.GoverningToken.Hash || p.AssetId == Blockchain.UtilityToken.Hash))
                     return Fixed8.Zero;
                 return base.SystemFee;
             }

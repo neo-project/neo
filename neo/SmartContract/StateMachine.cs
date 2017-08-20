@@ -100,7 +100,7 @@ namespace Neo.SmartContract
             if (votes.Length > 1024) return false;
             account = accounts[account.ScriptHash];
             if (account.IsFrozen) return false;
-            if ((!account.Balances.TryGetValue(Blockchain.SystemShare.Hash, out Fixed8 balance) || balance.Equals(Fixed8.Zero)) && votes.Length > 0)
+            if ((!account.Balances.TryGetValue(Blockchain.GoverningToken.Hash, out Fixed8 balance) || balance.Equals(Fixed8.Zero)) && votes.Length > 0)
                 return false;
             if (!CheckWitness(engine, account.ScriptHash)) return false;
             account = accounts.GetAndChange(account.ScriptHash);
