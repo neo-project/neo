@@ -14,9 +14,8 @@ namespace Neo.IO.Json
         {
             get
             {
-                if (!properties.ContainsKey(name))
-                    return null;
-                return properties[name];
+                properties.TryGetValue(name, out JObject value);
+                return value;
             }
             set
             {

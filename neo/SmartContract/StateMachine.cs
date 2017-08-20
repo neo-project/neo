@@ -100,7 +100,7 @@ namespace Neo.SmartContract
             if (votes.Length > 1024) return false;
             account = accounts[account.ScriptHash];
             if (account.IsFrozen) return false;
-            if ((!account.Balances.ContainsKey(Blockchain.SystemShare.Hash) || account.Balances[Blockchain.SystemShare.Hash].Equals(Fixed8.Zero)) && votes.Length > 0)
+            if ((!account.Balances.TryGetValue(Blockchain.SystemShare.Hash, out Fixed8 balance) || balance.Equals(Fixed8.Zero)) && votes.Length > 0)
                 return false;
             if (!CheckWitness(engine, account.ScriptHash)) return false;
             account = accounts.GetAndChange(account.ScriptHash);
@@ -125,7 +125,7 @@ namespace Neo.SmartContract
         {
             InvocationTransaction tx = (InvocationTransaction)engine.ScriptContainer;
             AssetType asset_type = (AssetType)(byte)engine.EvaluationStack.Pop().GetBigInteger();
-            if (!Enum.IsDefined(typeof(AssetType), asset_type) || asset_type == AssetType.CreditFlag || asset_type == AssetType.DutyFlag || asset_type == AssetType.SystemShare || asset_type == AssetType.SystemCoin)
+            if (!Enum.IsDefined(typeof(AssetType), asset_type) || asset_type == AssetType.CreditFlag || asset_type == AssetType.DutyFlag || asset_type == AssetType.GoverningToken || asset_type == AssetType.UtilityToken)
                 return false;
             if (engine.EvaluationStack.Peek().GetByteArray().Length > 1024)
                 return false;
@@ -290,8 +290,8 @@ namespace Neo.SmartContract
         private bool Contract_GetStorageContext(ExecutionEngine engine)
         {
             ContractState contract = engine.EvaluationStack.Pop().GetInterface<ContractState>();
-            if (!contracts_created.ContainsKey(contract.ScriptHash)) return false;
-            if (!contracts_created[contract.ScriptHash].Equals(new UInt160(engine.CurrentContext.ScriptHash))) return false;
+            if (!contracts_created.TryGetValue(contract.ScriptHash, out UInt160 created)) return false;
+            if (!created.Equals(new UInt160(engine.CurrentContext.ScriptHash))) return false;
             engine.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
             {
                 ScriptHash = contract.ScriptHash

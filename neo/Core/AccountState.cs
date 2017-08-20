@@ -1,5 +1,6 @@
 ﻿using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.IO.Json;
 using Neo.VM;
 using System.Collections.Generic;
 using System.IO;
@@ -16,6 +17,16 @@ namespace Neo.Core
 
         public override int Size => base.Size + ScriptHash.Size + sizeof(bool) + Votes.GetVarSize()
             + IO.Helper.GetVarSize(Balances.Count) + Balances.Count * (32 + 8);
+
+        public AccountState() { }
+
+        public AccountState(UInt160 hash)
+        {
+            this.ScriptHash = hash;
+            this.IsFrozen = false;
+            this.Votes = new ECPoint[0];
+            this.Balances = new Dictionary<UInt256, Fixed8>();
+        }
 
         AccountState ICloneable<AccountState>.Clone()
         {
@@ -67,6 +78,22 @@ namespace Neo.Core
                 writer.Write(pair.Key);
                 writer.Write(pair.Value);
             }
+        }
+
+        public override JObject ToJson()
+        {
+            JObject json = base.ToJson();
+            json["script_hash"] = ScriptHash.ToString();
+            json["frozen"] = IsFrozen;
+            json["votes"] = new JArray(Votes.Select(p => (JObject)p.ToString()));
+            json["balances"] = new JArray(Balances.Select(p =>
+            {
+                JObject balance = new JObject();
+                balance["asset"] = p.Key.ToString();
+                balance["value"] = p.Value.ToString();
+                return balance;
+            }));
+            return json;
         }
     }
 }

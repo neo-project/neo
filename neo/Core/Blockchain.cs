@@ -37,7 +37,7 @@ namespace Neo.Core
 #pragma warning disable CS0612
         public static readonly RegisterTransaction SystemShare = new RegisterTransaction
         {
-            AssetType = AssetType.SystemShare,
+            AssetType = AssetType.GoverningToken,
             Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]",
             Amount = Fixed8.FromDecimal(100000000),
             Precision = 0,
@@ -51,7 +51,7 @@ namespace Neo.Core
 
         public static readonly RegisterTransaction SystemCoin = new RegisterTransaction
         {
-            AssetType = AssetType.SystemCoin,
+            AssetType = AssetType.UtilityToken,
             Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币\"},{\"lang\":\"en\",\"name\":\"AntCoin\"}]",
             Amount = Fixed8.FromDecimal(GenerationAmount.Sum(p => p) * DecrementInterval),
             Precision = 8,
@@ -168,12 +168,12 @@ namespace Neo.Core
                         throw new ArgumentException();
                 foreach (CoinReference claim in group)
                 {
-                    if (!claimable.ContainsKey(claim.PrevIndex))
+                    if (!claimable.TryGetValue(claim.PrevIndex, out SpentCoin claimed))
                         if (ignoreClaimed)
                             continue;
                         else
                             throw new ArgumentException();
-                    unclaimed.Add(claimable[claim.PrevIndex]);
+                    unclaimed.Add(claimed);
                 }
             }
             return CalculateBonusInternal(unclaimed);

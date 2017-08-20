@@ -1,6 +1,8 @@
 ﻿using Neo.Core;
 using System;
 using System.Collections.Generic;
+using Neo.Cryptography.ECC;
+using Neo.IO;
 
 namespace Neo.UnitTests
 {
@@ -28,7 +30,7 @@ namespace Neo.UnitTests
 
         public override bool ContainsBlock(UInt256 hash)
         {
-            throw new NotImplementedException();
+            return true; // for verify in UT_Block
         }
 
         public override bool ContainsTransaction(UInt256 hash)
@@ -73,7 +75,8 @@ namespace Neo.UnitTests
 
         public override IEnumerable<ValidatorState> GetEnrollments()
         {
-            throw new NotImplementedException();
+            ECPoint ecp = TestUtils.StandbyValidators[0];
+            return new ValidatorState[] { new ValidatorState() { PublicKey = ecp } };
         }
 
         public override Header GetHeader(uint height)
@@ -109,7 +112,8 @@ namespace Neo.UnitTests
         public override Transaction GetTransaction(UInt256 hash, out int height)
         {
             height = 0;
-            return new TestTransaction(_assetId, TransactionType.ClaimTransaction);
+            // take part of the trans hash and use that for the scripthash of the testtransaction
+            return new TestTransaction(_assetId, TransactionType.ClaimTransaction, new UInt160(TestUtils.GetByteArray(20,hash.ToArray()[0])));
         }
 
         public override Dictionary<ushort, SpentCoin> GetUnclaimed(UInt256 hash)
@@ -124,7 +128,11 @@ namespace Neo.UnitTests
 
         public override IEnumerable<VoteState> GetVotes(IEnumerable<Transaction> others)
         {
-            throw new NotImplementedException();
+            VoteState vs = new VoteState() { Count = Fixed8.FromDecimal(1), PublicKeys = TestUtils.StandbyValidators};            
+            return new VoteState[]
+            {
+                vs
+            };
         }
 
         public override bool IsDoubleSpend(Transaction tx)

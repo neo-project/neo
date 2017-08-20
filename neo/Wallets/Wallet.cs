@@ -295,8 +295,8 @@ namespace Neo.Wallets
         {
             lock (keys)
             {
-                if (!keys.ContainsKey(publicKeyHash)) return null;
-                return keys[publicKeyHash];
+                keys.TryGetValue(publicKeyHash, out KeyPair key);
+                return key;
             }
         }
 
@@ -305,8 +305,7 @@ namespace Neo.Wallets
             lock (keys)
                 lock (contracts)
                 {
-                    if (!contracts.ContainsKey(scriptHash)) return null;
-                    return keys[contracts[scriptHash].PublicKeyHash];
+                    return !contracts.TryGetValue(scriptHash, out Contract contract) ? null : keys[contract.PublicKeyHash];
                 }
         }
 
@@ -366,8 +365,8 @@ namespace Neo.Wallets
         {
             lock (contracts)
             {
-                if (!contracts.ContainsKey(scriptHash)) return null;
-                return contracts[scriptHash];
+                contracts.TryGetValue(scriptHash, out Contract contract);
+                return contract;
             }
         }
 
