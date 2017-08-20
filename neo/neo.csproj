@@ -61,4 +61,10 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
+    <PackageReference Include="Replicon.Cryptography.SCrypt">
+      <Version>1.1.6.13</Version>
+    </PackageReference>
+  </ItemGroup>
+
 </Project>
