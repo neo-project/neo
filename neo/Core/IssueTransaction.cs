@@ -56,9 +56,7 @@ namespace Neo.Core
         /// <returns>返回验证后的结果</returns>
         public override bool Verify(IEnumerable<Transaction> mempool)
         {
-            List<Transaction> mempool_list = mempool.ToList();
-
-            if (!base.Verify(mempool_list)) return false;
+            if (!base.Verify(mempool)) return false;
             TransactionResult[] results = GetTransactionResults()?.Where(p => p.Amount < Fixed8.Zero).ToArray();
             if (results == null) return false;
             foreach (TransactionResult r in results)
@@ -66,7 +64,7 @@ namespace Neo.Core
                 AssetState asset = Blockchain.Default.GetAssetState(r.AssetId);
                 if (asset == null) return false;
                 if (asset.Amount < Fixed8.Zero) continue;
-                Fixed8 quantity_issued = asset.Available + mempool_list.OfType<IssueTransaction>().Where(p => ! p.Equals(this)).SelectMany(p => p.Outputs).Where(p => p.AssetId == r.AssetId).Sum(p => p.Value);
+                Fixed8 quantity_issued = asset.Available + mempool.OfType<IssueTransaction>().Where(p => p != this).SelectMany(p => p.Outputs).Where(p => p.AssetId == r.AssetId).Sum(p => p.Value);
                 if (asset.Amount - quantity_issued < -r.Amount) return false;
             }
             return true;

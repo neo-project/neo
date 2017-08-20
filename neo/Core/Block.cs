@@ -140,7 +140,7 @@ namespace Neo.Core
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(Transactions.OfType<ISerializable>().ToArray());
+            writer.Write(Transactions);
         }
 
         /// <summary>
@@ -165,7 +165,7 @@ namespace Neo.Core
             {
                 ((IVerifiable)this).SerializeUnsigned(writer);
                 writer.Write((byte)1); writer.Write(Script);
-                writer.Write(Transactions.Select(p => p.Hash).OfType<ISerializable>().ToArray());
+                writer.Write(Transactions.Select(p => p.Hash).ToArray());
                 writer.Flush();
                 return ms.ToArray();
             }

@@ -56,7 +56,7 @@ namespace Neo.Network.Payloads
         {
             base.Serialize(writer);
             writer.WriteVarInt(TxCount);
-            writer.Write(Hashes.OfType<ISerializable>().ToArray());
+            writer.Write(Hashes);
             writer.WriteVarBytes(Flags);
         }
     }

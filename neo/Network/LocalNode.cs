@@ -36,8 +36,6 @@ namespace Neo.Network
         internal readonly RelayCache RelayCache = new RelayCache(100);
 
         private static readonly HashSet<IPEndPoint> unconnectedPeers = new HashSet<IPEndPoint>();
-        private static readonly object unconnectedPeersLock = new object();
-
         private static readonly HashSet<IPEndPoint> badPeers = new HashSet<IPEndPoint>();
         internal readonly List<RemoteNode> connectedPeers = new List<RemoteNode>();
 
@@ -217,7 +215,7 @@ namespace Neo.Network
         public async Task ConnectToPeerAsync(IPEndPoint remoteEndpoint)
         {
             if (remoteEndpoint.Port == Port && LocalAddresses.Contains(remoteEndpoint.Address)) return;
-            lock (unconnectedPeersLock)
+            lock (unconnectedPeers)
             {
                 unconnectedPeers.Remove(remoteEndpoint);
             }
@@ -245,11 +243,10 @@ namespace Neo.Network
                     if (unconnectedCount > 0)
                     {
                         IPEndPoint[] endpoints;
-                        lock(unconnectedPeersLock)
+                        lock (unconnectedPeers)
                         {
-							endpoints = unconnectedPeers.Take(ConnectedMax - connectedCount).ToArray();
+                            endpoints = unconnectedPeers.Take(ConnectedMax - connectedCount).ToArray();
                         }
-
                         tasks = endpoints.Select(p => ConnectToPeerAsync(p)).ToArray();
                     }
                     else if (connectedCount > 0)
@@ -298,7 +295,7 @@ namespace Neo.Network
                     Blockchain.PersistCompleted -= Blockchain_PersistCompleted;
                     if (listener != null) listener.Stop();
                     if (!connectThread.ThreadState.HasFlag(ThreadState.Unstarted)) connectThread.Join();
-                    lock (unconnectedPeersLock)
+                    lock (unconnectedPeers)
                     {
                         if (unconnectedPeers.Count < UnconnectedMax)
                         {
@@ -359,7 +356,7 @@ namespace Neo.Network
 
         public static void LoadState(Stream stream)
         {
-            lock(unconnectedPeersLock)
+            lock (unconnectedPeers)
             {
                 unconnectedPeers.Clear();
                 using (BinaryReader reader = new BinaryReader(stream, Encoding.ASCII, true))
@@ -405,8 +402,7 @@ namespace Neo.Network
             InventoryReceivingEventArgs args = new InventoryReceivingEventArgs(inventory);
             InventoryReceiving?.Invoke(this, args);
             if (args.Cancel) return false;
-            Block block = inventory as Block;
-            if (block != null)
+            if (inventory is Block block)
             {
                 if (Blockchain.Default == null) return false;
                 if (Blockchain.Default.ContainsBlock(block.Hash)) return false;
@@ -474,20 +470,19 @@ namespace Neo.Network
 
         private void RemoteNode_InventoryReceived(object sender, IInventory inventory)
         {
-            Transaction item = inventory as Transaction;
-            if (item != null && item.Type != TransactionType.ClaimTransaction && item.Type != TransactionType.IssueTransaction)
+            if (inventory is Transaction tx && tx.Type != TransactionType.ClaimTransaction && tx.Type != TransactionType.IssueTransaction)
             {
                 if (Blockchain.Default == null) return;
                 lock (KnownHashes)
                 {
-                    if (!KnownHashes.Add(item.Hash)) return;
+                    if (!KnownHashes.Add(inventory.Hash)) return;
                 }
-                InventoryReceivingEventArgs args = new InventoryReceivingEventArgs(item);
+                InventoryReceivingEventArgs args = new InventoryReceivingEventArgs(inventory);
                 InventoryReceiving?.Invoke(this, args);
                 if (args.Cancel) return;
                 lock (temp_pool)
                 {
-                    temp_pool.Add(item);
+                    temp_pool.Add(tx);
                 }
                 new_tx_event.Set();
             }
@@ -499,7 +494,7 @@ namespace Neo.Network
 
         private void RemoteNode_PeersReceived(object sender, IPEndPoint[] peers)
         {
-            lock (unconnectedPeersLock)
+            lock (unconnectedPeers)
             {
                 if (unconnectedPeers.Count < UnconnectedMax)
                 {
@@ -535,7 +530,7 @@ namespace Neo.Network
         public static void SaveState(Stream stream)
         {
             IPEndPoint[] peers;
-            lock (unconnectedPeersLock)
+            lock (unconnectedPeers)
             {
                 peers = unconnectedPeers.Take(UnconnectedMax).ToArray();
             }

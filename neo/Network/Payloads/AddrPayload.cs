@@ -1,6 +1,5 @@
 ﻿using Neo.IO;
 using System.IO;
-using System.Linq;
 
 namespace Neo.Network.Payloads
 {
@@ -25,7 +24,7 @@ namespace Neo.Network.Payloads
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(AddressList.OfType<ISerializable>().ToArray());
+            writer.Write(AddressList);
         }
     }
 }

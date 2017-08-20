@@ -27,7 +27,7 @@ namespace Neo.Network.Payloads
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(Headers.OfType<ISerializable>().ToArray());
+            writer.Write(Headers);
         }
     }
 }

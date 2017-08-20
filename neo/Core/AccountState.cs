@@ -70,7 +70,7 @@ namespace Neo.Core
             base.Serialize(writer);
             writer.Write(ScriptHash);
             writer.Write(IsFrozen);
-            writer.Write(Votes.OfType<ISerializable>().ToArray());
+            writer.Write(Votes);
             var balances = Balances.Where(p => p.Value > Fixed8.Zero).ToArray();
             writer.WriteVarInt(balances.Length);
             foreach (var pair in balances)

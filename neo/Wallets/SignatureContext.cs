@@ -139,10 +139,11 @@ namespace Neo.Wallets
         public static SignatureContext FromJson(JObject json)
         {
             IVerifiable verifiable = typeof(SignatureContext).GetTypeInfo().Assembly.CreateInstance(json["type"].AsString()) as IVerifiable;
+            if (verifiable == null) throw new FormatException();
             using (MemoryStream ms = new MemoryStream(json["hex"].AsString().HexToBytes(), false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
-                verifiable?.DeserializeUnsigned(reader);
+                verifiable.DeserializeUnsigned(reader);
             }
             SignatureContext context = new SignatureContext(verifiable);
             JArray scripts = (JArray)json["scripts"];

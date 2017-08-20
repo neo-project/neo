@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Neo.IO.Caching
 {
-    internal class TrackableCollection<TKey, TItem> : KeyedCollection<TKey, TItem> where TItem : class, ITrackable<TKey>
+    internal class TrackableCollection<TKey, TItem> : KeyedCollection<TKey, TItem> where TItem : ITrackable<TKey>
     {
         public TrackableCollection() { }
 

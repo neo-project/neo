@@ -57,7 +57,7 @@ namespace Neo.Core
         /// <param name="writer">存放序列化后的结果</param>
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
-            writer.Write(Claims.OfType<ISerializable>().ToArray());
+            writer.Write(Claims);
         }
 
         /// <summary>
@@ -77,11 +77,10 @@ namespace Neo.Core
         /// <returns>返回验证结果</returns>
         public override bool Verify(IEnumerable<Transaction> mempool)
         {
-            List<Transaction> mempool_list = mempool.ToList();
-            if (!base.Verify(mempool_list)) return false;
+            if (!base.Verify(mempool)) return false;
             if (Claims.Length != Claims.Distinct().Count())
                 return false;
-            if (mempool_list.OfType<ClaimTransaction>().Where(p => p.Equals(this)).SelectMany(p => p.Claims).Intersect(Claims).Any())
+            if (mempool.OfType<ClaimTransaction>().Where(p => p != this).SelectMany(p => p.Claims).Intersect(Claims).Count() > 0)
                 return false;
             TransactionResult result = GetTransactionResults().FirstOrDefault(p => p.AssetId == Blockchain.UtilityToken.Hash);
             if (result == null || result.Amount > Fixed8.Zero) return false;

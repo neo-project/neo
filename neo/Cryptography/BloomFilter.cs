@@ -36,10 +36,16 @@ namespace Neo.Cryptography
             return true;
         }
         
-        // TODO check this, it doesn't seem correct to be copying over itself.
         public void GetBits(byte[] newBits)
         {
-            newBits.CopyTo(newBits, 0);
+#if NET461
+            bits.CopyTo(newBits, 0);
+#else
+            // the method 'BitArray.CopyTo' is not available in .Net Core
+            for (int i = 0; i < bits.Length; i++)
+                if (bits.Get(i))
+                    newBits[i / 8] |= (byte)(1 << (i % 8));
+#endif
         }
     }
 }
