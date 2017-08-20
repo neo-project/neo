@@ -83,7 +83,7 @@ namespace Neo.Core
                 return false;
             if (mempool_list.OfType<ClaimTransaction>().Where(p => p.Equals(this)).SelectMany(p => p.Claims).Intersect(Claims).Any())
                 return false;
-            TransactionResult result = GetTransactionResults().FirstOrDefault(p => p.AssetId == Blockchain.SystemCoin.Hash);
+            TransactionResult result = GetTransactionResults().FirstOrDefault(p => p.AssetId == Blockchain.UtilityToken.Hash);
             if (result == null || result.Amount > Fixed8.Zero) return false;
             try
             {

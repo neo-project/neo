@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Copyright>2015-2017 The Neo Project</Copyright>
     <AssemblyTitle>Neo</AssemblyTitle>
-    <Version>2.1.0</Version>
+    <Version>2.2.0</Version>
     <Authors>The Neo Project</Authors>
     <TargetFrameworks>netstandard1.6;net461</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -39,7 +39,7 @@
     <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="1.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="1.0.3" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="1.0.2" />
-    <PackageReference Include="Neo.VM" Version="2.0.0" />
+    <PackageReference Include="Neo.VM" Version="2.0.1" />
     <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
     <PackageReference Include="System.Security.SecureString" Version="4.0.0" />
     <PackageReference Include="System.ValueTuple" Version="4.3.1" />
