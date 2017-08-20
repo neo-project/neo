@@ -111,18 +111,34 @@ namespace Neo.Network
 
         private static bool AddTransaction(Transaction tx)
         {
-            Console.WriteLine("AddTransaction 0");
+            if (tx.Print)
+            {
+                Console.WriteLine("AddTransaction 0");
+            }
             if (Blockchain.Default == null) return false;
-            Console.WriteLine("AddTransaction 1");
+            if (tx.Print)
+            {
+                Console.WriteLine("AddTransaction 1");
+            }
             lock (mem_pool)
             {
-                Console.WriteLine("AddTransaction 2");
+                if (tx.Print)
+                {
+                    Console.WriteLine("AddTransaction 2");
+                }
                 if (mem_pool.ContainsKey(tx.Hash)) return false;
-                Console.WriteLine("AddTransaction 3");
+                if (tx.Print)
+                { Console.WriteLine("AddTransaction 3"); }
                 if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
-                Console.WriteLine("AddTransaction 4");
+                if (tx.Print)
+                {
+                    Console.WriteLine("AddTransaction 4");
+                }
                 if (!tx.Verify(mem_pool.Values)) return false;
-                Console.WriteLine("AddTransaction 5");
+                if (tx.Print)
+                {
+                    Console.WriteLine("AddTransaction 5");
+                }
                 mem_pool.Add(tx.Hash, tx);
                 CheckMemPool();
             }
@@ -394,17 +410,38 @@ namespace Neo.Network
 
         public bool Relay(IInventory inventory)
         {
-            Console.WriteLine("Relay 0");
+            bool print = false;
+            if (inventory is Transaction)
+            {
+                Transaction tx = (Transaction)inventory;
+                if (tx.Print)
+                {
+                    print = true;
+                }
+            }
+            if (print)
+            {
+                Console.WriteLine("Relay 0");
+            }
             if (inventory is MinerTransaction) return false;
-            Console.WriteLine("Relay 1");
+            if (print)
+            {
+                Console.WriteLine("Relay 1");
+            }
             lock (KnownHashes)
             {
                 if (!KnownHashes.Add(inventory.Hash)) return false;
             }
-            Console.WriteLine("Relay 2");
+            if (print)
+            {
+                Console.WriteLine("Relay 2");
+            }
             InventoryReceivingEventArgs args = new InventoryReceivingEventArgs(inventory);
             InventoryReceiving?.Invoke(this, args);
-            Console.WriteLine("Relay 3");
+            if (print)
+            {
+                Console.WriteLine("Relay 3");
+            }
             if (args.Cancel) return false;
             if (inventory is Block)
             {
@@ -415,18 +452,30 @@ namespace Neo.Network
             }
             else if (inventory is Transaction)
             {
-                Console.WriteLine("Relay 4 : Transaction");
+                if (print)
+                {
+                    Console.WriteLine("Relay 4 : Transaction");
+                }
                 if (!AddTransaction((Transaction)inventory)) return false;
             }
             else //if (inventory is Consensus)
             {
-				Console.WriteLine("Relay 4.1 : inventory");
-				if (!inventory.Verify()) return false;
+                if (print)
+                {
+                    Console.WriteLine("Relay 4.1 : inventory");
+                }
+                if (!inventory.Verify()) return false;
             }
-			Console.WriteLine("Relay 5");
-			bool relayed = RelayDirectly(inventory);
-			Console.WriteLine("Relay 6");
-			InventoryReceived?.Invoke(this, inventory);
+            if (print)
+            {
+                Console.WriteLine("Relay 5");
+            }
+            bool relayed = RelayDirectly(inventory);
+            if (print)
+            {
+                Console.WriteLine("Relay 6");
+            }
+            InventoryReceived?.Invoke(this, inventory);
             return relayed;
         }
 

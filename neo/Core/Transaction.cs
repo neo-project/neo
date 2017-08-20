@@ -329,88 +329,88 @@ namespace Neo.Core
         /// <returns>返回验证的结果</returns>
         public virtual bool Verify(IEnumerable<Transaction> mempool)
         {
-            Console.WriteLine("Verify 0");
+            //Console.WriteLine("Verify 0");
             for (int i = 1; i < Inputs.Length; i++)
                 for (int j = 0; j < i; j++)
                     if (Inputs[i].PrevHash == Inputs[j].PrevHash && Inputs[i].PrevIndex == Inputs[j].PrevIndex)
                         return false;
-            Console.WriteLine("Verify 1");
+            //Console.WriteLine("Verify 1");
             if (mempool.Where(p => p != this).SelectMany(p => p.Inputs).Intersect(Inputs).Count() > 0)
                 return false;
-            Console.WriteLine("Verify 2");
+            //Console.WriteLine("Verify 2");
             if (Blockchain.Default.IsDoubleSpend(this))
                 return false;
-            Console.WriteLine("Verify 3");
+            //Console.WriteLine("Verify 3");
             foreach (var group in Outputs.GroupBy(p => p.AssetId))
             {
                 AssetState asset = Blockchain.Default.GetAssetState(group.Key);
-                Console.WriteLine($"Verify 4 {group.Key}");
+                //Console.WriteLine($"Verify 4 {group.Key}");
                 if (asset == null) return false;
-                Console.WriteLine($"Verify 5 {group.Key}");
+                //Console.WriteLine($"Verify 5 {group.Key}");
                 if (asset.Expiration <= Blockchain.Default.Height + 1 && asset.AssetType != AssetType.SystemShare && asset.AssetType != AssetType.SystemCoin)
                     return false;
-                Console.WriteLine($"Verify 6 {group.Key}");
+                //Console.WriteLine($"Verify 6 {group.Key}");
                 foreach (TransactionOutput output in group)
                     if (output.Value.GetData() % (long)Math.Pow(10, 8 - asset.Precision) != 0)
                         return false;
-                Console.WriteLine($"Verify 7 {group.Key}");
+                //Console.WriteLine($"Verify 7 {group.Key}");
             }
-			Console.WriteLine($"Verify 8.0");
-			foreach (TransactionOutput tr in References.Values)
-			{
-				Console.WriteLine($"Verify 8.1 {tr.AssetId} {tr.Value.value}");
-			}
-			foreach (TransactionOutput tr in Outputs)
-			{
-				Console.WriteLine($"Verify 8.2 {tr.AssetId} {tr.Value.value}");
-			}
-			Console.WriteLine($"Verify 8.3");
+			//Console.WriteLine($"Verify 8.0");
+			//foreach (TransactionOutput tr in References.Values)
+			//{
+			//	Console.WriteLine($"Verify 8.1 {tr.AssetId} {tr.Value.value}");
+			//}
+			//foreach (TransactionOutput tr in Outputs)
+			//{
+			//	Console.WriteLine($"Verify 8.2 {tr.AssetId} {tr.Value.value}");
+			//}
+			//Console.WriteLine($"Verify 8.3");
 			TransactionResult[] results = GetTransactionResults()?.ToArray();
-            Console.WriteLine($"Verify 8.4");
+            //Console.WriteLine($"Verify 8.4");
             if (results == null) return false;
             TransactionResult[] results_destroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
-            Console.WriteLine($"Verify 9");
+            //Console.WriteLine($"Verify 9");
             if (results_destroy.Length > 1) return false;
-            Console.WriteLine($"Verify 10");
+            //Console.WriteLine($"Verify 10");
             if (results_destroy.Length == 1 && results_destroy[0].AssetId != Blockchain.SystemCoin.Hash)
                 return false;
-            Console.WriteLine($"Verify 11");
+            //Console.WriteLine($"Verify 11");
             if (SystemFee > Fixed8.Zero && (results_destroy.Length == 0 || results_destroy[0].Amount < SystemFee))
                 return false;
             TransactionResult[] results_issue = results.Where(p => p.Amount < Fixed8.Zero).ToArray();
-            Console.WriteLine($"Verify 12");
+            //Console.WriteLine($"Verify 12");
             switch (Type)
             {
                 case TransactionType.MinerTransaction:
                 case TransactionType.ClaimTransaction:
                     if (results_issue.Any(p => p.AssetId != Blockchain.SystemCoin.Hash))
                     {
-                        Console.WriteLine($"Verify 13");
+                        //Console.WriteLine($"Verify 13");
                         return false;
                     }
                     break;
                 case TransactionType.IssueTransaction:
                     if (results_issue.Any(p => p.AssetId == Blockchain.SystemCoin.Hash))
                     {
-                        Console.WriteLine($"Verify 14");
+                        //Console.WriteLine($"Verify 14");
                         return false;
                     }
                     break;
                 default:
                     if (results_issue.Length > 0)
                     {
-                        Console.WriteLine($"Verify 15 {results_issue.Length}");
-                        foreach(TransactionResult tr in results_issue) {
-                            Console.WriteLine($"Verify 15 {tr.AssetId} {tr.Amount}");
-						}
+                        //Console.WriteLine($"Verify 15 {results_issue.Length}");
+                        //foreach(TransactionResult tr in results_issue) {
+                            //Console.WriteLine($"Verify 15 {tr.AssetId} {tr.Amount}");
+						//}
                         return false;
                     }
                     break;
             }
-            Console.WriteLine($"Verify 16");
+            //Console.WriteLine($"Verify 16");
             if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
                 return false;
-            Console.WriteLine($"Verify 17 end -> VerifyScripts");
+            //Console.WriteLine($"Verify 17 end -> VerifyScripts");
             return this.VerifyScripts();
         }
     }

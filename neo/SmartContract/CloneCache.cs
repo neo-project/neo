@@ -17,6 +17,11 @@ namespace Neo.SmartContract
             this.innerCache = innerCache;
         }
 
+        public override IEnumerable<KeyValuePair<TKey, TValue>> GetEnumerator()
+        {
+            return innerCache.GetEnumerator();
+        }
+
         public void Commit()
         {
             foreach (Trackable trackable in GetChangeSet())

@@ -3,14 +3,17 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Neo.Core;
 using Neo.IO;
+using Neo.IO.Caching;
 using Neo.IO.Json;
 using Neo.Wallets;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Net;
+using Neo.Implementations.Blockchains.Utilities;
 
 namespace Neo.Network.RPC
 {
@@ -182,13 +185,13 @@ namespace Neo.Network.RPC
                     }
                 case "sendrawtransaction":
                     {
-						Console.WriteLine("sendrawtransaction 0");
+                        Console.WriteLine("sendrawtransaction 0");
                         Transaction tx = Transaction.DeserializeFrom(_params[0].AsString().HexToBytes());
-                        tx.Print = true;
-						Console.WriteLine("sendrawtransaction 1");
-						bool retval = LocalNode.Relay(tx);
-						Console.WriteLine("sendrawtransaction 2");
-						return retval;
+                        //tx.Print = true;
+                        Console.WriteLine("sendrawtransaction 1");
+                        bool retval = LocalNode.Relay(tx);
+                        Console.WriteLine($"sendrawtransaction 2 {retval}");
+                        return retval;
                     }
                 case "submitblock":
                     {
@@ -284,9 +287,172 @@ namespace Neo.Network.RPC
 
                         return count;
                     }
+                case "getaccountlist":
+                    {
+                        //Console.WriteLine("getaccountlist 0");
+
+                        uint fromTs = (uint)_params[0].AsNumber();
+
+                        uint toTs = (uint)_params[1].AsNumber();
+
+                        uint minHeight = 0;
+
+                        uint maxHeight = Blockchain.Default.Height;
+
+                        uint fromHeight = getHeightOfTs(0, minHeight, maxHeight, fromTs);
+
+                        uint toHeight = getHeightOfTs(0, fromHeight, maxHeight, toTs);
+
+                        JArray list = new JArray();
+
+                        Console.WriteLine($"getaccountlist 1 fromHeight:{fromHeight}; toHeight:{toHeight};");
+
+                        Dictionary<UInt160, HashSet<UInt160>> friendByAccount = new Dictionary<UInt160, HashSet<UInt160>>();
+                        Dictionary<UInt160, long> txCountByAccount = new Dictionary<UInt160, long>();
+                        for (uint index = fromHeight; index < toHeight; index++)
+                        {
+                            //Console.WriteLine($"getaccountlist 2  fromHeight:{fromHeight}; toHeight:{toHeight}; index:{index};");
+
+                            Block block = Blockchain.Default.GetBlock(index);
+                            //Console.WriteLine("getaccountlist 2.1");
+                            foreach (Transaction t in block.Transactions)
+                            {
+                                //Console.WriteLine("getaccountlist 3");
+
+                                foreach (CoinReference cr in t.Inputs)
+                                {
+                                    //Console.WriteLine("getaccountlist 4");
+
+                                    UInt160 input = t.References[cr].ScriptHash;
+
+
+                                    if (!friendByAccount.ContainsKey(input))
+                                    {
+                                        friendByAccount[input] = new HashSet<UInt160>();
+                                    }
+
+
+                                    foreach (TransactionOutput to in t.Outputs)
+                                    {
+                                        //Console.WriteLine("getaccountlist 5.0");
+
+                                        UInt160 output = to.ScriptHash;
+
+                                        //Console.WriteLine("getaccountlist 5.1");
+                                        //Console.WriteLine("getaccountlist 5.2");
+                                        if (!friendByAccount.ContainsKey(output))
+                                        {
+                                            friendByAccount[output] = new HashSet<UInt160>();
+                                        }
+
+                                        //Console.WriteLine($"getaccountlist 5.3 output:{output};");
+                                        friendByAccount[input].Add(output);
+
+                                        //Console.WriteLine($"getaccountlist 5.4 input:{input};");
+                                        friendByAccount[output].Add(input);
+
+                                        //Console.WriteLine("getaccountlist 5.5");
+                                    }
+                                }
+                                foreach (TransactionOutput to in t.Outputs)
+                                {
+                                    UInt160 output = to.ScriptHash;
+                                    //Console.WriteLine("getaccountlist 6");
+                                    long oldCount;
+                                    if (txCountByAccount.ContainsKey(output))
+                                    {
+                                        oldCount = txCountByAccount[output];
+                                    }
+                                    else
+                                    {
+                                        oldCount = 0;
+                                    }
+                                    //Console.WriteLine($"getaccountlist 6.1 output:{output};");
+                                    txCountByAccount[output] = oldCount + 1;
+                                }
+                            }
+                        }
+
+
+                        Console.WriteLine($"getaccountlist 7 txCountByAccount.Count:{txCountByAccount.Count}; friendByAccount.Count:{friendByAccount.Count};");
+
+                        DataCache<UInt160, AccountState> accountStateCache = Blockchain.Default.GetTable<UInt160, AccountState>();
+
+                        Dictionary<UInt160, String> addressByAccount = new Dictionary<UInt160, String>();
+                        foreach (KeyValuePair<UInt160, AccountState> accountStateEntry in accountStateCache.GetEnumerator())
+                        {
+                            UInt160 key = accountStateEntry.Value.ScriptHash;
+                            String address = Wallet.ToAddress(key);
+                            addressByAccount[key] = address;
+                        }
+
+                        foreach (KeyValuePair<UInt160, AccountState> accountStateEntry in accountStateCache.GetEnumerator())
+                        {
+                            UInt160 key = accountStateEntry.Value.ScriptHash;
+                            String address = addressByAccount[key];
+
+                            //Console.WriteLine($"getaccountlist 7 key:{key}; address:{address};");
+                            JObject entry = new JObject();
+                            entry["account"] = address;
+
+                            if (accountStateEntry.Value.Balances.ContainsKey(Blockchain.SystemShare.Hash))
+                            {
+                                entry["neo"] = accountStateEntry.Value.Balances[Blockchain.SystemShare.Hash].value;
+                            }
+                            else
+                            {
+                                entry["neo"] = 0;
+                            }
+
+                            if (accountStateEntry.Value.Balances.ContainsKey(Blockchain.SystemCoin.Hash))
+                            {
+                                entry["gas"] = accountStateEntry.Value.Balances[Blockchain.SystemCoin.Hash].value;
+                            }
+                            else
+                            {
+                                entry["gas"] = 0;
+                            }
+
+                            if (txCountByAccount.ContainsKey(key))
+                            {
+                                entry["tx"] = txCountByAccount[key];
+                            }
+                            else
+                            {
+                                entry["tx"] = 0;
+                            }
+
+                            if (friendByAccount.ContainsKey(key))
+                            {
+                                entry["friends"] = toJArray(addressByAccount, friendByAccount[key]);
+                            }
+                            else
+                            {
+                                entry["friends"] = new JArray();
+                            }
+
+                            list.Add(entry);
+                        }
+
+                        Console.WriteLine($"getaccountlist 8 {list.Count()}");
+
+                        return list;
+                    }
                 default:
                     throw new RpcException(-32601, "Method not found");
             }
+        }
+
+        private JArray toJArray(Dictionary<UInt160, String> addressByAccount, HashSet<UInt160> set)
+        {
+            JArray list = new JArray();
+
+            foreach (UInt160 obj in set)
+            {
+                list.Add(addressByAccount[obj]);
+            }
+
+            return list;
         }
 
         private uint getHeightOfTs(uint level, uint minHeight, uint maxHeight, uint ts)

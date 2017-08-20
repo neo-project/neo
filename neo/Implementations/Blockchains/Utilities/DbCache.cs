@@ -5,7 +5,8 @@ using System.Collections.Generic;
 
 namespace Neo.Implementations.Blockchains.Utilities
 {
-    internal class DbCache<TKey, TValue> : DataCache<TKey, TValue>
+    internal class
+    DbCache<TKey, TValue> : DataCache<TKey, TValue>
         where TKey : IEquatable<TKey>, ISerializable, new()
         where TValue : class, ISerializable, new()
     {
@@ -18,6 +19,11 @@ namespace Neo.Implementations.Blockchains.Utilities
             this.db = db;
             this.prefix = prefix;
             this.f = f;
+        }
+
+        public override IEnumerable<KeyValuePair<TKey, TValue>> GetEnumerator()
+        {
+            return db.Find(f.getDefaultReadOptions(), SliceBuilder.Begin(prefix), (k, v) => new KeyValuePair<TKey, TValue>(k.ToArray().AsSerializable<TKey>(), v.ToArray().AsSerializable<TValue>()));
         }
 
         public void Commit(AbstractWriteBatch batch)

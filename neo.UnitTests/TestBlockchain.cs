@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using Neo.Cryptography.ECC;
+using Neo.IO.Caching;
 
 namespace Neo.UnitTests
 {
@@ -24,6 +25,10 @@ namespace Neo.UnitTests
 
         public override bool VerifyBlocks { get; set; } = true;
 
+		public override DataCache<TKey, TValue> GetTable<TKey, TValue>()
+		{
+			throw new NotImplementedException();
+		}
         public override bool AddBlock(Block block)
         {
             throw new NotImplementedException();

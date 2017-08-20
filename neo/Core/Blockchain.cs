@@ -1,6 +1,7 @@
 ﻿using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.IO.Caching;
 using Neo.VM;
 using Neo.Wallets;
 using System;
@@ -19,7 +20,7 @@ namespace Neo.Core
         /// </summary>
         public static event EventHandler<Block> PersistCompleted;
 
-		public abstract bool VerifyBlocks { get; set; }
+        public abstract bool VerifyBlocks { get; set; }
 
         /// <summary>
         /// 产生每个区块的时间间隔，已秒为单位
@@ -267,6 +268,10 @@ namespace Neo.Core
         public abstract AccountState GetAccountState(UInt160 script_hash);
 
         public abstract AssetState GetAssetState(UInt256 asset_id);
+
+        public abstract DataCache<TKey, TValue> GetTable<TKey, TValue>() where TKey : IEquatable<TKey>, ISerializable, new()
+            where TValue : class, ISerializable, new();
+
 
         /// <summary>
         /// 根据指定的高度，返回对应的区块信息

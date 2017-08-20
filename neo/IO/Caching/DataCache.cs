@@ -42,6 +42,8 @@ namespace Neo.IO.Caching
             }
         }
 
+        public abstract IEnumerable<KeyValuePair<TKey, TValue>> GetEnumerator();
+
         public void Add(TKey key, TValue value)
         {
             if (dictionary.ContainsKey(key) && dictionary[key].State != TrackState.Deleted)

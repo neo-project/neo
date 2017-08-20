@@ -44,7 +44,7 @@ namespace Neo.Implementations.Blockchains.Utilities
             dbOptions.CreateIfMissing = true;
             db = f.Open(path, dbOptions);
 
-			if (db.TryGet(f.getDefaultReadOptions(), SliceBuilder.Begin(DataEntryPrefix.SYS_Version), out value) && Version.TryParse(value.ToString(), out version) && version >= Version.Parse("1.5"))
+            if (db.TryGet(f.getDefaultReadOptions(), SliceBuilder.Begin(DataEntryPrefix.SYS_Version), out value) && Version.TryParse(value.ToString(), out version) && version >= Version.Parse("1.5"))
             {
                 AbstractReadOptions options = f.newReadOptions();
                 options.FillCache = false;
@@ -117,7 +117,7 @@ namespace Neo.Implementations.Blockchains.Utilities
 
         public override bool AddBlock(Block block)
         {
-			Console.WriteLine($"AddBlock[0] block.Hash{block.Hash}");
+            Console.WriteLine($"AddBlock[0] block.Hash{block.Hash}");
             lock (block_cache)
             {
                 if (!block_cache.ContainsKey(block.Hash))
@@ -298,9 +298,7 @@ namespace Neo.Implementations.Blockchains.Utilities
             return value.ToArray().ToInt64(0);
         }
 
-        public DataCache<TKey, TValue> GetTable<TKey, TValue>()
-            where TKey : IEquatable<TKey>, ISerializable, new()
-            where TValue : class, ISerializable, new()
+        public override DataCache<TKey, TValue> GetTable<TKey, TValue>()
         {
             Type t = typeof(TValue);
             if (t == typeof(AccountState)) return new DbCache<TKey, TValue>(db, DataEntryPrefix.ST_Account, f);
@@ -415,25 +413,43 @@ namespace Neo.Implementations.Blockchains.Utilities
 
         public override bool IsDoubleSpend(Transaction tx)
         {
-            Console.WriteLine("IsDoubleSpend 0");
+            if (tx.Print)
+            {
+                Console.WriteLine("IsDoubleSpend 0");
+            }
             if (tx.Inputs.Length == 0) return false;
-			Console.WriteLine("IsDoubleSpend 1");
-			AbstractReadOptions options = f.newReadOptions();
+            if (tx.Print)
+            {
+                Console.WriteLine("IsDoubleSpend 1");
+            }
+            AbstractReadOptions options = f.newReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
                 foreach (var group in tx.Inputs.GroupBy(p => p.PrevHash))
                 {
-					UnspentCoinState state = db.TryGet<UnspentCoinState>(options, DataEntryPrefix.ST_Coin, group.Key);
-                    Console.WriteLine($"IsDoubleSpend 2 {group.Key}");
+                    UnspentCoinState state = db.TryGet<UnspentCoinState>(options, DataEntryPrefix.ST_Coin, group.Key);
+                    if (tx.Print)
+                    {
+                        Console.WriteLine($"IsDoubleSpend 2 {group.Key}");
+                    }
                     if (state == null) return true;
-					Console.WriteLine($"IsDoubleSpend 3 {group.Key}");
-					if (group.Any(p => p.PrevIndex >= state.Items.Length || state.Items[p.PrevIndex].HasFlag(CoinState.Spent)))
+                    if (tx.Print)
+                    {
+                        Console.WriteLine($"IsDoubleSpend 3 {group.Key}");
+                    }
+                    if (group.Any(p => p.PrevIndex >= state.Items.Length || state.Items[p.PrevIndex].HasFlag(CoinState.Spent)))
                         return true;
-					Console.WriteLine($"IsDoubleSpend 4 {group.Key}");
-				}
+                    if (tx.Print)
+                    {
+                        Console.WriteLine($"IsDoubleSpend 4 {group.Key}");
+                    }
+                }
             }
-			Console.WriteLine($"IsDoubleSpend 5");
-			return false;
+            if (tx.Print)
+            {
+                Console.WriteLine($"IsDoubleSpend 5");
+            }
+            return false;
         }
 
         private void OnAddHeader(Header header, AbstractWriteBatch batch)
@@ -589,10 +605,10 @@ namespace Neo.Implementations.Blockchains.Utilities
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(block.Hash).Add(block.Index));
 
 
-			Console.WriteLine($"Persist[0]  batch.Count{batch}");
+            Console.WriteLine($"Persist[0]  batch.Count{batch}");
             db.Write(f.getDefaultWriteOptions(), batch);
             Console.WriteLine($"Persist[1]  batch.Count{batch.Count()}");
-			current_block_height = block.Index;
+            current_block_height = block.Index;
         }
 
         private void PersistBlocks()
@@ -610,7 +626,7 @@ namespace Neo.Implementations.Blockchains.Utilities
                     }
 
 
-					Console.WriteLine($"PersistBlocks[0] hash{hash}");
+                    Console.WriteLine($"PersistBlocks[0] hash{hash}");
 
                     Block block;
                     lock (block_cache)
@@ -618,21 +634,21 @@ namespace Neo.Implementations.Blockchains.Utilities
                         if (!block_cache.ContainsKey(hash)) break;
                         block = block_cache[hash];
                     }
-					Console.WriteLine($"PersistBlocks[1] hash{hash}");
+                    Console.WriteLine($"PersistBlocks[1] hash{hash}");
 
-					Persist(block);
+                    Persist(block);
                     OnPersistCompleted(block);
 
-					Console.WriteLine($"PersistBlocks[2] hash{hash}");
+                    Console.WriteLine($"PersistBlocks[2] hash{hash}");
 
-					lock (block_cache)
+                    lock (block_cache)
                     {
                         block_cache.Remove(hash);
                     }
 
                     Console.WriteLine($"PersistBlocks[3] block_cache.Count{block_cache.Count}");
 
-				}
+                }
             }
         }
     }
