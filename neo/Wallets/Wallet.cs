@@ -703,9 +703,9 @@ namespace Neo.Wallets
                             coins.Add(coin);
                         }
                     }
-                    if (tx is ClaimTransaction)
+                    if (tx is ClaimTransaction transaction)
                     {
-                        foreach (CoinReference claim in ((ClaimTransaction)tx).Claims)
+                        foreach (CoinReference claim in transaction.Claims)
                         {
                             coins[claim].State |= CoinState.Claimed;
                             coins[claim].State &= ~CoinState.Confirmed;

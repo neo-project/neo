@@ -74,7 +74,8 @@ namespace Neo.UnitTests
             // block 1
             uut.Size.Should().Be(109);
         }
-  private IssueTransaction getIssueTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
+
+  		private IssueTransaction getIssueTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
         {
             TestUtils.SetupTestBlockchain(assetId);
 

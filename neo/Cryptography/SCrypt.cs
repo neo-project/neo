@@ -245,6 +245,12 @@ namespace Neo.Cryptography
             }
         }
 
+#if NET461
+        public static byte[] DeriveKey(byte[] password, byte[] salt, int N, int r, int p, int derivedKeyLength)
+        {
+            return Replicon.Cryptography.SCrypt.SCrypt.DeriveKey(password, salt, (ulong)N, (uint)r, (uint)p, (uint)derivedKeyLength);
+        }
+#else
         public unsafe static byte[] DeriveKey(byte[] password, byte[] salt, int N, int r, int p, int derivedKeyLength)
         {
             var Ba = new byte[128 * r * p + 63];
@@ -274,6 +280,7 @@ namespace Neo.Cryptography
 
             return buf;
         }
+#endif
 
         private static void PBKDF2_SHA256(HMACSHA256 mac, byte[] password, byte[] salt, int saltLength, long iterationCount, byte[] derivedKey, int derivedKeyLength)
         {

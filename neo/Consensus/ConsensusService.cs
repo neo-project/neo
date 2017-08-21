@@ -185,7 +185,15 @@ namespace Neo.Consensus
                     if (payload.Version != ConsensusContext.Version || payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
                         return;
                     if (payload.ValidatorIndex >= context.Validators.Length) return;
-                    ConsensusMessage message = ConsensusMessage.DeserializeFrom(payload.Data);
+                    ConsensusMessage message;
+                    try
+                    {
+                        message = ConsensusMessage.DeserializeFrom(payload.Data);
+                    }
+                    catch (FormatException)
+                    {
+                        return;
+                    }
                     if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView)
                         return;
                     switch (message.Type)

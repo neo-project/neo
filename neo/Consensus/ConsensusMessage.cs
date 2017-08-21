@@ -27,6 +27,8 @@ namespace Neo.Consensus
         public static ConsensusMessage DeserializeFrom(byte[] data)
         {
             ConsensusMessageType type = (ConsensusMessageType)data[0];
+            if (!Enum.IsDefined(typeof(ConsensusMessageType), type))
+                throw new FormatException();
             string typeName = $"{typeof(ConsensusMessage).Namespace}.{type}";
             ConsensusMessage message = typeof(ConsensusMessage).GetTypeInfo().Assembly.CreateInstance(typeName) as ConsensusMessage;
             using (MemoryStream ms = new MemoryStream(data, false))
