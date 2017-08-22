@@ -341,9 +341,10 @@ namespace Neo.Network.RPC
                             //Console.WriteLine("getaccountlist 2.1");
                             foreach (Transaction t in block.Transactions)
                             {
-                                //Console.WriteLine("getaccountlist 3");
+								//Console.WriteLine("getaccountlist 3");
+                                // TODO: try using GetTransactionResults?
 
-                                foreach (CoinReference cr in t.Inputs)
+								foreach (CoinReference cr in t.Inputs)
                                 {
                                     //Console.WriteLine("getaccountlist 4");
 
@@ -356,28 +357,13 @@ namespace Neo.Network.RPC
                                     {
                                         friendByAccount = neoFriendByAccount;
                                         txByAccount = neoTxByAccount;
-                                        if (neoInByAccount.ContainsKey(input))
-                                        {
-                                            neoInByAccount[input] += (long)ti.Value.value;
-                                        }
-                                        else
-                                        {
-                                            neoInByAccount[input] = (long)ti.Value.value;
-                                        }
+                                        increment(neoInByAccount, input, ti.Value);
                                     }
                                     else if (ti.AssetId == Blockchain.SystemCoin.Hash)
                                     {
                                         friendByAccount = gasFriendByAccount;
                                         txByAccount = gasTxByAccount;
-
-                                        if (gasInByAccount.ContainsKey(input))
-                                        {
-                                            gasInByAccount[input] += (decimal)ti.Value.value;
-                                        }
-                                        else
-                                        {
-                                            gasInByAccount[input] = (decimal)ti.Value.value;
-                                        }
+										increment(gasInByAccount, input, ti.Value);
                                     }
 
                                     if (txByAccount != null)
@@ -387,21 +373,35 @@ namespace Neo.Network.RPC
                                             if (to.AssetId == ti.AssetId)
                                             {
                                                 UInt160 output = to.ScriptHash;
-                                                if (txByAccount.ContainsKey(input))
+                                                if (input == output)
                                                 {
-                                                    txByAccount[input]++;
+                                                    if (ti.AssetId == Blockchain.SystemShare.Hash)
+                                                    {
+                                                        increment(neoInByAccount, input, -ti.Value);
+                                                    }
+                                                    else if (ti.AssetId == Blockchain.SystemCoin.Hash)
+                                                    {
+                                                        increment(gasInByAccount, input, -ti.Value);
+                                                    }
                                                 }
                                                 else
                                                 {
-                                                    txByAccount[input] = 1;
-                                                }
-                                                if (txByAccount.ContainsKey(output))
-                                                {
-                                                    txByAccount[output]++;
-                                                }
-                                                else
-                                                {
-                                                    txByAccount[output] = 1;
+                                                    if (txByAccount.ContainsKey(input))
+                                                    {
+                                                        txByAccount[input]++;
+                                                    }
+                                                    else
+                                                    {
+                                                        txByAccount[input] = 1;
+                                                    }
+                                                    if (txByAccount.ContainsKey(output))
+                                                    {
+                                                        txByAccount[output]++;
+                                                    }
+                                                    else
+                                                    {
+                                                        txByAccount[output] = 1;
+                                                    }
                                                 }
                                             }
                                         }
@@ -438,25 +438,11 @@ namespace Neo.Network.RPC
                                     UInt160 output = to.ScriptHash;
                                     if (to.AssetId == Blockchain.SystemShare.Hash)
                                     {
-                                        if (neoOutByAccount.ContainsKey(output))
-                                        {
-                                            neoOutByAccount[output] += (long)to.Value.value;
-                                        }
-                                        else
-                                        {
-                                            neoOutByAccount[output] = (long)to.Value.value;
-                                        }
+                                        increment(neoOutByAccount, output, to.Value);
                                     }
                                     if (to.AssetId == Blockchain.SystemCoin.Hash)
                                     {
-                                        if (gasOutByAccount.ContainsKey(output))
-                                        {
-                                            gasOutByAccount[output] += (decimal)to.Value.value;
-                                        }
-                                        else
-                                        {
-                                            gasOutByAccount[output] = (decimal)to.Value.value;
-                                        }
+                                        increment(gasOutByAccount, output, to.Value);
                                     }
                                 }
                             }
@@ -581,6 +567,30 @@ namespace Neo.Network.RPC
                     }
                 default:
                     throw new RpcException(-32601, "Method not found");
+            }
+        }
+
+        private static void increment(Dictionary<UInt160, decimal> map, UInt160 key, Fixed8 value)
+        {
+            if (map.ContainsKey(key))
+            {
+                map[key] += (decimal)value;
+            }
+            else
+            {
+                map[key] = (decimal)value;
+            }
+        }
+
+        private static void increment(Dictionary<UInt160, long> map, UInt160 key, Fixed8 value)
+        {
+            if (map.ContainsKey(key))
+            {
+                map[key] += (long)value;
+            }
+            else
+            {
+                map[key] = (long)value;
             }
         }
 
