@@ -21,7 +21,12 @@ Coverage
 	* AccountState.cs
 	* AssetState.cs
 	* Block.cs - Some code coverage missing on the Verify() method.
-	* ClaimTransaction.cs
+	* ClaimTransaction.cs	
 	* CoinReference.cs
+	* ContractState.cs
+	* FunctionCode.cs
+	* Header.cs
+	* Helper.cs
+	* InvocationTransaction.cs
 	* SpentCoinState.cs
 	* Witness.cs
