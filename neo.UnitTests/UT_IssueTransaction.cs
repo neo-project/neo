@@ -31,7 +31,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void SystemFee_Get_Version_0_Share()
         {
-            uut = TestUtils.GetIssueTransaction(false, 10, Blockchain.SystemShare.Hash);            
+            uut = TestUtils.GetIssueTransaction(false, 10, Blockchain.GoverningToken.Hash);            
             uut.Version = 0;
             
             uut.SystemFee.Should().Be(Fixed8.Zero);
@@ -40,7 +40,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void SystemFee_Get_Version_0_Coin()
         {
-            uut = TestUtils.GetIssueTransaction(false, 10, Blockchain.SystemCoin.Hash);
+            uut = TestUtils.GetIssueTransaction(false, 10, Blockchain.UtilityToken.Hash);
             uut.Version = 0;
 
             uut.SystemFee.Should().Be(Fixed8.Zero);
@@ -59,7 +59,7 @@ namespace Neo.UnitTests
         public void GetScriptHashesForVerifying()
         {
             TestUtils.SetupTestBlockchain(UInt256.Zero);
-            uut = TestUtils.GetIssueTransaction(false, 10, Blockchain.SystemCoin.Hash);
+            uut = TestUtils.GetIssueTransaction(false, 10, Blockchain.UtilityToken.Hash);
             UInt160[] res = uut.GetScriptHashesForVerifying();
             res.Length.Should().Be(1);
             res[0].Should().Be(new UInt160(TestUtils.GetByteArray(20, 0xe7)));
@@ -86,13 +86,13 @@ namespace Neo.UnitTests
                 {
                     new TransactionOutput
                     {
-                        AssetId = Blockchain.SystemCoin.Hash,
+                        AssetId = Blockchain.UtilityToken.Hash,
                         Value = Fixed8.FromDecimal(10),
                         ScriptHash = Contract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
                     },
                     new TransactionOutput
                     {
-                        AssetId = Blockchain.SystemShare.Hash,
+                        AssetId = Blockchain.GoverningToken.Hash,
                         Value = Fixed8.FromDecimal(10),
                         ScriptHash = Contract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
                     },
