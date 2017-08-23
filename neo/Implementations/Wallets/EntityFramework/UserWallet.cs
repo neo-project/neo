@@ -1,7 +1,7 @@
-﻿using Neo.Core;
+﻿using Microsoft.EntityFrameworkCore;
+using Neo.Core;
 using Neo.IO;
 using Neo.Wallets;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -263,7 +263,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
         {
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
-                foreach (byte[] hash in ctx.Addresses.Select(p => p.ScriptHash).Except(ctx.Contracts.Select(p => p.ScriptHash)))
+                foreach (byte[] hash in ctx.Addresses.Where(p => !ctx.Contracts.Select(q => q.ScriptHash).Contains(p.ScriptHash)).Select(p => p.ScriptHash))
                     yield return new UInt160(hash);
             }
         }
