@@ -1,5 +1,6 @@
 ﻿using Neo.IO;
 using System;
+using System.Globalization;
 using System.IO;
 
 namespace Neo
@@ -116,7 +117,7 @@ namespace Neo
 
         public static Fixed8 Parse(string s)
         {
-            return FromDecimal(decimal.Parse(s));
+            return FromDecimal(decimal.Parse(s, NumberStyles.Float, CultureInfo.InvariantCulture));
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -126,7 +127,7 @@ namespace Neo
 
         public override string ToString()
         {
-            return ((decimal)this).ToString();
+            return ((decimal)this).ToString(CultureInfo.InvariantCulture);
         }
 
         public string ToString(string format)
@@ -142,7 +143,7 @@ namespace Neo
         public static bool TryParse(string s, out Fixed8 result)
         {
             decimal d;
-            if (!decimal.TryParse(s, out d))
+            if (!decimal.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out d))
             {
                 result = default(Fixed8);
                 return false;
