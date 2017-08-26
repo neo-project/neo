@@ -26,7 +26,7 @@ namespace Neo.Network
             : base(localNode)
         {
             this.socket = socket;
-            OnConnected();
+            OnConnectedListener();//別人連我
         }
 
         public async Task<bool> ConnectAsync()
@@ -37,9 +37,9 @@ namespace Neo.Network
             try
             {
                 await socket.ConnectAsync(address, ListenerEndpoint.Port);
-                OnConnected();
+                OnConnected();//我連別人
             }
-            catch (SocketException)
+            catch (SocketException e)
             {
                 Disconnect(false);
                 return false;
@@ -59,8 +59,18 @@ namespace Neo.Network
 
         private void OnConnected()
         {
+            //发现在我的电脑上 socket.RemoteEndPoint 会抛出异常
+            //IPEndPoint remoteEndpoint = (IPEndPoint)socket.RemoteEndPoint;
+            //RemoteEndpoint = new IPEndPoint(remoteEndpoint.Address.MapToIPv6(), remoteEndpoint.Port);
+            this.RemoteEndpoint = new IPEndPoint(ListenerEndpoint.Address.MapToIPv6(), ListenerEndpoint.Port);
+            stream = new NetworkStream(socket);
+            connected = true;
+        }
+        private void OnConnectedListener()
+        {
             IPEndPoint remoteEndpoint = (IPEndPoint)socket.RemoteEndPoint;
             RemoteEndpoint = new IPEndPoint(remoteEndpoint.Address.MapToIPv6(), remoteEndpoint.Port);
+            this.RemoteEndpoint = new IPEndPoint(RemoteEndpoint.Address.MapToIPv6(), RemoteEndpoint.Port);
             stream = new NetworkStream(socket);
             connected = true;
         }
