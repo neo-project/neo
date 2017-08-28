@@ -8,27 +8,28 @@
         /// <summary>
         /// 签名
         /// </summary>
-        Signature = 0,
-        Boolean = 1,
+        Signature = 0x00,
+        Boolean = 0x01,
         /// <summary>
         /// 整数
         /// </summary>
-        Integer = 2,
+        Integer = 0x02,
         /// <summary>
         /// 160位散列值
         /// </summary>
-        Hash160 = 3,
+        Hash160 = 0x03,
         /// <summary>
         /// 256位散列值
         /// </summary>
-        Hash256 = 4,
+        Hash256 = 0x04,
         /// <summary>
         /// 字节数组
         /// </summary>
-        ByteArray = 5,
-        PublicKey = 6,
+        ByteArray = 0x05,
+        PublicKey = 0x06,
+        String = 0x07,
 
-        Array = 16,
+        Array = 0x10,
 
         Void = 0xff
     }

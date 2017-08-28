@@ -64,7 +64,7 @@ namespace Neo.Cryptography.ECC
                 case 0x00: // infinity
                     {
                         if (encoded.Length != 1)
-                            throw new ArgumentException("Incorrect length for infinity encoding", "encoded");
+                            throw new FormatException("Incorrect length for infinity encoding");
                         p = curve.Infinity;
                         break;
                     }
@@ -72,7 +72,7 @@ namespace Neo.Cryptography.ECC
                 case 0x03: // compressed
                     {
                         if (encoded.Length != (expectedLength + 1))
-                            throw new ArgumentException("Incorrect length for compressed encoding", "encoded");
+                            throw new FormatException("Incorrect length for compressed encoding");
                         int yTilde = encoded[0] & 1;
                         BigInteger X1 = new BigInteger(encoded.Skip(1).Reverse().Concat(new byte[1]).ToArray());
                         p = DecompressPoint(yTilde, X1, curve);
@@ -83,7 +83,7 @@ namespace Neo.Cryptography.ECC
                 case 0x07: // hybrid
                     {
                         if (encoded.Length != (2 * expectedLength + 1))
-                            throw new ArgumentException("Incorrect length for uncompressed/hybrid encoding", "encoded");
+                            throw new FormatException("Incorrect length for uncompressed/hybrid encoding");
                         BigInteger X1 = new BigInteger(encoded.Skip(1).Take(expectedLength).Reverse().Concat(new byte[1]).ToArray());
                         BigInteger Y1 = new BigInteger(encoded.Skip(1 + expectedLength).Reverse().Concat(new byte[1]).ToArray());
                         p = new ECPoint(new ECFieldElement(X1, curve), new ECFieldElement(Y1, curve), curve);
@@ -350,6 +350,20 @@ namespace Neo.Cryptography.ECC
         public override string ToString()
         {
             return EncodePoint(true).ToHexString();
+        }
+
+        public static bool TryParse(string value, ECCurve curve, out ECPoint point)
+        {
+            try
+            {
+                point = Parse(value, curve);
+                return true;
+            }
+            catch (FormatException)
+            {
+                point = null;
+                return false;
+            }
         }
 
         internal ECPoint Twice()
