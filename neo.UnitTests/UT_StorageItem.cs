@@ -25,7 +25,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void Output_Set()
+        public void Value_Set()
         {
             byte[] val = new byte[] { 0x42, 0x32};
             uut.Value = val;
