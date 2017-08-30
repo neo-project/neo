@@ -55,7 +55,7 @@ namespace Neo.Network.RPC
             }
         }
 
-        protected virtual JObject Process(string method, JArray _params)
+        protected virtual JObject Process(string method, JArray _params, JObject errorTrace)
         {
             switch (method)
             {
@@ -304,6 +304,7 @@ namespace Neo.Network.RPC
                     }
                 case "getaccountlist":
                     {
+                        errorTrace["1"] = "init";
                         //Console.WriteLine("getaccountlist 0");
 
                         uint fromTs = (uint)_params[0].AsNumber();
@@ -318,12 +319,10 @@ namespace Neo.Network.RPC
 
                         uint toHeight = getHeightOfTs(0, fromHeight, maxHeight, toTs);
 
-                        JArray list = new JArray();
+                        int roundPrecision = 2;
 
-                        Console.WriteLine($"getaccountlist 1 fromHeight:{fromHeight}; toHeight:{toHeight};");
-
-                        Dictionary<UInt160, HashSet<UInt160>> neoFriendByAccount = new Dictionary<UInt160, HashSet<UInt160>>();
-                        Dictionary<UInt160, HashSet<UInt160>> gasFriendByAccount = new Dictionary<UInt160, HashSet<UInt160>>();
+                        //Console.WriteLine($"getaccountlist 1 fromHeight:{fromHeight}; toHeight:{toHeight};");
+                        errorTrace["2"] = $"fromHeight:{fromHeight}; toHeight:{toHeight};";
 
                         Dictionary<UInt160, long> neoTxByAccount = new Dictionary<UInt160, long>();
                         Dictionary<UInt160, long> gasTxByAccount = new Dictionary<UInt160, long>();
@@ -333,6 +332,7 @@ namespace Neo.Network.RPC
 
                         Dictionary<UInt160, long> neoOutByAccount = new Dictionary<UInt160, long>();
                         Dictionary<UInt160, decimal> gasOutByAccount = new Dictionary<UInt160, decimal>();
+
                         for (uint index = fromHeight; index < toHeight; index++)
                         {
                             //Console.WriteLine($"getaccountlist 2  fromHeight:{fromHeight}; toHeight:{toHeight}; index:{index};");
@@ -341,94 +341,17 @@ namespace Neo.Network.RPC
                             //Console.WriteLine("getaccountlist 2.1");
                             foreach (Transaction t in block.Transactions)
                             {
-								//Console.WriteLine("getaccountlist 3");
-                                // TODO: try using GetTransactionResults?
+                                //Console.WriteLine("getaccountlist 3");
 
-								foreach (CoinReference cr in t.Inputs)
+                                Dictionary<UInt160, Dictionary<UInt256, Fixed8>> friendAssetMap = new Dictionary<UInt160, Dictionary<UInt256, Fixed8>>();
+
+                                foreach (CoinReference cr in t.Inputs)
                                 {
-                                    //Console.WriteLine("getaccountlist 4");
-
                                     TransactionOutput ti = t.References[cr];
                                     UInt160 input = ti.ScriptHash;
-                                    Dictionary<UInt160, HashSet<UInt160>> friendByAccount = null;
-                                    Dictionary<UInt160, long> txByAccount = null;
-
-                                    if (ti.AssetId == Blockchain.SystemShare.Hash)
+                                    if ((ti.AssetId == Blockchain.SystemShare.Hash) || (ti.AssetId == Blockchain.SystemCoin.Hash))
                                     {
-                                        friendByAccount = neoFriendByAccount;
-                                        txByAccount = neoTxByAccount;
-                                        increment(neoInByAccount, input, ti.Value);
-                                    }
-                                    else if (ti.AssetId == Blockchain.SystemCoin.Hash)
-                                    {
-                                        friendByAccount = gasFriendByAccount;
-                                        txByAccount = gasTxByAccount;
-										increment(gasInByAccount, input, ti.Value);
-                                    }
-
-                                    if (txByAccount != null)
-                                    {
-                                        foreach (TransactionOutput to in t.Outputs)
-                                        {
-                                            if (to.AssetId == ti.AssetId)
-                                            {
-                                                UInt160 output = to.ScriptHash;
-                                                if (input == output)
-                                                {
-                                                    if (ti.AssetId == Blockchain.SystemShare.Hash)
-                                                    {
-                                                        increment(neoInByAccount, input, -ti.Value);
-                                                    }
-                                                    else if (ti.AssetId == Blockchain.SystemCoin.Hash)
-                                                    {
-                                                        increment(gasInByAccount, input, -ti.Value);
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    if (txByAccount.ContainsKey(input))
-                                                    {
-                                                        txByAccount[input]++;
-                                                    }
-                                                    else
-                                                    {
-                                                        txByAccount[input] = 1;
-                                                    }
-                                                    if (txByAccount.ContainsKey(output))
-                                                    {
-                                                        txByAccount[output]++;
-                                                    }
-                                                    else
-                                                    {
-                                                        txByAccount[output] = 1;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    if (friendByAccount != null)
-                                    {
-                                        if (!friendByAccount.ContainsKey(input))
-                                        {
-                                            friendByAccount[input] = new HashSet<UInt160>();
-                                        }
-
-                                        foreach (TransactionOutput to in t.Outputs)
-                                        {
-                                            if (to.AssetId == ti.AssetId)
-                                            {
-                                                UInt160 output = to.ScriptHash;
-
-                                                if (!friendByAccount.ContainsKey(output))
-                                                {
-                                                    friendByAccount[output] = new HashSet<UInt160>();
-                                                }
-
-                                                friendByAccount[input].Add(output);
-                                                friendByAccount[output].Add(input);
-                                            }
-                                        }
+                                        increment(friendAssetMap, input, ti.AssetId, ti.Value);
                                     }
                                 }
 
@@ -436,20 +359,48 @@ namespace Neo.Network.RPC
                                 foreach (TransactionOutput to in t.Outputs)
                                 {
                                     UInt160 output = to.ScriptHash;
-                                    if (to.AssetId == Blockchain.SystemShare.Hash)
+                                    if ((to.AssetId == Blockchain.SystemShare.Hash) || (to.AssetId == Blockchain.SystemCoin.Hash))
                                     {
-                                        increment(neoOutByAccount, output, to.Value);
+                                        increment(friendAssetMap, output, to.AssetId, -to.Value);
                                     }
-                                    if (to.AssetId == Blockchain.SystemCoin.Hash)
+                                }
+
+                                foreach (UInt160 friend in friendAssetMap.Keys)
+                                {
+                                    if (friendAssetMap[friend].ContainsKey(Blockchain.SystemShare.Hash))
                                     {
-                                        increment(gasOutByAccount, output, to.Value);
+                                        increment(neoTxByAccount, friend, Fixed8.One);
+                                        Fixed8 value = friendAssetMap[friend][Blockchain.SystemShare.Hash];
+                                        if (value < Fixed8.Zero)
+                                        {
+                                            increment(neoInByAccount, friend, -value);
+                                        }
+                                        else
+                                        {
+                                            increment(neoOutByAccount, friend, value);
+                                        }
+                                    }
+                                    if (friendAssetMap[friend].ContainsKey(Blockchain.SystemCoin.Hash))
+                                    {
+                                        increment(gasTxByAccount, friend, Fixed8.One);
+                                        Fixed8 value = friendAssetMap[friend][Blockchain.SystemCoin.Hash];
+                                        if (value < Fixed8.Zero)
+                                        {
+                                            increment(gasInByAccount, friend, -value);
+                                        }
+                                        else
+                                        {
+                                            increment(gasOutByAccount, friend, value);
+                                        }
                                     }
                                 }
                             }
                         }
+                        errorTrace["3"] = $"accountStateCache";
 
                         DataCache<UInt160, AccountState> accountStateCache = Blockchain.Default.GetTable<UInt160, AccountState>();
 
+                        errorTrace["4"] = $"addressByAccount";
                         Dictionary<UInt160, String> addressByAccount = new Dictionary<UInt160, String>();
                         foreach (KeyValuePair<UInt160, AccountState> accountStateEntry in accountStateCache.GetEnumerator())
                         {
@@ -458,116 +409,110 @@ namespace Neo.Network.RPC
                             addressByAccount[key] = address;
                         }
 
+                        errorTrace["5"] = $"returnList";
+                        JArray returnList = new JArray();
+
                         foreach (KeyValuePair<UInt160, AccountState> accountStateEntry in accountStateCache.GetEnumerator())
                         {
                             UInt160 key = accountStateEntry.Value.ScriptHash;
-                            String address = addressByAccount[key];
+                            if (addressByAccount.ContainsKey(key))
+                            {
+                                String address = addressByAccount[key];
 
-                            //Console.WriteLine($"getaccountlist 7 key:{key}; address:{address};");
-                            JObject entry = new JObject();
-                            entry["account"] = address;
+                                //Console.WriteLine($"getaccountlist 7 key:{key}; address:{address};");
+                                JObject entry = new JObject();
+                                entry["account"] = address;
 
-                            if (accountStateEntry.Value.Balances.ContainsKey(Blockchain.SystemShare.Hash))
-                            {
-                                entry["neo"] = accountStateEntry.Value.Balances[Blockchain.SystemShare.Hash].value;
-                            }
-                            else
-                            {
-                                entry["neo"] = 0;
-                            }
+                                if (accountStateEntry.Value.Balances.ContainsKey(Blockchain.SystemShare.Hash))
+                                {
+                                    entry["neo"] = (long)accountStateEntry.Value.Balances[Blockchain.SystemShare.Hash];
+                                }
+                                else
+                                {
+                                    entry["neo"] = 0;
+                                }
 
-                            if (accountStateEntry.Value.Balances.ContainsKey(Blockchain.SystemCoin.Hash))
-                            {
-                                entry["gas"] = accountStateEntry.Value.Balances[Blockchain.SystemCoin.Hash].value;
-                            }
-                            else
-                            {
-                                entry["gas"] = 0;
-                            }
+                                if (accountStateEntry.Value.Balances.ContainsKey(Blockchain.SystemCoin.Hash))
+                                {
+                                    entry["gas"] = toRoundedDouble((decimal)accountStateEntry.Value.Balances[Blockchain.SystemCoin.Hash], roundPrecision);
+                                }
+                                else
+                                {
+                                    entry["gas"] = 0;
+                                }
 
-                            if (neoInByAccount.ContainsKey(key))
-                            {
-                                entry["neo_in"] = neoInByAccount[key];
-                            }
-                            else
-                            {
-                                entry["neo_in"] = 0;
-                            }
+                                if (neoInByAccount.ContainsKey(key))
+                                {
+                                    entry["neo_in"] = neoInByAccount[key];
+                                }
+                                else
+                                {
+                                    entry["neo_in"] = 0;
+                                }
 
-                            if (neoOutByAccount.ContainsKey(key))
-                            {
-                                entry["neo_out"] = neoOutByAccount[key];
-                            }
-                            else
-                            {
-                                entry["neo_out"] = 0;
-                            }
+                                if (neoOutByAccount.ContainsKey(key))
+                                {
+                                    entry["neo_out"] = neoOutByAccount[key];
+                                }
+                                else
+                                {
+                                    entry["neo_out"] = 0;
+                                }
 
 
-                            if (gasInByAccount.ContainsKey(key))
-                            {
-                                entry["gas_in"] = (double)gasInByAccount[key];
-                            }
-                            else
-                            {
-                                entry["gas_in"] = 0;
-                            }
+                                if (gasInByAccount.ContainsKey(key))
+                                {
+                                    entry["gas_in"] = toRoundedDouble(gasInByAccount[key], roundPrecision);
+                                }
+                                else
+                                {
+                                    entry["gas_in"] = 0;
+                                }
 
-                            if (gasOutByAccount.ContainsKey(key))
-                            {
-                                entry["gas_out"] = (double)gasOutByAccount[key];
-                            }
-                            else
-                            {
-                                entry["gas_out"] = 0;
-                            }
+                                if (gasOutByAccount.ContainsKey(key))
+                                {
+                                    entry["gas_out"] = toRoundedDouble(gasOutByAccount[key], roundPrecision);
+                                }
+                                else
+                                {
+                                    entry["gas_out"] = 0;
+                                }
 
-                            if (neoTxByAccount.ContainsKey(key))
-                            {
-                                entry["neo_tx"] = neoTxByAccount[key];
-                            }
-                            else
-                            {
-                                entry["neo_tx"] = 0;
-                            }
+                                if (neoTxByAccount.ContainsKey(key))
+                                {
+                                    entry["neo_tx"] = neoTxByAccount[key];
+                                }
+                                else
+                                {
+                                    entry["neo_tx"] = 0;
+                                }
 
-                            if (gasTxByAccount.ContainsKey(key))
-                            {
-                                entry["gas_tx"] = gasTxByAccount[key];
-                            }
-                            else
-                            {
-                                entry["gas_tx"] = 0;
-                            }
+                                if (gasTxByAccount.ContainsKey(key))
+                                {
+                                    entry["gas_tx"] = gasTxByAccount[key];
+                                }
+                                else
+                                {
+                                    entry["gas_tx"] = 0;
+                                }
 
-                            if (neoFriendByAccount.ContainsKey(key))
-                            {
-                                entry["neo_friends"] = neoFriendByAccount[key].Count();
+                                returnList.Add(entry);
                             }
-                            else
-                            {
-                                entry["neo_friends"] = 0;
-                            }
-
-                            if (gasFriendByAccount.ContainsKey(key))
-                            {
-                                entry["gas_friends"] = gasFriendByAccount[key].Count();
-                            }
-                            else
-                            {
-                                entry["gas_friends"] = 0;
-                            }
-
-                            list.Add(entry);
                         }
+                        errorTrace["6"] = $"return";
+                        //Console.WriteLine($"getaccountlist 8 {returnList.Count()}");
 
-                        Console.WriteLine($"getaccountlist 8 {list.Count()}");
-
-                        return list;
+                        return returnList;
                     }
                 default:
-                    throw new RpcException(-32601, "Method not found");
+                    throw new RpcException(-32601, $"Method not found \"{method}\"");
             }
+        }
+
+        private static double toRoundedDouble(decimal value, int precision)
+        {
+            double dbl = (double)value;
+            return Math.Round(dbl, precision);
         }
 
         private static void increment(Dictionary<UInt160, decimal> map, UInt160 key, Fixed8 value)
@@ -592,6 +537,19 @@ namespace Neo.Network.RPC
             {
                 map[key] = (long)value;
             }
+        }
+
+        private static void increment(Dictionary<UInt160, Dictionary<UInt256, Fixed8>> map, UInt160 key1, UInt256 key2, Fixed8 value)
+        {
+            if (!map.ContainsKey(key1))
+            {
+                map[key1] = new Dictionary<UInt256, Fixed8>();
+            }
+            if (!map[key1].ContainsKey(key2))
+            {
+                map[key1][key2] = Fixed8.Zero;
+            }
+            map[key1][key2] += value;
         }
 
         private uint getHeightOfTs(uint level, uint minHeight, uint maxHeight, uint ts)
@@ -695,17 +653,18 @@ namespace Neo.Network.RPC
             {
                 return CreateErrorResponse(request["id"], -32600, "Invalid Request");
             }
+            JObject errorTrace = new JObject();
             JObject result = null;
             try
             {
-                result = Process(request["method"].AsString(), (JArray)request["params"]);
+                result = Process(request["method"].AsString(), (JArray)request["params"], errorTrace);
             }
             catch (Exception ex)
             {
 #if DEBUG
                 return CreateErrorResponse(request["id"], ex.HResult, ex.Message, ex.StackTrace);
 #else
-                return CreateErrorResponse(request["id"], ex.HResult, ex.Message);
+                return CreateErrorResponse(request["id"], ex.HResult, ex.Message, errorTrace);
 #endif
             }
             JObject response = CreateResponse(request["id"]);
