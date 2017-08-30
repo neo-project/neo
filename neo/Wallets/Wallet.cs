@@ -1,6 +1,7 @@
 ﻿using Neo.Core;
 using Neo.Cryptography;
 using Neo.IO.Caching;
+using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +23,7 @@ namespace Neo.Wallets
         private readonly byte[] iv;
         private readonly byte[] masterKey;
         private readonly Dictionary<UInt160, KeyPair> keys;
-        private readonly Dictionary<UInt160, Contract> contracts;
+        private readonly Dictionary<UInt160, VerificationContract> contracts;
         private readonly HashSet<UInt160> watchOnly;
         private readonly TrackableCollection<CoinReference, Coin> coins;
         private uint current_height;
@@ -43,7 +44,7 @@ namespace Neo.Wallets
                 this.iv = new byte[16];
                 this.masterKey = new byte[32];
                 this.keys = new Dictionary<UInt160, KeyPair>();
-                this.contracts = new Dictionary<UInt160, Contract>();
+                this.contracts = new Dictionary<UInt160, VerificationContract>();
                 this.watchOnly = new HashSet<UInt160>();
                 this.coins = new TrackableCollection<CoinReference, Coin>();
                 this.current_height = Blockchain.Default?.HeaderHeight + 1 ?? 0;
@@ -95,7 +96,7 @@ namespace Neo.Wallets
         {
         }
 
-        public virtual void AddContract(Contract contract)
+        public virtual void AddContract(VerificationContract contract)
         {
             lock (keys)
             {
@@ -221,7 +222,7 @@ namespace Neo.Wallets
             {
                 lock (contracts)
                 {
-                    foreach (Contract contract in contracts.Values.Where(p => p.PublicKeyHash == publicKeyHash).ToArray())
+                    foreach (VerificationContract contract in contracts.Values.Where(p => p.PublicKeyHash == publicKeyHash).ToArray())
                     {
                         DeleteAddress(contract.ScriptHash);
                     }
@@ -306,7 +307,7 @@ namespace Neo.Wallets
             lock (keys)
                 lock (contracts)
                 {
-                    return !contracts.TryGetValue(scriptHash, out Contract contract) ? null : keys[contract.PublicKeyHash];
+                    return !contracts.TryGetValue(scriptHash, out VerificationContract contract) ? null : keys[contract.PublicKeyHash];
                 }
         }
 
@@ -362,16 +363,16 @@ namespace Neo.Wallets
             }
         }
 
-        public Contract GetContract(UInt160 scriptHash)
+        public VerificationContract GetContract(UInt160 scriptHash)
         {
             lock (contracts)
             {
-                contracts.TryGetValue(scriptHash, out Contract contract);
+                contracts.TryGetValue(scriptHash, out VerificationContract contract);
                 return contract;
             }
         }
 
-        public IEnumerable<Contract> GetContracts()
+        public IEnumerable<VerificationContract> GetContracts()
         {
             lock (contracts)
             {
@@ -382,11 +383,11 @@ namespace Neo.Wallets
             }
         }
 
-        public IEnumerable<Contract> GetContracts(UInt160 publicKeyHash)
+        public IEnumerable<VerificationContract> GetContracts(UInt160 publicKeyHash)
         {
             lock (contracts)
             {
-                foreach (Contract contract in contracts.Values.Where(p => p.PublicKeyHash.Equals(publicKeyHash)))
+                foreach (VerificationContract contract in contracts.Values.Where(p => p.PublicKeyHash.Equals(publicKeyHash)))
                 {
                     yield return contract;
                 }
@@ -502,7 +503,7 @@ namespace Neo.Wallets
 
         protected abstract IEnumerable<Coin> LoadCoins();
 
-        protected abstract IEnumerable<Contract> LoadContracts();
+        protected abstract IEnumerable<VerificationContract> LoadContracts();
 
         protected abstract byte[] LoadStoredData(string name);
 
@@ -720,12 +721,12 @@ namespace Neo.Wallets
             return true;
         }
 
-        public bool Sign(SignatureContext context)
+        public bool Sign(ContractParametersContext context)
         {
             bool fSuccess = false;
             foreach (UInt160 scriptHash in context.ScriptHashes)
             {
-                Contract contract = GetContract(scriptHash);
+                VerificationContract contract = GetContract(scriptHash);
                 if (contract == null) continue;
                 KeyPair key = GetKeyByScriptHash(scriptHash);
                 if (key == null) continue;

@@ -1,15 +1,19 @@
 ﻿using Neo.IO;
 using Neo.IO.Json;
+using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Neo.Core
 {
     [Obsolete]
     public class PublishTransaction : Transaction
     {
-        public FunctionCode Code;
+        public byte[] Script;
+        public ContractParameterType[] ParameterList;
+        public ContractParameterType ReturnType;
         public bool NeedStorage;
         public string Name;
         public string CodeVersion;
@@ -17,7 +21,20 @@ namespace Neo.Core
         public string Email;
         public string Description;
 
-        public override int Size => base.Size + Code.Size + Name.GetVarSize() + CodeVersion.GetVarSize() + Author.GetVarSize() + Email.GetVarSize() + Description.GetVarSize();
+        private UInt160 _scriptHash;
+        internal UInt160 ScriptHash
+        {
+            get
+            {
+                if (_scriptHash == null)
+                {
+                    _scriptHash = Script.ToScriptHash();
+                }
+                return _scriptHash;
+            }
+        }
+
+        public override int Size => base.Size + Script.GetVarSize() + ParameterList.GetVarSize() + sizeof(ContractParameterType) + Name.GetVarSize() + CodeVersion.GetVarSize() + Author.GetVarSize() + Email.GetVarSize() + Description.GetVarSize();
 
         public PublishTransaction()
             : base(TransactionType.PublishTransaction)
@@ -27,7 +44,9 @@ namespace Neo.Core
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             if (Version > 1) throw new FormatException();
-            Code = reader.ReadSerializable<FunctionCode>();
+            Script = reader.ReadVarBytes();
+            ParameterList = reader.ReadVarBytes().Select(p => (ContractParameterType)p).ToArray();
+            ReturnType = (ContractParameterType)reader.ReadByte();
             if (Version >= 1)
                 NeedStorage = reader.ReadBoolean();
             else
@@ -41,7 +60,9 @@ namespace Neo.Core
 
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
-            writer.Write(Code);
+            writer.WriteVarBytes(Script);
+            writer.WriteVarBytes(ParameterList.Cast<byte>().ToArray());
+            writer.Write((byte)ReturnType);
             if (Version >= 1) writer.Write(NeedStorage);
             writer.WriteVarString(Name);
             writer.WriteVarString(CodeVersion);
@@ -54,7 +75,11 @@ namespace Neo.Core
         {
             JObject json = base.ToJson();
             json["contract"] = new JObject();
-            json["contract"]["code"] = Code.ToJson();
+            json["contract"]["code"] = new JObject();
+            json["contract"]["code"]["hash"] = ScriptHash.ToString();
+            json["contract"]["code"]["script"] = Script.ToHexString();
+            json["contract"]["code"]["parameters"] = new JArray(ParameterList.Select(p => (JObject)p));
+            json["contract"]["code"]["returntype"] = ReturnType;
             json["contract"]["needstorage"] = NeedStorage;
             json["contract"]["name"] = Name;
             json["contract"]["version"] = CodeVersion;

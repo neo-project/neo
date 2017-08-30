@@ -1,7 +1,6 @@
 ﻿using Neo.Core;
 using Neo.Cryptography.ECC;
 using Neo.VM;
-using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -565,7 +564,7 @@ namespace Neo.SmartContract
         {
             ContractState contract = engine.EvaluationStack.Pop().GetInterface<ContractState>();
             if (contract == null) return false;
-            engine.EvaluationStack.Push(contract.Code.Script);
+            engine.EvaluationStack.Push(contract.Script);
             return true;
         }
 

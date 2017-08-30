@@ -19,16 +19,11 @@ namespace Neo.IO.Json
             }
             set
             {
-                if (properties.ContainsKey(name))
-                {
-                    properties[name] = value;
-                }
-                else
-                {
-                    properties.Add(name, value);
-                }
+                properties[name] = value;
             }
         }
+
+        public IReadOnlyDictionary<string, JObject> Properties => properties;
 
         public virtual bool AsBoolean()
         {
@@ -156,7 +151,7 @@ namespace Neo.IO.Json
 
         protected static void SkipSpace(TextReader reader)
         {
-            while (reader.Peek() == ' ' || reader.Peek() == '\r' || reader.Peek() == '\n')
+            while (reader.Peek() == ' ' || reader.Peek() == '\t' || reader.Peek() == '\r' || reader.Peek() == '\n')
             {
                 reader.Read();
             }

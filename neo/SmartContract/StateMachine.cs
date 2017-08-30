@@ -209,12 +209,9 @@ namespace Neo.SmartContract
             {
                 contract = new ContractState
                 {
-                    Code = new FunctionCode
-                    {
-                        Script = script,
-                        ParameterList = parameter_list,
-                        ReturnType = return_type
-                    },
+                    Script = script,
+                    ParameterList = parameter_list,
+                    ReturnType = return_type,
                     HasStorage = need_storage,
                     Name = name,
                     CodeVersion = version,
@@ -253,12 +250,9 @@ namespace Neo.SmartContract
             {
                 contract = new ContractState
                 {
-                    Code = new FunctionCode
-                    {
-                        Script = script,
-                        ParameterList = parameter_list,
-                        ReturnType = return_type
-                    },
+                    Script = script,
+                    ParameterList = parameter_list,
+                    ReturnType = return_type,
                     HasStorage = need_storage,
                     Name = name,
                     CodeVersion = version,

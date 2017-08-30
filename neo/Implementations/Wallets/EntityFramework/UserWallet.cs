@@ -1,7 +1,7 @@
-﻿using Neo.Core;
+﻿using Microsoft.EntityFrameworkCore;
+using Neo.Core;
 using Neo.IO;
 using Neo.Wallets;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +9,6 @@ using System.Reflection;
 using System.Security;
 using CoreTransaction = Neo.Core.Transaction;
 using WalletCoin = Neo.Wallets.Coin;
-using WalletContract = Neo.Wallets.Contract;
 using WalletKeyPair = Neo.Wallets.KeyPair;
 
 namespace Neo.Implementations.Wallets.EntityFramework
@@ -30,7 +29,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
         {
         }
 
-        public override void AddContract(WalletContract contract)
+        public override void AddContract(VerificationContract contract)
         {
             base.AddContract(contract);
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
@@ -104,7 +103,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
         {
             WalletKeyPair account = base.CreateKey(privateKey);
             OnCreateAccount(account);
-            AddContract(WalletContract.CreateSignatureContract(account.PublicKey));
+            AddContract(VerificationContract.CreateSignatureContract(account.PublicKey));
             return account;
         }
 
@@ -232,13 +231,13 @@ namespace Neo.Implementations.Wallets.EntityFramework
             }
         }
 
-        protected override IEnumerable<WalletContract> LoadContracts()
+        protected override IEnumerable<VerificationContract> LoadContracts()
         {
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
                 foreach (Contract contract in ctx.Contracts)
                 {
-                    yield return contract.RawData.AsSerializable<WalletContract>();
+                    yield return contract.RawData.AsSerializable<VerificationContract>();
                 }
             }
         }
@@ -263,7 +262,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
         {
             using (WalletDataContext ctx = new WalletDataContext(DbPath))
             {
-                foreach (byte[] hash in ctx.Addresses.Select(p => p.ScriptHash).Except(ctx.Contracts.Select(p => p.ScriptHash)))
+                foreach (byte[] hash in ctx.Addresses.Where(p => !ctx.Contracts.Select(q => q.ScriptHash).Contains(p.ScriptHash)).Select(p => p.ScriptHash))
                     yield return new UInt160(hash);
             }
         }
