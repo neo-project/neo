@@ -3,6 +3,7 @@ using Neo.Core;
 using Neo.Cryptography.ECC;
 using Neo.VM;
 using Neo.Wallets;
+using Neo.SmartContract;
 
 namespace Neo.UnitTests
 {

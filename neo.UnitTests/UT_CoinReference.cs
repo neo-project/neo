@@ -180,7 +180,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void GetHashCode()
+        public void Class_GetHashCode()
         {
             UInt256 prevHashVal;
             ushort prevIndexVal;

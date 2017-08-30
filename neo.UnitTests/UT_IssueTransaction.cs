@@ -7,6 +7,7 @@ using Neo.Core;
 using Neo.IO.Json;
 using Neo.Wallets;
 using Neo.VM;
+using Neo.SmartContract;
 
 namespace Neo.UnitTests
 {
