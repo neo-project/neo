@@ -1,5 +1,6 @@
 ﻿using Neo.Core;
 using Neo.Cryptography;
+using Neo.SmartContract;
 using System;
 using System.Linq;
 using System.Security.Cryptography;

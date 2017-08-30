@@ -1,8 +1,8 @@
 ﻿using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.SmartContract;
 using Neo.VM;
-using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -373,7 +373,7 @@ namespace Neo.Core
 
         byte[] IScriptTable.GetScript(byte[] script_hash)
         {
-            return GetContract(new UInt160(script_hash)).Code.Script;
+            return GetContract(new UInt160(script_hash)).Script;
         }
 
         public abstract StorageItem GetStorageItem(StorageKey key);

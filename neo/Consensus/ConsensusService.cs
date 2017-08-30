@@ -3,6 +3,7 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network;
 using Neo.Network.Payloads;
+using Neo.SmartContract;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -86,9 +87,9 @@ namespace Neo.Consensus
         {
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                Contract contract = Contract.CreateMultiSigContract(context.Validators[context.MyIndex].EncodePoint(true).ToScriptHash(), context.M, context.Validators);
+                VerificationContract contract = VerificationContract.CreateMultiSigContract(context.Validators[context.MyIndex].EncodePoint(true).ToScriptHash(), context.M, context.Validators);
                 Block block = context.MakeHeader();
-                SignatureContext sc = new SignatureContext(block);
+                ContractParametersContext sc = new ContractParametersContext(block);
                 for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
                     if (context.Signatures[i] != null)
                     {
@@ -332,10 +333,10 @@ namespace Neo.Consensus
 
         private void SignAndRelay(ConsensusPayload payload)
         {
-            SignatureContext sc;
+            ContractParametersContext sc;
             try
             {
-                sc = new SignatureContext(payload);
+                sc = new ContractParametersContext(payload);
             }
             catch (InvalidOperationException)
             {

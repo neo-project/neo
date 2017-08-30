@@ -19,16 +19,11 @@ namespace Neo.IO.Json
             }
             set
             {
-                if (properties.ContainsKey(name))
-                {
-                    properties[name] = value;
-                }
-                else
-                {
-                    properties.Add(name, value);
-                }
+                properties[name] = value;
             }
         }
+
+        public IReadOnlyDictionary<string, JObject> Properties => properties;
 
         public virtual bool AsBoolean()
         {

@@ -21,7 +21,7 @@ namespace Neo.VM
         public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params object[] args)
         {
             for (int i = args.Length - 1; i >= 0; i--)
-                EmitPush(sb, args[i]);
+                sb.EmitPush(args[i]);
             sb.EmitPush(args.Length);
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
@@ -34,7 +34,7 @@ namespace Neo.VM
             return sb.EmitPush(data.ToArray());
         }
 
-        private static void EmitPush(ScriptBuilder sb, object obj)
+        public static ScriptBuilder EmitPush(this ScriptBuilder sb, object obj)
         {
             switch (obj)
             {
@@ -83,6 +83,7 @@ namespace Neo.VM
                 default:
                     throw new ArgumentException();
             }
+            return sb;
         }
 
         public static ScriptBuilder EmitSysCall(this ScriptBuilder sb, string api, params object[] args)

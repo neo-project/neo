@@ -536,9 +536,11 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         {
 #pragma warning disable CS0612
                             PublishTransaction publish_tx = (PublishTransaction)tx;
-                            contracts.GetOrAdd(publish_tx.Code.ScriptHash, () => new ContractState
+                            contracts.GetOrAdd(publish_tx.ScriptHash, () => new ContractState
                             {
-                                Code = publish_tx.Code,
+                                Script = publish_tx.Script,
+                                ParameterList = publish_tx.ParameterList,
+                                ReturnType = publish_tx.ReturnType,
                                 HasStorage = publish_tx.NeedStorage,
                                 Name = publish_tx.Name,
                                 CodeVersion = publish_tx.CodeVersion,

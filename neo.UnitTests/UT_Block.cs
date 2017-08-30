@@ -124,7 +124,7 @@ namespace Neo.UnitTests
                     {
                         AssetId = assetId,
                         Value = Fixed8.FromDecimal(outputVal),
-                        ScriptHash = Contract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
+                        ScriptHash = VerificationContract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
                     }
                 },
                 Scripts = new[]
@@ -165,7 +165,7 @@ namespace Neo.UnitTests
                     {
                         AssetId = assetId,
                         Value = Fixed8.FromDecimal(outputVal),
-                        ScriptHash = Contract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
+                        ScriptHash = VerificationContract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
                     }
                 },
                 Scripts = new[]
