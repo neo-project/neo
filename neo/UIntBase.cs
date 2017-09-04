@@ -69,7 +69,7 @@ namespace Neo
         /// <returns>返回16进制字符串</returns>
         public override string ToString()
         {
-            return data_bytes.Reverse().ToHexString();
+            return "0x" + data_bytes.Reverse().ToHexString();
         }
 
         public static bool operator ==(UIntBase left, UIntBase right)
