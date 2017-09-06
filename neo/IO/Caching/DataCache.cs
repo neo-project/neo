@@ -48,22 +48,30 @@ namespace Neo.IO.Caching
             {
                 Key = key,
                 Item = value,
-                State = TrackState.Added
+                State = trackable == null ? TrackState.Added : TrackState.Changed
             };
         }
 
         public void Delete(TKey key)
         {
-            Trackable trackable;
-            if (dictionary.TryGetValue(key, out trackable))
-                trackable.State = TrackState.Deleted;
+            if (dictionary.TryGetValue(key, out Trackable trackable))
+            {
+                if (trackable.State == TrackState.Added)
+                    dictionary.Remove(key);
+                else
+                    trackable.State = TrackState.Deleted;
+            }
             else
+            {
+                TValue item = TryGetInternal(key);
+                if (item == null) return;
                 dictionary.Add(key, new Trackable
                 {
                     Key = key,
-                    Item = null,
+                    Item = item,
                     State = TrackState.Deleted
                 });
+            }
         }
 
         public void DeleteWhere(Func<TKey, TValue, bool> predicate)
@@ -104,7 +112,7 @@ namespace Neo.IO.Caching
                 {
                     if (factory == null) throw new KeyNotFoundException();
                     trackable.Item = factory();
-                    trackable.State = TrackState.Added;
+                    trackable.State = TrackState.Changed;
                 }
                 else if (trackable.State == TrackState.None)
                 {
@@ -140,7 +148,7 @@ namespace Neo.IO.Caching
                 if (trackable.State == TrackState.Deleted)
                 {
                     trackable.Item = factory();
-                    trackable.State = TrackState.Added;
+                    trackable.State = TrackState.Changed;
                 }
             }
             else
