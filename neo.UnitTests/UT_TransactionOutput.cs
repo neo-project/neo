@@ -81,7 +81,7 @@ namespace Neo.UnitTests
             JObject jObj = uut.ToJson(36);
             jObj.Should().NotBeNull();
             jObj["n"].AsNumber().Should().Be(36);
-            jObj["asset"].AsString().Should().Be("2020202020202020202020202020202020202020202020202020202020202042");
+            jObj["asset"].AsString().Should().Be("0x2020202020202020202020202020202020202020202020202020202020202042");
             jObj["value"].AsString().Should().Be("42");
             jObj["address"].AsString().Should().Be("AMoWjH3BDwMY7j8FEAovPJdq8XEuyJynwN");
         }
