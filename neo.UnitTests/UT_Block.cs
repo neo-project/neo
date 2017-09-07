@@ -557,11 +557,11 @@ namespace Neo.UnitTests
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["hash"].AsString().Should().Be("4520462a8c80056291f871da523bff0eb17e29d44ab4317e69ff7a42083cb39d");
+            jObj["hash"].AsString().Should().Be("0x4520462a8c80056291f871da523bff0eb17e29d44ab4317e69ff7a42083cb39d");
             jObj["size"].AsNumber().Should().Be(119);
             jObj["version"].AsNumber().Should().Be(0);
-            jObj["previousblockhash"].AsString().Should().Be("0000000000000000000000000000000000000000000000000000000000000000");
-            jObj["merkleroot"].AsString().Should().Be("fb5bd72b2d6792d75dc2f1084ffa9e9f70ca85543c717a6b13d9959b452a57d6");
+            jObj["previousblockhash"].AsString().Should().Be("0x0000000000000000000000000000000000000000000000000000000000000000");
+            jObj["merkleroot"].AsString().Should().Be("0xfb5bd72b2d6792d75dc2f1084ffa9e9f70ca85543c717a6b13d9959b452a57d6");
             jObj["time"].AsNumber().Should().Be(4244941696);
             jObj["index"].AsNumber().Should().Be(0);
             jObj["nonce"].AsString().Should().Be("000000000000001e");
@@ -573,7 +573,7 @@ namespace Neo.UnitTests
 
             jObj["tx"].Should().NotBeNull();
             JArray txObj = (JArray)jObj["tx"];
-            txObj[0]["txid"].AsString().Should().Be("fb5bd72b2d6792d75dc2f1084ffa9e9f70ca85543c717a6b13d9959b452a57d6");
+            txObj[0]["txid"].AsString().Should().Be("0xfb5bd72b2d6792d75dc2f1084ffa9e9f70ca85543c717a6b13d9959b452a57d6");
             txObj[0]["size"].AsNumber().Should().Be(10);
             txObj[0]["type"].AsString().Should().Be("MinerTransaction");
             txObj[0]["version"].AsNumber().Should().Be(0);

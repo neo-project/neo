@@ -337,12 +337,12 @@ namespace Neo.Consensus
             try
             {
                 sc = new ContractParametersContext(payload);
+                wallet.Sign(sc);
             }
             catch (InvalidOperationException)
             {
                 return;
             }
-            wallet.Sign(sc);
             sc.Verifiable.Scripts = sc.GetScripts();
             localNode.RelayDirectly(payload);
         }

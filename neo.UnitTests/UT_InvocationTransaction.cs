@@ -101,7 +101,7 @@ namespace Neo.UnitTests
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["txid"].AsString().Should().Be("8258b950487299376f89ad2d09598b7acbc5cde89b161b3dd73c256f9e2a94b1");
+            jObj["txid"].AsString().Should().Be("0x8258b950487299376f89ad2d09598b7acbc5cde89b161b3dd73c256f9e2a94b1");
             jObj["size"].AsNumber().Should().Be(39);
             jObj["type"].AsString().Should().Be("InvocationTransaction");
             jObj["version"].AsNumber().Should().Be(0);

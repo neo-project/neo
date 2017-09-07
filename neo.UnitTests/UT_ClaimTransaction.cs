@@ -139,7 +139,7 @@ namespace Neo.UnitTests
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["txid"].AsString().Should().Be("45a5c537ca95d62add6b331cad0fd742ce29ada02c50ea7e4d709f83563972b9");
+            jObj["txid"].AsString().Should().Be("0x45a5c537ca95d62add6b331cad0fd742ce29ada02c50ea7e4d709f83563972b9");
             jObj["size"].AsNumber().Should().Be(41);
             jObj["type"].AsString().Should().Be("ClaimTransaction");
             jObj["version"].AsNumber().Should().Be(0);
@@ -152,7 +152,7 @@ namespace Neo.UnitTests
 
             JArray claims = (JArray) jObj["claims"];
             claims.Count.Should().Be(1);
-            claims[0]["txid"].AsString().Should().Be("2020202020202020202020202020202020202020202020202020202020202042");
+            claims[0]["txid"].AsString().Should().Be("0x2020202020202020202020202020202020202020202020202020202020202042");
             claims[0]["vout"].AsNumber().Should().Be(0);
         }
 

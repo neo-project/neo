@@ -2,7 +2,6 @@
 using Neo.Cryptography.ECC;
 using Neo.VM;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -126,14 +125,10 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private HashSet<UInt160> _hashes_for_verifying = null;
         protected bool CheckWitness(ExecutionEngine engine, UInt160 hash)
         {
-            if (_hashes_for_verifying == null)
-            {
-                IVerifiable container = (IVerifiable)engine.ScriptContainer;
-                _hashes_for_verifying = new HashSet<UInt160>(container.GetScriptHashesForVerifying());
-            }
+            IVerifiable container = (IVerifiable)engine.ScriptContainer;
+            UInt160[] _hashes_for_verifying = container.GetScriptHashesForVerifying();
             return _hashes_for_verifying.Contains(hash);
         }
 
