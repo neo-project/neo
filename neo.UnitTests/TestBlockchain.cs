@@ -55,7 +55,9 @@ namespace Neo.UnitTests
 
         public override AssetState GetAssetState(UInt256 asset_id)
         {
-            throw new NotImplementedException();
+            if (asset_id == UInt256.Zero) return null;
+            UInt160 val = new UInt160(TestUtils.GetByteArray(20, asset_id.ToArray()[0]));
+            return new AssetState() { Issuer = val };
         }
 
         public override Block GetBlock(UInt256 hash)

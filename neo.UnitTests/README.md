@@ -17,11 +17,27 @@ With .NET Core SDK installed, use the CLI to navigate to the neo.UnitTest folder
 Coverage
 ====================
 
+* Base
+	* Fixed8.cs
 * Core
 	* AccountState.cs
 	* AssetState.cs
 	* Block.cs - Some code coverage missing on the Verify() method.
-	* ClaimTransaction.cs
-	* CoinReference.cs
+	* ClaimTransaction.cs	
+	* CoinReference.cs	
+	* Header.cs
+	* Helper.cs
+	* InvocationTransaction.cs
+	* IssueTransaction.cs
+	* MinerTransaction.cs
+	* SpentCoin.cs
 	* SpentCoinState.cs
+	* StorageItem.cs
+	* StorageKey.cs
+	* TransactionAttribute.cs
+	* TransactionOuput.cs
+	* TransactionResult.cs
+	* UnspentCoinState.cs
+	* ValidatorState.cs
+	* VoteState.cs
 	* Witness.cs

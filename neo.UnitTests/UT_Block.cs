@@ -75,28 +75,7 @@ namespace Neo.UnitTests
             uut.Size.Should().Be(109);
         }
 
-        private MinerTransaction getMinerTransaction()
-        {
-            return new MinerTransaction
-            {
-                Nonce = 2083236893,
-                Attributes = new TransactionAttribute[0],
-                Inputs = new CoinReference[0],
-                Outputs = new TransactionOutput[0],
-                Scripts = new Witness[0]
-            };
-        }
-
-        private ClaimTransaction getClaimTransaction()
-        {
-            return new ClaimTransaction
-            {
-                Claims = new CoinReference[0]
-            };
-        }
-
-        private readonly ECPoint[] StandbyValidators = new ECPoint[] { ECPoint.DecodePoint("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c".HexToBytes(), ECCurve.Secp256r1) };
-        private IssueTransaction getIssueTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
+  		private IssueTransaction getIssueTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
         {
             TestUtils.SetupTestBlockchain(assetId);
 
@@ -349,7 +328,7 @@ namespace Neo.UnitTests
             TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
 
             uut.Transactions = new Transaction[1] {
-                getIssueTransaction(true, 0, new UInt256(TestUtils.GetByteArray(32, 0x42)))
+                TestUtils.GetIssueTransaction(true, 0, new UInt256(TestUtils.GetByteArray(32, 0x42)))
             };
 
             Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.FromDecimal(-500));

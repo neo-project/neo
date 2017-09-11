@@ -12,7 +12,8 @@ namespace Neo.UnitTests
     [TestClass]
     public class UT_Culture
     {
-
+        // This test runs all the other unit tests in the project, with a variety of cultures
+        // This test will fail when any other test in the project fails. Fix the other failing test(s) and this test should pass again.
         [TestMethod]
         [NotReRunnable]
         public void All_Tests_Cultures()

@@ -2,6 +2,8 @@
 using Neo.Core;
 using Neo.Cryptography.ECC;
 using Neo.VM;
+using Neo.Wallets;
+using Neo.SmartContract;
 
 namespace Neo.UnitTests
 {
@@ -41,6 +43,47 @@ namespace Neo.UnitTests
                 Inputs = new CoinReference[0],
                 Outputs = new TransactionOutput[0],
                 Scripts = new Witness[0]
+            };
+        }
+
+        public static IssueTransaction GetIssueTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
+        {
+            TestUtils.SetupTestBlockchain(assetId);
+
+            CoinReference[] inputsVal;
+            if (inputVal)
+            {
+                inputsVal = new[]
+                {
+                    TestUtils.GetCoinReference(null)
+                };
+            }
+            else
+            {
+                inputsVal = new CoinReference[0];
+            }
+
+            return new IssueTransaction
+            {
+                Attributes = new TransactionAttribute[0],
+                Inputs = inputsVal,
+                Outputs = new[]
+                {
+                    new TransactionOutput
+                    {
+                        AssetId = assetId,
+                        Value = Fixed8.FromDecimal(outputVal),
+                        ScriptHash = Contract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
+                    }
+                },
+                Scripts = new[]
+                {
+                    new Witness
+                    {
+                        InvocationScript = new byte[0],
+                        VerificationScript = new[] { (byte)OpCode.PUSHT }
+                    }
+                }
             };
         }
 
