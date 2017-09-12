@@ -47,6 +47,8 @@ namespace Neo.SmartContract
                 case ContractParameterType.Array:
                     this.Value = new List<ContractParameter>();
                     break;
+                default:
+                    throw new ArgumentException();
             }
         }
 
@@ -85,6 +87,8 @@ namespace Neo.SmartContract
                     case ContractParameterType.Array:
                         parameter.Value = ((JArray)json["value"]).Select(p => FromJson(p)).ToArray();
                         break;
+                    default:
+                        throw new ArgumentException();
                 }
             return parameter;
         }
@@ -119,6 +123,8 @@ namespace Neo.SmartContract
                 case ContractParameterType.String:
                     Value = text;
                     break;
+                default:
+                    throw new ArgumentException();
             }
         }
 

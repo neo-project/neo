@@ -4,13 +4,15 @@ using Microsoft.AspNetCore.Http;
 using Neo.Core;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.SmartContract;
+using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using System.Net;
 
 namespace Neo.Network.RPC
 {
@@ -50,6 +52,16 @@ namespace Neo.Network.RPC
                 host.Dispose();
                 host = null;
             }
+        }
+
+        private static JObject GetInvokeResult(byte[] script)
+        {
+            ApplicationEngine engine = ApplicationEngine.Run(script);
+            JObject json = new JObject();
+            json["state"] = engine.State;
+            json["gas_consumed"] = engine.GasConsumed.ToString();
+            json["stack"] = new JArray(engine.EvaluationStack.Select(p => p.ToParameter().ToJson()));
+            return json;
         }
 
         protected virtual JObject Process(string method, JArray _params)
@@ -180,6 +192,34 @@ namespace Neo.Network.RPC
                         ushort index = (ushort)_params[1].AsNumber();
                         return Blockchain.Default.GetUnspent(hash, index)?.ToJson(index);
                     }
+                case "invoke":
+                    {
+                        UInt160 script_hash = UInt160.Parse(_params[0].AsString());
+                        ContractParameter[] parameters = ((JArray)_params[1]).Select(p => ContractParameter.FromJson(p)).ToArray();
+                        byte[] script;
+                        using (ScriptBuilder sb = new ScriptBuilder())
+                        {
+                            script = sb.EmitAppCall(script_hash, parameters).ToArray();
+                        }
+                        return GetInvokeResult(script);
+                    }
+                case "invokefunction":
+                    {
+                        UInt160 script_hash = UInt160.Parse(_params[0].AsString());
+                        string operation = _params[1].AsString();
+                        ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[1]).Select(p => ContractParameter.FromJson(p)).ToArray() : new ContractParameter[0];
+                        byte[] script;
+                        using (ScriptBuilder sb = new ScriptBuilder())
+                        {
+                            script = sb.EmitAppCall(script_hash, operation, args).ToArray();
+                        }
+                        return GetInvokeResult(script);
+                    }
+                case "invokescript":
+                    {
+                        byte[] script = _params[0].AsString().HexToBytes();
+                        return GetInvokeResult(script);
+                    }
                 case "sendrawtransaction":
                     {
                         Transaction tx = Transaction.DeserializeFrom(_params[0].AsString().HexToBytes());
@@ -205,7 +245,7 @@ namespace Neo.Network.RPC
                         json["address"] = _params[0];
                         json["isvalid"] = scriptHash != null;
                         return json;
-                }
+                    }
                 case "getpeers":
                     {
                         JObject json = new JObject();
@@ -298,9 +338,8 @@ namespace Neo.Network.RPC
             {
                 response = CreateErrorResponse(null, -32700, "Parse error");
             }
-            else if (request is JArray)
+            else if (request is JArray array)
             {
-                JArray array = (JArray)request;
                 if (array.Count == 0)
                 {
                     response = CreateErrorResponse(request["id"], -32600, "Invalid Request");

@@ -1,8 +1,8 @@
 ﻿using Neo.Core;
+using Neo.Cryptography.ECC;
+using Neo.IO.Caching;
 using System;
 using System.Collections.Generic;
-using Neo.Cryptography.ECC;
-using Neo.IO;
 
 namespace Neo.UnitTests
 {
@@ -39,6 +39,11 @@ namespace Neo.UnitTests
         }
 
         public override bool ContainsUnspent(UInt256 hash, ushort index)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override DataCache<TKey, TValue> CreateCache<TKey, TValue>()
         {
             throw new NotImplementedException();
         }

@@ -211,7 +211,7 @@ namespace Neo.SmartContract
                 {
                     foreach (ContractParameter parameter in item.Parameters.Reverse())
                     {
-                        sb.EmitPush(parameter.Value);
+                        sb.EmitPush(parameter);
                     }
                     scripts[i] = new Witness
                     {

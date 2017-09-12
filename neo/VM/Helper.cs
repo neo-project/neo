@@ -1,5 +1,9 @@
-﻿using Neo.IO;
+﻿using Neo.Cryptography.ECC;
+using Neo.IO;
+using Neo.SmartContract;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.VM
@@ -18,6 +22,32 @@ namespace Neo.VM
             return sb.EmitAppCall(scriptHash.ToArray(), useTailCall);
         }
 
+        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, params ContractParameter[] parameters)
+        {
+            for (int i = parameters.Length - 1; i >= 0; i--)
+                sb.EmitPush(parameters[i]);
+            return sb.EmitAppCall(scriptHash);
+        }
+
+        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation)
+        {
+            sb.EmitPush(false);
+            sb.EmitPush(operation);
+            sb.EmitAppCall(scriptHash);
+            return sb;
+        }
+
+        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params ContractParameter[] args)
+        {
+            for (int i = args.Length - 1; i >= 0; i--)
+                sb.EmitPush(args[i]);
+            sb.EmitPush(args.Length);
+            sb.Emit(OpCode.PACK);
+            sb.EmitPush(operation);
+            sb.EmitAppCall(scriptHash);
+            return sb;
+        }
+
         public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params object[] args)
         {
             for (int i = args.Length - 1; i >= 0; i--)
@@ -32,6 +62,47 @@ namespace Neo.VM
         public static ScriptBuilder EmitPush(this ScriptBuilder sb, ISerializable data)
         {
             return sb.EmitPush(data.ToArray());
+        }
+
+        public static ScriptBuilder EmitPush(this ScriptBuilder sb, ContractParameter parameter)
+        {
+            switch (parameter.Type)
+            {
+                case ContractParameterType.Signature:
+                case ContractParameterType.ByteArray:
+                    sb.EmitPush((byte[])parameter.Value);
+                    break;
+                case ContractParameterType.Boolean:
+                    sb.EmitPush((bool)parameter.Value);
+                    break;
+                case ContractParameterType.Integer:
+                    sb.EmitPush((BigInteger)parameter.Value);
+                    break;
+                case ContractParameterType.Hash160:
+                    sb.EmitPush((UInt160)parameter.Value);
+                    break;
+                case ContractParameterType.Hash256:
+                    sb.EmitPush((UInt256)parameter.Value);
+                    break;
+                case ContractParameterType.PublicKey:
+                    sb.EmitPush((ECPoint)parameter.Value);
+                    break;
+                case ContractParameterType.String:
+                    sb.EmitPush((string)parameter.Value);
+                    break;
+                case ContractParameterType.Array:
+                    {
+                        IList<ContractParameter> parameters = (IList<ContractParameter>)parameter.Value;
+                        for (int i = parameters.Count - 1; i >= 0; i--)
+                            sb.EmitPush(parameters[i]);
+                        sb.EmitPush(parameters.Count);
+                        sb.Emit(OpCode.PACK);
+                    }
+                    break;
+                default:
+                    throw new ArgumentException();
+            }
+            return sb;
         }
 
         public static ScriptBuilder EmitPush(this ScriptBuilder sb, object obj)
@@ -91,6 +162,45 @@ namespace Neo.VM
             for (int i = args.Length - 1; i >= 0; i--)
                 EmitPush(sb, args[i]);
             return sb.EmitSysCall(api);
+        }
+
+        public static ContractParameter ToParameter(this StackItem item)
+        {
+            switch (item.GetType().Name)
+            {
+                case "Array":
+                case "Struct":
+                    return new ContractParameter
+                    {
+                        Type = ContractParameterType.Array,
+                        Value = item.GetArray().Select(p => p.ToParameter()).ToArray()
+                    };
+                case "Boolean":
+                    return new ContractParameter
+                    {
+                        Type = ContractParameterType.Boolean,
+                        Value = item.GetBoolean()
+                    };
+                case "ByteArray":
+                    return new ContractParameter
+                    {
+                        Type = ContractParameterType.ByteArray,
+                        Value = item.GetByteArray()
+                    };
+                case "Integer":
+                    return new ContractParameter
+                    {
+                        Type = ContractParameterType.Integer,
+                        Value = item.GetBigInteger()
+                    };
+                case "InteropInterface":
+                    return new ContractParameter
+                    {
+                        Type = ContractParameterType.InteropInterface
+                    };
+                default:
+                    throw new ArgumentException();
+            }
         }
     }
 }

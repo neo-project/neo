@@ -288,9 +288,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             return value.ToArray().ToInt64(0);
         }
 
-        public DataCache<TKey, TValue> GetTable<TKey, TValue>()
-            where TKey : IEquatable<TKey>, ISerializable, new()
-            where TValue : class, ISerializable, new()
+        public override DataCache<TKey, TValue> CreateCache<TKey, TValue>()
         {
             Type t = typeof(TValue);
             if (t == typeof(AccountState)) return new DbCache<TKey, TValue>(db, DataEntryPrefix.ST_Account);

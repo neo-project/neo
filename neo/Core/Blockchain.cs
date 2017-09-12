@@ -1,6 +1,7 @@
 ﻿using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.IO.Caching;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
@@ -259,6 +260,10 @@ namespace Neo.Core
         }
 
         public abstract bool ContainsUnspent(UInt256 hash, ushort index);
+
+        public abstract DataCache<TKey, TValue> CreateCache<TKey, TValue>()
+            where TKey : IEquatable<TKey>, ISerializable, new()
+            where TValue : class, ISerializable, new();
 
         public abstract void Dispose();
 

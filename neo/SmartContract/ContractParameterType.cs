@@ -31,6 +31,8 @@
 
         Array = 0x10,
 
+        InteropInterface = 0xf0,
+
         Void = 0xff
     }
 }

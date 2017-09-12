@@ -1,13 +1,14 @@
 ﻿using Neo.Core;
+using Neo.IO.Caching;
 using Neo.VM;
 
-namespace Neo.Implementations.Blockchains.LevelDB
+namespace Neo.SmartContract
 {
     internal class CachedScriptTable : IScriptTable
     {
-        private DbCache<UInt160, ContractState> contracts;
+        private DataCache<UInt160, ContractState> contracts;
 
-        public CachedScriptTable(DbCache<UInt160, ContractState> contracts)
+        public CachedScriptTable(DataCache<UInt160, ContractState> contracts)
         {
             this.contracts = contracts;
         }
