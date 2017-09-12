@@ -18,6 +18,9 @@ namespace Neo.SmartContract
         private CloneCache<StorageKey, StorageItem> storages;
 
         private Dictionary<UInt160, UInt160> contracts_created = new Dictionary<UInt160, UInt160>();
+        private List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
+
+        public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
 
         public StateMachine(DataCache<UInt160, AccountState> accounts, DataCache<ECPoint, ValidatorState> validators, DataCache<UInt256, AssetState> assets, DataCache<UInt160, ContractState> contracts, DataCache<StorageKey, StorageItem> storages)
         {
@@ -26,6 +29,7 @@ namespace Neo.SmartContract
             this.assets = new CloneCache<UInt256, AssetState>(assets);
             this.contracts = new CloneCache<UInt160, ContractState>(contracts);
             this.storages = new CloneCache<StorageKey, StorageItem>(storages);
+            Notify += StateMachine_Notify;
             Register("Neo.Account.SetVotes", Account_SetVotes);
             Register("Neo.Validator.Register", Validator_Register);
             Register("Neo.Asset.Create", Asset_Create);
@@ -65,6 +69,11 @@ namespace Neo.SmartContract
             assets.Commit();
             contracts.Commit();
             storages.Commit();
+        }
+
+        private void StateMachine_Notify(object sender, NotifyEventArgs e)
+        {
+            notifications.Add(e);
         }
 
         protected override bool Blockchain_GetAccount(ExecutionEngine engine)

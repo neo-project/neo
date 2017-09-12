@@ -556,7 +556,12 @@ namespace Neo.Implementations.Blockchains.LevelDB
                             StateMachine service = new StateMachine(accounts, validators, assets, contracts, storages);
                             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, itx, script_table, service, itx.Gas);
                             engine.LoadScript(itx.Script, false);
-                            if (engine.Execute()) service.Commit();
+                            if (engine.Execute())
+                            {
+                                service.Commit();
+                                if (service.Notifications.Count > 0)
+                                    OnNotify(service.Notifications.ToArray());
+                            }
                         }
                         break;
                 }

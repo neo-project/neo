@@ -10,8 +10,8 @@ namespace Neo.SmartContract
 {
     public class StateReader : InteropService
     {
-        public static event EventHandler<NotifyEventArgs> Notify;
-        public static event EventHandler<LogEventArgs> Log;
+        public event EventHandler<NotifyEventArgs> Notify;
+        public event EventHandler<LogEventArgs> Log;
 
         public static readonly StateReader Default = new StateReader();
 

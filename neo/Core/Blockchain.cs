@@ -15,9 +15,7 @@ namespace Neo.Core
     /// </summary>
     public abstract class Blockchain : IDisposable, IScriptTable
     {
-        /// <summary>
-        /// 当区块被写入到硬盘后触发
-        /// </summary>
+        public static event EventHandler<NotifyEventArgs[]> Notify;
         public static event EventHandler<Block> PersistCompleted;
 
         /// <summary>
@@ -185,8 +183,7 @@ namespace Neo.Core
             List<SpentCoin> unclaimed = new List<SpentCoin>();
             foreach (var group in inputs.GroupBy(p => p.PrevHash))
             {
-                int height_start;
-                Transaction tx = Default.GetTransaction(group.Key, out height_start);
+                Transaction tx = Default.GetTransaction(group.Key, out int height_start);
                 if (tx == null) throw new ArgumentException();
                 if (height_start == height_end) continue;
                 foreach (CoinReference claim in group)
@@ -407,8 +404,7 @@ namespace Neo.Core
         /// <returns>返回对应的交易信息</returns>
         public Transaction GetTransaction(UInt256 hash)
         {
-            int height;
-            return GetTransaction(hash, out height);
+            return GetTransaction(hash, out _);
         }
 
         /// <summary>
@@ -447,6 +443,11 @@ namespace Neo.Core
         /// <returns>返回交易是否双花</returns>
         public abstract bool IsDoubleSpend(Transaction tx);
 
+        protected void OnNotify(NotifyEventArgs[] notifications)
+        {
+            Notify?.Invoke(this, notifications);
+        }
+
         /// <summary>
         /// 当区块被写入到硬盘后调用
         /// </summary>
@@ -457,7 +458,7 @@ namespace Neo.Core
             {
                 _validators.Clear();
             }
-            if (PersistCompleted != null) PersistCompleted(this, block);
+            PersistCompleted?.Invoke(this, block);
         }
 
         /// <summary>
@@ -467,9 +468,8 @@ namespace Neo.Core
         /// <returns>返回注册后的区块链实例</returns>
         public static Blockchain RegisterBlockchain(Blockchain blockchain)
         {
-            if (blockchain == null) throw new ArgumentNullException();
             if (Default != null) Default.Dispose();
-            Default = blockchain;
+            Default = blockchain ?? throw new ArgumentNullException();
             return blockchain;
         }
     }
