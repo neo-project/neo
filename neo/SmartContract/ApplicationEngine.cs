@@ -145,10 +145,6 @@ namespace Neo.SmartContract
                 {
                     gas_consumed = checked(gas_consumed + GetPrice() * ratio);
                 }
-                catch (OverflowException)
-                {
-                    return false;
-                }
                 catch (Exception)
                 {
                     return false;
