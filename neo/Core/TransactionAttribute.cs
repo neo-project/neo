@@ -24,7 +24,7 @@ namespace Neo.Core
         /// <summary>
         /// Maximum data size
         /// </summary>
-        const int MaxTransactionAttributeSize = 2 ^ 13; //8192
+        const int MaxTransactionAttributeSize = ushort.MaxValue; //65535
 
         public int Size
         {

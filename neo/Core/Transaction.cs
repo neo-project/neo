@@ -45,7 +45,7 @@ namespace Neo.Core
         /// <summary>
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
-        const int MaxTransactionAttributes = 64;
+        const int MaxTransactionAttributes = 16;
 
 
         private UInt256 _hash = null;
