@@ -21,6 +21,11 @@ namespace Neo.Core
         /// </summary>
         public byte[] Data;
 
+        /// <summary>
+        /// Maximum data size
+        /// </summary>
+        const int MaxTransactionAttributeSize = 2 ^ 13; //8192
+
         public int Size
         {
             get
@@ -48,7 +53,7 @@ namespace Neo.Core
             else if (Usage == TransactionAttributeUsage.DescriptionUrl)
                 Data = reader.ReadBytes(reader.ReadByte());
             else if (Usage == TransactionAttributeUsage.Description || Usage >= TransactionAttributeUsage.Remark)
-                Data = reader.ReadVarBytes(ushort.MaxValue);
+                Data = reader.ReadVarBytes(MaxTransactionAttributeSize);
             else
                 throw new FormatException();
         }
@@ -56,6 +61,12 @@ namespace Neo.Core
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Usage);
+
+            if( Data.Length > MaxTransactionAttributeSize)
+            {
+                throw new FormatException();
+            }
+
             if (Usage == TransactionAttributeUsage.DescriptionUrl)
                 writer.Write((byte)Data.Length);
             else if (Usage == TransactionAttributeUsage.Description || Usage >= TransactionAttributeUsage.Remark)

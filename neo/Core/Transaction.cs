@@ -42,6 +42,12 @@ namespace Neo.Core
         /// </summary>
         public Witness[] Scripts { get; set; }
 
+        /// <summary>
+        /// Maximum number of attributes that can be contained within a transaction
+        /// </summary>
+        const int MaxTransactionAttributes = 64;
+
+
         private UInt256 _hash = null;
         public UInt256 Hash
         {
@@ -184,7 +190,8 @@ namespace Neo.Core
         {
             Version = reader.ReadByte();
             DeserializeExclusiveData(reader);
-            Attributes = reader.ReadSerializableArray<TransactionAttribute>();
+          
+            Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
             Inputs = reader.ReadSerializableArray<CoinReference>();
             Outputs = reader.ReadSerializableArray<TransactionOutput>(ushort.MaxValue + 1);
         }
@@ -284,6 +291,12 @@ namespace Neo.Core
             writer.Write((byte)Type);
             writer.Write(Version);
             SerializeExclusiveData(writer);
+
+            if( Attributes.Length > MaxTransactionAttributes)
+            {
+                throw new FormatException();
+            }
+
             writer.Write(Attributes);
             writer.Write(Inputs);
             writer.Write(Outputs);
