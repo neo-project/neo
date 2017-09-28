@@ -14,23 +14,22 @@ namespace Neo.Network
         private const int PayloadMaxSize = 0x02000000;
 
         public static readonly uint Magic = Settings.Default.Magic;
-        public string Command;
-        public uint Checksum;
+
+        public MessageCommand Command;
         public byte[] Payload;
 
         public int Size => sizeof(uint) + 12 + sizeof(int) + sizeof(uint) + Payload.Length;
 
-        public static Message Create(string command, ISerializable payload = null)
+        public static Message Create(MessageCommand command, ISerializable payload = null)
         {
             return Create(command, payload == null ? new byte[0] : payload.ToArray());
         }
 
-        public static Message Create(string command, byte[] payload)
+        public static Message Create(MessageCommand command, byte[] payload)
         {
             return new Message
             {
                 Command = command,
-                Checksum = GetChecksum(payload),
                 Payload = payload
             };
         }
@@ -39,13 +38,15 @@ namespace Neo.Network
         {
             if (reader.ReadUInt32() != Magic)
                 throw new FormatException();
-            this.Command = reader.ReadFixedString(12);
+            if (!Enum.TryParse(reader.ReadFixedString(12), out this.Command))
+                throw new FormatException();
             uint length = reader.ReadUInt32();
             if (length > PayloadMaxSize)
                 throw new FormatException();
-            this.Checksum = reader.ReadUInt32();
+
+            uint checksum = reader.ReadUInt32();
             this.Payload = reader.ReadBytes((int)length);
-            if (GetChecksum(Payload) != Checksum)
+            if (GetChecksum(Payload) != checksum)
                 throw new FormatException();
         }
 
@@ -53,22 +54,26 @@ namespace Neo.Network
         {
             byte[] buffer = new byte[24];
             await FillBufferAsync(stream, buffer, cancellationToken);
+
+            uint checksum;
             Message message = new Message();
             using (MemoryStream ms = new MemoryStream(buffer, false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
                 if (reader.ReadUInt32() != Magic)
                     throw new FormatException();
-                message.Command = reader.ReadFixedString(12);
+                if (!Enum.TryParse(reader.ReadFixedString(12), out message.Command))
+                    throw new FormatException();
                 uint length = reader.ReadUInt32();
                 if (length > PayloadMaxSize)
                     throw new FormatException();
-                message.Checksum = reader.ReadUInt32();
+
+                checksum = reader.ReadUInt32();
                 message.Payload = new byte[length];
             }
             if (message.Payload.Length > 0)
                 await FillBufferAsync(stream, message.Payload, cancellationToken);
-            if (GetChecksum(message.Payload) != message.Checksum)
+            if (GetChecksum(message.Payload) != checksum)
                 throw new FormatException();
             return message;
         }
@@ -77,22 +82,26 @@ namespace Neo.Network
         {
             byte[] buffer = new byte[24];
             await FillBufferAsync(socket, buffer, cancellationToken);
+
+            uint checksum;
             Message message = new Message();
             using (MemoryStream ms = new MemoryStream(buffer, false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
                 if (reader.ReadUInt32() != Magic)
                     throw new FormatException();
-                message.Command = reader.ReadFixedString(12);
+                if (!Enum.TryParse(reader.ReadFixedString(12), out message.Command))
+                    throw new FormatException();
                 uint length = reader.ReadUInt32();
                 if (length > PayloadMaxSize)
                     throw new FormatException();
-                message.Checksum = reader.ReadUInt32();
+
+                checksum = reader.ReadUInt32();
                 message.Payload = new byte[length];
             }
             if (message.Payload.Length > 0)
                 await FillBufferAsync(socket, message.Payload, cancellationToken);
-            if (GetChecksum(message.Payload) != message.Checksum)
+            if (GetChecksum(message.Payload) != checksum)
                 throw new FormatException();
             return message;
         }
@@ -129,9 +138,9 @@ namespace Neo.Network
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(Magic);
-            writer.WriteFixedString(Command, 12);
+            writer.WriteFixedString(Command.ToString(), 12);
             writer.Write(Payload.Length);
-            writer.Write(Checksum);
+            writer.Write(GetChecksum(Payload));
             writer.Write(Payload);
         }
     }
