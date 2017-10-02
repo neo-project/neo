@@ -597,8 +597,8 @@ namespace Neo.Implementations.Blockchains.LevelDB
                     Block block;
                     lock (block_cache)
                     {
-                        if (!block_cache.ContainsKey(hash)) break;
-                        block = block_cache[hash];
+                        if (!block_cache.TryGetValue(hash, out block))
+                            break;
                     }
                     Persist(block);
                     OnPersistCompleted(block);
