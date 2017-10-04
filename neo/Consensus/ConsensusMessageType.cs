@@ -3,7 +3,7 @@
     internal enum ConsensusMessageType : byte
     {
         ChangeView = 0x00,
-        PerpareRequest = 0x20,
-        PerpareResponse = 0x21,
+        PrepareRequest = 0x20,
+        PrepareResponse = 0x21,
     }
 }
