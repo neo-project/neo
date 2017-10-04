@@ -86,9 +86,9 @@ namespace Neo.Consensus
             };
         }
 
-        public ConsensusPayload MakePerpareRequest()
+        public ConsensusPayload MakePrepareRequest()
         {
-            return MakePayload(new PerpareRequest
+            return MakePayload(new PrepareRequest
             {
                 Nonce = Nonce,
                 NextConsensus = NextConsensus,
@@ -98,9 +98,9 @@ namespace Neo.Consensus
             });
         }
 
-        public ConsensusPayload MakePerpareResponse(byte[] signature)
+        public ConsensusPayload MakePrepareResponse(byte[] signature)
         {
-            return MakePayload(new PerpareResponse
+            return MakePayload(new PrepareResponse
             {
                 Signature = signature
             });
