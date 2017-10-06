@@ -57,7 +57,7 @@ namespace Neo.Network
                 if (needSync)
                     lock (localNode.connectedPeers)
                         foreach (RemoteNode node in localNode.connectedPeers)
-                            node.EnqueueMessage(MessageCommand.getblocks, GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash), true);
+                            node.EnqueueMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash), true);
             }
         }
 
@@ -66,12 +66,12 @@ namespace Neo.Network
             Disconnect(false);
         }
 
-        public void EnqueueMessage(MessageCommand command, ISerializable payload = null)
+        public void EnqueueMessage(string command, ISerializable payload = null)
         {
             EnqueueMessage(command, payload, false);
         }
 
-        private void EnqueueMessage(MessageCommand command, ISerializable payload, bool is_single)
+        private void EnqueueMessage(string command, ISerializable payload, bool is_single)
         {
             lock (message_queue)
             {
@@ -120,7 +120,7 @@ namespace Neo.Network
                 peers = peers.Take(MaxCountToSend);
                 payload = AddrPayload.Create(peers.Select(p => NetworkAddressWithTime.Create(p.ListenerEndpoint, p.Version.Services, p.Version.Timestamp)).ToArray());
             }
-            EnqueueMessage(MessageCommand.addr, payload, true);
+            EnqueueMessage("addr", payload, true);
         }
 
         private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
@@ -136,7 +136,7 @@ namespace Neo.Network
                 if (hash == null) break;
                 hashes.Add(hash);
             } while (hash != payload.HashStop && hashes.Count < 500);
-            EnqueueMessage(MessageCommand.inv, InvPayload.Create(InventoryType.Block, hashes.ToArray()));
+            EnqueueMessage("inv", InvPayload.Create(InventoryType.Block, hashes.ToArray()));
         }
 
         private void OnGetDataMessageReceived(InvPayload payload)
@@ -154,7 +154,7 @@ namespace Neo.Network
                         if (inventory == null && Blockchain.Default != null)
                             inventory = Blockchain.Default.GetTransaction(hash);
                         if (inventory != null)
-                            EnqueueMessage(MessageCommand.tx, inventory);
+                            EnqueueMessage("tx", inventory);
                         break;
                     case InventoryType.Block:
                         if (inventory == null && Blockchain.Default != null)
@@ -164,19 +164,19 @@ namespace Neo.Network
                             BloomFilter filter = bloom_filter;
                             if (filter == null)
                             {
-                                EnqueueMessage(MessageCommand.block, inventory);
+                                EnqueueMessage("block", inventory);
                             }
                             else
                             {
                                 Block block = (Block)inventory;
                                 BitArray flags = new BitArray(block.Transactions.Select(p => TestFilter(filter, p)).ToArray());
-                                EnqueueMessage(MessageCommand.merkleblock, MerkleBlockPayload.Create(block, flags));
+                                EnqueueMessage("merkleblock", MerkleBlockPayload.Create(block, flags));
                             }
                         }
                         break;
                     case InventoryType.Consensus:
                         if (inventory != null)
-                            EnqueueMessage(MessageCommand.consensus, inventory);
+                            EnqueueMessage("consensus", inventory);
                         break;
                 }
             }
@@ -195,7 +195,7 @@ namespace Neo.Network
                 if (hash == null) break;
                 headers.Add(Blockchain.Default.GetHeader(hash));
             } while (hash != payload.HashStop && headers.Count < 2000);
-            EnqueueMessage(MessageCommand.headers, HeadersPayload.Create(headers));
+            EnqueueMessage("headers", HeadersPayload.Create(headers));
         }
 
         private void OnHeadersMessageReceived(HeadersPayload payload)
@@ -204,7 +204,7 @@ namespace Neo.Network
             Blockchain.Default.AddHeaders(payload.Headers);
             if (Blockchain.Default.HeaderHeight < Version.StartHeight)
             {
-                EnqueueMessage(MessageCommand.getheaders, GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash), true);
+                EnqueueMessage("getheaders", GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash), true);
             }
         }
 
@@ -251,71 +251,71 @@ namespace Neo.Network
                 }
             }
             if (hashes.Length == 0) return;
-            EnqueueMessage(MessageCommand.getdata, InvPayload.Create(payload.Type, hashes));
+            EnqueueMessage("getdata", InvPayload.Create(payload.Type, hashes));
         }
 
         private void OnMemPoolMessageReceived()
         {
-            EnqueueMessage(MessageCommand.inv, InvPayload.Create(InventoryType.TX, LocalNode.GetMemoryPool().Select(p => p.Hash).ToArray()));
+            EnqueueMessage("inv", InvPayload.Create(InventoryType.TX, LocalNode.GetMemoryPool().Select(p => p.Hash).ToArray()));
         }
 
         private void OnMessageReceived(Message message)
         {
             switch (message.Command)
             {
-                case MessageCommand.addr:
+                case "addr":
                     OnAddrMessageReceived(message.Payload.AsSerializable<AddrPayload>());
                     break;
-                case MessageCommand.block:
+                case "block":
                     OnInventoryReceived(message.Payload.AsSerializable<Block>());
                     break;
-                case MessageCommand.consensus:
+                case "consensus":
                     OnInventoryReceived(message.Payload.AsSerializable<ConsensusPayload>());
                     break;
-                case MessageCommand.filteradd:
+                case "filteradd":
                     OnFilterAddMessageReceived(message.Payload.AsSerializable<FilterAddPayload>());
                     break;
-                case MessageCommand.filterclear:
+                case "filterclear":
                     OnFilterClearMessageReceived();
                     break;
-                case MessageCommand.filterload:
+                case "filterload":
                     OnFilterLoadMessageReceived(message.Payload.AsSerializable<FilterLoadPayload>());
                     break;
-                case MessageCommand.getaddr:
+                case "getaddr":
                     OnGetAddrMessageReceived();
                     break;
-                case MessageCommand.getblocks:
+                case "getblocks":
                     OnGetBlocksMessageReceived(message.Payload.AsSerializable<GetBlocksPayload>());
                     break;
-                case MessageCommand.getdata:
+                case "getdata":
                     OnGetDataMessageReceived(message.Payload.AsSerializable<InvPayload>());
                     break;
-                case MessageCommand.getheaders:
+                case "getheaders":
                     OnGetHeadersMessageReceived(message.Payload.AsSerializable<GetBlocksPayload>());
                     break;
-                case MessageCommand.headers:
+                case "headers":
                     OnHeadersMessageReceived(message.Payload.AsSerializable<HeadersPayload>());
                     break;
-                case MessageCommand.inv:
+                case "inv":
                     OnInvMessageReceived(message.Payload.AsSerializable<InvPayload>());
                     break;
-                case MessageCommand.mempool:
+                case "mempool":
                     OnMemPoolMessageReceived();
                     break;
-                case MessageCommand.tx:
+                case "tx":
                     if (message.Payload.Length <= 1024 * 1024)
                         OnInventoryReceived(Transaction.DeserializeFrom(message.Payload));
                     break;
-                case MessageCommand.verack:
-                case MessageCommand.version:
+                case "verack":
+                case "version":
                     Disconnect(true);
                     break;
-                case MessageCommand.alert:
-                case MessageCommand.merkleblock:
-                case MessageCommand.notfound:
-                case MessageCommand.ping:
-                case MessageCommand.pong:
-                case MessageCommand.reject:
+                case "alert":
+                case "merkleblock":
+                case "notfound":
+                case "ping":
+                case "pong":
+                case "reject":
                 default:
                     //暂时忽略
                     break;
@@ -333,7 +333,7 @@ namespace Neo.Network
                 if (filter != null && !TestFilter(filter, (Transaction)data))
                     return false;
             }
-            EnqueueMessage(MessageCommand.inv, InvPayload.Create(data.InventoryType, data.Hash));
+            EnqueueMessage("inv", InvPayload.Create(data.InventoryType, data.Hash));
             return true;
         }
 
@@ -345,28 +345,28 @@ namespace Neo.Network
                 transactions = transactions.Where(p => TestFilter(filter, p));
             UInt256[] hashes = transactions.Select(p => p.Hash).ToArray();
             if (hashes.Length == 0) return;
-            EnqueueMessage(MessageCommand.inv, InvPayload.Create(InventoryType.TX, hashes));
+            EnqueueMessage("inv", InvPayload.Create(InventoryType.TX, hashes));
         }
 
         internal void RequestMemoryPool()
         {
-            EnqueueMessage(MessageCommand.mempool, null, true);
+            EnqueueMessage("mempool", null, true);
         }
 
         internal void RequestPeers()
         {
-            EnqueueMessage(MessageCommand.getaddr, null, true);
+            EnqueueMessage("getaddr", null, true);
         }
 
         protected abstract Task<bool> SendMessageAsync(Message message);
 
         internal async void StartProtocol()
         {
-            if (!await SendMessageAsync(Message.Create(MessageCommand.version, VersionPayload.Create(localNode.Port, localNode.Nonce, localNode.UserAgent))))
+            if (!await SendMessageAsync(Message.Create("version", VersionPayload.Create(localNode.Port, localNode.Nonce, localNode.UserAgent))))
                 return;
             Message message = await ReceiveMessageAsync(HalfMinute);
             if (message == null) return;
-            if (message.Command != MessageCommand.version)
+            if (message.Command != "version")
             {
                 Disconnect(true);
                 return;
@@ -412,17 +412,17 @@ namespace Neo.Network
             {
                 ListenerEndpoint = new IPEndPoint(RemoteEndpoint.Address, Version.Port);
             }
-            if (!await SendMessageAsync(Message.Create(MessageCommand.verack))) return;
+            if (!await SendMessageAsync(Message.Create("verack"))) return;
             message = await ReceiveMessageAsync(HalfMinute);
             if (message == null) return;
-            if (message.Command != MessageCommand.verack)
+            if (message.Command != "verack")
             {
                 Disconnect(true);
                 return;
             }
             if (Blockchain.Default?.HeaderHeight < Version.StartHeight)
             {
-                EnqueueMessage(MessageCommand.getheaders, GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash), true);
+                EnqueueMessage("getheaders", GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash), true);
             }
             StartSendLoop();
             while (disposed == 0)
@@ -431,14 +431,14 @@ namespace Neo.Network
                 {
                     if (missions.Count == 0 && Blockchain.Default.Height < Version.StartHeight)
                     {
-                        EnqueueMessage(MessageCommand.getblocks, GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash), true);
+                        EnqueueMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash), true);
                     }
                 }
                 TimeSpan timeout = missions.Count == 0 ? HalfHour : OneMinute;
                 message = await ReceiveMessageAsync(timeout);
                 if (message == null) break;
                 if (DateTime.Now - mission_start > OneMinute
-                    && message.Command != MessageCommand.block && message.Command != MessageCommand.consensus && message.Command != MessageCommand.tx)
+                    && message.Command != "block" && message.Command != "consensus" && message.Command != "tx")
                 {
                     Disconnect(false);
                     break;
