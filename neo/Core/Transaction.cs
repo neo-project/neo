@@ -18,6 +18,11 @@ namespace Neo.Core
     public abstract class Transaction : IEquatable<Transaction>, IInventory
     {
         /// <summary>
+        /// Maximum number of attributes that can be contained within a transaction
+        /// </summary>
+        private const int MaxTransactionAttributes = 16;
+
+        /// <summary>
         /// 交易类型
         /// </summary>
         public readonly TransactionType Type;
@@ -41,12 +46,6 @@ namespace Neo.Core
         /// 用于验证该交易的脚本列表
         /// </summary>
         public Witness[] Scripts { get; set; }
-
-        /// <summary>
-        /// Maximum number of attributes that can be contained within a transaction
-        /// </summary>
-        const int MaxTransactionAttributes = 16;
-
 
         private UInt256 _hash = null;
         public UInt256 Hash
@@ -190,7 +189,6 @@ namespace Neo.Core
         {
             Version = reader.ReadByte();
             DeserializeExclusiveData(reader);
-          
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
             Inputs = reader.ReadSerializableArray<CoinReference>();
             Outputs = reader.ReadSerializableArray<TransactionOutput>(ushort.MaxValue + 1);
@@ -291,12 +289,6 @@ namespace Neo.Core
             writer.Write((byte)Type);
             writer.Write(Version);
             SerializeExclusiveData(writer);
-
-            if( Attributes.Length > MaxTransactionAttributes)
-            {
-                throw new FormatException();
-            }
-
             writer.Write(Attributes);
             writer.Write(Inputs);
             writer.Write(Outputs);
