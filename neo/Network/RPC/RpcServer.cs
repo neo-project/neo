@@ -207,7 +207,7 @@ namespace Neo.Network.RPC
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
                         string operation = _params[1].AsString();
-                        ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[1]).Select(p => ContractParameter.FromJson(p)).ToArray() : new ContractParameter[0];
+                        ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson(p)).ToArray() : new ContractParameter[0];
                         byte[] script;
                         using (ScriptBuilder sb = new ScriptBuilder())
                         {
