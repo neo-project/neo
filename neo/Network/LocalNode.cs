@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Neo.Core;
@@ -527,7 +527,7 @@ namespace Neo.Network
             }
         }
 
-        public void SaveState(Stream stream)
+        public static void SaveState(Stream stream)
         {
             IPEndPoint[] peers;
             lock (unconnectedPeers)
@@ -536,19 +536,13 @@ namespace Neo.Network
             }
             using (BinaryWriter writer = new BinaryWriter(stream, Encoding.ASCII, true))
             {
-                int length = peers.Length + connectedPeers.Count;
-                writer.Write(length);
-				foreach (RemoteNode node in connectedPeers)
-				{
-					writer.Write(node.RemoteEndpoint.Address.MapToIPv4().GetAddressBytes());
-					writer.Write((ushort)node.ListenerEndpoint.Port);
-				}
-				foreach (IPEndPoint endpoint in peers)
+                writer.Write(peers.Length);
+                foreach (IPEndPoint endpoint in peers)
                 {
                     writer.Write(endpoint.Address.MapToIPv4().GetAddressBytes());
                     writer.Write((ushort)endpoint.Port);
                 }
-			}
+            }
         }
 
         public void Start(int port = 0, int ws_port = 0)
