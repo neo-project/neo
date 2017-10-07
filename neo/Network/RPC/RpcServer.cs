@@ -288,6 +288,14 @@ namespace Neo.Network.RPC
                         }
 
                         return json;
+					}
+				case "getversion":
+					{
+						JObject json = new JObject();
+                        json["port"] = LocalNode.Port;
+                        json["nonce"] = LocalNode.Nonce;
+                        json["useragent"] = LocalNode.UserAgent;
+                        return json;
                     }
                 default:
                     throw new RpcException(-32601, "Method not found");
