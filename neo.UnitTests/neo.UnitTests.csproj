@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>    
-    <TargetFramework>netcoreapp1.1</TargetFramework>    
+    <TargetFramework>net461</TargetFramework>    
     <AssemblyName>Neo.UnitTests</AssemblyName>    
     <RootNamespace>Neo.UnitTests</RootNamespace>
   </PropertyGroup>

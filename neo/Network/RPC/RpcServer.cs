@@ -279,8 +279,11 @@ namespace Neo.Network.RPC
                             foreach (RemoteNode node in LocalNode.GetRemoteNodes())
                             {
                                 JObject peerJson = new JObject();
-                                peerJson["address"] = node.RemoteEndpoint.Address.ToString();
-                                peerJson["port"] = node.ListenerEndpoint.Port;
+								peerJson["address"] = node.RemoteEndpoint.Address.ToString();
+                                peerJson["remotePort"] = node.RemoteEndpoint.Port;
+								if(node.ListenerEndpoint != null) {
+									peerJson["port"] = node.ListenerEndpoint.Port;
+								}
                                 connectedPeers.Add(peerJson);
                             }
                             json["connected"] = connectedPeers;
