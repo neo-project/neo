@@ -2,12 +2,12 @@
 
 namespace Neo.Consensus
 {
-    internal class PerpareResponse : ConsensusMessage
+    internal class PrepareResponse : ConsensusMessage
     {
         public byte[] Signature;
 
-        public PerpareResponse()
-            : base(ConsensusMessageType.PerpareResponse)
+        public PrepareResponse()
+            : base(ConsensusMessageType.PrepareResponse)
         {
         }
 

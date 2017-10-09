@@ -37,17 +37,10 @@ namespace Neo.SmartContract
                 case OpCode.PACK:
                 case OpCode.NEWARRAY:
                     {
-                        try
-                        {
-                            int size = (int)EvaluationStack.Peek().GetBigInteger();
-                            if (size > MaxArraySize) return false;
-                            return true;
-                        }
-                        catch (Exception)
-                        {
-                            return false;
-                        }
-
+                        if (EvaluationStack.Count == 0) return false;
+                        int size = (int)EvaluationStack.Peek().GetBigInteger();
+                        if (size > MaxArraySize) return false;
+                        return true;
                     }
                 default:
                     return true;
@@ -144,16 +137,16 @@ namespace Neo.SmartContract
                 try
                 {
                     gas_consumed = checked(gas_consumed + GetPrice() * ratio);
+                    if (!testMode && gas_consumed > gas_amount) return false;
+                    if (!CheckItemSize()) return false;
+                    if (!CheckStackSize()) return false;
+                    if (!CheckArraySize()) return false;
+                    if (!CheckInvocationStack()) return false;
                 }
-                catch (Exception)
+                catch
                 {
                     return false;
                 }
-                if (!testMode && gas_consumed > gas_amount) return false;
-                if (!CheckItemSize()) return false;
-                if (!CheckStackSize()) return false;
-                if (!CheckArraySize()) return false;
-                if (!CheckInvocationStack()) return false;
                 StepInto();
             }
             return !State.HasFlag(VMState.FAULT);
