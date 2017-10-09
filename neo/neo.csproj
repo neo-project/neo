@@ -53,8 +53,6 @@
     <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.0.1" />
   </ItemGroup>
 
-<<<<<<< HEAD
-=======
   <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
     <Reference Include="System.Numerics" />
     <Reference Include="System.Security" />
@@ -69,5 +67,4 @@
     </PackageReference>
   </ItemGroup>
 
->>>>>>> parent of 93174e7... * neo.sln:
 </Project>
