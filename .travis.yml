@@ -10,7 +10,9 @@ dist: trusty
 
 before_install:
   - cd neo.UnitTests
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 2048; rvm install 2.3.5; rvm use 2.3.5; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 2048; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rvm install 2.3.5; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rvm use 2.3.5; fi
 
 script:
  - dotnet restore
