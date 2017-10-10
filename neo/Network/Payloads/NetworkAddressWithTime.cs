@@ -30,7 +30,15 @@ namespace Neo.Network.Payloads
         {
             Timestamp = reader.ReadUInt32();
             Services = reader.ReadUInt64();
-            IPAddress address = new IPAddress(reader.ReadBytes(16));
+            IPAddress address;
+            try
+            {
+                address = new IPAddress(reader.ReadBytes(16));
+            }
+            catch (ArgumentException ex)
+            {
+                throw new FormatException(ex.Message, ex);
+            }
             ushort port = reader.ReadBytes(2).Reverse().ToArray().ToUInt16(0);
             EndPoint = new IPEndPoint(address, port);
         }

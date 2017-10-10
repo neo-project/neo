@@ -11,7 +11,7 @@ namespace Neo.Network
 {
     public class UPnP
     {
-        private static string _descUrl, _serviceUrl, _eventUrl;
+        private static string _serviceUrl;
 
         public static TimeSpan TimeOut { get; set; } = TimeSpan.FromSeconds(3);
 
@@ -53,7 +53,6 @@ namespace Neo.Network
                     resp = resp.Substring(0, resp.IndexOf("\r")).Trim();
                     if (!string.IsNullOrEmpty(_serviceUrl = await GetServiceUrlAsync(resp)))
                     {
-                        _descUrl = resp;
                         return true;
                     }
                 }
@@ -74,11 +73,10 @@ namespace Neo.Network
                 XmlNode typen = desc.SelectSingleNode("//tns:device/tns:deviceType/text()", nsMgr);
                 if (!typen.Value.Contains("InternetGatewayDevice"))
                     return null;
-                XmlNode node = desc.SelectSingleNode("//tns:service[tns:serviceType=\"urn:schemas-upnp-org:service:WANIPConnection:1\"]/tns:controlURL/text()", nsMgr);
+                XmlNode node = desc.SelectSingleNode("//tns:service[contains(tns:serviceType,\"WANIPConnection\")]/tns:controlURL/text()", nsMgr);
                 if (node == null)
                     return null;
-                XmlNode eventnode = desc.SelectSingleNode("//tns:service[tns:serviceType=\"urn:schemas-upnp-org:service:WANIPConnection:1\"]/tns:eventSubURL/text()", nsMgr);
-                _eventUrl = CombineUrls(resp, eventnode.Value);
+                XmlNode eventnode = desc.SelectSingleNode("//tns:service[contains(tns:serviceType,\"WANIPConnection\")]/tns:eventSubURL/text()", nsMgr);
                 return CombineUrls(resp, node.Value);
             }
             catch { return null; }

@@ -80,7 +80,7 @@ namespace Neo.Network.Payloads
             ECPoint[] validators = Blockchain.Default.GetValidators();
             if (validators.Length <= ValidatorIndex)
                 throw new InvalidOperationException();
-            return new[] { Contract.CreateSignatureContract(validators[ValidatorIndex]).ScriptHash };
+            return new[] { VerificationContract.CreateSignatureContract(validators[ValidatorIndex]).ScriptHash };
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

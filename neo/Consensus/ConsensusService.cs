@@ -3,6 +3,7 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network;
 using Neo.Network.Payloads;
+using Neo.SmartContract;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -49,7 +50,7 @@ namespace Neo.Consensus
                     Log($"send perpare response");
                     context.State |= ConsensusState.SignatureSent;
                     context.Signatures[context.MyIndex] = context.MakeHeader().Sign(wallet.GetKey(context.Validators[context.MyIndex]));
-                    SignAndRelay(context.MakePerpareResponse(context.Signatures[context.MyIndex]));
+                    SignAndRelay(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
                     CheckSignatures();
                 }
                 else
@@ -86,9 +87,9 @@ namespace Neo.Consensus
         {
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                Contract contract = Contract.CreateMultiSigContract(context.Validators[context.MyIndex].EncodePoint(true).ToScriptHash(), context.M, context.Validators);
+                VerificationContract contract = VerificationContract.CreateMultiSigContract(context.Validators[context.MyIndex].EncodePoint(true).ToScriptHash(), context.M, context.Validators);
                 Block block = context.MakeHeader();
-                SignatureContext sc = new SignatureContext(block);
+                ContractParametersContext sc = new ContractParametersContext(block);
                 for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
                     if (context.Signatures[i] != null)
                     {
@@ -109,9 +110,9 @@ namespace Neo.Consensus
             Fixed8 amount_netfee = Block.CalculateNetFee(transactions);
             TransactionOutput[] outputs = amount_netfee == Fixed8.Zero ? new TransactionOutput[0] : new[] { new TransactionOutput
             {
-                AssetId = Blockchain.SystemCoin.Hash,
+                AssetId = Blockchain.UtilityToken.Hash,
                 Value = amount_netfee,
-                ScriptHash = wallet.GetContracts().First().ScriptHash
+                ScriptHash = wallet.GetChangeAddress()
             } };
             return new MinerTransaction
             {
@@ -185,7 +186,15 @@ namespace Neo.Consensus
                     if (payload.Version != ConsensusContext.Version || payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
                         return;
                     if (payload.ValidatorIndex >= context.Validators.Length) return;
-                    ConsensusMessage message = ConsensusMessage.DeserializeFrom(payload.Data);
+                    ConsensusMessage message;
+                    try
+                    {
+                        message = ConsensusMessage.DeserializeFrom(payload.Data);
+                    }
+                    catch (FormatException)
+                    {
+                        return;
+                    }
                     if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView)
                         return;
                     switch (message.Type)
@@ -193,11 +202,11 @@ namespace Neo.Consensus
                         case ConsensusMessageType.ChangeView:
                             OnChangeViewReceived(payload, (ChangeView)message);
                             break;
-                        case ConsensusMessageType.PerpareRequest:
-                            OnPerpareRequestReceived(payload, (PerpareRequest)message);
+                        case ConsensusMessageType.PrepareRequest:
+                            OnPrepareRequestReceived(payload, (PrepareRequest)message);
                             break;
-                        case ConsensusMessageType.PerpareResponse:
-                            OnPerpareResponseReceived(payload, (PerpareResponse)message);
+                        case ConsensusMessageType.PrepareResponse:
+                            OnPrepareResponseReceived(payload, (PrepareResponse)message);
                             break;
                     }
                 }
@@ -234,9 +243,9 @@ namespace Neo.Consensus
             CheckExpectedView(message.NewViewNumber);
         }
 
-        private void OnPerpareRequestReceived(ConsensusPayload payload, PerpareRequest message)
+        private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
         {
-            Log($"{nameof(OnPerpareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
+            Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (!context.State.HasFlag(ConsensusState.Backup) || context.State.HasFlag(ConsensusState.RequestReceived))
                 return;
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
@@ -257,18 +266,20 @@ namespace Neo.Consensus
             context.Signatures[payload.ValidatorIndex] = message.Signature;
             Dictionary<UInt256, Transaction> mempool = LocalNode.GetMemoryPool().ToDictionary(p => p.Hash);
             foreach (UInt256 hash in context.TransactionHashes.Skip(1))
-                if (mempool.ContainsKey(hash))
-                    if (!AddTransaction(mempool[hash], false))
+            {
+                if (mempool.TryGetValue(hash, out Transaction tx))
+                    if (!AddTransaction(tx, false))
                         return;
+            }
             if (!AddTransaction(message.MinerTransaction, true)) return;
             LocalNode.AllowHashes(context.TransactionHashes.Except(context.Transactions.Keys));
             if (context.Transactions.Count < context.TransactionHashes.Length)
                 localNode.SynchronizeMemoryPool();
         }
 
-        private void OnPerpareResponseReceived(ConsensusPayload payload, PerpareResponse message)
+        private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
-            Log($"{nameof(OnPerpareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+            Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (context.Signatures[payload.ValidatorIndex] != null) return;
             Block header = context.MakeHeader();
@@ -300,7 +311,7 @@ namespace Neo.Consensus
                         context.NextConsensus = Blockchain.GetConsensusAddress(Blockchain.Default.GetValidators(transactions).ToArray());
                         context.Signatures[context.MyIndex] = context.MakeHeader().Sign(wallet.GetKey(context.Validators[context.MyIndex]));
                     }
-                    SignAndRelay(context.MakePerpareRequest());
+                    SignAndRelay(context.MakePrepareRequest());
                     timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer_view + 1)), Timeout.InfiniteTimeSpan);
                 }
                 else if ((context.State.HasFlag(ConsensusState.Primary) && context.State.HasFlag(ConsensusState.RequestSent)) || context.State.HasFlag(ConsensusState.Backup))
@@ -322,16 +333,16 @@ namespace Neo.Consensus
 
         private void SignAndRelay(ConsensusPayload payload)
         {
-            SignatureContext sc;
+            ContractParametersContext sc;
             try
             {
-                sc = new SignatureContext(payload);
+                sc = new ContractParametersContext(payload);
+                wallet.Sign(sc);
             }
             catch (InvalidOperationException)
             {
                 return;
             }
-            wallet.Sign(sc);
             sc.Verifiable.Scripts = sc.GetScripts();
             localNode.RelayDirectly(payload);
         }

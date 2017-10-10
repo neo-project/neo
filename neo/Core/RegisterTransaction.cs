@@ -1,6 +1,7 @@
 ﻿using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.SmartContract;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -45,7 +46,7 @@ namespace Neo.Core
         {
             get
             {
-                if (AssetType == AssetType.SystemShare || AssetType == AssetType.SystemCoin)
+                if (AssetType == AssetType.GoverningToken || AssetType == AssetType.UtilityToken)
                     return Fixed8.Zero;
                 return base.SystemFee;
             }
@@ -68,7 +69,7 @@ namespace Neo.Core
             Amount = reader.ReadSerializable<Fixed8>();
             Precision = reader.ReadByte();
             Owner = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
-            if (Owner.IsInfinity && AssetType != AssetType.SystemShare && AssetType != AssetType.SystemCoin)
+            if (Owner.IsInfinity && AssetType != AssetType.GoverningToken && AssetType != AssetType.UtilityToken)
                 throw new FormatException();
             Admin = reader.ReadSerializable<UInt160>();
         }
@@ -86,9 +87,9 @@ namespace Neo.Core
         protected override void OnDeserialized()
         {
             base.OnDeserialized();
-            if (AssetType == AssetType.SystemShare && !Hash.Equals(Blockchain.SystemShare.Hash))
+            if (AssetType == AssetType.GoverningToken && !Hash.Equals(Blockchain.GoverningToken.Hash))
                 throw new FormatException();
-            if (AssetType == AssetType.SystemCoin && !Hash.Equals(Blockchain.SystemCoin.Hash))
+            if (AssetType == AssetType.UtilityToken && !Hash.Equals(Blockchain.UtilityToken.Hash))
                 throw new FormatException();
         }
 

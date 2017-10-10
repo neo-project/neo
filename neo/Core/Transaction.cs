@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography;
+using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network;
@@ -17,6 +17,16 @@ namespace Neo.Core
     /// </summary>
     public abstract class Transaction : IEquatable<Transaction>, IInventory
     {
+        /// <summary>
+        /// Maximum number of attributes that can be contained within a transaction
+        /// </summary>
+        private const int MaxTransactionAttributes = 16;
+
+        /// <summary>
+        /// Reflection cache for transaction types
+        /// </summary>
+        private static Dictionary<byte, Type> ReflectionCache = new Dictionary<byte, Type>();
+
         /// <summary>
         /// 交易类型
         /// </summary>
@@ -67,8 +77,8 @@ namespace Neo.Core
             {
                 if (_network_fee == -Fixed8.Satoshi)
                 {
-                    Fixed8 input = References.Values.Where(p => p.AssetId.Equals(Blockchain.SystemCoin.Hash)).Sum(p => p.Value);
-                    Fixed8 output = Outputs.Where(p => p.AssetId.Equals(Blockchain.SystemCoin.Hash)).Sum(p => p.Value);
+                    Fixed8 input = References.Values.Where(p => p.AssetId.Equals(Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
+                    Fixed8 output = Outputs.Where(p => p.AssetId.Equals(Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
                     _network_fee = input - output - SystemFee;
                 }
                 return _network_fee;
@@ -110,13 +120,18 @@ namespace Neo.Core
         /// <summary>
         /// 系统费用
         /// </summary>
-        public virtual Fixed8 SystemFee
+        public virtual Fixed8 SystemFee => Settings.Default.SystemFee.TryGetValue(Type, out Fixed8 fee) ? fee : Fixed8.Zero;
+
+        static Transaction()
         {
-            get
+            // Cache all types
+            Assembly asm = typeof(Transaction).GetTypeInfo().Assembly;
+            foreach (TransactionType t in Enum.GetValues(typeof(TransactionType)))
             {
-                if (Settings.Default.SystemFee.ContainsKey(Type))
-                    return Settings.Default.SystemFee[Type];
-                return Fixed8.Zero;
+                // Get type name
+                string typeName = string.Format("{0}.{1}", typeof(Transaction).Namespace, t);
+                // Append to cache
+                ReflectionCache.Add((byte)t, asm.GetType(typeName));
             }
         }
 
@@ -170,11 +185,14 @@ namespace Neo.Core
         /// <returns>返回反序列化后的结果</returns>
         internal static Transaction DeserializeFrom(BinaryReader reader)
         {
-            TransactionType type = (TransactionType)reader.ReadByte();
-            string typeName = string.Format("{0}.{1}", typeof(Transaction).Namespace, type);
-            Transaction transaction = typeof(Transaction).GetTypeInfo().Assembly.CreateInstance(typeName) as Transaction;
+            // Looking for type in reflection cache
+            if (!ReflectionCache.TryGetValue(reader.ReadByte(), out Type type))
+                throw new FormatException();
+
+            Transaction transaction = (Transaction)Activator.CreateInstance(type);
             if (transaction == null)
                 throw new FormatException();
+
             transaction.DeserializeUnsignedWithoutType(reader);
             transaction.Scripts = reader.ReadSerializableArray<Witness>();
             transaction.OnDeserialized();
@@ -192,7 +210,7 @@ namespace Neo.Core
         {
             Version = reader.ReadByte();
             DeserializeExclusiveData(reader);
-            Attributes = reader.ReadSerializableArray<TransactionAttribute>();
+            Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
             Inputs = reader.ReadSerializableArray<CoinReference>();
             Outputs = reader.ReadSerializableArray<TransactionOutput>(ushort.MaxValue + 1);
         }
@@ -340,7 +358,7 @@ namespace Neo.Core
             {
                 AssetState asset = Blockchain.Default.GetAssetState(group.Key);
                 if (asset == null) return false;
-                if (asset.Expiration <= Blockchain.Default.Height + 1 && asset.AssetType != AssetType.SystemShare && asset.AssetType != AssetType.SystemCoin)
+                if (asset.Expiration <= Blockchain.Default.Height + 1 && asset.AssetType != AssetType.GoverningToken && asset.AssetType != AssetType.UtilityToken)
                     return false;
                 foreach (TransactionOutput output in group)
                     if (output.Value.GetData() % (long)Math.Pow(10, 8 - asset.Precision) != 0)
@@ -350,7 +368,7 @@ namespace Neo.Core
             if (results == null) return false;
             TransactionResult[] results_destroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
             if (results_destroy.Length > 1) return false;
-            if (results_destroy.Length == 1 && results_destroy[0].AssetId != Blockchain.SystemCoin.Hash)
+            if (results_destroy.Length == 1 && results_destroy[0].AssetId != Blockchain.UtilityToken.Hash)
                 return false;
             if (SystemFee > Fixed8.Zero && (results_destroy.Length == 0 || results_destroy[0].Amount < SystemFee))
                 return false;
@@ -359,11 +377,11 @@ namespace Neo.Core
             {
                 case TransactionType.MinerTransaction:
                 case TransactionType.ClaimTransaction:
-                    if (results_issue.Any(p => p.AssetId != Blockchain.SystemCoin.Hash))
+                    if (results_issue.Any(p => p.AssetId != Blockchain.UtilityToken.Hash))
                         return false;
                     break;
                 case TransactionType.IssueTransaction:
-                    if (results_issue.Any(p => p.AssetId == Blockchain.SystemCoin.Hash))
+                    if (results_issue.Any(p => p.AssetId == Blockchain.UtilityToken.Hash))
                         return false;
                     break;
                 default:

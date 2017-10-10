@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Neo.Consensus
 {
-    internal class PerpareRequest : ConsensusMessage
+    internal class PrepareRequest : ConsensusMessage
     {
         public ulong Nonce;
         public UInt160 NextConsensus;
@@ -14,8 +14,8 @@ namespace Neo.Consensus
         public MinerTransaction MinerTransaction;
         public byte[] Signature;
 
-        public PerpareRequest()
-            : base(ConsensusMessageType.PerpareRequest)
+        public PrepareRequest()
+            : base(ConsensusMessageType.PrepareRequest)
         {
         }
 

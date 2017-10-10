@@ -21,10 +21,8 @@ namespace Neo.IO.Caching
         {
             get
             {
-                Trackable trackable;
-                if (dictionary.ContainsKey(key))
+                if (dictionary.TryGetValue(key, out Trackable trackable))
                 {
-                    trackable = dictionary[key];
                     if (trackable.State == TrackState.Deleted)
                         throw new KeyNotFoundException();
                 }
@@ -44,27 +42,36 @@ namespace Neo.IO.Caching
 
         public void Add(TKey key, TValue value)
         {
-            if (dictionary.ContainsKey(key) && dictionary[key].State != TrackState.Deleted)
+            if (dictionary.TryGetValue(key, out Trackable trackable) && trackable.State != TrackState.Deleted)
                 throw new ArgumentException();
             dictionary[key] = new Trackable
             {
                 Key = key,
                 Item = value,
-                State = TrackState.Added
+                State = trackable == null ? TrackState.Added : TrackState.Changed
             };
         }
 
         public void Delete(TKey key)
         {
-            if (dictionary.ContainsKey(key))
-                dictionary[key].State = TrackState.Deleted;
+            if (dictionary.TryGetValue(key, out Trackable trackable))
+            {
+                if (trackable.State == TrackState.Added)
+                    dictionary.Remove(key);
+                else
+                    trackable.State = TrackState.Deleted;
+            }
             else
+            {
+                TValue item = TryGetInternal(key);
+                if (item == null) return;
                 dictionary.Add(key, new Trackable
                 {
                     Key = key,
-                    Item = null,
+                    Item = item,
                     State = TrackState.Deleted
                 });
+            }
         }
 
         public void DeleteWhere(Func<TKey, TValue, bool> predicate)
@@ -99,15 +106,13 @@ namespace Neo.IO.Caching
 
         public TValue GetAndChange(TKey key, Func<TValue> factory = null)
         {
-            Trackable trackable;
-            if (dictionary.ContainsKey(key))
+            if (dictionary.TryGetValue(key, out Trackable trackable))
             {
-                trackable = dictionary[key];
                 if (trackable.State == TrackState.Deleted)
                 {
                     if (factory == null) throw new KeyNotFoundException();
                     trackable.Item = factory();
-                    trackable.State = TrackState.Added;
+                    trackable.State = TrackState.Changed;
                 }
                 else if (trackable.State == TrackState.None)
                 {
@@ -138,14 +143,12 @@ namespace Neo.IO.Caching
 
         public TValue GetOrAdd(TKey key, Func<TValue> factory)
         {
-            Trackable trackable;
-            if (dictionary.ContainsKey(key))
+            if (dictionary.TryGetValue(key, out Trackable trackable))
             {
-                trackable = dictionary[key];
                 if (trackable.State == TrackState.Deleted)
                 {
                     trackable.Item = factory();
-                    trackable.State = TrackState.Added;
+                    trackable.State = TrackState.Changed;
                 }
             }
             else
@@ -171,24 +174,20 @@ namespace Neo.IO.Caching
 
         public TValue TryGet(TKey key)
         {
-            if (dictionary.ContainsKey(key))
+            if (dictionary.TryGetValue(key, out Trackable trackable))
             {
-                Trackable trackable = dictionary[key];
                 if (trackable.State == TrackState.Deleted) return null;
                 return trackable.Item;
             }
-            else
+            TValue value = TryGetInternal(key);
+            if (value == null) return null;
+            dictionary.Add(key, new Trackable
             {
-                TValue value = TryGetInternal(key);
-                if (value == null) return null;
-                dictionary.Add(key, new Trackable
-                {
-                    Key = key,
-                    Item = value,
-                    State = TrackState.None
-                });
-                return value;
-            }
+                Key = key,
+                Item = value,
+                State = TrackState.None
+            });
+            return value;
         }
 
         protected abstract TValue TryGetInternal(TKey key);

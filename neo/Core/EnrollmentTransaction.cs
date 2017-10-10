@@ -24,7 +24,7 @@ namespace Neo.Core
             {
                 if (_script_hash == null)
                 {
-                    _script_hash = Contract.CreateSignatureContract(PublicKey).ScriptHash;
+                    _script_hash = VerificationContract.CreateSignatureContract(PublicKey).ScriptHash;
                 }
                 return _script_hash;
             }

@@ -1,13 +1,16 @@
-﻿using Neo.Core;
-using Neo.IO;
-using Neo.IO.Json;
-using Neo.Wallets;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Neo.Core;
+using Neo.IO;
+using Neo.IO.Json;
+using Neo.SmartContract;
+using Neo.VM;
+using Neo.Wallets;
 using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -51,10 +54,32 @@ namespace Neo.Network.RPC
             }
         }
 
+        private static JObject GetInvokeResult(byte[] script)
+        {
+            ApplicationEngine engine = ApplicationEngine.Run(script);
+            JObject json = new JObject();
+            json["state"] = engine.State;
+            json["gas_consumed"] = engine.GasConsumed.ToString();
+            json["stack"] = new JArray(engine.EvaluationStack.Select(p => p.ToParameter().ToJson()));
+            return json;
+        }
+
         protected virtual JObject Process(string method, JArray _params)
         {
             switch (method)
             {
+                case "getaccountstate":
+                    {
+                        UInt160 script_hash = Wallet.ToScriptHash(_params[0].AsString());
+                        AccountState account = Blockchain.Default.GetAccountState(script_hash) ?? new AccountState(script_hash);
+                        return account.ToJson();
+                    }
+                case "getassetstate":
+                    {
+                        UInt256 asset_id = UInt256.Parse(_params[0].AsString());
+                        AssetState asset = Blockchain.Default.GetAssetState(asset_id);
+                        return asset?.ToJson() ?? throw new RpcException(-100, "Unknown asset");
+                    }
                 case "getbestblockhash":
                     return Blockchain.Default.CurrentBlockHash.ToString();
                 case "getblock":
@@ -92,10 +117,35 @@ namespace Neo.Network.RPC
                 case "getblockhash":
                     {
                         uint height = (uint)_params[0].AsNumber();
-                        return Blockchain.Default.GetBlockHash(height).ToString();
+                        if (height >= 0 && height <= Blockchain.Default.Height)
+                        {
+                            return Blockchain.Default.GetBlockHash(height).ToString();
+                        }
+                        else
+                        {
+                            throw new RpcException(-100, "Invalid Height");
+                        }
+                    }
+                case "getblocksysfee":
+                    {
+                        uint height = (uint)_params[0].AsNumber();
+                        if (height >= 0 && height <= Blockchain.Default.Height)
+                        {
+                            return Blockchain.Default.GetSysFeeAmount(height).ToString();
+                        }
+                        else
+                        {
+                            throw new RpcException(-100, "Invalid Height");
+                        }
                     }
                 case "getconnectioncount":
                     return LocalNode.RemoteNodeCount;
+                case "getcontractstate":
+                    {
+                        UInt160 script_hash = UInt160.Parse(_params[0].AsString());
+                        ContractState contract = Blockchain.Default.GetContract(script_hash);
+                        return contract?.ToJson() ?? throw new RpcException(-100, "Unknown contract");
+                    }
                 case "getrawmempool":
                     return new JArray(LocalNode.GetMemoryPool().Select(p => (JObject)p.Hash.ToString()));
                 case "getrawtransaction":
@@ -107,7 +157,7 @@ namespace Neo.Network.RPC
                         if (tx == null)
                             tx = Blockchain.Default.GetTransaction(hash, out height);
                         if (tx == null)
-                            throw new RpcException(-101, "Unknown transaction");
+                            throw new RpcException(-100, "Unknown transaction");
                         if (verbose)
                         {
                             JObject json = tx.ToJson();
@@ -125,11 +175,50 @@ namespace Neo.Network.RPC
                             return tx.ToArray().ToHexString();
                         }
                     }
+                case "getstorage":
+                    {
+                        UInt160 script_hash = UInt160.Parse(_params[0].AsString());
+                        byte[] key = _params[1].AsString().HexToBytes();
+                        StorageItem item = Blockchain.Default.GetStorageItem(new StorageKey
+                        {
+                            ScriptHash = script_hash,
+                            Key = key
+                        }) ?? new StorageItem();
+                        return item.Value?.ToHexString();
+                    }
                 case "gettxout":
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
                         ushort index = (ushort)_params[1].AsNumber();
                         return Blockchain.Default.GetUnspent(hash, index)?.ToJson(index);
+                    }
+                case "invoke":
+                    {
+                        UInt160 script_hash = UInt160.Parse(_params[0].AsString());
+                        ContractParameter[] parameters = ((JArray)_params[1]).Select(p => ContractParameter.FromJson(p)).ToArray();
+                        byte[] script;
+                        using (ScriptBuilder sb = new ScriptBuilder())
+                        {
+                            script = sb.EmitAppCall(script_hash, parameters).ToArray();
+                        }
+                        return GetInvokeResult(script);
+                    }
+                case "invokefunction":
+                    {
+                        UInt160 script_hash = UInt160.Parse(_params[0].AsString());
+                        string operation = _params[1].AsString();
+                        ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson(p)).ToArray() : new ContractParameter[0];
+                        byte[] script;
+                        using (ScriptBuilder sb = new ScriptBuilder())
+                        {
+                            script = sb.EmitAppCall(script_hash, operation, args).ToArray();
+                        }
+                        return GetInvokeResult(script);
+                    }
+                case "invokescript":
+                    {
+                        byte[] script = _params[0].AsString().HexToBytes();
+                        return GetInvokeResult(script);
                     }
                 case "sendrawtransaction":
                     {
@@ -155,6 +244,48 @@ namespace Neo.Network.RPC
                         }
                         json["address"] = _params[0];
                         json["isvalid"] = scriptHash != null;
+                        return json;
+                    }
+                case "getpeers":
+                    {
+                        JObject json = new JObject();
+
+                        {
+                            JArray unconnectedPeers = new JArray();
+                            foreach (IPEndPoint peer in LocalNode.GetUnconnectedPeers())
+                            {
+                                JObject peerJson = new JObject();
+                                peerJson["address"] = peer.Address.ToString();
+                                peerJson["port"] = peer.Port;
+                                unconnectedPeers.Add(peerJson);
+                            }
+                            json["unconnected"] = unconnectedPeers;
+                        }
+
+                        {
+                            JArray badPeers = new JArray();
+                            foreach (IPEndPoint peer in LocalNode.GetBadPeers())
+                            {
+                                JObject peerJson = new JObject();
+                                peerJson["address"] = peer.Address.ToString();
+                                peerJson["port"] = peer.Port;
+                                badPeers.Add(peerJson);
+                            }
+                            json["bad"] = badPeers;
+                        }
+
+                        {
+                            JArray connectedPeers = new JArray();
+                            foreach (RemoteNode node in LocalNode.GetRemoteNodes())
+                            {
+                                JObject peerJson = new JObject();
+                                peerJson["address"] = node.RemoteEndpoint.Address.ToString();
+                                peerJson["port"] = node.ListenerEndpoint.Port;
+                                connectedPeers.Add(peerJson);
+                            }
+                            json["connected"] = connectedPeers;
+                        }
+
                         return json;
                     }
                 default:
@@ -207,9 +338,8 @@ namespace Neo.Network.RPC
             {
                 response = CreateErrorResponse(null, -32700, "Parse error");
             }
-            else if (request is JArray)
+            else if (request is JArray array)
             {
-                JArray array = (JArray)request;
                 if (array.Count == 0)
                 {
                     response = CreateErrorResponse(request["id"], -32600, "Invalid Request");

@@ -1,4 +1,7 @@
-﻿using Neo.VM;
+﻿using Neo.Core;
+using Neo.Cryptography.ECC;
+using Neo.IO.Caching;
+using Neo.VM;
 using System;
 using System.Text;
 
@@ -12,13 +15,15 @@ namespace Neo.SmartContract
         private long gas_consumed = 0;
         private readonly bool testMode;
 
+        public TriggerType Trigger { get; }
         public Fixed8 GasConsumed => new Fixed8(gas_consumed);
 
-        public ApplicationEngine(IScriptContainer container, IScriptTable table, InteropService service, Fixed8 gas, bool testMode = false)
+        public ApplicationEngine(TriggerType trigger, IScriptContainer container, IScriptTable table, InteropService service, Fixed8 gas, bool testMode = false)
             : base(container, Cryptography.Crypto.Default, table, service)
         {
             this.gas_amount = gas_free + gas.GetData();
             this.testMode = testMode;
+            this.Trigger = trigger;
         }
 
         private bool CheckArraySize()
@@ -32,6 +37,7 @@ namespace Neo.SmartContract
                 case OpCode.PACK:
                 case OpCode.NEWARRAY:
                     {
+                        if (EvaluationStack.Count == 0) return false;
                         int size = (int)EvaluationStack.Peek().GetBigInteger();
                         if (size > MaxArraySize) return false;
                         return true;
@@ -131,16 +137,16 @@ namespace Neo.SmartContract
                 try
                 {
                     gas_consumed = checked(gas_consumed + GetPrice() * ratio);
+                    if (!testMode && gas_consumed > gas_amount) return false;
+                    if (!CheckItemSize()) return false;
+                    if (!CheckStackSize()) return false;
+                    if (!CheckArraySize()) return false;
+                    if (!CheckInvocationStack()) return false;
                 }
-                catch (OverflowException)
+                catch
                 {
                     return false;
                 }
-                if (!testMode && gas_consumed > gas_amount) return false;
-                if (!CheckItemSize()) return false;
-                if (!CheckStackSize()) return false;
-                if (!CheckArraySize()) return false;
-                if (!CheckInvocationStack()) return false;
                 StepInto();
             }
             return !State.HasFlag(VMState.FAULT);
@@ -246,6 +252,21 @@ namespace Neo.SmartContract
                 default:
                     return 1;
             }
+        }
+
+        public static ApplicationEngine Run(byte[] script, IScriptContainer container = null)
+        {
+            DataCache<UInt160, AccountState> accounts = Blockchain.Default.CreateCache<UInt160, AccountState>();
+            DataCache<ECPoint, ValidatorState> validators = Blockchain.Default.CreateCache<ECPoint, ValidatorState>();
+            DataCache<UInt256, AssetState> assets = Blockchain.Default.CreateCache<UInt256, AssetState>();
+            DataCache<UInt160, ContractState> contracts = Blockchain.Default.CreateCache<UInt160, ContractState>();
+            DataCache<StorageKey, StorageItem> storages = Blockchain.Default.CreateCache<StorageKey, StorageItem>();
+            CachedScriptTable script_table = new CachedScriptTable(contracts);
+            StateMachine service = new StateMachine(accounts, validators, assets, contracts, storages);
+            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, script_table, service, Fixed8.Zero, true);
+            engine.LoadScript(script, false);
+            engine.Execute();
+            return engine;
         }
     }
 }

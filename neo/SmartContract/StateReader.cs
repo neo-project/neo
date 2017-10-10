@@ -1,9 +1,7 @@
 ﻿using Neo.Core;
 using Neo.Cryptography.ECC;
 using Neo.VM;
-using Neo.Wallets;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -12,13 +10,14 @@ namespace Neo.SmartContract
 {
     public class StateReader : InteropService
     {
-        public static event EventHandler<NotifyEventArgs> Notify;
-        public static event EventHandler<LogEventArgs> Log;
+        public event EventHandler<NotifyEventArgs> Notify;
+        public event EventHandler<LogEventArgs> Log;
 
         public static readonly StateReader Default = new StateReader();
 
         public StateReader()
         {
+            Register("Neo.Runtime.GetTrigger", Runtime_GetTrigger);
             Register("Neo.Runtime.CheckWitness", Runtime_CheckWitness);
             Register("Neo.Runtime.Notify", Runtime_Notify);
             Register("Neo.Runtime.Log", Runtime_Log);
@@ -119,14 +118,17 @@ namespace Neo.SmartContract
             #endregion
         }
 
-        private HashSet<UInt160> _hashes_for_verifying = null;
+        protected virtual bool Runtime_GetTrigger(ExecutionEngine engine)
+        {
+            ApplicationEngine app_engine = (ApplicationEngine)engine;
+            engine.EvaluationStack.Push((int)app_engine.Trigger);
+            return true;
+        }
+
         protected bool CheckWitness(ExecutionEngine engine, UInt160 hash)
         {
-            if (_hashes_for_verifying == null)
-            {
-                IVerifiable container = (IVerifiable)engine.ScriptContainer;
-                _hashes_for_verifying = new HashSet<UInt160>(container.GetScriptHashesForVerifying());
-            }
+            IVerifiable container = (IVerifiable)engine.ScriptContainer;
+            UInt160[] _hashes_for_verifying = container.GetScriptHashesForVerifying();
             return _hashes_for_verifying.Contains(hash);
         }
 
@@ -484,7 +486,7 @@ namespace Neo.SmartContract
             AccountState account = engine.EvaluationStack.Pop().GetInterface<AccountState>();
             UInt256 asset_id = new UInt256(engine.EvaluationStack.Pop().GetByteArray());
             if (account == null) return false;
-            Fixed8 balance = account.Balances.ContainsKey(asset_id) ? account.Balances[asset_id] : Fixed8.Zero;
+            Fixed8 balance = account.Balances.TryGetValue(asset_id, out Fixed8 value) ? value : Fixed8.Zero;
             engine.EvaluationStack.Push(balance.GetData());
             return true;
         }
@@ -557,7 +559,7 @@ namespace Neo.SmartContract
         {
             ContractState contract = engine.EvaluationStack.Pop().GetInterface<ContractState>();
             if (contract == null) return false;
-            engine.EvaluationStack.Push(contract.Code.Script);
+            engine.EvaluationStack.Push(contract.Script);
             return true;
         }
 
