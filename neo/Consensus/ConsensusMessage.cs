@@ -1,12 +1,17 @@
 ﻿using Neo.IO;
+using Neo.IO.Caching;
 using System;
 using System.IO;
-using System.Reflection;
 
 namespace Neo.Consensus
 {
     internal abstract class ConsensusMessage : ISerializable
     {
+        /// <summary>
+        /// Reflection cache for transaction types
+        /// </summary>
+        private static ReflectionCache<byte> ReflectionCache = ReflectionCache<byte>.CreateFromEnum<ConsensusMessageType>();
+
         public readonly ConsensusMessageType Type;
         public byte ViewNumber;
 
@@ -26,11 +31,9 @@ namespace Neo.Consensus
 
         public static ConsensusMessage DeserializeFrom(byte[] data)
         {
-            ConsensusMessageType type = (ConsensusMessageType)data[0];
-            if (!Enum.IsDefined(typeof(ConsensusMessageType), type))
-                throw new FormatException();
-            string typeName = $"{typeof(ConsensusMessage).Namespace}.{type}";
-            ConsensusMessage message = typeof(ConsensusMessage).GetTypeInfo().Assembly.CreateInstance(typeName) as ConsensusMessage;
+            ConsensusMessage message = ReflectionCache.CreateInstance<ConsensusMessage>(data[0]);
+            if (message == null) throw new FormatException();
+
             using (MemoryStream ms = new MemoryStream(data, false))
             using (BinaryReader r = new BinaryReader(ms))
             {
