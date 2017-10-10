@@ -23,7 +23,7 @@ namespace Neo.Core
         private const int MaxTransactionAttributes = 16;
 
         /// <summary>
-        /// Reflection cache for transaction types
+        /// Reflection cache for TransactionType
         /// </summary>
         private static ReflectionCache<byte> ReflectionCache = ReflectionCache<byte>.CreateFromEnum<TransactionType>();
 
