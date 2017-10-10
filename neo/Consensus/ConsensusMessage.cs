@@ -8,7 +8,7 @@ namespace Neo.Consensus
     internal abstract class ConsensusMessage : ISerializable
     {
         /// <summary>
-        /// Reflection cache for transaction types
+        /// Reflection cache for ConsensusMessageType
         /// </summary>
         private static ReflectionCache<byte> ReflectionCache = ReflectionCache<byte>.CreateFromEnum<ConsensusMessageType>();
 
