@@ -352,8 +352,8 @@ namespace Neo.SmartContract
 
         protected virtual bool Block_GetTransaction(ExecutionEngine engine)
         {
-            Block block = engine.EvaluationStack.Pop().GetInterface<Block>();
             int index = (int)engine.EvaluationStack.Pop().GetBigInteger();
+            Block block = engine.EvaluationStack.Pop().GetInterface<Block>();
             if (block == null) return false;
             if (index < 0 || index >= block.Transactions.Length) return false;
             Transaction tx = block.Transactions[index];
@@ -483,8 +483,8 @@ namespace Neo.SmartContract
 
         protected virtual bool Account_GetBalance(ExecutionEngine engine)
         {
-            AccountState account = engine.EvaluationStack.Pop().GetInterface<AccountState>();
             UInt256 asset_id = new UInt256(engine.EvaluationStack.Pop().GetByteArray());
+            AccountState account = engine.EvaluationStack.Pop().GetInterface<AccountState>();
             if (account == null) return false;
             Fixed8 balance = account.Balances.TryGetValue(asset_id, out Fixed8 value) ? value : Fixed8.Zero;
             engine.EvaluationStack.Push(balance.GetData());
