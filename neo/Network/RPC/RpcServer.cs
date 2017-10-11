@@ -280,7 +280,7 @@ namespace Neo.Network.RPC
                             {
                                 JObject peerJson = new JObject();
                                 peerJson["address"] = node.RemoteEndpoint.Address.ToString();
-                                peerJson["port"] = node.ListenerEndpoint.Port;
+                                peerJson["port"] = node.ListenerEndpoint?.Port ?? 0;
                                 connectedPeers.Add(peerJson);
                             }
                             json["connected"] = connectedPeers;
