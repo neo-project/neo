@@ -2,17 +2,17 @@ language: csharp
 
 os:
  - linux
- - osx
+# - osx
 
-osx_image: xcode9.1
+#osx_image: xcode9.1
 dist: trusty
 mono: none
 dotnet: 1.0.4
 
 before_install:
   - cd neo.UnitTests
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 2048; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 2048; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
 
 script:
  - dotnet restore
