@@ -4,15 +4,15 @@ os:
  - linux
  - osx
 
+osx_image: xcode9.1
+dist: trusty
 mono: none
 dotnet: 1.0.4
-dist: trusty
 
 before_install:
   - cd neo.UnitTests
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 2048; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rvm install 2.3.5; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rvm use 2.3.5; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
 
 script:
  - dotnet restore
