@@ -280,12 +280,20 @@ namespace Neo.Network.RPC
                             {
                                 JObject peerJson = new JObject();
                                 peerJson["address"] = node.RemoteEndpoint.Address.ToString();
-                                peerJson["port"] = node.ListenerEndpoint.Port;
+                                peerJson["port"] = node.ListenerEndpoint?.Port ?? 0;
                                 connectedPeers.Add(peerJson);
                             }
                             json["connected"] = connectedPeers;
                         }
 
+                        return json;
+					}
+				case "getversion":
+					{
+						JObject json = new JObject();
+                        json["port"] = LocalNode.Port;
+                        json["nonce"] = LocalNode.Nonce;
+                        json["useragent"] = LocalNode.UserAgent;
                         return json;
                     }
                 default:
