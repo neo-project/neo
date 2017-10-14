@@ -22,11 +22,13 @@ namespace Neo.Core
         /// <summary>
         /// 用于报名成为记账候选人的特殊交易
         /// </summary>
+        #pragma warning disable CS0612
         [ReflectionCache(typeof(EnrollmentTransaction))]
         EnrollmentTransaction = 0x20,
         /// <summary>
         /// 用于资产登记的特殊交易
         /// </summary>
+        #pragma warning disable CS0612
         [ReflectionCache(typeof(RegisterTransaction))]
         RegisterTransaction = 0x40,
         /// <summary>
@@ -37,6 +39,7 @@ namespace Neo.Core
         /// <summary>
         /// Publish scripts to the blockchain for being invoked later.
         /// </summary>
+        #pragma warning disable CS0612
         [ReflectionCache(typeof(PublishTransaction))]
         PublishTransaction = 0xd0,
         [ReflectionCache(typeof(InvocationTransaction))]
