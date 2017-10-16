@@ -3,7 +3,7 @@ using Neo.Implementations.Blockchains.LevelDB;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.IO.Caching;
-using Neo.Cryptography.ECC
+using Neo.Cryptography.ECC;
 using Neo.Wallets;
 using System;
 using System.IO;

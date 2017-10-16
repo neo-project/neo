@@ -71,6 +71,12 @@ namespace Neo.SmartContract
             storages.Commit();
         }
 
+
+        public void CommitStorages()
+        {
+            storages.Commit();
+        }
+
         private void StateMachine_Notify(object sender, NotifyEventArgs e)
         {
             notifications.Add(e);
