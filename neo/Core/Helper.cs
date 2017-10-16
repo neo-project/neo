@@ -61,6 +61,27 @@ namespace Neo.Core
             return machine;
         }
 
+        internal static CachedScriptTable GetScriptTable()
+        {
+            DataCache<UInt160, ContractState> contracts = Blockchain.Default.CreateCache<UInt160, ContractState>();
+            CachedScriptTable table = new CachedScriptTable(contracts);
+            return table;
+        }
+
+
+        internal static bool IsStandardVerification(byte[] verification)
+        {
+            //these lengths are standard verification script lengths
+            int verification_len_1 = 35;
+            int verification_len_2 = 241;
+
+            if(verification.Length == verification_len_1 || verification.Length == verification_len_2) {
+                return true;
+            };
+
+            return false;
+        }
+
         internal static bool VerifyScripts(this IVerifiable verifiable)
         {
             UInt160[] hashes;
@@ -74,9 +95,6 @@ namespace Neo.Core
             }
             if (hashes.Length != verifiable.Scripts.Length) return false;
 
-            // set up a state machine with access to accounts, storages, etc
-            // to be used by verification contracts
-            StateMachine verificationMachine = GetVerificationStateMachine();
 
             for (int i = 0; i < hashes.Length; i++)
             {
@@ -94,24 +112,57 @@ namespace Neo.Core
                     if (hashes[i] != verification.ToScriptHash()) return false;
                 }
 
-                // give the verification contract a fixed amount of gas to use
-                // this could be set to any value
-                Fixed8 verificationGas = Fixed8.One * 10;
+                // these are the default application engine items
+                // to use when verifying a 'standard' verification script
+                InteropService state_reader = StateReader.Default;
+                IScriptTable script_table = Blockchain.Default;
+                Fixed8 verification_gas = Fixed8.Zero;
 
-                ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, Blockchain.Default, verificationMachine, verificationGas);
+                // check to see if it is a standard verification script
+                // if not, we will use a different state reader, script table, and gas
+                bool is_standard = IsStandardVerification(verification);
+
+                if( !is_standard) {
+                    // use a statereader with read (possibly write) access to blockchain data
+                    state_reader = GetVerificationStateMachine();
+    
+                    // use cached script table rather than blockchain
+                    script_table = GetScriptTable();
+
+                    // give the verification contract a fixed amount of gas to use
+                    // this could be set to any value
+                    verification_gas = Fixed8.One * 10;                    
+                }
+
+
+                ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, script_table, state_reader, verification_gas);
                 engine.LoadScript(verification, false);
                 engine.LoadScript(verifiable.Scripts[i].InvocationScript, true);
+
+                // execute the script.  if it halts in a bad state return false
                 if (!engine.Execute()) return false;
 
+                // if execution is successful, we check the evaluation stack
+                // if the length of the evaluation stack is 1, and the item evaluates to true
+                // that means that verification of this script has succeeded
+                // and a transfer of assets will occur
                 if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
 
-                // we will allow verification contracts the ability to alter the storages states
-                // so that, for example, a verification contract could look up an address in storage
-                // and determine if it can withdraw from an account
-                // after that operation, the verification code will need to write back to storage
-                // to indicate that, for example, account A has withdrawn X amount
 
-                verificationMachine.CommitStorages();
+                if( ! is_standard ) {
+
+                    // we will allow verification contracts the ability to alter the storages states
+                    // so that, for example, a verification contract could look up an address in storage
+                    // and determine if it can withdraw from an account
+                    // after that operation, the verification code will need to write back to storage
+                    // to indicate that, for example, account A has withdrawn X amount
+
+                    // this will not occur if the verification script returns false
+                    // if that is the case, the transfer did not succeed, and we should
+                    // not need to place anything into storage, or alter storage
+                    StateMachine machine = state_reader as StateMachine;
+                    machine.CommitStorages();
+                }
 
             }
             return true;
