@@ -1,6 +1,9 @@
 ﻿using Neo.Cryptography;
+using Neo.Implementations.Blockchains.LevelDB;
 using Neo.SmartContract;
 using Neo.VM;
+using Neo.IO.Caching;
+using Neo.Cryptography.ECC
 using Neo.Wallets;
 using System;
 using System.IO;
@@ -43,6 +46,21 @@ namespace Neo.Core
             return new UInt160(Crypto.Default.Hash160(script));
         }
 
+
+        internal static StateMachine GetVerificationStateMachine()
+        {
+            Blockchain bc = Blockchain.Default;
+
+            DataCache<UInt160, AccountState> accounts = bc.CreateCache<UInt160, AccountState>();
+            DataCache<ECPoint, ValidatorState> validators = bc.CreateCache<ECPoint, ValidatorState>();
+            DataCache<UInt256, AssetState> assets = bc.CreateCache<UInt256, AssetState>();
+            DataCache<UInt160, ContractState> contracts = bc.CreateCache<UInt160, ContractState>();
+            DataCache<StorageKey, StorageItem> storages = bc.CreateCache<StorageKey, StorageItem>();
+            StateMachine machine = new StateMachine(accounts, validators, assets, contracts, storages);
+
+            return machine;
+        }
+
         internal static bool VerifyScripts(this IVerifiable verifiable)
         {
             UInt160[] hashes;
@@ -55,6 +73,11 @@ namespace Neo.Core
                 return false;
             }
             if (hashes.Length != verifiable.Scripts.Length) return false;
+
+            // set up a state machine with access to accounts, storages, etc
+            // to be used by verification contracts
+            StateMachine verificationMachine = GetVerificationStateMachine();
+
             for (int i = 0; i < hashes.Length; i++)
             {
                 byte[] verification = verifiable.Scripts[i].VerificationScript;
@@ -70,11 +93,26 @@ namespace Neo.Core
                 {
                     if (hashes[i] != verification.ToScriptHash()) return false;
                 }
-                ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, Blockchain.Default, StateReader.Default, Fixed8.Zero);
+
+                // give the verification contract a fixed amount of gas to use
+                // this could be set to any value
+                Fixed8 verificationGas = Fixed8.One * 10;
+
+                ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, Blockchain.Default, verificationMachine, verificationGas);
                 engine.LoadScript(verification, false);
                 engine.LoadScript(verifiable.Scripts[i].InvocationScript, true);
                 if (!engine.Execute()) return false;
+
                 if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
+
+                // we will allow verification contracts the ability to alter the storages states
+                // so that, for example, a verification contract could look up an address in storage
+                // and determine if it can withdraw from an account
+                // after that operation, the verification code will need to write back to storage
+                // to indicate that, for example, account A has withdrawn X amount
+
+                verificationMachine.CommitStorages();
+
             }
             return true;
         }
