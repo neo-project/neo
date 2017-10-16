@@ -15,7 +15,7 @@ namespace Neo.Core
     /// </summary>
     public abstract class Blockchain : IDisposable, IScriptTable
     {
-        public static event EventHandler<NotifyEventArgs[]> Notify;
+        public static event EventHandler<BlockNotifyEventArgs> Notify;
         public static event EventHandler<Block> PersistCompleted;
 
         /// <summary>
@@ -443,9 +443,9 @@ namespace Neo.Core
         /// <returns>返回交易是否双花</returns>
         public abstract bool IsDoubleSpend(Transaction tx);
 
-        protected void OnNotify(NotifyEventArgs[] notifications)
+        protected void OnNotify(Block block, NotifyEventArgs[] notifications)
         {
-            Notify?.Invoke(this, notifications);
+            Notify?.Invoke(this, new BlockNotifyEventArgs(block, notifications));
         }
 
         /// <summary>

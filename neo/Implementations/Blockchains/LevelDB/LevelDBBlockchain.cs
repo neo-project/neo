@@ -447,6 +447,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             DbCache<UInt256, AssetState> assets = new DbCache<UInt256, AssetState>(db, DataEntryPrefix.ST_Asset);
             DbCache<UInt160, ContractState> contracts = new DbCache<UInt160, ContractState>(db, DataEntryPrefix.ST_Contract);
             DbCache<StorageKey, StorageItem> storages = new DbCache<StorageKey, StorageItem>(db, DataEntryPrefix.ST_Storage);
+            List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
             long amount_sysfee = GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.SystemFee);
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(block.Hash), SliceBuilder.Begin().Add(amount_sysfee).Add(block.Trim()));
             foreach (Transaction tx in block.Transactions)
@@ -559,13 +560,14 @@ namespace Neo.Implementations.Blockchains.LevelDB
                             if (engine.Execute())
                             {
                                 service.Commit();
-                                if (service.Notifications.Count > 0)
-                                    OnNotify(service.Notifications.ToArray());
+                                notifications.AddRange(service.Notifications);
                             }
                         }
                         break;
                 }
             }
+            if (notifications.Count > 0)
+                OnNotify(block, notifications.ToArray());
             accounts.DeleteWhere((k, v) => !v.IsFrozen && v.Votes.Length == 0 && v.Balances.All(p => p.Value <= Fixed8.Zero));
             accounts.Commit(batch);
             unspentcoins.DeleteWhere((k, v) => v.Items.All(p => p.HasFlag(CoinState.Spent)));
