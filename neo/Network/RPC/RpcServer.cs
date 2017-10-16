@@ -332,6 +332,7 @@ namespace Neo.Network.RPC
 
                         Dictionary<UInt160, long> neoOutByAccount = new Dictionary<UInt160, long>();
                         Dictionary<UInt160, decimal> gasOutByAccount = new Dictionary<UInt160, decimal>();
+                        Dictionary<UInt160, uint> firstTsByAccount = new Dictionary<UInt160, uint>();
 
                         for (uint index = fromHeight; index < toHeight; index++)
                         {
@@ -367,6 +368,10 @@ namespace Neo.Network.RPC
 
                                 foreach (UInt160 friend in friendAssetMap.Keys)
                                 {
+                                    if (!firstTsByAccount.ContainsKey(friend))
+                                    {
+                                        firstTsByAccount[friend] = block.Timestamp;
+                                    }
                                     if (friendAssetMap[friend].ContainsKey(Blockchain.SystemShare.Hash))
                                     {
                                         increment(neoTxByAccount, friend, Fixed8.One);
@@ -495,6 +500,15 @@ namespace Neo.Network.RPC
                                 {
                                     entry["gas_tx"] = 0;
                                 }
+
+								if (firstTsByAccount.ContainsKey(key))
+								{
+									entry["first_ts"] = firstTsByAccount[key];
+								}
+								else
+								{
+									entry["first_ts"] = 0;
+								}
 
                                 returnList.Add(entry);
                             }
