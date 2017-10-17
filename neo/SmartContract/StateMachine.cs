@@ -71,7 +71,6 @@ namespace Neo.SmartContract
             storages.Commit();
         }
 
-
         public void CommitStorages()
         {
             storages.Commit();

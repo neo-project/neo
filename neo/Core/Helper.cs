@@ -1,5 +1,4 @@
 ﻿using Neo.Cryptography;
-using Neo.Implementations.Blockchains.LevelDB;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.IO.Caching;
