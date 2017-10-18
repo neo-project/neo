@@ -147,22 +147,6 @@ namespace Neo.Core
                 // and a transfer of assets will occur
                 if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
 
-
-                if( ! is_standard ) {
-
-                    // we will allow verification contracts the ability to alter the storages states
-                    // so that, for example, a verification contract could look up an address in storage
-                    // and determine if it can withdraw from an account
-                    // after that operation, the verification code will need to write back to storage
-                    // to indicate that, for example, account A has withdrawn X amount
-
-                    // this will not occur if the verification script returns false
-                    // if that is the case, the transfer did not succeed, and we should
-                    // not need to place anything into storage, or alter storage
-                    StateMachine machine = state_reader as StateMachine;
-                    machine.CommitStorages();
-                }
-
             }
             return true;
         }
