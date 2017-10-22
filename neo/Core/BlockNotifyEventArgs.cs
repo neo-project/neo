@@ -14,8 +14,4 @@ namespace Neo.Core
             this.Notifications = notifications;
         }
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> upstream/master
