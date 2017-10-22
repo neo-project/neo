@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Copyright>2015-2017 The Neo Project</Copyright>
     <AssemblyTitle>Neo</AssemblyTitle>
-    <Version>2.3.3</Version>
+    <Version>3.0.0</Version>
     <Authors>The Neo Project</Authors>
     <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
