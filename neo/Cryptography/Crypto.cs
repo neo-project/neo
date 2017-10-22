@@ -21,12 +21,6 @@ namespace Neo.Cryptography
 
         public byte[] Sign(byte[] message, byte[] prikey, byte[] pubkey)
         {
-#if NET461
-            const int ECDSA_PRIVATE_P256_MAGIC = 0x32534345;
-            prikey = BitConverter.GetBytes(ECDSA_PRIVATE_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey).Concat(prikey).ToArray();
-            using (CngKey key = CngKey.Import(prikey, CngKeyBlobFormat.EccPrivateBlob))
-            using (ECDsaCng ecdsa = new ECDsaCng(key))
-#else
             using (var ecdsa = ECDsa.Create(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
@@ -37,7 +31,6 @@ namespace Neo.Cryptography
                     Y = pubkey.Skip(32).ToArray()
                 }
             }))
-#endif
             {
                 return ecdsa.SignData(message, HashAlgorithmName.SHA256);
             }
@@ -64,12 +57,6 @@ namespace Neo.Cryptography
             {
                 throw new ArgumentException();
             }
-#if NET461
-            const int ECDSA_PUBLIC_P256_MAGIC = 0x31534345;
-            pubkey = BitConverter.GetBytes(ECDSA_PUBLIC_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey).ToArray();
-            using (CngKey key = CngKey.Import(pubkey, CngKeyBlobFormat.EccPublicBlob))
-            using (ECDsaCng ecdsa = new ECDsaCng(key))
-#else
             using (var ecdsa = ECDsa.Create(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
@@ -79,7 +66,6 @@ namespace Neo.Cryptography
                     Y = pubkey.Skip(32).ToArray()
                 }
             }))
-#endif
             {
                 return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
             }

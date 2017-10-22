@@ -33,7 +33,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Neo.VM" Version="2.0.3" />
     <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel.Https" Version="2.0.0" />
@@ -47,6 +46,8 @@
     <PackageReference Include="System.Net.NetworkInformation" Version="4.3.0" />
     <PackageReference Include="System.Net.Requests" Version="4.3.0" />
     <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.3.0" />
+    <PackageReference Include="Neo.VM" Version="3.0.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="4.4.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
@@ -55,11 +56,6 @@
     <Reference Include="System.Xml" />
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
-    <PackageReference Include="Replicon.Cryptography.SCrypt" Version="1.1.6.13">
-    </PackageReference>
   </ItemGroup>
 
 </Project>

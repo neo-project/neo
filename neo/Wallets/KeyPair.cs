@@ -14,6 +14,8 @@ namespace Neo.Wallets
         public readonly Cryptography.ECC.ECPoint PublicKey;
         public readonly UInt160 PublicKeyHash;
 
+        static byte[] s_additionalEntropy = { 9, 8, 7, 6, 5 };
+
         public KeyPair(byte[] privateKey)
         {
             if (privateKey.Length != 32 && privateKey.Length != 96 && privateKey.Length != 104)
@@ -29,18 +31,12 @@ namespace Neo.Wallets
                 this.PublicKey = Cryptography.ECC.ECPoint.FromBytes(privateKey, Cryptography.ECC.ECCurve.Secp256r1);
             }
             this.PublicKeyHash = PublicKey.EncodePoint(true).ToScriptHash();
-#if NET461
-            ProtectedMemory.Protect(PrivateKey, MemoryProtectionScope.SameProcess);
-#endif
+            ProtectedData.Protect(PrivateKey,s_additionalEntropy, DataProtectionScope.CurrentUser);
         }
 
         public IDisposable Decrypt()
         {
-#if NET461
-            return new ProtectedMemoryContext(PrivateKey, MemoryProtectionScope.SameProcess);
-#else
-            return new System.IO.MemoryStream(0);
-#endif
+            return new ProtectedMemoryContext(PrivateKey, DataProtectionScope.CurrentUser);
         }
 
         public bool Equals(KeyPair other)
