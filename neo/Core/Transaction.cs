@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography;
+using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network;
@@ -17,6 +17,16 @@ namespace Neo.Core
     /// </summary>
     public abstract class Transaction : IEquatable<Transaction>, IInventory
     {
+        /// <summary>
+        /// Maximum number of attributes that can be contained within a transaction
+        /// </summary>
+        private const int MaxTransactionAttributes = 16;
+
+        /// <summary>
+        /// Reflection cache for transaction types
+        /// </summary>
+        private static Dictionary<byte, Type> ReflectionCache = new Dictionary<byte, Type>();
+
         /// <summary>
         /// 交易类型
         /// </summary>
@@ -41,12 +51,6 @@ namespace Neo.Core
         /// 用于验证该交易的脚本列表
         /// </summary>
         public Witness[] Scripts { get; set; }
-
-        /// <summary>
-        /// Maximum number of attributes that can be contained within a transaction
-        /// </summary>
-        const int MaxTransactionAttributes = 16;
-
 
         private UInt256 _hash = null;
         public UInt256 Hash
@@ -118,6 +122,19 @@ namespace Neo.Core
         /// </summary>
         public virtual Fixed8 SystemFee => Settings.Default.SystemFee.TryGetValue(Type, out Fixed8 fee) ? fee : Fixed8.Zero;
 
+        static Transaction()
+        {
+            // Cache all types
+            Assembly asm = typeof(Transaction).GetTypeInfo().Assembly;
+            foreach (TransactionType t in Enum.GetValues(typeof(TransactionType)))
+            {
+                // Get type name
+                string typeName = string.Format("{0}.{1}", typeof(Transaction).Namespace, t);
+                // Append to cache
+                ReflectionCache.Add((byte)t, asm.GetType(typeName));
+            }
+        }
+
         /// <summary>
         /// 用指定的类型初始化Transaction对象
         /// </summary>
@@ -168,11 +185,14 @@ namespace Neo.Core
         /// <returns>返回反序列化后的结果</returns>
         internal static Transaction DeserializeFrom(BinaryReader reader)
         {
-            TransactionType type = (TransactionType)reader.ReadByte();
-            string typeName = string.Format("{0}.{1}", typeof(Transaction).Namespace, type);
-            Transaction transaction = typeof(Transaction).GetTypeInfo().Assembly.CreateInstance(typeName) as Transaction;
+            // Looking for type in reflection cache
+            if (!ReflectionCache.TryGetValue(reader.ReadByte(), out Type type))
+                throw new FormatException();
+
+            Transaction transaction = (Transaction)Activator.CreateInstance(type);
             if (transaction == null)
                 throw new FormatException();
+
             transaction.DeserializeUnsignedWithoutType(reader);
             transaction.Scripts = reader.ReadSerializableArray<Witness>();
             transaction.OnDeserialized();
@@ -190,7 +210,6 @@ namespace Neo.Core
         {
             Version = reader.ReadByte();
             DeserializeExclusiveData(reader);
-          
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
             Inputs = reader.ReadSerializableArray<CoinReference>();
             Outputs = reader.ReadSerializableArray<TransactionOutput>(ushort.MaxValue + 1);
@@ -291,12 +310,6 @@ namespace Neo.Core
             writer.Write((byte)Type);
             writer.Write(Version);
             SerializeExclusiveData(writer);
-
-            if( Attributes.Length > MaxTransactionAttributes)
-            {
-                throw new FormatException();
-            }
-
             writer.Write(Attributes);
             writer.Write(Inputs);
             writer.Write(Outputs);
