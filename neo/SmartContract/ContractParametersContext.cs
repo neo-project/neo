@@ -156,6 +156,12 @@ namespace Neo.SmartContract
                             throw new NotSupportedException();
                         else
                             index = i;
+
+                if(index == -1) {
+                    // unable to find ContractParameterType.Signature in contract.ParameterList 
+                    // return now to prevent array index out of bounds exception
+                    return false;
+                }
                 return Add(contract, index, signature);
             }
         }
