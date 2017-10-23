@@ -36,6 +36,8 @@ namespace Neo.Network
         public IPEndPoint RemoteEndpoint { get; protected set; }
         public IPEndPoint ListenerEndpoint { get; protected set; }
 
+        private Thread sendLoopThread;
+
         protected RemoteNode(LocalNode localNode)
         {
             this.localNode = localNode;
@@ -48,17 +50,28 @@ namespace Neo.Network
                 Disconnected?.Invoke(this, error);
                 bool needSync = false;
                 lock (missions_global)
+                {
                     lock (missions)
+                    {
                         if (missions.Count > 0)
                         {
                             missions_global.ExceptWith(missions);
                             needSync = true;
                         }
+                    }
+                }
                 if (needSync)
+                {
                     lock (localNode.connectedPeers)
+                    {
                         foreach (RemoteNode node in localNode.connectedPeers)
+                        {
                             node.EnqueueMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash), true);
+                        }
+                    }
+                }
             }
+            sendLoopThread?.Join();
         }
 
         public void Dispose()
@@ -241,10 +254,15 @@ namespace Neo.Network
                 lock (missions)
                 {
                     if (localNode.GlobalMissionsEnabled)
+                    {
                         hashes = hashes.Where(p => !missions_global.Contains(p)).ToArray();
+                    }
                     if (hashes.Length > 0)
                     {
-                        if (missions.Count == 0) mission_start = DateTime.Now;
+                        if (missions.Count == 0)
+                        {
+                            mission_start = DateTime.Now;
+                        }
                         missions_global.UnionWith(hashes);
                         missions.UnionWith(hashes);
                     }
@@ -424,7 +442,8 @@ namespace Neo.Network
             {
                 EnqueueMessage("getheaders", GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash), true);
             }
-            StartSendLoop();
+            sendLoopThread = new Thread(StartSendLoop);
+            sendLoopThread.Start();
             while (disposed == 0)
             {
                 if (Blockchain.Default != null)
@@ -460,7 +479,7 @@ namespace Neo.Network
             }
         }
 
-        private async void StartSendLoop()
+        private void StartSendLoop()
         {
             while (disposed == 0)
             {
@@ -481,7 +500,7 @@ namespace Neo.Network
                 }
                 else
                 {
-                    await SendMessageAsync(message);
+                    SendMessageAsync(message);
                 }
             }
         }
