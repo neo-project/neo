@@ -76,8 +76,15 @@ namespace Neo.VM
                     sb.EmitPush((bool)parameter.Value);
                     break;
                 case ContractParameterType.Integer:
-                    sb.EmitPush((BigInteger)parameter.Value);
+                {
+                    //Quick fix to support int. Was not able to execute a SimpleContract 
+                    //that summed two ints.
+                    if (parameter.Value is int)
+                        sb.EmitPush(parameter.Value);
+                    else
+                        sb.EmitPush((BigInteger)parameter.Value);
                     break;
+                }
                 case ContractParameterType.Hash160:
                     sb.EmitPush((UInt160)parameter.Value);
                     break;
