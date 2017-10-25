@@ -1,5 +1,6 @@
 using Neo.Cryptography;
 using Neo.IO;
+using Neo.IO.Caching;
 using Neo.IO.Json;
 using Neo.Network;
 using Neo.VM;
@@ -7,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
 namespace Neo.Core
@@ -23,9 +23,9 @@ namespace Neo.Core
         private const int MaxTransactionAttributes = 16;
 
         /// <summary>
-        /// Reflection cache for transaction types
+        /// Reflection cache for TransactionType
         /// </summary>
-        private static Dictionary<byte, Type> ReflectionCache = new Dictionary<byte, Type>();
+        private static ReflectionCache<byte> ReflectionCache = ReflectionCache<byte>.CreateFromEnum<TransactionType>();
 
         /// <summary>
         /// 交易类型
@@ -122,19 +122,6 @@ namespace Neo.Core
         /// </summary>
         public virtual Fixed8 SystemFee => Settings.Default.SystemFee.TryGetValue(Type, out Fixed8 fee) ? fee : Fixed8.Zero;
 
-        static Transaction()
-        {
-            // Cache all types
-            Assembly asm = typeof(Transaction).GetTypeInfo().Assembly;
-            foreach (TransactionType t in Enum.GetValues(typeof(TransactionType)))
-            {
-                // Get type name
-                string typeName = string.Format("{0}.{1}", typeof(Transaction).Namespace, t);
-                // Append to cache
-                ReflectionCache.Add((byte)t, asm.GetType(typeName));
-            }
-        }
-
         /// <summary>
         /// 用指定的类型初始化Transaction对象
         /// </summary>
@@ -186,12 +173,8 @@ namespace Neo.Core
         internal static Transaction DeserializeFrom(BinaryReader reader)
         {
             // Looking for type in reflection cache
-            if (!ReflectionCache.TryGetValue(reader.ReadByte(), out Type type))
-                throw new FormatException();
-
-            Transaction transaction = (Transaction)Activator.CreateInstance(type);
-            if (transaction == null)
-                throw new FormatException();
+            Transaction transaction = ReflectionCache.CreateInstance<Transaction>(reader.ReadByte());
+            if (transaction == null) throw new FormatException();
 
             transaction.DeserializeUnsignedWithoutType(reader);
             transaction.Scripts = reader.ReadSerializableArray<Witness>();

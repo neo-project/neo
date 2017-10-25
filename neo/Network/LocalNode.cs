@@ -136,14 +136,20 @@ namespace Neo.Network
                 {
                     transactions = transactions.Where(p => !mem_pool.ContainsKey(p.Hash) && !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
                     if (transactions.Length == 0) continue;
+
+                    Transaction[] tmpool = mem_pool.Values.Concat(transactions).ToArray();
+
                     transactions.AsParallel().ForAll(tx =>
                     {
-                        if (tx.Verify(mem_pool.Values.Concat(transactions)))
+                        if (tx.Verify(tmpool))
                             verified.Add(tx);
                     });
+
                     if (verified.Count == 0) continue;
+
                     foreach (Transaction tx in verified)
                         mem_pool.Add(tx.Hash, tx);
+
                     CheckMemPool();
                 }
                 RelayDirectly(verified);
@@ -163,6 +169,7 @@ namespace Neo.Network
 
         private void Blockchain_PersistCompleted(object sender, Block block)
         {
+            Transaction[] remain;
             lock (mem_pool)
             {
                 foreach (Transaction tx in block.Transactions)
@@ -170,14 +177,15 @@ namespace Neo.Network
                     mem_pool.Remove(tx.Hash);
                 }
                 if (mem_pool.Count == 0) return;
-                Transaction[] remain = mem_pool.Values.ToArray();
+
+                remain = mem_pool.Values.ToArray();
                 mem_pool.Clear();
-                lock (temp_pool)
-                {
-                    temp_pool.UnionWith(remain);
-                }
-                new_tx_event.Set();
             }
+            lock (temp_pool)
+            {
+                temp_pool.UnionWith(remain);
+            }
+            new_tx_event.Set();
         }
 
         private static void CheckMemPool()
