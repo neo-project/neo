@@ -13,6 +13,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace Neo.Network.RPC
 {
@@ -396,16 +397,50 @@ namespace Neo.Network.RPC
             Start(uriPrefix, null, null);
         }
 
-        public void Start(string[] uriPrefix, string sslCert, string password)
+        public static IPEndPoint ParseIPEndPoint(string uriPrefix)
         {
-            if (uriPrefix.Length == 0)
+            string[] split = uriPrefix.Split(':');
+            if (split.Length != 2)
+            {
+                throw new FormatException($"Invalid uriPrefix format : {uriPrefix}");
+            }
+            IPAddress ip;
+            if (!IPAddress.TryParse(split[0], out ip))
+            {
+                throw new FormatException("Invalid IPAddress : {split[0]}");
+            }
+            int port;
+            if (!int.TryParse(split[1], out port))
+            {
+                throw new FormatException("Invalid port : {split[1]}");
+            }
+            return new IPEndPoint(ip, port);
+        }
+
+        public void Start(string[] uriPrefixs, string sslCert, string password)
+        {
+            if (uriPrefixs.Length == 0)
                 throw new ArgumentException();
             IWebHostBuilder builder = new WebHostBuilder();
-            if (uriPrefix.Any(p => p.StartsWith("https")))
-                builder = builder.UseKestrel(options => options.UseHttps(sslCert, password));
+            if (uriPrefixs.Any(p => p.StartsWith("https", true, CultureInfo.InvariantCulture)))
+            {
+                builder = builder.UseKestrel(options =>
+                {
+                    foreach (string uriPrefix in uriPrefixs)
+                    {
+                        IPEndPoint endPoint = ParseIPEndPoint(uriPrefix);
+                        options.Listen(endPoint, listenerOptions =>
+                        {
+                            listenerOptions.UseHttps(sslCert, password);
+                        });
+                    }
+                });
+            }
             else
-                builder = builder.UseKestrel();
-            builder = builder.UseUrls(uriPrefix).Configure(app => app.Run(ProcessAsync));
+            {
+                builder = builder.UseKestrel().UseUrls(uriPrefixs);
+            }
+            builder = builder.Configure(app => app.Run(ProcessAsync));
             host = builder.Build();
             host.Start();
         }

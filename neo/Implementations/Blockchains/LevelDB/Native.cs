@@ -12,17 +12,6 @@ namespace Neo.Implementations.Blockchains.LevelDB
 
     internal static class Native
     {
-#if NET461
-        static Native()
-        {
-            string platform = IntPtr.Size == 8 ? "x64" : "x86";
-            LoadLibrary(Path.Combine(AppContext.BaseDirectory, platform, "libleveldb"));
-        }
-
-        [DllImport("kernel32")]
-        private static extern IntPtr LoadLibrary(string dllToLoad);
-#endif
-
         #region Logger
         [DllImport("libleveldb", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr leveldb_logger_create(IntPtr /* Action<string> */ logger);
