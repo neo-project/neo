@@ -53,6 +53,16 @@ namespace Neo
             return data_bytes.ToInt32(0);
         }
 
+        public static UIntBase Parse(string s)
+        {
+            if (s.Length == 40 || s.Length == 42)
+                return UInt160.Parse(s);
+            else if (s.Length == 64 || s.Length == 66)
+                return UInt256.Parse(s);
+            else
+                throw new FormatException();
+        }
+
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(data_bytes);
@@ -70,6 +80,39 @@ namespace Neo
         public override string ToString()
         {
             return "0x" + data_bytes.Reverse().ToHexString();
+        }
+
+        public static bool TryParse<T>(string s, out T result) where T : UIntBase
+        {
+            int size;
+            if (typeof(T) == typeof(UInt160))
+                size = 20;
+            else if (typeof(T) == typeof(UInt256))
+                size = 32;
+            else if (s.Length == 40 || s.Length == 42)
+                size = 20;
+            else if (s.Length == 64 || s.Length == 66)
+                size = 32;
+            else
+                size = 0;
+            if (size == 20)
+            {
+                if (UInt160.TryParse(s, out UInt160 r))
+                {
+                    result = (T)(UIntBase)r;
+                    return true;
+                }
+            }
+            else if (size == 32)
+            {
+                if (UInt256.TryParse(s, out UInt256 r))
+                {
+                    result = (T)(UIntBase)r;
+                    return true;
+                }
+            }
+            result = null;
+            return false;
         }
 
         public static bool operator ==(UIntBase left, UIntBase right)
