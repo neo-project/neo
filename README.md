@@ -8,7 +8,7 @@ To learn more about NEO, please read the [White Paper](http://docs.neo.org/en-us
 Supported Platforms
 --------
 
-We have already supported the following platforms:
+We already support the following platforms:
 
 * CentOS 7
 * Docker
