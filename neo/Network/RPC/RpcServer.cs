@@ -287,10 +287,10 @@ namespace Neo.Network.RPC
                         }
 
                         return json;
-					}
-				case "getversion":
-					{
-						JObject json = new JObject();
+                    }
+                case "getversion":
+                    {
+                        JObject json = new JObject();
                         json["port"] = LocalNode.Port;
                         json["nonce"] = LocalNode.Nonce;
                         json["useragent"] = LocalNode.UserAgent;

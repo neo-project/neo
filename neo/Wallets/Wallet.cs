@@ -2,9 +2,11 @@
 using Neo.Cryptography;
 using Neo.IO.Caching;
 using Neo.SmartContract;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -28,6 +30,7 @@ namespace Neo.Wallets
         private readonly TrackableCollection<CoinReference, Coin> coins;
         private uint current_height;
 
+        private static readonly Random rand = new Random();
         private readonly Thread thread;
         private bool isrunning = true;
 
@@ -341,6 +344,30 @@ namespace Neo.Wallets
             return FindUnspentCoins().Where(p => p.Output.AssetId.Equals(asset_id)).Sum(p => p.Output.Value);
         }
 
+        public BigDecimal GetAvailable(UIntBase asset_id)
+        {
+            if (asset_id is UInt160 asset_id_160)
+            {
+                byte[] script;
+                using (ScriptBuilder sb = new ScriptBuilder())
+                {
+                    foreach (UInt160 account in GetContracts().Select(p => p.ScriptHash))
+                        sb.EmitAppCall(asset_id_160, "balanceOf", account);
+                    sb.Emit(OpCode.DEPTH, OpCode.PACK);
+                    sb.EmitAppCall(asset_id_160, "decimals");
+                    script = sb.ToArray();
+                }
+                ApplicationEngine engine = ApplicationEngine.Run(script);
+                byte decimals = (byte)engine.EvaluationStack.Pop().GetBigInteger();
+                BigInteger amount = engine.EvaluationStack.Pop().GetArray().Aggregate(BigInteger.Zero, (x, y) => x + y.GetBigInteger());
+                return new BigDecimal(amount, decimals);
+            }
+            else
+            {
+                return new BigDecimal(GetAvailable((UInt256)asset_id).GetData(), 8);
+            }
+        }
+
         public Fixed8 GetBalance(UInt256 asset_id)
         {
             return GetCoins().Where(p => !p.State.HasFlag(CoinState.Spent) && p.Output.AssetId.Equals(asset_id)).Sum(p => p.Output.Value);
@@ -568,6 +595,112 @@ namespace Neo.Wallets
             }
             tx.Inputs = pay_coins.Values.SelectMany(p => p.Unspents).Select(p => p.Reference).ToArray();
             tx.Outputs = outputs_new.ToArray();
+            return tx;
+        }
+
+        public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 change_address = null, Fixed8 fee = default(Fixed8))
+        {
+            var cOutputs = outputs.Where(p => !p.IsGlobalAsset).GroupBy(p => new
+            {
+                AssetId = (UInt160)p.AssetId,
+                Account = p.ScriptHash
+            }, (k, g) => new
+            {
+                AssetId = k.AssetId,
+                Value = g.Aggregate(BigInteger.Zero, (x, y) => x + y.Value.Value),
+                Account = k.Account
+            }).ToArray();
+            Transaction tx;
+            if (attributes == null) attributes = new List<TransactionAttribute>();
+            if (cOutputs.Length == 0)
+            {
+                tx = new ContractTransaction();
+            }
+            else
+            {
+                UInt160[] addresses = GetAddresses().ToArray();
+                HashSet<UInt160> sAttributes = new HashSet<UInt160>();
+                using (ScriptBuilder sb = new ScriptBuilder())
+                {
+                    foreach (var output in cOutputs)
+                    {
+                        byte[] script;
+                        using (ScriptBuilder sb2 = new ScriptBuilder())
+                        {
+                            foreach (UInt160 address in addresses)
+                                sb2.EmitAppCall(output.AssetId, "balanceOf", address);
+                            sb2.Emit(OpCode.DEPTH, OpCode.PACK);
+                            script = sb2.ToArray();
+                        }
+                        ApplicationEngine engine = ApplicationEngine.Run(script);
+                        if (engine.State.HasFlag(VMState.FAULT)) return null;
+                        var balances = engine.EvaluationStack.Pop().GetArray().Reverse().Zip(addresses, (i, a) => new
+                        {
+                            Account = a,
+                            Value = i.GetBigInteger()
+                        }).ToArray();
+                        BigInteger sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
+                        if (sum < output.Value) return null;
+                        if (sum != output.Value)
+                        {
+                            balances = balances.OrderByDescending(p => p.Value).ToArray();
+                            BigInteger amount = output.Value;
+                            int i = 0;
+                            while (balances[i].Value <= amount)
+                                amount -= balances[i++].Value;
+                            if (amount == BigInteger.Zero)
+                                balances = balances.Take(i).ToArray();
+                            else
+                                balances = balances.Take(i).Concat(new[] { balances.Last(p => p.Value >= amount) }).ToArray();
+                            sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
+                        }
+                        sAttributes.UnionWith(balances.Select(p => p.Account));
+                        for (int i = 0; i < balances.Length; i++)
+                        {
+                            BigInteger value = balances[i].Value;
+                            if (i == 0)
+                            {
+                                BigInteger change = sum - output.Value;
+                                if (change > 0) value -= change;
+                            }
+                            sb.EmitAppCall(output.AssetId, "transfer", balances[i].Account, output.Account, value);
+                            sb.Emit(OpCode.THROWIFNOT);
+                        }
+                    }
+                    byte[] nonce = new byte[8];
+                    rand.NextBytes(nonce);
+                    sb.Emit(OpCode.RET, nonce);
+                    tx = new InvocationTransaction
+                    {
+                        Version = 1,
+                        Script = sb.ToArray()
+                    };
+                }
+                attributes.AddRange(sAttributes.Select(p => new TransactionAttribute
+                {
+                    Usage = TransactionAttributeUsage.Script,
+                    Data = p.ToArray()
+                }));
+            }
+            tx.Attributes = attributes.ToArray();
+            tx.Inputs = new CoinReference[0];
+            tx.Outputs = outputs.Where(p => p.IsGlobalAsset).Select(p => p.ToTxOutput()).ToArray();
+            tx.Scripts = new Witness[0];
+            if (tx is InvocationTransaction itx)
+            {
+                ApplicationEngine engine = ApplicationEngine.Run(itx.Script, itx);
+                if (engine.State.HasFlag(VMState.FAULT)) return null;
+                tx = new InvocationTransaction
+                {
+                    Version = itx.Version,
+                    Script = itx.Script,
+                    Gas = InvocationTransaction.GetGas(engine.GasConsumed),
+                    Attributes = itx.Attributes,
+                    Inputs = itx.Inputs,
+                    Outputs = itx.Outputs
+                };
+            }
+            tx = MakeTransaction(tx, change_address, fee);
             return tx;
         }
 

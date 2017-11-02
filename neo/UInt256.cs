@@ -37,7 +37,7 @@ namespace Neo
             return Equals(other);
         }
 
-        public static UInt256 Parse(string s)
+        public static new UInt256 Parse(string s)
         {
             if (s == null)
                 throw new ArgumentNullException();

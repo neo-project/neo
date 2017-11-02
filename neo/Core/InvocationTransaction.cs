@@ -36,6 +36,13 @@ namespace Neo.Core
             }
         }
 
+        public static Fixed8 GetGas(Fixed8 consumed)
+        {
+            Fixed8 gas = consumed - Fixed8.FromDecimal(10);
+            if (gas <= Fixed8.Zero) return Fixed8.Zero;
+            return gas.Ceiling();
+        }
+
         protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.WriteVarBytes(Script);
