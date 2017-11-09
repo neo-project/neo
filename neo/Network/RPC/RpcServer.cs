@@ -391,22 +391,13 @@ namespace Neo.Network.RPC
             return response;
         }
 
-        public void Start(params string[] uriPrefix)
+        public void Start(int port, string sslCert = null, string password = null)
         {
-            Start(uriPrefix, null, null);
-        }
-
-        public void Start(string[] uriPrefix, string sslCert, string password)
-        {
-            if (uriPrefix.Length == 0)
-                throw new ArgumentException();
-            IWebHostBuilder builder = new WebHostBuilder();
-            if (uriPrefix.Any(p => p.StartsWith("https")))
-                builder = builder.UseKestrel(options => options.UseHttps(sslCert, password));
-            else
-                builder = builder.UseKestrel();
-            builder = builder.UseUrls(uriPrefix).Configure(app => app.Run(ProcessAsync));
-            host = builder.Build();
+            host = new WebHostBuilder().UseKestrel(options => options.Listen(IPAddress.Any, port, listenOptions =>
+            {
+                if (!string.IsNullOrEmpty(sslCert))
+                    listenOptions.UseHttps(sslCert, password);
+            })).Configure(app => app.Run(ProcessAsync)).Build();
             host.Start();
         }
     }

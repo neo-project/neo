@@ -362,6 +362,7 @@ namespace Neo.Network
 
         internal async void StartProtocol()
         {
+            await Task.Yield(); //There is a bug in .NET Core 2.0 that blocks async method which returns void.
             if (!await SendMessageAsync(Message.Create("version", VersionPayload.Create(localNode.Port, localNode.Nonce, localNode.UserAgent))))
                 return;
             Message message = await ReceiveMessageAsync(HalfMinute);
@@ -462,6 +463,7 @@ namespace Neo.Network
 
         private async void StartSendLoop()
         {
+            await Task.Yield(); //There is a bug in .NET Core 2.0 that blocks async method which returns void.
             while (disposed == 0)
             {
                 Message message = null;

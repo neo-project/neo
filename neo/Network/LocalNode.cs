@@ -85,6 +85,7 @@ namespace Neo.Network
 
         private async void AcceptPeers()
         {
+            await Task.Yield(); //There is a bug in .NET Core 2.0 that blocks async method which returns void.
             while (!cancellationTokenSource.IsCancellationRequested)
             {
                 Socket socket;
