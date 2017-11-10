@@ -132,7 +132,7 @@ namespace Neo.SmartContract
             {
                 case OpCode.INC:
                     {
-                        BigInteger x = EvaluationStack.Pop().GetBigInteger();
+                        BigInteger x = EvaluationStack.Peek().GetBigInteger();
 
                         if (!CheckBigInteger(x) || !CheckBigInteger(x + 1))
                             return false;
@@ -141,7 +141,7 @@ namespace Neo.SmartContract
                     }
                 case OpCode.DEC:
                     {
-                        BigInteger x = EvaluationStack.Pop().GetBigInteger();
+                        BigInteger x = EvaluationStack.Peek().GetBigInteger();
 
                         if (!CheckBigInteger(x) || !CheckBigInteger(x - 1))
                             return false;
@@ -150,8 +150,8 @@ namespace Neo.SmartContract
                     }
                 case OpCode.ADD:
                     {
-                        BigInteger x2 = EvaluationStack.Pop().GetBigInteger();
-                        BigInteger x1 = EvaluationStack.Pop().GetBigInteger();
+                        BigInteger x2 = EvaluationStack.Peek().GetBigInteger();
+                        BigInteger x1 = EvaluationStack.Peek(1).GetBigInteger();
 
                         if (!CheckBigInteger(x2) || !CheckBigInteger(x1) || !CheckBigInteger(x1 + x2))
                             return false;
@@ -160,8 +160,8 @@ namespace Neo.SmartContract
                     }
                 case OpCode.SUB:
                     {
-                        BigInteger x2 = EvaluationStack.Pop().GetBigInteger();
-                        BigInteger x1 = EvaluationStack.Pop().GetBigInteger();
+                        BigInteger x2 = EvaluationStack.Peek().GetBigInteger();
+                        BigInteger x1 = EvaluationStack.Peek(1).GetBigInteger();
 
                         if (!CheckBigInteger(x2) || !CheckBigInteger(x1) || !CheckBigInteger(x1 - x2))
                             return false;
@@ -170,8 +170,8 @@ namespace Neo.SmartContract
                     }
                 case OpCode.MUL:
                     {
-                        BigInteger x2 = EvaluationStack.Pop().GetBigInteger();
-                        BigInteger x1 = EvaluationStack.Pop().GetBigInteger();
+                        BigInteger x2 = EvaluationStack.Peek().GetBigInteger();
+                        BigInteger x1 = EvaluationStack.Peek(1).GetBigInteger();
 
                         if (!CheckBigInteger(x2) || !CheckBigInteger(x1) || !CheckBigInteger(x1 * x2))
                             return false;
@@ -180,8 +180,8 @@ namespace Neo.SmartContract
                     }
                 case OpCode.DIV:
                     {
-                        BigInteger x2 = EvaluationStack.Pop().GetBigInteger();
-                        BigInteger x1 = EvaluationStack.Pop().GetBigInteger();
+                        BigInteger x2 = EvaluationStack.Peek().GetBigInteger();
+                        BigInteger x1 = EvaluationStack.Peek(1).GetBigInteger();
 
                         if (!CheckBigInteger(x2) || !CheckBigInteger(x1) || !CheckBigInteger(x1 / x2))
                             return false;
@@ -190,8 +190,8 @@ namespace Neo.SmartContract
                     }
                 case OpCode.MOD:
                     {
-                        BigInteger x2 = EvaluationStack.Pop().GetBigInteger();
-                        BigInteger x1 = EvaluationStack.Pop().GetBigInteger();
+                        BigInteger x2 = EvaluationStack.Peek().GetBigInteger();
+                        BigInteger x1 = EvaluationStack.Peek(1).GetBigInteger();
 
                         if (!CheckBigInteger(x2) || !CheckBigInteger(x1) || !CheckBigInteger(x1 % x2))
                             return false;
