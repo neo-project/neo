@@ -2,12 +2,12 @@ language: csharp
 
 os:
  - linux
-# - osx
+ - osx
 
 #osx_image: xcode9.1
 dist: trusty
 mono: none
-dotnet: 1.0.4
+dotnet: 2.0.3
 
 before_install:
   - cd neo.UnitTests
