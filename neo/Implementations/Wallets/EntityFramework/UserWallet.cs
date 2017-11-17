@@ -418,8 +418,8 @@ namespace Neo.Implementations.Wallets.EntityFramework
                 using (WalletDataContext ctx = new WalletDataContext(DbPath))
                 {
                     ctx.Keys.First(p => p.Name == "Height").Value = BitConverter.GetBytes(0);
-                    ctx.Database.ExecuteSqlCommand($"DELETE FROM [{nameof(Transaction)}]");
-                    ctx.Database.ExecuteSqlCommand($"DELETE FROM [{nameof(Coin)}]");
+                    ctx.Database.ExecuteSqlCommand($"DELETE FROM [{nameof(Transaction)}]".ToString());
+                    ctx.Database.ExecuteSqlCommand($"DELETE FROM [{nameof(Coin)}]".ToString());
                     ctx.SaveChanges();
                 }
             }
