@@ -174,6 +174,10 @@ namespace Neo.SmartContract
                         BigInteger x1 = EvaluationStack.Peek(1).GetBigInteger();
 
                         int lx1 = x1 == null ? 0 : x1.ToByteArray().Length;
+
+                        if (lx1 > MaxSizeForBigInteger)
+                            return false;
+
                         int lx2 = x2 == null ? 0 : x2.ToByteArray().Length;
 
                         if ((lx1 + lx2) > MaxSizeForBigInteger)
