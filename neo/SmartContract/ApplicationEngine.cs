@@ -143,7 +143,7 @@ namespace Neo.SmartContract
                     {
                         BigInteger x = EvaluationStack.Peek().GetBigInteger();
 
-                        if (!CheckBigInteger(x))
+                        if (!CheckBigInteger(x) || ( x <= 0 && !CheckBigInteger(x - 1)))
                             return false;
 
                         break;
@@ -163,7 +163,7 @@ namespace Neo.SmartContract
                         BigInteger x2 = EvaluationStack.Peek().GetBigInteger();
                         BigInteger x1 = EvaluationStack.Peek(1).GetBigInteger();
 
-                        if (!CheckBigInteger(x2) || !CheckBigInteger(x1))
+                        if (!CheckBigInteger(x2) || !CheckBigInteger(x1) || !CheckBigInteger(x1 - x2))
                             return false;
 
                         break;
