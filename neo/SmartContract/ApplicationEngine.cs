@@ -95,7 +95,15 @@ namespace Neo.SmartContract
                 case OpCode.CAT:
                     {
                         if (EvaluationStack.Count < 2) return false;
-                        int length = EvaluationStack.Peek(0).GetByteArray().Length + EvaluationStack.Peek(1).GetByteArray().Length;
+                        int length;
+                        try
+                        {
+                            length = EvaluationStack.Peek(0).GetByteArray().Length + EvaluationStack.Peek(1).GetByteArray().Length;
+                        }
+                        catch (NotSupportedException)
+                        {
+                            return false;
+                        }
                         if (length > MaxItemSize) return false;
                         return true;
                     }
