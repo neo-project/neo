@@ -42,7 +42,7 @@ namespace Neo.Network
             catch (ObjectDisposedException) { }
             catch (Exception ex) when (ex is FormatException || ex is IOException || ex is WebSocketException || ex is OperationCanceledException)
             {
-                Disconnect(true);
+                Disconnect(false);
             }
             finally
             {
