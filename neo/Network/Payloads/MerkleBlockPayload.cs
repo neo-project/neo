@@ -20,14 +20,7 @@ namespace Neo.Network.Payloads
             MerkleTree tree = new MerkleTree(block.Transactions.Select(p => p.Hash).ToArray());
             tree.Trim(flags);
             byte[] buffer = new byte[(flags.Length + 7) / 8];
-#if NET461
             flags.CopyTo(buffer, 0);
-#else
-            // the method 'BitArray.CopyTo' is not available in .Net Core
-            for (int i = 0; i < flags.Length; i++)
-                if (flags.Get(i))
-                    buffer[i / 8] |= (byte)(1 << (i % 8));
-#endif
             return new MerkleBlockPayload
             {
                 Version = block.Version,

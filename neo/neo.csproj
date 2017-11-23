@@ -3,9 +3,9 @@
   <PropertyGroup>
     <Copyright>2015-2017 The Neo Project</Copyright>
     <AssemblyTitle>Neo</AssemblyTitle>
-    <Version>2.3.5</Version>
+    <Version>2.4.0</Version>
     <Authors>The Neo Project</Authors>
-    <TargetFrameworks>netstandard1.6;net461</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net47</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>Neo</AssemblyName>
     <PackageId>Neo</PackageId>
@@ -13,14 +13,12 @@
     <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/neo-project/neo.git</RepositoryUrl>
-    <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.6' ">1.6.1</NetStandardImplicitPackageVersion>
     <RootNamespace>Neo</RootNamespace>
     <Company>The Neo Project</Company>
     <Description>Neo</Description>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard1.6|AnyCPU'">
-    <DefineConstants>RELEASE;NETSTANDARD1_6</DefineConstants>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <DebugType>none</DebugType>
     <DebugSymbols>False</DebugSymbols>
   </PropertyGroup>
@@ -34,34 +32,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="1.1.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel.Https" Version="1.1.1" />
-    <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="1.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="1.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="1.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel.Https" Version="2.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="2.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
     <PackageReference Include="Neo.VM" Version="2.0.3" />
-    <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
-    <PackageReference Include="System.Security.SecureString" Version="4.0.0" />
-    <PackageReference Include="System.ValueTuple" Version="4.3.1" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
-    <PackageReference Include="System.Linq.Parallel" Version="4.0.1" />
-    <PackageReference Include="System.Net.NameResolution" Version="4.0.0" />
-    <PackageReference Include="System.Net.NetworkInformation" Version="4.1.0" />
-    <PackageReference Include="System.Net.Requests" Version="4.0.11" />
-    <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.0.1" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
-    <Reference Include="System.Numerics" />
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net47' ">
     <Reference Include="System.Security" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net47'">
     <PackageReference Include="Replicon.Cryptography.SCrypt">
       <Version>1.1.6.13</Version>
     </PackageReference>
