@@ -287,7 +287,7 @@ namespace Neo.SmartContract
                 }
             }
             engine.EvaluationStack.Push(StackItem.FromInterface(contract));
-            return true;
+            return Contract_Destroy(engine);
         }
 
         private bool Contract_GetStorageContext(ExecutionEngine engine)
