@@ -29,14 +29,14 @@ namespace Neo.Wallets
                 this.PublicKey = Cryptography.ECC.ECPoint.FromBytes(privateKey, Cryptography.ECC.ECCurve.Secp256r1);
             }
             this.PublicKeyHash = PublicKey.EncodePoint(true).ToScriptHash();
-#if NET461
+#if NET47
             ProtectedMemory.Protect(PrivateKey, MemoryProtectionScope.SameProcess);
 #endif
         }
 
         public IDisposable Decrypt()
         {
-#if NET461
+#if NET47
             return new ProtectedMemoryContext(PrivateKey, MemoryProtectionScope.SameProcess);
 #else
             return new System.IO.MemoryStream(0);

@@ -12,7 +12,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
 
     internal static class Native
     {
-#if NET461
+#if NET47
         static Native()
         {
             string platform = IntPtr.Size == 8 ? "x64" : "x86";
