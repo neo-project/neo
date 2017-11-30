@@ -2,8 +2,8 @@
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.SmartContract;
 using Neo.VM;
-using Neo.Wallets;
 using System;
 using System.IO;
 
@@ -80,7 +80,7 @@ namespace Neo.Network.Payloads
             ECPoint[] validators = Blockchain.Default.GetValidators();
             if (validators.Length <= ValidatorIndex)
                 throw new InvalidOperationException();
-            return new[] { VerificationContract.CreateSignatureContract(validators[ValidatorIndex]).ScriptHash };
+            return new[] { Contract.CreateSignatureRedeemScript(validators[ValidatorIndex]).ToScriptHash() };
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

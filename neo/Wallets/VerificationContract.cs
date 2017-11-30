@@ -1,5 +1,4 @@
-﻿using Neo.Core;
-using Neo.Cryptography.ECC;
+﻿using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.SmartContract;
 using Neo.VM;
@@ -11,8 +10,6 @@ namespace Neo.Wallets
 {
     public class VerificationContract : Contract, IEquatable<VerificationContract>, ISerializable
     {
-        public UInt160 PublicKeyHash;
-
         private string _address;
         /// <summary>
         /// 合约地址
@@ -29,25 +26,23 @@ namespace Neo.Wallets
             }
         }
 
-        public int Size => PublicKeyHash.Size + ParameterList.GetVarSize() + Script.GetVarSize();
+        public int Size => 20 + ParameterList.GetVarSize() + Script.GetVarSize();
 
-        public static VerificationContract Create(UInt160 publicKeyHash, ContractParameterType[] parameterList, byte[] redeemScript)
+        public static VerificationContract Create(ContractParameterType[] parameterList, byte[] redeemScript)
         {
             return new VerificationContract
             {
                 Script = redeemScript,
-                ParameterList = parameterList,
-                PublicKeyHash = publicKeyHash
+                ParameterList = parameterList
             };
         }
 
-        public static VerificationContract CreateMultiSigContract(UInt160 publicKeyHash, int m, params ECPoint[] publicKeys)
+        public static VerificationContract CreateMultiSigContract(int m, params ECPoint[] publicKeys)
         {
             return new VerificationContract
             {
                 Script = CreateMultiSigRedeemScript(m, publicKeys),
-                ParameterList = Enumerable.Repeat(ContractParameterType.Signature, m).ToArray(),
-                PublicKeyHash = publicKeyHash
+                ParameterList = Enumerable.Repeat(ContractParameterType.Signature, m).ToArray()
             };
         }
 
@@ -56,8 +51,7 @@ namespace Neo.Wallets
             return new VerificationContract
             {
                 Script = CreateSignatureRedeemScript(publicKey),
-                ParameterList = new[] { ContractParameterType.Signature },
-                PublicKeyHash = publicKey.EncodePoint(true).ToScriptHash(),
+                ParameterList = new[] { ContractParameterType.Signature }
             };
         }
 
@@ -67,7 +61,7 @@ namespace Neo.Wallets
         /// <param name="reader">数据来源</param>
         public void Deserialize(BinaryReader reader)
         {
-            PublicKeyHash = reader.ReadSerializable<UInt160>();
+            reader.ReadSerializable<UInt160>();
             ParameterList = reader.ReadVarBytes().Select(p => (ContractParameterType)p).ToArray();
             Script = reader.ReadVarBytes();
         }
@@ -109,9 +103,7 @@ namespace Neo.Wallets
         /// <param name="writer">存放序列化后的结果</param>
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write(PublicKeyHash);
-            writer.WriteVarBytes(ParameterList.Cast<byte>().ToArray());
-            writer.WriteVarBytes(Script);
+            throw new NotSupportedException();
         }
     }
 }
