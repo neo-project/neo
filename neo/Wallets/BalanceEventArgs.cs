@@ -3,11 +3,11 @@ using System;
 
 namespace Neo.Wallets
 {
-    public class TransactionEventArgs : EventArgs
+    public class BalanceEventArgs : EventArgs
     {
         public Transaction Transaction;
         public UInt160[] RelatedAccounts;
-        public uint? Height;
+        public uint Height;
         public uint Time;
     }
 }

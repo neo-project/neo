@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Neo.Core;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Wallets;
@@ -6,18 +7,22 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security;
 using System.Security.Cryptography;
 
 namespace Neo.Implementations.Wallets.EntityFramework
 {
-    public class UserWallet : Wallet
+    public class UserWallet : Wallet, IDisposable
     {
+        public override event EventHandler<BalanceEventArgs> BalanceChanged;
+
         private readonly string path;
         private readonly byte[] iv;
         private readonly byte[] masterKey;
         private readonly Dictionary<UInt160, WalletAccount> accounts;
 
         public override string Name => Path.GetFileNameWithoutExtension(path);
+        public override uint WalletHeight => WalletIndexer.IndexHeight;
 
         public override Version Version
         {
@@ -45,6 +50,13 @@ namespace Neo.Implementations.Wallets.EntityFramework
             ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
 #endif
             this.accounts = LoadAccounts();
+            WalletIndexer.RegisterAccounts(accounts.Keys);
+            WalletIndexer.BalanceChanged += WalletIndexer_BalanceChanged;
+        }
+
+        public override void ApplyTransaction(Transaction tx)
+        {
+            //TODO: implement UserWallet.ApplyTransaction
         }
 
         public bool ChangePassword(string password_old, string password_new)
@@ -83,9 +95,26 @@ namespace Neo.Implementations.Wallets.EntityFramework
             throw new NotSupportedException();
         }
 
+        private byte[] DecryptPrivateKey(byte[] encryptedPrivateKey)
+        {
+            if (encryptedPrivateKey == null) throw new ArgumentNullException(nameof(encryptedPrivateKey));
+            if (encryptedPrivateKey.Length != 96) throw new ArgumentException();
+#if NET47
+            using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
+#endif
+            {
+                return encryptedPrivateKey.AesDecrypt(masterKey, iv);
+            }
+        }
+
         public override bool DeleteAccount(UInt160 scriptHash)
         {
             throw new NotSupportedException();
+        }
+
+        public void Dispose()
+        {
+            WalletIndexer.BalanceChanged -= WalletIndexer_BalanceChanged;
         }
 
         public override Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount)
@@ -104,16 +133,14 @@ namespace Neo.Implementations.Wallets.EntityFramework
             return accounts.Values;
         }
 
-        private byte[] DecryptPrivateKey(byte[] encryptedPrivateKey)
+        public override IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts)
         {
-            if (encryptedPrivateKey == null) throw new ArgumentNullException(nameof(encryptedPrivateKey));
-            if (encryptedPrivateKey.Length != 96) throw new ArgumentException();
-#if NET47
-            using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
-#endif
-            {
-                return encryptedPrivateKey.AesDecrypt(masterKey, iv);
-            }
+            return WalletIndexer.GetCoins(accounts);
+        }
+
+        public override IEnumerable<UInt256> GetTransactions()
+        {
+            return WalletIndexer.GetTransactions(accounts.Keys);
         }
 
         private Dictionary<UInt160, WalletAccount> LoadAccounts()
@@ -138,6 +165,16 @@ namespace Neo.Implementations.Wallets.EntityFramework
             {
                 return ctx.Keys.FirstOrDefault(p => p.Name == name)?.Value;
             }
+        }
+
+        public static UserWallet Open(string path, string password)
+        {
+            return new UserWallet(path, password.ToAesKey());
+        }
+
+        public static UserWallet Open(string path, SecureString password)
+        {
+            return new UserWallet(path, password.ToAesKey());
         }
 
         private void SaveStoredData(string name, byte[] value)
@@ -169,6 +206,21 @@ namespace Neo.Implementations.Wallets.EntityFramework
         public bool VerifyPassword(string password)
         {
             return password.ToAesKey().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
+        }
+
+        private void WalletIndexer_BalanceChanged(object sender, BalanceEventArgs e)
+        {
+            UInt160[] relatedAccounts = e.RelatedAccounts.Where(p => Contains(p)).ToArray();
+            if (relatedAccounts.Length > 0)
+            {
+                BalanceChanged?.Invoke(this, new BalanceEventArgs
+                {
+                    Transaction = e.Transaction,
+                    RelatedAccounts = relatedAccounts,
+                    Height = e.Height,
+                    Time = e.Time
+                });
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Neo.Core;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -7,18 +8,32 @@ namespace Neo.Wallets
 {
     internal static class WalletIndexer
     {
+        public static event EventHandler<BalanceEventArgs> BalanceChanged;
+
         private static readonly Dictionary<uint, HashSet<UInt160>> indexes = new Dictionary<uint, HashSet<UInt160>>();
         private static readonly Dictionary<UInt160, HashSet<CoinReference>> accounts_tracked = new Dictionary<UInt160, HashSet<CoinReference>>();
         private static readonly Dictionary<CoinReference, Coin> coins_tracked = new Dictionary<CoinReference, Coin>();
 
         private static readonly object SyncRoot = new object();
 
+        public static uint IndexHeight
+        {
+            get
+            {
+                lock (SyncRoot)
+                {
+                    if (indexes.Count == 0) return 0;
+                    return indexes.Keys.Min();
+                }
+            }
+        }
+
         static WalletIndexer()
         {
             Thread thread = new Thread(ProcessBlocks)
             {
                 IsBackground = true,
-                Name = "WalletIndexer.ProcessBlocks"
+                Name = $"{nameof(WalletIndexer)}.{nameof(ProcessBlocks)}"
             };
             thread.Start();
         }
@@ -27,6 +42,7 @@ namespace Neo.Wallets
         {
             foreach (Transaction tx in block.Transactions)
             {
+                HashSet<UInt160> accounts_changed = new HashSet<UInt160>();
                 for (ushort index = 0; index < tx.Outputs.Length; index++)
                 {
                     TransactionOutput output = tx.Outputs[index];
@@ -51,11 +67,9 @@ namespace Neo.Wallets
                                 State = CoinState.Confirmed
                             });
                         }
+                        accounts_changed.Add(output.ScriptHash);
                     }
                 }
-            }
-            foreach (Transaction tx in block.Transactions)
-            {
                 foreach (CoinReference input in tx.Inputs)
                 {
                     if (coins_tracked.TryGetValue(input, out Coin coin))
@@ -69,18 +83,30 @@ namespace Neo.Wallets
                             accounts_tracked[coin.Output.ScriptHash].Remove(input);
                             coins_tracked.Remove(input);
                         }
+                        accounts_changed.Add(coin.Output.ScriptHash);
                     }
                 }
-            }
-            foreach (ClaimTransaction tx in block.Transactions.OfType<ClaimTransaction>())
-            {
-                foreach (CoinReference claim in tx.Claims)
+                if (tx is ClaimTransaction ctx)
                 {
-                    if (coins_tracked.TryGetValue(claim, out Coin coin))
+                    foreach (CoinReference claim in ctx.Claims)
                     {
-                        accounts_tracked[coin.Output.ScriptHash].Remove(claim);
-                        coins_tracked.Remove(claim);
+                        if (coins_tracked.TryGetValue(claim, out Coin coin))
+                        {
+                            accounts_tracked[coin.Output.ScriptHash].Remove(claim);
+                            coins_tracked.Remove(claim);
+                            accounts_changed.Add(coin.Output.ScriptHash);
+                        }
                     }
+                }
+                if (accounts_changed.Count > 0)
+                {
+                    BalanceChanged?.Invoke(null, new BalanceEventArgs
+                    {
+                        Transaction = tx,
+                        RelatedAccounts = accounts_changed.ToArray(),
+                        Height = block.Index,
+                        Time = block.Timestamp
+                    });
                 }
             }
         }
@@ -128,6 +154,12 @@ namespace Neo.Wallets
                     foreach (CoinReference reference in accounts_tracked[account])
                         yield return coins_tracked[reference];
             }
+        }
+
+        public static IEnumerable<UInt256> GetTransactions(IEnumerable<UInt160> accounts)
+        {
+            //TODO: implement WalletIndexer.GetTransactions
+            return Enumerable.Empty<UInt256>();
         }
 
         public static void RegisterAccounts(IEnumerable<UInt160> accounts, uint height = 0)

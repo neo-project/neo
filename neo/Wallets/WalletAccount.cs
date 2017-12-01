@@ -10,6 +10,7 @@
 
         public string Address => Wallet.ToAddress(ScriptHash);
         public abstract bool HasKey { get; }
+        public bool WatchOnly => Contract == null;
 
         public abstract KeyPair GetKey();
 

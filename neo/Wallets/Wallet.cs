@@ -14,20 +14,23 @@ namespace Neo.Wallets
 {
     public abstract class Wallet
     {
-        public event EventHandler BalanceChanged;
-        public event EventHandler<TransactionEventArgs> NewTransaction;
+        public abstract event EventHandler<BalanceEventArgs> BalanceChanged;
 
         private static readonly Random rand = new Random();
 
         public abstract string Name { get; }
         public abstract Version Version { get; }
+        public abstract uint WalletHeight { get; }
 
+        public abstract void ApplyTransaction(Transaction tx);
         public abstract bool Contains(UInt160 scriptHash);
         public abstract WalletAccount CreateAccount(byte[] privateKey);
         public abstract WalletAccount CreateAccount(UInt160 scriptHash);
         public abstract bool DeleteAccount(UInt160 scriptHash);
         public abstract WalletAccount GetAccount(UInt160 scriptHash);
         public abstract IEnumerable<WalletAccount> GetAccounts();
+        public abstract IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts);
+        public abstract IEnumerable<UInt256> GetTransactions();
 
         public WalletAccount CreateAccount()
         {
@@ -43,8 +46,8 @@ namespace Neo.Wallets
 
         public IEnumerable<Coin> FindUnspentCoins()
         {
-            IEnumerable<UInt160> accounts = GetAccounts().Where(p => !p.Lock && p.Contract != null).Select(p => p.ScriptHash);
-            return WalletIndexer.GetCoins(accounts).Where(p => p.State.HasFlag(CoinState.Confirmed) && !p.State.HasFlag(CoinState.Spent) && !p.State.HasFlag(CoinState.Frozen));
+            IEnumerable<UInt160> accounts = GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash);
+            return GetCoins(accounts).Where(p => p.State.HasFlag(CoinState.Confirmed) && !p.State.HasFlag(CoinState.Spent) && !p.State.HasFlag(CoinState.Frozen));
         }
 
         public virtual Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount)
@@ -80,7 +83,7 @@ namespace Neo.Wallets
                 byte[] script;
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
-                    foreach (UInt160 account in GetAccounts().Where(p => p.Contract != null).Select(p => p.ScriptHash))
+                    foreach (UInt160 account in GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash))
                         sb.EmitAppCall(asset_id_160, "balanceOf", account);
                     sb.Emit(OpCode.DEPTH, OpCode.PACK);
                     sb.EmitAppCall(asset_id_160, "decimals");
@@ -99,7 +102,7 @@ namespace Neo.Wallets
 
         public Fixed8 GetBalance(UInt256 asset_id)
         {
-            return GetCoins().Where(p => !p.State.HasFlag(CoinState.Spent) && p.Output.AssetId.Equals(asset_id)).Sum(p => p.Output.Value);
+            return GetCoins(GetAccounts().Select(p => p.ScriptHash)).Where(p => !p.State.HasFlag(CoinState.Spent) && p.Output.AssetId.Equals(asset_id)).Sum(p => p.Output.Value);
         }
 
         public virtual UInt160 GetChangeAddress()
@@ -109,7 +112,7 @@ namespace Neo.Wallets
             if (account == null)
                 account = accounts.FirstOrDefault(p => p.Contract?.IsStandard == true);
             if (account == null)
-                account = accounts.FirstOrDefault(p => p.Contract != null);
+                account = accounts.FirstOrDefault(p => !p.WatchOnly);
             if (account == null)
                 account = accounts.FirstOrDefault();
             return account?.ScriptHash;
@@ -117,7 +120,7 @@ namespace Neo.Wallets
 
         public IEnumerable<Coin> GetCoins()
         {
-            return WalletIndexer.GetCoins(GetAccounts().Select(p => p.ScriptHash));
+            return GetCoins(GetAccounts().Select(p => p.ScriptHash));
         }
 
         public static byte[] GetPrivateKeyFromNEP2(string nep2, string passphrase)
@@ -157,15 +160,15 @@ namespace Neo.Wallets
 
         public IEnumerable<Coin> GetUnclaimedCoins()
         {
-            IEnumerable<UInt160> accounts = GetAccounts().Where(p => !p.Lock && p.Contract != null).Select(p => p.ScriptHash);
-            IEnumerable<Coin> coins = WalletIndexer.GetCoins(accounts);
+            IEnumerable<UInt160> accounts = GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash);
+            IEnumerable<Coin> coins = GetCoins(accounts);
             coins = coins.Where(p => p.Output.AssetId.Equals(Blockchain.GoverningToken.Hash));
             coins = coins.Where(p => p.State.HasFlag(CoinState.Confirmed) && p.State.HasFlag(CoinState.Spent));
             coins = coins.Where(p => !p.State.HasFlag(CoinState.Claimed) && !p.State.HasFlag(CoinState.Frozen));
             return coins;
         }
 
-        public WalletAccount Import(X509Certificate2 cert)
+        public virtual WalletAccount Import(X509Certificate2 cert)
         {
             byte[] privateKey;
             using (ECDsa ecdsa = cert.GetECDsaPrivateKey())
@@ -177,7 +180,7 @@ namespace Neo.Wallets
             return account;
         }
 
-        public WalletAccount Import(string wif)
+        public virtual WalletAccount Import(string wif)
         {
             byte[] privateKey = GetPrivateKeyFromWIF(wif);
             WalletAccount account = CreateAccount(privateKey);
@@ -185,7 +188,7 @@ namespace Neo.Wallets
             return account;
         }
 
-        public WalletAccount Import(string nep2, string passphrase)
+        public virtual WalletAccount Import(string nep2, string passphrase)
         {
             byte[] privateKey = GetPrivateKeyFromNEP2(nep2, passphrase);
             WalletAccount account = CreateAccount(privateKey);
@@ -272,7 +275,7 @@ namespace Neo.Wallets
             }
             else
             {
-                UInt160[] accounts = GetAccounts().Where(p => !p.Lock && p.Contract != null).Select(p => p.ScriptHash).ToArray();
+                UInt160[] accounts = GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
                 HashSet<UInt160> sAttributes = new HashSet<UInt160>();
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
