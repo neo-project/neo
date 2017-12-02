@@ -73,6 +73,7 @@ namespace Neo.SmartContract
             {
                 case OpCode.CALL:
                 case OpCode.APPCALL:
+                case OpCode.DYNAMICCALL:
                     if (InvocationStack.Count >= MaxInvocationStackSize) return false;
                     return true;
                 default:
@@ -228,6 +229,18 @@ namespace Neo.SmartContract
             return true;
         }
 
+        private bool CheckDynamicInvoke(OpCode nextInstruction)
+        {
+            if(nextInstruction == OpCode.DYNAMICCALL)
+            {
+                byte[] script_hash = EvaluationStack.Peek().GetByteArray();
+                CachedScriptTable script_table = (CachedScriptTable)this.table;
+                ContractState contract_state = script_table.GetContractState(script_hash);
+                return contract_state.HasDynamicInvoke;
+            }
+            return true;
+        }
+
         public new bool Execute()
         {
             try
@@ -246,6 +259,7 @@ namespace Neo.SmartContract
                         if (!CheckArraySize(nextOpcode)) return false;
                         if (!CheckInvocationStack(nextOpcode)) return false;
                         if (!CheckBigIntegers(nextOpcode)) return false;
+                        if (!CheckDynamicInvoke(nextOpcode)) return false;
                     }
 
                     StepInto();
@@ -342,7 +356,19 @@ namespace Neo.SmartContract
                 case "Neo.Contract.Migrate":
                 case "AntShares.Contract.Create":
                 case "AntShares.Contract.Migrate":
-                    return 500L * 100000000L / ratio;
+                    long fee = 100L;
+
+                    ContractPropertyState contract_properties = (ContractPropertyState)(byte)EvaluationStack.Peek(3).GetBigInteger();
+
+                    if(contract_properties.HasFlag(ContractPropertyState.HasStorage))
+                    {
+                        fee += 400L;
+                    }
+                    if(contract_properties.HasFlag(ContractPropertyState.HasDynamicInvoke))
+                    {
+                        fee += 500L;
+                    }
+                    return fee * 100000000L / ratio;;
                 case "Neo.Storage.Get":
                 case "AntShares.Storage.Get":
                     return 100;

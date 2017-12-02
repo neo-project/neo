@@ -540,7 +540,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                                 Script = publish_tx.Script,
                                 ParameterList = publish_tx.ParameterList,
                                 ReturnType = publish_tx.ReturnType,
-                                HasStorage = publish_tx.NeedStorage,
+                                ContractProperties = (ContractPropertyState)Convert.ToByte(publish_tx.NeedStorage),
                                 Name = publish_tx.Name,
                                 CodeVersion = publish_tx.CodeVersion,
                                 Author = publish_tx.Author,
