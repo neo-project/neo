@@ -87,7 +87,7 @@ namespace Neo.Consensus
         {
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                VerificationContract contract = VerificationContract.CreateMultiSigContract(context.M, context.Validators);
+                Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
                 Block block = context.MakeHeader();
                 ContractParametersContext sc = new ContractParametersContext(block);
                 for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)

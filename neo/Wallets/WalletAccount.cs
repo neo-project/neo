@@ -1,4 +1,6 @@
-﻿namespace Neo.Wallets
+﻿using Neo.SmartContract;
+
+namespace Neo.Wallets
 {
     public abstract class WalletAccount
     {
@@ -6,7 +8,7 @@
         public string Label;
         public bool IsDefault;
         public bool Lock;
-        public VerificationContract Contract;
+        public Contract Contract;
 
         public string Address => Wallet.ToAddress(ScriptHash);
         public abstract bool HasKey { get; }

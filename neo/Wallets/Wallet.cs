@@ -25,6 +25,7 @@ namespace Neo.Wallets
         public abstract void ApplyTransaction(Transaction tx);
         public abstract bool Contains(UInt160 scriptHash);
         public abstract WalletAccount CreateAccount(byte[] privateKey);
+        public abstract WalletAccount CreateAccount(Contract contract, byte[] privateKey = null);
         public abstract WalletAccount CreateAccount(UInt160 scriptHash);
         public abstract bool DeleteAccount(UInt160 scriptHash);
         public abstract WalletAccount GetAccount(UInt160 scriptHash);

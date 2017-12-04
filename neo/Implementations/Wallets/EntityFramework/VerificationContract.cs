@@ -1,14 +1,14 @@
-﻿using Neo.Cryptography.ECC;
-using Neo.IO;
+﻿using Neo.IO;
 using Neo.SmartContract;
 using Neo.VM;
+using Neo.Wallets;
 using System;
 using System.IO;
 using System.Linq;
 
-namespace Neo.Wallets
+namespace Neo.Implementations.Wallets.EntityFramework
 {
-    public class VerificationContract : Contract, IEquatable<VerificationContract>, ISerializable
+    public class VerificationContract : SmartContract.Contract, IEquatable<VerificationContract>, ISerializable
     {
         private string _address;
         /// <summary>
@@ -27,33 +27,6 @@ namespace Neo.Wallets
         }
 
         public int Size => 20 + ParameterList.GetVarSize() + Script.GetVarSize();
-
-        public static VerificationContract Create(ContractParameterType[] parameterList, byte[] redeemScript)
-        {
-            return new VerificationContract
-            {
-                Script = redeemScript,
-                ParameterList = parameterList
-            };
-        }
-
-        public static VerificationContract CreateMultiSigContract(int m, params ECPoint[] publicKeys)
-        {
-            return new VerificationContract
-            {
-                Script = CreateMultiSigRedeemScript(m, publicKeys),
-                ParameterList = Enumerable.Repeat(ContractParameterType.Signature, m).ToArray()
-            };
-        }
-
-        public static VerificationContract CreateSignatureContract(ECPoint publicKey)
-        {
-            return new VerificationContract
-            {
-                Script = CreateSignatureRedeemScript(publicKey),
-                ParameterList = new[] { ContractParameterType.Signature }
-            };
-        }
 
         /// <summary>
         /// 反序列化

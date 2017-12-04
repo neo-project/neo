@@ -35,6 +35,24 @@ namespace Neo.SmartContract
             }
         }
 
+        public static Contract Create(ContractParameterType[] parameterList, byte[] redeemScript)
+        {
+            return new Contract
+            {
+                Script = redeemScript,
+                ParameterList = parameterList
+            };
+        }
+
+        public static Contract CreateMultiSigContract(int m, params ECPoint[] publicKeys)
+        {
+            return new Contract
+            {
+                Script = CreateMultiSigRedeemScript(m, publicKeys),
+                ParameterList = Enumerable.Repeat(ContractParameterType.Signature, m).ToArray()
+            };
+        }
+
         public static byte[] CreateMultiSigRedeemScript(int m, params ECPoint[] publicKeys)
         {
             if (!(1 <= m && m <= publicKeys.Length && publicKeys.Length <= 1024))
@@ -50,6 +68,15 @@ namespace Neo.SmartContract
                 sb.Emit(OpCode.CHECKMULTISIG);
                 return sb.ToArray();
             }
+        }
+
+        public static Contract CreateSignatureContract(ECPoint publicKey)
+        {
+            return new Contract
+            {
+                Script = CreateSignatureRedeemScript(publicKey),
+                ParameterList = new[] { ContractParameterType.Signature }
+            };
         }
 
         public static byte[] CreateSignatureRedeemScript(ECPoint publicKey)
