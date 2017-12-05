@@ -76,7 +76,10 @@ namespace Neo.VM
                     sb.EmitPush((bool)parameter.Value);
                     break;
                 case ContractParameterType.Integer:
-                    sb.EmitPush((BigInteger)parameter.Value);
+                    if (parameter.Value is BigInteger bi)
+                        sb.EmitPush(bi);
+                    else
+                        sb.EmitPush((BigInteger)typeof(BigInteger).GetConstructor(new[] { parameter.Value.GetType() }).Invoke(new[] { parameter.Value }));
                     break;
                 case ContractParameterType.Hash160:
                     sb.EmitPush((UInt160)parameter.Value);
