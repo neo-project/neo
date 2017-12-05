@@ -2,7 +2,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace Neo.Implementations.Blockchains.LevelDB
+namespace Neo.IO.Data.LevelDB
 {
     internal enum CompressionType : byte
     {

@@ -1,18 +1,17 @@
-﻿using Neo.IO;
-using Neo.IO.Caching;
+﻿using Neo.IO.Caching;
 using System;
 using System.Collections.Generic;
 
-namespace Neo.Implementations.Blockchains.LevelDB
+namespace Neo.IO.Data.LevelDB
 {
     internal class DbCache<TKey, TValue> : DataCache<TKey, TValue>
         where TKey : IEquatable<TKey>, ISerializable, new()
         where TValue : class, ISerializable, new()
     {
         private DB db;
-        private DataEntryPrefix prefix;
+        private byte prefix;
 
-        public DbCache(DB db, DataEntryPrefix prefix)
+        public DbCache(DB db, byte prefix)
         {
             this.db = db;
             this.prefix = prefix;
