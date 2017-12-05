@@ -73,7 +73,6 @@ namespace Neo.SmartContract
             {
                 case OpCode.CALL:
                 case OpCode.APPCALL:
-                case OpCode.DYNAMICCALL:
                     if (InvocationStack.Count >= MaxInvocationStackSize) return false;
                     return true;
                 default:
@@ -231,7 +230,7 @@ namespace Neo.SmartContract
 
         private bool CheckDynamicInvoke(OpCode nextInstruction)
         {
-            if(nextInstruction == OpCode.DYNAMICCALL)
+            if(nextInstruction == OpCode.APPCALL)
             {
                 ContractPropertyState contract_properties = (ContractPropertyState)(byte)EvaluationStack.Peek(3).GetBigInteger();
                 return contract_properties.HasFlag(ContractPropertyState.HasDynamicInvoke);
