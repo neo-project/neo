@@ -25,7 +25,7 @@ namespace Neo.Wallets
         public abstract void ApplyTransaction(Transaction tx);
         public abstract bool Contains(UInt160 scriptHash);
         public abstract WalletAccount CreateAccount(byte[] privateKey);
-        public abstract WalletAccount CreateAccount(Contract contract, byte[] privateKey = null);
+        public abstract WalletAccount CreateAccount(Contract contract, KeyPair key = null);
         public abstract WalletAccount CreateAccount(UInt160 scriptHash);
         public abstract bool DeleteAccount(UInt160 scriptHash);
         public abstract WalletAccount GetAccount(UInt160 scriptHash);
@@ -43,6 +43,12 @@ namespace Neo.Wallets
             WalletAccount account = CreateAccount(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
             return account;
+        }
+
+        public WalletAccount CreateAccount(Contract contract, byte[] privateKey)
+        {
+            if (privateKey == null) return CreateAccount(contract);
+            return CreateAccount(contract, new KeyPair(privateKey));
         }
 
         public IEnumerable<Coin> FindUnspentCoins()

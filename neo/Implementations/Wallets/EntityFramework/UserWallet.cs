@@ -90,7 +90,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
             throw new NotSupportedException();
         }
 
-        public override WalletAccount CreateAccount(SmartContract.Contract contract, byte[] privateKey = null)
+        public override WalletAccount CreateAccount(SmartContract.Contract contract, KeyPair key = null)
         {
             throw new NotSupportedException();
         }

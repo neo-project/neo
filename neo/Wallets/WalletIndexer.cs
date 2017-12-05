@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace Neo.Wallets
 {
-    internal static class WalletIndexer
+    public static class WalletIndexer
     {
         public static event EventHandler<BalanceEventArgs> BalanceChanged;
 
@@ -160,6 +160,19 @@ namespace Neo.Wallets
         {
             //TODO: implement WalletIndexer.GetTransactions
             return Enumerable.Empty<UInt256>();
+        }
+
+        public static void RebuildIndex()
+        {
+            lock (SyncRoot)
+            {
+                indexes.Clear();
+                if (accounts_tracked.Count > 0)
+                    indexes[0] = new HashSet<UInt160>(accounts_tracked.Keys);
+                foreach (HashSet<CoinReference> coins in accounts_tracked.Values)
+                    coins.Clear();
+                coins_tracked.Clear();
+            }
         }
 
         public static void RegisterAccounts(IEnumerable<UInt160> accounts, uint height = 0)

@@ -1,7 +1,6 @@
 ﻿using Neo.IO;
 using Neo.SmartContract;
 using Neo.VM;
-using Neo.Wallets;
 using System;
 using System.IO;
 using System.Linq;
@@ -10,22 +9,6 @@ namespace Neo.Implementations.Wallets.EntityFramework
 {
     public class VerificationContract : SmartContract.Contract, IEquatable<VerificationContract>, ISerializable
     {
-        private string _address;
-        /// <summary>
-        /// 合约地址
-        /// </summary>
-        public string Address
-        {
-            get
-            {
-                if (_address == null)
-                {
-                    _address = Wallet.ToAddress(ScriptHash);
-                }
-                return _address;
-            }
-        }
-
         public int Size => 20 + ParameterList.GetVarSize() + Script.GetVarSize();
 
         /// <summary>

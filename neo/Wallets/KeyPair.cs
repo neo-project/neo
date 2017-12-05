@@ -93,6 +93,11 @@ namespace Neo.Wallets
             return PublicKey.GetHashCode();
         }
 
+        public override string ToString()
+        {
+            return PublicKey.ToString();
+        }
+
         private static byte[] XOR(byte[] x, byte[] y)
         {
             if (x.Length != y.Length) throw new ArgumentException();
