@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+k<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Copyright>2015-2017 The Neo Project</Copyright>
@@ -37,6 +37,7 @@
     <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="2.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
+    <PackageReference Include="Neo.VM" Version="2.0.3" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net47' ">
@@ -44,11 +45,9 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net47'">
-    <PackageReference Include="Replicon.Cryptography.SCrypt" Version="1.1.6.13">
+    <PackageReference Include="Replicon.Cryptography.SCrypt">
+      <Version>1.1.6.13</Version>
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\neo-vm\src\neo-vm\neo-vm.csproj" />
-  </ItemGroup>
 </Project>
