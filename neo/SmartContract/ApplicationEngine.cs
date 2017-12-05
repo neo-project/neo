@@ -233,10 +233,8 @@ namespace Neo.SmartContract
         {
             if(nextInstruction == OpCode.DYNAMICCALL)
             {
-                byte[] script_hash = EvaluationStack.Peek().GetByteArray();
-                CachedScriptTable script_table = (CachedScriptTable)this.table;
-                ContractState contract_state = script_table.GetContractState(script_hash);
-                return contract_state.HasDynamicInvoke;
+                ContractPropertyState contract_properties = (ContractPropertyState)(byte)EvaluationStack.Peek(3).GetBigInteger();
+                return contract_properties.HasFlag(ContractPropertyState.HasDynamicInvoke);
             }
             return true;
         }

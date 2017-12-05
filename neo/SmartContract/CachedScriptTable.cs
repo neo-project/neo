@@ -17,10 +17,5 @@ namespace Neo.SmartContract
         {
             return contracts[new UInt160(script_hash)].Script;
         }
-
-        public ContractState GetContractState(byte[] script_hash)
-        {
-            return contracts[new UInt160(script_hash)];
-        }
     }
 }
