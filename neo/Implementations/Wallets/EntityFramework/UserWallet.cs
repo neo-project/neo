@@ -20,6 +20,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
         private readonly byte[] iv;
         private readonly byte[] masterKey;
         private readonly Dictionary<UInt160, WalletAccount> accounts;
+        private readonly Dictionary<UInt256, Transaction> unconfirmed = new Dictionary<UInt256, Transaction>();
 
         public override string Name => Path.GetFileNameWithoutExtension(path);
         public override uint WalletHeight => WalletIndexer.IndexHeight;
@@ -56,7 +57,17 @@ namespace Neo.Implementations.Wallets.EntityFramework
 
         public override void ApplyTransaction(Transaction tx)
         {
-            //TODO: implement UserWallet.ApplyTransaction
+            lock (unconfirmed)
+            {
+                unconfirmed[tx.Hash] = tx;
+            }
+            BalanceChanged?.Invoke(this, new BalanceEventArgs
+            {
+                Transaction = tx,
+                RelatedAccounts = tx.Scripts.Select(p => p.ScriptHash).Union(tx.Outputs.Select(p => p.ScriptHash)).Where(p => Contains(p)).ToArray(),
+                Height = null,
+                Time = DateTime.UtcNow.ToTimestamp()
+            });
         }
 
         public bool ChangePassword(string password_old, string password_new)
@@ -140,12 +151,66 @@ namespace Neo.Implementations.Wallets.EntityFramework
 
         public override IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts)
         {
-            return WalletIndexer.GetCoins(accounts);
+            if (unconfirmed.Count == 0)
+                return WalletIndexer.GetCoins(accounts);
+            else
+                return GetCoinsInternal();
+            IEnumerable<Coin> GetCoinsInternal()
+            {
+                HashSet<CoinReference> inputs, claims;
+                Coin[] coins_unconfirmed;
+                lock (unconfirmed)
+                {
+                    inputs = new HashSet<CoinReference>(unconfirmed.Values.SelectMany(p => p.Inputs));
+                    claims = new HashSet<CoinReference>(unconfirmed.Values.OfType<ClaimTransaction>().SelectMany(p => p.Claims));
+                    coins_unconfirmed = unconfirmed.Values.Select(tx => tx.Outputs.Select((o, i) => new Coin
+                    {
+                        Reference = new CoinReference
+                        {
+                            PrevHash = tx.Hash,
+                            PrevIndex = (ushort)i
+                        },
+                        Output = o,
+                        State = CoinState.Unconfirmed
+                    })).SelectMany(p => p).ToArray();
+                }
+                foreach (Coin coin in WalletIndexer.GetCoins(accounts))
+                {
+                    if (inputs.Contains(coin.Reference))
+                    {
+                        if (coin.Output.AssetId.Equals(Blockchain.GoverningToken.Hash))
+                            yield return new Coin
+                            {
+                                Reference = coin.Reference,
+                                Output = coin.Output,
+                                State = coin.State | CoinState.Spent
+                            };
+                        continue;
+                    }
+                    else if (claims.Contains(coin.Reference))
+                    {
+                        continue;
+                    }
+                    yield return coin;
+                }
+                HashSet<UInt160> accounts_set = new HashSet<UInt160>(accounts);
+                foreach (Coin coin in coins_unconfirmed)
+                {
+                    if (accounts_set.Contains(coin.Output.ScriptHash))
+                        yield return coin;
+                }
+            }
         }
 
         public override IEnumerable<UInt256> GetTransactions()
         {
-            return WalletIndexer.GetTransactions(accounts.Keys);
+            foreach (UInt256 hash in WalletIndexer.GetTransactions(accounts.Keys))
+                yield return hash;
+            lock (unconfirmed)
+            {
+                foreach (UInt256 hash in unconfirmed.Keys)
+                    yield return hash;
+            }
         }
 
         private Dictionary<UInt160, WalletAccount> LoadAccounts()
@@ -215,6 +280,10 @@ namespace Neo.Implementations.Wallets.EntityFramework
 
         private void WalletIndexer_BalanceChanged(object sender, BalanceEventArgs e)
         {
+            lock (unconfirmed)
+            {
+                unconfirmed.Remove(e.Transaction.Hash);
+            }
             UInt160[] relatedAccounts = e.RelatedAccounts.Where(p => Contains(p)).ToArray();
             if (relatedAccounts.Length > 0)
             {

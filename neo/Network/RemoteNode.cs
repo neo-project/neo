@@ -499,7 +499,7 @@ namespace Neo.Network
             if (filter.Check(tx.Hash.ToArray())) return true;
             if (tx.Outputs.Any(p => filter.Check(p.ScriptHash.ToArray()))) return true;
             if (tx.Inputs.Any(p => filter.Check(p.ToArray()))) return true;
-            if (tx.Scripts.Any(p => filter.Check(p.VerificationScript.ToScriptHash().ToArray())))
+            if (tx.Scripts.Any(p => filter.Check(p.ScriptHash.ToArray())))
                 return true;
             if (tx.Type == TransactionType.RegisterTransaction)
             {

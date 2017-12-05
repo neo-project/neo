@@ -7,7 +7,7 @@ namespace Neo.Wallets
     {
         public Transaction Transaction;
         public UInt160[] RelatedAccounts;
-        public uint Height;
+        public uint? Height;
         public uint Time;
     }
 }
