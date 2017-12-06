@@ -230,10 +230,18 @@ namespace Neo.SmartContract
 
         private bool CheckDynamicInvoke(OpCode nextInstruction)
         {
-            if(nextInstruction == OpCode.APPCALL)
+            if(nextInstruction == OpCode.APPCALL || nextInstruction == OpCode.TAILCALL)
             {
-                ContractPropertyState contract_properties = (ContractPropertyState)(byte)EvaluationStack.Peek(3).GetBigInteger();
-                return contract_properties.HasFlag(ContractPropertyState.HasDynamicInvoke);
+                for (int i = CurrentContext.InstructionPointer + 1; i < CurrentContext.InstructionPointer + 20; i++) 
+                {
+                    if (CurrentContext.Script[i] != 0) return true;
+                }
+                // if we get this far it is a dynamic call
+                // now look at the current executing script
+                // to determine if it can do dynamic calls
+                CachedScriptTable script_table = (CachedScriptTable)table;
+                ContractState contract = script_table.GetContractState(CurrentContext.ScriptHash);
+                return contract.HasDynamicInvoke;
             }
             return true;
         }
