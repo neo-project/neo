@@ -39,15 +39,19 @@ namespace Neo.SmartContract
         private long gas_consumed = 0;
         private readonly bool testMode;
 
+        private readonly CachedScriptTable script_table;
+
         public TriggerType Trigger { get; }
         public Fixed8 GasConsumed => new Fixed8(gas_consumed);
 
         public ApplicationEngine(TriggerType trigger, IScriptContainer container, IScriptTable table, InteropService service, Fixed8 gas, bool testMode = false)
             : base(container, Cryptography.Crypto.Default, table, service)
         {
+            this.script_table = (CachedScriptTable)table;
             this.gas_amount = gas_free + gas.GetData();
             this.testMode = testMode;
             this.Trigger = trigger;
+
         }
 
         private bool CheckArraySize(OpCode nextInstruction)
@@ -239,7 +243,6 @@ namespace Neo.SmartContract
                 // if we get this far it is a dynamic call
                 // now look at the current executing script
                 // to determine if it can do dynamic calls
-                CachedScriptTable script_table = (CachedScriptTable)table;
                 ContractState contract = script_table.GetContractState(CurrentContext.ScriptHash);
                 return contract.HasDynamicInvoke;
             }
