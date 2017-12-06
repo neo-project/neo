@@ -60,6 +60,7 @@ namespace Neo.SmartContract
             {
                 case OpCode.PACK:
                 case OpCode.NEWARRAY:
+                case OpCode.NEWSTRUCT:
                     {
                         if (EvaluationStack.Count == 0) return false;
                         int size = (int)EvaluationStack.Peek().GetBigInteger();
