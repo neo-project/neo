@@ -202,7 +202,6 @@ namespace Neo.SmartContract
             if (parameter_list.Length > 252) return false;
             ContractParameterType return_type = (ContractParameterType)(byte)engine.EvaluationStack.Pop().GetBigInteger();
             ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.EvaluationStack.Pop().GetBigInteger();
-            bool need_storage = engine.EvaluationStack.Pop().GetBoolean();
             if (engine.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
             string name = Encoding.UTF8.GetString(engine.EvaluationStack.Pop().GetByteArray());
             if (engine.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
