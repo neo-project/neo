@@ -237,7 +237,7 @@ namespace Neo.SmartContract
         {
             if(nextInstruction == OpCode.APPCALL || nextInstruction == OpCode.TAILCALL)
             {
-                for (int i = CurrentContext.InstructionPointer + 1; i < CurrentContext.InstructionPointer + 20; i++) 
+                for (int i = CurrentContext.InstructionPointer + 1; i < CurrentContext.InstructionPointer + 21; i++) 
                 {
                     if (CurrentContext.Script[i] != 0) return true;
                 }

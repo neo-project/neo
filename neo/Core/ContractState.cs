@@ -102,13 +102,14 @@ namespace Neo.Core
             json["script"] = Script.ToHexString();
             json["parameters"] = new JArray(ParameterList.Select(p => (JObject)p));
             json["returntype"] = ReturnType;
-            json["storage"] = HasStorage;
-            json["dynamic_invoke"] = HasDynamicInvoke;
             json["name"] = Name;
             json["code_version"] = CodeVersion;
             json["author"] = Author;
             json["email"] = Email;
             json["description"] = Description;
+            json["properties"] = new JObject();
+            json["properties"]["storage"] = HasStorage;
+            json["properties"]["dynamic_invoke"] = HasDynamicInvoke;
             return json;
         }
     }
