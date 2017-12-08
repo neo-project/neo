@@ -47,11 +47,13 @@ namespace Neo.SmartContract
         public ApplicationEngine(TriggerType trigger, IScriptContainer container, IScriptTable table, InteropService service, Fixed8 gas, bool testMode = false)
             : base(container, Cryptography.Crypto.Default, table, service)
         {
-            this.script_table = (CachedScriptTable)table;
             this.gas_amount = gas_free + gas.GetData();
             this.testMode = testMode;
             this.Trigger = trigger;
-
+            if( table is CachedScriptTable)
+            {
+                this.script_table = (CachedScriptTable)table;    
+            }
         }
 
         private bool CheckArraySize(OpCode nextInstruction)
