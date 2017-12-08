@@ -28,7 +28,7 @@ namespace Neo.Implementations.Wallets.NEP6
         public override Version Version => version;
         public override uint WalletHeight => WalletIndexer.IndexHeight;
 
-        private NEP6Wallet(string path, string name = null)
+        public NEP6Wallet(string path, string name = null)
         {
             this.path = path;
             if (File.Exists(path))
@@ -110,13 +110,6 @@ namespace Neo.Implementations.Wallets.NEP6
             {
                 return accounts.ContainsKey(scriptHash);
             }
-        }
-
-        public static NEP6Wallet Create(string path, string name)
-        {
-            NEP6Wallet wallet = new NEP6Wallet(path, name);
-            wallet.Save();
-            return wallet;
         }
 
         public override WalletAccount CreateAccount(byte[] privateKey)
@@ -339,11 +332,6 @@ namespace Neo.Implementations.Wallets.NEP6
         internal void Lock()
         {
             password = null;
-        }
-
-        public static NEP6Wallet Open(string path)
-        {
-            return new NEP6Wallet(path);
         }
 
         public void Save()

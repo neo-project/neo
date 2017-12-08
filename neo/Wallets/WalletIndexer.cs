@@ -48,6 +48,8 @@ namespace Neo.Wallets
                 }).GroupBy(p => p.Height, p => p.Account))
                 {
                     indexes.Add(group.Key, new HashSet<UInt160>(group));
+                    foreach (UInt160 account in group)
+                        accounts_tracked.Add(account, new HashSet<CoinReference>());
                 }
                 foreach (Coin coin in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.ST_Coin), (k, v) => new Coin
                 {
@@ -56,12 +58,7 @@ namespace Neo.Wallets
                     State = (CoinState)v.ToArray()[60]
                 }))
                 {
-                    if (!accounts_tracked.TryGetValue(coin.Output.ScriptHash, out HashSet<CoinReference> coins))
-                    {
-                        coins = new HashSet<CoinReference>();
-                        accounts_tracked.Add(coin.Output.ScriptHash, coins);
-                    }
-                    coins.Add(coin.Reference);
+                    accounts_tracked[coin.Output.ScriptHash].Add(coin.Reference);
                     coins_tracked.Add(coin.Reference, coin);
                 }
             }
