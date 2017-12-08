@@ -379,7 +379,7 @@ namespace Neo.SmartContract
                     {
                         fee += 500L;
                     }
-                    return fee * 100000000L / ratio;;
+                    return fee * 100000000L / ratio;
                 case "Neo.Storage.Get":
                 case "AntShares.Storage.Get":
                     return 100;
