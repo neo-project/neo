@@ -21,7 +21,6 @@ namespace Neo.SmartContract
             Register("Neo.Runtime.CheckWitness", Runtime_CheckWitness);
             Register("Neo.Runtime.Notify", Runtime_Notify);
             Register("Neo.Runtime.Log", Runtime_Log);
-            Register("Neo.Runtime.GetCurrentBlock", Runtime_GetCurrentBlock);
             Register("Neo.Runtime.GetTime", Runtime_GetCurrentTime);
             Register("Neo.Blockchain.GetHeight", Blockchain_GetHeight);
             Register("Neo.Blockchain.GetHeader", Blockchain_GetHeader);
@@ -168,19 +167,6 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected virtual bool Runtime_GetCurrentBlock(ExecutionEngine engine)
-        {
-            if (Blockchain.Default == null)
-                engine.EvaluationStack.Push(StackItem.FromInterface(Blockchain.GenesisBlock));
-            else
-            {
-                // current block returns the currently persisting block if this is an Application Trigger
-                // otherwise it returns the most recent block
-                engine.EvaluationStack.Push(StackItem.FromInterface(Blockchain.Default.CurrentBlock));
-            }
-            return true;
-        }
-
         protected virtual bool Runtime_GetCurrentTime(ExecutionEngine engine)
         {
             if (Blockchain.Default == null)
@@ -189,8 +175,14 @@ namespace Neo.SmartContract
             {
                 // current block returns the currently persisting block time if this is an Application Trigger
                 // otherwise it returns the time of the most recent block
-                Block block = Blockchain.Default.CurrentBlock;
-                engine.EvaluationStack.Push(block.Timestamp);
+                uint current_time = Blockchain.Default.CurrentBlock.Timestamp;
+
+                ApplicationEngine app_engine = (ApplicationEngine)engine;
+                if (app_engine.Trigger == TriggerType.Verification)
+                {
+                    current_time += Blockchain.SecondsPerBlock;
+                }
+                engine.EvaluationStack.Push(current_time);
             }
             return true;
         }

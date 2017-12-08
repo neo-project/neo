@@ -308,7 +308,6 @@ namespace Neo.SmartContract
                     return 100;
                 case "Neo.Blockchain.GetBlock":
                 case "AntShares.Blockchain.GetBlock":
-                case "Neo.Runtime.GetCurrentBlock":                    
                     return 200;
                 case "Neo.Runtime.GetTime":
                     return 100;
