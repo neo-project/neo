@@ -201,7 +201,7 @@ namespace Neo.SmartContract
             ContractParameterType[] parameter_list = engine.EvaluationStack.Pop().GetByteArray().Select(p => (ContractParameterType)p).ToArray();
             if (parameter_list.Length > 252) return false;
             ContractParameterType return_type = (ContractParameterType)(byte)engine.EvaluationStack.Pop().GetBigInteger();
-            bool need_storage = engine.EvaluationStack.Pop().GetBoolean();
+            ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.EvaluationStack.Pop().GetBigInteger();
             if (engine.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
             string name = Encoding.UTF8.GetString(engine.EvaluationStack.Pop().GetByteArray());
             if (engine.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
@@ -221,7 +221,7 @@ namespace Neo.SmartContract
                     Script = script,
                     ParameterList = parameter_list,
                     ReturnType = return_type,
-                    HasStorage = need_storage,
+                    ContractProperties = contract_properties,
                     Name = name,
                     CodeVersion = version,
                     Author = author,
@@ -242,7 +242,7 @@ namespace Neo.SmartContract
             ContractParameterType[] parameter_list = engine.EvaluationStack.Pop().GetByteArray().Select(p => (ContractParameterType)p).ToArray();
             if (parameter_list.Length > 252) return false;
             ContractParameterType return_type = (ContractParameterType)(byte)engine.EvaluationStack.Pop().GetBigInteger();
-            bool need_storage = engine.EvaluationStack.Pop().GetBoolean();
+            ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.EvaluationStack.Pop().GetBigInteger();
             if (engine.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
             string name = Encoding.UTF8.GetString(engine.EvaluationStack.Pop().GetByteArray());
             if (engine.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
@@ -262,7 +262,7 @@ namespace Neo.SmartContract
                     Script = script,
                     ParameterList = parameter_list,
                     ReturnType = return_type,
-                    HasStorage = need_storage,
+                    ContractProperties = contract_properties,
                     Name = name,
                     CodeVersion = version,
                     Author = author,
@@ -271,7 +271,7 @@ namespace Neo.SmartContract
                 };
                 contracts.Add(hash, contract);
                 contracts_created.Add(hash, new UInt160(engine.CurrentContext.ScriptHash));
-                if (need_storage)
+                if (contract.HasStorage)
                 {
                     foreach (var pair in storages.Find(engine.CurrentContext.ScriptHash).ToArray())
                     {
