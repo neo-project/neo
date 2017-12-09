@@ -23,6 +23,14 @@ namespace Neo.UnitTests
 
         public override uint Height => throw new NotImplementedException();
 
+        public override Block CurrentBlock
+        {
+            get
+            {
+                return GetBlock(Height);
+            }
+        }
+
         public override bool AddBlock(Block block)
         {
             throw new NotImplementedException();
