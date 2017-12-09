@@ -11,12 +11,17 @@ namespace Neo.Core
         public byte[] Script;
         public ContractParameterType[] ParameterList;
         public ContractParameterType ReturnType;
-        public bool HasStorage;
+        public ContractPropertyState ContractProperties;
         public string Name;
         public string CodeVersion;
         public string Author;
         public string Email;
         public string Description;
+
+
+        public bool HasStorage => ContractProperties.HasFlag(ContractPropertyState.HasStorage);
+
+        public bool HasDynamicInvoke => ContractProperties.HasFlag(ContractPropertyState.HasDynamicInvoke);
 
         private UInt160 _scriptHash;
         public UInt160 ScriptHash
@@ -40,7 +45,7 @@ namespace Neo.Core
                 Script = Script,
                 ParameterList = ParameterList,
                 ReturnType = ReturnType,
-                HasStorage = HasStorage,
+                ContractProperties = ContractProperties,
                 Name = Name,
                 CodeVersion = CodeVersion,
                 Author = Author,
@@ -55,7 +60,7 @@ namespace Neo.Core
             Script = reader.ReadVarBytes();
             ParameterList = reader.ReadVarBytes().Select(p => (ContractParameterType)p).ToArray();
             ReturnType = (ContractParameterType)reader.ReadByte();
-            HasStorage = reader.ReadBoolean();
+            ContractProperties = (ContractPropertyState)reader.ReadByte();
             Name = reader.ReadVarString();
             CodeVersion = reader.ReadVarString();
             Author = reader.ReadVarString();
@@ -68,7 +73,7 @@ namespace Neo.Core
             Script = replica.Script;
             ParameterList = replica.ParameterList;
             ReturnType = replica.ReturnType;
-            HasStorage = replica.HasStorage;
+            ContractProperties = replica.ContractProperties;
             Name = replica.Name;
             CodeVersion = replica.CodeVersion;
             Author = replica.Author;
@@ -82,7 +87,7 @@ namespace Neo.Core
             writer.WriteVarBytes(Script);
             writer.WriteVarBytes(ParameterList.Cast<byte>().ToArray());
             writer.Write((byte)ReturnType);
-            writer.Write(HasStorage);
+            writer.Write((byte)ContractProperties);
             writer.WriteVarString(Name);
             writer.WriteVarString(CodeVersion);
             writer.WriteVarString(Author);
@@ -97,12 +102,14 @@ namespace Neo.Core
             json["script"] = Script.ToHexString();
             json["parameters"] = new JArray(ParameterList.Select(p => (JObject)p));
             json["returntype"] = ReturnType;
-            json["storage"] = HasStorage;
             json["name"] = Name;
             json["code_version"] = CodeVersion;
             json["author"] = Author;
             json["email"] = Email;
             json["description"] = Description;
+            json["properties"] = new JObject();
+            json["properties"]["storage"] = HasStorage;
+            json["properties"]["dynamic_invoke"] = HasDynamicInvoke;
             return json;
         }
     }
