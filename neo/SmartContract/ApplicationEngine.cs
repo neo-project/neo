@@ -39,6 +39,8 @@ namespace Neo.SmartContract
         private long gas_consumed = 0;
         private readonly bool testMode;
 
+        private readonly CachedScriptTable script_table;
+
         public TriggerType Trigger { get; }
         public Fixed8 GasConsumed => new Fixed8(gas_consumed);
 
@@ -48,6 +50,10 @@ namespace Neo.SmartContract
             this.gas_amount = gas_free + gas.GetData();
             this.testMode = testMode;
             this.Trigger = trigger;
+            if( table is CachedScriptTable)
+            {
+                this.script_table = (CachedScriptTable)table;    
+            }
         }
 
         private bool CheckArraySize(OpCode nextInstruction)
@@ -229,6 +235,23 @@ namespace Neo.SmartContract
             return true;
         }
 
+        private bool CheckDynamicInvoke(OpCode nextInstruction)
+        {
+            if(nextInstruction == OpCode.APPCALL || nextInstruction == OpCode.TAILCALL)
+            {
+                for (int i = CurrentContext.InstructionPointer + 1; i < CurrentContext.InstructionPointer + 21; i++) 
+                {
+                    if (CurrentContext.Script[i] != 0) return true;
+                }
+                // if we get this far it is a dynamic call
+                // now look at the current executing script
+                // to determine if it can do dynamic calls
+                ContractState contract = script_table.GetContractState(CurrentContext.ScriptHash);
+                return contract.HasDynamicInvoke;
+            }
+            return true;
+        }
+
         public new bool Execute()
         {
             try
@@ -247,6 +270,7 @@ namespace Neo.SmartContract
                         if (!CheckArraySize(nextOpcode)) return false;
                         if (!CheckInvocationStack(nextOpcode)) return false;
                         if (!CheckBigIntegers(nextOpcode)) return false;
+                        if (!CheckDynamicInvoke(nextOpcode)) return false;
                     }
 
                     StepInto();
@@ -345,7 +369,19 @@ namespace Neo.SmartContract
                 case "Neo.Contract.Migrate":
                 case "AntShares.Contract.Create":
                 case "AntShares.Contract.Migrate":
-                    return 500L * 100000000L / ratio;
+                    long fee = 100L;
+
+                    ContractPropertyState contract_properties = (ContractPropertyState)(byte)EvaluationStack.Peek(3).GetBigInteger();
+
+                    if(contract_properties.HasFlag(ContractPropertyState.HasStorage))
+                    {
+                        fee += 400L;
+                    }
+                    if(contract_properties.HasFlag(ContractPropertyState.HasDynamicInvoke))
+                    {
+                        fee += 500L;
+                    }
+                    return fee * 100000000L / ratio;
                 case "Neo.Storage.Get":
                 case "AntShares.Storage.Get":
                     return 100;
