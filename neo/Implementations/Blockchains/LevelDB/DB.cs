@@ -101,7 +101,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             // There's a bug in .Net Core.
             // When calling DB.Write(), it will throw LevelDBException sometimes.
             // But when you try to catch the exception, the bug disappears.
-            // We shall remove the "try...catch" clause when Microsoft fix the bug.
+            // We shall remove the "try...catch" clause when Microsoft fixes the bug.
             byte retry = 0;
             while (true)
             {
