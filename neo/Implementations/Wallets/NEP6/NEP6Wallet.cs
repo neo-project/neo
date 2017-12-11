@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using UserWallet = Neo.Implementations.Wallets.EntityFramework.UserWallet;
 
 namespace Neo.Implementations.Wallets.NEP6
 {
@@ -332,6 +333,26 @@ namespace Neo.Implementations.Wallets.NEP6
         internal void Lock()
         {
             password = null;
+        }
+
+        public static NEP6Wallet Migrate(string path, string db3path, string password)
+        {
+            using (UserWallet wallet_old = UserWallet.Open(db3path, password))
+            {
+                NEP6Wallet wallet_new = new NEP6Wallet(path, wallet_old.Name);
+                using (wallet_new.Unlock(password))
+                {
+                    foreach (WalletAccount account in wallet_old.GetAccounts())
+                    {
+                        KeyPair key = account.GetKey();
+                        using (key.Decrypt())
+                        {
+                            wallet_new.CreateAccount(key.PrivateKey);
+                        }
+                    }
+                }
+                return wallet_new;
+            }
         }
 
         public void Save()
