@@ -344,11 +344,7 @@ namespace Neo.Implementations.Wallets.NEP6
                 {
                     foreach (WalletAccount account in wallet_old.GetAccounts())
                     {
-                        KeyPair key = account.GetKey();
-                        using (key.Decrypt())
-                        {
-                            wallet_new.CreateAccount(key.PrivateKey);
-                        }
+                        wallet_new.CreateAccount(account.Contract, account.GetKey());
                     }
                 }
                 return wallet_new;
