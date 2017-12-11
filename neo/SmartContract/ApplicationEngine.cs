@@ -350,6 +350,7 @@ namespace Neo.SmartContract
                     return 100;
                 case "Neo.Transaction.GetReferences":
                 case "AntShares.Transaction.GetReferences":
+                case "Neo.Transaction.GetUnspentCoins":    
                     return 200;
                 case "Neo.Account.SetVotes":
                 case "AntShares.Account.SetVotes":

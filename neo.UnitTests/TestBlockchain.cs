@@ -133,6 +133,11 @@ namespace Neo.UnitTests
             throw new NotImplementedException();
         }
 
+        public override IEnumerable<TransactionOutput> GetUnspent(UInt256 hash)
+        {
+            throw new NotImplementedException();
+        }
+
         public override IEnumerable<VoteState> GetVotes(IEnumerable<Transaction> others)
         {
             VoteState vs = new VoteState() { Count = Fixed8.FromDecimal(1), PublicKeys = TestUtils.StandbyValidators};            
