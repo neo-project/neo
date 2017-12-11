@@ -273,7 +273,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
             }
         }
 
-        public bool VerifyPassword(string password)
+        public override bool VerifyPassword(string password)
         {
             return password.ToAesKey().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
         }

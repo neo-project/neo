@@ -400,6 +400,8 @@ namespace Neo.Wallets
             return new UInt160(data.Skip(1).ToArray());
         }
 
+        public abstract bool VerifyPassword(string password);
+
         private static byte[] XOR(byte[] x, byte[] y)
         {
             if (x.Length != y.Length) throw new ArgumentException();

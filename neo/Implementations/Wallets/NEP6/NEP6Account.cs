@@ -1,5 +1,6 @@
 ﻿using Neo.IO.Json;
 using Neo.Wallets;
+using System;
 
 namespace Neo.Implementations.Wallets.NEP6
 {
@@ -10,6 +11,7 @@ namespace Neo.Implementations.Wallets.NEP6
         private KeyPair key;
         public JObject Extra;
 
+        public bool Decrypted => nep2key == null || key != null;
         public override bool HasKey => nep2key != null;
 
         public NEP6Account(NEP6Wallet wallet, UInt160 scriptHash, string nep2key = null)
@@ -47,6 +49,16 @@ namespace Neo.Implementations.Wallets.NEP6
             return key;
         }
 
+        public KeyPair GetKey(string password)
+        {
+            if (nep2key == null) return null;
+            if (key == null)
+            {
+                key = new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password));
+            }
+            return key;
+        }
+
         public JObject ToJson()
         {
             JObject account = new JObject();
@@ -58,6 +70,19 @@ namespace Neo.Implementations.Wallets.NEP6
             account["contract"] = ((NEP6Contract)Contract).ToJson();
             account["extra"] = Extra;
             return account;
+        }
+
+        public bool VerifyPassword(string password)
+        {
+            try
+            {
+                Wallet.GetPrivateKeyFromNEP2(nep2key, password);
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
         }
     }
 }
