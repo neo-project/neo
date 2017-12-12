@@ -1,9 +1,8 @@
-﻿using Neo.IO;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Neo.Implementations.Blockchains.LevelDB
+namespace Neo.IO.Data.LevelDB
 {
     internal class SliceBuilder
     {
@@ -60,9 +59,9 @@ namespace Neo.Implementations.Blockchains.LevelDB
             return new SliceBuilder();
         }
 
-        public static SliceBuilder Begin(DataEntryPrefix prefix)
+        public static SliceBuilder Begin(byte prefix)
         {
-            return new SliceBuilder().Add((byte)prefix);
+            return new SliceBuilder().Add(prefix);
         }
 
         public static implicit operator Slice(SliceBuilder value)

@@ -1,8 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Core;
-using Neo.IO.Json;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -29,7 +27,7 @@ namespace Neo.UnitTests
         public void Items_Set()
         {
             CoinState item1 = CoinState.Confirmed;
-            CoinState item2 = CoinState.Locked;
+            CoinState item2 = CoinState.Spent;
             CoinState[] val = new CoinState[] { item1, item2 };
             uut.Items = val;
             uut.Items.Length.Should().Be(val.Length);
@@ -51,7 +49,7 @@ namespace Neo.UnitTests
         public void Size_Get_3()
         {
             CoinState item1 = CoinState.Confirmed;
-            CoinState item2 = CoinState.Locked;
+            CoinState item2 = CoinState.Frozen;
             CoinState item3 = CoinState.Spent;
             CoinState[] val = new CoinState[] { item1, item2, item3 };
             uut.Items = val;
@@ -62,7 +60,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Deserialize()
         {
-            byte[] data = new byte[] { 0, 2, 1, 16 };
+            byte[] data = new byte[] { 0, 2, 1, 8 };
             int index = 0;
             using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
             {
@@ -73,14 +71,14 @@ namespace Neo.UnitTests
             }
             uut.Items.Length.Should().Be(2);
             uut.Items[0].Should().Be(CoinState.Confirmed);
-            uut.Items[1].Should().Be(CoinState.Locked);
+            uut.Items[1].Should().Be(CoinState.Claimed);
         }
 
         [TestMethod]
         public void Serialize()
         {
             CoinState item1 = CoinState.Confirmed;
-            CoinState item2 = CoinState.Locked;
+            CoinState item2 = CoinState.Claimed;
             CoinState[] val = new CoinState[] { item1, item2 };
             uut.Items = val;
 
@@ -94,7 +92,7 @@ namespace Neo.UnitTests
                 }
             }
 
-            byte[] requiredData = new byte[] { 0, 2, 1, 16 };
+            byte[] requiredData = new byte[] { 0, 2, 1, 8 };
 
             data.Length.Should().Be(requiredData.Length);
             for (int i = 0; i < requiredData.Length; i++)

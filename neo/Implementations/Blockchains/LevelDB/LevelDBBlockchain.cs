@@ -3,6 +3,7 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Caching;
+using Neo.IO.Data.LevelDB;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;

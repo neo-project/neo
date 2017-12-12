@@ -9,6 +9,19 @@ namespace Neo.Core
         public byte[] InvocationScript;
         public byte[] VerificationScript;
 
+        private UInt160 _scriptHash;
+        public virtual UInt160 ScriptHash
+        {
+            get
+            {
+                if (_scriptHash == null)
+                {
+                    _scriptHash = VerificationScript.ToScriptHash();
+                }
+                return _scriptHash;
+            }
+        }
+
         public int Size => InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
 
         void ISerializable.Deserialize(BinaryReader reader)

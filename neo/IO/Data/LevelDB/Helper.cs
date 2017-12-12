@@ -1,18 +1,17 @@
-﻿using Neo.IO;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Neo.Implementations.Blockchains.LevelDB
+namespace Neo.IO.Data.LevelDB
 {
     internal static class Helper
     {
-        public static void Delete(this WriteBatch batch, DataEntryPrefix prefix, ISerializable key)
+        public static void Delete(this WriteBatch batch, byte prefix, ISerializable key)
         {
             batch.Delete(SliceBuilder.Begin(prefix).Add(key));
         }
 
-        public static IEnumerable<T> Find<T>(this DB db, ReadOptions options, DataEntryPrefix prefix) where T : class, ISerializable, new()
+        public static IEnumerable<T> Find<T>(this DB db, ReadOptions options, byte prefix) where T : class, ISerializable, new()
         {
             return Find(db, options, SliceBuilder.Begin(prefix), (k, v) => v.ToArray().AsSerializable<T>());
         }
@@ -33,22 +32,22 @@ namespace Neo.Implementations.Blockchains.LevelDB
             }
         }
 
-        public static T Get<T>(this DB db, ReadOptions options, DataEntryPrefix prefix, ISerializable key) where T : class, ISerializable, new()
+        public static T Get<T>(this DB db, ReadOptions options, byte prefix, ISerializable key) where T : class, ISerializable, new()
         {
             return db.Get(options, SliceBuilder.Begin(prefix).Add(key)).ToArray().AsSerializable<T>();
         }
 
-        public static T Get<T>(this DB db, ReadOptions options, DataEntryPrefix prefix, ISerializable key, Func<Slice, T> resultSelector)
+        public static T Get<T>(this DB db, ReadOptions options, byte prefix, ISerializable key, Func<Slice, T> resultSelector)
         {
             return resultSelector(db.Get(options, SliceBuilder.Begin(prefix).Add(key)));
         }
 
-        public static void Put(this WriteBatch batch, DataEntryPrefix prefix, ISerializable key, ISerializable value)
+        public static void Put(this WriteBatch batch, byte prefix, ISerializable key, ISerializable value)
         {
             batch.Put(SliceBuilder.Begin(prefix).Add(key), value.ToArray());
         }
 
-        public static T TryGet<T>(this DB db, ReadOptions options, DataEntryPrefix prefix, ISerializable key) where T : class, ISerializable, new()
+        public static T TryGet<T>(this DB db, ReadOptions options, byte prefix, ISerializable key) where T : class, ISerializable, new()
         {
             Slice slice;
             if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out slice))
@@ -56,7 +55,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             return slice.ToArray().AsSerializable<T>();
         }
 
-        public static T TryGet<T>(this DB db, ReadOptions options, DataEntryPrefix prefix, ISerializable key, Func<Slice, T> resultSelector) where T : class
+        public static T TryGet<T>(this DB db, ReadOptions options, byte prefix, ISerializable key, Func<Slice, T> resultSelector) where T : class
         {
             Slice slice;
             if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out slice))

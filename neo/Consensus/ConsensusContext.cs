@@ -4,6 +4,7 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.Payloads;
 using Neo.Wallets;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -26,6 +27,7 @@ namespace Neo.Consensus
         public Dictionary<UInt256, Transaction> Transactions;
         public byte[][] Signatures;
         public byte[] ExpectedView;
+        public KeyPair KeyPair;
 
         public int M => Validators.Length - (Validators.Length - 1) / 3;
 
@@ -118,13 +120,12 @@ namespace Neo.Consensus
             TransactionHashes = null;
             Signatures = new byte[Validators.Length][];
             ExpectedView = new byte[Validators.Length];
-            for (int i = 0; i < Validators.Length; i++)
+            KeyPair = null;
+            WalletAccount account = wallet.GetAccount(Blockchain.GetConsensusAddress(Validators));
+            if (account?.HasKey == true)
             {
-                if (wallet.ContainsKey(Validators[i]))
-                {
-                    MyIndex = i;
-                    break;
-                }
+                KeyPair = account.GetKey();
+                MyIndex = Array.IndexOf(Validators, KeyPair.PublicKey);
             }
             _header = null;
         }

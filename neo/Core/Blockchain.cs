@@ -275,7 +275,9 @@ namespace Neo.Core
         /// <returns>返回对应的区块信息</returns>
         public Block GetBlock(uint height)
         {
-            return GetBlock(GetBlockHash(height));
+            UInt256 hash = GetBlockHash(height);
+            if (hash == null) return null;
+            return GetBlock(hash);
         }
 
         /// <summary>

@@ -12,7 +12,6 @@ namespace Neo.Wallets
     {
         public readonly byte[] PrivateKey;
         public readonly Cryptography.ECC.ECPoint PublicKey;
-        public readonly UInt160 PublicKeyHash;
 
         public KeyPair(byte[] privateKey)
         {
@@ -28,7 +27,6 @@ namespace Neo.Wallets
             {
                 this.PublicKey = Cryptography.ECC.ECPoint.FromBytes(privateKey, Cryptography.ECC.ECCurve.Secp256r1);
             }
-            this.PublicKeyHash = PublicKey.EncodePoint(true).ToScriptHash();
 #if NET47
             ProtectedMemory.Protect(PrivateKey, MemoryProtectionScope.SameProcess);
 #endif
@@ -47,7 +45,7 @@ namespace Neo.Wallets
         {
             if (ReferenceEquals(this, other)) return true;
             if (ReferenceEquals(null, other)) return false;
-            return PublicKeyHash.Equals(other.PublicKeyHash);
+            return PublicKey.Equals(other.PublicKey);
         }
 
         public override bool Equals(object obj)
@@ -92,7 +90,12 @@ namespace Neo.Wallets
 
         public override int GetHashCode()
         {
-            return PublicKeyHash.GetHashCode();
+            return PublicKey.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return PublicKey.ToString();
         }
 
         private static byte[] XOR(byte[] x, byte[] y)

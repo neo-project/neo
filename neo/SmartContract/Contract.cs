@@ -1,6 +1,7 @@
 ﻿using Neo.Core;
 using Neo.Cryptography.ECC;
 using Neo.VM;
+using Neo.Wallets;
 using System;
 using System.Linq;
 
@@ -10,6 +11,22 @@ namespace Neo.SmartContract
     {
         public byte[] Script;
         public ContractParameterType[] ParameterList;
+
+        private string _address;
+        /// <summary>
+        /// 合约地址
+        /// </summary>
+        public string Address
+        {
+            get
+            {
+                if (_address == null)
+                {
+                    _address = Wallet.ToAddress(ScriptHash);
+                }
+                return _address;
+            }
+        }
 
         public virtual bool IsStandard
         {
@@ -35,6 +52,24 @@ namespace Neo.SmartContract
             }
         }
 
+        public static Contract Create(ContractParameterType[] parameterList, byte[] redeemScript)
+        {
+            return new Contract
+            {
+                Script = redeemScript,
+                ParameterList = parameterList
+            };
+        }
+
+        public static Contract CreateMultiSigContract(int m, params ECPoint[] publicKeys)
+        {
+            return new Contract
+            {
+                Script = CreateMultiSigRedeemScript(m, publicKeys),
+                ParameterList = Enumerable.Repeat(ContractParameterType.Signature, m).ToArray()
+            };
+        }
+
         public static byte[] CreateMultiSigRedeemScript(int m, params ECPoint[] publicKeys)
         {
             if (!(1 <= m && m <= publicKeys.Length && publicKeys.Length <= 1024))
@@ -50,6 +85,15 @@ namespace Neo.SmartContract
                 sb.Emit(OpCode.CHECKMULTISIG);
                 return sb.ToArray();
             }
+        }
+
+        public static Contract CreateSignatureContract(ECPoint publicKey)
+        {
+            return new Contract
+            {
+                Script = CreateSignatureRedeemScript(publicKey),
+                ParameterList = new[] { ContractParameterType.Signature }
+            };
         }
 
         public static byte[] CreateSignatureRedeemScript(ECPoint publicKey)
