@@ -29,6 +29,7 @@ namespace Neo.SmartContract
             Register("Neo.Blockchain.GetValidators", Blockchain_GetValidators);
             Register("Neo.Blockchain.GetAsset", Blockchain_GetAsset);
             Register("Neo.Blockchain.GetContract", Blockchain_GetContract);
+            Register("Neo.Header.GetIndex", Header_GetIndex);
             Register("Neo.Header.GetHash", Header_GetHash);
             Register("Neo.Header.GetVersion", Header_GetVersion);
             Register("Neo.Header.GetPrevHash", Header_GetPrevHash);
@@ -45,6 +46,7 @@ namespace Neo.SmartContract
             Register("Neo.Transaction.GetInputs", Transaction_GetInputs);
             Register("Neo.Transaction.GetOutputs", Transaction_GetOutputs);
             Register("Neo.Transaction.GetReferences", Transaction_GetReferences);
+            Register("Neo.Transaction.GetUnspentCoins", Transaction_GetUnspentCoins);
             Register("Neo.Attribute.GetUsage", Attribute_GetUsage);
             Register("Neo.Attribute.GetData", Attribute_GetData);
             Register("Neo.Input.GetHash", Input_GetHash);
@@ -278,6 +280,14 @@ namespace Neo.SmartContract
             return true;
         }
 
+        protected virtual bool Header_GetIndex(ExecutionEngine engine)
+        {
+            BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
+            if (header == null) return false;
+            engine.EvaluationStack.Push(header.Index);
+            return true;
+        }
+
         protected virtual bool Header_GetHash(ExecutionEngine engine)
         {
             BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
@@ -406,6 +416,14 @@ namespace Neo.SmartContract
             Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
             if (tx == null) return false;
             engine.EvaluationStack.Push(tx.Inputs.Select(p => StackItem.FromInterface(tx.References[p])).ToArray());
+            return true;
+        }
+
+        protected virtual bool Transaction_GetUnspentCoins(ExecutionEngine engine)
+        {
+            Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
+            if (tx == null) return false;
+            engine.EvaluationStack.Push(Blockchain.Default.GetUnspent(tx.Hash).Select(p => StackItem.FromInterface(p)).ToArray());
             return true;
         }
 

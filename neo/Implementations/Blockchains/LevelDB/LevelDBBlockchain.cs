@@ -358,6 +358,30 @@ namespace Neo.Implementations.Blockchains.LevelDB
             }
         }
 
+        public override IEnumerable<TransactionOutput> GetUnspent(UInt256 hash)
+        {
+            ReadOptions options = new ReadOptions();
+            using (options.Snapshot = db.GetSnapshot())
+            {
+                List<TransactionOutput> outputs = new List<TransactionOutput>();
+                UnspentCoinState state = db.TryGet<UnspentCoinState>(options, DataEntryPrefix.ST_Coin, hash);
+                if (state != null)
+                {
+                    int height;
+                    Transaction tx = GetTransaction(options, hash, out height);
+                    for (int i = 0; i < state.Items.Length; i++)
+                    {
+                        if (!state.Items[i].HasFlag(CoinState.Spent))
+                        {
+                            outputs.Add(tx.Outputs[i]);
+                        }
+
+                    }
+                }
+                return outputs;
+            }
+        }
+
         public override IEnumerable<VoteState> GetVotes(IEnumerable<Transaction> others)
         {
             ReadOptions options = new ReadOptions();
@@ -541,7 +565,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                                 Script = publish_tx.Script,
                                 ParameterList = publish_tx.ParameterList,
                                 ReturnType = publish_tx.ReturnType,
-                                HasStorage = publish_tx.NeedStorage,
+                                ContractProperties = (ContractPropertyState)Convert.ToByte(publish_tx.NeedStorage),
                                 Name = publish_tx.Name,
                                 CodeVersion = publish_tx.CodeVersion,
                                 Author = publish_tx.Author,

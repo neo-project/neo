@@ -427,6 +427,9 @@ namespace Neo.Core
         /// <returns>返回一个交易输出，表示一个未花费的资产</returns>
         public abstract TransactionOutput GetUnspent(UInt256 hash, ushort index);
 
+        public abstract IEnumerable<TransactionOutput> GetUnspent(UInt256 hash);
+
+
         /// <summary>
         /// 获取选票信息
         /// </summary>

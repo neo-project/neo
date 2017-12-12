@@ -42,6 +42,7 @@ namespace Neo
             int index = s.IndexOf('.');
             if (index >= 0)
             {
+                s = s.TrimEnd('0');
                 int d = s.Length - index - 1;
                 if (d > decimals) throw new FormatException();
                 s = s.Remove(index, 1);
@@ -77,6 +78,7 @@ namespace Neo
             int index = s.IndexOf('.');
             if (index >= 0)
             {
+                s = s.TrimEnd('0');
                 int d = s.Length - index - 1;
                 if (d > decimals)
                 {
