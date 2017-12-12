@@ -8,6 +8,7 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 
 namespace Neo.Consensus
@@ -24,6 +25,8 @@ namespace Neo.Consensus
         private byte timer_view;
         private DateTime block_received_time;
         private bool started = false;
+
+        private static RNGCryptoServiceProvider rngProvider = new RNGCryptoServiceProvider();
 
         public ConsensusService(LocalNode localNode, Wallet wallet)
         {
@@ -139,8 +142,7 @@ namespace Neo.Consensus
         private static ulong GetNonce()
         {
             byte[] nonce = new byte[sizeof(ulong)];
-            Random rand = new Random();
-            rand.NextBytes(nonce);
+            rngProvider.GetBytes(nonce);
             return nonce.ToUInt64(0);
         }
 
