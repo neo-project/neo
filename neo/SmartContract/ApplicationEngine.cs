@@ -226,7 +226,7 @@ namespace Neo.SmartContract
                     case OpCode.UNPACK:
                         StackItem item = EvaluationStack.Peek();
                         if (!item.IsArray) return false;
-                        size = item.GetArray().Length;
+                        size = item.GetArray().Count;
                         break;
                 }
             if (size == 0) return true;
