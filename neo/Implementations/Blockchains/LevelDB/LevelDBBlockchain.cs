@@ -23,6 +23,8 @@ namespace Neo.Implementations.Blockchains.LevelDB
         private Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private uint current_block_height = 0;
         private uint stored_header_count = 0;
+        private Block persisting_block;
+
         private AutoResetEvent new_block_event = new AutoResetEvent(false);
         private bool disposed = false;
 
@@ -105,6 +107,18 @@ namespace Neo.Implementations.Blockchains.LevelDB
             thread_persistence = new Thread(PersistBlocks);
             thread_persistence.Name = "LevelDBBlockchain.PersistBlocks";
             thread_persistence.Start();
+        }
+
+        public override Block CurrentBlock
+        {
+            get
+            {
+                if (persisting_block != null)
+                {
+                    return persisting_block;
+                }
+                return GetBlock(Height);
+            }
         }
 
         public override bool AddBlock(Block block)
@@ -464,6 +478,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
 
         private void Persist(Block block)
         {
+            persisting_block = block;
             WriteBatch batch = new WriteBatch();
             DbCache<UInt160, AccountState> accounts = new DbCache<UInt160, AccountState>(db, DataEntryPrefix.ST_Account);
             DbCache<UInt256, UnspentCoinState> unspentcoins = new DbCache<UInt256, UnspentCoinState>(db, DataEntryPrefix.ST_Coin);
@@ -606,6 +621,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(block.Hash).Add(block.Index));
             db.Write(WriteOptions.Default, batch);
             current_block_height = block.Index;
+            persisting_block = null;
         }
 
         private void PersistBlocks()

@@ -333,6 +333,8 @@ namespace Neo.SmartContract
                 case "Neo.Blockchain.GetBlock":
                 case "AntShares.Blockchain.GetBlock":
                     return 200;
+                case "Neo.Runtime.GetTime":
+                    return 100;
                 case "Neo.Blockchain.GetTransaction":
                 case "AntShares.Blockchain.GetTransaction":
                     return 100;

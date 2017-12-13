@@ -119,6 +119,12 @@ namespace Neo.Core
         /// 当前最新区块散列值
         /// </summary>
         public abstract UInt256 CurrentBlockHash { get; }
+
+        /// <summary>
+        /// Gets highest block
+        /// </summary>
+        public abstract Block CurrentBlock { get; }
+
         /// <summary>
         /// 当前最新区块头的散列值
         /// </summary>

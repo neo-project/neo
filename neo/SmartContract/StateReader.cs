@@ -21,6 +21,7 @@ namespace Neo.SmartContract
             Register("Neo.Runtime.CheckWitness", Runtime_CheckWitness);
             Register("Neo.Runtime.Notify", Runtime_Notify);
             Register("Neo.Runtime.Log", Runtime_Log);
+            Register("Neo.Runtime.GetTime", Runtime_GetCurrentTime);
             Register("Neo.Blockchain.GetHeight", Blockchain_GetHeight);
             Register("Neo.Blockchain.GetHeader", Blockchain_GetHeader);
             Register("Neo.Blockchain.GetBlock", Blockchain_GetBlock);
@@ -164,6 +165,26 @@ namespace Neo.SmartContract
         {
             string message = Encoding.UTF8.GetString(engine.EvaluationStack.Pop().GetByteArray());
             Log?.Invoke(this, new LogEventArgs(engine.ScriptContainer, new UInt160(engine.CurrentContext.ScriptHash), message));
+            return true;
+        }
+
+        protected virtual bool Runtime_GetCurrentTime(ExecutionEngine engine)
+        {
+            if (Blockchain.Default == null)
+                engine.EvaluationStack.Push(Blockchain.GenesisBlock.Timestamp);
+            else
+            {
+                // current block returns the currently persisting block time if this is an Application Trigger
+                // otherwise it returns the time of the most recent block
+                uint current_time = Blockchain.Default.CurrentBlock.Timestamp;
+
+                ApplicationEngine app_engine = (ApplicationEngine)engine;
+                if (app_engine.Trigger == TriggerType.Verification)
+                {
+                    current_time += Blockchain.SecondsPerBlock;
+                }
+                engine.EvaluationStack.Push(current_time);
+            }
             return true;
         }
 
