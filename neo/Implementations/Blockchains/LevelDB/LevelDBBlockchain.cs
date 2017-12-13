@@ -579,7 +579,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         {
                             InvocationTransaction itx = (InvocationTransaction)tx;
                             CachedScriptTable script_table = new CachedScriptTable(contracts);
-                            StateMachine service = new StateMachine(accounts, validators, assets, contracts, storages);
+                            StateMachine service = new StateMachine(block, accounts, validators, assets, contracts, storages);
                             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, itx, script_table, service, itx.Gas);
                             engine.LoadScript(itx.Script, false);
                             if (engine.Execute())

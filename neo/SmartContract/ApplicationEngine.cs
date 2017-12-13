@@ -2,7 +2,6 @@
 using Neo.Cryptography.ECC;
 using Neo.IO.Caching;
 using Neo.VM;
-using System;
 using System.Numerics;
 using System.Text;
 
@@ -50,9 +49,9 @@ namespace Neo.SmartContract
             this.gas_amount = gas_free + gas.GetData();
             this.testMode = testMode;
             this.Trigger = trigger;
-            if( table is CachedScriptTable)
+            if (table is CachedScriptTable)
             {
-                this.script_table = (CachedScriptTable)table;    
+                this.script_table = (CachedScriptTable)table;
             }
         }
 
@@ -237,9 +236,9 @@ namespace Neo.SmartContract
 
         private bool CheckDynamicInvoke(OpCode nextInstruction)
         {
-            if(nextInstruction == OpCode.APPCALL || nextInstruction == OpCode.TAILCALL)
+            if (nextInstruction == OpCode.APPCALL || nextInstruction == OpCode.TAILCALL)
             {
-                for (int i = CurrentContext.InstructionPointer + 1; i < CurrentContext.InstructionPointer + 21; i++) 
+                for (int i = CurrentContext.InstructionPointer + 1; i < CurrentContext.InstructionPointer + 21; i++)
                 {
                     if (CurrentContext.Script[i] != 0) return true;
                 }
@@ -350,7 +349,7 @@ namespace Neo.SmartContract
                     return 100;
                 case "Neo.Transaction.GetReferences":
                 case "AntShares.Transaction.GetReferences":
-                case "Neo.Transaction.GetUnspentCoins":    
+                case "Neo.Transaction.GetUnspentCoins":
                     return 200;
                 case "Neo.Account.SetVotes":
                 case "AntShares.Account.SetVotes":
@@ -372,11 +371,11 @@ namespace Neo.SmartContract
 
                     ContractPropertyState contract_properties = (ContractPropertyState)(byte)EvaluationStack.Peek(3).GetBigInteger();
 
-                    if(contract_properties.HasFlag(ContractPropertyState.HasStorage))
+                    if (contract_properties.HasFlag(ContractPropertyState.HasStorage))
                     {
                         fee += 400L;
                     }
-                    if(contract_properties.HasFlag(ContractPropertyState.HasDynamicInvoke))
+                    if (contract_properties.HasFlag(ContractPropertyState.HasDynamicInvoke))
                     {
                         fee += 500L;
                     }
@@ -395,15 +394,32 @@ namespace Neo.SmartContract
             }
         }
 
-        public static ApplicationEngine Run(byte[] script, IScriptContainer container = null)
+        public static ApplicationEngine Run(byte[] script, IScriptContainer container = null, Block persisting_block = null)
         {
+            if (persisting_block == null)
+                persisting_block = new Block
+                {
+                    Version = 0,
+                    PrevHash = Blockchain.Default.CurrentBlockHash,
+                    MerkleRoot = new UInt256(),
+                    Timestamp = Blockchain.Default.GetHeader(Blockchain.Default.Height).Timestamp + Blockchain.SecondsPerBlock,
+                    Index = Blockchain.Default.Height + 1,
+                    ConsensusData = 0,
+                    NextConsensus = Blockchain.Default.GetHeader(Blockchain.Default.Height).NextConsensus,
+                    Script = new Witness
+                    {
+                        InvocationScript = new byte[0],
+                        VerificationScript = new byte[0]
+                    },
+                    Transactions = new Transaction[0]
+                };
             DataCache<UInt160, AccountState> accounts = Blockchain.Default.CreateCache<UInt160, AccountState>();
             DataCache<ECPoint, ValidatorState> validators = Blockchain.Default.CreateCache<ECPoint, ValidatorState>();
             DataCache<UInt256, AssetState> assets = Blockchain.Default.CreateCache<UInt256, AssetState>();
             DataCache<UInt160, ContractState> contracts = Blockchain.Default.CreateCache<UInt160, ContractState>();
             DataCache<StorageKey, StorageItem> storages = Blockchain.Default.CreateCache<StorageKey, StorageItem>();
             CachedScriptTable script_table = new CachedScriptTable(contracts);
-            StateMachine service = new StateMachine(accounts, validators, assets, contracts, storages);
+            StateMachine service = new StateMachine(persisting_block, accounts, validators, assets, contracts, storages);
             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, script_table, service, Fixed8.Zero, true);
             engine.LoadScript(script, false);
             engine.Execute();

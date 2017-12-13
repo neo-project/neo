@@ -21,6 +21,7 @@ namespace Neo.SmartContract
             Register("Neo.Runtime.CheckWitness", Runtime_CheckWitness);
             Register("Neo.Runtime.Notify", Runtime_Notify);
             Register("Neo.Runtime.Log", Runtime_Log);
+            Register("Neo.Runtime.GetTime", Runtime_GetTime);
             Register("Neo.Blockchain.GetHeight", Blockchain_GetHeight);
             Register("Neo.Blockchain.GetHeader", Blockchain_GetHeader);
             Register("Neo.Blockchain.GetBlock", Blockchain_GetBlock);
@@ -164,6 +165,14 @@ namespace Neo.SmartContract
         {
             string message = Encoding.UTF8.GetString(engine.EvaluationStack.Pop().GetByteArray());
             Log?.Invoke(this, new LogEventArgs(engine.ScriptContainer, new UInt160(engine.CurrentContext.ScriptHash), message));
+            return true;
+        }
+
+        protected virtual bool Runtime_GetTime(ExecutionEngine engine)
+        {
+            BlockBase header = Blockchain.Default?.GetHeader(Blockchain.Default.Height);
+            if (header == null) header = Blockchain.GenesisBlock;
+            engine.EvaluationStack.Push(header.Timestamp + Blockchain.SecondsPerBlock);
             return true;
         }
 

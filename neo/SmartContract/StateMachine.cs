@@ -11,19 +11,21 @@ namespace Neo.SmartContract
 {
     public class StateMachine : StateReader
     {
-        private CloneCache<UInt160, AccountState> accounts;
-        private CloneCache<ECPoint, ValidatorState> validators;
-        private CloneCache<UInt256, AssetState> assets;
-        private CloneCache<UInt160, ContractState> contracts;
-        private CloneCache<StorageKey, StorageItem> storages;
+        private readonly Block persisting_block;
+        private readonly CloneCache<UInt160, AccountState> accounts;
+        private readonly CloneCache<ECPoint, ValidatorState> validators;
+        private readonly CloneCache<UInt256, AssetState> assets;
+        private readonly CloneCache<UInt160, ContractState> contracts;
+        private readonly CloneCache<StorageKey, StorageItem> storages;
 
         private Dictionary<UInt160, UInt160> contracts_created = new Dictionary<UInt160, UInt160>();
         private List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
 
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
 
-        public StateMachine(DataCache<UInt160, AccountState> accounts, DataCache<ECPoint, ValidatorState> validators, DataCache<UInt256, AssetState> assets, DataCache<UInt160, ContractState> contracts, DataCache<StorageKey, StorageItem> storages)
+        public StateMachine(Block persisting_block, DataCache<UInt160, AccountState> accounts, DataCache<ECPoint, ValidatorState> validators, DataCache<UInt256, AssetState> assets, DataCache<UInt160, ContractState> contracts, DataCache<StorageKey, StorageItem> storages)
         {
+            this.persisting_block = persisting_block;
             this.accounts = new CloneCache<UInt160, AccountState>(accounts);
             this.validators = new CloneCache<ECPoint, ValidatorState>(validators);
             this.assets = new CloneCache<UInt256, AssetState>(assets);
@@ -74,6 +76,12 @@ namespace Neo.SmartContract
         private void StateMachine_Notify(object sender, NotifyEventArgs e)
         {
             notifications.Add(e);
+        }
+
+        protected override bool Runtime_GetTime(ExecutionEngine engine)
+        {
+            engine.EvaluationStack.Push(persisting_block.Timestamp);
+            return true;
         }
 
         protected override bool Blockchain_GetAccount(ExecutionEngine engine)
