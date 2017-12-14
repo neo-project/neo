@@ -14,8 +14,6 @@ namespace Neo.Consensus
 {
     public class ConsensusService : IDisposable
     {
-        public const int MaxTransactionsPerBlock = 500;
-
         private ConsensusContext context = new ConsensusContext();
         private LocalNode localNode;
         private Wallet wallet;
@@ -259,7 +257,7 @@ namespace Neo.Consensus
             context.Nonce = message.Nonce;
             context.NextConsensus = message.NextConsensus;
             context.TransactionHashes = message.TransactionHashes;
-            if (context.TransactionHashes.Length > MaxTransactionsPerBlock) return;
+            if (context.TransactionHashes.Length > Settings.Default.MaxTransactionsPerBlock) return;
             context.Transactions = new Dictionary<UInt256, Transaction>();
             if (!Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
             context.Signatures = new byte[context.Validators.Length][];
@@ -303,8 +301,8 @@ namespace Neo.Consensus
                         context.Timestamp = Math.Max(DateTime.Now.ToTimestamp(), Blockchain.Default.GetHeader(context.PrevHash).Timestamp + 1);
                         context.Nonce = GetNonce();
                         List<Transaction> transactions = LocalNode.GetMemoryPool().Where(p => CheckPolicy(p)).ToList();
-                        if (transactions.Count >= MaxTransactionsPerBlock)
-                            transactions = transactions.OrderByDescending(p => p.NetworkFee / p.Size).Take(MaxTransactionsPerBlock - 1).ToList();
+                        if (transactions.Count >= Settings.Default.MaxTransactionsPerBlock)
+                            transactions = transactions.OrderByDescending(p => p.NetworkFee / p.Size).Take(Settings.Default.MaxTransactionsPerBlock - 1).ToList();
                         transactions.Insert(0, CreateMinerTransaction(transactions, context.BlockIndex, context.Nonce));
                         context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
                         context.Transactions = transactions.ToDictionary(p => p.Hash);

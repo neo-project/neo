@@ -1,5 +1,5 @@
-﻿using Neo.Core;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
+using Neo.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +10,7 @@ namespace Neo
     {
         public uint Magic { get; private set; }
         public byte AddressVersion { get; private set; }
+        public int MaxTransactionsPerBlock { get; private set; }
         public string[] StandbyValidators { get; private set; }
         public string[] SeedList { get; private set; }
         public IReadOnlyDictionary<TransactionType, Fixed8> SystemFee { get; private set; }
@@ -23,6 +24,7 @@ namespace Neo
             {
                 Magic = uint.Parse(section.GetSection("Magic").Value),
                 AddressVersion = byte.Parse(section.GetSection("AddressVersion").Value),
+                MaxTransactionsPerBlock = int.Parse(section.GetSection("MaxTransactionsPerBlock").Value),
                 StandbyValidators = section.GetSection("StandbyValidators").GetChildren().Select(p => p.Value).ToArray(),
                 SeedList = section.GetSection("SeedList").GetChildren().Select(p => p.Value).ToArray(),
                 SystemFee = section.GetSection("SystemFee").GetChildren().ToDictionary(p => (TransactionType)Enum.Parse(typeof(TransactionType), p.Key, true), p => Fixed8.Parse(p.Value)),
