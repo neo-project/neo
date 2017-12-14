@@ -20,15 +20,23 @@ namespace Neo
         static Settings()
         {
             IConfigurationSection section = new ConfigurationBuilder().AddJsonFile("protocol.json").Build().GetSection("ProtocolConfiguration");
-            Default = new Settings
-            {
-                Magic = uint.Parse(section.GetSection("Magic").Value),
-                AddressVersion = byte.Parse(section.GetSection("AddressVersion").Value),
-                MaxTransactionsPerBlock = int.Parse(section.GetSection("MaxTransactionsPerBlock").Value),
-                StandbyValidators = section.GetSection("StandbyValidators").GetChildren().Select(p => p.Value).ToArray(),
-                SeedList = section.GetSection("SeedList").GetChildren().Select(p => p.Value).ToArray(),
-                SystemFee = section.GetSection("SystemFee").GetChildren().ToDictionary(p => (TransactionType)Enum.Parse(typeof(TransactionType), p.Key, true), p => Fixed8.Parse(p.Value)),
-            };
+            Default = new Settings(section);
+        }
+
+        public Settings(IConfigurationSection section)
+        {
+            this.Magic = uint.Parse(section.GetSection("Magic").Value);
+            this.AddressVersion = byte.Parse(section.GetSection("AddressVersion").Value);
+            this.MaxTransactionsPerBlock = GetValueOrDefault(section.GetSection("MaxTransactionsPerBlock"), 500, p => int.Parse(p));
+            this.StandbyValidators = section.GetSection("StandbyValidators").GetChildren().Select(p => p.Value).ToArray();
+            this.SeedList = section.GetSection("SeedList").GetChildren().Select(p => p.Value).ToArray();
+            this.SystemFee = section.GetSection("SystemFee").GetChildren().ToDictionary(p => (TransactionType)Enum.Parse(typeof(TransactionType), p.Key, true), p => Fixed8.Parse(p.Value));
+        }
+
+        public T GetValueOrDefault<T>(IConfigurationSection section, T defaultValue, Func<string, T> selector)
+        {
+            if (section.Value == null) return defaultValue;
+            return selector(section.Value);
         }
     }
 }
