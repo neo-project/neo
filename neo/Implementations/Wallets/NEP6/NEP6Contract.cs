@@ -11,6 +11,7 @@ namespace Neo.Implementations.Wallets.NEP6
 
         public static NEP6Contract FromJson(JObject json)
         {
+            if (json == null) return null;
             return new NEP6Contract
             {
                 Script = json["script"].AsString().HexToBytes(),

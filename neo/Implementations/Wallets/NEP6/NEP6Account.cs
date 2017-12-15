@@ -67,7 +67,7 @@ namespace Neo.Implementations.Wallets.NEP6
             account["isDefault"] = IsDefault;
             account["lock"] = Lock;
             account["key"] = nep2key;
-            account["contract"] = ((NEP6Contract)Contract).ToJson();
+            account["contract"] = ((NEP6Contract)Contract)?.ToJson();
             account["extra"] = Extra;
             return account;
         }
