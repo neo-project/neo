@@ -9,6 +9,7 @@ using System.Numerics;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Wallets
 {
@@ -76,6 +77,11 @@ namespace Neo.Wallets
                 return unspents_ordered.Take(i).ToArray();
             else
                 return unspents_ordered.Take(i).Concat(new[] { unspents_ordered.Last(p => p.Output.Value >= amount) }).ToArray();
+        }
+
+        public WalletAccount GetAccount(ECPoint pubkey)
+        {
+            return GetAccount(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash());
         }
 
         public Fixed8 GetAvailable(UInt256 asset_id)
