@@ -34,7 +34,7 @@ namespace Neo.SmartContract
 
         private const long ratio = 100000;
         private const long gas_free = 10 * 100000000;
-        private const long min_gas = 100000;
+        private const long min_gas = 1000;
 
         private readonly long gas_amount;
         private long gas_consumed = 0;
