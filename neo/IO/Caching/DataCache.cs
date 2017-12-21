@@ -6,7 +6,7 @@ namespace Neo.IO.Caching
 {
     public abstract class DataCache<TKey, TValue>
         where TKey : IEquatable<TKey>, ISerializable
-        where TValue : class, ISerializable, new()
+        where TValue : class, ICloneable<TValue>, ISerializable, new()
     {
         protected internal class Trackable
         {
@@ -52,6 +52,30 @@ namespace Neo.IO.Caching
             };
         }
 
+        protected abstract void AddInternal(TKey key, TValue value);
+
+        public void Commit()
+        {
+            foreach (Trackable trackable in GetChangeSet())
+                switch (trackable.State)
+                {
+                    case TrackState.Added:
+                        AddInternal(trackable.Key, trackable.Item);
+                        break;
+                    case TrackState.Changed:
+                        UpdateInternal(trackable.Key, trackable.Item);
+                        break;
+                    case TrackState.Deleted:
+                        DeleteInternal(trackable.Key);
+                        break;
+                }
+        }
+
+        public DataCache<TKey, TValue> CreateSnapshot()
+        {
+            return new CloneCache<TKey, TValue>(this);
+        }
+
         public void Delete(TKey key)
         {
             if (dictionary.TryGetValue(key, out Trackable trackable))
@@ -73,6 +97,8 @@ namespace Neo.IO.Caching
                 });
             }
         }
+
+        public abstract void DeleteInternal(TKey key);
 
         public void DeleteWhere(Func<TKey, TValue, bool> predicate)
         {
@@ -191,5 +217,7 @@ namespace Neo.IO.Caching
         }
 
         protected abstract TValue TryGetInternal(TKey key);
+
+        protected abstract void UpdateInternal(TKey key, TValue value);
     }
 }

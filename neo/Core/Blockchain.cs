@@ -23,6 +23,7 @@ namespace Neo.Core
         /// </summary>
         public const uint SecondsPerBlock = 15;
         public const uint DecrementInterval = 2000000;
+        public const uint MaxValidators = 1024;
         public static readonly uint[] GenerationAmount = { 8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
         /// <summary>
         /// 产生每个区块的时间间隔
@@ -258,9 +259,11 @@ namespace Neo.Core
 
         public abstract bool ContainsUnspent(UInt256 hash, ushort index);
 
-        public abstract DataCache<TKey, TValue> CreateCache<TKey, TValue>()
+        public abstract MetaDataCache<T> GetMetaData<T>() where T : class, ISerializable, new();
+
+        public abstract DataCache<TKey, TValue> GetStates<TKey, TValue>()
             where TKey : IEquatable<TKey>, ISerializable, new()
-            where TValue : class, ISerializable, new();
+            where TValue : class, ICloneable<TValue>, ISerializable, new();
 
         public abstract void Dispose();
 
@@ -341,24 +344,18 @@ namespace Neo.Core
 
         public virtual IEnumerable<ECPoint> GetValidators(IEnumerable<Transaction> others)
         {
-            //TODO: 此处排序可能将耗费大量内存，考虑是否采用其它机制
-            VoteState[] votes = GetVotes(others).OrderBy(p => p.PublicKeys.Length).ToArray();
-            int validators_count = (int)votes.WeightedFilter(0.25, 0.75, p => p.Count.GetData(), (p, w) => new
+            MetaDataCache<ValidatorsCountState> validators_count = GetMetaData<ValidatorsCountState>();
+            int count = (int)validators_count.Get().Votes.Select((p, i) => new
             {
-                ValidatorsCount = p.PublicKeys.Length,
+                Count = i,
+                Votes = p
+            }).Where(p => p.Votes > Fixed8.Zero).ToArray().WeightedFilter(0.25, 0.75, p => p.Votes.GetData(), (p, w) => new
+            {
+                p.Count,
                 Weight = w
-            }).WeightedAverage(p => p.ValidatorsCount, p => p.Weight);
-            validators_count = Math.Max(validators_count, StandbyValidators.Length);
-            Dictionary<ECPoint, Fixed8> validators = GetEnrollments().ToDictionary(p => p.PublicKey, p => Fixed8.Zero);
-            foreach (var vote in votes)
-            {
-                foreach (ECPoint pubkey in vote.PublicKeys.Take(validators_count))
-                {
-                    if (validators.ContainsKey(pubkey))
-                        validators[pubkey] += vote.Count;
-                }
-            }
-            return validators.OrderByDescending(p => p.Value).ThenBy(p => p.Key).Select(p => p.Key).Take(validators_count);
+            }).WeightedAverage(p => p.Count, p => p.Weight);
+            count = Math.Max(count, StandbyValidators.Length);
+            return GetEnrollments().OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count);
         }
 
         /// <summary>
@@ -428,18 +425,6 @@ namespace Neo.Core
         public abstract TransactionOutput GetUnspent(UInt256 hash, ushort index);
 
         public abstract IEnumerable<TransactionOutput> GetUnspent(UInt256 hash);
-
-
-        /// <summary>
-        /// 获取选票信息
-        /// </summary>
-        /// <returns>返回一个选票列表，包含当前区块链中所有有效的选票</returns>
-        public IEnumerable<VoteState> GetVotes()
-        {
-            return GetVotes(Enumerable.Empty<Transaction>());
-        }
-
-        public abstract IEnumerable<VoteState> GetVotes(IEnumerable<Transaction> others);
 
         /// <summary>
         /// 判断交易是否双花

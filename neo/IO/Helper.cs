@@ -142,7 +142,7 @@ namespace Neo.IO
             value.Serialize(writer);
         }
 
-        public static void Write(this BinaryWriter writer, ISerializable[] value)
+        public static void Write<T>(this BinaryWriter writer, T[] value) where T : ISerializable
         {
             writer.WriteVarInt(value.Length);
             for (int i = 0; i < value.Length; i++)

@@ -43,7 +43,12 @@ namespace Neo.UnitTests
             throw new NotImplementedException();
         }
 
-        public override DataCache<TKey, TValue> CreateCache<TKey, TValue>()
+        public override MetaDataCache<T> GetMetaData<T>()
+        {
+            return new TestMetaDataCache<T>();
+        }
+
+        public override DataCache<TKey, TValue> GetStates<TKey, TValue>()
         {
             throw new NotImplementedException();
         }
@@ -136,15 +141,6 @@ namespace Neo.UnitTests
         public override IEnumerable<TransactionOutput> GetUnspent(UInt256 hash)
         {
             throw new NotImplementedException();
-        }
-
-        public override IEnumerable<VoteState> GetVotes(IEnumerable<Transaction> others)
-        {
-            VoteState vs = new VoteState() { Count = Fixed8.FromDecimal(1), PublicKeys = TestUtils.StandbyValidators};            
-            return new VoteState[]
-            {
-                vs
-            };
         }
 
         public override bool IsDoubleSpend(Transaction tx)

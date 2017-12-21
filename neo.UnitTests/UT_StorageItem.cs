@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Core;
-using System.Collections.Generic;
+using Neo.IO;
 using System.IO;
 using System.Text;
 

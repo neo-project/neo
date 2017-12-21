@@ -12,11 +12,11 @@ namespace Neo.SmartContract
     public class StateMachine : StateReader
     {
         private readonly Block persisting_block;
-        private readonly CloneCache<UInt160, AccountState> accounts;
-        private readonly CloneCache<ECPoint, ValidatorState> validators;
-        private readonly CloneCache<UInt256, AssetState> assets;
-        private readonly CloneCache<UInt160, ContractState> contracts;
-        private readonly CloneCache<StorageKey, StorageItem> storages;
+        private readonly DataCache<UInt160, AccountState> accounts;
+        private readonly DataCache<ECPoint, ValidatorState> validators;
+        private readonly DataCache<UInt256, AssetState> assets;
+        private readonly DataCache<UInt160, ContractState> contracts;
+        private readonly DataCache<StorageKey, StorageItem> storages;
 
         private Dictionary<UInt160, UInt160> contracts_created = new Dictionary<UInt160, UInt160>();
         private List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
@@ -26,11 +26,11 @@ namespace Neo.SmartContract
         public StateMachine(Block persisting_block, DataCache<UInt160, AccountState> accounts, DataCache<ECPoint, ValidatorState> validators, DataCache<UInt256, AssetState> assets, DataCache<UInt160, ContractState> contracts, DataCache<StorageKey, StorageItem> storages)
         {
             this.persisting_block = persisting_block;
-            this.accounts = new CloneCache<UInt160, AccountState>(accounts);
-            this.validators = new CloneCache<ECPoint, ValidatorState>(validators);
-            this.assets = new CloneCache<UInt256, AssetState>(assets);
-            this.contracts = new CloneCache<UInt160, ContractState>(contracts);
-            this.storages = new CloneCache<StorageKey, StorageItem>(storages);
+            this.accounts = accounts.CreateSnapshot();
+            this.validators = validators.CreateSnapshot();
+            this.assets = assets.CreateSnapshot();
+            this.contracts = contracts.CreateSnapshot();
+            this.storages = storages.CreateSnapshot();
             Notify += StateMachine_Notify;
             Register("Neo.Account.SetVotes", Account_SetVotes);
             Register("Neo.Validator.Register", Validator_Register);
@@ -114,14 +114,29 @@ namespace Neo.SmartContract
             AccountState account = engine.EvaluationStack.Pop().GetInterface<AccountState>();
             ECPoint[] votes = engine.EvaluationStack.Pop().GetArray().Select(p => ECPoint.DecodePoint(p.GetByteArray(), ECCurve.Secp256r1)).ToArray();
             if (account == null) return false;
-            if (votes.Length > 1024) return false;
+            if (votes.Length > Blockchain.MaxValidators) return false;
             account = accounts[account.ScriptHash];
             if (account.IsFrozen) return false;
-            if ((!account.Balances.TryGetValue(Blockchain.GoverningToken.Hash, out Fixed8 balance) || balance.Equals(Fixed8.Zero)) && votes.Length > 0)
+            Fixed8 balance = account.GetBalance(Blockchain.GoverningToken.Hash);
+            if (balance.Equals(Fixed8.Zero) && votes.Length > 0)
                 return false;
             if (!CheckWitness(engine, account.ScriptHash)) return false;
             account = accounts.GetAndChange(account.ScriptHash);
+            foreach (ECPoint pubkey in account.Votes)
+            {
+                ValidatorState validator = validators.GetAndChange(pubkey);
+                validator.Votes -= balance;
+                if (!validator.Registered && validator.Votes.Equals(Fixed8.Zero))
+                    validators.Delete(pubkey);
+            }
             account.Votes = votes.Distinct().ToArray();
+            foreach (ECPoint pubkey in account.Votes)
+                validators.GetAndChange(pubkey, () => new ValidatorState
+                {
+                    PublicKey = pubkey,
+                    Registered = false,
+                    Votes = Fixed8.Zero
+                }).Votes += balance;
             return true;
         }
 
@@ -130,10 +145,13 @@ namespace Neo.SmartContract
             ECPoint pubkey = ECPoint.DecodePoint(engine.EvaluationStack.Pop().GetByteArray(), ECCurve.Secp256r1);
             if (pubkey.IsInfinity) return false;
             if (!CheckWitness(engine, pubkey)) return false;
-            ValidatorState validator = validators.GetOrAdd(pubkey, () => new ValidatorState
+            ValidatorState validator = validators.GetAndChange(pubkey, () => new ValidatorState
             {
-                PublicKey = pubkey
+                PublicKey = pubkey,
+                Registered = true,
+                Votes = Fixed8.Zero
             });
+            validator.Registered = true;
             engine.EvaluationStack.Push(StackItem.FromInterface(validator));
             return true;
         }

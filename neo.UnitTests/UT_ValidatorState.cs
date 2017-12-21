@@ -2,8 +2,6 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Core;
 using Neo.Cryptography.ECC;
-using Neo.IO.Json;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -31,7 +29,7 @@ namespace Neo.UnitTests
         {
             ECPoint val = new ECPoint();
             uut.PublicKey = val;
-            uut.PublicKey.Should().Be(val);            
+            uut.PublicKey.Should().Be(val);
         }
 
         [TestMethod]
@@ -40,13 +38,13 @@ namespace Neo.UnitTests
             ECPoint val = ECPoint.DecodePoint("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c".HexToBytes(), ECCurve.Secp256r1);
             uut.PublicKey = val;
 
-            uut.Size.Should().Be(34); // 1 + 33
+            uut.Size.Should().Be(43); // 1 + 33 + 1 + 8
         }
 
         [TestMethod]
         public void Deserialize()
         {
-            byte[] data = new byte[] { 0, 3, 178, 9, 253, 79, 83, 167, 23, 14, 164, 68, 78, 12, 176, 166, 187, 106, 83, 194, 189, 1, 105, 38, 152, 156, 248, 95, 155, 15, 186, 23, 167, 12 };
+            byte[] data = new byte[] { 0, 3, 178, 9, 253, 79, 83, 167, 23, 14, 164, 68, 78, 12, 176, 166, 187, 106, 83, 194, 189, 1, 105, 38, 152, 156, 248, 95, 155, 15, 186, 23, 167, 12, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
             int index = 0;
             using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
             {
@@ -62,16 +60,6 @@ namespace Neo.UnitTests
         public void Equals_SameObj()
         {
             uut.Equals(uut).Should().BeTrue();
-        }
-
-
-        [TestMethod]
-        public void Equals_SameKey()
-        {
-            ValidatorState newVs = new ValidatorState();
-            newVs.PublicKey = ECPoint.DecodePoint("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c".HexToBytes(), ECCurve.Secp256r1);
-            uut.PublicKey = ECPoint.DecodePoint("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c".HexToBytes(), ECCurve.Secp256r1);
-            uut.Equals(newVs).Should().BeTrue();
         }
 
         [TestMethod]
@@ -90,18 +78,12 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void GetHashCode_Get()
-        {
-            uut.PublicKey = ECPoint.DecodePoint("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c".HexToBytes(), ECCurve.Secp256r1);
-            uut.GetHashCode().Should().Be(435035065);
-        }
-
-
-        [TestMethod]
         public void Serialize()
         {
             ECPoint val = ECPoint.DecodePoint("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c".HexToBytes(), ECCurve.Secp256r1);
             uut.PublicKey = val;
+            uut.Registered = true;
+            uut.Votes = Fixed8.Zero;
 
             byte[] data;
             using (MemoryStream stream = new MemoryStream())
@@ -113,7 +95,7 @@ namespace Neo.UnitTests
                 }
             }
 
-            byte[] requiredData = new byte[] { 0, 3, 178, 9, 253, 79, 83, 167, 23, 14, 164, 68, 78, 12, 176, 166, 187, 106, 83, 194, 189, 1, 105, 38, 152, 156, 248, 95, 155, 15, 186, 23, 167, 12 };
+            byte[] requiredData = new byte[] { 0, 3, 178, 9, 253, 79, 83, 167, 23, 14, 164, 68, 78, 12, 176, 166, 187, 106, 83, 194, 189, 1, 105, 38, 152, 156, 248, 95, 155, 15, 186, 23, 167, 12, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
 
             data.Length.Should().Be(requiredData.Length);
             for (int i = 0; i < requiredData.Length; i++)
