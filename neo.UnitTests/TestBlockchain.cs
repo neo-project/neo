@@ -50,7 +50,7 @@ namespace Neo.UnitTests
 
         public override DataCache<TKey, TValue> GetStates<TKey, TValue>()
         {
-            throw new NotImplementedException();
+            return new TestDataCache<TKey, TValue>();
         }
 
         public override void Dispose()
@@ -125,7 +125,7 @@ namespace Neo.UnitTests
         {
             height = 0;
             // take part of the trans hash and use that for the scripthash of the testtransaction
-            return new TestTransaction(_assetId, TransactionType.ClaimTransaction, new UInt160(TestUtils.GetByteArray(20,hash.ToArray()[0])));
+            return new TestTransaction(_assetId, TransactionType.ClaimTransaction, new UInt160(TestUtils.GetByteArray(20, hash.ToArray()[0])));
         }
 
         public override Dictionary<ushort, SpentCoin> GetUnclaimed(UInt256 hash)

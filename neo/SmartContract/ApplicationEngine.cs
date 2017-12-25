@@ -1,5 +1,4 @@
 ﻿using Neo.Core;
-using Neo.Cryptography.ECC;
 using Neo.IO.Caching;
 using Neo.VM;
 using System.Numerics;
@@ -414,12 +413,11 @@ namespace Neo.SmartContract
                     Transactions = new Transaction[0]
                 };
             DataCache<UInt160, AccountState> accounts = Blockchain.Default.GetStates<UInt160, AccountState>();
-            DataCache<ECPoint, ValidatorState> validators = Blockchain.Default.GetStates<ECPoint, ValidatorState>();
             DataCache<UInt256, AssetState> assets = Blockchain.Default.GetStates<UInt256, AssetState>();
             DataCache<UInt160, ContractState> contracts = Blockchain.Default.GetStates<UInt160, ContractState>();
             DataCache<StorageKey, StorageItem> storages = Blockchain.Default.GetStates<StorageKey, StorageItem>();
             CachedScriptTable script_table = new CachedScriptTable(contracts);
-            StateMachine service = new StateMachine(persisting_block, accounts, validators, assets, contracts, storages);
+            StateMachine service = new StateMachine(persisting_block, accounts, assets, contracts, storages);
             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, script_table, service, Fixed8.Zero, true);
             engine.LoadScript(script, false);
             engine.Execute();
