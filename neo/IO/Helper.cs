@@ -31,6 +31,15 @@ namespace Neo.IO
             return serializable;
         }
 
+        public static T[] AsSerializableArray<T>(this byte[] value) where T : ISerializable, new()
+        {
+            using (MemoryStream ms = new MemoryStream(value, false))
+            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            {
+                return reader.ReadSerializableArray<T>();
+            }
+        }
+
         internal static int GetVarSize(int value)
         {
             if (value < 0xFD)

@@ -110,12 +110,7 @@ namespace Neo.IO.Caching
         {
             foreach (var pair in FindInternal(key_prefix))
                 if (!dictionary.ContainsKey(pair.Key))
-                    dictionary.Add(pair.Key, new Trackable
-                    {
-                        Key = pair.Key,
-                        Item = pair.Value,
-                        State = TrackState.None
-                    });
+                    yield return pair;
             foreach (var pair in dictionary)
                 if (pair.Value.State != TrackState.Deleted && pair.Key.ToArray().Take(key_prefix.Length).SequenceEqual(key_prefix))
                     yield return new KeyValuePair<TKey, TValue>(pair.Key, pair.Value.Item);

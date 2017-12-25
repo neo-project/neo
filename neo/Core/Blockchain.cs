@@ -344,6 +344,8 @@ namespace Neo.Core
 
         public virtual IEnumerable<ECPoint> GetValidators(IEnumerable<Transaction> others)
         {
+            //TODO: consider unconfirmed transactions
+            DataCache<ECPoint, ValidatorState> validators = GetStates<ECPoint, ValidatorState>();
             MetaDataCache<ValidatorsCountState> validators_count = GetMetaData<ValidatorsCountState>();
             int count = (int)validators_count.Get().Votes.Select((p, i) => new
             {
@@ -355,7 +357,20 @@ namespace Neo.Core
                 Weight = w
             }).WeightedAverage(p => p.Count, p => p.Weight);
             count = Math.Max(count, StandbyValidators.Length);
-            return GetEnrollments().OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count);
+            ECPoint[] pubkeys = GetEnrollments().OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).ToArray();
+            IEnumerable<ECPoint> result;
+            if (pubkeys.Length == count)
+            {
+                result = pubkeys;
+            }
+            else
+            {
+                HashSet<ECPoint> hashSet = new HashSet<ECPoint>(pubkeys);
+                for (int i = 0; i < StandbyValidators.Length && hashSet.Count < count; i++)
+                    hashSet.Add(StandbyValidators[i]);
+                result = hashSet;
+            }
+            return result.OrderBy(p => p);
         }
 
         /// <summary>

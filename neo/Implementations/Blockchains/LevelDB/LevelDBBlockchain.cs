@@ -230,7 +230,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
         public override IEnumerable<ValidatorState> GetEnrollments()
         {
             HashSet<ECPoint> sv = new HashSet<ECPoint>(StandbyValidators);
-            return db.Find<ValidatorState>(ReadOptions.Default, DataEntryPrefix.ST_Validator).Where(p => p.Registered || sv.Contains(p.PublicKey));
+            return db.Find<ValidatorState>(ReadOptions.Default, DataEntryPrefix.ST_Validator).Where(p => (p.Registered && p.Votes > Fixed8.Zero) || sv.Contains(p.PublicKey));
         }
 
         public override Header GetHeader(uint height)
@@ -493,86 +493,86 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         account.Balances[out_prev.AssetId] -= out_prev.Value;
                     }
                 }
-                switch (tx.Type)
+                switch (tx)
                 {
-                    case TransactionType.RegisterTransaction:
-                        {
 #pragma warning disable CS0612
-                            RegisterTransaction rtx = (RegisterTransaction)tx;
-                            assets.Add(tx.Hash, new AssetState
-                            {
-                                AssetId = rtx.Hash,
-                                AssetType = rtx.AssetType,
-                                Name = rtx.Name,
-                                Amount = rtx.Amount,
-                                Available = Fixed8.Zero,
-                                Precision = rtx.Precision,
-                                Fee = Fixed8.Zero,
-                                FeeAddress = new UInt160(),
-                                Owner = rtx.Owner,
-                                Admin = rtx.Admin,
-                                Issuer = rtx.Admin,
-                                Expiration = block.Index + 2 * 2000000,
-                                IsFrozen = false
-                            });
-#pragma warning restore CS0612
-                        }
+                    case RegisterTransaction tx_register:
+                        assets.Add(tx.Hash, new AssetState
+                        {
+                            AssetId = tx_register.Hash,
+                            AssetType = tx_register.AssetType,
+                            Name = tx_register.Name,
+                            Amount = tx_register.Amount,
+                            Available = Fixed8.Zero,
+                            Precision = tx_register.Precision,
+                            Fee = Fixed8.Zero,
+                            FeeAddress = new UInt160(),
+                            Owner = tx_register.Owner,
+                            Admin = tx_register.Admin,
+                            Issuer = tx_register.Admin,
+                            Expiration = block.Index + 2 * 2000000,
+                            IsFrozen = false
+                        });
                         break;
-                    case TransactionType.IssueTransaction:
+#pragma warning restore CS0612
+                    case IssueTransaction _:
                         foreach (TransactionResult result in tx.GetTransactionResults().Where(p => p.Amount < Fixed8.Zero))
                             assets.GetAndChange(result.AssetId).Available -= result.Amount;
                         break;
-                    case TransactionType.ClaimTransaction:
+                    case ClaimTransaction _:
                         foreach (CoinReference input in ((ClaimTransaction)tx).Claims)
                         {
                             if (spentcoins.TryGet(input.PrevHash)?.Items.Remove(input.PrevIndex) == true)
                                 spentcoins.GetAndChange(input.PrevHash);
                         }
                         break;
-                    case TransactionType.EnrollmentTransaction:
-                        {
 #pragma warning disable CS0612
-                            EnrollmentTransaction enroll_tx = (EnrollmentTransaction)tx;
-                            validators.GetAndChange(enroll_tx.PublicKey, () => new ValidatorState
-                            {
-                                PublicKey = enroll_tx.PublicKey,
-                                Registered = true,
-                                Votes = Fixed8.Zero
-                            }).Registered = true;
-#pragma warning restore CS0612
-                        }
-                        break;
-                    case TransactionType.PublishTransaction:
+                    case EnrollmentTransaction tx_enrollment:
+                        validators.GetAndChange(tx_enrollment.PublicKey, () => new ValidatorState
                         {
-#pragma warning disable CS0612
-                            PublishTransaction publish_tx = (PublishTransaction)tx;
-                            contracts.GetOrAdd(publish_tx.ScriptHash, () => new ContractState
-                            {
-                                Script = publish_tx.Script,
-                                ParameterList = publish_tx.ParameterList,
-                                ReturnType = publish_tx.ReturnType,
-                                ContractProperties = (ContractPropertyState)Convert.ToByte(publish_tx.NeedStorage),
-                                Name = publish_tx.Name,
-                                CodeVersion = publish_tx.CodeVersion,
-                                Author = publish_tx.Author,
-                                Email = publish_tx.Email,
-                                Description = publish_tx.Description
-                            });
-#pragma warning restore CS0612
-                        }
+                            PublicKey = tx_enrollment.PublicKey,
+                            Registered = true,
+                            Votes = Fixed8.Zero
+                        }).Registered = true;
                         break;
-                    case TransactionType.InvocationTransaction:
-                        {
-                            InvocationTransaction itx = (InvocationTransaction)tx;
-                            CachedScriptTable script_table = new CachedScriptTable(contracts);
-                            StateMachine service = new StateMachine(block, accounts, validators, assets, contracts, storages);
-                            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, itx, script_table, service, itx.Gas);
-                            engine.LoadScript(itx.Script, false);
-                            if (engine.Execute())
+#pragma warning restore CS0612
+                    case StateTransaction tx_state:
+                        foreach (StateDescriptor descriptor in tx_state.Descriptors)
+                            switch (descriptor.Type)
                             {
-                                service.Commit();
-                                notifications.AddRange(service.Notifications);
+                                case StateType.Account:
+                                    ProcessAccountStateDescriptor(descriptor, accounts, validators, validators_count);
+                                    break;
+                                case StateType.Validator:
+                                    ProcessValidatorStateDescriptor(descriptor, validators);
+                                    break;
                             }
+                        break;
+#pragma warning disable CS0612
+                    case PublishTransaction tx_publish:
+                        contracts.GetOrAdd(tx_publish.ScriptHash, () => new ContractState
+                        {
+                            Script = tx_publish.Script,
+                            ParameterList = tx_publish.ParameterList,
+                            ReturnType = tx_publish.ReturnType,
+                            ContractProperties = (ContractPropertyState)Convert.ToByte(tx_publish.NeedStorage),
+                            Name = tx_publish.Name,
+                            CodeVersion = tx_publish.CodeVersion,
+                            Author = tx_publish.Author,
+                            Email = tx_publish.Email,
+                            Description = tx_publish.Description
+                        });
+                        break;
+#pragma warning restore CS0612
+                    case InvocationTransaction tx_invocation:
+                        CachedScriptTable script_table = new CachedScriptTable(contracts);
+                        StateMachine service = new StateMachine(block, accounts, assets, contracts, storages);
+                        ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, script_table, service, tx_invocation.Gas);
+                        engine.LoadScript(tx_invocation.Script, false);
+                        if (engine.Execute())
+                        {
+                            service.Commit();
+                            notifications.AddRange(service.Notifications);
                         }
                         break;
                 }
@@ -589,6 +589,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             assets.Commit();
             contracts.Commit();
             storages.Commit();
+            validators_count.Commit(batch);
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(block.Hash).Add(block.Index));
             db.Write(WriteOptions.Default, batch);
             current_block_height = block.Index;
@@ -620,6 +621,63 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         block_cache.Remove(hash);
                     }
                 }
+            }
+        }
+
+        private void ProcessAccountStateDescriptor(StateDescriptor descriptor, DataCache<UInt160, AccountState> accounts, DataCache<ECPoint, ValidatorState> validators, MetaDataCache<ValidatorsCountState> validators_count)
+        {
+            UInt160 hash = new UInt160(descriptor.Key);
+            AccountState account = accounts.GetAndChange(hash, () => new AccountState
+            {
+                ScriptHash = hash,
+                IsFrozen = false,
+                Votes = new ECPoint[0],
+                Balances = new Dictionary<UInt256, Fixed8>()
+            });
+            switch (descriptor.Field)
+            {
+                case "Votes":
+                    Fixed8 balance = account.GetBalance(GoverningToken.Hash);
+                    foreach (ECPoint pubkey in account.Votes)
+                    {
+                        ValidatorState validator = validators.GetAndChange(pubkey);
+                        validator.Votes -= balance;
+                        if (!validator.Registered && validator.Votes.Equals(Fixed8.Zero))
+                            validators.Delete(pubkey);
+                    }
+                    ECPoint[] votes = descriptor.Value.AsSerializableArray<ECPoint>().Distinct().ToArray();
+                    if (votes.Length != account.Votes.Length)
+                    {
+                        ValidatorsCountState count_state = validators_count.GetAndChange();
+                        count_state.Votes[account.Votes.Length - 1] -= balance;
+                        count_state.Votes[votes.Length - 1] += balance;
+                    }
+                    account.Votes = votes;
+                    foreach (ECPoint pubkey in account.Votes)
+                        validators.GetAndChange(pubkey, () => new ValidatorState
+                        {
+                            PublicKey = pubkey,
+                            Registered = false,
+                            Votes = Fixed8.Zero
+                        }).Votes += balance;
+                    break;
+            }
+        }
+
+        private void ProcessValidatorStateDescriptor(StateDescriptor descriptor, DataCache<ECPoint, ValidatorState> validators)
+        {
+            ECPoint pubkey = ECPoint.DecodePoint(descriptor.Key, ECCurve.Secp256r1);
+            ValidatorState validator = validators.GetAndChange(pubkey, () => new ValidatorState
+            {
+                PublicKey = pubkey,
+                Registered = false,
+                Votes = Fixed8.Zero
+            });
+            switch (descriptor.Field)
+            {
+                case "Registered":
+                    validator.Registered = BitConverter.ToBoolean(descriptor.Value, 0);
+                    break;
             }
         }
     }
