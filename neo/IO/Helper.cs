@@ -146,6 +146,17 @@ namespace Neo.IO
             }
         }
 
+        public static byte[] ToByteArray<T>(this T[] value) where T : ISerializable
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            {
+                writer.Write(value);
+                writer.Flush();
+                return ms.ToArray();
+            }
+        }
+
         public static void Write(this BinaryWriter writer, ISerializable value)
         {
             value.Serialize(writer);
