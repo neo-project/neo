@@ -12,6 +12,15 @@ namespace Neo.Core
 
         public override int Size => base.Size + PublicKey.Size + sizeof(bool) + Votes.Size;
 
+        public ValidatorState() { }
+
+        public ValidatorState(ECPoint pubkey)
+        {
+            this.PublicKey = pubkey;
+            this.Registered = false;
+            this.Votes = Fixed8.Zero;
+        }
+
         ValidatorState ICloneable<ValidatorState>.Clone()
         {
             return new ValidatorState

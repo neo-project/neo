@@ -106,13 +106,13 @@ namespace Neo.IO.Caching
                 trackable.State = TrackState.Deleted;
         }
 
-        public IEnumerable<KeyValuePair<TKey, TValue>> Find(byte[] key_prefix)
+        public IEnumerable<KeyValuePair<TKey, TValue>> Find(byte[] key_prefix = null)
         {
-            foreach (var pair in FindInternal(key_prefix))
+            foreach (var pair in FindInternal(key_prefix ?? new byte[0]))
                 if (!dictionary.ContainsKey(pair.Key))
                     yield return pair;
             foreach (var pair in dictionary)
-                if (pair.Value.State != TrackState.Deleted && pair.Key.ToArray().Take(key_prefix.Length).SequenceEqual(key_prefix))
+                if (pair.Value.State != TrackState.Deleted && (key_prefix == null || pair.Key.ToArray().Take(key_prefix.Length).SequenceEqual(key_prefix)))
                     yield return new KeyValuePair<TKey, TValue>(pair.Key, pair.Value.Item);
         }
 

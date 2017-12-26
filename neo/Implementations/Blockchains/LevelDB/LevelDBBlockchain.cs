@@ -453,12 +453,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                     if (output.AssetId.Equals(GoverningToken.Hash) && account.Votes.Length > 0)
                     {
                         foreach (ECPoint pubkey in account.Votes)
-                            validators.GetAndChange(pubkey, () => new ValidatorState
-                            {
-                                PublicKey = pubkey,
-                                Registered = false,
-                                Votes = Fixed8.Zero
-                            }).Votes += output.Value;
+                            validators.GetAndChange(pubkey, () => new ValidatorState(pubkey)).Votes += output.Value;
                         validators_count.GetAndChange().Votes[account.Votes.Length - 1] += output.Value;
                     }
                 }
@@ -528,12 +523,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         break;
 #pragma warning disable CS0612
                     case EnrollmentTransaction tx_enrollment:
-                        validators.GetAndChange(tx_enrollment.PublicKey, () => new ValidatorState
-                        {
-                            PublicKey = tx_enrollment.PublicKey,
-                            Registered = true,
-                            Votes = Fixed8.Zero
-                        }).Registered = true;
+                        validators.GetAndChange(tx_enrollment.PublicKey, () => new ValidatorState(tx_enrollment.PublicKey)).Registered = true;
                         break;
 #pragma warning restore CS0612
                     case StateTransaction tx_state:
@@ -621,63 +611,6 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         block_cache.Remove(hash);
                     }
                 }
-            }
-        }
-
-        private void ProcessAccountStateDescriptor(StateDescriptor descriptor, DataCache<UInt160, AccountState> accounts, DataCache<ECPoint, ValidatorState> validators, MetaDataCache<ValidatorsCountState> validators_count)
-        {
-            UInt160 hash = new UInt160(descriptor.Key);
-            AccountState account = accounts.GetAndChange(hash, () => new AccountState
-            {
-                ScriptHash = hash,
-                IsFrozen = false,
-                Votes = new ECPoint[0],
-                Balances = new Dictionary<UInt256, Fixed8>()
-            });
-            switch (descriptor.Field)
-            {
-                case "Votes":
-                    Fixed8 balance = account.GetBalance(GoverningToken.Hash);
-                    foreach (ECPoint pubkey in account.Votes)
-                    {
-                        ValidatorState validator = validators.GetAndChange(pubkey);
-                        validator.Votes -= balance;
-                        if (!validator.Registered && validator.Votes.Equals(Fixed8.Zero))
-                            validators.Delete(pubkey);
-                    }
-                    ECPoint[] votes = descriptor.Value.AsSerializableArray<ECPoint>().Distinct().ToArray();
-                    if (votes.Length != account.Votes.Length)
-                    {
-                        ValidatorsCountState count_state = validators_count.GetAndChange();
-                        count_state.Votes[account.Votes.Length - 1] -= balance;
-                        count_state.Votes[votes.Length - 1] += balance;
-                    }
-                    account.Votes = votes;
-                    foreach (ECPoint pubkey in account.Votes)
-                        validators.GetAndChange(pubkey, () => new ValidatorState
-                        {
-                            PublicKey = pubkey,
-                            Registered = false,
-                            Votes = Fixed8.Zero
-                        }).Votes += balance;
-                    break;
-            }
-        }
-
-        private void ProcessValidatorStateDescriptor(StateDescriptor descriptor, DataCache<ECPoint, ValidatorState> validators)
-        {
-            ECPoint pubkey = ECPoint.DecodePoint(descriptor.Key, ECCurve.Secp256r1);
-            ValidatorState validator = validators.GetAndChange(pubkey, () => new ValidatorState
-            {
-                PublicKey = pubkey,
-                Registered = false,
-                Votes = Fixed8.Zero
-            });
-            switch (descriptor.Field)
-            {
-                case "Registered":
-                    validator.Registered = BitConverter.ToBoolean(descriptor.Value, 0);
-                    break;
             }
         }
     }
