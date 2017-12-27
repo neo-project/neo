@@ -263,7 +263,7 @@ namespace Neo.Core
 
         public abstract DataCache<TKey, TValue> GetStates<TKey, TValue>()
             where TKey : IEquatable<TKey>, ISerializable, new()
-            where TValue : class, ICloneable<TValue>, ISerializable, new();
+            where TValue : StateBase, ICloneable<TValue>, new();
 
         public abstract void Dispose();
 

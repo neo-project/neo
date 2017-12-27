@@ -31,12 +31,12 @@ namespace Neo.IO
             return serializable;
         }
 
-        public static T[] AsSerializableArray<T>(this byte[] value) where T : ISerializable, new()
+        public static T[] AsSerializableArray<T>(this byte[] value, int max = 0x10000000) where T : ISerializable, new()
         {
             using (MemoryStream ms = new MemoryStream(value, false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
-                return reader.ReadSerializableArray<T>();
+                return reader.ReadSerializableArray<T>(max);
             }
         }
 

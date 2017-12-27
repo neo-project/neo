@@ -1,4 +1,6 @@
-﻿using Neo.IO;
+﻿using Neo.Cryptography.ECC;
+using Neo.IO;
+using Neo.IO.Caching;
 using Neo.IO.Json;
 using System;
 using System.IO;
@@ -111,18 +113,24 @@ namespace Neo.Core
             {
                 case "Votes":
                     if (Blockchain.Default == null) return false;
-                    int votes_count;
-                    using (MemoryStream ms = new MemoryStream(Value, false))
-                    using (BinaryReader reader = new BinaryReader(ms))
+                    ECPoint[] pubkeys;
+                    try
                     {
-                        votes_count = (int)reader.ReadVarInt();
+                        pubkeys = Value.AsSerializableArray<ECPoint>((int)Blockchain.MaxValidators);
                     }
-                    if (votes_count > Blockchain.MaxValidators) return false;
+                    catch (FormatException)
+                    {
+                        return false;
+                    }
                     UInt160 hash = new UInt160(Key);
                     AccountState account = Blockchain.Default.GetAccountState(hash);
                     if (account?.IsFrozen != false) return false;
                     Fixed8 balance = account.GetBalance(Blockchain.GoverningToken.Hash);
-                    if (balance.Equals(Fixed8.Zero) && votes_count > 0) return false;
+                    if (balance.Equals(Fixed8.Zero) && pubkeys.Length > 0) return false;
+                    DataCache<ECPoint, ValidatorState> validators = Blockchain.Default.GetStates<ECPoint, ValidatorState>();
+                    foreach (ECPoint pubkey in pubkeys)
+                        if (validators.TryGet(pubkey)?.Registered != true)
+                            return false;
                     return true;
                 default:
                     return false;
