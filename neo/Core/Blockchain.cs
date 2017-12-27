@@ -547,8 +547,10 @@ namespace Neo.Core
                     if (votes.Length != account.Votes.Length)
                     {
                         ValidatorsCountState count_state = validators_count.GetAndChange();
-                        count_state.Votes[account.Votes.Length - 1] -= balance;
-                        count_state.Votes[votes.Length - 1] += balance;
+                        if (account.Votes.Length > 0)
+                            count_state.Votes[account.Votes.Length - 1] -= balance;
+                        if (votes.Length > 0)
+                            count_state.Votes[votes.Length - 1] += balance;
                     }
                     account.Votes = votes;
                     foreach (ECPoint pubkey in account.Votes)
