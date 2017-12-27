@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.IO.Caching;
 using Neo.IO.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -125,12 +126,15 @@ namespace Neo.Core
                     UInt160 hash = new UInt160(Key);
                     AccountState account = Blockchain.Default.GetAccountState(hash);
                     if (account?.IsFrozen != false) return false;
-                    Fixed8 balance = account.GetBalance(Blockchain.GoverningToken.Hash);
-                    if (balance.Equals(Fixed8.Zero) && pubkeys.Length > 0) return false;
-                    DataCache<ECPoint, ValidatorState> validators = Blockchain.Default.GetStates<ECPoint, ValidatorState>();
-                    foreach (ECPoint pubkey in pubkeys)
-                        if (validators.TryGet(pubkey)?.Registered != true)
-                            return false;
+                    if (pubkeys.Length > 0)
+                    {
+                        if (account.GetBalance(Blockchain.GoverningToken.Hash).Equals(Fixed8.Zero)) return false;
+                        HashSet<ECPoint> sv = new HashSet<ECPoint>(Blockchain.StandbyValidators);
+                        DataCache<ECPoint, ValidatorState> validators = Blockchain.Default.GetStates<ECPoint, ValidatorState>();
+                        foreach (ECPoint pubkey in pubkeys)
+                            if (!sv.Contains(pubkey) && validators.TryGet(pubkey)?.Registered != true)
+                                return false;
+                    }
                     return true;
                 default:
                     return false;
