@@ -52,15 +52,15 @@ namespace Neo.Wallets
             return CreateAccount(contract, new KeyPair(privateKey));
         }
 
-        public IEnumerable<Coin> FindUnspentCoins()
+        public IEnumerable<Coin> FindUnspentCoins(params UInt160[] from)
         {
-            IEnumerable<UInt160> accounts = GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash);
+            IEnumerable<UInt160> accounts = from.Length > 0 ? from : GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash);
             return GetCoins(accounts).Where(p => p.State.HasFlag(CoinState.Confirmed) && !p.State.HasFlag(CoinState.Spent) && !p.State.HasFlag(CoinState.Frozen));
         }
 
-        public virtual Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount)
+        public virtual Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount, params UInt160[] from)
         {
-            return FindUnspentCoins(FindUnspentCoins(), asset_id, amount);
+            return FindUnspentCoins(FindUnspentCoins(from), asset_id, amount);
         }
 
         protected static Coin[] FindUnspentCoins(IEnumerable<Coin> unspents, UInt256 asset_id, Fixed8 amount)
@@ -209,7 +209,7 @@ namespace Neo.Wallets
             return account;
         }
 
-        public T MakeTransaction<T>(T tx, UInt160 change_address = null, Fixed8 fee = default(Fixed8)) where T : Transaction
+        public T MakeTransaction<T>(T tx, UInt160 from = null, UInt160 change_address = null, Fixed8 fee = default(Fixed8)) where T : Transaction
         {
             if (tx.Outputs == null) tx.Outputs = new TransactionOutput[0];
             if (tx.Attributes == null) tx.Attributes = new TransactionAttribute[0];
@@ -241,12 +241,12 @@ namespace Neo.Wallets
             var pay_coins = pay_total.Select(p => new
             {
                 AssetId = p.Key,
-                Unspents = FindUnspentCoins(p.Key, p.Value.Value)
+                Unspents = from == null ? FindUnspentCoins(p.Key, p.Value.Value) : FindUnspentCoins(p.Key, p.Value.Value, from)
             }).ToDictionary(p => p.AssetId);
             if (pay_coins.Any(p => p.Value.Unspents == null)) return null;
             var input_sum = pay_coins.Values.ToDictionary(p => p.AssetId, p => new
             {
-                AssetId = p.AssetId,
+                p.AssetId,
                 Value = p.Unspents.Sum(q => q.Output.Value)
             });
             if (change_address == null) change_address = GetChangeAddress();
@@ -268,7 +268,7 @@ namespace Neo.Wallets
             return tx;
         }
 
-        public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 change_address = null, Fixed8 fee = default(Fixed8))
+        public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null, UInt160 change_address = null, Fixed8 fee = default(Fixed8))
         {
             var cOutputs = outputs.Where(p => !p.IsGlobalAsset).GroupBy(p => new
             {
@@ -276,9 +276,9 @@ namespace Neo.Wallets
                 Account = p.ScriptHash
             }, (k, g) => new
             {
-                AssetId = k.AssetId,
+                k.AssetId,
                 Value = g.Aggregate(BigInteger.Zero, (x, y) => x + y.Value.Value),
-                Account = k.Account
+                k.Account
             }).ToArray();
             Transaction tx;
             if (attributes == null) attributes = new List<TransactionAttribute>();
@@ -288,7 +288,7 @@ namespace Neo.Wallets
             }
             else
             {
-                UInt160[] accounts = GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
+                UInt160[] accounts = from == null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { from };
                 HashSet<UInt160> sAttributes = new HashSet<UInt160>();
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
@@ -370,7 +370,7 @@ namespace Neo.Wallets
                     Outputs = itx.Outputs
                 };
             }
-            tx = MakeTransaction(tx, change_address, fee);
+            tx = MakeTransaction(tx, from, change_address, fee);
             return tx;
         }
 

@@ -133,9 +133,9 @@ namespace Neo.Implementations.Wallets.EntityFramework
             WalletIndexer.BalanceChanged -= WalletIndexer_BalanceChanged;
         }
 
-        public override Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount)
+        public override Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount, UInt160[] from)
         {
-            return FindUnspentCoins(FindUnspentCoins().ToArray().Where(p => GetAccount(p.Output.ScriptHash).Contract.IsStandard), asset_id, amount) ?? base.FindUnspentCoins(asset_id, amount);
+            return FindUnspentCoins(FindUnspentCoins(from).ToArray().Where(p => GetAccount(p.Output.ScriptHash).Contract.IsStandard), asset_id, amount) ?? base.FindUnspentCoins(asset_id, amount, from);
         }
 
         public override WalletAccount GetAccount(UInt160 scriptHash)
