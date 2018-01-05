@@ -31,6 +31,15 @@ namespace Neo.IO
             return serializable;
         }
 
+        public static T[] AsSerializableArray<T>(this byte[] value, int max = 0x10000000) where T : ISerializable, new()
+        {
+            using (MemoryStream ms = new MemoryStream(value, false))
+            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            {
+                return reader.ReadSerializableArray<T>(max);
+            }
+        }
+
         internal static int GetVarSize(int value)
         {
             if (value < 0xFD)
@@ -137,12 +146,23 @@ namespace Neo.IO
             }
         }
 
+        public static byte[] ToByteArray<T>(this T[] value) where T : ISerializable
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            {
+                writer.Write(value);
+                writer.Flush();
+                return ms.ToArray();
+            }
+        }
+
         public static void Write(this BinaryWriter writer, ISerializable value)
         {
             value.Serialize(writer);
         }
 
-        public static void Write(this BinaryWriter writer, ISerializable[] value)
+        public static void Write<T>(this BinaryWriter writer, T[] value) where T : ISerializable
         {
             writer.WriteVarInt(value.Length);
             for (int i = 0; i < value.Length; i++)
