@@ -38,18 +38,9 @@ namespace Neo
 
         public static BigDecimal Parse(string s, byte decimals)
         {
-            byte ds = decimals;
-            int index = s.IndexOf('.');
-            if (index >= 0)
-            {
-                s = s.TrimEnd('0');
-                int d = s.Length - index - 1;
-                if (d > decimals) throw new FormatException();
-                s = s.Remove(index, 1);
-                ds -= (byte)d;
-            }
-            s += new string('0', ds);
-            return new BigDecimal(BigInteger.Parse(s), decimals);
+            if (!TryParse(s, decimals, out BigDecimal result))
+                throw new FormatException();
+            return result;
         }
 
         public Fixed8 ToFixed8()
@@ -74,21 +65,28 @@ namespace Neo
 
         public static bool TryParse(string s, byte decimals, out BigDecimal result)
         {
-            byte ds = decimals;
-            int index = s.IndexOf('.');
+            int e = 0;
+            int index = s.IndexOfAny(new[] { 'e', 'E' });
+            if (index >= 0)
+            {
+                e = sbyte.Parse(s.Substring(index + 1));
+                s = s.Substring(0, index);
+            }
+            index = s.IndexOf('.');
             if (index >= 0)
             {
                 s = s.TrimEnd('0');
-                int d = s.Length - index - 1;
-                if (d > decimals)
-                {
-                    result = default(BigDecimal);
-                    return false;
-                }
+                e -= s.Length - index - 1;
                 s = s.Remove(index, 1);
-                ds -= (byte)d;
             }
-            s += new string('0', ds);
+            int ds = e + decimals;
+            if (ds < 0)
+            {
+                result = default(BigDecimal);
+                return false;
+            }
+            if (ds > 0)
+                s += new string('0', ds);
             if (!BigInteger.TryParse(s, out BigInteger value))
             {
                 result = default(BigDecimal);

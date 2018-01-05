@@ -75,8 +75,6 @@ namespace Neo.Network.Payloads
         {
             if (Blockchain.Default == null)
                 throw new InvalidOperationException();
-            if (PrevHash != Blockchain.Default.CurrentBlockHash)
-                throw new InvalidOperationException();
             ECPoint[] validators = Blockchain.Default.GetValidators();
             if (validators.Length <= ValidatorIndex)
                 throw new InvalidOperationException();
@@ -102,9 +100,7 @@ namespace Neo.Network.Payloads
         public bool Verify()
         {
             if (Blockchain.Default == null) return false;
-            if (PrevHash != Blockchain.Default.CurrentBlockHash)
-                return false;
-            if (BlockIndex != Blockchain.Default.Height + 1)
+            if (BlockIndex <= Blockchain.Default.Height)
                 return false;
             return this.VerifyScripts();
         }
