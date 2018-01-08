@@ -136,7 +136,7 @@ namespace Neo.Wallets
             return GetCoins(GetAccounts().Select(p => p.ScriptHash));
         }
 
-        public static byte[] GetPrivateKeyFromNEP2(string nep2, string passphrase)
+        public static byte[] GetPrivateKeyFromNEP2(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
         {
             if (nep2 == null) throw new ArgumentNullException(nameof(nep2));
             if (passphrase == null) throw new ArgumentNullException(nameof(passphrase));
@@ -145,7 +145,7 @@ namespace Neo.Wallets
                 throw new FormatException();
             byte[] addresshash = new byte[4];
             Buffer.BlockCopy(data, 3, addresshash, 0, 4);
-            byte[] derivedkey = SCrypt.DeriveKey(Encoding.UTF8.GetBytes(passphrase), addresshash, 16384, 8, 8, 64);
+            byte[] derivedkey = SCrypt.DeriveKey(Encoding.UTF8.GetBytes(passphrase), addresshash, N, r, p, 64);
             byte[] derivedhalf1 = derivedkey.Take(32).ToArray();
             byte[] derivedhalf2 = derivedkey.Skip(32).ToArray();
             byte[] encryptedkey = new byte[32];

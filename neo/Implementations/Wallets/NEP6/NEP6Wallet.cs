@@ -20,7 +20,7 @@ namespace Neo.Implementations.Wallets.NEP6
         private string password;
         private string name;
         private Version version;
-        private readonly ScryptParameters scrypt;
+        public readonly ScryptParameters Scrypt;
         private readonly Dictionary<UInt160, NEP6Account> accounts;
         private readonly JObject extra;
         private readonly Dictionary<UInt256, Transaction> unconfirmed = new Dictionary<UInt256, Transaction>();
@@ -41,7 +41,7 @@ namespace Neo.Implementations.Wallets.NEP6
                 }
                 this.name = wallet["name"]?.AsString();
                 this.version = Version.Parse(wallet["version"].AsString());
-                this.scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
+                this.Scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
                 this.accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p, this)).ToDictionary(p => p.ScriptHash);
                 this.extra = wallet["extra"];
                 WalletIndexer.RegisterAccounts(accounts.Keys);
@@ -50,7 +50,7 @@ namespace Neo.Implementations.Wallets.NEP6
             {
                 this.name = name;
                 this.version = Version.Parse("1.0");
-                this.scrypt = ScryptParameters.Default;
+                this.Scrypt = ScryptParameters.Default;
                 this.accounts = new Dictionary<UInt160, NEP6Account>();
                 this.extra = JObject.Null;
             }
@@ -163,7 +163,7 @@ namespace Neo.Implementations.Wallets.NEP6
 
         public KeyPair DecryptKey(string nep2key)
         {
-            return new KeyPair(GetPrivateKeyFromNEP2(nep2key, password));
+            return new KeyPair(GetPrivateKeyFromNEP2(nep2key, password, Scrypt.N, Scrypt.R, Scrypt.P));
         }
 
         public override bool DeleteAccount(UInt160 scriptHash)
@@ -322,10 +322,12 @@ namespace Neo.Implementations.Wallets.NEP6
                 ParameterNames = new[] { "signature" },
                 Deployed = false
             };
-            NEP6Account account = new NEP6Account(this, contract.ScriptHash, nep2)
-            {
-                Contract = contract
-            };
+            NEP6Account account;
+            if (Scrypt.N == 16384 && Scrypt.R == 8 && Scrypt.P == 8)
+                account = new NEP6Account(this, contract.ScriptHash, nep2);
+            else
+                account = new NEP6Account(this, contract.ScriptHash, key, passphrase);
+            account.Contract = contract;
             AddAccount(account, true);
             return account;
         }
@@ -356,7 +358,7 @@ namespace Neo.Implementations.Wallets.NEP6
             JObject wallet = new JObject();
             wallet["name"] = name;
             wallet["version"] = version.ToString();
-            wallet["scrypt"] = scrypt.ToJson();
+            wallet["scrypt"] = Scrypt.ToJson();
             wallet["accounts"] = new JArray(accounts.Values.Select(p => p.ToJson()));
             wallet["extra"] = extra;
             File.WriteAllText(path, wallet.ToString());

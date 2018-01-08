@@ -22,7 +22,7 @@ namespace Neo.Implementations.Wallets.NEP6
         }
 
         public NEP6Account(NEP6Wallet wallet, UInt160 scriptHash, KeyPair key, string password)
-            : this(wallet, scriptHash, key.Export(password))
+            : this(wallet, scriptHash, key.Export(password, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P))
         {
             this.key = key;
         }
@@ -54,7 +54,7 @@ namespace Neo.Implementations.Wallets.NEP6
             if (nep2key == null) return null;
             if (key == null)
             {
-                key = new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password));
+                key = new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P));
             }
             return key;
         }
@@ -76,7 +76,7 @@ namespace Neo.Implementations.Wallets.NEP6
         {
             try
             {
-                Wallet.GetPrivateKeyFromNEP2(nep2key, password);
+                Wallet.GetPrivateKeyFromNEP2(nep2key, password, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P);
                 return true;
             }
             catch (FormatException)

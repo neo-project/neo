@@ -67,14 +67,14 @@ namespace Neo.Wallets
             }
         }
 
-        public string Export(string passphrase)
+        public string Export(string passphrase, int N = 16384, int r = 8, int p = 8)
         {
             using (Decrypt())
             {
                 UInt160 script_hash = Contract.CreateSignatureRedeemScript(PublicKey).ToScriptHash();
                 string address = Wallet.ToAddress(script_hash);
                 byte[] addresshash = Encoding.ASCII.GetBytes(address).Sha256().Sha256().Take(4).ToArray();
-                byte[] derivedkey = SCrypt.DeriveKey(Encoding.UTF8.GetBytes(passphrase), addresshash, 16384, 8, 8, 64);
+                byte[] derivedkey = SCrypt.DeriveKey(Encoding.UTF8.GetBytes(passphrase), addresshash, N, r, p, 64);
                 byte[] derivedhalf1 = derivedkey.Take(32).ToArray();
                 byte[] derivedhalf2 = derivedkey.Skip(32).ToArray();
                 byte[] encryptedkey = XOR(PrivateKey, derivedhalf1).AES256Encrypt(derivedhalf2);
