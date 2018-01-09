@@ -69,7 +69,12 @@ namespace Neo
             int index = s.IndexOfAny(new[] { 'e', 'E' });
             if (index >= 0)
             {
-                e = sbyte.Parse(s.Substring(index + 1));
+                if (!sbyte.TryParse(s.Substring(index + 1), out sbyte e_temp))
+                {
+                    result = default(BigDecimal);
+                    return false;
+                }
+                e = e_temp;
                 s = s.Substring(0, index);
             }
             index = s.IndexOf('.');
