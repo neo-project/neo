@@ -189,7 +189,7 @@ namespace Neo.Consensus
                     {
                         message = ConsensusMessage.DeserializeFrom(payload.Data);
                     }
-                    catch (FormatException)
+                    catch
                     {
                         return;
                     }
