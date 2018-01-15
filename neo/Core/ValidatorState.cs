@@ -1,21 +1,33 @@
 ﻿using Neo.Cryptography.ECC;
 using Neo.IO;
-using System;
 using System.IO;
 
 namespace Neo.Core
 {
-    public class ValidatorState : StateBase, ICloneable<ValidatorState>, IEquatable<ValidatorState>
+    public class ValidatorState : StateBase, ICloneable<ValidatorState>
     {
         public ECPoint PublicKey;
+        public bool Registered;
+        public Fixed8 Votes;
 
-        public override int Size => base.Size + PublicKey.Size;
+        public override int Size => base.Size + PublicKey.Size + sizeof(bool) + Votes.Size;
+
+        public ValidatorState() { }
+
+        public ValidatorState(ECPoint pubkey)
+        {
+            this.PublicKey = pubkey;
+            this.Registered = false;
+            this.Votes = Fixed8.Zero;
+        }
 
         ValidatorState ICloneable<ValidatorState>.Clone()
         {
             return new ValidatorState
             {
-                PublicKey = PublicKey
+                PublicKey = PublicKey,
+                Registered = Registered,
+                Votes = Votes
             };
         }
 
@@ -23,36 +35,23 @@ namespace Neo.Core
         {
             base.Deserialize(reader);
             PublicKey = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
-        }
-
-        public bool Equals(ValidatorState other)
-        {
-            if (ReferenceEquals(this, other)) return true;
-            if (ReferenceEquals(null, other)) return false;
-            return PublicKey.Equals(other.PublicKey);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(this, obj)) return true;
-            if (ReferenceEquals(null, obj)) return false;
-            return Equals(obj as ValidatorState);
+            Registered = reader.ReadBoolean();
+            Votes = reader.ReadSerializable<Fixed8>();
         }
 
         void ICloneable<ValidatorState>.FromReplica(ValidatorState replica)
         {
             PublicKey = replica.PublicKey;
-        }
-
-        public override int GetHashCode()
-        {
-            return PublicKey.GetHashCode();
+            Registered = replica.Registered;
+            Votes = replica.Votes;
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
             writer.Write(PublicKey);
+            writer.Write(Registered);
+            writer.Write(Votes);
         }
     }
 }

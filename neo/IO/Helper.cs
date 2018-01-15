@@ -9,9 +9,9 @@ namespace Neo.IO
 {
     public static class Helper
     {
-        public static T AsSerializable<T>(this byte[] value) where T : ISerializable, new()
+        public static T AsSerializable<T>(this byte[] value, int start = 0) where T : ISerializable, new()
         {
-            using (MemoryStream ms = new MemoryStream(value, false))
+            using (MemoryStream ms = new MemoryStream(value, start, value.Length - start, false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
                 return reader.ReadSerializable<T>();

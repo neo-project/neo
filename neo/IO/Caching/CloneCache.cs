@@ -1,10 +1,7 @@
-﻿using Neo.Core;
-using Neo.IO;
-using Neo.IO.Caching;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
-namespace Neo.SmartContract
+namespace Neo.IO.Caching
 {
     internal class CloneCache<TKey, TValue> : DataCache<TKey, TValue>
         where TKey : IEquatable<TKey>, ISerializable
@@ -17,21 +14,14 @@ namespace Neo.SmartContract
             this.innerCache = innerCache;
         }
 
-        public void Commit()
+        protected override void AddInternal(TKey key, TValue value)
         {
-            foreach (Trackable trackable in GetChangeSet())
-                switch (trackable.State)
-                {
-                    case TrackState.Added:
-                        innerCache.Add(trackable.Key, trackable.Item);
-                        break;
-                    case TrackState.Changed:
-                        innerCache.GetAndChange(trackable.Key).FromReplica(trackable.Item);
-                        break;
-                    case TrackState.Deleted:
-                        innerCache.Delete(trackable.Key);
-                        break;
-                }
+            innerCache.Add(key, value);
+        }
+
+        public override void DeleteInternal(TKey key)
+        {
+            innerCache.Delete(key);
         }
 
         protected override IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix)
@@ -48,6 +38,11 @@ namespace Neo.SmartContract
         protected override TValue TryGetInternal(TKey key)
         {
             return innerCache.TryGet(key)?.Clone();
+        }
+
+        protected override void UpdateInternal(TKey key, TValue value)
+        {
+            innerCache.GetAndChange(key).FromReplica(value);
         }
     }
 }
