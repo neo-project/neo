@@ -98,6 +98,8 @@ namespace Neo.IO.Caching
             }
         }
 
+        public abstract IEnumerable<KeyValuePair<TKey, TValue>> GetEnumerator();
+
         public abstract void DeleteInternal(TKey key);
 
         public void DeleteWhere(Func<TKey, TValue, bool> predicate)

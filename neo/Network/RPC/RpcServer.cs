@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Neo.Core;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.IO.Caching;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.Wallets;
@@ -13,6 +14,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Neo.Network.RPC
 {
@@ -297,8 +299,289 @@ namespace Neo.Network.RPC
                         json["useragent"] = LocalNode.UserAgent;
                         return json;
                     }
+                case "getaccountlist":
+                    {
+                        //Console.WriteLine("getaccountlist 0");
+
+                        uint fromTs = (uint)_params[0].AsNumber();
+
+                        uint toTs = (uint)_params[1].AsNumber();
+
+                        uint minHeight = 0;
+
+                        uint maxHeight = Blockchain.Default.Height;
+
+                        uint fromHeight = getHeightOfTs(0, minHeight, maxHeight, fromTs);
+
+                        uint toHeight = getHeightOfTs(0, fromHeight, maxHeight, toTs);
+
+                        int roundPrecision = 2;
+
+                        //Console.WriteLine($"getaccountlist 1 fromHeight:{fromHeight}; toHeight:{toHeight};");
+
+                        Dictionary<UInt160, long> neoTxByAccount = new Dictionary<UInt160, long>();
+                        Dictionary<UInt160, long> gasTxByAccount = new Dictionary<UInt160, long>();
+
+                        Dictionary<UInt160, long> neoInByAccount = new Dictionary<UInt160, long>();
+                        Dictionary<UInt160, decimal> gasInByAccount = new Dictionary<UInt160, decimal>();
+
+                        Dictionary<UInt160, long> neoOutByAccount = new Dictionary<UInt160, long>();
+                        Dictionary<UInt160, decimal> gasOutByAccount = new Dictionary<UInt160, decimal>();
+                        Dictionary<UInt160, uint> firstTsByAccount = new Dictionary<UInt160, uint>();
+
+                        for (uint index = fromHeight; index < toHeight; index++)
+                        {
+                            //Console.WriteLine($"getaccountlist 2  fromHeight:{fromHeight}; toHeight:{toHeight}; index:{index};");
+
+                            Block block = Blockchain.Default.GetBlock(index);
+                            //Console.WriteLine("getaccountlist 2.1");
+                            foreach (Transaction t in block.Transactions)
+                            {
+                                //Console.WriteLine("getaccountlist 3");
+
+                                Dictionary<UInt160, Dictionary<UInt256, Fixed8>> friendAssetMap = new Dictionary<UInt160, Dictionary<UInt256, Fixed8>>();
+
+                                foreach (CoinReference cr in t.Inputs)
+                                {
+                                    TransactionOutput ti = t.References[cr];
+                                    UInt160 input = ti.ScriptHash;
+                                    if ((ti.AssetId == Blockchain.GoverningToken.Hash) || (ti.AssetId == Blockchain.UtilityToken.Hash))
+                                    {
+                                        increment(friendAssetMap, input, ti.AssetId, ti.Value);
+                                    }
+                                }
+
+
+                                foreach (TransactionOutput to in t.Outputs)
+                                {
+                                    UInt160 output = to.ScriptHash;
+                                    if ((to.AssetId == Blockchain.GoverningToken.Hash) || (to.AssetId == Blockchain.UtilityToken.Hash))
+                                    {
+                                        increment(friendAssetMap, output, to.AssetId, -to.Value);
+                                    }
+                                }
+
+                                foreach (UInt160 friend in friendAssetMap.Keys)
+                                {
+                                    if (!firstTsByAccount.ContainsKey(friend))
+                                    {
+                                        firstTsByAccount[friend] = block.Timestamp;
+                                    }
+                                    if (friendAssetMap[friend].ContainsKey(Blockchain.GoverningToken.Hash))
+                                    {
+                                        increment(neoTxByAccount, friend, Fixed8.One);
+                                        Fixed8 value = friendAssetMap[friend][Blockchain.GoverningToken.Hash];
+                                        if (value < Fixed8.Zero)
+                                        {
+                                            increment(neoInByAccount, friend, -value);
+                                        }
+                                        else
+                                        {
+                                            increment(neoOutByAccount, friend, value);
+                                        }
+                                    }
+                                    if (friendAssetMap[friend].ContainsKey(Blockchain.UtilityToken.Hash))
+                                    {
+                                        increment(gasTxByAccount, friend, Fixed8.One);
+                                        Fixed8 value = friendAssetMap[friend][Blockchain.UtilityToken.Hash];
+                                        if (value < Fixed8.Zero)
+                                        {
+                                            increment(gasInByAccount, friend, -value);
+                                        }
+                                        else
+                                        {
+                                            increment(gasOutByAccount, friend, value);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        DataCache<UInt160, AccountState> accountStateCache = Blockchain.Default.GetStates<UInt160, AccountState>();
+
+                        Dictionary<UInt160, String> addressByAccount = new Dictionary<UInt160, String>();
+                        foreach (KeyValuePair<UInt160, AccountState> accountStateEntry in accountStateCache.GetEnumerator())
+                        {
+                            UInt160 key = accountStateEntry.Value.ScriptHash;
+                            String address = Wallet.ToAddress(key);
+                            addressByAccount[key] = address;
+                        }
+
+                        JArray returnList = new JArray();
+
+                        foreach (KeyValuePair<UInt160, AccountState> accountStateEntry in accountStateCache.GetEnumerator())
+                        {
+                            UInt160 key = accountStateEntry.Value.ScriptHash;
+                            if (addressByAccount.ContainsKey(key))
+                            {
+                                String address = addressByAccount[key];
+
+                                //Console.WriteLine($"getaccountlist 7 key:{key}; address:{address};");
+                                JObject entry = new JObject();
+                                entry["account"] = address;
+
+                                if (accountStateEntry.Value.Balances.ContainsKey(Blockchain.GoverningToken.Hash))
+                                {
+                                    entry["neo"] = (long)accountStateEntry.Value.Balances[Blockchain.GoverningToken.Hash];
+                                }
+                                else
+                                {
+                                    entry["neo"] = 0;
+                                }
+
+                                if (accountStateEntry.Value.Balances.ContainsKey(Blockchain.UtilityToken.Hash))
+                                {
+                                    entry["gas"] = toRoundedDouble((decimal)accountStateEntry.Value.Balances[Blockchain.UtilityToken.Hash], roundPrecision);
+                                }
+                                else
+                                {
+                                    entry["gas"] = 0;
+                                }
+
+                                if (neoInByAccount.ContainsKey(key))
+                                {
+                                    entry["neo_in"] = neoInByAccount[key];
+                                }
+                                else
+                                {
+                                    entry["neo_in"] = 0;
+                                }
+
+                                if (neoOutByAccount.ContainsKey(key))
+                                {
+                                    entry["neo_out"] = neoOutByAccount[key];
+                                }
+                                else
+                                {
+                                    entry["neo_out"] = 0;
+                                }
+
+
+                                if (gasInByAccount.ContainsKey(key))
+                                {
+                                    entry["gas_in"] = toRoundedDouble(gasInByAccount[key], roundPrecision);
+                                }
+                                else
+                                {
+                                    entry["gas_in"] = 0;
+                                }
+
+                                if (gasOutByAccount.ContainsKey(key))
+                                {
+                                    entry["gas_out"] = toRoundedDouble(gasOutByAccount[key], roundPrecision);
+                                }
+                                else
+                                {
+                                    entry["gas_out"] = 0;
+                                }
+
+                                if (neoTxByAccount.ContainsKey(key))
+                                {
+                                    entry["neo_tx"] = neoTxByAccount[key];
+                                }
+                                else
+                                {
+                                    entry["neo_tx"] = 0;
+                                }
+
+                                if (gasTxByAccount.ContainsKey(key))
+                                {
+                                    entry["gas_tx"] = gasTxByAccount[key];
+                                }
+                                else
+                                {
+                                    entry["gas_tx"] = 0;
+                                }
+
+								if (firstTsByAccount.ContainsKey(key))
+								{
+									entry["first_ts"] = firstTsByAccount[key];
+								}
+								else
+								{
+									entry["first_ts"] = 0;
+								}
+
+                                returnList.Add(entry);
+                            }
+                        }
+                        //Console.WriteLine($"getaccountlist 8 {returnList.Count()}");
+
+                        return returnList;
+                    }
                 default:
-                    throw new RpcException(-32601, "Method not found");
+                    throw new RpcException(-32601, $"Method not found \"{method}\"");
+            }
+        }
+
+        private static double toRoundedDouble(decimal value, int precision)
+        {
+            double dbl = (double)value;
+            return Math.Round(dbl, precision);
+        }
+
+        private static void increment(Dictionary<UInt160, decimal> map, UInt160 key, Fixed8 value)
+        {
+            if (map.ContainsKey(key))
+            {
+                map[key] += (decimal)value;
+            }
+            else
+            {
+                map[key] = (decimal)value;
+            }
+        }
+
+        private static void increment(Dictionary<UInt160, long> map, UInt160 key, Fixed8 value)
+        {
+            if (map.ContainsKey(key))
+            {
+                map[key] += (long)value;
+            }
+            else
+            {
+                map[key] = (long)value;
+            }
+        }
+
+        private static void increment(Dictionary<UInt160, Dictionary<UInt256, Fixed8>> map, UInt160 key1, UInt256 key2, Fixed8 value)
+        {
+            if (!map.ContainsKey(key1))
+            {
+                map[key1] = new Dictionary<UInt256, Fixed8>();
+            }
+            if (!map[key1].ContainsKey(key2))
+            {
+                map[key1][key2] = Fixed8.Zero;
+            }
+            map[key1][key2] += value;
+        }
+
+        private uint getHeightOfTs(uint level, uint minHeight, uint maxHeight, uint ts)
+        {
+            uint midHeight = minHeight + ((maxHeight - minHeight) / 2);
+            if ((midHeight == minHeight) || (midHeight == maxHeight))
+            {
+                return minHeight;
+            }
+            Block midBlock = Blockchain.Default.GetBlock(midHeight);
+            if (ts == midBlock.Timestamp)
+            {
+                return midHeight;
+            }
+            else if (ts < midBlock.Timestamp)
+            {
+#if DEBUG
+                Console.WriteLine($"level:{level};minHeight:{minHeight};midHeight:{midHeight};midBlock.Timestamp:{midBlock.Timestamp};");
+#endif
+                return getHeightOfTs(level + 1, minHeight, midHeight, ts);
+            }
+            else
+            {
+#if DEBUG
+                Console.WriteLine($"level:{level};midHeight:{midHeight};maxHeight:{maxHeight};midBlock.Timestamp:{midBlock.Timestamp};");
+#endif
+                return getHeightOfTs(level + 1, midHeight, maxHeight, ts);
             }
         }
 

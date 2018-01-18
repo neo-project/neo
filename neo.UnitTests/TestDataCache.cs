@@ -14,6 +14,11 @@ namespace Neo.UnitTests
         {
         }
 
+        public override IEnumerable<KeyValuePair<TKey, TValue>> GetEnumerator()
+        {
+            return Enumerable.Empty<KeyValuePair<TKey, TValue>>();
+        }
+
         protected override void AddInternal(TKey key, TValue value)
         {
         }
