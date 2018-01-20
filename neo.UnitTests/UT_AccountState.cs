@@ -1,10 +1,11 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using FluentAssertions;
+﻿using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Core;
 using Neo.Cryptography.ECC;
+using Neo.IO;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Neo.Core;
 
 namespace Neo.UnitTests
 {
@@ -41,7 +42,7 @@ namespace Neo.UnitTests
 
         [TestMethod]
         public void IsFrozen_Set()
-        {            
+        {
             uut.IsFrozen = true;
             uut.IsFrozen.Should().Be(true);
         }
@@ -81,7 +82,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Size_Get_0_Votes_0_Balances()
         {
-            UInt160 val = new UInt160();        
+            UInt160 val = new UInt160();
             ECPoint[] array = new ECPoint[0];
             Dictionary<UInt256, Fixed8> dict = new Dictionary<UInt256, Fixed8>();
 

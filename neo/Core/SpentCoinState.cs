@@ -4,7 +4,7 @@ using System.IO;
 
 namespace Neo.Core
 {
-    public class SpentCoinState : StateBase
+    public class SpentCoinState : StateBase, ICloneable<SpentCoinState>
     {
         public UInt256 TransactionHash;
         public uint TransactionHeight;
@@ -12,6 +12,16 @@ namespace Neo.Core
 
         public override int Size => base.Size + TransactionHash.Size + sizeof(uint)
             + IO.Helper.GetVarSize(Items.Count) + Items.Count * (sizeof(ushort) + sizeof(uint));
+
+        SpentCoinState ICloneable<SpentCoinState>.Clone()
+        {
+            return new SpentCoinState
+            {
+                TransactionHash = TransactionHash,
+                TransactionHeight = TransactionHeight,
+                Items = new Dictionary<ushort, uint>(Items)
+            };
+        }
 
         public override void Deserialize(BinaryReader reader)
         {
@@ -26,6 +36,13 @@ namespace Neo.Core
                 uint height = reader.ReadUInt32();
                 Items.Add(index, height);
             }
+        }
+
+        void ICloneable<SpentCoinState>.FromReplica(SpentCoinState replica)
+        {
+            TransactionHash = replica.TransactionHash;
+            TransactionHeight = replica.TransactionHeight;
+            Items = replica.Items;
         }
 
         public override void Serialize(BinaryWriter writer)

@@ -14,6 +14,7 @@
         public const byte ST_Storage = 0x70;
 
         public const byte IX_HeaderHashList = 0x80;
+        public const byte IX_ValidatorsCount = 0x90;
 
         public const byte SYS_CurrentBlock = 0xc0;
         public const byte SYS_CurrentHeader = 0xc1;

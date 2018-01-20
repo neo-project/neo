@@ -39,5 +39,4 @@ Coverage
 	* TransactionResult.cs
 	* UnspentCoinState.cs
 	* ValidatorState.cs
-	* VoteState.cs
 	* Witness.cs

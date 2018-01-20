@@ -23,6 +23,7 @@ namespace Neo.Core
         /// </summary>
         public const uint SecondsPerBlock = 15;
         public const uint DecrementInterval = 2000000;
+        public const uint MaxValidators = 1024;
         public static readonly uint[] GenerationAmount = { 8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
         /// <summary>
         /// 产生每个区块的时间间隔
@@ -258,9 +259,11 @@ namespace Neo.Core
 
         public abstract bool ContainsUnspent(UInt256 hash, ushort index);
 
-        public abstract DataCache<TKey, TValue> CreateCache<TKey, TValue>()
+        public abstract MetaDataCache<T> GetMetaData<T>() where T : class, ISerializable, new();
+
+        public abstract DataCache<TKey, TValue> GetStates<TKey, TValue>()
             where TKey : IEquatable<TKey>, ISerializable, new()
-            where TValue : class, ISerializable, new();
+            where TValue : StateBase, ICloneable<TValue>, new();
 
         public abstract void Dispose();
 
@@ -341,24 +344,95 @@ namespace Neo.Core
 
         public virtual IEnumerable<ECPoint> GetValidators(IEnumerable<Transaction> others)
         {
-            //TODO: 此处排序可能将耗费大量内存，考虑是否采用其它机制
-            VoteState[] votes = GetVotes(others).OrderBy(p => p.PublicKeys.Length).ToArray();
-            int validators_count = (int)votes.WeightedFilter(0.25, 0.75, p => p.Count.GetData(), (p, w) => new
+            DataCache<UInt160, AccountState> accounts = GetStates<UInt160, AccountState>();
+            DataCache<ECPoint, ValidatorState> validators = GetStates<ECPoint, ValidatorState>();
+            MetaDataCache<ValidatorsCountState> validators_count = GetMetaData<ValidatorsCountState>();
+            foreach (Transaction tx in others)
             {
-                ValidatorsCount = p.PublicKeys.Length,
-                Weight = w
-            }).WeightedAverage(p => p.ValidatorsCount, p => p.Weight);
-            validators_count = Math.Max(validators_count, StandbyValidators.Length);
-            Dictionary<ECPoint, Fixed8> validators = GetEnrollments().ToDictionary(p => p.PublicKey, p => Fixed8.Zero);
-            foreach (var vote in votes)
-            {
-                foreach (ECPoint pubkey in vote.PublicKeys.Take(validators_count))
+                foreach (TransactionOutput output in tx.Outputs)
                 {
-                    if (validators.ContainsKey(pubkey))
-                        validators[pubkey] += vote.Count;
+                    AccountState account = accounts.GetAndChange(output.ScriptHash, () => new AccountState(output.ScriptHash));
+                    if (account.Balances.ContainsKey(output.AssetId))
+                        account.Balances[output.AssetId] += output.Value;
+                    else
+                        account.Balances[output.AssetId] = output.Value;
+                    if (output.AssetId.Equals(GoverningToken.Hash) && account.Votes.Length > 0)
+                    {
+                        foreach (ECPoint pubkey in account.Votes)
+                            validators.GetAndChange(pubkey, () => new ValidatorState(pubkey)).Votes += output.Value;
+                        validators_count.GetAndChange().Votes[account.Votes.Length - 1] += output.Value;
+                    }
+                }
+                foreach (var group in tx.Inputs.GroupBy(p => p.PrevHash))
+                {
+                    Transaction tx_prev = GetTransaction(group.Key, out int height);
+                    foreach (CoinReference input in group)
+                    {
+                        TransactionOutput out_prev = tx_prev.Outputs[input.PrevIndex];
+                        AccountState account = accounts.GetAndChange(out_prev.ScriptHash);
+                        if (out_prev.AssetId.Equals(GoverningToken.Hash))
+                        {
+                            if (account.Votes.Length > 0)
+                            {
+                                foreach (ECPoint pubkey in account.Votes)
+                                {
+                                    ValidatorState validator = validators.GetAndChange(pubkey);
+                                    validator.Votes -= out_prev.Value;
+                                    if (!validator.Registered && validator.Votes.Equals(Fixed8.Zero))
+                                        validators.Delete(pubkey);
+                                }
+                                validators_count.GetAndChange().Votes[account.Votes.Length - 1] -= out_prev.Value;
+                            }
+                        }
+                        account.Balances[out_prev.AssetId] -= out_prev.Value;
+                    }
+                }
+                switch (tx)
+                {
+#pragma warning disable CS0612
+                    case EnrollmentTransaction tx_enrollment:
+                        validators.GetAndChange(tx_enrollment.PublicKey, () => new ValidatorState(tx_enrollment.PublicKey)).Registered = true;
+                        break;
+#pragma warning restore CS0612
+                    case StateTransaction tx_state:
+                        foreach (StateDescriptor descriptor in tx_state.Descriptors)
+                            switch (descriptor.Type)
+                            {
+                                case StateType.Account:
+                                    ProcessAccountStateDescriptor(descriptor, accounts, validators, validators_count);
+                                    break;
+                                case StateType.Validator:
+                                    ProcessValidatorStateDescriptor(descriptor, validators);
+                                    break;
+                            }
+                        break;
                 }
             }
-            return validators.OrderByDescending(p => p.Value).ThenBy(p => p.Key).Select(p => p.Key).Take(validators_count);
+            int count = (int)validators_count.Get().Votes.Select((p, i) => new
+            {
+                Count = i,
+                Votes = p
+            }).Where(p => p.Votes > Fixed8.Zero).ToArray().WeightedFilter(0.25, 0.75, p => p.Votes.GetData(), (p, w) => new
+            {
+                p.Count,
+                Weight = w
+            }).WeightedAverage(p => p.Count, p => p.Weight);
+            count = Math.Max(count, StandbyValidators.Length);
+            HashSet<ECPoint> sv = new HashSet<ECPoint>(StandbyValidators);
+            ECPoint[] pubkeys = validators.Find().Select(p => p.Value).Where(p => (p.Registered && p.Votes > Fixed8.Zero) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).ToArray();
+            IEnumerable<ECPoint> result;
+            if (pubkeys.Length == count)
+            {
+                result = pubkeys;
+            }
+            else
+            {
+                HashSet<ECPoint> hashSet = new HashSet<ECPoint>(pubkeys);
+                for (int i = 0; i < StandbyValidators.Length && hashSet.Count < count; i++)
+                    hashSet.Add(StandbyValidators[i]);
+                result = hashSet;
+            }
+            return result.OrderBy(p => p);
         }
 
         /// <summary>
@@ -429,18 +503,6 @@ namespace Neo.Core
 
         public abstract IEnumerable<TransactionOutput> GetUnspent(UInt256 hash);
 
-
-        /// <summary>
-        /// 获取选票信息
-        /// </summary>
-        /// <returns>返回一个选票列表，包含当前区块链中所有有效的选票</returns>
-        public IEnumerable<VoteState> GetVotes()
-        {
-            return GetVotes(Enumerable.Empty<Transaction>());
-        }
-
-        public abstract IEnumerable<VoteState> GetVotes(IEnumerable<Transaction> others);
-
         /// <summary>
         /// 判断交易是否双花
         /// </summary>
@@ -464,6 +526,49 @@ namespace Neo.Core
                 _validators.Clear();
             }
             PersistCompleted?.Invoke(this, block);
+        }
+
+        protected void ProcessAccountStateDescriptor(StateDescriptor descriptor, DataCache<UInt160, AccountState> accounts, DataCache<ECPoint, ValidatorState> validators, MetaDataCache<ValidatorsCountState> validators_count)
+        {
+            UInt160 hash = new UInt160(descriptor.Key);
+            AccountState account = accounts.GetAndChange(hash, () => new AccountState(hash));
+            switch (descriptor.Field)
+            {
+                case "Votes":
+                    Fixed8 balance = account.GetBalance(GoverningToken.Hash);
+                    foreach (ECPoint pubkey in account.Votes)
+                    {
+                        ValidatorState validator = validators.GetAndChange(pubkey);
+                        validator.Votes -= balance;
+                        if (!validator.Registered && validator.Votes.Equals(Fixed8.Zero))
+                            validators.Delete(pubkey);
+                    }
+                    ECPoint[] votes = descriptor.Value.AsSerializableArray<ECPoint>().Distinct().ToArray();
+                    if (votes.Length != account.Votes.Length)
+                    {
+                        ValidatorsCountState count_state = validators_count.GetAndChange();
+                        if (account.Votes.Length > 0)
+                            count_state.Votes[account.Votes.Length - 1] -= balance;
+                        if (votes.Length > 0)
+                            count_state.Votes[votes.Length - 1] += balance;
+                    }
+                    account.Votes = votes;
+                    foreach (ECPoint pubkey in account.Votes)
+                        validators.GetAndChange(pubkey, () => new ValidatorState(pubkey)).Votes += balance;
+                    break;
+            }
+        }
+
+        protected void ProcessValidatorStateDescriptor(StateDescriptor descriptor, DataCache<ECPoint, ValidatorState> validators)
+        {
+            ECPoint pubkey = ECPoint.DecodePoint(descriptor.Key, ECCurve.Secp256r1);
+            ValidatorState validator = validators.GetAndChange(pubkey, () => new ValidatorState(pubkey));
+            switch (descriptor.Field)
+            {
+                case "Registered":
+                    validator.Registered = BitConverter.ToBoolean(descriptor.Value, 0);
+                    break;
+            }
         }
 
         /// <summary>

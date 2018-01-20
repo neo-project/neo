@@ -36,6 +36,8 @@ namespace Neo.Core
         /// </summary>
         [ReflectionCache(typeof(ContractTransaction))]
         ContractTransaction = 0x80,
+        [ReflectionCache(typeof(StateTransaction))]
+        StateTransaction = 0x90,
         /// <summary>
         /// Publish scripts to the blockchain for being invoked later.
         /// </summary>
