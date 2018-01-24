@@ -34,12 +34,12 @@ namespace Neo.Network.Payloads
             try
             {
                 address = new IPAddress(reader.ReadBytes(16));
+                ushort port = reader.ReadBytes(2).Reverse().ToArray().ToUInt16(0);
             }
             catch (ArgumentException ex)
             {
                 throw new FormatException(ex.Message, ex);
             }
-            ushort port = reader.ReadBytes(2).Reverse().ToArray().ToUInt16(0);
             EndPoint = new IPEndPoint(address, port);
         }
 

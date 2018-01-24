@@ -479,7 +479,7 @@ namespace Neo.Network
                     Disconnect(false);
                     break;
                 }
-                catch (FormatException)
+                catch
                 {
                     Disconnect(true);
                     break;
