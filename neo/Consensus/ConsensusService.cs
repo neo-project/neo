@@ -257,7 +257,6 @@ namespace Neo.Consensus
             context.Nonce = message.Nonce;
             context.NextConsensus = message.NextConsensus;
             context.TransactionHashes = message.TransactionHashes;
-            if (context.TransactionHashes.Length > Settings.Default.MaxTransactionsPerBlock) return;
             context.Transactions = new Dictionary<UInt256, Transaction>();
             if (!Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
             context.Signatures = new byte[context.Validators.Length][];
