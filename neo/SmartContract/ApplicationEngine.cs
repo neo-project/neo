@@ -261,21 +261,29 @@ namespace Neo.SmartContract
                         OpCode nextOpcode = CurrentContext.NextInstruction;
 
                         gas_consumed = checked(gas_consumed + GetPrice(nextOpcode) * ratio);
-                        if (!testMode && gas_consumed > gas_amount) return false;
+                        if (!testMode && gas_consumed > gas_amount)
+                        {
+                            State |= VMState.FAULT;
+                            return false;
+                        }
 
-                        if (!CheckItemSize(nextOpcode)) return false;
-                        if (!CheckStackSize(nextOpcode)) return false;
-                        if (!CheckArraySize(nextOpcode)) return false;
-                        if (!CheckInvocationStack(nextOpcode)) return false;
-                        if (!CheckBigIntegers(nextOpcode)) return false;
-                        if (!CheckDynamicInvoke(nextOpcode)) return false;
+                        if (!CheckItemSize(nextOpcode) ||
+                            !CheckStackSize(nextOpcode) ||
+                            !CheckArraySize(nextOpcode) ||
+                            !CheckInvocationStack(nextOpcode) ||
+                            !CheckBigIntegers(nextOpcode) ||
+                            !CheckDynamicInvoke(nextOpcode))
+                        {
+                            State |= VMState.FAULT;
+                            return false;
+                        }
                     }
-
                     StepInto();
                 }
             }
             catch
             {
+                State |= VMState.FAULT;
                 return false;
             }
             return !State.HasFlag(VMState.FAULT);
