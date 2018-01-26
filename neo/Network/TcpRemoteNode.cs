@@ -75,11 +75,9 @@ namespace Neo.Network
             {
                 return await Message.DeserializeFromAsync(stream, source.Token);
             }
-            catch (ArgumentException) { }
-            catch (ObjectDisposedException) { }
-            catch (Exception ex) when (ex is FormatException || ex is IOException || ex is OperationCanceledException)
+            catch (Exception ex) 
             {
-                Disconnect(false);
+                Disconnect(!(ex is FormatException || ex is IOException || ex is OperationCanceledException));
             }
             finally
             {
@@ -102,10 +100,9 @@ namespace Neo.Network
                 await stream.WriteAsync(buffer, 0, buffer.Length, source.Token);
                 return true;
             }
-            catch (ObjectDisposedException) { }
-            catch (Exception ex) when (ex is IOException || ex is OperationCanceledException)
+            catch (Exception ex)
             {
-                Disconnect(false);
+                Disconnect(!(ex is FormatException || ex is IOException || ex is OperationCanceledException));
             }
             finally
             {
