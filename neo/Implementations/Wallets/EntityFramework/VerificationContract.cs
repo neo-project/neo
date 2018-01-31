@@ -59,7 +59,9 @@ namespace Neo.Implementations.Wallets.EntityFramework
         /// <param name="writer">存放序列化后的结果</param>
         public void Serialize(BinaryWriter writer)
         {
-            throw new NotSupportedException();
+            writer.Write(new UInt160());
+            writer.WriteVarBytes(ParameterList.Select(p => (byte)p).ToArray());
+            writer.WriteVarBytes(Script);
         }
     }
 }

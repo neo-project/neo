@@ -13,6 +13,8 @@ namespace Neo.Wallets
         public readonly byte[] PrivateKey;
         public readonly Cryptography.ECC.ECPoint PublicKey;
 
+        public UInt160 PublicKeyHash => PublicKey.EncodePoint(true).ToScriptHash();
+
         public KeyPair(byte[] privateKey)
         {
             if (privateKey.Length != 32 && privateKey.Length != 96 && privateKey.Length != 104)
