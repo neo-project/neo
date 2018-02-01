@@ -143,15 +143,17 @@ namespace Neo.SmartContract
         protected virtual bool Runtime_CheckWitness(ExecutionEngine engine)
         {
             byte[] hashOrPubkey = engine.EvaluationStack.Pop().GetByteArray();
+            
             bool result;
             if (hashOrPubkey.Length == 20)
                 result = CheckWitness(engine, new UInt160(hashOrPubkey));
             else if (hashOrPubkey.Length == 33)
                 result = CheckWitness(engine, ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1));
             else
-                return false;
+                result = false;
+            
             engine.EvaluationStack.Push(result);
-            return true;
+            return result;
         }
 
         protected virtual bool Runtime_Notify(ExecutionEngine engine)
