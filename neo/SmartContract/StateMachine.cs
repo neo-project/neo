@@ -2,6 +2,7 @@
 using Neo.Cryptography.ECC;
 using Neo.IO.Caching;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -148,22 +149,26 @@ namespace Neo.SmartContract
 
         private bool Asset_Renew(ExecutionEngine engine)
         {
-            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
-            if (asset == null) return false;
-            byte years = (byte)engine.EvaluationStack.Pop().GetBigInteger();
-            asset = assets.GetAndChange(asset.AssetId);
-            if (asset.Expiration < Blockchain.Default.Height + 1)
-                asset.Expiration = Blockchain.Default.Height + 1;
-            try
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                asset.Expiration = checked(asset.Expiration + years * 2000000u);
+                AssetState asset = _interface.GetInterface<AssetState>();
+                if (asset == null) return false;
+                byte years = (byte)engine.EvaluationStack.Pop().GetBigInteger();
+                asset = assets.GetAndChange(asset.AssetId);
+                if (asset.Expiration < Blockchain.Default.Height + 1)
+                    asset.Expiration = Blockchain.Default.Height + 1;
+                try
+                {
+                    asset.Expiration = checked(asset.Expiration + years * 2000000u);
+                }
+                catch (OverflowException)
+                {
+                    asset.Expiration = uint.MaxValue;
+                }
+                engine.EvaluationStack.Push(asset.Expiration);
+                return true;
             }
-            catch (OverflowException)
-            {
-                asset.Expiration = uint.MaxValue;
-            }
-            engine.EvaluationStack.Push(asset.Expiration);
-            return true;
+            return false;
         }
 
         private bool Contract_Create(ExecutionEngine engine)
@@ -264,14 +269,18 @@ namespace Neo.SmartContract
 
         private bool Contract_GetStorageContext(ExecutionEngine engine)
         {
-            ContractState contract = engine.EvaluationStack.Pop().GetInterface<ContractState>();
-            if (!contracts_created.TryGetValue(contract.ScriptHash, out UInt160 created)) return false;
-            if (!created.Equals(new UInt160(engine.CurrentContext.ScriptHash))) return false;
-            engine.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                ScriptHash = contract.ScriptHash
-            }));
-            return true;
+                ContractState contract = _interface.GetInterface<ContractState>();
+                if (!contracts_created.TryGetValue(contract.ScriptHash, out UInt160 created)) return false;
+                if (!created.Equals(new UInt160(engine.CurrentContext.ScriptHash))) return false;
+                engine.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
+                {
+                    ScriptHash = contract.ScriptHash
+                }));
+                return true;
+            }
+            return false;
         }
 
         private bool Contract_Destroy(ExecutionEngine engine)
@@ -288,44 +297,56 @@ namespace Neo.SmartContract
 
         protected override bool Storage_Get(ExecutionEngine engine)
         {
-            StorageContext context = engine.EvaluationStack.Pop().GetInterface<StorageContext>();
-            if (!CheckStorageContext(context)) return false;
-            byte[] key = engine.EvaluationStack.Pop().GetByteArray();
-            StorageItem item = storages.TryGet(new StorageKey
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                ScriptHash = context.ScriptHash,
-                Key = key
-            });
-            engine.EvaluationStack.Push(item?.Value ?? new byte[0]);
-            return true;
+                StorageContext context = _interface.GetInterface<StorageContext>();
+                if (!CheckStorageContext(context)) return false;
+                byte[] key = engine.EvaluationStack.Pop().GetByteArray();
+                StorageItem item = storages.TryGet(new StorageKey
+                {
+                    ScriptHash = context.ScriptHash,
+                    Key = key
+                });
+                engine.EvaluationStack.Push(item?.Value ?? new byte[0]);
+                return true;
+            }
+            return false;
         }
 
         private bool Storage_Put(ExecutionEngine engine)
         {
-            StorageContext context = engine.EvaluationStack.Pop().GetInterface<StorageContext>();
-            if (!CheckStorageContext(context)) return false;
-            byte[] key = engine.EvaluationStack.Pop().GetByteArray();
-            if (key.Length > 1024) return false;
-            byte[] value = engine.EvaluationStack.Pop().GetByteArray();
-            storages.GetAndChange(new StorageKey
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                ScriptHash = context.ScriptHash,
-                Key = key
-            }, () => new StorageItem()).Value = value;
-            return true;
+                StorageContext context = _interface.GetInterface<StorageContext>();
+                if (!CheckStorageContext(context)) return false;
+                byte[] key = engine.EvaluationStack.Pop().GetByteArray();
+                if (key.Length > 1024) return false;
+                byte[] value = engine.EvaluationStack.Pop().GetByteArray();
+                storages.GetAndChange(new StorageKey
+                {
+                    ScriptHash = context.ScriptHash,
+                    Key = key
+                }, () => new StorageItem()).Value = value;
+                return true;
+            }
+            return false;
         }
 
         private bool Storage_Delete(ExecutionEngine engine)
         {
-            StorageContext context = engine.EvaluationStack.Pop().GetInterface<StorageContext>();
-            if (!CheckStorageContext(context)) return false;
-            byte[] key = engine.EvaluationStack.Pop().GetByteArray();
-            storages.Delete(new StorageKey
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                ScriptHash = context.ScriptHash,
-                Key = key
-            });
-            return true;
+                StorageContext context = _interface.GetInterface<StorageContext>();
+                if (!CheckStorageContext(context)) return false;
+                byte[] key = engine.EvaluationStack.Pop().GetByteArray();
+                storages.Delete(new StorageKey
+                {
+                    ScriptHash = context.ScriptHash,
+                    Key = key
+                });
+                return true;
+            }
+            return false;
         }
     }
 }

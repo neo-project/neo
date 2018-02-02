@@ -1,6 +1,7 @@
 ﻿using Neo.Core;
 using Neo.IO.Caching;
 using Neo.VM;
+using Neo.VM.Types;
 using System.Numerics;
 using System.Text;
 
@@ -223,8 +224,10 @@ namespace Neo.SmartContract
                         break;
                     case OpCode.UNPACK:
                         StackItem item = EvaluationStack.Peek();
-                        if (!item.IsArray) return false;
-                        size = item.GetArray().Count;
+                        if (item is Array array)
+                            size = array.Count;
+                        else
+                            return false;
                         break;
                 }
             if (size == 0) return true;

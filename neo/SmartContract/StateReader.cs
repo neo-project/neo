@@ -1,10 +1,15 @@
 ﻿using Neo.Core;
 using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using VMArray = Neo.VM.Types.Array;
+using VMBoolean = Neo.VM.Types.Boolean;
 
 namespace Neo.SmartContract
 {
@@ -22,6 +27,8 @@ namespace Neo.SmartContract
             Register("Neo.Runtime.Notify", Runtime_Notify);
             Register("Neo.Runtime.Log", Runtime_Log);
             Register("Neo.Runtime.GetTime", Runtime_GetTime);
+            Register("Neo.Runtime.Serialize", Runtime_Serialize);
+            Register("Neo.Runtime.Deserialize", Runtime_Deserialize);
             Register("Neo.Blockchain.GetHeight", Blockchain_GetHeight);
             Register("Neo.Blockchain.GetHeader", Blockchain_GetHeader);
             Register("Neo.Blockchain.GetBlock", Blockchain_GetBlock);
@@ -176,6 +183,91 @@ namespace Neo.SmartContract
             return true;
         }
 
+        private void SerializeStackItem(StackItem item, BinaryWriter writer)
+        {
+            switch (item)
+            {
+                case ByteArray _:
+                    writer.Write((byte)StackItemType.ByteArray);
+                    writer.WriteVarBytes(item.GetByteArray());
+                    break;
+                case VMBoolean _:
+                    writer.Write((byte)StackItemType.Boolean);
+                    writer.Write(item.GetBoolean());
+                    break;
+                case Integer _:
+                    writer.Write((byte)StackItemType.Integer);
+                    writer.WriteVarBytes(item.GetByteArray());
+                    break;
+                case InteropInterface _:
+                    throw new NotSupportedException();
+                case VMArray array:
+                    if (array is Struct)
+                        writer.Write((byte)StackItemType.Struct);
+                    else
+                        writer.Write((byte)StackItemType.Array);
+                    writer.WriteVarInt(array.Count);
+                    foreach (StackItem subitem in array)
+                        SerializeStackItem(subitem, writer);
+                    break;
+            }
+        }
+
+        protected virtual bool Runtime_Serialize(ExecutionEngine engine)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms))
+            {
+                try
+                {
+                    SerializeStackItem(engine.EvaluationStack.Pop(), writer);
+                }
+                catch (NotSupportedException)
+                {
+                    return false;
+                }
+                writer.Flush();
+                engine.EvaluationStack.Push(ms.ToArray());
+            }
+            return true;
+        }
+
+        private StackItem DeserializeStackItem(BinaryReader reader)
+        {
+            StackItemType type = (StackItemType)reader.ReadByte();
+            switch (type)
+            {
+                case StackItemType.ByteArray:
+                    return new ByteArray(reader.ReadVarBytes());
+                case StackItemType.Boolean:
+                    return new VMBoolean(reader.ReadBoolean());
+                case StackItemType.Integer:
+                    return new Integer(new BigInteger(reader.ReadVarBytes()));
+                case StackItemType.Array:
+                case StackItemType.Struct:
+                    VMArray array = type == StackItemType.Struct ? new Struct() : new VMArray();
+                    ulong count = reader.ReadVarInt();
+                    while (count-- > 0)
+                        array.Add(DeserializeStackItem(reader));
+                    return array;
+                default:
+                    return null;
+            }
+        }
+
+        protected virtual bool Runtime_Deserialize(ExecutionEngine engine)
+        {
+            byte[] data = engine.EvaluationStack.Pop().GetByteArray();
+            using (MemoryStream ms = new MemoryStream(data, false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                StackItem item = DeserializeStackItem(reader);
+                if (item == null) return false;
+                engine.EvaluationStack.Push(item);
+            }
+            return true;
+        }
+
         protected virtual bool Blockchain_GetHeight(ExecutionEngine engine)
         {
             if (Blockchain.Default == null)
@@ -291,303 +383,451 @@ namespace Neo.SmartContract
 
         protected virtual bool Header_GetIndex(ExecutionEngine engine)
         {
-            BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
-            if (header == null) return false;
-            engine.EvaluationStack.Push(header.Index);
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                BlockBase header = _interface.GetInterface<BlockBase>();
+                if (header == null) return false;
+                engine.EvaluationStack.Push(header.Index);
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Header_GetHash(ExecutionEngine engine)
         {
-            BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
-            if (header == null) return false;
-            engine.EvaluationStack.Push(header.Hash.ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                BlockBase header = _interface.GetInterface<BlockBase>();
+                if (header == null) return false;
+                engine.EvaluationStack.Push(header.Hash.ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Header_GetVersion(ExecutionEngine engine)
         {
-            BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
-            if (header == null) return false;
-            engine.EvaluationStack.Push(header.Version);
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                BlockBase header = _interface.GetInterface<BlockBase>();
+                if (header == null) return false;
+                engine.EvaluationStack.Push(header.Version);
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Header_GetPrevHash(ExecutionEngine engine)
         {
-            BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
-            if (header == null) return false;
-            engine.EvaluationStack.Push(header.PrevHash.ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                BlockBase header = _interface.GetInterface<BlockBase>();
+                if (header == null) return false;
+                engine.EvaluationStack.Push(header.PrevHash.ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Header_GetMerkleRoot(ExecutionEngine engine)
         {
-            BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
-            if (header == null) return false;
-            engine.EvaluationStack.Push(header.MerkleRoot.ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                BlockBase header = _interface.GetInterface<BlockBase>();
+                if (header == null) return false;
+                engine.EvaluationStack.Push(header.MerkleRoot.ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Header_GetTimestamp(ExecutionEngine engine)
         {
-            BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
-            if (header == null) return false;
-            engine.EvaluationStack.Push(header.Timestamp);
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                BlockBase header = _interface.GetInterface<BlockBase>();
+                if (header == null) return false;
+                engine.EvaluationStack.Push(header.Timestamp);
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Header_GetConsensusData(ExecutionEngine engine)
         {
-            BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
-            if (header == null) return false;
-            engine.EvaluationStack.Push(header.ConsensusData);
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                BlockBase header = _interface.GetInterface<BlockBase>();
+                if (header == null) return false;
+                engine.EvaluationStack.Push(header.ConsensusData);
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Header_GetNextConsensus(ExecutionEngine engine)
         {
-            BlockBase header = engine.EvaluationStack.Pop().GetInterface<BlockBase>();
-            if (header == null) return false;
-            engine.EvaluationStack.Push(header.NextConsensus.ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                BlockBase header = _interface.GetInterface<BlockBase>();
+                if (header == null) return false;
+                engine.EvaluationStack.Push(header.NextConsensus.ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Block_GetTransactionCount(ExecutionEngine engine)
         {
-            Block block = engine.EvaluationStack.Pop().GetInterface<Block>();
-            if (block == null) return false;
-            engine.EvaluationStack.Push(block.Transactions.Length);
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Block block = _interface.GetInterface<Block>();
+                if (block == null) return false;
+                engine.EvaluationStack.Push(block.Transactions.Length);
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Block_GetTransactions(ExecutionEngine engine)
         {
-            Block block = engine.EvaluationStack.Pop().GetInterface<Block>();
-            if (block == null) return false;
-            engine.EvaluationStack.Push(block.Transactions.Select(p => StackItem.FromInterface(p)).ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Block block = _interface.GetInterface<Block>();
+                if (block == null) return false;
+                engine.EvaluationStack.Push(block.Transactions.Select(p => StackItem.FromInterface(p)).ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Block_GetTransaction(ExecutionEngine engine)
         {
-            Block block = engine.EvaluationStack.Pop().GetInterface<Block>();
-            int index = (int)engine.EvaluationStack.Pop().GetBigInteger();
-            if (block == null) return false;
-            if (index < 0 || index >= block.Transactions.Length) return false;
-            Transaction tx = block.Transactions[index];
-            engine.EvaluationStack.Push(StackItem.FromInterface(tx));
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Block block = _interface.GetInterface<Block>();
+                int index = (int)engine.EvaluationStack.Pop().GetBigInteger();
+                if (block == null) return false;
+                if (index < 0 || index >= block.Transactions.Length) return false;
+                Transaction tx = block.Transactions[index];
+                engine.EvaluationStack.Push(StackItem.FromInterface(tx));
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Transaction_GetHash(ExecutionEngine engine)
         {
-            Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
-            if (tx == null) return false;
-            engine.EvaluationStack.Push(tx.Hash.ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Transaction tx = _interface.GetInterface<Transaction>();
+                if (tx == null) return false;
+                engine.EvaluationStack.Push(tx.Hash.ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Transaction_GetType(ExecutionEngine engine)
         {
-            Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
-            if (tx == null) return false;
-            engine.EvaluationStack.Push((int)tx.Type);
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Transaction tx = _interface.GetInterface<Transaction>();
+                if (tx == null) return false;
+                engine.EvaluationStack.Push((int)tx.Type);
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Transaction_GetAttributes(ExecutionEngine engine)
         {
-            Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
-            if (tx == null) return false;
-            engine.EvaluationStack.Push(tx.Attributes.Select(p => StackItem.FromInterface(p)).ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Transaction tx = _interface.GetInterface<Transaction>();
+                if (tx == null) return false;
+                engine.EvaluationStack.Push(tx.Attributes.Select(p => StackItem.FromInterface(p)).ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Transaction_GetInputs(ExecutionEngine engine)
         {
-            Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
-            if (tx == null) return false;
-            engine.EvaluationStack.Push(tx.Inputs.Select(p => StackItem.FromInterface(p)).ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Transaction tx = _interface.GetInterface<Transaction>();
+                if (tx == null) return false;
+                engine.EvaluationStack.Push(tx.Inputs.Select(p => StackItem.FromInterface(p)).ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Transaction_GetOutputs(ExecutionEngine engine)
         {
-            Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
-            if (tx == null) return false;
-            engine.EvaluationStack.Push(tx.Outputs.Select(p => StackItem.FromInterface(p)).ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Transaction tx = _interface.GetInterface<Transaction>();
+                if (tx == null) return false;
+                engine.EvaluationStack.Push(tx.Outputs.Select(p => StackItem.FromInterface(p)).ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Transaction_GetReferences(ExecutionEngine engine)
         {
-            Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
-            if (tx == null) return false;
-            engine.EvaluationStack.Push(tx.Inputs.Select(p => StackItem.FromInterface(tx.References[p])).ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Transaction tx = _interface.GetInterface<Transaction>();
+                if (tx == null) return false;
+                engine.EvaluationStack.Push(tx.Inputs.Select(p => StackItem.FromInterface(tx.References[p])).ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Transaction_GetUnspentCoins(ExecutionEngine engine)
         {
-            Transaction tx = engine.EvaluationStack.Pop().GetInterface<Transaction>();
-            if (tx == null) return false;
-            engine.EvaluationStack.Push(Blockchain.Default.GetUnspent(tx.Hash).Select(p => StackItem.FromInterface(p)).ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Transaction tx = _interface.GetInterface<Transaction>();
+                if (tx == null) return false;
+                engine.EvaluationStack.Push(Blockchain.Default.GetUnspent(tx.Hash).Select(p => StackItem.FromInterface(p)).ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Attribute_GetUsage(ExecutionEngine engine)
         {
-            TransactionAttribute attr = engine.EvaluationStack.Pop().GetInterface<TransactionAttribute>();
-            if (attr == null) return false;
-            engine.EvaluationStack.Push((int)attr.Usage);
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                TransactionAttribute attr = _interface.GetInterface<TransactionAttribute>();
+                if (attr == null) return false;
+                engine.EvaluationStack.Push((int)attr.Usage);
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Attribute_GetData(ExecutionEngine engine)
         {
-            TransactionAttribute attr = engine.EvaluationStack.Pop().GetInterface<TransactionAttribute>();
-            if (attr == null) return false;
-            engine.EvaluationStack.Push(attr.Data);
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                TransactionAttribute attr = _interface.GetInterface<TransactionAttribute>();
+                if (attr == null) return false;
+                engine.EvaluationStack.Push(attr.Data);
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Input_GetHash(ExecutionEngine engine)
         {
-            CoinReference input = engine.EvaluationStack.Pop().GetInterface<CoinReference>();
-            if (input == null) return false;
-            engine.EvaluationStack.Push(input.PrevHash.ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                CoinReference input = _interface.GetInterface<CoinReference>();
+                if (input == null) return false;
+                engine.EvaluationStack.Push(input.PrevHash.ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Input_GetIndex(ExecutionEngine engine)
         {
-            CoinReference input = engine.EvaluationStack.Pop().GetInterface<CoinReference>();
-            if (input == null) return false;
-            engine.EvaluationStack.Push((int)input.PrevIndex);
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                CoinReference input = _interface.GetInterface<CoinReference>();
+                if (input == null) return false;
+                engine.EvaluationStack.Push((int)input.PrevIndex);
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Output_GetAssetId(ExecutionEngine engine)
         {
-            TransactionOutput output = engine.EvaluationStack.Pop().GetInterface<TransactionOutput>();
-            if (output == null) return false;
-            engine.EvaluationStack.Push(output.AssetId.ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                TransactionOutput output = _interface.GetInterface<TransactionOutput>();
+                if (output == null) return false;
+                engine.EvaluationStack.Push(output.AssetId.ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Output_GetValue(ExecutionEngine engine)
         {
-            TransactionOutput output = engine.EvaluationStack.Pop().GetInterface<TransactionOutput>();
-            if (output == null) return false;
-            engine.EvaluationStack.Push(output.Value.GetData());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                TransactionOutput output = _interface.GetInterface<TransactionOutput>();
+                if (output == null) return false;
+                engine.EvaluationStack.Push(output.Value.GetData());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Output_GetScriptHash(ExecutionEngine engine)
         {
-            TransactionOutput output = engine.EvaluationStack.Pop().GetInterface<TransactionOutput>();
-            if (output == null) return false;
-            engine.EvaluationStack.Push(output.ScriptHash.ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                TransactionOutput output = _interface.GetInterface<TransactionOutput>();
+                if (output == null) return false;
+                engine.EvaluationStack.Push(output.ScriptHash.ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Account_GetScriptHash(ExecutionEngine engine)
         {
-            AccountState account = engine.EvaluationStack.Pop().GetInterface<AccountState>();
-            if (account == null) return false;
-            engine.EvaluationStack.Push(account.ScriptHash.ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                AccountState account = _interface.GetInterface<AccountState>();
+                if (account == null) return false;
+                engine.EvaluationStack.Push(account.ScriptHash.ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Account_GetVotes(ExecutionEngine engine)
         {
-            AccountState account = engine.EvaluationStack.Pop().GetInterface<AccountState>();
-            if (account == null) return false;
-            engine.EvaluationStack.Push(account.Votes.Select(p => (StackItem)p.EncodePoint(true)).ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                AccountState account = _interface.GetInterface<AccountState>();
+                if (account == null) return false;
+                engine.EvaluationStack.Push(account.Votes.Select(p => (StackItem)p.EncodePoint(true)).ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Account_GetBalance(ExecutionEngine engine)
         {
-            AccountState account = engine.EvaluationStack.Pop().GetInterface<AccountState>();
-            UInt256 asset_id = new UInt256(engine.EvaluationStack.Pop().GetByteArray());
-            if (account == null) return false;
-            Fixed8 balance = account.Balances.TryGetValue(asset_id, out Fixed8 value) ? value : Fixed8.Zero;
-            engine.EvaluationStack.Push(balance.GetData());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                AccountState account = _interface.GetInterface<AccountState>();
+                UInt256 asset_id = new UInt256(engine.EvaluationStack.Pop().GetByteArray());
+                if (account == null) return false;
+                Fixed8 balance = account.Balances.TryGetValue(asset_id, out Fixed8 value) ? value : Fixed8.Zero;
+                engine.EvaluationStack.Push(balance.GetData());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Asset_GetAssetId(ExecutionEngine engine)
         {
-            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
-            if (asset == null) return false;
-            engine.EvaluationStack.Push(asset.AssetId.ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                AssetState asset = _interface.GetInterface<AssetState>();
+                if (asset == null) return false;
+                engine.EvaluationStack.Push(asset.AssetId.ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Asset_GetAssetType(ExecutionEngine engine)
         {
-            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
-            if (asset == null) return false;
-            engine.EvaluationStack.Push((int)asset.AssetType);
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                AssetState asset = _interface.GetInterface<AssetState>();
+                if (asset == null) return false;
+                engine.EvaluationStack.Push((int)asset.AssetType);
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Asset_GetAmount(ExecutionEngine engine)
         {
-            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
-            if (asset == null) return false;
-            engine.EvaluationStack.Push(asset.Amount.GetData());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                AssetState asset = _interface.GetInterface<AssetState>();
+                if (asset == null) return false;
+                engine.EvaluationStack.Push(asset.Amount.GetData());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Asset_GetAvailable(ExecutionEngine engine)
         {
-            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
-            if (asset == null) return false;
-            engine.EvaluationStack.Push(asset.Available.GetData());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                AssetState asset = _interface.GetInterface<AssetState>();
+                if (asset == null) return false;
+                engine.EvaluationStack.Push(asset.Available.GetData());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Asset_GetPrecision(ExecutionEngine engine)
         {
-            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
-            if (asset == null) return false;
-            engine.EvaluationStack.Push((int)asset.Precision);
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                AssetState asset = _interface.GetInterface<AssetState>();
+                if (asset == null) return false;
+                engine.EvaluationStack.Push((int)asset.Precision);
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Asset_GetOwner(ExecutionEngine engine)
         {
-            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
-            if (asset == null) return false;
-            engine.EvaluationStack.Push(asset.Owner.EncodePoint(true));
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                AssetState asset = _interface.GetInterface<AssetState>();
+                if (asset == null) return false;
+                engine.EvaluationStack.Push(asset.Owner.EncodePoint(true));
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Asset_GetAdmin(ExecutionEngine engine)
         {
-            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
-            if (asset == null) return false;
-            engine.EvaluationStack.Push(asset.Admin.ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                AssetState asset = _interface.GetInterface<AssetState>();
+                if (asset == null) return false;
+                engine.EvaluationStack.Push(asset.Admin.ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Asset_GetIssuer(ExecutionEngine engine)
         {
-            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
-            if (asset == null) return false;
-            engine.EvaluationStack.Push(asset.Issuer.ToArray());
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                AssetState asset = _interface.GetInterface<AssetState>();
+                if (asset == null) return false;
+                engine.EvaluationStack.Push(asset.Issuer.ToArray());
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Contract_GetScript(ExecutionEngine engine)
         {
-            ContractState contract = engine.EvaluationStack.Pop().GetInterface<ContractState>();
-            if (contract == null) return false;
-            engine.EvaluationStack.Push(contract.Script);
-            return true;
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                ContractState contract = _interface.GetInterface<ContractState>();
+                if (contract == null) return false;
+                engine.EvaluationStack.Push(contract.Script);
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Storage_GetContext(ExecutionEngine engine)
@@ -601,18 +841,22 @@ namespace Neo.SmartContract
 
         protected virtual bool Storage_Get(ExecutionEngine engine)
         {
-            StorageContext context = engine.EvaluationStack.Pop().GetInterface<StorageContext>();
-            ContractState contract = Blockchain.Default.GetContract(context.ScriptHash);
-            if (contract == null) return false;
-            if (!contract.HasStorage) return false;
-            byte[] key = engine.EvaluationStack.Pop().GetByteArray();
-            StorageItem item = Blockchain.Default.GetStorageItem(new StorageKey
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                ScriptHash = context.ScriptHash,
-                Key = key
-            });
-            engine.EvaluationStack.Push(item?.Value ?? new byte[0]);
-            return true;
+                StorageContext context = _interface.GetInterface<StorageContext>();
+                ContractState contract = Blockchain.Default.GetContract(context.ScriptHash);
+                if (contract == null) return false;
+                if (!contract.HasStorage) return false;
+                byte[] key = engine.EvaluationStack.Pop().GetByteArray();
+                StorageItem item = Blockchain.Default.GetStorageItem(new StorageKey
+                {
+                    ScriptHash = context.ScriptHash,
+                    Key = key
+                });
+                engine.EvaluationStack.Push(item?.Value ?? new byte[0]);
+                return true;
+            }
+            return false;
         }
     }
 }
