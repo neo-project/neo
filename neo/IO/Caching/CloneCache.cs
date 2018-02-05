@@ -14,6 +14,11 @@ namespace Neo.IO.Caching
             this.innerCache = innerCache;
         }
 
+
+        public override IEnumerable<KeyValuePair<TKey, TValue>> GetEnumerator() {
+            return innerCache.GetEnumerator();
+        }
+
         protected override void AddInternal(TKey key, TValue value)
         {
             innerCache.Add(key, value);
