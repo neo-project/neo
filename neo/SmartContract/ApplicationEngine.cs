@@ -428,11 +428,13 @@ namespace Neo.SmartContract
             DataCache<UInt160, ContractState> contracts = Blockchain.Default.GetStates<UInt160, ContractState>();
             DataCache<StorageKey, StorageItem> storages = Blockchain.Default.GetStates<StorageKey, StorageItem>();
             CachedScriptTable script_table = new CachedScriptTable(contracts);
-            StateMachine service = new StateMachine(persisting_block, accounts, assets, contracts, storages);
-            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, script_table, service, Fixed8.Zero, true);
-            engine.LoadScript(script, false);
-            engine.Execute();
-            return engine;
+            using (StateMachine service = new StateMachine(persisting_block, accounts, assets, contracts, storages))
+            {
+                ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, script_table, service, Fixed8.Zero, true);
+                engine.LoadScript(script, false);
+                engine.Execute();
+                return engine;
+            }
         }
     }
 }

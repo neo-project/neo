@@ -558,14 +558,16 @@ namespace Neo.Implementations.Blockchains.LevelDB
 #pragma warning restore CS0612
                     case InvocationTransaction tx_invocation:
                         CachedScriptTable script_table = new CachedScriptTable(contracts);
-                        StateMachine service = new StateMachine(block, accounts, assets, contracts, storages);
-                        ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, script_table, service, tx_invocation.Gas);
-                        engine.LoadScript(tx_invocation.Script, false);
-                        if (engine.Execute())
+                        using (StateMachine service = new StateMachine(block, accounts, assets, contracts, storages))
                         {
-                            service.Commit();
+                            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, script_table, service, tx_invocation.Gas);
+                            engine.LoadScript(tx_invocation.Script, false);
+                            if (engine.Execute())
+                            {
+                                service.Commit();
+                            }
+                            ApplicationExecuted?.Invoke(this, new ApplicationExecutedEventArgs(tx_invocation, service.Notifications.ToArray(), engine));
                         }
-                        ApplicationExecuted?.Invoke(this, new ApplicationExecutedEventArgs(tx_invocation, service.Notifications.ToArray(), engine));
                         break;
                 }
             }
