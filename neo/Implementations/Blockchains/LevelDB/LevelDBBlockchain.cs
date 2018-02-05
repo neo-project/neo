@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using Iterator = Neo.IO.Data.LevelDB.Iterator;
 
 namespace Neo.Implementations.Blockchains.LevelDB
 {

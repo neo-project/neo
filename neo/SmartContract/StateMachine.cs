@@ -19,9 +19,11 @@ namespace Neo.SmartContract
         private readonly DataCache<StorageKey, StorageItem> storages;
 
         private Dictionary<UInt160, UInt160> contracts_created = new Dictionary<UInt160, UInt160>();
-        private List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
 
-        public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
+        protected override DataCache<UInt160, AccountState> Accounts => accounts;
+        protected override DataCache<UInt256, AssetState> Assets => assets;
+        protected override DataCache<UInt160, ContractState> Contracts => contracts;
+        protected override DataCache<StorageKey, StorageItem> Storages => storages;
 
         public StateMachine(Block persisting_block, DataCache<UInt160, AccountState> accounts, DataCache<UInt256, AssetState> assets, DataCache<UInt160, ContractState> contracts, DataCache<StorageKey, StorageItem> storages)
         {
@@ -30,7 +32,6 @@ namespace Neo.SmartContract
             this.assets = assets.CreateSnapshot();
             this.contracts = contracts.CreateSnapshot();
             this.storages = storages.CreateSnapshot();
-            Notify += StateMachine_Notify;
             Register("Neo.Asset.Create", Asset_Create);
             Register("Neo.Asset.Renew", Asset_Renew);
             Register("Neo.Contract.Create", Contract_Create);
@@ -51,14 +52,6 @@ namespace Neo.SmartContract
             #endregion
         }
 
-        private bool CheckStorageContext(StorageContext context)
-        {
-            ContractState contract = contracts.TryGet(context.ScriptHash);
-            if (contract == null) return false;
-            if (!contract.HasStorage) return false;
-            return true;
-        }
-
         public void Commit()
         {
             accounts.Commit();
@@ -67,39 +60,9 @@ namespace Neo.SmartContract
             storages.Commit();
         }
 
-        private void StateMachine_Notify(object sender, NotifyEventArgs e)
-        {
-            notifications.Add(e);
-        }
-
         protected override bool Runtime_GetTime(ExecutionEngine engine)
         {
             engine.EvaluationStack.Push(persisting_block.Timestamp);
-            return true;
-        }
-
-        protected override bool Blockchain_GetAccount(ExecutionEngine engine)
-        {
-            UInt160 hash = new UInt160(engine.EvaluationStack.Pop().GetByteArray());
-            engine.EvaluationStack.Push(StackItem.FromInterface(accounts[hash]));
-            return true;
-        }
-
-        protected override bool Blockchain_GetAsset(ExecutionEngine engine)
-        {
-            UInt256 hash = new UInt256(engine.EvaluationStack.Pop().GetByteArray());
-            AssetState asset = assets.TryGet(hash);
-            if (asset == null) return false;
-            engine.EvaluationStack.Push(StackItem.FromInterface(asset));
-            return true;
-        }
-
-        protected override bool Blockchain_GetContract(ExecutionEngine engine)
-        {
-            UInt160 hash = new UInt160(engine.EvaluationStack.Pop().GetByteArray());
-            ContractState contract = contracts.TryGet(hash);
-            if (contract == null) return false;
-            engine.EvaluationStack.Push(StackItem.FromInterface(contract));
             return true;
         }
 
@@ -293,24 +256,6 @@ namespace Neo.SmartContract
                 foreach (var pair in storages.Find(hash.ToArray()))
                     storages.Delete(pair.Key);
             return true;
-        }
-
-        protected override bool Storage_Get(ExecutionEngine engine)
-        {
-            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                StorageContext context = _interface.GetInterface<StorageContext>();
-                if (!CheckStorageContext(context)) return false;
-                byte[] key = engine.EvaluationStack.Pop().GetByteArray();
-                StorageItem item = storages.TryGet(new StorageKey
-                {
-                    ScriptHash = context.ScriptHash,
-                    Key = key
-                });
-                engine.EvaluationStack.Push(item?.Value ?? new byte[0]);
-                return true;
-            }
-            return false;
         }
 
         private bool Storage_Put(ExecutionEngine engine)

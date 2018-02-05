@@ -1,9 +1,11 @@
 ﻿using Neo.Core;
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.IO.Caching;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -13,12 +15,59 @@ using VMBoolean = Neo.VM.Types.Boolean;
 
 namespace Neo.SmartContract
 {
-    public class StateReader : InteropService
+    public class StateReader : InteropService, IDisposable
     {
-        public event EventHandler<NotifyEventArgs> Notify;
-        public event EventHandler<LogEventArgs> Log;
+        public static event EventHandler<NotifyEventArgs> Notify;
+        public static event EventHandler<LogEventArgs> Log;
 
-        public static readonly StateReader Default = new StateReader();
+        private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
+        private readonly List<IDisposable> disposables = new List<IDisposable>();
+
+        public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
+
+        private DataCache<UInt160, AccountState> _accounts;
+        protected virtual DataCache<UInt160, AccountState> Accounts
+        {
+            get
+            {
+                if (_accounts == null)
+                    _accounts = Blockchain.Default.GetStates<UInt160, AccountState>();
+                return _accounts;
+            }
+        }
+
+        private DataCache<UInt256, AssetState> _assets;
+        protected virtual DataCache<UInt256, AssetState> Assets
+        {
+            get
+            {
+                if (_assets == null)
+                    _assets = Blockchain.Default.GetStates<UInt256, AssetState>();
+                return _assets;
+            }
+        }
+
+        private DataCache<UInt160, ContractState> _contracts;
+        protected virtual DataCache<UInt160, ContractState> Contracts
+        {
+            get
+            {
+                if (_contracts == null)
+                    _contracts = Blockchain.Default.GetStates<UInt160, ContractState>();
+                return _contracts;
+            }
+        }
+
+        private DataCache<StorageKey, StorageItem> _storages;
+        protected virtual DataCache<StorageKey, StorageItem> Storages
+        {
+            get
+            {
+                if (_storages == null)
+                    _storages = Blockchain.Default.GetStates<StorageKey, StorageItem>();
+                return _storages;
+            }
+        }
 
         public StateReader()
         {
@@ -76,6 +125,10 @@ namespace Neo.SmartContract
             Register("Neo.Contract.GetScript", Contract_GetScript);
             Register("Neo.Storage.GetContext", Storage_GetContext);
             Register("Neo.Storage.Get", Storage_Get);
+            Register("Neo.Storage.Find", Storage_Find);
+            Register("Neo.Iterator.Next", Iterator_Next);
+            Register("Neo.Iterator.Key", Iterator_Key);
+            Register("Neo.Iterator.Value", Iterator_Value);
             #region Old AntShares APIs
             Register("AntShares.Runtime.CheckWitness", Runtime_CheckWitness);
             Register("AntShares.Runtime.Notify", Runtime_Notify);
@@ -128,6 +181,21 @@ namespace Neo.SmartContract
             #endregion
         }
 
+        internal bool CheckStorageContext(StorageContext context)
+        {
+            ContractState contract = Contracts.TryGet(context.ScriptHash);
+            if (contract == null) return false;
+            if (!contract.HasStorage) return false;
+            return true;
+        }
+
+        public void Dispose()
+        {
+            foreach (IDisposable disposable in disposables)
+                disposable.Dispose();
+            disposables.Clear();
+        }
+
         protected virtual bool Runtime_GetTrigger(ExecutionEngine engine)
         {
             ApplicationEngine app_engine = (ApplicationEngine)engine;
@@ -164,7 +232,9 @@ namespace Neo.SmartContract
         protected virtual bool Runtime_Notify(ExecutionEngine engine)
         {
             StackItem state = engine.EvaluationStack.Pop();
-            Notify?.Invoke(this, new NotifyEventArgs(engine.ScriptContainer, new UInt160(engine.CurrentContext.ScriptHash), state));
+            NotifyEventArgs notification = new NotifyEventArgs(engine.ScriptContainer, new UInt160(engine.CurrentContext.ScriptHash), state);
+            Notify?.Invoke(this, notification);
+            notifications.Add(notification);
             return true;
         }
 
@@ -351,8 +421,8 @@ namespace Neo.SmartContract
 
         protected virtual bool Blockchain_GetAccount(ExecutionEngine engine)
         {
-            byte[] hash = engine.EvaluationStack.Pop().GetByteArray();
-            AccountState account = Blockchain.Default?.GetAccountState(new UInt160(hash));
+            UInt160 hash = new UInt160(engine.EvaluationStack.Pop().GetByteArray());
+            AccountState account = Accounts.GetOrAdd(hash, () => new AccountState(hash));
             engine.EvaluationStack.Push(StackItem.FromInterface(account));
             return true;
         }
@@ -366,8 +436,9 @@ namespace Neo.SmartContract
 
         protected virtual bool Blockchain_GetAsset(ExecutionEngine engine)
         {
-            byte[] hash = engine.EvaluationStack.Pop().GetByteArray();
-            AssetState asset = Blockchain.Default?.GetAssetState(new UInt256(hash));
+            UInt256 hash = new UInt256(engine.EvaluationStack.Pop().GetByteArray());
+            AssetState asset = Assets.TryGet(hash);
+            if (asset == null) return false;
             engine.EvaluationStack.Push(StackItem.FromInterface(asset));
             return true;
         }
@@ -375,7 +446,7 @@ namespace Neo.SmartContract
         protected virtual bool Blockchain_GetContract(ExecutionEngine engine)
         {
             UInt160 hash = new UInt160(engine.EvaluationStack.Pop().GetByteArray());
-            ContractState contract = Blockchain.Default.GetContract(hash);
+            ContractState contract = Contracts.TryGet(hash);
             if (contract == null) return false;
             engine.EvaluationStack.Push(StackItem.FromInterface(contract));
             return true;
@@ -844,16 +915,63 @@ namespace Neo.SmartContract
             if (engine.EvaluationStack.Pop() is InteropInterface _interface)
             {
                 StorageContext context = _interface.GetInterface<StorageContext>();
-                ContractState contract = Blockchain.Default.GetContract(context.ScriptHash);
-                if (contract == null) return false;
-                if (!contract.HasStorage) return false;
+                if (!CheckStorageContext(context)) return false;
                 byte[] key = engine.EvaluationStack.Pop().GetByteArray();
-                StorageItem item = Blockchain.Default.GetStorageItem(new StorageKey
+                StorageItem item = Storages.TryGet(new StorageKey
                 {
                     ScriptHash = context.ScriptHash,
                     Key = key
                 });
                 engine.EvaluationStack.Push(item?.Value ?? new byte[0]);
+                return true;
+            }
+            return false;
+        }
+
+        protected virtual bool Storage_Find(ExecutionEngine engine)
+        {
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                StorageContext context = _interface.GetInterface<StorageContext>();
+                if (!CheckStorageContext(context)) return false;
+                byte[] prefix = engine.EvaluationStack.Pop().GetByteArray();
+                prefix = context.ScriptHash.ToArray().Concat(prefix).ToArray();
+                StorageIterator iterator = new StorageIterator(Storages.Find(prefix).GetEnumerator());
+                engine.EvaluationStack.Push(StackItem.FromInterface(iterator));
+                disposables.Add(iterator);
+                return true;
+            }
+            return false;
+        }
+
+        protected virtual bool Iterator_Next(ExecutionEngine engine)
+        {
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Iterator iterator = _interface.GetInterface<Iterator>();
+                engine.EvaluationStack.Push(iterator.Next());
+                return true;
+            }
+            return false;
+        }
+
+        protected virtual bool Iterator_Key(ExecutionEngine engine)
+        {
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Iterator iterator = _interface.GetInterface<Iterator>();
+                engine.EvaluationStack.Push(iterator.Key());
+                return true;
+            }
+            return false;
+        }
+
+        protected virtual bool Iterator_Value(ExecutionEngine engine)
+        {
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Iterator iterator = _interface.GetInterface<Iterator>();
+                engine.EvaluationStack.Push(iterator.Value());
                 return true;
             }
             return false;
