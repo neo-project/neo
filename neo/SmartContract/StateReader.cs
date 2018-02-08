@@ -104,7 +104,6 @@ namespace Neo.SmartContract
             Register("Neo.Transaction.GetOutputs", Transaction_GetOutputs);
             Register("Neo.Transaction.GetReferences", Transaction_GetReferences);
             Register("Neo.Transaction.GetUnspentCoins", Transaction_GetUnspentCoins);
-            Register("Neo.Transaction.GetUnspentCoins", Transaction_GetUnspentCoins);
             Register("Neo.InvocationTransaction.GetScript", InvocationTransaction_GetScript);
             Register("Neo.Attribute.GetUsage", Attribute_GetUsage);
             Register("Neo.Attribute.GetData", Attribute_GetData);
