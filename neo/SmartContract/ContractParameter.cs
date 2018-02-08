@@ -165,7 +165,7 @@ namespace Neo.SmartContract
                 case byte[] data:
                     return data.ToHexString();
                 case UIntBase data:
-                    return $"0x{data}";
+                    return $"{data}";
                 case IList<ContractParameter> data:
                     StringBuilder sb = new StringBuilder();
                     sb.Append('[');
