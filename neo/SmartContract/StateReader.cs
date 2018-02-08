@@ -104,6 +104,7 @@ namespace Neo.SmartContract
             Register("Neo.Transaction.GetOutputs", Transaction_GetOutputs);
             Register("Neo.Transaction.GetReferences", Transaction_GetReferences);
             Register("Neo.Transaction.GetUnspentCoins", Transaction_GetUnspentCoins);
+            Register("Neo.InvocationTransaction.GetScript", InvocationTransaction_GetScript);
             Register("Neo.Attribute.GetUsage", Attribute_GetUsage);
             Register("Neo.Attribute.GetData", Attribute_GetData);
             Register("Neo.Input.GetHash", Input_GetHash);
@@ -666,6 +667,18 @@ namespace Neo.SmartContract
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
                 engine.EvaluationStack.Push(Blockchain.Default.GetUnspent(tx.Hash).Select(p => StackItem.FromInterface(p)).ToArray());
+                return true;
+            }
+            return false;
+        }
+
+        protected virtual bool InvocationTransaction_GetScript(ExecutionEngine engine)
+        {
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                InvocationTransaction tx = _interface.GetInterface<InvocationTransaction>();
+                if (tx == null) return false;
+                engine.EvaluationStack.Push(tx.Script);
                 return true;
             }
             return false;
