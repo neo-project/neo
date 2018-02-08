@@ -2,7 +2,7 @@
 
 namespace Neo.SmartContract
 {
-    public class StorageContext : IInteropInterface
+    internal class StorageContext : IInteropInterface
     {
         public UInt160 ScriptHash;
 
