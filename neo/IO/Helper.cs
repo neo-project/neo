@@ -9,9 +9,9 @@ namespace Neo.IO
 {
     public static class Helper
     {
-        public static T AsSerializable<T>(this byte[] value) where T : ISerializable, new()
+        public static T AsSerializable<T>(this byte[] value, int start = 0) where T : ISerializable, new()
         {
-            using (MemoryStream ms = new MemoryStream(value, false))
+            using (MemoryStream ms = new MemoryStream(value, start, value.Length - start, false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
                 return reader.ReadSerializable<T>();
@@ -29,6 +29,15 @@ namespace Neo.IO
                 serializable.Deserialize(reader);
             }
             return serializable;
+        }
+
+        public static T[] AsSerializableArray<T>(this byte[] value, int max = 0x10000000) where T : ISerializable, new()
+        {
+            using (MemoryStream ms = new MemoryStream(value, false))
+            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            {
+                return reader.ReadSerializableArray<T>(max);
+            }
         }
 
         internal static int GetVarSize(int value)
@@ -137,12 +146,23 @@ namespace Neo.IO
             }
         }
 
+        public static byte[] ToByteArray<T>(this T[] value) where T : ISerializable
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            {
+                writer.Write(value);
+                writer.Flush();
+                return ms.ToArray();
+            }
+        }
+
         public static void Write(this BinaryWriter writer, ISerializable value)
         {
             value.Serialize(writer);
         }
 
-        public static void Write(this BinaryWriter writer, ISerializable[] value)
+        public static void Write<T>(this BinaryWriter writer, T[] value) where T : ISerializable
         {
             writer.WriteVarInt(value.Length);
             for (int i = 0; i < value.Length; i++)

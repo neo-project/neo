@@ -85,6 +85,10 @@ namespace Neo.Network
 
         private async void AcceptPeers()
         {
+#if !NET47
+            //There is a bug in .NET Core 2.0 that blocks async method which returns void.
+            await Task.Yield();
+#endif
             while (!cancellationTokenSource.IsCancellationRequested)
             {
                 Socket socket;
@@ -579,6 +583,7 @@ namespace Neo.Network
                     if (port > 0)
                     {
                         listener = new TcpListener(IPAddress.Any, port);
+                        listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, 1);
                         try
                         {
                             listener.Start();

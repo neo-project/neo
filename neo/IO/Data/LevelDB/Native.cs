@@ -2,7 +2,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace Neo.Implementations.Blockchains.LevelDB
+namespace Neo.IO.Data.LevelDB
 {
     internal enum CompressionType : byte
     {
@@ -12,7 +12,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
 
     internal static class Native
     {
-#if NET461
+#if NET47
         static Native()
         {
             string platform = IntPtr.Size == 8 ? "x64" : "x86";

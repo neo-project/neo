@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Neo.Implementations.Blockchains.LevelDB
+namespace Neo.IO.Data.LevelDB
 {
     internal struct Slice : IComparable<Slice>, IEquatable<Slice>
     {
@@ -131,11 +131,11 @@ namespace Neo.Implementations.Blockchains.LevelDB
             }
         }
 
-        unsafe public uint ToUInt32()
+        unsafe public uint ToUInt32(int index = 0)
         {
-            if (buffer.Length != sizeof(uint))
+            if (buffer.Length != sizeof(uint) + index)
                 throw new InvalidCastException();
-            fixed (byte* pbyte = &buffer[0])
+            fixed (byte* pbyte = &buffer[index])
             {
                 return *((uint*)pbyte);
             }

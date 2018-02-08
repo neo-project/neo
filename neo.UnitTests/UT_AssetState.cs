@@ -1,11 +1,11 @@
-﻿using Neo.Core;
-using Neo.Cryptography.ECC;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Core;
+using Neo.Cryptography.ECC;
+using Neo.IO;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using System.Threading;
 
 namespace Neo.UnitTests
 {
@@ -264,7 +264,7 @@ namespace Neo.UnitTests
 
             uut.Size.Should().Be(130); // 1 + 32 + 1 + 4 + 8 + 8 + 1 + 1 + 8 + 20 + 1 + 20 + 20 + 4 + 1
         }
-     
+
         [TestMethod]
         public void Clone()
         {

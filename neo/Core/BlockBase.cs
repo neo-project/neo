@@ -94,7 +94,7 @@ namespace Neo.Core
         UInt160[] IVerifiable.GetScriptHashesForVerifying()
         {
             if (PrevHash == UInt256.Zero)
-                return new[] { Script.VerificationScript.ToScriptHash() };
+                return new[] { Script.ScriptHash };
             Header prev_header = Blockchain.Default.GetHeader(PrevHash);
             if (prev_header == null) throw new InvalidOperationException();
             return new UInt160[] { prev_header.NextConsensus };

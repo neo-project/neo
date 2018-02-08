@@ -3,6 +3,7 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Caching;
+using Neo.IO.Data.LevelDB;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
@@ -37,7 +38,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             Version version;
             Slice value;
             db = DB.Open(path, new Options { CreateIfMissing = true });
-            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.SYS_Version), out value) && Version.TryParse(value.ToString(), out version) && version >= Version.Parse("1.5"))
+            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.SYS_Version), out value) && Version.TryParse(value.ToString(), out version) && version >= Version.Parse("2.6.0"))
             {
                 ReadOptions options = new ReadOptions { FillCache = false };
                 value = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock));
@@ -228,10 +229,8 @@ namespace Neo.Implementations.Blockchains.LevelDB
 
         public override IEnumerable<ValidatorState> GetEnrollments()
         {
-            return db.Find<ValidatorState>(ReadOptions.Default, DataEntryPrefix.ST_Validator).Union(StandbyValidators.Select(p => new ValidatorState
-            {
-                PublicKey = p
-            }));
+            HashSet<ECPoint> sv = new HashSet<ECPoint>(StandbyValidators);
+            return db.Find<ValidatorState>(ReadOptions.Default, DataEntryPrefix.ST_Validator).Where(p => (p.Registered && p.Votes > Fixed8.Zero) || sv.Contains(p.PublicKey));
         }
 
         public override Header GetHeader(uint height)
@@ -288,7 +287,14 @@ namespace Neo.Implementations.Blockchains.LevelDB
             return value.ToArray().ToInt64(0);
         }
 
-        public override DataCache<TKey, TValue> CreateCache<TKey, TValue>()
+        public override MetaDataCache<T> GetMetaData<T>()
+        {
+            Type t = typeof(T);
+            if (t == typeof(ValidatorsCountState)) return new DbMetaDataCache<T>(db, DataEntryPrefix.IX_ValidatorsCount);
+            throw new NotSupportedException();
+        }
+
+        public override DataCache<TKey, TValue> GetStates<TKey, TValue>()
         {
             Type t = typeof(TValue);
             if (t == typeof(AccountState)) return new DbCache<TKey, TValue>(db, DataEntryPrefix.ST_Account);
@@ -357,48 +363,27 @@ namespace Neo.Implementations.Blockchains.LevelDB
             }
         }
 
-        public override IEnumerable<VoteState> GetVotes(IEnumerable<Transaction> others)
+        public override IEnumerable<TransactionOutput> GetUnspent(UInt256 hash)
         {
             ReadOptions options = new ReadOptions();
             using (options.Snapshot = db.GetSnapshot())
             {
-                IList<Transaction> transactions = others as IList<Transaction> ?? others.ToList();
-                var inputs = transactions.SelectMany(p => p.Inputs).GroupBy(p => p.PrevHash, (k, g) =>
+                List<TransactionOutput> outputs = new List<TransactionOutput>();
+                UnspentCoinState state = db.TryGet<UnspentCoinState>(options, DataEntryPrefix.ST_Coin, hash);
+                if (state != null)
                 {
                     int height;
-                    Transaction tx = GetTransaction(options, k, out height);
-                    return g.Select(p => tx.Outputs[p.PrevIndex]);
-                }).SelectMany(p => p).Where(p => p.AssetId.Equals(GoverningToken.Hash)).Select(p => new
-                {
-                    p.ScriptHash,
-                    Value = -p.Value
-                });
-                var outputs = transactions.SelectMany(p => p.Outputs).Where(p => p.AssetId.Equals(GoverningToken.Hash)).Select(p => new
-                {
-                    p.ScriptHash,
-                    p.Value
-                });
-                var changes = inputs.Concat(outputs).GroupBy(p => p.ScriptHash).ToDictionary(p => p.Key, p => p.Sum(i => i.Value));
-                var accounts = db.Find<AccountState>(options, DataEntryPrefix.ST_Account).Where(p => p.Votes.Length > 0).ToArray();
-                if (accounts.Length > 0)
-                    foreach (AccountState account in accounts)
+                    Transaction tx = GetTransaction(options, hash, out height);
+                    for (int i = 0; i < state.Items.Length; i++)
                     {
-                        Fixed8 balance = account.Balances.TryGetValue(GoverningToken.Hash, out Fixed8 value) ? value : Fixed8.Zero;
-                        if (changes.TryGetValue(account.ScriptHash, out Fixed8 change))
-                            balance += change;
-                        if (balance <= Fixed8.Zero) continue;
-                        yield return new VoteState
+                        if (!state.Items[i].HasFlag(CoinState.Spent))
                         {
-                            PublicKeys = account.Votes,
-                            Count = balance
-                        };
+                            outputs.Add(tx.Outputs[i]);
+                        }
+
                     }
-                else
-                    yield return new VoteState
-                    {
-                        PublicKeys = StandbyValidators,
-                        Count = GoverningToken.Amount
-                    };
+                }
+                return outputs;
             }
         }
 
@@ -440,13 +425,14 @@ namespace Neo.Implementations.Blockchains.LevelDB
         private void Persist(Block block)
         {
             WriteBatch batch = new WriteBatch();
-            DbCache<UInt160, AccountState> accounts = new DbCache<UInt160, AccountState>(db, DataEntryPrefix.ST_Account);
-            DbCache<UInt256, UnspentCoinState> unspentcoins = new DbCache<UInt256, UnspentCoinState>(db, DataEntryPrefix.ST_Coin);
-            DbCache<UInt256, SpentCoinState> spentcoins = new DbCache<UInt256, SpentCoinState>(db, DataEntryPrefix.ST_SpentCoin);
-            DbCache<ECPoint, ValidatorState> validators = new DbCache<ECPoint, ValidatorState>(db, DataEntryPrefix.ST_Validator);
-            DbCache<UInt256, AssetState> assets = new DbCache<UInt256, AssetState>(db, DataEntryPrefix.ST_Asset);
-            DbCache<UInt160, ContractState> contracts = new DbCache<UInt160, ContractState>(db, DataEntryPrefix.ST_Contract);
-            DbCache<StorageKey, StorageItem> storages = new DbCache<StorageKey, StorageItem>(db, DataEntryPrefix.ST_Storage);
+            DbCache<UInt160, AccountState> accounts = new DbCache<UInt160, AccountState>(db, DataEntryPrefix.ST_Account, batch);
+            DbCache<UInt256, UnspentCoinState> unspentcoins = new DbCache<UInt256, UnspentCoinState>(db, DataEntryPrefix.ST_Coin, batch);
+            DbCache<UInt256, SpentCoinState> spentcoins = new DbCache<UInt256, SpentCoinState>(db, DataEntryPrefix.ST_SpentCoin, batch);
+            DbCache<ECPoint, ValidatorState> validators = new DbCache<ECPoint, ValidatorState>(db, DataEntryPrefix.ST_Validator, batch);
+            DbCache<UInt256, AssetState> assets = new DbCache<UInt256, AssetState>(db, DataEntryPrefix.ST_Asset, batch);
+            DbCache<UInt160, ContractState> contracts = new DbCache<UInt160, ContractState>(db, DataEntryPrefix.ST_Contract, batch);
+            DbCache<StorageKey, StorageItem> storages = new DbCache<StorageKey, StorageItem>(db, DataEntryPrefix.ST_Storage, batch);
+            DbMetaDataCache<ValidatorsCountState> validators_count = new DbMetaDataCache<ValidatorsCountState>(db, DataEntryPrefix.IX_ValidatorsCount);
             List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
             long amount_sysfee = GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.SystemFee);
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(block.Hash), SliceBuilder.Begin().Add(amount_sysfee).Add(block.Trim()));
@@ -464,15 +450,22 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         account.Balances[output.AssetId] += output.Value;
                     else
                         account.Balances[output.AssetId] = output.Value;
+                    if (output.AssetId.Equals(GoverningToken.Hash) && account.Votes.Length > 0)
+                    {
+                        foreach (ECPoint pubkey in account.Votes)
+                            validators.GetAndChange(pubkey, () => new ValidatorState(pubkey)).Votes += output.Value;
+                        validators_count.GetAndChange().Votes[account.Votes.Length - 1] += output.Value;
+                    }
                 }
                 foreach (var group in tx.Inputs.GroupBy(p => p.PrevHash))
                 {
-                    int height;
-                    Transaction tx_prev = GetTransaction(ReadOptions.Default, group.Key, out height);
+                    Transaction tx_prev = GetTransaction(ReadOptions.Default, group.Key, out int height);
                     foreach (CoinReference input in group)
                     {
                         unspentcoins.GetAndChange(input.PrevHash).Items[input.PrevIndex] |= CoinState.Spent;
-                        if (tx_prev.Outputs[input.PrevIndex].AssetId.Equals(GoverningToken.Hash))
+                        TransactionOutput out_prev = tx_prev.Outputs[input.PrevIndex];
+                        AccountState account = accounts.GetAndChange(out_prev.ScriptHash);
+                        if (out_prev.AssetId.Equals(GoverningToken.Hash))
                         {
                             spentcoins.GetAndChange(input.PrevHash, () => new SpentCoinState
                             {
@@ -480,88 +473,96 @@ namespace Neo.Implementations.Blockchains.LevelDB
                                 TransactionHeight = (uint)height,
                                 Items = new Dictionary<ushort, uint>()
                             }).Items.Add(input.PrevIndex, block.Index);
+                            if (account.Votes.Length > 0)
+                            {
+                                foreach (ECPoint pubkey in account.Votes)
+                                {
+                                    ValidatorState validator = validators.GetAndChange(pubkey);
+                                    validator.Votes -= out_prev.Value;
+                                    if (!validator.Registered && validator.Votes.Equals(Fixed8.Zero))
+                                        validators.Delete(pubkey);
+                                }
+                                validators_count.GetAndChange().Votes[account.Votes.Length - 1] -= out_prev.Value;
+                            }
                         }
-                        accounts.GetAndChange(tx_prev.Outputs[input.PrevIndex].ScriptHash).Balances[tx_prev.Outputs[input.PrevIndex].AssetId] -= tx_prev.Outputs[input.PrevIndex].Value;
+                        account.Balances[out_prev.AssetId] -= out_prev.Value;
                     }
                 }
-                switch (tx.Type)
+                switch (tx)
                 {
-                    case TransactionType.RegisterTransaction:
-                        {
 #pragma warning disable CS0612
-                            RegisterTransaction rtx = (RegisterTransaction)tx;
-                            assets.Add(tx.Hash, new AssetState
-                            {
-                                AssetId = rtx.Hash,
-                                AssetType = rtx.AssetType,
-                                Name = rtx.Name,
-                                Amount = rtx.Amount,
-                                Available = Fixed8.Zero,
-                                Precision = rtx.Precision,
-                                Fee = Fixed8.Zero,
-                                FeeAddress = new UInt160(),
-                                Owner = rtx.Owner,
-                                Admin = rtx.Admin,
-                                Issuer = rtx.Admin,
-                                Expiration = block.Index + 2 * 2000000,
-                                IsFrozen = false
-                            });
-#pragma warning restore CS0612
-                        }
+                    case RegisterTransaction tx_register:
+                        assets.Add(tx.Hash, new AssetState
+                        {
+                            AssetId = tx_register.Hash,
+                            AssetType = tx_register.AssetType,
+                            Name = tx_register.Name,
+                            Amount = tx_register.Amount,
+                            Available = Fixed8.Zero,
+                            Precision = tx_register.Precision,
+                            Fee = Fixed8.Zero,
+                            FeeAddress = new UInt160(),
+                            Owner = tx_register.Owner,
+                            Admin = tx_register.Admin,
+                            Issuer = tx_register.Admin,
+                            Expiration = block.Index + 2 * 2000000,
+                            IsFrozen = false
+                        });
                         break;
-                    case TransactionType.IssueTransaction:
+#pragma warning restore CS0612
+                    case IssueTransaction _:
                         foreach (TransactionResult result in tx.GetTransactionResults().Where(p => p.Amount < Fixed8.Zero))
                             assets.GetAndChange(result.AssetId).Available -= result.Amount;
                         break;
-                    case TransactionType.ClaimTransaction:
+                    case ClaimTransaction _:
                         foreach (CoinReference input in ((ClaimTransaction)tx).Claims)
                         {
                             if (spentcoins.TryGet(input.PrevHash)?.Items.Remove(input.PrevIndex) == true)
                                 spentcoins.GetAndChange(input.PrevHash);
                         }
                         break;
-                    case TransactionType.EnrollmentTransaction:
-                        {
 #pragma warning disable CS0612
-                            EnrollmentTransaction enroll_tx = (EnrollmentTransaction)tx;
-                            validators.GetOrAdd(enroll_tx.PublicKey, () => new ValidatorState
-                            {
-                                PublicKey = enroll_tx.PublicKey
-                            });
-#pragma warning restore CS0612
-                        }
+                    case EnrollmentTransaction tx_enrollment:
+                        validators.GetAndChange(tx_enrollment.PublicKey, () => new ValidatorState(tx_enrollment.PublicKey)).Registered = true;
                         break;
-                    case TransactionType.PublishTransaction:
-                        {
-#pragma warning disable CS0612
-                            PublishTransaction publish_tx = (PublishTransaction)tx;
-                            contracts.GetOrAdd(publish_tx.ScriptHash, () => new ContractState
-                            {
-                                Script = publish_tx.Script,
-                                ParameterList = publish_tx.ParameterList,
-                                ReturnType = publish_tx.ReturnType,
-                                HasStorage = publish_tx.NeedStorage,
-                                Name = publish_tx.Name,
-                                CodeVersion = publish_tx.CodeVersion,
-                                Author = publish_tx.Author,
-                                Email = publish_tx.Email,
-                                Description = publish_tx.Description
-                            });
 #pragma warning restore CS0612
-                        }
-                        break;
-                    case TransactionType.InvocationTransaction:
-                        {
-                            InvocationTransaction itx = (InvocationTransaction)tx;
-                            CachedScriptTable script_table = new CachedScriptTable(contracts);
-                            StateMachine service = new StateMachine(accounts, validators, assets, contracts, storages);
-                            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, itx, script_table, service, itx.Gas);
-                            engine.LoadScript(itx.Script, false);
-                            if (engine.Execute())
+                    case StateTransaction tx_state:
+                        foreach (StateDescriptor descriptor in tx_state.Descriptors)
+                            switch (descriptor.Type)
                             {
-                                service.Commit();
-                                notifications.AddRange(service.Notifications);
+                                case StateType.Account:
+                                    ProcessAccountStateDescriptor(descriptor, accounts, validators, validators_count);
+                                    break;
+                                case StateType.Validator:
+                                    ProcessValidatorStateDescriptor(descriptor, validators);
+                                    break;
                             }
+                        break;
+#pragma warning disable CS0612
+                    case PublishTransaction tx_publish:
+                        contracts.GetOrAdd(tx_publish.ScriptHash, () => new ContractState
+                        {
+                            Script = tx_publish.Script,
+                            ParameterList = tx_publish.ParameterList,
+                            ReturnType = tx_publish.ReturnType,
+                            ContractProperties = (ContractPropertyState)Convert.ToByte(tx_publish.NeedStorage),
+                            Name = tx_publish.Name,
+                            CodeVersion = tx_publish.CodeVersion,
+                            Author = tx_publish.Author,
+                            Email = tx_publish.Email,
+                            Description = tx_publish.Description
+                        });
+                        break;
+#pragma warning restore CS0612
+                    case InvocationTransaction tx_invocation:
+                        CachedScriptTable script_table = new CachedScriptTable(contracts);
+                        StateMachine service = new StateMachine(block, accounts, assets, contracts, storages);
+                        ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, script_table, service, tx_invocation.Gas);
+                        engine.LoadScript(tx_invocation.Script, false);
+                        if (engine.Execute())
+                        {
+                            service.Commit();
+                            notifications.AddRange(service.Notifications);
                         }
                         break;
                 }
@@ -569,15 +570,16 @@ namespace Neo.Implementations.Blockchains.LevelDB
             if (notifications.Count > 0)
                 OnNotify(block, notifications.ToArray());
             accounts.DeleteWhere((k, v) => !v.IsFrozen && v.Votes.Length == 0 && v.Balances.All(p => p.Value <= Fixed8.Zero));
-            accounts.Commit(batch);
+            accounts.Commit();
             unspentcoins.DeleteWhere((k, v) => v.Items.All(p => p.HasFlag(CoinState.Spent)));
-            unspentcoins.Commit(batch);
+            unspentcoins.Commit();
             spentcoins.DeleteWhere((k, v) => v.Items.Count == 0);
-            spentcoins.Commit(batch);
-            validators.Commit(batch);
-            assets.Commit(batch);
-            contracts.Commit(batch);
-            storages.Commit(batch);
+            spentcoins.Commit();
+            validators.Commit();
+            assets.Commit();
+            contracts.Commit();
+            storages.Commit();
+            validators_count.Commit(batch);
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock), SliceBuilder.Begin().Add(block.Hash).Add(block.Index));
             db.Write(WriteOptions.Default, batch);
             current_block_height = block.Index;

@@ -1,13 +1,13 @@
 ﻿using Neo.Core;
-using Neo.IO.Caching;
 using System;
 
 namespace Neo.Wallets
 {
-    public class Coin : IEquatable<Coin>, ITrackable<CoinReference>
+    public class Coin : IEquatable<Coin>
     {
         public CoinReference Reference;
         public TransactionOutput Output;
+        public CoinState State;
 
         private string _address = null;
         public string Address
@@ -21,29 +21,6 @@ namespace Neo.Wallets
                 return _address;
             }
         }
-
-        CoinReference ITrackable<CoinReference>.Key => Reference;
-
-        private CoinState state;
-        public CoinState State
-        {
-            get
-            {
-                return state;
-            }
-            set
-            {
-                if (state != value)
-                {
-                    state = value;
-                    ITrackable<CoinReference> _this = this;
-                    if (_this.TrackState == TrackState.None)
-                        _this.TrackState = TrackState.Changed;
-                }
-            }
-        }
-
-        TrackState ITrackable<CoinReference>.TrackState { get; set; }
 
         public bool Equals(Coin other)
         {

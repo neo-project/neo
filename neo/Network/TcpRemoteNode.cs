@@ -70,7 +70,7 @@ namespace Neo.Network
             CancellationTokenSource source = new CancellationTokenSource(timeout);
             //Stream.ReadAsync doesn't support CancellationToken
             //see: https://stackoverflow.com/questions/20131434/cancel-networkstream-readasync-using-tcplistener
-            source.Token.Register(() => Disconnect(true));
+            source.Token.Register(() => Disconnect(false));
             try
             {
                 return await Message.DeserializeFromAsync(stream, source.Token);
@@ -79,7 +79,7 @@ namespace Neo.Network
             catch (ObjectDisposedException) { }
             catch (Exception ex) when (ex is FormatException || ex is IOException || ex is OperationCanceledException)
             {
-                Disconnect(true);
+                Disconnect(false);
             }
             finally
             {
@@ -96,7 +96,7 @@ namespace Neo.Network
             CancellationTokenSource source = new CancellationTokenSource(10000);
             //Stream.WriteAsync doesn't support CancellationToken
             //see: https://stackoverflow.com/questions/20131434/cancel-networkstream-readasync-using-tcplistener
-            source.Token.Register(() => Disconnect(true));
+            source.Token.Register(() => Disconnect(false));
             try
             {
                 await stream.WriteAsync(buffer, 0, buffer.Length, source.Token);

@@ -68,7 +68,7 @@ namespace Neo.Core
                 }
                 else
                 {
-                    if (hashes[i] != verification.ToScriptHash()) return false;
+                    if (hashes[i] != verifiable.Scripts[i].ScriptHash) return false;
                 }
                 ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, Blockchain.Default, StateReader.Default, Fixed8.Zero);
                 engine.LoadScript(verification, false);

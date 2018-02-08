@@ -14,8 +14,6 @@ namespace Neo.Consensus
 {
     public class ConsensusService : IDisposable
     {
-        public const int MaxTransactionsPerBlock = 500;
-
         private ConsensusContext context = new ConsensusContext();
         private LocalNode localNode;
         private Wallet wallet;
@@ -49,7 +47,7 @@ namespace Neo.Consensus
                 {
                     Log($"send perpare response");
                     context.State |= ConsensusState.SignatureSent;
-                    context.Signatures[context.MyIndex] = context.MakeHeader().Sign(wallet.GetKey(context.Validators[context.MyIndex]));
+                    context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
                     SignAndRelay(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
                     CheckSignatures();
                 }
@@ -87,7 +85,7 @@ namespace Neo.Consensus
         {
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                VerificationContract contract = VerificationContract.CreateMultiSigContract(context.Validators[context.MyIndex].EncodePoint(true).ToScriptHash(), context.M, context.Validators);
+                Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
                 Block block = context.MakeHeader();
                 ContractParametersContext sc = new ContractParametersContext(block);
                 for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
@@ -191,7 +189,7 @@ namespace Neo.Consensus
                     {
                         message = ConsensusMessage.DeserializeFrom(payload.Data);
                     }
-                    catch (FormatException)
+                    catch
                     {
                         return;
                     }
@@ -259,7 +257,7 @@ namespace Neo.Consensus
             context.Nonce = message.Nonce;
             context.NextConsensus = message.NextConsensus;
             context.TransactionHashes = message.TransactionHashes;
-            if (context.TransactionHashes.Length > MaxTransactionsPerBlock) return;
+            if (context.TransactionHashes.Length > Settings.Default.MaxTransactionsPerBlock) return;
             context.Transactions = new Dictionary<UInt256, Transaction>();
             if (!Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
             context.Signatures = new byte[context.Validators.Length][];
@@ -303,13 +301,13 @@ namespace Neo.Consensus
                         context.Timestamp = Math.Max(DateTime.Now.ToTimestamp(), Blockchain.Default.GetHeader(context.PrevHash).Timestamp + 1);
                         context.Nonce = GetNonce();
                         List<Transaction> transactions = LocalNode.GetMemoryPool().Where(p => CheckPolicy(p)).ToList();
-                        if (transactions.Count >= MaxTransactionsPerBlock)
-                            transactions = transactions.OrderByDescending(p => p.NetworkFee / p.Size).Take(MaxTransactionsPerBlock - 1).ToList();
+                        if (transactions.Count >= Settings.Default.MaxTransactionsPerBlock)
+                            transactions = transactions.OrderByDescending(p => p.NetworkFee / p.Size).Take(Settings.Default.MaxTransactionsPerBlock - 1).ToList();
                         transactions.Insert(0, CreateMinerTransaction(transactions, context.BlockIndex, context.Nonce));
                         context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
                         context.Transactions = transactions.ToDictionary(p => p.Hash);
                         context.NextConsensus = Blockchain.GetConsensusAddress(Blockchain.Default.GetValidators(transactions).ToArray());
-                        context.Signatures[context.MyIndex] = context.MakeHeader().Sign(wallet.GetKey(context.Validators[context.MyIndex]));
+                        context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
                     }
                     SignAndRelay(context.MakePrepareRequest());
                     timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer_view + 1)), Timeout.InfiniteTimeSpan);

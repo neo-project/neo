@@ -2,8 +2,8 @@
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.SmartContract;
 using Neo.VM;
-using Neo.Wallets;
 using System;
 using System.IO;
 
@@ -75,12 +75,10 @@ namespace Neo.Network.Payloads
         {
             if (Blockchain.Default == null)
                 throw new InvalidOperationException();
-            if (PrevHash != Blockchain.Default.CurrentBlockHash)
-                throw new InvalidOperationException();
             ECPoint[] validators = Blockchain.Default.GetValidators();
             if (validators.Length <= ValidatorIndex)
                 throw new InvalidOperationException();
-            return new[] { VerificationContract.CreateSignatureContract(validators[ValidatorIndex]).ScriptHash };
+            return new[] { Contract.CreateSignatureRedeemScript(validators[ValidatorIndex]).ToScriptHash() };
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -102,9 +100,7 @@ namespace Neo.Network.Payloads
         public bool Verify()
         {
             if (Blockchain.Default == null) return false;
-            if (PrevHash != Blockchain.Default.CurrentBlockHash)
-                return false;
-            if (BlockIndex != Blockchain.Default.Height + 1)
+            if (BlockIndex <= Blockchain.Default.Height)
                 return false;
             return this.VerifyScripts();
         }

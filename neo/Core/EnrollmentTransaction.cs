@@ -1,7 +1,7 @@
 ﻿using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
-using Neo.Wallets;
+using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,7 +24,7 @@ namespace Neo.Core
             {
                 if (_script_hash == null)
                 {
-                    _script_hash = VerificationContract.CreateSignatureContract(PublicKey).ScriptHash;
+                    _script_hash = Contract.CreateSignatureRedeemScript(PublicKey).ToScriptHash();
                 }
                 return _script_hash;
             }

@@ -6,7 +6,7 @@ namespace Neo.IO.Caching
 {
     public abstract class DataCache<TKey, TValue>
         where TKey : IEquatable<TKey>, ISerializable
-        where TValue : class, ISerializable, new()
+        where TValue : class, ICloneable<TValue>, ISerializable, new()
     {
         protected internal class Trackable
         {
@@ -52,6 +52,30 @@ namespace Neo.IO.Caching
             };
         }
 
+        protected abstract void AddInternal(TKey key, TValue value);
+
+        public void Commit()
+        {
+            foreach (Trackable trackable in GetChangeSet())
+                switch (trackable.State)
+                {
+                    case TrackState.Added:
+                        AddInternal(trackable.Key, trackable.Item);
+                        break;
+                    case TrackState.Changed:
+                        UpdateInternal(trackable.Key, trackable.Item);
+                        break;
+                    case TrackState.Deleted:
+                        DeleteInternal(trackable.Key);
+                        break;
+                }
+        }
+
+        public DataCache<TKey, TValue> CreateSnapshot()
+        {
+            return new CloneCache<TKey, TValue>(this);
+        }
+
         public void Delete(TKey key)
         {
             if (dictionary.TryGetValue(key, out Trackable trackable))
@@ -74,24 +98,21 @@ namespace Neo.IO.Caching
             }
         }
 
+        public abstract void DeleteInternal(TKey key);
+
         public void DeleteWhere(Func<TKey, TValue, bool> predicate)
         {
             foreach (Trackable trackable in dictionary.Where(p => p.Value.State != TrackState.Deleted && predicate(p.Key, p.Value.Item)).Select(p => p.Value))
                 trackable.State = TrackState.Deleted;
         }
 
-        public IEnumerable<KeyValuePair<TKey, TValue>> Find(byte[] key_prefix)
+        public IEnumerable<KeyValuePair<TKey, TValue>> Find(byte[] key_prefix = null)
         {
-            foreach (var pair in FindInternal(key_prefix))
+            foreach (var pair in FindInternal(key_prefix ?? new byte[0]))
                 if (!dictionary.ContainsKey(pair.Key))
-                    dictionary.Add(pair.Key, new Trackable
-                    {
-                        Key = pair.Key,
-                        Item = pair.Value,
-                        State = TrackState.None
-                    });
+                    yield return pair;
             foreach (var pair in dictionary)
-                if (pair.Value.State != TrackState.Deleted && pair.Key.ToArray().Take(key_prefix.Length).SequenceEqual(key_prefix))
+                if (pair.Value.State != TrackState.Deleted && (key_prefix == null || pair.Key.ToArray().Take(key_prefix.Length).SequenceEqual(key_prefix)))
                     yield return new KeyValuePair<TKey, TValue>(pair.Key, pair.Value.Item);
         }
 
@@ -191,5 +212,7 @@ namespace Neo.IO.Caching
         }
 
         protected abstract TValue TryGetInternal(TKey key);
+
+        protected abstract void UpdateInternal(TKey key, TValue value);
     }
 }
