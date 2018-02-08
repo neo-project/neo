@@ -374,6 +374,7 @@ namespace Neo.Core
             }
             if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
                 return false;
+            if (!this.VerifyReceivingScripts()) return false;
             return this.VerifyScripts();
         }
     }
