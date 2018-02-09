@@ -35,7 +35,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
         /// <summary>
         /// Return true if haven't got valid handle
         /// </summary>
-        public bool IsDisposed => disposed;
+        public override bool IsDisposed => disposed;
 
         public LevelDBBlockchain(string path)
         {
