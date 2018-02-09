@@ -22,11 +22,6 @@ namespace Neo.Wallets
         private static readonly DB db;
         private static readonly object SyncRoot = new object();
 
-        /// <summary>
-        /// Exit signal flag
-        /// </summary>
-        private static long ExitSignal = 0;
-
         public static uint IndexHeight
         {
             get
@@ -206,14 +201,13 @@ namespace Neo.Wallets
         private static void ProcessBlocks()
         {
             bool need_sleep = false;
-            for (; Interlocked.Read(ref ExitSignal) == 0;)
+            for (; ; )
             {
                 if (need_sleep)
                 {
                     Thread.Sleep(2000);
                     need_sleep = false;
                 }
-
                 lock (SyncRoot)
                 {
                     if (indexes.Count == 0)
@@ -250,14 +244,6 @@ namespace Neo.Wallets
                     db.Write(WriteOptions.Default, batch);
                 }
             }
-        }
-
-        /// <summary>
-        /// Call this method por quit ProcessBlocks Thread
-        /// </summary>
-        public static void ExitThread()
-        {
-            Interlocked.Exchange(ref ExitSignal, 1);
         }
 
         public static void RebuildIndex()
