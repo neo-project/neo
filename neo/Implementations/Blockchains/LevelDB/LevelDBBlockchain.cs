@@ -446,6 +446,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 {
                     Items = Enumerable.Repeat(CoinState.Confirmed, tx.Outputs.Length).ToArray()
                 });
+                HashSet<ContractState> receiving_contracts = new HashSet<ContractState>();
                 foreach (TransactionOutput output in tx.Outputs)
                 {
                     AccountState account = accounts.GetAndChange(output.ScriptHash, () => new AccountState(output.ScriptHash));
@@ -459,17 +460,21 @@ namespace Neo.Implementations.Blockchains.LevelDB
                             validators.GetAndChange(pubkey, () => new ValidatorState(pubkey)).Votes += output.Value;
                         validators_count.GetAndChange().Votes[account.Votes.Length - 1] += output.Value;
                     }
-                    HashSet<ContractState> receiving_contracts = new HashSet<ContractState>(tx.Outputs.Select(o => contracts[o.ScriptHash]).Where(c => c != null));
+                    ContractState contract = contracts[output.ScriptHash];
+                    if (contract != null)
+                    {
+                        receiving_contracts.Add(contract);
+                    }
+                }
+                foreach (ContractState receiving_contract in receiving_contracts)
+                {
                     using (StateMachine service = new StateMachine(block, accounts, assets, contracts, storages))
                     {
-                        foreach (var receiving_contract in receiving_contracts)
+                        ApplicationEngine engine = new ApplicationEngine(TriggerType.ApplicationR, tx, script_table, service, Fixed8.Zero);
+                        engine.LoadScript(receiving_contract.Script, false);
+                        if (engine.Execute())
                         {
-                            ApplicationEngine engine = new ApplicationEngine(TriggerType.ApplicationR, tx, script_table, service, Fixed8.Zero);
-                            engine.LoadScript(receiving_contract.Script, false);
-                            if (engine.Execute())
-                            {
-                                service.Commit();
-                            }
+                            service.Commit();
                         }
                     }
                 }
