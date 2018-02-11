@@ -246,11 +246,9 @@ namespace Neo.Wallets
                         db.Write(WriteOptions.Default, batch);
                     }
                 }
-                catch
+                catch when (Blockchain.Default == null || Blockchain.Default.IsDisposed || db.IsDisposed)
                 {
-                    // Check exit thread
-                    if (Blockchain.Default == null || Blockchain.Default.IsDisposed || db.IsDisposed)
-                        return;
+                    return;
                 }
             }
         }
