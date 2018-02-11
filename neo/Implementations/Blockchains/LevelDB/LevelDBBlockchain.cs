@@ -5,6 +5,7 @@ using Neo.IO;
 using Neo.IO.Caching;
 using Neo.IO.Data.LevelDB;
 using Neo.SmartContract;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -468,10 +469,15 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 }
                 foreach (ContractState receiving_contract in receiving_contracts)
                 {
+                    using (ScriptBuilder sb = new ScriptBuilder())
                     using (StateMachine service = new StateMachine(block, accounts, assets, contracts, storages))
                     {
                         ApplicationEngine engine = new ApplicationEngine(TriggerType.ApplicationR, tx, script_table, service, Fixed8.Zero);
                         engine.LoadScript(receiving_contract.Script, false);
+                        sb.EmitPush(0);
+                        sb.Emit(OpCode.PACK);
+                        sb.EmitPush("received");
+                        engine.LoadScript(sb.ToArray(), true);
                         if (engine.Execute())
                         {
                             service.Commit();
