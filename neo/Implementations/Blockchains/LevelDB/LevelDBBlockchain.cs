@@ -436,6 +436,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             DbCache<UInt160, ContractState> contracts = new DbCache<UInt160, ContractState>(db, DataEntryPrefix.ST_Contract, batch);
             DbCache<StorageKey, StorageItem> storages = new DbCache<StorageKey, StorageItem>(db, DataEntryPrefix.ST_Storage, batch);
             DbMetaDataCache<ValidatorsCountState> validators_count = new DbMetaDataCache<ValidatorsCountState>(db, DataEntryPrefix.IX_ValidatorsCount);
+            CachedScriptTable script_table = new CachedScriptTable(contracts);
             long amount_sysfee = GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.SystemFee);
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(block.Hash), SliceBuilder.Begin().Add(amount_sysfee).Add(block.Trim()));
             foreach (Transaction tx in block.Transactions)
@@ -457,6 +458,19 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         foreach (ECPoint pubkey in account.Votes)
                             validators.GetAndChange(pubkey, () => new ValidatorState(pubkey)).Votes += output.Value;
                         validators_count.GetAndChange().Votes[account.Votes.Length - 1] += output.Value;
+                    }
+                    HashSet<ContractState> receiving_contracts = new HashSet<ContractState>(tx.Outputs.Select(o => contracts[o.ScriptHash]).Where(c => c != null));
+                    using (StateMachine service = new StateMachine(block, accounts, assets, contracts, storages))
+                    {
+                        foreach (var receiving_contract in receiving_contracts)
+                        {
+                            ApplicationEngine engine = new ApplicationEngine(TriggerType.ApplicationR, tx, script_table, service, Fixed8.Zero);
+                            engine.LoadScript(receiving_contract.Script, false);
+                            if (engine.Execute())
+                            {
+                                service.Commit();
+                            }
+                        }
                     }
                 }
                 foreach (var group in tx.Inputs.GroupBy(p => p.PrevHash))
@@ -557,7 +571,6 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         break;
 #pragma warning restore CS0612
                     case InvocationTransaction tx_invocation:
-                        CachedScriptTable script_table = new CachedScriptTable(contracts);
                         using (StateMachine service = new StateMachine(block, accounts, assets, contracts, storages))
                         {
                             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, script_table, service, tx_invocation.Gas);
