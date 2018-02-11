@@ -10,6 +10,11 @@ namespace Neo.UnitTests
     {
         private UInt256 _assetId;
 
+        /// <summary>
+        /// Return true if haven't got valid handle
+        /// </summary>
+        public override bool IsDisposed => false;
+
         public TestBlockchain(UInt256 assetId)
         {
             _assetId = assetId;

@@ -35,6 +35,11 @@ namespace Neo.Implementations.Blockchains.LevelDB
         public override uint Height => current_block_height;
         public bool VerifyBlocks { get; set; } = true;
 
+        /// <summary>
+        /// Return true if haven't got valid handle
+        /// </summary>
+        public override bool IsDisposed => disposed;
+
         public LevelDBBlockchain(string path)
         {
             header_index.Add(GenesisBlock.Hash);
