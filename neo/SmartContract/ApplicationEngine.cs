@@ -1,6 +1,7 @@
 ﻿using Neo.Core;
 using Neo.IO.Caching;
 using Neo.VM;
+using Neo.VM.Types;
 using System.Numerics;
 using System.Text;
 
@@ -223,8 +224,10 @@ namespace Neo.SmartContract
                         break;
                     case OpCode.UNPACK:
                         StackItem item = EvaluationStack.Peek();
-                        if (!item.IsArray) return false;
-                        size = item.GetArray().Count;
+                        if (item is Array array)
+                            size = array.Count;
+                        else
+                            return false;
                         break;
                 }
             if (size == 0) return true;
@@ -261,21 +264,29 @@ namespace Neo.SmartContract
                         OpCode nextOpcode = CurrentContext.NextInstruction;
 
                         gas_consumed = checked(gas_consumed + GetPrice(nextOpcode) * ratio);
-                        if (!testMode && gas_consumed > gas_amount) return false;
+                        if (!testMode && gas_consumed > gas_amount)
+                        {
+                            State |= VMState.FAULT;
+                            return false;
+                        }
 
-                        if (!CheckItemSize(nextOpcode)) return false;
-                        if (!CheckStackSize(nextOpcode)) return false;
-                        if (!CheckArraySize(nextOpcode)) return false;
-                        if (!CheckInvocationStack(nextOpcode)) return false;
-                        if (!CheckBigIntegers(nextOpcode)) return false;
-                        if (!CheckDynamicInvoke(nextOpcode)) return false;
+                        if (!CheckItemSize(nextOpcode) ||
+                            !CheckStackSize(nextOpcode) ||
+                            !CheckArraySize(nextOpcode) ||
+                            !CheckInvocationStack(nextOpcode) ||
+                            !CheckBigIntegers(nextOpcode) ||
+                            !CheckDynamicInvoke(nextOpcode))
+                        {
+                            State |= VMState.FAULT;
+                            return false;
+                        }
                     }
-
                     StepInto();
                 }
             }
             catch
             {
+                State |= VMState.FAULT;
                 return false;
             }
             return !State.HasFlag(VMState.FAULT);
@@ -417,11 +428,13 @@ namespace Neo.SmartContract
             DataCache<UInt160, ContractState> contracts = Blockchain.Default.GetStates<UInt160, ContractState>();
             DataCache<StorageKey, StorageItem> storages = Blockchain.Default.GetStates<StorageKey, StorageItem>();
             CachedScriptTable script_table = new CachedScriptTable(contracts);
-            StateMachine service = new StateMachine(persisting_block, accounts, assets, contracts, storages);
-            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, script_table, service, Fixed8.Zero, true);
-            engine.LoadScript(script, false);
-            engine.Execute();
-            return engine;
+            using (StateMachine service = new StateMachine(persisting_block, accounts, assets, contracts, storages))
+            {
+                ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, script_table, service, Fixed8.Zero, true);
+                engine.LoadScript(script, false);
+                engine.Execute();
+                return engine;
+            }
         }
     }
 }

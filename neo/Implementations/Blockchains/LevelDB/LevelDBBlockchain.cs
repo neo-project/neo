@@ -11,11 +11,14 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using Iterator = Neo.IO.Data.LevelDB.Iterator;
 
 namespace Neo.Implementations.Blockchains.LevelDB
 {
     public class LevelDBBlockchain : Blockchain
     {
+        public static event EventHandler<ApplicationExecutedEventArgs> ApplicationExecuted;
+
         private DB db;
         private Thread thread_persistence;
         private List<UInt256> header_index = new List<UInt256>();
@@ -438,7 +441,6 @@ namespace Neo.Implementations.Blockchains.LevelDB
             DbCache<UInt160, ContractState> contracts = new DbCache<UInt160, ContractState>(db, DataEntryPrefix.ST_Contract, batch);
             DbCache<StorageKey, StorageItem> storages = new DbCache<StorageKey, StorageItem>(db, DataEntryPrefix.ST_Storage, batch);
             DbMetaDataCache<ValidatorsCountState> validators_count = new DbMetaDataCache<ValidatorsCountState>(db, DataEntryPrefix.IX_ValidatorsCount);
-            List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
             long amount_sysfee = GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.SystemFee);
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(block.Hash), SliceBuilder.Begin().Add(amount_sysfee).Add(block.Trim()));
             foreach (Transaction tx in block.Transactions)
@@ -561,19 +563,19 @@ namespace Neo.Implementations.Blockchains.LevelDB
 #pragma warning restore CS0612
                     case InvocationTransaction tx_invocation:
                         CachedScriptTable script_table = new CachedScriptTable(contracts);
-                        StateMachine service = new StateMachine(block, accounts, assets, contracts, storages);
-                        ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, script_table, service, tx_invocation.Gas);
-                        engine.LoadScript(tx_invocation.Script, false);
-                        if (engine.Execute())
+                        using (StateMachine service = new StateMachine(block, accounts, assets, contracts, storages))
                         {
-                            service.Commit();
-                            notifications.AddRange(service.Notifications);
+                            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, script_table, service, tx_invocation.Gas);
+                            engine.LoadScript(tx_invocation.Script, false);
+                            if (engine.Execute())
+                            {
+                                service.Commit();
+                            }
+                            ApplicationExecuted?.Invoke(this, new ApplicationExecutedEventArgs(tx_invocation, service.Notifications.ToArray(), engine));
                         }
                         break;
                 }
             }
-            if (notifications.Count > 0)
-                OnNotify(block, notifications.ToArray());
             accounts.DeleteWhere((k, v) => !v.IsFrozen && v.Votes.Length == 0 && v.Balances.All(p => p.Value <= Fixed8.Zero));
             accounts.Commit();
             unspentcoins.DeleteWhere((k, v) => v.Items.All(p => p.HasFlag(CoinState.Spent)));
