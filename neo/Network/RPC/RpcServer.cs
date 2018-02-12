@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Neo.Core;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.Wallets;
@@ -298,7 +299,20 @@ namespace Neo.Network.RPC
                         return json;
                     }
                 default:
-                    throw new RpcException(-32601, "Method not found");
+                    {
+                        // Execute plugin call
+
+                        JObject ret = NeoPlugin.BroadcastRpcCall(new NeoRpcPluginArgs()
+                        {
+                            Method = method,
+                            Params = _params
+                        });
+
+                        if (ret == null) return ret;
+
+                        // Method not found
+                        throw new RpcException(-32601, "Method not found");
+                    }
             }
         }
 

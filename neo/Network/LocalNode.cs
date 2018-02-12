@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Neo.Core;
 using Neo.IO;
 using Neo.IO.Caching;
+using Neo.Plugins;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -96,14 +97,17 @@ namespace Neo.Network
                 {
                     socket = await listener.AcceptSocketAsync();
                 }
-                catch (ObjectDisposedException)
+                catch (ObjectDisposedException e)
                 {
+                    NeoPlugin.BroadcastLog(e);
                     break;
                 }
-                catch (SocketException)
+                catch (SocketException e)
                 {
+                    NeoPlugin.BroadcastLog(e);
                     continue;
                 }
+
                 TcpRemoteNode remoteNode = new TcpRemoteNode(this, socket);
                 OnConnected(remoteNode);
             }
