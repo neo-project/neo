@@ -308,7 +308,7 @@ namespace Neo.Network.RPC
                             Params = _params
                         });
 
-                        if (ret == null) return ret;
+                        if (ret != null) return ret;
 
                         // Method not found
                         throw new RpcException(-32601, "Method not found");
