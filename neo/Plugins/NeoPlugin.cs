@@ -91,6 +91,22 @@ namespace Neo.Plugins
 
         #region static
         /// <summary>
+        /// Unload all plugins
+        /// </summary>
+        public static void UnloadAll()
+        {
+            if (LogLoaded != null)
+            {
+                foreach (NeoPlugin plg in LogLoaded) try { plg.Unload(); } catch { }
+                LogLoaded = null;
+            }
+            if (RpcLoaded != null)
+            {
+                foreach (NeoPlugin plg in RpcLoaded) try { plg.Unload(); } catch { }
+                RpcLoaded = null;
+            }
+        }
+        /// <summary>
         /// Log Exception
         /// </summary>
         /// <param name="error">Error</param>
