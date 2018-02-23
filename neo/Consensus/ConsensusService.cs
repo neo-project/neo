@@ -193,7 +193,7 @@ namespace Neo.Consensus
                             UInt256 hash = Blockchain.Default.CurrentHeaderHash;
 
                             foreach (RemoteNode r in localNode.GetRemoteNodes())
-                                r.EnqueueMessage("getheaders", GetBlocksPayload.Create(hash), true);
+                                r.EnqueueMessage("getheaders", GetBlocksPayload.Create(hash));
                         }
 
                         return;
