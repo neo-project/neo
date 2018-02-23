@@ -190,15 +190,15 @@ namespace Neo.Consensus
 
                         if (Blockchain.Default?.HeaderHeight < payload.BlockIndex)
                         {
-                            GetBlocksPayload msg = GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash);
+                            UInt256 hash = Blockchain.Default.CurrentHeaderHash;
 
                             foreach (RemoteNode r in localNode.GetRemoteNodes())
-                                r.EnqueueMessage("getheaders", msg);
+                                r.EnqueueMessage("getheaders", GetBlocksPayload.Create(hash), true);
                         }
 
                         return;
                     }
-
+                        
                     if (payload.ValidatorIndex >= context.Validators.Length) return;
                     ConsensusMessage message;
                     try
