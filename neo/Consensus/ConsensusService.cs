@@ -181,8 +181,24 @@ namespace Neo.Consensus
                 lock (context)
                 {
                     if (payload.ValidatorIndex == context.MyIndex) return;
-                    if (payload.Version != ConsensusContext.Version || payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
+
+                    if (payload.Version != ConsensusContext.Version)
                         return;
+                    if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
+                    {
+                        // Request blocks
+
+                        if (Blockchain.Default?.HeaderHeight < payload.BlockIndex)
+                        {
+                            UInt256 hash = Blockchain.Default.CurrentHeaderHash;
+
+                            foreach (RemoteNode r in localNode.GetRemoteNodes())
+                                r.EnqueueMessage("getheaders", GetBlocksPayload.Create(hash), true);
+                        }
+
+                        return;
+                    }
+                        
                     if (payload.ValidatorIndex >= context.Validators.Length) return;
                     ConsensusMessage message;
                     try
