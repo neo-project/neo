@@ -190,6 +190,8 @@ namespace Neo.Consensus
 
                         if (Blockchain.Default?.HeaderHeight < payload.BlockIndex)
                         {
+                            Log($"chain sync: expected={payload.BlockIndex} current: {Blockchain.Default?.HeaderHeight}");
+
                             GetBlocksPayload msg = GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash);
 
                             foreach (RemoteNode r in localNode.GetRemoteNodes())
