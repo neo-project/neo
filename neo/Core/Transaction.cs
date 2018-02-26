@@ -394,7 +394,7 @@ namespace Neo.Core
                         sb.EmitPush(0);
                         sb.Emit(OpCode.PACK);
                         sb.EmitPush("receiving");
-                        engine.LoadScript(sb.ToArray(), true);
+                        engine.LoadScript(sb.ToArray(), false);
                     }
                     if (!engine.Execute()) return false;
                     if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
