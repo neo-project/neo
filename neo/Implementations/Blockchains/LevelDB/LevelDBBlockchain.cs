@@ -447,7 +447,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 {
                     Items = Enumerable.Repeat(CoinState.Confirmed, tx.Outputs.Length).ToArray()
                 });
-                HashSet<ContractState> receiving_contracts = new HashSet<ContractState>();
+                List<ContractState> receiving_contracts = new List<ContractState>();
                 foreach (TransactionOutput output in tx.Outputs)
                 {
                     AccountState account = accounts.GetAndChange(output.ScriptHash, () => new AccountState(output.ScriptHash));
@@ -461,7 +461,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                             validators.GetAndChange(pubkey, () => new ValidatorState(pubkey)).Votes += output.Value;
                         validators_count.GetAndChange().Votes[account.Votes.Length - 1] += output.Value;
                     }
-                    ContractState contract = contracts[output.ScriptHash];
+                    ContractState contract = contracts.TryGet(output.ScriptHash);
                     if (contract != null)
                     {
                         receiving_contracts.Add(contract);
@@ -469,15 +469,17 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 }
                 foreach (ContractState receiving_contract in receiving_contracts)
                 {
-                    using (ScriptBuilder sb = new ScriptBuilder())
                     using (StateMachine service = new StateMachine(block, accounts, assets, contracts, storages))
                     {
                         ApplicationEngine engine = new ApplicationEngine(TriggerType.ApplicationR, tx, script_table, service, Fixed8.Zero);
                         engine.LoadScript(receiving_contract.Script, false);
-                        sb.EmitPush(0);
-                        sb.Emit(OpCode.PACK);
-                        sb.EmitPush("received");
-                        engine.LoadScript(sb.ToArray(), true);
+                        using (ScriptBuilder sb = new ScriptBuilder())
+                        {
+                            sb.EmitPush(0);
+                            sb.Emit(OpCode.PACK);
+                            sb.EmitPush("received");
+                            engine.LoadScript(sb.ToArray(), false);
+                        }
                         if (engine.Execute())
                         {
                             service.Commit();
