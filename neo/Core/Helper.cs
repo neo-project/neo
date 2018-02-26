@@ -3,7 +3,6 @@ using Neo.SmartContract;
 using Neo.VM;
 using Neo.Wallets;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -76,27 +75,6 @@ namespace Neo.Core
                     ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, Blockchain.Default, service, Fixed8.Zero);
                     engine.LoadScript(verification, false);
                     engine.LoadScript(verifiable.Scripts[i].InvocationScript, true);
-                    if (!engine.Execute()) return false;
-                    if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
-                }
-            }
-            return true;
-        }
-
-        internal static bool VerifyReceivingScripts(this Transaction transaction)
-        {
-            HashSet<ContractState> receiving_contracts = new HashSet<ContractState>(transaction.Outputs.Select(o => Blockchain.Default.GetContract(o.ScriptHash)).Where(c => c != null));
-            foreach (ContractState receiving_contract in receiving_contracts)
-            {
-                using (ScriptBuilder sb = new ScriptBuilder())
-                using (StateReader service = new StateReader())
-                {
-                    ApplicationEngine engine = new ApplicationEngine(TriggerType.VerificationR, transaction, Blockchain.Default, service, Fixed8.Zero);
-                    engine.LoadScript(receiving_contract.Script, false);
-                    sb.EmitPush(0);
-                    sb.Emit(OpCode.PACK);
-                    sb.EmitPush("receiving");
-                    engine.LoadScript(sb.ToArray(), true);
                     if (!engine.Execute()) return false;
                     if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
                 }
