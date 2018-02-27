@@ -381,9 +381,9 @@ namespace Neo.Core
 
         private bool VerifyReceivingScripts()
         {
-            foreach (TransactionOutput output in Outputs)
+            foreach (UInt160 hash in Outputs.Select(p => p.ScriptHash).Distinct())
             {
-                ContractState contract = Blockchain.Default.GetContract(output.ScriptHash);
+                ContractState contract = Blockchain.Default.GetContract(hash);
                 if (contract == null) continue;
                 using (StateReader service = new StateReader())
                 {

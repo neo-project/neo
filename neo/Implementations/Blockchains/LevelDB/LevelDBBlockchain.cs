@@ -447,7 +447,6 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 {
                     Items = Enumerable.Repeat(CoinState.Confirmed, tx.Outputs.Length).ToArray()
                 });
-                List<ContractState> receiving_contracts = new List<ContractState>();
                 foreach (TransactionOutput output in tx.Outputs)
                 {
                     AccountState account = accounts.GetAndChange(output.ScriptHash, () => new AccountState(output.ScriptHash));
@@ -461,18 +460,15 @@ namespace Neo.Implementations.Blockchains.LevelDB
                             validators.GetAndChange(pubkey, () => new ValidatorState(pubkey)).Votes += output.Value;
                         validators_count.GetAndChange().Votes[account.Votes.Length - 1] += output.Value;
                     }
-                    ContractState contract = contracts.TryGet(output.ScriptHash);
-                    if (contract != null)
-                    {
-                        receiving_contracts.Add(contract);
-                    }
                 }
-                foreach (ContractState receiving_contract in receiving_contracts)
+                foreach (UInt160 hash in tx.Outputs.Select(p => p.ScriptHash).Distinct())
                 {
+                    ContractState contract = contracts.TryGet(hash);
+                    if (contract == null) continue;
                     using (StateMachine service = new StateMachine(block, accounts, assets, contracts, storages))
                     {
                         ApplicationEngine engine = new ApplicationEngine(TriggerType.ApplicationR, tx, script_table, service, Fixed8.Zero);
-                        engine.LoadScript(receiving_contract.Script, false);
+                        engine.LoadScript(contract.Script, false);
                         using (ScriptBuilder sb = new ScriptBuilder())
                         {
                             sb.EmitPush(0);
