@@ -188,9 +188,9 @@ namespace Neo.Consensus
                     {
                         // Request blocks
 
-                        if (Blockchain.Default?.HeaderHeight < payload.BlockIndex)
+                        if (Blockchain.Default?.Height < payload.BlockIndex)
                         {
-                            Log($"chain sync: expected={payload.BlockIndex} current: {Blockchain.Default?.HeaderHeight}");
+                            Log($"chain sync: expected={payload.BlockIndex} current: {Blockchain.Default?.Height}");
 
                             GetBlocksPayload msg = GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash);
 
