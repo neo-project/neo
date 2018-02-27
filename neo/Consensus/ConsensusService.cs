@@ -192,7 +192,7 @@ namespace Neo.Consensus
                         {
                             Log($"chain sync: expected={payload.BlockIndex} current: {Blockchain.Default?.HeaderHeight}");
 
-                            GetBlocksPayload msg = GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash);
+                            GetBlocksPayload msg = GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash);
 
                             foreach (RemoteNode r in localNode.GetRemoteNodes())
                                 r.EnqueueMessage("getheaders", msg);
