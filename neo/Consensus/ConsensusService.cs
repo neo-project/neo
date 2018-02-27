@@ -188,7 +188,7 @@ namespace Neo.Consensus
                     {
                         // Request blocks
 
-                        if (Blockchain.Default?.Height < payload.BlockIndex)
+                        if (Blockchain.Default?.Height + 1 < payload.BlockIndex)
                         {
                             Log($"chain sync: expected={payload.BlockIndex} current: {Blockchain.Default?.Height}");
 
