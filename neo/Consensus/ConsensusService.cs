@@ -195,7 +195,7 @@ namespace Neo.Consensus
                             GetBlocksPayload msg = GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash);
 
                             foreach (RemoteNode r in localNode.GetRemoteNodes())
-                                r.EnqueueMessage("getheaders", msg);
+                                r.EnqueueMessage("getblocks", msg);
                         }
 
                         return;
