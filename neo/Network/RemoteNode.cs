@@ -56,9 +56,7 @@ namespace Neo.Network
                             needSync = true;
                         }
                 if (needSync)
-                    lock (localNode.connectedPeers)
-                        foreach (RemoteNode node in localNode.connectedPeers)
-                            node.EnqueueMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash));
+                    localNode.RequestGetBlocks();
             }
         }
 
