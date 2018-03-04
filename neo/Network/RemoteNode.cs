@@ -2,6 +2,7 @@
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.Payloads;
+using Neo.Network.Queues;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -23,8 +24,9 @@ namespace Neo.Network
         private static readonly TimeSpan OneMinute = TimeSpan.FromMinutes(1);
         private static readonly TimeSpan HalfHour = TimeSpan.FromMinutes(30);
 
-        private Queue<Message> message_queue_high = new Queue<Message>();
-        private Queue<Message> message_queue_low = new Queue<Message>();
+        private SendMessageQueue message_queue_send = new SendMessageQueue();
+        private ReceiveMessageQueue message_queue_recv = new ReceiveMessageQueue();
+
         private static HashSet<UInt256> missions_global = new HashSet<UInt256>();
         private HashSet<UInt256> missions = new HashSet<UInt256>();
         private DateTime mission_start = DateTime.Now.AddYears(100);
@@ -69,40 +71,7 @@ namespace Neo.Network
 
         public void EnqueueMessage(string command, ISerializable payload = null)
         {
-            bool is_single = false;
-            switch (command)
-            {
-                case "addr":
-                case "getaddr":
-                case "getblocks":
-                case "getheaders":
-                case "mempool":
-                    is_single = true;
-                    break;
-            }
-            Queue<Message> message_queue;
-            switch (command)
-            {
-                case "alert":
-                case "consensus":
-                case "filteradd":
-                case "filterclear":
-                case "filterload":
-                case "getaddr":
-                case "mempool":
-                    message_queue = message_queue_high;
-                    break;
-                default:
-                    message_queue = message_queue_low;
-                    break;
-            }
-            lock (message_queue)
-            {
-                if (!is_single || message_queue.All(p => p.Command != command))
-                {
-                    message_queue.Enqueue(Message.Create(command, payload));
-                }
-            }
+            message_queue_send.Enqueue(command, payload);
         }
 
         private void OnAddrMessageReceived(AddrPayload payload)
@@ -282,66 +251,155 @@ namespace Neo.Network
             EnqueueMessage("inv", InvPayload.Create(InventoryType.TX, LocalNode.GetMemoryPool().Select(p => p.Hash).ToArray()));
         }
 
-        private void OnMessageReceived(Message message)
+        private bool EnqueueReceivedMessage(Message message, out ISerializable payload)
         {
             switch (message.Command)
             {
-                case "addr":
-                    OnAddrMessageReceived(message.Payload.AsSerializable<AddrPayload>());
-                    break;
-                case "block":
-                    OnInventoryReceived(message.Payload.AsSerializable<Block>());
-                    break;
-                case "consensus":
-                    OnInventoryReceived(message.Payload.AsSerializable<ConsensusPayload>());
-                    break;
-                case "filteradd":
-                    OnFilterAddMessageReceived(message.Payload.AsSerializable<FilterAddPayload>());
-                    break;
-                case "filterclear":
-                    OnFilterClearMessageReceived();
-                    break;
-                case "filterload":
-                    OnFilterLoadMessageReceived(message.Payload.AsSerializable<FilterLoadPayload>());
-                    break;
+                case "addr": payload = message.Payload.AsSerializable<AddrPayload>(); return true;
+                case "block": payload = message.Payload.AsSerializable<Block>(); return true;
+                case "consensus": payload = message.Payload.AsSerializable<ConsensusPayload>(); return true;
+                case "filteradd": payload = message.Payload.AsSerializable<FilterAddPayload>(); return true;
                 case "getaddr":
-                    OnGetAddrMessageReceived();
-                    break;
-                case "getblocks":
-                    OnGetBlocksMessageReceived(message.Payload.AsSerializable<GetBlocksPayload>());
-                    break;
-                case "getdata":
-                    OnGetDataMessageReceived(message.Payload.AsSerializable<InvPayload>());
-                    break;
-                case "getheaders":
-                    OnGetHeadersMessageReceived(message.Payload.AsSerializable<GetBlocksPayload>());
-                    break;
-                case "headers":
-                    OnHeadersMessageReceived(message.Payload.AsSerializable<HeadersPayload>());
-                    break;
-                case "inv":
-                    OnInvMessageReceived(message.Payload.AsSerializable<InvPayload>());
-                    break;
                 case "mempool":
-                    OnMemPoolMessageReceived();
-                    break;
+                case "filterclear": payload = null; return true;
+                case "filterload": payload = message.Payload.AsSerializable<FilterLoadPayload>(); return true;
+                case "getblocks": payload = message.Payload.AsSerializable<GetBlocksPayload>(); return true;
+                case "getdata": payload = message.Payload.AsSerializable<InvPayload>(); return true;
+                case "getheaders": payload = message.Payload.AsSerializable<GetBlocksPayload>(); return true;
+                case "headers": payload = message.Payload.AsSerializable<HeadersPayload>(); return true;
+                case "inv": payload = message.Payload.AsSerializable<InvPayload>(); return true;
                 case "tx":
-                    if (message.Payload.Length <= 1024 * 1024)
-                        OnInventoryReceived(Transaction.DeserializeFrom(message.Payload));
-                    break;
+                    {
+                        if (message.Payload.Length <= 1024 * 1024)
+                        {
+                            payload = Transaction.DeserializeFrom(message.Payload);
+                            return true;
+                        }
+
+                        payload = null;
+                        return false;
+                    }
                 case "verack":
                 case "version":
-                    Disconnect(true);
-                    break;
+                    {
+                        Disconnect(true);
+                        payload = null;
+                        return false;
+                    }
                 case "alert":
                 case "merkleblock":
                 case "notfound":
                 case "ping":
                 case "pong":
                 case "reject":
+                //暂时忽略
                 default:
-                    //暂时忽略
-                    break;
+                    {
+                        payload = null;
+                        return false;
+                    }
+            }
+        }
+
+        private void OnMessageReceived(string command, ISerializable obj)
+        {
+            switch (command)
+            {
+                case "addr":
+                    {
+                        if (obj is AddrPayload payload)
+                            OnAddrMessageReceived(payload);
+                        break;
+                    }
+                case "block":
+                    {
+                        if (obj is Block payload)
+                            OnInventoryReceived(payload);
+                        break;
+                    }
+                case "consensus":
+                    {
+                        if (obj is ConsensusPayload payload)
+                            OnInventoryReceived(payload);
+                        break;
+                    }
+                case "filteradd":
+                    {
+                        if (obj is FilterAddPayload payload)
+                            OnFilterAddMessageReceived(payload);
+                        break;
+                    }
+                case "filterclear":
+                    {
+                        OnFilterClearMessageReceived();
+                        break;
+                    }
+                case "filterload":
+                    {
+                        if (obj is FilterLoadPayload payload)
+                            OnFilterLoadMessageReceived(payload);
+                        break;
+                    }
+                case "getaddr":
+                    {
+                        OnGetAddrMessageReceived();
+                        break;
+                    }
+                case "getblocks":
+                    {
+                        if (obj is GetBlocksPayload payload)
+                            OnGetBlocksMessageReceived(payload);
+                        break;
+                    }
+                case "getdata":
+                    {
+                        if (obj is InvPayload payload)
+                            OnGetDataMessageReceived(payload);
+                        break;
+                    }
+                case "getheaders":
+                    {
+                        if (obj is GetBlocksPayload payload)
+                            OnGetHeadersMessageReceived(payload);
+                        break;
+                    }
+                case "headers":
+                    {
+                        if (obj is HeadersPayload payload)
+                            OnHeadersMessageReceived(payload);
+                        break;
+                    }
+                case "inv":
+                    {
+                        if (obj is InvPayload payload)
+                            OnInvMessageReceived(payload);
+                        break;
+                    }
+                case "mempool":
+                    {
+                        OnMemPoolMessageReceived();
+                        break;
+                    }
+                case "tx":
+                    {
+                        if (obj is Transaction payload)
+                            OnInventoryReceived(payload);
+                        break;
+                    }
+                case "verack":
+                case "version":
+                    {
+                        Disconnect(true);
+                        break;
+                    }
+                case "alert":
+                case "merkleblock":
+                case "notfound":
+                case "ping":
+                case "pong":
+                case "reject":
+                //暂时忽略
+                default: break;
             }
         }
 
@@ -452,6 +510,13 @@ namespace Neo.Network
                 EnqueueMessage("getheaders", GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash));
             }
             StartSendLoop();
+
+            Thread recTh = new Thread(new ThreadStart(AsyncReceive))
+            {
+                IsBackground = true
+            };
+            recTh.Start();
+
             while (disposed == 0)
             {
                 if (Blockchain.Default != null)
@@ -461,18 +526,24 @@ namespace Neo.Network
                         EnqueueMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash));
                     }
                 }
+
                 TimeSpan timeout = missions.Count == 0 ? HalfHour : OneMinute;
                 message = await ReceiveMessageAsync(timeout);
                 if (message == null) break;
+
                 if (DateTime.Now - mission_start > OneMinute
                     && message.Command != "block" && message.Command != "consensus" && message.Command != "tx")
                 {
                     Disconnect(false);
                     break;
                 }
+
                 try
                 {
-                    OnMessageReceived(message);
+                    // Parse message and enqueue
+
+                    if (EnqueueReceivedMessage(message, out ISerializable payload))
+                        message_queue_recv.Enqueue(message.Command, payload);
                 }
                 catch (EndOfStreamException)
                 {
@@ -487,6 +558,22 @@ namespace Neo.Network
             }
         }
 
+        private void AsyncReceive()
+        {
+            while (disposed == 0)
+            {
+                ParsedMessage msg = message_queue_recv.Dequeue();
+                if (msg != null)
+                {
+                    OnMessageReceived(msg.Command, msg.Payload);
+                }
+                else
+                {
+                    Thread.Sleep(1);
+                }
+            }
+        }
+
         private async void StartSendLoop()
         {
 #if !NET47
@@ -495,29 +582,13 @@ namespace Neo.Network
 #endif
             while (disposed == 0)
             {
-                Message message = null;
-                lock (message_queue_high)
-                {
-                    if (message_queue_high.Count > 0)
-                    {
-                        message = message_queue_high.Dequeue();
-                    }
-                }
-                if (message == null)
-                {
-                    lock (message_queue_low)
-                    {
-                        if (message_queue_low.Count > 0)
-                        {
-                            message = message_queue_low.Dequeue();
-                        }
-                    }
-                }
+                Message message = message_queue_send.Dequeue();
+
                 if (message == null)
                 {
                     for (int i = 0; i < 10 && disposed == 0; i++)
                     {
-                        Thread.Sleep(100);
+                        Thread.Sleep(10);
                     }
                 }
                 else

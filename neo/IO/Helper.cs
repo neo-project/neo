@@ -88,7 +88,7 @@ namespace Neo.IO
         public static string ReadFixedString(this BinaryReader reader, int length)
         {
             byte[] data = reader.ReadBytes(length);
-            return Encoding.UTF8.GetString(data.TakeWhile(p => p != 0).ToArray());
+            return Encoding.UTF8.GetString(data).TrimEnd('\0');
         }
 
         public static T ReadSerializable<T>(this BinaryReader reader) where T : ISerializable, new()
