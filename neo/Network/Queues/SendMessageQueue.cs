@@ -1,4 +1,5 @@
 ﻿using Neo.IO;
+using Neo.Network.Payloads;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,7 +7,7 @@ namespace Neo.Network.Queues
 {
     public class SendMessageQueue : MessageQueue<Message>
     {
-        bool IsHighPriorityMessage(string command, out bool isSingle)
+        bool IsHighPriorityMessage(string command, ISerializable payload, out bool isSingle)
         {
             switch (command)
             {
@@ -27,6 +28,13 @@ namespace Neo.Network.Queues
                 case "filterload":
                 case "getaddr":
                 case "mempool": return true;
+                case "inv":
+                    {
+                        if (payload is InvPayload p && p.Type != InventoryType.TX)
+                            return true;
+
+                        return false;
+                    }
                 default: return false;
             }
         }
@@ -38,7 +46,7 @@ namespace Neo.Network.Queues
         public void Enqueue(string command, ISerializable payload)
         {
             Queue<Message> message_queue =
-                IsHighPriorityMessage(command, out bool isSingle) ?
+                IsHighPriorityMessage(command, payload, out bool isSingle) ?
                 QueueHigh : QueueLow;
 
             lock (message_queue)
