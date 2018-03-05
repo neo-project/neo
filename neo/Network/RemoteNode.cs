@@ -251,7 +251,7 @@ namespace Neo.Network
             EnqueueMessage("inv", InvPayload.Create(InventoryType.TX, LocalNode.GetMemoryPool().Select(p => p.Hash).ToArray()));
         }
 
-        private bool EnqueueReceivedMessage(Message message, out ISerializable payload)
+        private bool ParseMessage(Message message, out ISerializable payload)
         {
             switch (message.Command)
             {
@@ -292,7 +292,7 @@ namespace Neo.Network
                 case "ping":
                 case "pong":
                 case "reject":
-                //暂时忽略
+                // Ignore
                 default:
                     {
                         payload = null;
@@ -398,7 +398,7 @@ namespace Neo.Network
                 case "ping":
                 case "pong":
                 case "reject":
-                //暂时忽略
+                // Ignore
                 default: break;
             }
         }
@@ -542,7 +542,7 @@ namespace Neo.Network
                 {
                     // Parse message and enqueue
 
-                    if (EnqueueReceivedMessage(message, out ISerializable payload))
+                    if (ParseMessage(message, out ISerializable payload))
                         message_queue_recv.Enqueue(message.Command, payload);
                 }
                 catch (EndOfStreamException)

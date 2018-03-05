@@ -10,6 +10,11 @@ namespace Neo.Network.Queues
         {
             switch (command)
             {
+                case "getheaders":
+                case "getblocks":
+                    {
+                        return true;
+                    }
                 case "inv":
                     {
                         if (payload is InvPayload inv && inv.Type != InventoryType.TX)
@@ -29,7 +34,7 @@ namespace Neo.Network.Queues
         {
             Queue<ParsedMessage> message_queue =
                 IsHighPriorityMessage(command, payload) ?
-                Queue_high : Queue_low;
+                QueueHigh : QueueLow;
 
             lock (message_queue)
             {

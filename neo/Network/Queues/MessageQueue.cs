@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using Neo.IO;
+using System.Collections.Generic;
 
 namespace Neo.Network.Queues
 {
     public abstract class MessageQueue<T>
     {
-        protected readonly Queue<T> Queue_high = new Queue<T>();
-        protected readonly Queue<T> Queue_low = new Queue<T>();
+        protected readonly Queue<T> QueueHigh = new Queue<T>();
+        protected readonly Queue<T> QueueLow = new Queue<T>();
 
         /// <summary>
         /// Dequeue object according to priority
@@ -14,21 +15,21 @@ namespace Neo.Network.Queues
         {
             T ret = default(T);
 
-            lock (Queue_high)
+            lock (QueueHigh)
             {
-                if (Queue_high.Count > 0)
+                if (QueueHigh.Count > 0)
                 {
-                    ret = Queue_high.Dequeue();
+                    ret = QueueHigh.Dequeue();
                 }
             }
 
             if (ret == null)
             {
-                lock (Queue_low)
+                lock (QueueLow)
                 {
-                    if (Queue_low.Count > 0)
+                    if (QueueLow.Count > 0)
                     {
-                        ret = Queue_low.Dequeue();
+                        ret = QueueLow.Dequeue();
                     }
                 }
             }

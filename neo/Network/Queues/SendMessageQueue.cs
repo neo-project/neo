@@ -39,7 +39,7 @@ namespace Neo.Network.Queues
         {
             Queue<Message> message_queue =
                 IsHighPriorityMessage(command, out bool isSingle) ?
-                Queue_high : Queue_low;
+                QueueHigh : QueueLow;
 
             lock (message_queue)
             {
