@@ -10,6 +10,8 @@ namespace Neo.Network.Queues
         {
             switch (command)
             {
+                case "block":
+                case "consensus":
                 case "getheaders":
                 case "getblocks":
                     {
