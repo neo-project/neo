@@ -17,6 +17,10 @@ namespace Neo.Network.Queues
                     {
                         return true;
                     }
+                case "invpool":
+                    {
+                        return true;
+                    }
                 case "inv":
                     {
                         if (payload is InvPayload inv && inv.Type != InventoryType.TX)

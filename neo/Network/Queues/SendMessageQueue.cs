@@ -21,6 +21,7 @@ namespace Neo.Network.Queues
 
             switch (command)
             {
+                case "invpool":
                 case "alert":
                 case "consensus":
                 case "filteradd":
