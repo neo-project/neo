@@ -37,7 +37,6 @@ namespace Neo.Consensus
                 !CheckPolicy(tx))
             {
                 Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}");
-                RequestChangeView();
                 return false;
             }
             context.Transactions[tx.Hash] = tx;
