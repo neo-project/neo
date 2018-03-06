@@ -14,9 +14,6 @@ namespace Neo.Network.Queues
                 case "consensus":
                 case "getheaders":
                 case "getblocks":
-                    {
-                        return true;
-                    }
                 case "invpool":
                     {
                         return true;
