@@ -181,8 +181,23 @@ namespace Neo.Consensus
                 lock (context)
                 {
                     if (payload.ValidatorIndex == context.MyIndex) return;
-                    if (payload.Version != ConsensusContext.Version || payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
+
+                    if (payload.Version != ConsensusContext.Version)
                         return;
+                    if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
+                    {
+                        // Request blocks
+
+                        if (Blockchain.Default?.Height + 1 < payload.BlockIndex)
+                        {
+                            Log($"chain sync: expected={payload.BlockIndex} current: {Blockchain.Default?.Height}");
+
+                            localNode.RequestGetBlocks();
+                        }
+
+                        return;
+                    }
+
                     if (payload.ValidatorIndex >= context.Validators.Length) return;
                     ConsensusMessage message;
                     try
