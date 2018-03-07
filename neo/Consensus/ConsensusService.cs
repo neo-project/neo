@@ -286,7 +286,11 @@ namespace Neo.Consensus
             if (!AddTransaction(message.MinerTransaction, true)) return;
             LocalNode.AllowHashes(context.TransactionHashes.Except(context.Transactions.Keys));
             if (context.Transactions.Count < context.TransactionHashes.Length)
-                localNode.SynchronizeMemoryPool();
+            {
+                InvPayload msg = InvPayload.Create(InventoryType.TX, context.TransactionHashes.Where(i => !context.Transactions.ContainsKey(i)).ToArray());
+                foreach (RemoteNode node in localNode.GetRemoteNodes())
+                    node.EnqueueMessage("getdata", msg);
+            }
         }
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
