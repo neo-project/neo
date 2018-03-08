@@ -14,6 +14,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Numerics;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -29,7 +30,7 @@ namespace Neo.Network
         public const uint ProtocolVersion = 0;
         private const int ConnectedMax = 10;
         private const int UnconnectedMax = 1000;
-        public const int MemoryPoolSize = 30000;
+        public const int MemoryPoolSize = 50000;
 
         private static readonly Dictionary<UInt256, Transaction> mem_pool = new Dictionary<UInt256, Transaction>();
         private readonly HashSet<Transaction> temp_pool = new HashSet<Transaction>();
@@ -196,7 +197,14 @@ namespace Neo.Network
         private static void CheckMemPool()
         {
             if (mem_pool.Count <= MemoryPoolSize) return;
-            UInt256[] hashes = mem_pool.Values.AsParallel().OrderBy(p => p.NetworkFee / p.Size).Take(mem_pool.Count - MemoryPoolSize).Select(p => p.Hash).ToArray();
+            
+            UInt256[] hashes = mem_pool.Values.AsParallel()
+                .OrderBy(p => p.NetworkFee / p.Size)
+                .ThenBy(p => new BigInteger(p.Hash.ToArray()))
+                .Take(mem_pool.Count - MemoryPoolSize)
+                .Select(p => p.Hash)
+                .ToArray();
+            
             foreach (UInt256 hash in hashes)
                 mem_pool.Remove(hash);
         }
