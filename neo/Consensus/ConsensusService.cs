@@ -323,6 +323,9 @@ namespace Neo.Consensus
                         context.NextConsensus = Blockchain.GetConsensusAddress(Blockchain.Default.GetValidators(transactions).ToArray());
                         context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
                     }
+                    InvPayload invPayload = InvPayload.Create(InventoryType.TX, context.TransactionHashes);
+                    foreach (RemoteNode node in localNode.GetRemoteNodes())
+                        node.EnqueueMessage("inv", invPayload);
                     SignAndRelay(context.MakePrepareRequest());
                     timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer_view + 1)), Timeout.InfiniteTimeSpan);
                 }
