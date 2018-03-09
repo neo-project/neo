@@ -148,7 +148,6 @@ namespace Neo.Consensus
             context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             context.Transactions = transactions.ToDictionary(p => p.Hash);
             context.NextConsensus = Blockchain.GetConsensusAddress(Blockchain.Default.GetValidators(transactions).ToArray());
-            context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
         }
 
         private static ulong GetNonce()
@@ -340,6 +339,7 @@ namespace Neo.Consensus
                     if (!context.State.HasFlag(ConsensusState.SignatureSent))
                     {
                         context.Timestamp = Math.Max(DateTime.Now.ToTimestamp(), Blockchain.Default.GetHeader(context.PrevHash).Timestamp + 1);
+                        context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
                     }
                     SignAndRelay(context.MakePrepareRequest());
                     timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer_view + 1)), Timeout.InfiniteTimeSpan);
