@@ -140,6 +140,18 @@ namespace Neo.Implementations.Blockchains.LevelDB
             return true;
         }
 
+        public void AddBlockDirectly(Block block)
+        {
+            if (block.Index == header_index.Count)
+            {
+                WriteBatch batch = new WriteBatch();
+                OnAddHeader(block.Header, batch);
+                db.Write(WriteOptions.Default, batch);
+            }
+            Persist(block);
+            OnPersistCompleted(block);
+        }
+
         protected internal override void AddHeaders(IEnumerable<Header> headers)
         {
             lock (header_index)
