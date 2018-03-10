@@ -103,25 +103,6 @@ namespace Neo.Consensus
             }
         }
 
-        private MinerTransaction CreateMinerTransaction(IEnumerable<Transaction> transactions, uint height, ulong nonce)
-        {
-            Fixed8 amount_netfee = Block.CalculateNetFee(transactions);
-            TransactionOutput[] outputs = amount_netfee == Fixed8.Zero ? new TransactionOutput[0] : new[] { new TransactionOutput
-            {
-                AssetId = Blockchain.UtilityToken.Hash,
-                Value = amount_netfee,
-                ScriptHash = wallet.GetChangeAddress()
-            } };
-            return new MinerTransaction
-            {
-                Nonce = (uint)(nonce % (uint.MaxValue + 1ul)),
-                Attributes = new TransactionAttribute[0],
-                Inputs = new CoinReference[0],
-                Outputs = outputs,
-                Scripts = new Witness[0]
-            };
-        }
-
         public void Dispose()
         {
             Log("OnStop");
@@ -132,6 +113,41 @@ namespace Neo.Consensus
                 LocalNode.InventoryReceiving -= LocalNode_InventoryReceiving;
                 LocalNode.InventoryReceived -= LocalNode_InventoryReceived;
             }
+        }
+
+        private void FillContext()
+        {
+            List<Transaction> transactions = LocalNode.GetMemoryPool().Where(p => CheckPolicy(p)).ToList();
+            if (transactions.Count >= Settings.Default.MaxTransactionsPerBlock)
+                transactions = transactions.OrderByDescending(p => p.NetworkFee / p.Size).Take(Settings.Default.MaxTransactionsPerBlock - 1).ToList();
+            Fixed8 amount_netfee = Block.CalculateNetFee(transactions);
+            TransactionOutput[] outputs = amount_netfee == Fixed8.Zero ? new TransactionOutput[0] : new[] { new TransactionOutput
+            {
+                AssetId = Blockchain.UtilityToken.Hash,
+                Value = amount_netfee,
+                ScriptHash = wallet.GetChangeAddress()
+            } };
+            while (true)
+            {
+                ulong nonce = GetNonce();
+                MinerTransaction tx = new MinerTransaction
+                {
+                    Nonce = (uint)(nonce % (uint.MaxValue + 1ul)),
+                    Attributes = new TransactionAttribute[0],
+                    Inputs = new CoinReference[0],
+                    Outputs = outputs,
+                    Scripts = new Witness[0]
+                };
+                if (Blockchain.Default.GetTransaction(tx.Hash) == null)
+                {
+                    context.Nonce = nonce;
+                    transactions.Insert(0, tx);
+                    break;
+                }
+            }
+            context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
+            context.Transactions = transactions.ToDictionary(p => p.Hash);
+            context.NextConsensus = Blockchain.GetConsensusAddress(Blockchain.Default.GetValidators(transactions).ToArray());
         }
 
         private static ulong GetNonce()
@@ -155,6 +171,16 @@ namespace Neo.Consensus
                 if (context.MyIndex == context.PrimaryIndex)
                 {
                     context.State |= ConsensusState.Primary;
+                    if (!context.State.HasFlag(ConsensusState.SignatureSent))
+                    {
+                        FillContext();
+                    }
+                    if (context.TransactionHashes.Length > 1)
+                    {
+                        InvPayload invPayload = InvPayload.Create(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray());
+                        foreach (RemoteNode node in localNode.GetRemoteNodes())
+                            node.EnqueueMessage("inv", invPayload);
+                    }
                     timer_height = context.BlockIndex;
                     timer_view = view_number;
                     TimeSpan span = DateTime.Now - block_received_time;
@@ -313,19 +339,8 @@ namespace Neo.Consensus
                     if (!context.State.HasFlag(ConsensusState.SignatureSent))
                     {
                         context.Timestamp = Math.Max(DateTime.Now.ToTimestamp(), Blockchain.Default.GetHeader(context.PrevHash).Timestamp + 1);
-                        context.Nonce = GetNonce();
-                        List<Transaction> transactions = LocalNode.GetMemoryPool().Where(p => CheckPolicy(p)).ToList();
-                        if (transactions.Count >= Settings.Default.MaxTransactionsPerBlock)
-                            transactions = transactions.OrderByDescending(p => p.NetworkFee / p.Size).Take(Settings.Default.MaxTransactionsPerBlock - 1).ToList();
-                        transactions.Insert(0, CreateMinerTransaction(transactions, context.BlockIndex, context.Nonce));
-                        context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
-                        context.Transactions = transactions.ToDictionary(p => p.Hash);
-                        context.NextConsensus = Blockchain.GetConsensusAddress(Blockchain.Default.GetValidators(transactions).ToArray());
                         context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
                     }
-                    InvPayload invPayload = InvPayload.Create(InventoryType.TX, context.TransactionHashes);
-                    foreach (RemoteNode node in localNode.GetRemoteNodes())
-                        node.EnqueueMessage("inv", invPayload);
                     SignAndRelay(context.MakePrepareRequest());
                     timer.Change(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer_view + 1)), Timeout.InfiniteTimeSpan);
                 }

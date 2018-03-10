@@ -157,7 +157,10 @@ namespace Neo.Network
                 if (hash == null) break;
                 hashes.Add(hash);
             } while (hash != payload.HashStop && hashes.Count < 500);
-            EnqueueMessage("inv", InvPayload.Create(InventoryType.Block, hashes.ToArray()));
+            if (hashes.Count > 0)
+            {
+                EnqueueMessage("inv", InvPayload.Create(InventoryType.Block, hashes.ToArray()));
+            }
         }
 
         private void OnGetDataMessageReceived(InvPayload payload)
