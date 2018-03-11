@@ -257,7 +257,7 @@ namespace Neo.Network
             UInt256[] hashes = payload.Hashes.Distinct().ToArray();
             lock (LocalNode.KnownHashes)
             {
-                hashes = hashes.Where(p => !LocalNode.KnownHashes.Contains(p)).ToArray();
+                hashes = hashes.Where(p => !LocalNode.KnownHashes.ContainsKey(p) || DateTime.UtcNow - LocalNode.KnownHashes[p] > LocalNode.HashesExpiration).ToArray();
             }
             if (hashes.Length == 0) return;
             lock (missions_global)
