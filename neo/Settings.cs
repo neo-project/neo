@@ -8,6 +8,7 @@ namespace Neo
 {
     internal class Settings
     {
+        public bool shit = false; 
         public uint Magic { get; private set; }
         public byte AddressVersion { get; private set; }
         public int MaxTransactionsPerBlock { get; private set; }
