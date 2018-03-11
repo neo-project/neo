@@ -30,10 +30,11 @@ namespace Neo.Network
         private const int ConnectedMax = 10;
         private const int UnconnectedMax = 1000;
         public const int MemoryPoolSize = 30000;
+        internal static readonly TimeSpan HashesExpiration = TimeSpan.FromSeconds(30);
 
         private static readonly Dictionary<UInt256, Transaction> mem_pool = new Dictionary<UInt256, Transaction>();
         private readonly HashSet<Transaction> temp_pool = new HashSet<Transaction>();
-        internal static readonly HashSet<UInt256> KnownHashes = new HashSet<UInt256>();
+        internal static readonly Dictionary<UInt256, DateTime> KnownHashes = new Dictionary<UInt256, DateTime>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
 
         private static readonly HashSet<IPEndPoint> unconnectedPeers = new HashSet<IPEndPoint>();
@@ -168,7 +169,8 @@ namespace Neo.Network
         {
             lock (KnownHashes)
             {
-                KnownHashes.ExceptWith(hashes);
+                foreach (UInt256 hash in hashes)
+                    KnownHashes.Remove(hash);
             }
         }
 
@@ -191,6 +193,27 @@ namespace Neo.Network
                 temp_pool.UnionWith(remain);
             }
             new_tx_event.Set();
+        }
+
+        private static bool CheckKnownHashes(UInt256 hash)
+        {
+            DateTime now = DateTime.UtcNow;
+            lock (KnownHashes)
+            {
+                if (KnownHashes.TryGetValue(hash, out DateTime time))
+                {
+                    if (now - time <= HashesExpiration)
+                        return false;
+                }
+                KnownHashes[hash] = now;
+                if (KnownHashes.Count > 1000000)
+                {
+                    UInt256[] expired = KnownHashes.Where(p => now - p.Value > HashesExpiration).Select(p => p.Key).ToArray();
+                    foreach (UInt256 key in expired)
+                        KnownHashes.Remove(key);
+                }
+                return true;
+            }
         }
 
         private static void CheckMemPool()
@@ -418,10 +441,7 @@ namespace Neo.Network
         public bool Relay(IInventory inventory)
         {
             if (inventory is MinerTransaction) return false;
-            lock (KnownHashes)
-            {
-                if (!KnownHashes.Add(inventory.Hash)) return false;
-            }
+            if (!CheckKnownHashes(inventory.Hash)) return false;
             InventoryReceivingEventArgs args = new InventoryReceivingEventArgs(inventory);
             InventoryReceiving?.Invoke(this, args);
             if (args.Cancel) return false;
@@ -496,10 +516,7 @@ namespace Neo.Network
             if (inventory is Transaction tx && tx.Type != TransactionType.ClaimTransaction && tx.Type != TransactionType.IssueTransaction)
             {
                 if (Blockchain.Default == null) return;
-                lock (KnownHashes)
-                {
-                    if (!KnownHashes.Add(inventory.Hash)) return;
-                }
+                if (!CheckKnownHashes(inventory.Hash)) return;
                 InventoryReceivingEventArgs args = new InventoryReceivingEventArgs(inventory);
                 InventoryReceiving?.Invoke(this, args);
                 if (args.Cancel) return;
