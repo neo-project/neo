@@ -332,12 +332,11 @@ namespace Neo.Network
             }
         }
 
-        public static IEnumerable<Transaction> GetMemoryPool()
+        public static Transaction[] GetMemoryPool()
         {
             lock (mem_pool)
             {
-                foreach (Transaction tx in mem_pool.Values)
-                    yield return tx;
+                return mem_pool.Values.ToArray();
             }
         }
 
