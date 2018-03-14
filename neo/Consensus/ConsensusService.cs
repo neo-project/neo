@@ -310,9 +310,14 @@ namespace Neo.Consensus
                         return;
             }
             if (!AddTransaction(message.MinerTransaction, true)) return;
-            LocalNode.AllowHashes(context.TransactionHashes.Except(context.Transactions.Keys));
             if (context.Transactions.Count < context.TransactionHashes.Length)
-                localNode.SynchronizeMemoryPool();
+            {
+                UInt256[] hashes = context.TransactionHashes.Where(i => !context.Transactions.ContainsKey(i)).ToArray();
+                LocalNode.AllowHashes(hashes);
+                InvPayload msg = InvPayload.Create(InventoryType.TX, hashes);
+                foreach (RemoteNode node in localNode.GetRemoteNodes())
+                    node.EnqueueMessage("getdata", msg);
+            }
         }
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
