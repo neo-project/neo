@@ -22,10 +22,11 @@ namespace Neo.Network
         private static readonly TimeSpan HalfMinute = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan OneMinute = TimeSpan.FromMinutes(1);
         private static readonly TimeSpan HalfHour = TimeSpan.FromMinutes(30);
+        private static readonly TimeSpan MissionExpiration = TimeSpan.FromMinutes(1);
 
         private Queue<Message> message_queue_high = new Queue<Message>();
         private Queue<Message> message_queue_low = new Queue<Message>();
-        private static HashSet<UInt256> missions_global = new HashSet<UInt256>();
+        private static Dictionary<UInt256, DateTime> missions_global = new Dictionary<UInt256, DateTime>();
         private HashSet<UInt256> missions = new HashSet<UInt256>();
         private DateTime mission_start = DateTime.Now.AddYears(100);
 
@@ -52,7 +53,8 @@ namespace Neo.Network
                     lock (missions)
                         if (missions.Count > 0)
                         {
-                            missions_global.ExceptWith(missions);
+                            foreach (UInt256 hash in missions)
+                                missions_global.Remove(hash);
                             needSync = true;
                         }
                 if (needSync)
@@ -254,28 +256,30 @@ namespace Neo.Network
         {
             if (payload.Type != InventoryType.TX && payload.Type != InventoryType.Block && payload.Type != InventoryType.Consensus)
                 return;
-            UInt256[] hashes = payload.Hashes.Distinct().ToArray();
+            HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
             lock (LocalNode.KnownHashes)
             {
-                hashes = hashes.Where(p => !LocalNode.KnownHashes.ContainsKey(p) || DateTime.UtcNow - LocalNode.KnownHashes[p] > LocalNode.HashesExpiration).ToArray();
+                hashes.RemoveWhere(p => LocalNode.KnownHashes.TryGetValue(p, out DateTime time) && time + LocalNode.HashesExpiration >= DateTime.UtcNow);
             }
-            if (hashes.Length == 0) return;
+            if (hashes.Count == 0) return;
             lock (missions_global)
             {
                 lock (missions)
                 {
                     if (localNode.GlobalMissionsEnabled)
-                        hashes = hashes.Where(p => !missions_global.Contains(p)).ToArray();
-                    if (hashes.Length > 0)
+                        hashes.RemoveWhere(p => missions_global.TryGetValue(p, out DateTime time) && time + MissionExpiration >= DateTime.UtcNow);
+                    if (hashes.Count > 0)
                     {
                         if (missions.Count == 0) mission_start = DateTime.Now;
-                        missions_global.UnionWith(hashes);
+                        foreach (UInt256 hash in hashes)
+                            if (!missions_global.ContainsKey(hash))
+                                missions_global.Add(hash, DateTime.UtcNow);
                         missions.UnionWith(hashes);
                     }
                 }
             }
-            if (hashes.Length == 0) return;
-            EnqueueMessage("getdata", InvPayload.Create(payload.Type, hashes));
+            if (hashes.Count == 0) return;
+            EnqueueMessage("getdata", InvPayload.Create(payload.Type, hashes.ToArray()));
         }
 
         private void OnMemPoolMessageReceived()
