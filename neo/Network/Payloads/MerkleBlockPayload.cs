@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Neo.Network.Payloads
 {
-    internal class MerkleBlockPayload : BlockBase
+    public class MerkleBlockPayload : BlockBase
     {
         public int TxCount;
         public UInt256[] Hashes;

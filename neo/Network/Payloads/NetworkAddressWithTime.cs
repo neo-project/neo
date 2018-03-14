@@ -6,7 +6,7 @@ using System.Net;
 
 namespace Neo.Network.Payloads
 {
-    internal class NetworkAddressWithTime : ISerializable
+    public class NetworkAddressWithTime : ISerializable
     {
         public const ulong NODE_NETWORK = 1;
 

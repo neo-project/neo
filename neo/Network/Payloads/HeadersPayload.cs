@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Neo.Network.Payloads
 {
-    internal class HeadersPayload : ISerializable
+    public class HeadersPayload : ISerializable
     {
         public Header[] Headers;
 
