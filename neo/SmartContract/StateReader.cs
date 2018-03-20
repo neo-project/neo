@@ -948,8 +948,12 @@ namespace Neo.SmartContract
                 StorageContext context = _interface.GetInterface<StorageContext>();
                 if (!CheckStorageContext(context)) return false;
                 byte[] prefix = engine.EvaluationStack.Pop().GetByteArray();
-                prefix = context.ScriptHash.ToArray().Concat(prefix).ToArray();
-                StorageIterator iterator = new StorageIterator(Storages.Find(prefix).GetEnumerator());
+                StorageKey key = new StorageKey
+                {
+                    ScriptHash = context.ScriptHash,
+                    Key = prefix
+                };
+                StorageIterator iterator = new StorageIterator(Storages.Find(key.ToArray()).GetEnumerator());
                 engine.EvaluationStack.Push(StackItem.FromInterface(iterator));
                 disposables.Add(iterator);
                 return true;
