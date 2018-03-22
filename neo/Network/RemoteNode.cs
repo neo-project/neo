@@ -432,15 +432,7 @@ namespace Neo.Network
                 Disconnect(false);
                 return;
             }
-            if (ListenerEndpoint != null)
-            {
-                if (ListenerEndpoint.Port != Version.Port)
-                {
-                    Disconnect(true);
-                    return;
-                }
-            }
-            else if (Version.Port > 0)
+            if (ListenerEndpoint == null && Version.Port > 0)
             {
                 ListenerEndpoint = new IPEndPoint(RemoteEndpoint.Address, Version.Port);
             }
