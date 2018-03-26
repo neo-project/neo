@@ -85,33 +85,31 @@ namespace Neo.Wallets
             return GetAccount(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash());
         }
 
+        public BigDecimal GetAvailable(Fixed8 asset_id)
+        {
+            return new BigDecimal(asset_id.GetData(), 8);
+        }
+
+        public BigDecimal GetAvailable(UInt160 asset_id)
+        {
+            byte[] script;
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                foreach (UInt160 account in GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash))
+                    sb.EmitAppCall(asset_id, "balanceOf", account);
+                sb.Emit(OpCode.DEPTH, OpCode.PACK);
+                sb.EmitAppCall(asset_id, "decimals");
+                script = sb.ToArray();
+            }
+            ApplicationEngine engine = ApplicationEngine.Run(script);
+            byte decimals = (byte)engine.EvaluationStack.Pop().GetBigInteger();
+            BigInteger amount = ((VMArray)engine.EvaluationStack.Pop()).Aggregate(BigInteger.Zero, (x, y) => x + y.GetBigInteger());
+            return new BigDecimal(amount, decimals);
+        }
+
         public Fixed8 GetAvailable(UInt256 asset_id)
         {
             return FindUnspentCoins().Where(p => p.Output.AssetId.Equals(asset_id)).Sum(p => p.Output.Value);
-        }
-
-        public BigDecimal GetAvailable(UIntBase asset_id)
-        {
-            if (asset_id is UInt160 asset_id_160)
-            {
-                byte[] script;
-                using (ScriptBuilder sb = new ScriptBuilder())
-                {
-                    foreach (UInt160 account in GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash))
-                        sb.EmitAppCall(asset_id_160, "balanceOf", account);
-                    sb.Emit(OpCode.DEPTH, OpCode.PACK);
-                    sb.EmitAppCall(asset_id_160, "decimals");
-                    script = sb.ToArray();
-                }
-                ApplicationEngine engine = ApplicationEngine.Run(script);
-                byte decimals = (byte)engine.EvaluationStack.Pop().GetBigInteger();
-                BigInteger amount = ((VMArray)engine.EvaluationStack.Pop()).Aggregate(BigInteger.Zero, (x, y) => x + y.GetBigInteger());
-                return new BigDecimal(amount, decimals);
-            }
-            else
-            {
-                return new BigDecimal(GetAvailable((UInt256)asset_id).GetData(), 8);
-            }
         }
 
         public Fixed8 GetBalance(UInt256 asset_id)
