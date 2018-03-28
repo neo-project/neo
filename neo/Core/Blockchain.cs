@@ -20,7 +20,7 @@ namespace Neo.Core
         /// <summary>
         /// 产生每个区块的时间间隔，已秒为单位
         /// </summary>
-        public const uint SecondsPerBlock = 15;
+        public static readonly uint SecondsPerBlock = Settings.Default.SecondsPerBlock;
         public const uint DecrementInterval = 2000000;
         public const uint MaxValidators = 1024;
         public static readonly uint[] GenerationAmount = { 8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
