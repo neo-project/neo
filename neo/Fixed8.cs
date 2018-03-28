@@ -203,9 +203,31 @@ namespace Neo
 
         public static Fixed8 operator *(Fixed8 x, Fixed8 y)
         {
-            decimal ux = (decimal)x;
-            decimal uy = (decimal)y;
-            x.value = FromDecimal(ux * uy).value;
+            const ulong QUO = (1ul << 63) / (D >> 1);
+            const ulong REM = ((1ul << 63) % (D >> 1)) << 1;
+            int sign = Math.Sign(x.value) * Math.Sign(y.value);
+            ulong ux = (ulong)Math.Abs(x.value);
+            ulong uy = (ulong)Math.Abs(y.value);
+            ulong xh = ux >> 32;
+            ulong xl = ux & 0x00000000fffffffful;
+            ulong yh = uy >> 32;
+            ulong yl = uy & 0x00000000fffffffful;
+            ulong rh = xh * yh;
+            ulong rm = xh * yl + xl * yh;
+            ulong rl = xl * yl;
+            ulong rmh = rm >> 32;
+            ulong rml = rm << 32;
+            rh += rmh;
+            rl += rml;
+            if (rl < rml)
+                ++rh;
+            if (rh >= D)
+                throw new OverflowException();
+            ulong rd = rh * REM + rl;
+            if (rd < rl)
+                ++rh;
+            ulong r = rh * QUO + rd / D;
+            x.value = (long)r * sign;
             return x;
         }
 
