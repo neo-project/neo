@@ -6,7 +6,7 @@ using System.IO;
 
 namespace Neo
 {
-    public class UInt256 : IEquatable<UInt256>, IComparable<UInt256>, ISerializable
+    public class UInt256 : UIntBase, IEquatable<UInt256>, IComparable<UInt256>, ISerializable
     {
         private static readonly int size = 32;
 
@@ -77,7 +77,7 @@ namespace Neo
             return "0x" + buffer.Reverse().ToHexString();
         }
 
-        public static UInt256 Parse(string value)
+        public new static UInt256 Parse(string value)
         {
             return new UInt256(value.HexToBytes(size * 2).Reverse().ToArray());
         }

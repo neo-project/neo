@@ -7,15 +7,13 @@ namespace Neo.Wallets
 {
     public class AssetDescriptor
     {
-        public object AssetId;
+        public UIntBase AssetId;
         public string AssetName;
         public byte Decimals;
 
-        public AssetDescriptor(object asset_id)
+        public AssetDescriptor(UIntBase asset_id)
         {
-            UInt160 asset_id_160 = asset_id as UInt160;
-            UInt256 asset_id_256 = asset_id as UInt256;
-            if (asset_id_160 != null)
+            if (asset_id is UInt160 asset_id_160)
             {
                 byte[] script;
                 using (ScriptBuilder sb = new ScriptBuilder())
@@ -30,15 +28,13 @@ namespace Neo.Wallets
                 this.AssetName = engine.EvaluationStack.Pop().GetString();
                 this.Decimals = (byte)engine.EvaluationStack.Pop().GetBigInteger();
             }
-            else if (asset_id_256 != null)
+            else
             {
-                AssetState state = Blockchain.Default.GetAssetState(asset_id_256);
-                this.AssetId = asset_id;
+                AssetState state = Blockchain.Default.GetAssetState((UInt256)asset_id);
+                this.AssetId = state.AssetId;
                 this.AssetName = state.GetName();
                 this.Decimals = state.Precision;
             }
-            else
-                throw new NotSupportedException();
         }
 
         public override string ToString()

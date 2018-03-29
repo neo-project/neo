@@ -5,29 +5,18 @@ namespace Neo.Wallets
 {
     public class TransferOutput
     {
-        private object asset_id;
-        private UInt256 asset_id_256;
-
-        public object AssetId
-        {
-            get => asset_id;
-            set
-            {
-                asset_id = value;
-                asset_id_256 = value as UInt256;
-            }
-        }
+        public UIntBase AssetId;
         public BigDecimal Value;
         public UInt160 ScriptHash;
 
-        public bool IsGlobalAsset => asset_id_256 != null;
+        public bool IsGlobalAsset => AssetId is UInt256;
 
         public TransactionOutput ToTxOutput()
         {
-            if (asset_id_256 != null)
+            if (AssetId is UInt256 asset_id)
                 return new TransactionOutput
                 {
-                    AssetId = asset_id_256,
+                    AssetId = asset_id,
                     Value = Value.ToFixed8(),
                     ScriptHash = ScriptHash
                 };
