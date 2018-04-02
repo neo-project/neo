@@ -50,15 +50,15 @@ namespace Neo
             throw new Exception();
         }
 
-        public static byte[] HexToBytes(this string value, int limit = 0)
+        public static byte[] HexToBytes(this string value, int limit = -1)
         {
-            if (string.IsNullOrEmpty(value))
-                return new byte[0];
-            if (value.StartsWith("0x"))
+            if (value == null)
+                value = string.Empty;
+            else if (value.StartsWith("0x"))
                 value = value.Substring(2);
             if (value.Length % 2 == 1)
                 throw new FormatException();
-            if (limit != 0 && value.Length != limit)
+            if (limit >= 0 && value.Length != limit)
                 throw new FormatException();
             byte[] result = new byte[value.Length / 2];
             for (int i = 0; i < result.Length; i++)
