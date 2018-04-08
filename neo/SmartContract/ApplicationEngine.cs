@@ -156,11 +156,29 @@ namespace Neo.SmartContract
             switch (nextInstruction)
             {
                 case OpCode.SHL:
-                case OpCode.SHR:
                     {
-                        BigInteger ishift = EvaluationStack.Peek().GetBigInteger();
+                        BigInteger ishift = EvaluationStack.Peek(0).GetBigInteger();
 
                         if ((ishift > Max_SHL_SHR || ishift < Min_SHL_SHR))
+                            return false;
+
+                        BigInteger x = EvaluationStack.Peek(1).GetBigInteger();
+
+                        if (!CheckBigInteger(x << (int)ishift))
+                            return false;
+
+                        break;
+                    }
+                case OpCode.SHR:
+                    {
+                        BigInteger ishift = EvaluationStack.Peek(0).GetBigInteger();
+
+                        if ((ishift > Max_SHL_SHR || ishift < Min_SHL_SHR))
+                            return false;
+
+                        BigInteger x = EvaluationStack.Peek(1).GetBigInteger();
+
+                        if (!CheckBigInteger(x >> (int)ishift))
                             return false;
 
                         break;
