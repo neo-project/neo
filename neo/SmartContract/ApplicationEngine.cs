@@ -12,6 +12,14 @@ namespace Neo.SmartContract
     {
         #region Limits
         /// <summary>
+        /// Max value for SHL and SHR
+        /// </summary>
+        private const int Max_SHL_SHR = ushort.MaxValue;
+        /// <summary>
+        /// Min value for SHL and SHR
+        /// </summary>
+        private const int Min_SHL_SHR = -Max_SHL_SHR;
+        /// <summary>
         /// Set the max size allowed size for BigInteger
         /// </summary>
         private const int MaxSizeForBigInteger = 32;
@@ -147,6 +155,34 @@ namespace Neo.SmartContract
         {
             switch (nextInstruction)
             {
+                case OpCode.SHL:
+                    {
+                        BigInteger ishift = EvaluationStack.Peek(0).GetBigInteger();
+
+                        if ((ishift > Max_SHL_SHR || ishift < Min_SHL_SHR))
+                            return false;
+
+                        BigInteger x = EvaluationStack.Peek(1).GetBigInteger();
+
+                        if (!CheckBigInteger(x << (int)ishift))
+                            return false;
+
+                        break;
+                    }
+                case OpCode.SHR:
+                    {
+                        BigInteger ishift = EvaluationStack.Peek(0).GetBigInteger();
+
+                        if ((ishift > Max_SHL_SHR || ishift < Min_SHL_SHR))
+                            return false;
+
+                        BigInteger x = EvaluationStack.Peek(1).GetBigInteger();
+
+                        if (!CheckBigInteger(x >> (int)ishift))
+                            return false;
+
+                        break;
+                    }
                 case OpCode.INC:
                     {
                         BigInteger x = EvaluationStack.Peek().GetBigInteger();
