@@ -18,7 +18,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Min value for SHL and SHR
         /// </summary>
-        private const int Min_SHL_SHR = short.MinValue;
+        private const int Min_SHL_SHR = -Max_SHL_SHR;
         /// <summary>
         /// Set the max size allowed size for BigInteger
         /// </summary>
