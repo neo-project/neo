@@ -36,7 +36,7 @@ namespace Neo.Wallets
 
         static WalletIndexer()
         {
-            string path = $"Index_{Settings.Default.Magic:X8}";
+            string path = Path.GetFullPath($"Index_{Settings.Default.Magic:X8}");
             Directory.CreateDirectory(path);
             db = DB.Open(path, new Options { CreateIfMissing = true });
             if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.SYS_Version), out Slice value) && Version.TryParse(value.ToString(), out Version version) && version >= Version.Parse("2.5.4"))
