@@ -8,5 +8,6 @@
         InteropInterface = 0x40,
         Array = 0x80,
         Struct = 0x81,
+        Map = 0x82,
     }
 }
