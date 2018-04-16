@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Neo.Network.Payloads
 {
-    internal class FilterAddPayload : ISerializable
+    public class FilterAddPayload : ISerializable
     {
         public byte[] Data;
 

@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Neo.Network.Payloads
 {
-    internal class GetBlocksPayload : ISerializable
+    public class GetBlocksPayload : ISerializable
     {
         public UInt256[] HashStart;
         public UInt256 HashStop;

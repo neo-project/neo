@@ -1,10 +1,13 @@
 ﻿using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.SmartContract;
+using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using VMArray = Neo.VM.Types.Array;
+using VMBoolean = Neo.VM.Types.Boolean;
 
 namespace Neo.VM
 {
@@ -76,7 +79,10 @@ namespace Neo.VM
                     sb.EmitPush((bool)parameter.Value);
                     break;
                 case ContractParameterType.Integer:
-                    sb.EmitPush((BigInteger)parameter.Value);
+                    if (parameter.Value is BigInteger bi)
+                        sb.EmitPush(bi);
+                    else
+                        sb.EmitPush((BigInteger)typeof(BigInteger).GetConstructor(new[] { parameter.Value.GetType() }).Invoke(new[] { parameter.Value }));
                     break;
                 case ContractParameterType.Hash160:
                     sb.EmitPush((UInt160)parameter.Value);
@@ -166,34 +172,33 @@ namespace Neo.VM
 
         public static ContractParameter ToParameter(this StackItem item)
         {
-            switch (item.GetType().Name)
+            switch (item)
             {
-                case "Array":
-                case "Struct":
+                case VMArray array:
                     return new ContractParameter
                     {
                         Type = ContractParameterType.Array,
-                        Value = item.GetArray().Select(p => p.ToParameter()).ToArray()
+                        Value = array.Select(p => p.ToParameter()).ToArray()
                     };
-                case "Boolean":
+                case VMBoolean _:
                     return new ContractParameter
                     {
                         Type = ContractParameterType.Boolean,
                         Value = item.GetBoolean()
                     };
-                case "ByteArray":
+                case ByteArray _:
                     return new ContractParameter
                     {
                         Type = ContractParameterType.ByteArray,
                         Value = item.GetByteArray()
                     };
-                case "Integer":
+                case Integer _:
                     return new ContractParameter
                     {
                         Type = ContractParameterType.Integer,
                         Value = item.GetBigInteger()
                     };
-                case "InteropInterface":
+                case InteropInterface _:
                     return new ContractParameter
                     {
                         Type = ContractParameterType.InteropInterface

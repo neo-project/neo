@@ -11,8 +11,8 @@ namespace Neo.Core
         Spent = 1 << 1,
         //Vote = 1 << 2,
         Claimed = 1 << 3,
-        Locked = 1 << 4,
+        //Locked = 1 << 4,
         Frozen = 1 << 5,
-        WatchOnly = 1 << 6,
+        //WatchOnly = 1 << 6,
     }
 }

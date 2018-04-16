@@ -5,7 +5,7 @@ using System.IO;
 
 namespace Neo.Network.Payloads
 {
-    internal class FilterLoadPayload : ISerializable
+    public class FilterLoadPayload : ISerializable
     {
         public byte[] Filter;
         public byte K;

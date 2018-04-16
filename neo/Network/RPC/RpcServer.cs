@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.Extensions.DependencyInjection;
 using Neo.Core;
 using Neo.IO;
 using Neo.IO.Json;
@@ -9,6 +11,7 @@ using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -58,6 +61,7 @@ namespace Neo.Network.RPC
         {
             ApplicationEngine engine = ApplicationEngine.Run(script);
             JObject json = new JObject();
+            json["script"] = script.ToHexString();
             json["state"] = engine.State;
             json["gas_consumed"] = engine.GasConsumed.ToString();
             json["stack"] = new JArray(engine.EvaluationStack.Select(p => p.ToParameter().ToJson()));
@@ -287,10 +291,10 @@ namespace Neo.Network.RPC
                         }
 
                         return json;
-					}
-				case "getversion":
-					{
-						JObject json = new JObject();
+                    }
+                case "getversion":
+                    {
+                        JObject json = new JObject();
                         json["port"] = LocalNode.Port;
                         json["nonce"] = LocalNode.Nonce;
                         json["useragent"] = LocalNode.UserAgent;
@@ -363,7 +367,7 @@ namespace Neo.Network.RPC
             }
             if (response == null || (response as JArray)?.Count == 0) return;
             context.Response.ContentType = "application/json-rpc";
-            await context.Response.WriteAsync(response.ToString());
+            await context.Response.WriteAsync(response.ToString(), Encoding.UTF8);
         }
 
         private JObject ProcessRequest(JObject request)
@@ -391,22 +395,34 @@ namespace Neo.Network.RPC
             return response;
         }
 
-        public void Start(params string[] uriPrefix)
+        public void Start(int port, string sslCert = null, string password = null)
         {
-            Start(uriPrefix, null, null);
-        }
+            host = new WebHostBuilder().UseKestrel(options => options.Listen(IPAddress.Any, port, listenOptions =>
+            {
+                if (!string.IsNullOrEmpty(sslCert))
+                    listenOptions.UseHttps(sslCert, password);
+            }))
+            .Configure(app =>
+            {
+                app.UseResponseCompression();
+                app.Run(ProcessAsync);
+            })
+            .ConfigureServices(services =>
+            {
+                services.AddResponseCompression(options =>
+                {
+                    // options.EnableForHttps = false;
+                    options.Providers.Add<GzipCompressionProvider>();
+                    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/json-rpc" });
+                });
 
-        public void Start(string[] uriPrefix, string sslCert, string password)
-        {
-            if (uriPrefix.Length == 0)
-                throw new ArgumentException();
-            IWebHostBuilder builder = new WebHostBuilder();
-            if (uriPrefix.Any(p => p.StartsWith("https")))
-                builder = builder.UseKestrel(options => options.UseHttps(sslCert, password));
-            else
-                builder = builder.UseKestrel();
-            builder = builder.UseUrls(uriPrefix).Configure(app => app.Run(ProcessAsync));
-            host = builder.Build();
+                services.Configure<GzipCompressionProviderOptions>(options =>
+                {
+                    options.Level = CompressionLevel.Fastest;
+                });
+            })
+            .Build();
+
             host.Start();
         }
     }

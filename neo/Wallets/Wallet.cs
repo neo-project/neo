@@ -1,275 +1,67 @@
 ﻿using Neo.Core;
 using Neo.Cryptography;
-using Neo.IO.Caching;
 using Neo.SmartContract;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security;
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Threading;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
+using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.Wallets
 {
-    public abstract class Wallet : IDisposable
+    public abstract class Wallet
     {
-        public event EventHandler BalanceChanged;
+        public abstract event EventHandler<BalanceEventArgs> BalanceChanged;
 
-        public static readonly byte AddressVersion = Settings.Default.AddressVersion;
+        private static readonly Random rand = new Random();
 
-        private readonly string path;
-        private readonly byte[] iv;
-        private readonly byte[] masterKey;
-        private readonly Dictionary<UInt160, KeyPair> keys;
-        private readonly Dictionary<UInt160, VerificationContract> contracts;
-        private readonly HashSet<UInt160> watchOnly;
-        private readonly TrackableCollection<CoinReference, Coin> coins;
-        private uint current_height;
+        public abstract string Name { get; }
+        public abstract Version Version { get; }
+        public abstract uint WalletHeight { get; }
 
-        private readonly Thread thread;
-        private bool isrunning = true;
+        public abstract void ApplyTransaction(Transaction tx);
+        public abstract bool Contains(UInt160 scriptHash);
+        public abstract WalletAccount CreateAccount(byte[] privateKey);
+        public abstract WalletAccount CreateAccount(Contract contract, KeyPair key = null);
+        public abstract WalletAccount CreateAccount(UInt160 scriptHash);
+        public abstract bool DeleteAccount(UInt160 scriptHash);
+        public abstract WalletAccount GetAccount(UInt160 scriptHash);
+        public abstract IEnumerable<WalletAccount> GetAccounts();
+        public abstract IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts);
+        public abstract IEnumerable<UInt256> GetTransactions();
 
-        protected string DbPath => path;
-        protected object SyncRoot { get; } = new object();
-        public uint WalletHeight => current_height;
-        protected abstract Version Version { get; }
-
-        private Wallet(string path, byte[] passwordKey, bool create)
-        {
-            this.path = path;
-            if (create)
-            {
-                this.iv = new byte[16];
-                this.masterKey = new byte[32];
-                this.keys = new Dictionary<UInt160, KeyPair>();
-                this.contracts = new Dictionary<UInt160, VerificationContract>();
-                this.watchOnly = new HashSet<UInt160>();
-                this.coins = new TrackableCollection<CoinReference, Coin>();
-                this.current_height = Blockchain.Default?.HeaderHeight + 1 ?? 0;
-                using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
-                {
-                    rng.GetBytes(iv);
-                    rng.GetBytes(masterKey);
-                }
-                BuildDatabase();
-                SaveStoredData("PasswordHash", passwordKey.Sha256());
-                SaveStoredData("IV", iv);
-                SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
-                SaveStoredData("Version", new[] { Version.Major, Version.Minor, Version.Build, Version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
-                SaveStoredData("Height", BitConverter.GetBytes(current_height));
-#if NET461
-                ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
-#endif
-            }
-            else
-            {
-                byte[] passwordHash = LoadStoredData("PasswordHash");
-                if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Sha256()))
-                    throw new CryptographicException();
-                this.iv = LoadStoredData("IV");
-                this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
-#if NET461
-                ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
-#endif
-                this.keys = LoadKeyPairs().ToDictionary(p => p.PublicKeyHash);
-                this.contracts = LoadContracts().ToDictionary(p => p.ScriptHash);
-                this.watchOnly = new HashSet<UInt160>(LoadWatchOnly());
-                this.coins = new TrackableCollection<CoinReference, Coin>(LoadCoins());
-                this.current_height = LoadStoredData("Height").ToUInt32(0);
-            }
-            Array.Clear(passwordKey, 0, passwordKey.Length);
-            this.thread = new Thread(ProcessBlocks);
-            this.thread.IsBackground = true;
-            this.thread.Name = "Wallet.ProcessBlocks";
-            this.thread.Start();
-        }
-
-        protected Wallet(string path, string password, bool create)
-            : this(path, password.ToAesKey(), create)
-        {
-        }
-
-        protected Wallet(string path, SecureString password, bool create)
-            : this(path, password.ToAesKey(), create)
-        {
-        }
-
-        public virtual void AddContract(VerificationContract contract)
-        {
-            lock (keys)
-            {
-                if (!keys.ContainsKey(contract.PublicKeyHash))
-                    throw new InvalidOperationException();
-                lock (contracts)
-                    lock (watchOnly)
-                    {
-                        contracts[contract.ScriptHash] = contract;
-                        watchOnly.Remove(contract.ScriptHash);
-                    }
-            }
-        }
-
-        public virtual void AddWatchOnly(UInt160 scriptHash)
-        {
-            lock (contracts)
-            {
-                if (contracts.ContainsKey(scriptHash))
-                    return;
-                lock (watchOnly)
-                {
-                    watchOnly.Add(scriptHash);
-                }
-            }
-        }
-
-        protected virtual void BuildDatabase()
-        {
-        }
-
-        public bool ChangePassword(string password_old, string password_new)
-        {
-            if (!VerifyPassword(password_old)) return false;
-            byte[] passwordKey = password_new.ToAesKey();
-#if NET461
-            using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
-#endif
-            {
-                try
-                {
-                    SaveStoredData("PasswordHash", passwordKey.Sha256());
-                    SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
-                    return true;
-                }
-                finally
-                {
-                    Array.Clear(passwordKey, 0, passwordKey.Length);
-                }
-            }
-        }
-
-        private AddressState CheckAddressState(UInt160 scriptHash)
-        {
-            lock (contracts)
-            {
-                if (contracts.ContainsKey(scriptHash))
-                    return AddressState.InWallet;
-            }
-            lock (watchOnly)
-            {
-                if (watchOnly.Contains(scriptHash))
-                    return AddressState.InWallet | AddressState.WatchOnly;
-            }
-            return AddressState.None;
-        }
-
-        public bool ContainsKey(Cryptography.ECC.ECPoint publicKey)
-        {
-            return ContainsKey(publicKey.EncodePoint(true).ToScriptHash());
-        }
-
-        public bool ContainsKey(UInt160 publicKeyHash)
-        {
-            lock (keys)
-            {
-                return keys.ContainsKey(publicKeyHash);
-            }
-        }
-
-        public bool ContainsAddress(UInt160 scriptHash)
-        {
-            return CheckAddressState(scriptHash).HasFlag(AddressState.InWallet);
-        }
-
-        public KeyPair CreateKey()
+        public WalletAccount CreateAccount()
         {
             byte[] privateKey = new byte[32];
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
                 rng.GetBytes(privateKey);
             }
-            KeyPair key = CreateKey(privateKey);
+            WalletAccount account = CreateAccount(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
-            return key;
+            return account;
         }
 
-        public virtual KeyPair CreateKey(byte[] privateKey)
+        public WalletAccount CreateAccount(Contract contract, byte[] privateKey)
         {
-            KeyPair key = new KeyPair(privateKey);
-            lock (keys)
-            {
-                keys[key.PublicKeyHash] = key;
-            }
-            return key;
+            if (privateKey == null) return CreateAccount(contract);
+            return CreateAccount(contract, new KeyPair(privateKey));
         }
 
-        protected byte[] DecryptPrivateKey(byte[] encryptedPrivateKey)
+        public IEnumerable<Coin> FindUnspentCoins(params UInt160[] from)
         {
-            if (encryptedPrivateKey == null) throw new ArgumentNullException(nameof(encryptedPrivateKey));
-            if (encryptedPrivateKey.Length != 96) throw new ArgumentException();
-#if NET461
-            using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
-#endif
-            {
-                return encryptedPrivateKey.AesDecrypt(masterKey, iv);
-            }
+            IEnumerable<UInt160> accounts = from.Length > 0 ? from : GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash);
+            return GetCoins(accounts).Where(p => p.State.HasFlag(CoinState.Confirmed) && !p.State.HasFlag(CoinState.Spent) && !p.State.HasFlag(CoinState.Frozen));
         }
 
-        public virtual bool DeleteKey(UInt160 publicKeyHash)
+        public virtual Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount, params UInt160[] from)
         {
-            lock (keys)
-            {
-                lock (contracts)
-                {
-                    foreach (VerificationContract contract in contracts.Values.Where(p => p.PublicKeyHash == publicKeyHash).ToArray())
-                    {
-                        DeleteAddress(contract.ScriptHash);
-                    }
-                }
-                return keys.Remove(publicKeyHash);
-            }
-        }
-
-        public virtual bool DeleteAddress(UInt160 scriptHash)
-        {
-            lock (contracts)
-                lock (watchOnly)
-                    lock (coins)
-                    {
-                        foreach (CoinReference key in coins.Where(p => p.Output.ScriptHash == scriptHash).Select(p => p.Reference).ToArray())
-                        {
-                            coins.Remove(key);
-                        }
-                        coins.Commit();
-                        return contracts.Remove(scriptHash) || watchOnly.Remove(scriptHash);
-                    }
-        }
-
-        public virtual void Dispose()
-        {
-            isrunning = false;
-            if (!thread.ThreadState.HasFlag(ThreadState.Unstarted)) thread.Join();
-        }
-
-        protected byte[] EncryptPrivateKey(byte[] decryptedPrivateKey)
-        {
-#if NET461
-            using (new ProtectedMemoryContext(masterKey, MemoryProtectionScope.SameProcess))
-#endif
-            {
-                return decryptedPrivateKey.AesEncrypt(masterKey, iv);
-            }
-        }
-
-        public IEnumerable<Coin> FindUnspentCoins()
-        {
-            return GetCoins().Where(p => p.State.HasFlag(CoinState.Confirmed) && !p.State.HasFlag(CoinState.Spent) && !p.State.HasFlag(CoinState.Locked) && !p.State.HasFlag(CoinState.Frozen) && !p.State.HasFlag(CoinState.WatchOnly));
-        }
-
-        public virtual Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount)
-        {
-            return FindUnspentCoins(FindUnspentCoins(), asset_id, amount);
+            return FindUnspentCoins(FindUnspentCoins(from), asset_id, amount);
         }
 
         protected static Coin[] FindUnspentCoins(IEnumerable<Coin> unspents, UInt256 asset_id, Fixed8 amount)
@@ -288,52 +80,9 @@ namespace Neo.Wallets
                 return unspents_ordered.Take(i).Concat(new[] { unspents_ordered.Last(p => p.Output.Value >= amount) }).ToArray();
         }
 
-        public KeyPair GetKey(Cryptography.ECC.ECPoint publicKey)
+        public WalletAccount GetAccount(ECPoint pubkey)
         {
-            return GetKey(publicKey.EncodePoint(true).ToScriptHash());
-        }
-
-        public KeyPair GetKey(UInt160 publicKeyHash)
-        {
-            lock (keys)
-            {
-                keys.TryGetValue(publicKeyHash, out KeyPair key);
-                return key;
-            }
-        }
-
-        public KeyPair GetKeyByScriptHash(UInt160 scriptHash)
-        {
-            lock (keys)
-                lock (contracts)
-                {
-                    return !contracts.TryGetValue(scriptHash, out VerificationContract contract) ? null : keys[contract.PublicKeyHash];
-                }
-        }
-
-        public IEnumerable<KeyPair> GetKeys()
-        {
-            lock (keys)
-            {
-                foreach (var pair in keys)
-                {
-                    yield return pair.Value;
-                }
-            }
-        }
-
-        public IEnumerable<UInt160> GetAddresses()
-        {
-            lock (contracts)
-            {
-                foreach (var pair in contracts)
-                    yield return pair.Key;
-            }
-            lock (watchOnly)
-            {
-                foreach (UInt160 hash in watchOnly)
-                    yield return hash;
-            }
+            return GetAccount(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash());
         }
 
         public Fixed8 GetAvailable(UInt256 asset_id)
@@ -341,60 +90,54 @@ namespace Neo.Wallets
             return FindUnspentCoins().Where(p => p.Output.AssetId.Equals(asset_id)).Sum(p => p.Output.Value);
         }
 
+        public BigDecimal GetAvailable(UIntBase asset_id)
+        {
+            if (asset_id is UInt160 asset_id_160)
+            {
+                byte[] script;
+                using (ScriptBuilder sb = new ScriptBuilder())
+                {
+                    foreach (UInt160 account in GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash))
+                        sb.EmitAppCall(asset_id_160, "balanceOf", account);
+                    sb.Emit(OpCode.DEPTH, OpCode.PACK);
+                    sb.EmitAppCall(asset_id_160, "decimals");
+                    script = sb.ToArray();
+                }
+                ApplicationEngine engine = ApplicationEngine.Run(script);
+                byte decimals = (byte)engine.EvaluationStack.Pop().GetBigInteger();
+                BigInteger amount = ((VMArray)engine.EvaluationStack.Pop()).Aggregate(BigInteger.Zero, (x, y) => x + y.GetBigInteger());
+                return new BigDecimal(amount, decimals);
+            }
+            else
+            {
+                return new BigDecimal(GetAvailable((UInt256)asset_id).GetData(), 8);
+            }
+        }
+
         public Fixed8 GetBalance(UInt256 asset_id)
         {
-            return GetCoins().Where(p => !p.State.HasFlag(CoinState.Spent) && p.Output.AssetId.Equals(asset_id)).Sum(p => p.Output.Value);
+            return GetCoins(GetAccounts().Select(p => p.ScriptHash)).Where(p => !p.State.HasFlag(CoinState.Spent) && p.Output.AssetId.Equals(asset_id)).Sum(p => p.Output.Value);
         }
 
         public virtual UInt160 GetChangeAddress()
         {
-            lock (contracts)
-            {
-                return contracts.Values.FirstOrDefault(p => p.IsStandard)?.ScriptHash ?? contracts.Keys.FirstOrDefault();
-            }
+            WalletAccount[] accounts = GetAccounts().ToArray();
+            WalletAccount account = accounts.FirstOrDefault(p => p.IsDefault);
+            if (account == null)
+                account = accounts.FirstOrDefault(p => p.Contract?.IsStandard == true);
+            if (account == null)
+                account = accounts.FirstOrDefault(p => !p.WatchOnly);
+            if (account == null)
+                account = accounts.FirstOrDefault();
+            return account?.ScriptHash;
         }
 
         public IEnumerable<Coin> GetCoins()
         {
-            lock (coins)
-            {
-                foreach (Coin coin in coins)
-                    yield return coin;
-            }
+            return GetCoins(GetAccounts().Select(p => p.ScriptHash));
         }
 
-        public VerificationContract GetContract(UInt160 scriptHash)
-        {
-            lock (contracts)
-            {
-                contracts.TryGetValue(scriptHash, out VerificationContract contract);
-                return contract;
-            }
-        }
-
-        public IEnumerable<VerificationContract> GetContracts()
-        {
-            lock (contracts)
-            {
-                foreach (var pair in contracts)
-                {
-                    yield return pair.Value;
-                }
-            }
-        }
-
-        public IEnumerable<VerificationContract> GetContracts(UInt160 publicKeyHash)
-        {
-            lock (contracts)
-            {
-                foreach (VerificationContract contract in contracts.Values.Where(p => p.PublicKeyHash.Equals(publicKeyHash)))
-                {
-                    yield return contract;
-                }
-            }
-        }
-
-        public static byte[] GetPrivateKeyFromNEP2(string nep2, string passphrase)
+        public static byte[] GetPrivateKeyFromNEP2(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
         {
             if (nep2 == null) throw new ArgumentNullException(nameof(nep2));
             if (passphrase == null) throw new ArgumentNullException(nameof(passphrase));
@@ -403,7 +146,7 @@ namespace Neo.Wallets
                 throw new FormatException();
             byte[] addresshash = new byte[4];
             Buffer.BlockCopy(data, 3, addresshash, 0, 4);
-            byte[] derivedkey = SCrypt.DeriveKey(Encoding.UTF8.GetBytes(passphrase), addresshash, 16384, 8, 8, 64);
+            byte[] derivedkey = SCrypt.DeriveKey(Encoding.UTF8.GetBytes(passphrase), addresshash, N, r, p, 64);
             byte[] derivedhalf1 = derivedkey.Take(32).ToArray();
             byte[] derivedhalf2 = derivedkey.Skip(32).ToArray();
             byte[] encryptedkey = new byte[32];
@@ -429,90 +172,45 @@ namespace Neo.Wallets
             return privateKey;
         }
 
-        public abstract IEnumerable<T> GetTransactions<T>() where T : Transaction;
-
         public IEnumerable<Coin> GetUnclaimedCoins()
         {
-            lock (coins)
-            {
-                foreach (var coin in coins)
-                {
-                    if (!coin.Output.AssetId.Equals(Blockchain.GoverningToken.Hash)) continue;
-                    if (!coin.State.HasFlag(CoinState.Confirmed)) continue;
-                    if (!coin.State.HasFlag(CoinState.Spent)) continue;
-                    if (coin.State.HasFlag(CoinState.Claimed)) continue;
-                    if (coin.State.HasFlag(CoinState.Frozen)) continue;
-                    if (coin.State.HasFlag(CoinState.WatchOnly)) continue;
-                    yield return coin;
-                }
-            }
+            IEnumerable<UInt160> accounts = GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash);
+            IEnumerable<Coin> coins = GetCoins(accounts);
+            coins = coins.Where(p => p.Output.AssetId.Equals(Blockchain.GoverningToken.Hash));
+            coins = coins.Where(p => p.State.HasFlag(CoinState.Confirmed) && p.State.HasFlag(CoinState.Spent));
+            coins = coins.Where(p => !p.State.HasFlag(CoinState.Claimed) && !p.State.HasFlag(CoinState.Frozen));
+            return coins;
         }
 
-        public KeyPair Import(X509Certificate2 cert)
+        public virtual WalletAccount Import(X509Certificate2 cert)
         {
             byte[] privateKey;
             using (ECDsa ecdsa = cert.GetECDsaPrivateKey())
             {
-#if NET461
-                privateKey = ((ECDsaCng)ecdsa).Key.Export(CngKeyBlobFormat.EccPrivateBlob);
-#else
                 privateKey = ecdsa.ExportParameters(true).D;
-#endif
             }
-            KeyPair key = CreateKey(privateKey);
+            WalletAccount account = CreateAccount(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
-            return key;
+            return account;
         }
 
-        public KeyPair Import(string wif)
+        public virtual WalletAccount Import(string wif)
         {
             byte[] privateKey = GetPrivateKeyFromWIF(wif);
-            KeyPair key = CreateKey(privateKey);
+            WalletAccount account = CreateAccount(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
-            return key;
+            return account;
         }
 
-        public KeyPair Import(string nep2, string passphrase)
+        public virtual WalletAccount Import(string nep2, string passphrase)
         {
             byte[] privateKey = GetPrivateKeyFromNEP2(nep2, passphrase);
-            KeyPair key = CreateKey(privateKey);
+            WalletAccount account = CreateAccount(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
-            return key;
+            return account;
         }
 
-        protected bool IsWalletTransaction(Transaction tx)
-        {
-            lock (contracts)
-            {
-                if (tx.Outputs.Any(p => contracts.ContainsKey(p.ScriptHash)))
-                    return true;
-                if (tx.Scripts.Any(p => p.VerificationScript != null && contracts.ContainsKey(p.VerificationScript.ToScriptHash())))
-                    return true;
-            }
-            lock (watchOnly)
-            {
-                if (tx.Outputs.Any(p => watchOnly.Contains(p.ScriptHash)))
-                    return true;
-                if (tx.Scripts.Any(p => p.VerificationScript != null && watchOnly.Contains(p.VerificationScript.ToScriptHash())))
-                    return true;
-            }
-            return false;
-        }
-
-        protected abstract IEnumerable<KeyPair> LoadKeyPairs();
-
-        protected abstract IEnumerable<Coin> LoadCoins();
-
-        protected abstract IEnumerable<VerificationContract> LoadContracts();
-
-        protected abstract byte[] LoadStoredData(string name);
-
-        protected virtual IEnumerable<UInt160> LoadWatchOnly()
-        {
-            return Enumerable.Empty<UInt160>();
-        }
-
-        public T MakeTransaction<T>(T tx, UInt160 change_address = null, Fixed8 fee = default(Fixed8)) where T : Transaction
+        public T MakeTransaction<T>(T tx, UInt160 from = null, UInt160 change_address = null, Fixed8 fee = default(Fixed8)) where T : Transaction
         {
             if (tx.Outputs == null) tx.Outputs = new TransactionOutput[0];
             if (tx.Attributes == null) tx.Attributes = new TransactionAttribute[0];
@@ -544,12 +242,12 @@ namespace Neo.Wallets
             var pay_coins = pay_total.Select(p => new
             {
                 AssetId = p.Key,
-                Unspents = FindUnspentCoins(p.Key, p.Value.Value)
+                Unspents = from == null ? FindUnspentCoins(p.Key, p.Value.Value) : FindUnspentCoins(p.Key, p.Value.Value, from)
             }).ToDictionary(p => p.AssetId);
             if (pay_coins.Any(p => p.Value.Unspents == null)) return null;
             var input_sum = pay_coins.Values.ToDictionary(p => p.AssetId, p => new
             {
-                AssetId = p.AssetId,
+                p.AssetId,
                 Value = p.Unspents.Sum(q => q.Output.Value)
             });
             if (change_address == null) change_address = GetChangeAddress();
@@ -571,154 +269,110 @@ namespace Neo.Wallets
             return tx;
         }
 
-        protected abstract void OnProcessNewBlock(Block block, IEnumerable<Coin> added, IEnumerable<Coin> changed, IEnumerable<Coin> deleted);
-        protected abstract void OnSaveTransaction(Transaction tx, IEnumerable<Coin> added, IEnumerable<Coin> changed);
-
-        private void ProcessBlocks()
+        public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null, UInt160 change_address = null, Fixed8 fee = default(Fixed8))
         {
-            while (isrunning)
+            var cOutputs = outputs.Where(p => !p.IsGlobalAsset).GroupBy(p => new
             {
-                while (current_height <= Blockchain.Default?.Height && isrunning)
-                {
-                    lock (SyncRoot)
-                    {
-                        Block block = Blockchain.Default.GetBlock(current_height);
-                        if (block != null) ProcessNewBlock(block);
-                    }
-                }
-                for (int i = 0; i < 20 && isrunning; i++)
-                {
-                    Thread.Sleep(100);
-                }
+                AssetId = (UInt160)p.AssetId,
+                Account = p.ScriptHash
+            }, (k, g) => new
+            {
+                k.AssetId,
+                Value = g.Aggregate(BigInteger.Zero, (x, y) => x + y.Value.Value),
+                k.Account
+            }).ToArray();
+            Transaction tx;
+            if (attributes == null) attributes = new List<TransactionAttribute>();
+            if (cOutputs.Length == 0)
+            {
+                tx = new ContractTransaction();
             }
-        }
-
-        private void ProcessNewBlock(Block block)
-        {
-            Coin[] changeset;
-            lock (contracts)
-                lock (coins)
+            else
+            {
+                UInt160[] accounts = from == null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { from };
+                HashSet<UInt160> sAttributes = new HashSet<UInt160>();
+                using (ScriptBuilder sb = new ScriptBuilder())
                 {
-                    foreach (Transaction tx in block.Transactions)
+                    foreach (var output in cOutputs)
                     {
-                        for (ushort index = 0; index < tx.Outputs.Length; index++)
+                        byte[] script;
+                        using (ScriptBuilder sb2 = new ScriptBuilder())
                         {
-                            TransactionOutput output = tx.Outputs[index];
-                            AddressState state = CheckAddressState(output.ScriptHash);
-                            if (state.HasFlag(AddressState.InWallet))
+                            foreach (UInt160 account in accounts)
+                                sb2.EmitAppCall(output.AssetId, "balanceOf", account);
+                            sb2.Emit(OpCode.DEPTH, OpCode.PACK);
+                            script = sb2.ToArray();
+                        }
+                        ApplicationEngine engine = ApplicationEngine.Run(script);
+                        if (engine.State.HasFlag(VMState.FAULT)) return null;
+                        var balances = ((IEnumerable<StackItem>)(VMArray)engine.EvaluationStack.Pop()).Reverse().Zip(accounts, (i, a) => new
+                        {
+                            Account = a,
+                            Value = i.GetBigInteger()
+                        }).ToArray();
+                        BigInteger sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
+                        if (sum < output.Value) return null;
+                        if (sum != output.Value)
+                        {
+                            balances = balances.OrderByDescending(p => p.Value).ToArray();
+                            BigInteger amount = output.Value;
+                            int i = 0;
+                            while (balances[i].Value <= amount)
+                                amount -= balances[i++].Value;
+                            if (amount == BigInteger.Zero)
+                                balances = balances.Take(i).ToArray();
+                            else
+                                balances = balances.Take(i).Concat(new[] { balances.Last(p => p.Value >= amount) }).ToArray();
+                            sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
+                        }
+                        sAttributes.UnionWith(balances.Select(p => p.Account));
+                        for (int i = 0; i < balances.Length; i++)
+                        {
+                            BigInteger value = balances[i].Value;
+                            if (i == 0)
                             {
-                                CoinReference key = new CoinReference
-                                {
-                                    PrevHash = tx.Hash,
-                                    PrevIndex = index
-                                };
-                                if (coins.Contains(key))
-                                    coins[key].State |= CoinState.Confirmed;
-                                else
-                                    coins.Add(new Coin
-                                    {
-                                        Reference = key,
-                                        Output = output,
-                                        State = CoinState.Confirmed
-                                    });
-                                if (state.HasFlag(AddressState.WatchOnly))
-                                    coins[key].State |= CoinState.WatchOnly;
+                                BigInteger change = sum - output.Value;
+                                if (change > 0) value -= change;
                             }
+                            sb.EmitAppCall(output.AssetId, "transfer", balances[i].Account, output.Account, value);
+                            sb.Emit(OpCode.THROWIFNOT);
                         }
                     }
-                    foreach (Transaction tx in block.Transactions)
+                    byte[] nonce = new byte[8];
+                    rand.NextBytes(nonce);
+                    sb.Emit(OpCode.RET, nonce);
+                    tx = new InvocationTransaction
                     {
-                        foreach (CoinReference input in tx.Inputs)
-                        {
-                            if (coins.Contains(input))
-                            {
-                                if (coins[input].Output.AssetId.Equals(Blockchain.GoverningToken.Hash))
-                                    coins[input].State |= CoinState.Spent | CoinState.Confirmed;
-                                else
-                                    coins.Remove(input);
-                            }
-                        }
-                    }
-                    foreach (ClaimTransaction tx in block.Transactions.OfType<ClaimTransaction>())
-                    {
-                        foreach (CoinReference claim in tx.Claims)
-                        {
-                            if (coins.Contains(claim))
-                            {
-                                coins.Remove(claim);
-                            }
-                        }
-                    }
-                    current_height++;
-                    changeset = coins.GetChangeSet();
-                    OnProcessNewBlock(block, changeset.Where(p => ((ITrackable<CoinReference>)p).TrackState == TrackState.Added), changeset.Where(p => ((ITrackable<CoinReference>)p).TrackState == TrackState.Changed), changeset.Where(p => ((ITrackable<CoinReference>)p).TrackState == TrackState.Deleted));
-                    coins.Commit();
+                        Version = 1,
+                        Script = sb.ToArray()
+                    };
                 }
-            if (changeset.Length > 0)
-                BalanceChanged?.Invoke(this, EventArgs.Empty);
-        }
-
-        public virtual void Rebuild()
-        {
-            lock (SyncRoot)
-                lock (coins)
+                attributes.AddRange(sAttributes.Select(p => new TransactionAttribute
                 {
-                    coins.Clear();
-                    coins.Commit();
-                    current_height = 0;
-                }
-        }
-
-        protected abstract void SaveStoredData(string name, byte[] value);
-
-        public bool SaveTransaction(Transaction tx)
-        {
-            Coin[] changeset;
-            lock (contracts)
-                lock (coins)
+                    Usage = TransactionAttributeUsage.Script,
+                    Data = p.ToArray()
+                }));
+            }
+            tx.Attributes = attributes.ToArray();
+            tx.Inputs = new CoinReference[0];
+            tx.Outputs = outputs.Where(p => p.IsGlobalAsset).Select(p => p.ToTxOutput()).ToArray();
+            tx.Scripts = new Witness[0];
+            if (tx is InvocationTransaction itx)
+            {
+                ApplicationEngine engine = ApplicationEngine.Run(itx.Script, itx);
+                if (engine.State.HasFlag(VMState.FAULT)) return null;
+                tx = new InvocationTransaction
                 {
-                    if (tx.Inputs.Any(p => !coins.Contains(p) || coins[p].State.HasFlag(CoinState.Spent) || !coins[p].State.HasFlag(CoinState.Confirmed)))
-                        return false;
-                    foreach (CoinReference input in tx.Inputs)
-                    {
-                        coins[input].State |= CoinState.Spent;
-                        coins[input].State &= ~CoinState.Confirmed;
-                    }
-                    for (ushort i = 0; i < tx.Outputs.Length; i++)
-                    {
-                        AddressState state = CheckAddressState(tx.Outputs[i].ScriptHash);
-                        if (state.HasFlag(AddressState.InWallet))
-                        {
-                            Coin coin = new Coin
-                            {
-                                Reference = new CoinReference
-                                {
-                                    PrevHash = tx.Hash,
-                                    PrevIndex = i
-                                },
-                                Output = tx.Outputs[i],
-                                State = CoinState.Unconfirmed
-                            };
-                            if (state.HasFlag(AddressState.WatchOnly))
-                                coin.State |= CoinState.WatchOnly;
-                            coins.Add(coin);
-                        }
-                    }
-                    if (tx is ClaimTransaction transaction)
-                    {
-                        foreach (CoinReference claim in transaction.Claims)
-                        {
-                            coins[claim].State |= CoinState.Claimed;
-                            coins[claim].State &= ~CoinState.Confirmed;
-                        }
-                    }
-                    changeset = coins.GetChangeSet();
-                    OnSaveTransaction(tx, changeset.Where(p => ((ITrackable<CoinReference>)p).TrackState == TrackState.Added), changeset.Where(p => ((ITrackable<CoinReference>)p).TrackState == TrackState.Changed));
-                    coins.Commit();
-                }
-            if (changeset.Length > 0)
-                BalanceChanged?.Invoke(this, EventArgs.Empty);
-            return true;
+                    Version = itx.Version,
+                    Script = itx.Script,
+                    Gas = InvocationTransaction.GetGas(engine.GasConsumed),
+                    Attributes = itx.Attributes,
+                    Inputs = itx.Inputs,
+                    Outputs = itx.Outputs
+                };
+            }
+            tx = MakeTransaction(tx, from, change_address, fee);
+            return tx;
         }
 
         public bool Sign(ContractParametersContext context)
@@ -726,12 +380,11 @@ namespace Neo.Wallets
             bool fSuccess = false;
             foreach (UInt160 scriptHash in context.ScriptHashes)
             {
-                VerificationContract contract = GetContract(scriptHash);
-                if (contract == null) continue;
-                KeyPair key = GetKeyByScriptHash(scriptHash);
-                if (key == null) continue;
+                WalletAccount account = GetAccount(scriptHash);
+                if (account?.HasKey != true) continue;
+                KeyPair key = account.GetKey();
                 byte[] signature = context.Verifiable.Sign(key);
-                fSuccess |= context.AddSignature(contract, key.PublicKey, signature);
+                fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
             }
             return fSuccess;
         }
@@ -739,7 +392,7 @@ namespace Neo.Wallets
         public static string ToAddress(UInt160 scriptHash)
         {
             byte[] data = new byte[21];
-            data[0] = AddressVersion;
+            data[0] = Settings.Default.AddressVersion;
             Buffer.BlockCopy(scriptHash.ToArray(), 0, data, 1, 20);
             return data.Base58CheckEncode();
         }
@@ -749,20 +402,12 @@ namespace Neo.Wallets
             byte[] data = address.Base58CheckDecode();
             if (data.Length != 21)
                 throw new FormatException();
-            if (data[0] != AddressVersion)
+            if (data[0] != Settings.Default.AddressVersion)
                 throw new FormatException();
             return new UInt160(data.Skip(1).ToArray());
         }
 
-        public bool VerifyPassword(string password)
-        {
-            return password.ToAesKey().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
-        }
-
-        public bool VerifyPassword(SecureString password)
-        {
-            return password.ToAesKey().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
-        }
+        public abstract bool VerifyPassword(string password);
 
         private static byte[] XOR(byte[] x, byte[] y)
         {

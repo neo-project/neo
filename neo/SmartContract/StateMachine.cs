@@ -2,6 +2,7 @@
 using Neo.Cryptography.ECC;
 using Neo.IO.Caching;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,27 +12,26 @@ namespace Neo.SmartContract
 {
     public class StateMachine : StateReader
     {
-        private CloneCache<UInt160, AccountState> accounts;
-        private CloneCache<ECPoint, ValidatorState> validators;
-        private CloneCache<UInt256, AssetState> assets;
-        private CloneCache<UInt160, ContractState> contracts;
-        private CloneCache<StorageKey, StorageItem> storages;
+        private readonly Block persisting_block;
+        private readonly DataCache<UInt160, AccountState> accounts;
+        private readonly DataCache<UInt256, AssetState> assets;
+        private readonly DataCache<UInt160, ContractState> contracts;
+        private readonly DataCache<StorageKey, StorageItem> storages;
 
         private Dictionary<UInt160, UInt160> contracts_created = new Dictionary<UInt160, UInt160>();
-        private List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
 
-        public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
+        protected override DataCache<UInt160, AccountState> Accounts => accounts;
+        protected override DataCache<UInt256, AssetState> Assets => assets;
+        protected override DataCache<UInt160, ContractState> Contracts => contracts;
+        protected override DataCache<StorageKey, StorageItem> Storages => storages;
 
-        public StateMachine(DataCache<UInt160, AccountState> accounts, DataCache<ECPoint, ValidatorState> validators, DataCache<UInt256, AssetState> assets, DataCache<UInt160, ContractState> contracts, DataCache<StorageKey, StorageItem> storages)
+        public StateMachine(Block persisting_block, DataCache<UInt160, AccountState> accounts, DataCache<UInt256, AssetState> assets, DataCache<UInt160, ContractState> contracts, DataCache<StorageKey, StorageItem> storages)
         {
-            this.accounts = new CloneCache<UInt160, AccountState>(accounts);
-            this.validators = new CloneCache<ECPoint, ValidatorState>(validators);
-            this.assets = new CloneCache<UInt256, AssetState>(assets);
-            this.contracts = new CloneCache<UInt160, ContractState>(contracts);
-            this.storages = new CloneCache<StorageKey, StorageItem>(storages);
-            Notify += StateMachine_Notify;
-            Register("Neo.Account.SetVotes", Account_SetVotes);
-            Register("Neo.Validator.Register", Validator_Register);
+            this.persisting_block = persisting_block;
+            this.accounts = accounts.CreateSnapshot();
+            this.assets = assets.CreateSnapshot();
+            this.contracts = contracts.CreateSnapshot();
+            this.storages = storages.CreateSnapshot();
             Register("Neo.Asset.Create", Asset_Create);
             Register("Neo.Asset.Renew", Asset_Renew);
             Register("Neo.Contract.Create", Contract_Create);
@@ -41,8 +41,6 @@ namespace Neo.SmartContract
             Register("Neo.Storage.Put", Storage_Put);
             Register("Neo.Storage.Delete", Storage_Delete);
             #region Old AntShares APIs
-            Register("AntShares.Account.SetVotes", Account_SetVotes);
-            Register("AntShares.Validator.Register", Validator_Register);
             Register("AntShares.Asset.Create", Asset_Create);
             Register("AntShares.Asset.Renew", Asset_Renew);
             Register("AntShares.Contract.Create", Contract_Create);
@@ -54,79 +52,17 @@ namespace Neo.SmartContract
             #endregion
         }
 
-        private bool CheckStorageContext(StorageContext context)
-        {
-            ContractState contract = contracts.TryGet(context.ScriptHash);
-            if (contract == null) return false;
-            if (!contract.HasStorage) return false;
-            return true;
-        }
-
         public void Commit()
         {
             accounts.Commit();
-            validators.Commit();
             assets.Commit();
             contracts.Commit();
             storages.Commit();
         }
 
-        private void StateMachine_Notify(object sender, NotifyEventArgs e)
+        protected override bool Runtime_GetTime(ExecutionEngine engine)
         {
-            notifications.Add(e);
-        }
-
-        protected override bool Blockchain_GetAccount(ExecutionEngine engine)
-        {
-            UInt160 hash = new UInt160(engine.EvaluationStack.Pop().GetByteArray());
-            engine.EvaluationStack.Push(StackItem.FromInterface(accounts[hash]));
-            return true;
-        }
-
-        protected override bool Blockchain_GetAsset(ExecutionEngine engine)
-        {
-            UInt256 hash = new UInt256(engine.EvaluationStack.Pop().GetByteArray());
-            AssetState asset = assets.TryGet(hash);
-            if (asset == null) return false;
-            engine.EvaluationStack.Push(StackItem.FromInterface(asset));
-            return true;
-        }
-
-        protected override bool Blockchain_GetContract(ExecutionEngine engine)
-        {
-            UInt160 hash = new UInt160(engine.EvaluationStack.Pop().GetByteArray());
-            ContractState contract = contracts.TryGet(hash);
-            if (contract == null) return false;
-            engine.EvaluationStack.Push(StackItem.FromInterface(contract));
-            return true;
-        }
-
-        private bool Account_SetVotes(ExecutionEngine engine)
-        {
-            AccountState account = engine.EvaluationStack.Pop().GetInterface<AccountState>();
-            ECPoint[] votes = engine.EvaluationStack.Pop().GetArray().Select(p => ECPoint.DecodePoint(p.GetByteArray(), ECCurve.Secp256r1)).ToArray();
-            if (account == null) return false;
-            if (votes.Length > 1024) return false;
-            account = accounts[account.ScriptHash];
-            if (account.IsFrozen) return false;
-            if ((!account.Balances.TryGetValue(Blockchain.GoverningToken.Hash, out Fixed8 balance) || balance.Equals(Fixed8.Zero)) && votes.Length > 0)
-                return false;
-            if (!CheckWitness(engine, account.ScriptHash)) return false;
-            account = accounts.GetAndChange(account.ScriptHash);
-            account.Votes = votes.Distinct().ToArray();
-            return true;
-        }
-
-        private bool Validator_Register(ExecutionEngine engine)
-        {
-            ECPoint pubkey = ECPoint.DecodePoint(engine.EvaluationStack.Pop().GetByteArray(), ECCurve.Secp256r1);
-            if (pubkey.IsInfinity) return false;
-            if (!CheckWitness(engine, pubkey)) return false;
-            ValidatorState validator = validators.GetOrAdd(pubkey, () => new ValidatorState
-            {
-                PublicKey = pubkey
-            });
-            engine.EvaluationStack.Push(StackItem.FromInterface(validator));
+            engine.EvaluationStack.Push(persisting_block.Timestamp);
             return true;
         }
 
@@ -176,22 +112,26 @@ namespace Neo.SmartContract
 
         private bool Asset_Renew(ExecutionEngine engine)
         {
-            AssetState asset = engine.EvaluationStack.Pop().GetInterface<AssetState>();
-            if (asset == null) return false;
-            byte years = (byte)engine.EvaluationStack.Pop().GetBigInteger();
-            asset = assets.GetAndChange(asset.AssetId);
-            if (asset.Expiration < Blockchain.Default.Height + 1)
-                asset.Expiration = Blockchain.Default.Height + 1;
-            try
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                asset.Expiration = checked(asset.Expiration + years * 2000000u);
+                AssetState asset = _interface.GetInterface<AssetState>();
+                if (asset == null) return false;
+                byte years = (byte)engine.EvaluationStack.Pop().GetBigInteger();
+                asset = assets.GetAndChange(asset.AssetId);
+                if (asset.Expiration < Blockchain.Default.Height + 1)
+                    asset.Expiration = Blockchain.Default.Height + 1;
+                try
+                {
+                    asset.Expiration = checked(asset.Expiration + years * 2000000u);
+                }
+                catch (OverflowException)
+                {
+                    asset.Expiration = uint.MaxValue;
+                }
+                engine.EvaluationStack.Push(asset.Expiration);
+                return true;
             }
-            catch (OverflowException)
-            {
-                asset.Expiration = uint.MaxValue;
-            }
-            engine.EvaluationStack.Push(asset.Expiration);
-            return true;
+            return false;
         }
 
         private bool Contract_Create(ExecutionEngine engine)
@@ -201,7 +141,7 @@ namespace Neo.SmartContract
             ContractParameterType[] parameter_list = engine.EvaluationStack.Pop().GetByteArray().Select(p => (ContractParameterType)p).ToArray();
             if (parameter_list.Length > 252) return false;
             ContractParameterType return_type = (ContractParameterType)(byte)engine.EvaluationStack.Pop().GetBigInteger();
-            bool need_storage = engine.EvaluationStack.Pop().GetBoolean();
+            ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.EvaluationStack.Pop().GetBigInteger();
             if (engine.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
             string name = Encoding.UTF8.GetString(engine.EvaluationStack.Pop().GetByteArray());
             if (engine.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
@@ -221,7 +161,7 @@ namespace Neo.SmartContract
                     Script = script,
                     ParameterList = parameter_list,
                     ReturnType = return_type,
-                    HasStorage = need_storage,
+                    ContractProperties = contract_properties,
                     Name = name,
                     CodeVersion = version,
                     Author = author,
@@ -242,7 +182,7 @@ namespace Neo.SmartContract
             ContractParameterType[] parameter_list = engine.EvaluationStack.Pop().GetByteArray().Select(p => (ContractParameterType)p).ToArray();
             if (parameter_list.Length > 252) return false;
             ContractParameterType return_type = (ContractParameterType)(byte)engine.EvaluationStack.Pop().GetBigInteger();
-            bool need_storage = engine.EvaluationStack.Pop().GetBoolean();
+            ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.EvaluationStack.Pop().GetBigInteger();
             if (engine.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
             string name = Encoding.UTF8.GetString(engine.EvaluationStack.Pop().GetByteArray());
             if (engine.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
@@ -262,7 +202,7 @@ namespace Neo.SmartContract
                     Script = script,
                     ParameterList = parameter_list,
                     ReturnType = return_type,
-                    HasStorage = need_storage,
+                    ContractProperties = contract_properties,
                     Name = name,
                     CodeVersion = version,
                     Author = author,
@@ -271,7 +211,7 @@ namespace Neo.SmartContract
                 };
                 contracts.Add(hash, contract);
                 contracts_created.Add(hash, new UInt160(engine.CurrentContext.ScriptHash));
-                if (need_storage)
+                if (contract.HasStorage)
                 {
                     foreach (var pair in storages.Find(engine.CurrentContext.ScriptHash).ToArray())
                     {
@@ -287,19 +227,23 @@ namespace Neo.SmartContract
                 }
             }
             engine.EvaluationStack.Push(StackItem.FromInterface(contract));
-            return true;
+            return Contract_Destroy(engine);
         }
 
         private bool Contract_GetStorageContext(ExecutionEngine engine)
         {
-            ContractState contract = engine.EvaluationStack.Pop().GetInterface<ContractState>();
-            if (!contracts_created.TryGetValue(contract.ScriptHash, out UInt160 created)) return false;
-            if (!created.Equals(new UInt160(engine.CurrentContext.ScriptHash))) return false;
-            engine.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                ScriptHash = contract.ScriptHash
-            }));
-            return true;
+                ContractState contract = _interface.GetInterface<ContractState>();
+                if (!contracts_created.TryGetValue(contract.ScriptHash, out UInt160 created)) return false;
+                if (!created.Equals(new UInt160(engine.CurrentContext.ScriptHash))) return false;
+                engine.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
+                {
+                    ScriptHash = contract.ScriptHash
+                }));
+                return true;
+            }
+            return false;
         }
 
         private bool Contract_Destroy(ExecutionEngine engine)
@@ -314,46 +258,40 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected override bool Storage_Get(ExecutionEngine engine)
-        {
-            StorageContext context = engine.EvaluationStack.Pop().GetInterface<StorageContext>();
-            if (!CheckStorageContext(context)) return false;
-            byte[] key = engine.EvaluationStack.Pop().GetByteArray();
-            StorageItem item = storages.TryGet(new StorageKey
-            {
-                ScriptHash = context.ScriptHash,
-                Key = key
-            });
-            engine.EvaluationStack.Push(item?.Value ?? new byte[0]);
-            return true;
-        }
-
         private bool Storage_Put(ExecutionEngine engine)
         {
-            StorageContext context = engine.EvaluationStack.Pop().GetInterface<StorageContext>();
-            if (!CheckStorageContext(context)) return false;
-            byte[] key = engine.EvaluationStack.Pop().GetByteArray();
-            if (key.Length > 1024) return false;
-            byte[] value = engine.EvaluationStack.Pop().GetByteArray();
-            storages.GetAndChange(new StorageKey
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                ScriptHash = context.ScriptHash,
-                Key = key
-            }, () => new StorageItem()).Value = value;
-            return true;
+                StorageContext context = _interface.GetInterface<StorageContext>();
+                if (!CheckStorageContext(context)) return false;
+                byte[] key = engine.EvaluationStack.Pop().GetByteArray();
+                if (key.Length > 1024) return false;
+                byte[] value = engine.EvaluationStack.Pop().GetByteArray();
+                storages.GetAndChange(new StorageKey
+                {
+                    ScriptHash = context.ScriptHash,
+                    Key = key
+                }, () => new StorageItem()).Value = value;
+                return true;
+            }
+            return false;
         }
 
         private bool Storage_Delete(ExecutionEngine engine)
         {
-            StorageContext context = engine.EvaluationStack.Pop().GetInterface<StorageContext>();
-            if (!CheckStorageContext(context)) return false;
-            byte[] key = engine.EvaluationStack.Pop().GetByteArray();
-            storages.Delete(new StorageKey
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                ScriptHash = context.ScriptHash,
-                Key = key
-            });
-            return true;
+                StorageContext context = _interface.GetInterface<StorageContext>();
+                if (!CheckStorageContext(context)) return false;
+                byte[] key = engine.EvaluationStack.Pop().GetByteArray();
+                storages.Delete(new StorageKey
+                {
+                    ScriptHash = context.ScriptHash,
+                    Key = key
+                });
+                return true;
+            }
+            return false;
         }
     }
 }

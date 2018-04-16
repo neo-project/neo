@@ -22,9 +22,11 @@ namespace Neo.Network
         private static readonly TimeSpan HalfMinute = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan OneMinute = TimeSpan.FromMinutes(1);
         private static readonly TimeSpan HalfHour = TimeSpan.FromMinutes(30);
+        private static readonly TimeSpan MissionExpiration = TimeSpan.FromMinutes(1);
 
-        private Queue<Message> message_queue = new Queue<Message>();
-        private static HashSet<UInt256> missions_global = new HashSet<UInt256>();
+        private Queue<Message> message_queue_high = new Queue<Message>();
+        private Queue<Message> message_queue_low = new Queue<Message>();
+        private static Dictionary<UInt256, DateTime> missions_global = new Dictionary<UInt256, DateTime>();
         private HashSet<UInt256> missions = new HashSet<UInt256>();
         private DateTime mission_start = DateTime.Now.AddYears(100);
 
@@ -51,13 +53,12 @@ namespace Neo.Network
                     lock (missions)
                         if (missions.Count > 0)
                         {
-                            missions_global.ExceptWith(missions);
+                            foreach (UInt256 hash in missions)
+                                missions_global.Remove(hash);
                             needSync = true;
                         }
                 if (needSync)
-                    lock (localNode.connectedPeers)
-                        foreach (RemoteNode node in localNode.connectedPeers)
-                            node.EnqueueMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash), true);
+                    localNode.RequestGetBlocks();
             }
         }
 
@@ -68,11 +69,33 @@ namespace Neo.Network
 
         public void EnqueueMessage(string command, ISerializable payload = null)
         {
-            EnqueueMessage(command, payload, false);
-        }
-
-        private void EnqueueMessage(string command, ISerializable payload, bool is_single)
-        {
+            bool is_single = false;
+            switch (command)
+            {
+                case "addr":
+                case "getaddr":
+                case "getblocks":
+                case "getheaders":
+                case "mempool":
+                    is_single = true;
+                    break;
+            }
+            Queue<Message> message_queue;
+            switch (command)
+            {
+                case "alert":
+                case "consensus":
+                case "filteradd":
+                case "filterclear":
+                case "filterload":
+                case "getaddr":
+                case "mempool":
+                    message_queue = message_queue_high;
+                    break;
+                default:
+                    message_queue = message_queue_low;
+                    break;
+            }
             lock (message_queue)
             {
                 if (!is_single || message_queue.All(p => p.Command != command))
@@ -120,7 +143,7 @@ namespace Neo.Network
                 peers = peers.Take(MaxCountToSend);
                 payload = AddrPayload.Create(peers.Select(p => NetworkAddressWithTime.Create(p.ListenerEndpoint, p.Version.Services, p.Version.Timestamp)).ToArray());
             }
-            EnqueueMessage("addr", payload, true);
+            EnqueueMessage("addr", payload);
         }
 
         private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
@@ -136,7 +159,10 @@ namespace Neo.Network
                 if (hash == null) break;
                 hashes.Add(hash);
             } while (hash != payload.HashStop && hashes.Count < 500);
-            EnqueueMessage("inv", InvPayload.Create(InventoryType.Block, hashes.ToArray()));
+            if (hashes.Count > 0)
+            {
+                EnqueueMessage("inv", InvPayload.Create(InventoryType.Block, hashes.ToArray()));
+            }
         }
 
         private void OnGetDataMessageReceived(InvPayload payload)
@@ -204,7 +230,7 @@ namespace Neo.Network
             Blockchain.Default.AddHeaders(payload.Headers);
             if (Blockchain.Default.HeaderHeight < Version.StartHeight)
             {
-                EnqueueMessage("getheaders", GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash), true);
+                EnqueueMessage("getheaders", GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash));
             }
         }
 
@@ -230,28 +256,30 @@ namespace Neo.Network
         {
             if (payload.Type != InventoryType.TX && payload.Type != InventoryType.Block && payload.Type != InventoryType.Consensus)
                 return;
-            UInt256[] hashes = payload.Hashes.Distinct().ToArray();
+            HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
             lock (LocalNode.KnownHashes)
             {
-                hashes = hashes.Where(p => !LocalNode.KnownHashes.Contains(p)).ToArray();
+                hashes.RemoveWhere(p => LocalNode.KnownHashes.TryGetValue(p, out DateTime time) && time + LocalNode.HashesExpiration >= DateTime.UtcNow);
             }
-            if (hashes.Length == 0) return;
+            if (hashes.Count == 0) return;
             lock (missions_global)
             {
                 lock (missions)
                 {
                     if (localNode.GlobalMissionsEnabled)
-                        hashes = hashes.Where(p => !missions_global.Contains(p)).ToArray();
-                    if (hashes.Length > 0)
+                        hashes.RemoveWhere(p => missions_global.TryGetValue(p, out DateTime time) && time + MissionExpiration >= DateTime.UtcNow);
+                    if (hashes.Count > 0)
                     {
                         if (missions.Count == 0) mission_start = DateTime.Now;
-                        missions_global.UnionWith(hashes);
+                        foreach (UInt256 hash in hashes)
+                            if (!missions_global.ContainsKey(hash))
+                                missions_global.Add(hash, DateTime.UtcNow);
                         missions.UnionWith(hashes);
                     }
                 }
             }
-            if (hashes.Length == 0) return;
-            EnqueueMessage("getdata", InvPayload.Create(payload.Type, hashes));
+            if (hashes.Count == 0) return;
+            EnqueueMessage("getdata", InvPayload.Create(payload.Type, hashes.ToArray()));
         }
 
         private void OnMemPoolMessageReceived()
@@ -350,18 +378,22 @@ namespace Neo.Network
 
         internal void RequestMemoryPool()
         {
-            EnqueueMessage("mempool", null, true);
+            EnqueueMessage("mempool", null);
         }
 
         internal void RequestPeers()
         {
-            EnqueueMessage("getaddr", null, true);
+            EnqueueMessage("getaddr", null);
         }
 
         protected abstract Task<bool> SendMessageAsync(Message message);
 
         internal async void StartProtocol()
         {
+#if !NET47
+            //There is a bug in .NET Core 2.0 that blocks async method which returns void.
+            await Task.Yield();
+#endif
             if (!await SendMessageAsync(Message.Create("version", VersionPayload.Create(localNode.Port, localNode.Nonce, localNode.UserAgent))))
                 return;
             Message message = await ReceiveMessageAsync(HalfMinute);
@@ -400,15 +432,7 @@ namespace Neo.Network
                 Disconnect(false);
                 return;
             }
-            if (ListenerEndpoint != null)
-            {
-                if (ListenerEndpoint.Port != Version.Port)
-                {
-                    Disconnect(true);
-                    return;
-                }
-            }
-            else if (Version.Port > 0)
+            if (ListenerEndpoint == null && Version.Port > 0)
             {
                 ListenerEndpoint = new IPEndPoint(RemoteEndpoint.Address, Version.Port);
             }
@@ -422,7 +446,7 @@ namespace Neo.Network
             }
             if (Blockchain.Default?.HeaderHeight < Version.StartHeight)
             {
-                EnqueueMessage("getheaders", GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash), true);
+                EnqueueMessage("getheaders", GetBlocksPayload.Create(Blockchain.Default.CurrentHeaderHash));
             }
             StartSendLoop();
             while (disposed == 0)
@@ -431,7 +455,7 @@ namespace Neo.Network
                 {
                     if (missions.Count == 0 && Blockchain.Default.Height < Version.StartHeight)
                     {
-                        EnqueueMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash), true);
+                        EnqueueMessage("getblocks", GetBlocksPayload.Create(Blockchain.Default.CurrentBlockHash));
                     }
                 }
                 TimeSpan timeout = missions.Count == 0 ? HalfHour : OneMinute;
@@ -462,14 +486,28 @@ namespace Neo.Network
 
         private async void StartSendLoop()
         {
+#if !NET47
+            //There is a bug in .NET Core 2.0 that blocks async method which returns void.
+            await Task.Yield();
+#endif
             while (disposed == 0)
             {
                 Message message = null;
-                lock (message_queue)
+                lock (message_queue_high)
                 {
-                    if (message_queue.Count > 0)
+                    if (message_queue_high.Count > 0)
                     {
-                        message = message_queue.Dequeue();
+                        message = message_queue_high.Dequeue();
+                    }
+                }
+                if (message == null)
+                {
+                    lock (message_queue_low)
+                    {
+                        if (message_queue_low.Count > 0)
+                        {
+                            message = message_queue_low.Dequeue();
+                        }
                     }
                 }
                 if (message == null)
@@ -491,7 +529,7 @@ namespace Neo.Network
             if (filter.Check(tx.Hash.ToArray())) return true;
             if (tx.Outputs.Any(p => filter.Check(p.ScriptHash.ToArray()))) return true;
             if (tx.Inputs.Any(p => filter.Check(p.ToArray()))) return true;
-            if (tx.Scripts.Any(p => filter.Check(p.VerificationScript.ToScriptHash().ToArray())))
+            if (tx.Scripts.Any(p => filter.Check(p.ScriptHash.ToArray())))
                 return true;
             if (tx.Type == TransactionType.RegisterTransaction)
             {

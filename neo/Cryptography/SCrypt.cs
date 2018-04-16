@@ -245,7 +245,7 @@ namespace Neo.Cryptography
             }
         }
 
-#if NET461
+#if NET47
         public static byte[] DeriveKey(byte[] password, byte[] salt, int N, int r, int p, int derivedKeyLength)
         {
             return Replicon.Cryptography.SCrypt.SCrypt.DeriveKey(password, salt, (ulong)N, (uint)r, (uint)p, (uint)derivedKeyLength);

@@ -65,6 +65,13 @@ namespace Neo.Core
             Balances = replica.Balances;
         }
 
+        public Fixed8 GetBalance(UInt256 asset_id)
+        {
+            if (!Balances.TryGetValue(asset_id, out Fixed8 value))
+                value = Fixed8.Zero;
+            return value;
+        }
+
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);

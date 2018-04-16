@@ -1,13 +1,11 @@
-﻿using Neo.Core;
-using Neo.Cryptography.ECC;
-using Neo.VM;
-using Neo.Wallets;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+using Neo.Core;
+using Neo.IO.Json;
+using Neo.SmartContract;
+using Neo.VM;
 using System.IO;
 using System.Text;
-using Neo.IO.Json;
 
 namespace Neo.UnitTests
 {
@@ -75,7 +73,7 @@ namespace Neo.UnitTests
             uut.Size.Should().Be(109);
         }
 
-  		private IssueTransaction getIssueTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
+        private IssueTransaction getIssueTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
         {
             TestUtils.SetupTestBlockchain(assetId);
 
@@ -103,7 +101,7 @@ namespace Neo.UnitTests
                     {
                         AssetId = assetId,
                         Value = Fixed8.FromDecimal(outputVal),
-                        ScriptHash = VerificationContract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
+                        ScriptHash = Contract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
                     }
                 },
                 Scripts = new[]
@@ -144,7 +142,7 @@ namespace Neo.UnitTests
                     {
                         AssetId = assetId,
                         Value = Fixed8.FromDecimal(outputVal),
-                        ScriptHash = VerificationContract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
+                        ScriptHash = Contract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
                     }
                 },
                 Scripts = new[]

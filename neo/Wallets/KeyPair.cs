@@ -12,7 +12,8 @@ namespace Neo.Wallets
     {
         public readonly byte[] PrivateKey;
         public readonly Cryptography.ECC.ECPoint PublicKey;
-        public readonly UInt160 PublicKeyHash;
+
+        public UInt160 PublicKeyHash => PublicKey.EncodePoint(true).ToScriptHash();
 
         public KeyPair(byte[] privateKey)
         {
@@ -28,15 +29,14 @@ namespace Neo.Wallets
             {
                 this.PublicKey = Cryptography.ECC.ECPoint.FromBytes(privateKey, Cryptography.ECC.ECCurve.Secp256r1);
             }
-            this.PublicKeyHash = PublicKey.EncodePoint(true).ToScriptHash();
-#if NET461
+#if NET47
             ProtectedMemory.Protect(PrivateKey, MemoryProtectionScope.SameProcess);
 #endif
         }
 
         public IDisposable Decrypt()
         {
-#if NET461
+#if NET47
             return new ProtectedMemoryContext(PrivateKey, MemoryProtectionScope.SameProcess);
 #else
             return new System.IO.MemoryStream(0);
@@ -47,7 +47,7 @@ namespace Neo.Wallets
         {
             if (ReferenceEquals(this, other)) return true;
             if (ReferenceEquals(null, other)) return false;
-            return PublicKeyHash.Equals(other.PublicKeyHash);
+            return PublicKey.Equals(other.PublicKey);
         }
 
         public override bool Equals(object obj)
@@ -69,14 +69,14 @@ namespace Neo.Wallets
             }
         }
 
-        public string Export(string passphrase)
+        public string Export(string passphrase, int N = 16384, int r = 8, int p = 8)
         {
             using (Decrypt())
             {
                 UInt160 script_hash = Contract.CreateSignatureRedeemScript(PublicKey).ToScriptHash();
                 string address = Wallet.ToAddress(script_hash);
                 byte[] addresshash = Encoding.ASCII.GetBytes(address).Sha256().Sha256().Take(4).ToArray();
-                byte[] derivedkey = SCrypt.DeriveKey(Encoding.UTF8.GetBytes(passphrase), addresshash, 16384, 8, 8, 64);
+                byte[] derivedkey = SCrypt.DeriveKey(Encoding.UTF8.GetBytes(passphrase), addresshash, N, r, p, 64);
                 byte[] derivedhalf1 = derivedkey.Take(32).ToArray();
                 byte[] derivedhalf2 = derivedkey.Skip(32).ToArray();
                 byte[] encryptedkey = XOR(PrivateKey, derivedhalf1).AES256Encrypt(derivedhalf2);
@@ -92,7 +92,12 @@ namespace Neo.Wallets
 
         public override int GetHashCode()
         {
-            return PublicKeyHash.GetHashCode();
+            return PublicKey.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return PublicKey.ToString();
         }
 
         private static byte[] XOR(byte[] x, byte[] y)

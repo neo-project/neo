@@ -4,7 +4,7 @@ using System.IO;
 
 namespace Neo.Network.Payloads
 {
-    internal class InvPayload : ISerializable
+    public class InvPayload : ISerializable
     {
         public InventoryType Type;
         public UInt256[] Hashes;

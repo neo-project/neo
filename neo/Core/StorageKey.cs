@@ -11,12 +11,12 @@ namespace Neo.Core
         public UInt160 ScriptHash;
         public byte[] Key;
 
-        int ISerializable.Size => ScriptHash.Size + Key.GetVarSize();
+        int ISerializable.Size => ScriptHash.Size + (Key.Length / 16 + 1) * 17;
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
             ScriptHash = reader.ReadSerializable<UInt160>();
-            Key = reader.ReadVarBytes();
+            Key = reader.ReadBytesWithGrouping();
         }
 
         public bool Equals(StorageKey other)
@@ -43,7 +43,7 @@ namespace Neo.Core
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(ScriptHash);
-            writer.WriteVarBytes(Key);
+            writer.WriteBytesWithGrouping(Key);
         }
     }
 }

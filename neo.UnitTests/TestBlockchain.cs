@@ -10,6 +10,11 @@ namespace Neo.UnitTests
     {
         private UInt256 _assetId;
 
+        /// <summary>
+        /// Return true if haven't got valid handle
+        /// </summary>
+        public override bool IsDisposed => false;
+
         public TestBlockchain(UInt256 assetId)
         {
             _assetId = assetId;
@@ -43,9 +48,14 @@ namespace Neo.UnitTests
             throw new NotImplementedException();
         }
 
-        public override DataCache<TKey, TValue> CreateCache<TKey, TValue>()
+        public override MetaDataCache<T> GetMetaData<T>()
         {
-            throw new NotImplementedException();
+            return new TestMetaDataCache<T>();
+        }
+
+        public override DataCache<TKey, TValue> GetStates<TKey, TValue>()
+        {
+            return new TestDataCache<TKey, TValue>();
         }
 
         public override void Dispose()
@@ -120,7 +130,7 @@ namespace Neo.UnitTests
         {
             height = 0;
             // take part of the trans hash and use that for the scripthash of the testtransaction
-            return new TestTransaction(_assetId, TransactionType.ClaimTransaction, new UInt160(TestUtils.GetByteArray(20,hash.ToArray()[0])));
+            return new TestTransaction(_assetId, TransactionType.ClaimTransaction, new UInt160(TestUtils.GetByteArray(20, hash.ToArray()[0])));
         }
 
         public override Dictionary<ushort, SpentCoin> GetUnclaimed(UInt256 hash)
@@ -133,13 +143,9 @@ namespace Neo.UnitTests
             throw new NotImplementedException();
         }
 
-        public override IEnumerable<VoteState> GetVotes(IEnumerable<Transaction> others)
+        public override IEnumerable<TransactionOutput> GetUnspent(UInt256 hash)
         {
-            VoteState vs = new VoteState() { Count = Fixed8.FromDecimal(1), PublicKeys = TestUtils.StandbyValidators};            
-            return new VoteState[]
-            {
-                vs
-            };
+            throw new NotImplementedException();
         }
 
         public override bool IsDoubleSpend(Transaction tx)

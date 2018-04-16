@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 
 namespace Neo.Cryptography
 {
-    public class Murmur3 : HashAlgorithm
+    public sealed class Murmur3 : HashAlgorithm
     {
         private const uint c1 = 0xcc9e2d51;
         private const uint c2 = 0x1b873593;
@@ -22,6 +22,7 @@ namespace Neo.Cryptography
         public Murmur3(uint seed)
         {
             this.seed = seed;
+            Initialize();
         }
 
         protected override void HashCore(byte[] array, int ibStart, int cbSize)
