@@ -79,7 +79,8 @@ namespace Neo.Network
                 this.poolThread = new Thread(AddTransactionLoop)
                 {
                     IsBackground = true,
-                    Name = "LocalNode.AddTransactionLoop"
+                    Name = "LocalNode.AddTransactionLoop",
+                    Priority = ThreadPriority.BelowNormal
                 };
             }
             this.UserAgent = string.Format("/NEO:{0}/", GetType().GetTypeInfo().Assembly.GetName().Version.ToString(3));
@@ -355,9 +356,13 @@ namespace Neo.Network
                         nodes = connectedPeers.ToArray();
                     }
                     Task.WaitAll(nodes.Select(p => Task.Run(() => p.Disconnect(false))).ToArray());
+
                     new_tx_event.Set();
                     if (poolThread?.ThreadState.HasFlag(ThreadState.Unstarted) == false)
                         poolThread.Join();
+                    // Need to ensure any outstanding calls to Blockchain_PersistCompleted are not in progress.
+                    // TODO: could add locking instead of using an arbitrarily long sleep here.
+                    Thread.Sleep(3000);
                     new_tx_event.Dispose();
                 }
             }
