@@ -54,6 +54,8 @@ namespace Neo.Network
         private int disposed = 0;
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
+        private ConcurrentQueue<UInt256> persistedTxHashQueue = new ConcurrentQueue<UInt256>();
+
         public bool GlobalMissionsEnabled { get; set; } = true;
         public int RemoteNodeCount => connectedPeers.Count;
         public bool ServiceEnabled { get; set; } = true;
@@ -132,24 +134,28 @@ namespace Neo.Network
             while (!cancellationTokenSource.IsCancellationRequested)
             {
                 new_tx_event.WaitOne();
-                Transaction[] transactions;
-                lock (temp_pool)
-                {
-                    if (temp_pool.Count == 0) continue;
-                    transactions = temp_pool.ToArray();
-                    temp_pool.Clear();
-                }
+
                 ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
                 lock (mem_pool)
                 {
-                    transactions = transactions.Where(p => !mem_pool.ContainsKey(p.Hash) && !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
-                    if (transactions.Length == 0) continue;
+                    while (persistedTxHashQueue.TryDequeue(out UInt256 persistedTxHash)) 
+                        mem_pool.Remove(persistedTxHash);
+                    
+                    Transaction[] transactions;
+                    lock (temp_pool)
+                    {
+                        temp_pool.UnionWith(mem_pool.Values);
+                        mem_pool.Clear();
+                        transactions = temp_pool.ToArray();
+                        temp_pool.Clear();
+                    }
 
-                    Transaction[] tmpool = mem_pool.Values.Concat(transactions).ToArray();
+                    transactions = transactions.Where(p => !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
+                    if (transactions.Length == 0) continue;
 
                     transactions.AsParallel().ForAll(tx =>
                     {
-                        if (tx.Verify(tmpool))
+                        if (tx.Verify(transactions))
                             verified.Add(tx);
                     });
 
@@ -178,22 +184,9 @@ namespace Neo.Network
 
         private void Blockchain_PersistCompleted(object sender, Block block)
         {
-            Transaction[] remain;
-            lock (mem_pool)
-            {
-                foreach (Transaction tx in block.Transactions)
-                {
-                    mem_pool.Remove(tx.Hash);
-                }
-                if (mem_pool.Count == 0) return;
+            foreach (Transaction tx in block.Transactions)
+                persistedTxHashQueue.Enqueue(tx.Hash);
 
-                remain = mem_pool.Values.ToArray();
-                mem_pool.Clear();
-            }
-            lock (temp_pool)
-            {
-                temp_pool.UnionWith(remain);
-            }
             new_tx_event.Set();
         }
 
