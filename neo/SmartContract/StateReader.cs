@@ -281,6 +281,15 @@ namespace Neo.SmartContract
                     foreach (StackItem subitem in array)
                         SerializeStackItem(subitem, writer);
                     break;
+                case Map map:
+                    writer.Write((byte)StackItemType.Map);
+                    writer.WriteVarInt(map.Count);
+                    foreach (var pair in map)
+                    {
+                        SerializeStackItem(pair.Key, writer);
+                        SerializeStackItem(pair.Value, writer);
+                    }
+                    break;
             }
         }
 
@@ -316,13 +325,27 @@ namespace Neo.SmartContract
                     return new Integer(new BigInteger(reader.ReadVarBytes()));
                 case StackItemType.Array:
                 case StackItemType.Struct:
-                    VMArray array = type == StackItemType.Struct ? new Struct() : new VMArray();
-                    ulong count = reader.ReadVarInt();
-                    while (count-- > 0)
-                        array.Add(DeserializeStackItem(reader));
-                    return array;
+                    {
+                        VMArray array = type == StackItemType.Struct ? new Struct() : new VMArray();
+                        ulong count = reader.ReadVarInt();
+                        while (count-- > 0)
+                            array.Add(DeserializeStackItem(reader));
+                        return array;
+                    }
+                case StackItemType.Map:
+                    {
+                        Map map = new Map();
+                        ulong count = reader.ReadVarInt();
+                        while (count-- > 0)
+                        {
+                            StackItem key = DeserializeStackItem(reader);
+                            StackItem value = DeserializeStackItem(reader);
+                            map[key] = value;
+                        }
+                        return map;
+                    }
                 default:
-                    return null;
+                    throw new FormatException();
             }
         }
 
@@ -332,8 +355,19 @@ namespace Neo.SmartContract
             using (MemoryStream ms = new MemoryStream(data, false))
             using (BinaryReader reader = new BinaryReader(ms))
             {
-                StackItem item = DeserializeStackItem(reader);
-                if (item == null) return false;
+                StackItem item;
+                try
+                {
+                    item = DeserializeStackItem(reader);
+                }
+                catch (FormatException)
+                {
+                    return false;
+                }
+                catch (IOException)
+                {
+                    return false;
+                }
                 engine.EvaluationStack.Push(item);
             }
             return true;
@@ -948,8 +982,23 @@ namespace Neo.SmartContract
                 StorageContext context = _interface.GetInterface<StorageContext>();
                 if (!CheckStorageContext(context)) return false;
                 byte[] prefix = engine.EvaluationStack.Pop().GetByteArray();
-                prefix = context.ScriptHash.ToArray().Concat(prefix).ToArray();
-                StorageIterator iterator = new StorageIterator(Storages.Find(prefix).GetEnumerator());
+                byte[] prefix_key;
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    int index = 0;
+                    int remain = prefix.Length;
+                    while (remain >= 16)
+                    {
+                        ms.Write(prefix, index, 16);
+                        ms.WriteByte(0);
+                        index += 16;
+                        remain -= 16;
+                    }
+                    if (remain > 0)
+                        ms.Write(prefix, index, remain);
+                    prefix_key = context.ScriptHash.ToArray().Concat(ms.ToArray()).ToArray();
+                }
+                StorageIterator iterator = new StorageIterator(Storages.Find(prefix_key).Where(p => p.Key.Key.Take(prefix.Length).SequenceEqual(prefix)).GetEnumerator());
                 engine.EvaluationStack.Push(StackItem.FromInterface(iterator));
                 disposables.Add(iterator);
                 return true;

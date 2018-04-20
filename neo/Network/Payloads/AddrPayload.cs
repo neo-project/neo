@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Neo.Network.Payloads
 {
-    internal class AddrPayload : ISerializable
+    public class AddrPayload : ISerializable
     {
         public NetworkAddressWithTime[] AddressList;
 

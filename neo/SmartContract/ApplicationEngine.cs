@@ -2,6 +2,7 @@
 using Neo.IO.Caching;
 using Neo.VM;
 using Neo.VM.Types;
+using System.Collections;
 using System.Numerics;
 using System.Text;
 
@@ -10,6 +11,14 @@ namespace Neo.SmartContract
     public class ApplicationEngine : ExecutionEngine
     {
         #region Limits
+        /// <summary>
+        /// Max value for SHL and SHR
+        /// </summary>
+        private const int Max_SHL_SHR = ushort.MaxValue;
+        /// <summary>
+        /// Min value for SHL and SHR
+        /// </summary>
+        private const int Min_SHL_SHR = -Max_SHL_SHR;
         /// <summary>
         /// Set the max size allowed size for BigInteger
         /// </summary>
@@ -57,6 +66,7 @@ namespace Neo.SmartContract
 
         private bool CheckArraySize(OpCode nextInstruction)
         {
+            int size;
             switch (nextInstruction)
             {
                 case OpCode.PACK:
@@ -64,13 +74,30 @@ namespace Neo.SmartContract
                 case OpCode.NEWSTRUCT:
                     {
                         if (EvaluationStack.Count == 0) return false;
-                        int size = (int)EvaluationStack.Peek().GetBigInteger();
-                        if (size > MaxArraySize) return false;
-                        return true;
+                        size = (int)EvaluationStack.Peek().GetBigInteger();
                     }
+                    break;
+                case OpCode.SETITEM:
+                    {
+                        if (EvaluationStack.Count < 3) return false;
+                        if (!(EvaluationStack.Peek(2) is Map map)) return true;
+                        StackItem key = EvaluationStack.Peek(1);
+                        if (key is ICollection) return false;
+                        if (map.ContainsKey(key)) return true;
+                        size = map.Count + 1;
+                    }
+                    break;
+                case OpCode.APPEND:
+                    {
+                        if (EvaluationStack.Count < 2) return false;
+                        if (!(EvaluationStack.Peek(1) is Array array)) return false;
+                        size = array.Count + 1;
+                    }
+                    break;
                 default:
                     return true;
             }
+            return size <= MaxArraySize;
         }
 
         private bool CheckInvocationStack(OpCode nextInstruction)
@@ -128,6 +155,34 @@ namespace Neo.SmartContract
         {
             switch (nextInstruction)
             {
+                case OpCode.SHL:
+                    {
+                        BigInteger ishift = EvaluationStack.Peek(0).GetBigInteger();
+
+                        if ((ishift > Max_SHL_SHR || ishift < Min_SHL_SHR))
+                            return false;
+
+                        BigInteger x = EvaluationStack.Peek(1).GetBigInteger();
+
+                        if (!CheckBigInteger(x << (int)ishift))
+                            return false;
+
+                        break;
+                    }
+                case OpCode.SHR:
+                    {
+                        BigInteger ishift = EvaluationStack.Peek(0).GetBigInteger();
+
+                        if ((ishift > Max_SHL_SHR || ishift < Min_SHL_SHR))
+                            return false;
+
+                        BigInteger x = EvaluationStack.Peek(1).GetBigInteger();
+
+                        if (!CheckBigInteger(x >> (int)ishift))
+                            return false;
+
+                        break;
+                    }
                 case OpCode.INC:
                     {
                         BigInteger x = EvaluationStack.Peek().GetBigInteger();
@@ -220,6 +275,7 @@ namespace Neo.SmartContract
                     case OpCode.DUP:
                     case OpCode.OVER:
                     case OpCode.TUCK:
+                    case OpCode.NEWMAP:
                         size = 1;
                         break;
                     case OpCode.UNPACK:

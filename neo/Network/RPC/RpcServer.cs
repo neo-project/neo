@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.Extensions.DependencyInjection;
 using Neo.Core;
 using Neo.IO;
 using Neo.IO.Json;
@@ -9,6 +11,7 @@ using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -364,7 +367,7 @@ namespace Neo.Network.RPC
             }
             if (response == null || (response as JArray)?.Count == 0) return;
             context.Response.ContentType = "application/json-rpc";
-            await context.Response.WriteAsync(response.ToString());
+            await context.Response.WriteAsync(response.ToString(), Encoding.UTF8);
         }
 
         private JObject ProcessRequest(JObject request)
@@ -398,7 +401,28 @@ namespace Neo.Network.RPC
             {
                 if (!string.IsNullOrEmpty(sslCert))
                     listenOptions.UseHttps(sslCert, password);
-            })).Configure(app => app.Run(ProcessAsync)).Build();
+            }))
+            .Configure(app =>
+            {
+                app.UseResponseCompression();
+                app.Run(ProcessAsync);
+            })
+            .ConfigureServices(services =>
+            {
+                services.AddResponseCompression(options =>
+                {
+                    // options.EnableForHttps = false;
+                    options.Providers.Add<GzipCompressionProvider>();
+                    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/json-rpc" });
+                });
+
+                services.Configure<GzipCompressionProviderOptions>(options =>
+                {
+                    options.Level = CompressionLevel.Fastest;
+                });
+            })
+            .Build();
+
             host.Start();
         }
     }

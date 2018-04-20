@@ -47,7 +47,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             Version version;
             Slice value;
             db = DB.Open(path, new Options { CreateIfMissing = true });
-            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.SYS_Version), out value) && Version.TryParse(value.ToString(), out version) && version >= Version.Parse("2.6.0"))
+            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.SYS_Version), out value) && Version.TryParse(value.ToString(), out version) && version >= Version.Parse("2.7.4"))
             {
                 ReadOptions options = new ReadOptions { FillCache = false };
                 value = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.SYS_CurrentBlock));
@@ -139,6 +139,18 @@ namespace Neo.Implementations.Blockchains.LevelDB
                     new_block_event.Set();
             }
             return true;
+        }
+
+        public void AddBlockDirectly(Block block)
+        {
+            if (block.Index == header_index.Count)
+            {
+                WriteBatch batch = new WriteBatch();
+                OnAddHeader(block.Header, batch);
+                db.Write(WriteOptions.Default, batch);
+            }
+            Persist(block);
+            OnPersistCompleted(block);
         }
 
         protected internal override void AddHeaders(IEnumerable<Header> headers)
