@@ -649,6 +649,7 @@ namespace Neo.Network
                         catch { }
                     }
                     connectThread.Start();
+                    memPoolUpdaterThread?.Start();
                     poolThread?.Start();
                     if (port > 0)
                     {
