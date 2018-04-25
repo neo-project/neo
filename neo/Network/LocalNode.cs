@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Neo.Core;
-using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Network.Payloads;
 using System;
@@ -55,8 +54,6 @@ namespace Neo.Network
         private int disposed = 0;
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
-        private ConcurrentQueue<UInt256> persistedTxHashQueue = new ConcurrentQueue<UInt256>();
-
         public bool GlobalMissionsEnabled { get; set; } = true;
         public int RemoteNodeCount => connectedPeers.Count;
         public bool ServiceEnabled { get; set; } = true;
@@ -82,8 +79,7 @@ namespace Neo.Network
                 this.poolThread = new Thread(AddTransactionLoop)
                 {
                     IsBackground = true,
-                    Name = "LocalNode.AddTransactionLoop",
-                    Priority = ThreadPriority.BelowNormal
+                    Name = "LocalNode.AddTransactionLoop"
                 };
             }
             this.UserAgent = string.Format("/NEO:{0}/", GetType().GetTypeInfo().Assembly.GetName().Version.ToString(3));
@@ -119,53 +115,89 @@ namespace Neo.Network
         private static bool AddTransaction(Transaction tx)
         {
             if (Blockchain.Default == null) return false;
-            lock (mem_pool)
+            lock (Blockchain.Default.PersistLock)
             {
-                if (mem_pool.ContainsKey(tx.Hash)) return false;
-                if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
-                if (!tx.Verify(mem_pool.Values)) return false;
-                mem_pool.Add(tx.Hash, tx);
-                CheckMemPool();
+                lock (mem_pool)
+                {
+                    if (mem_pool.ContainsKey(tx.Hash)) return false;
+                    if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
+                    if (!tx.Verify(mem_pool.Values)) return false;
+                        mem_pool.Add(tx.Hash, tx);
+                    CheckMemPool();
+                }
             }
             return true;
         }
 
         private void AddTransactionLoop()
         {
+            int lastTransactionCount = 0;
+            uint lastBlockHeight = 0;
+            
             while (!cancellationTokenSource.IsCancellationRequested)
             {
                 new_tx_event.WaitOne();
 
                 ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
-                lock (mem_pool)
+                lock (Blockchain.Default.PersistLock)
                 {
-                    while (persistedTxHashQueue.TryDequeue(out UInt256 persistedTxHash)) 
-                        mem_pool.Remove(persistedTxHash);
-                    
-                    Transaction[] transactions;
-                    lock (temp_pool)
+                    lock (mem_pool)
                     {
-                        temp_pool.UnionWith(mem_pool.Values);
-                        mem_pool.Clear();
-                        transactions = temp_pool.ToArray();
-                        temp_pool.Clear();
+                        Transaction[] transactions;
+                        lock (temp_pool)
+                        {
+                            temp_pool.UnionWith(mem_pool.Values);
+                            mem_pool.Clear();
+                            transactions = temp_pool.ToArray();
+                            temp_pool.Clear();
+                        }
+
+                        uint currentHeight;
+
+                        transactions = transactions.Where(p => !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
+                        if (transactions.Length == 0) continue;
+
+                        currentHeight = Blockchain.Default.Height;
+                        // if same number of transactions as last call and previously verified 0, and we are currenyly 
+                        // on the same block as last call, exit early and avoid wasting CPU cycles and keeping mem_pool locked.
+                        if (currentHeight == lastBlockHeight && lastTransactionCount == transactions.Length)
+                        {
+                            foreach (var tx in transactions)
+                                mem_pool.Add(tx.Hash, tx);
+                            continue;
+                        }
+
+                        ParallelOptions po = new ParallelOptions();
+                        po.CancellationToken = Blockchain.Default.VerificationCancellationToken.Token;
+                        po.MaxDegreeOfParallelism = System.Environment.ProcessorCount;
+
+                        try
+                        {
+                            Parallel.ForEach(transactions.AsParallel(), po, tx =>
+                            {
+                                if (tx.Verify(transactions))
+                                    verified.Add(tx);
+                            });
+                        } catch (OperationCanceledException) 
+                        {
+                            lock (temp_pool)
+                            {
+                                foreach (Transaction tx in transactions)
+                                    temp_pool.Add(tx);
+                            }
+
+                            continue;
+                        }
+
+                        if (verified.Count == 0) continue;
+                        lastTransactionCount = verified.Count;
+                        lastBlockHeight = currentHeight;
+
+                        foreach (Transaction tx in verified)
+                            mem_pool.Add(tx.Hash, tx);
+
+                        CheckMemPool();
                     }
-
-                    transactions = transactions.Where(p => !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
-                    if (transactions.Length == 0) continue;
-
-                    transactions.AsParallel().ForAll(tx =>
-                    {
-                        if (tx.Verify(transactions))
-                            verified.Add(tx);
-                    });
-
-                    if (verified.Count == 0) continue;
-
-                    foreach (Transaction tx in verified)
-                        mem_pool.Add(tx.Hash, tx);
-
-                    CheckMemPool();
                 }
                 RelayDirectly(verified);
                 if (InventoryReceived != null)
@@ -185,9 +217,22 @@ namespace Neo.Network
 
         private void Blockchain_PersistCompleted(object sender, Block block)
         {
-            foreach (Transaction tx in block.Transactions)
-                persistedTxHashQueue.Enqueue(tx.Hash);
+            Transaction[] remain;
+            lock (mem_pool)
+            {
+                foreach (Transaction tx in block.Transactions)
+                {
+                    mem_pool.Remove(tx.Hash);
+                }
+                if (mem_pool.Count == 0) return;
 
+                remain = mem_pool.Values.ToArray();
+                mem_pool.Clear();
+            }
+            lock (temp_pool)
+            {
+                temp_pool.UnionWith(remain);
+            }
             new_tx_event.Set();
         }
 
@@ -435,6 +480,7 @@ namespace Neo.Network
                     new_tx_event.Set();
                     if (poolThread?.ThreadState.HasFlag(ThreadState.Unstarted) == false)
                         poolThread.Join();
+                    
                     // Need to ensure any outstanding calls to Blockchain_PersistCompleted are not in progress.
                     // TODO: could add locking instead of using an arbitrarily long sleep here.
                     Thread.Sleep(3000);
