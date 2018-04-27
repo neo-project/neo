@@ -88,7 +88,7 @@ namespace Neo
             };
         }
 
-        public ulong GetData() => value;
+        public long GetData() => checked(value);
 
         public override int GetHashCode()
         {
