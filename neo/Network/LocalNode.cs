@@ -246,14 +246,14 @@ namespace Neo.Network
         private static void CheckMemPool()
         {
             if (mem_pool.Count <= MemoryPoolSize) return;
-            
+
             UInt256[] hashes = mem_pool.Values.AsParallel()
                 .OrderBy(p => p.NetworkFee / p.Size)
                 .ThenBy(p => new BigInteger(p.Hash.ToArray()))
                 .Take(mem_pool.Count - MemoryPoolSize)
                 .Select(p => p.Hash)
                 .ToArray();
-            
+
             foreach (UInt256 hash in hashes)
                 mem_pool.Remove(hash);
         }
@@ -329,7 +329,8 @@ namespace Neo.Network
                     }
                     else
                     {
-                        tasks = Settings.Default.SeedList.OfType<string>().Select(p => p.Split(':')).Select(p => ConnectToPeerAsync(p[0], int.Parse(p[1]))).ToArray();
+                        Random rand = new Random();
+                        tasks = Settings.Default.SeedList.OrderBy(p => rand.Next()).Take(5).OfType<string>().Select(p => p.Split(':')).Select(p => ConnectToPeerAsync(p[0], int.Parse(p[1]))).ToArray();
                     }
                     try
                     {
