@@ -9,7 +9,7 @@ namespace Neo.Wallets
         public BigDecimal Value;
         public UInt160 ScriptHash;
 
-        public bool IsGlobalAsset => AssetId.Size == 32;
+        public bool IsGlobalAsset => AssetId is UInt256;
 
         public TransactionOutput ToTxOutput()
         {
