@@ -23,6 +23,7 @@ namespace Neo.Network.RPC
     {
         protected readonly LocalNode LocalNode;
         private IWebHost host;
+        protected RpcAuth authorize;
 
         public RpcServer(LocalNode localNode)
         {
@@ -68,7 +69,7 @@ namespace Neo.Network.RPC
             return json;
         }
 
-        protected virtual JObject Process(string method, JArray _params)
+        protected virtual JObject Process(string method, JArray _params, HttpContext context)
         {
             switch (method)
             {
@@ -305,6 +306,27 @@ namespace Neo.Network.RPC
             }
         }
 
+        protected bool CheckAuthorized(HttpContext context)
+        {
+            if (authorize != null)
+            {
+                switch (authorize.Type)
+                {
+                    case (RPC.RpcAuth.AuthType.Basic):
+                        {
+                            context.Response.Headers["WWW-Authenticate"] = "Basic realm=\"Restricted\"";
+                            string authorization = context.Request.Headers["Authorization"];
+                            if (authorization != null)
+                            {
+                                return authorize.CheckBasicAuth(authorization);
+                            }
+                            break;
+                        }        
+                }
+            }
+            return false;
+        }
+
         private async Task ProcessAsync(HttpContext context)
         {
             context.Response.Headers["Access-Control-Allow-Origin"] = "*";
@@ -312,6 +334,7 @@ namespace Neo.Network.RPC
             context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type";
             context.Response.Headers["Access-Control-Max-Age"] = "31536000";
             if (context.Request.Method != "GET" && context.Request.Method != "POST") return;
+
             JObject request = null;
             if (context.Request.Method == "GET")
             {
@@ -358,19 +381,19 @@ namespace Neo.Network.RPC
                 }
                 else
                 {
-                    response = array.Select(p => ProcessRequest(p)).Where(p => p != null).ToArray();
+                    response = array.Select(p => ProcessRequest(p, context)).Where(p => p != null).ToArray();
                 }
             }
             else
             {
-                response = ProcessRequest(request);
+                response = ProcessRequest(request, context);
             }
             if (response == null || (response as JArray)?.Count == 0) return;
             context.Response.ContentType = "application/json-rpc";
             await context.Response.WriteAsync(response.ToString(), Encoding.UTF8);
         }
 
-        private JObject ProcessRequest(JObject request)
+        private JObject ProcessRequest(JObject request, HttpContext context)
         {
             if (!request.ContainsProperty("id")) return null;
             if (!request.ContainsProperty("method") || !request.ContainsProperty("params") || !(request["params"] is JArray))
@@ -380,7 +403,7 @@ namespace Neo.Network.RPC
             JObject result = null;
             try
             {
-                result = Process(request["method"].AsString(), (JArray)request["params"]);
+                result = Process(request["method"].AsString(), (JArray)request["params"], context);
             }
             catch (Exception ex)
             {
@@ -395,9 +418,15 @@ namespace Neo.Network.RPC
             return response;
         }
 
-        public void Start(int port, string sslCert = null, string password = null)
+        public void Start
+            (
+            IPAddress bindaddress, int port,
+            RPC.RpcAuth.AuthType rpcAuthType = RPC.RpcAuth.AuthType.Basic, string rpcAuthUser = null, string rpcAuthPassword = null,
+            string sslCert = null, string password = null
+            )
         {
-            host = new WebHostBuilder().UseKestrel(options => options.Listen(IPAddress.Any, port, listenOptions =>
+            authorize = new RpcAuth(rpcAuthType, rpcAuthUser, rpcAuthPassword);
+            host = new WebHostBuilder().UseKestrel(options => options.Listen(bindaddress, port, listenOptions =>
             {
                 if (!string.IsNullOrEmpty(sslCert))
                     listenOptions.UseHttps(sslCert, password);
