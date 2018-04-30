@@ -29,6 +29,7 @@ namespace Neo.Network
 
         public const uint ProtocolVersion = 0;
         private const int ConnectedMax = 10;
+        private const int DesiredAvailablePeers = (int)(ConnectedMax * 1.5);
         private const int UnconnectedMax = 1000;
         public const int MemoryPoolSize = 50000;
         internal static readonly TimeSpan HashesExpiration = TimeSpan.FromSeconds(30);
@@ -214,14 +215,14 @@ namespace Neo.Network
         private static void CheckMemPool()
         {
             if (mem_pool.Count <= MemoryPoolSize) return;
-            
+
             UInt256[] hashes = mem_pool.Values.AsParallel()
                 .OrderBy(p => p.NetworkFee / p.Size)
                 .ThenBy(p => new BigInteger(p.Hash.ToArray()))
                 .Take(mem_pool.Count - MemoryPoolSize)
                 .Select(p => p.Hash)
                 .ToArray();
-            
+
             foreach (UInt256 hash in hashes)
                 mem_pool.Remove(hash);
         }
@@ -271,13 +272,15 @@ namespace Neo.Network
 
         private void ConnectToPeersLoop()
         {
+            List<Task> tasksList = new List<Task>();
+            DateTime lastSufficientPeersTimestamp = DateTime.UtcNow;
+
             while (!cancellationTokenSource.IsCancellationRequested)
             {
                 int connectedCount = connectedPeers.Count;
                 int unconnectedCount = unconnectedPeers.Count;
                 if (connectedCount < ConnectedMax)
                 {
-                    Task[] tasks = { };
                     if (unconnectedCount > 0)
                     {
                         IPEndPoint[] endpoints;
@@ -285,23 +288,61 @@ namespace Neo.Network
                         {
                             endpoints = unconnectedPeers.Take(ConnectedMax - connectedCount).ToArray();
                         }
-                        tasks = endpoints.Select(p => ConnectToPeerAsync(p)).ToArray();
+                        tasksList.AddRange(endpoints.Select(p => ConnectToPeerAsync(p)));
                     }
-                    else if (connectedCount > 0)
+
+                    if (connectedCount > 0)
                     {
-                        lock (connectedPeers)
+                        if (unconnectedCount + connectedCount < DesiredAvailablePeers)
                         {
-                            foreach (RemoteNode node in connectedPeers)
-                                node.RequestPeers();
+                            lock (connectedPeers)
+                            {
+                                foreach (RemoteNode node in connectedPeers)
+                                    node.RequestPeers();
+                            }
+
+                            if (lastSufficientPeersTimestamp < DateTime.UtcNow.AddSeconds(-180))
+                            {
+                                Random rand = new Random();
+                                tasksList.AddRange(Settings.Default.SeedList
+                                    .OrderBy(p => rand.Next()).Take(2)
+                                    .OfType<string>().Select(p => p.Split(':'))
+                                    .Select(p => ConnectToPeerAsync(p[0], int.Parse(p[1]))));
+                                
+                                // Reset this so we try to get more peers from the seed nodes before trying to connect
+                                // to seed nodes again.
+                                lastSufficientPeersTimestamp = DateTime.UtcNow;
+                            }
+                        }
+                        else
+                        {
+                            lastSufficientPeersTimestamp = DateTime.UtcNow;
                         }
                     }
                     else
                     {
-                        tasks = Settings.Default.SeedList.OfType<string>().Select(p => p.Split(':')).Select(p => ConnectToPeerAsync(p[0], int.Parse(p[1]))).ToArray();
+                        Random rand = new Random();
+                        tasksList.AddRange(Settings.Default.SeedList
+                            .OrderBy(p => rand.Next()).Take(5)
+                            .OfType<string>().Select(p => p.Split(':'))
+                            .Select(p => ConnectToPeerAsync(p[0], int.Parse(p[1]))));
+			// Reset this since we have connected to seed nodes.
+                        lastSufficientPeersTimestamp = DateTime.UtcNow;
                     }
+                    
                     try
                     {
-                        Task.WaitAll(tasks, cancellationTokenSource.Token);
+                        var tasksArray = tasksList.ToArray();
+                        Task.WaitAny(tasksArray, 5000, cancellationTokenSource.Token);
+
+                        foreach (var task in tasksArray)
+                        {
+                            if (!task.IsCanceled && !task.IsCompleted && !task.IsFaulted) continue;
+                            
+                            // Clean-up task no longer running.
+                            tasksList.Remove(task);
+                            task.Dispose();
+                        }
                     }
                     catch (OperationCanceledException)
                     {
