@@ -142,6 +142,8 @@ namespace Neo.Implementations.Blockchains.LevelDB
 
         public void AddBlockDirectly(Block block)
         {
+            if (block.Index != Height + 1)
+                throw new InvalidOperationException();
             if (block.Index == header_index.Count)
             {
                 WriteBatch batch = new WriteBatch();
