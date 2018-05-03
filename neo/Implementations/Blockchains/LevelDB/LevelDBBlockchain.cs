@@ -480,27 +480,6 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         validators_count.GetAndChange().Votes[account.Votes.Length - 1] += output.Value;
                     }
                 }
-                foreach (UInt160 hash in tx.Outputs.Select(p => p.ScriptHash).Distinct())
-                {
-                    ContractState contract = contracts.TryGet(hash);
-                    if (contract == null) continue;
-                    using (StateMachine service = new StateMachine(block, accounts, assets, contracts, storages))
-                    {
-                        ApplicationEngine engine = new ApplicationEngine(TriggerType.ApplicationR, tx, script_table, service, Fixed8.Zero);
-                        engine.LoadScript(contract.Script, false);
-                        using (ScriptBuilder sb = new ScriptBuilder())
-                        {
-                            sb.EmitPush(0);
-                            sb.Emit(OpCode.PACK);
-                            sb.EmitPush("received");
-                            engine.LoadScript(sb.ToArray(), false);
-                        }
-                        if (engine.Execute())
-                        {
-                            service.Commit();
-                        }
-                    }
-                }
                 foreach (var group in tx.Inputs.GroupBy(p => p.PrevHash))
                 {
                     Transaction tx_prev = GetTransaction(ReadOptions.Default, group.Key, out int height);
@@ -610,6 +589,27 @@ namespace Neo.Implementations.Blockchains.LevelDB
                             ApplicationExecuted?.Invoke(this, new ApplicationExecutedEventArgs(tx_invocation, service.Notifications.ToArray(), engine));
                         }
                         break;
+                }
+                foreach (UInt160 hash in tx.Outputs.Select(p => p.ScriptHash).Distinct())
+                {
+                    ContractState contract = contracts.TryGet(hash);
+                    if (contract == null) continue;
+                    using (StateMachine service = new StateMachine(block, accounts, assets, contracts, storages))
+                    {
+                        ApplicationEngine engine = new ApplicationEngine(TriggerType.ApplicationR, tx, script_table, service, Fixed8.Zero);
+                        engine.LoadScript(contract.Script, false);
+                        using (ScriptBuilder sb = new ScriptBuilder())
+                        {
+                            sb.EmitPush(0);
+                            sb.Emit(OpCode.PACK);
+                            sb.EmitPush("received");
+                            engine.LoadScript(sb.ToArray(), false);
+                        }
+                        if (engine.Execute())
+                        {
+                            service.Commit();
+                        }
+                    }
                 }
             }
             accounts.DeleteWhere((k, v) => !v.IsFrozen && v.Votes.Length == 0 && v.Balances.All(p => p.Value <= Fixed8.Zero));
