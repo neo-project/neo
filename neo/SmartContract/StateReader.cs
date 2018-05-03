@@ -482,8 +482,10 @@ namespace Neo.SmartContract
         {
             UInt160 hash = new UInt160(engine.EvaluationStack.Pop().GetByteArray());
             ContractState contract = Contracts.TryGet(hash);
-            if (contract == null) return false;
-            engine.EvaluationStack.Push(StackItem.FromInterface(contract));
+            if (contract == null)
+                engine.EvaluationStack.Push(new byte[0]);
+            else
+                engine.EvaluationStack.Push(StackItem.FromInterface(contract));
             return true;
         }
 
