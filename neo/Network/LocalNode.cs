@@ -139,6 +139,9 @@ namespace Neo.Network
 
         private void AddTransactionLoop()
         {
+            int lastTransactionCount = 0;
+            uint lastBlockHeight = 0;
+            
             while (!cancellationTokenSource.IsCancellationRequested)
             {
                 new_tx_event.WaitOne();
@@ -155,16 +158,44 @@ namespace Neo.Network
                         temp_pool.Clear();
                     }
 
-                    transactions = transactions.Where(p => !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
-                    if (transactions.Length == 0) continue;
-
-                    transactions.AsParallel().ForAll(tx =>
+                    uint currentHeight;
+                    lock (Blockchain.Default.PersistLock)
                     {
-                        if (tx.Verify(transactions))
-                            verified.Add(tx);
-                    });
+                        transactions = transactions.Where(p => !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
+                        if (transactions.Length == 0) continue;
+
+                        currentHeight = Blockchain.Default.Height;
+                        // if same number of transactions as last call and previously verified 0, and we are currenyly 
+                        // on the same block as last call, exit early and avoid wasting CPU cycles and keeping mem_pool locked.
+                        if (currentHeight == lastBlockHeight && lastTransactionCount == transactions.Length)
+                        {
+                            foreach (var tx in transactions)
+                                mem_pool.Add(tx.Hash, tx);
+                            continue;
+                        }
+
+                        ParallelOptions po = new ParallelOptions();
+                        po.CancellationToken = Blockchain.Default.VerificationCancellationToken.Token;
+                        po.MaxDegreeOfParallelism = System.Environment.ProcessorCount;
+
+                        try
+                        {
+                            Parallel.ForEach(transactions.AsParallel(), po, tx =>
+                            {
+                                if (tx.Verify(transactions))
+                                    verified.Add(tx);
+                            });
+                        } catch (OperationCanceledException) 
+                        {
+                            foreach (Transaction tx in transactions)
+                                mem_pool.Add(tx.Hash, tx);
+                            continue;
+                        }
+                    }
 
                     if (verified.Count == 0) continue;
+                    lastTransactionCount = verified.Count;
+                    lastBlockHeight = currentHeight;
 
                     foreach (Transaction tx in verified)
                         mem_pool.Add(tx.Hash, tx);
