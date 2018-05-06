@@ -48,14 +48,10 @@ namespace Neo.Network
         private IWebHost ws_host;
         private Thread connectThread;
         private Thread poolThread;
-        private Thread memPoolUpdaterThread;
         private readonly AutoResetEvent new_tx_event = new AutoResetEvent(false);
-        private readonly AutoResetEvent persisted_block_event = new AutoResetEvent(false);
         private int started = 0;
         private int disposed = 0;
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-
-        private Queue<UInt256> persistedTxHashQueue = new Queue<UInt256>();
 
         public bool GlobalMissionsEnabled { get; set; } = true;
         public int RemoteNodeCount => connectedPeers.Count;
@@ -84,13 +80,6 @@ namespace Neo.Network
                     IsBackground = true,
                     Name = "LocalNode.AddTransactionLoop",
                     Priority = ThreadPriority.BelowNormal
-                };
-
-                this.memPoolUpdaterThread = new Thread(MemPoolUpdateLoop)
-                {
-                    IsBackground = true,
-                    Name = "LocalNode.MemPoolUpdateLoop",
-                    Priority = ThreadPriority.Highest
                 };
             }
             this.UserAgent = string.Format("/NEO:{0}/", GetType().GetTypeInfo().Assembly.GetName().Version.ToString(3));
@@ -126,13 +115,16 @@ namespace Neo.Network
         private static bool AddTransaction(Transaction tx)
         {
             if (Blockchain.Default == null) return false;
-            lock (mem_pool)
+            lock (Blockchain.Default.PersistLock)
             {
-                if (mem_pool.ContainsKey(tx.Hash)) return false;
-                if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
-                if (!tx.Verify(mem_pool.Values)) return false;
-                mem_pool.Add(tx.Hash, tx);
-                CheckMemPool();
+                lock (mem_pool)
+                {
+                    if (mem_pool.ContainsKey(tx.Hash)) return false;
+                    if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
+                    if (!tx.Verify(mem_pool.Values)) return false;
+                        mem_pool.Add(tx.Hash, tx);
+                    CheckMemPool();
+                }
             }
             return true;
         }
@@ -147,20 +139,21 @@ namespace Neo.Network
                 new_tx_event.WaitOne();
 
                 ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
-                lock (mem_pool)
+                lock (Blockchain.Default.PersistLock)
                 {
-                    Transaction[] transactions;
-                    lock (temp_pool)
+                    lock (mem_pool)
                     {
-                        temp_pool.UnionWith(mem_pool.Values);
-                        mem_pool.Clear();
-                        transactions = temp_pool.ToArray();
-                        temp_pool.Clear();
-                    }
+                        Transaction[] transactions;
+                        lock (temp_pool)
+                        {
+                            temp_pool.UnionWith(mem_pool.Values);
+                            mem_pool.Clear();
+                            transactions = temp_pool.ToArray();
+                            temp_pool.Clear();
+                        }
 
-                    uint currentHeight;
-                    lock (Blockchain.Default.PersistLock)
-                    {
+                        uint currentHeight;
+
                         transactions = transactions.Where(p => !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
                         if (transactions.Length == 0) continue;
 
@@ -191,45 +184,21 @@ namespace Neo.Network
                                 mem_pool.Add(tx.Hash, tx);
                             continue;
                         }
+
+                        if (verified.Count == 0) continue;
+                        lastTransactionCount = verified.Count;
+                        lastBlockHeight = currentHeight;
+
+                        foreach (Transaction tx in verified)
+                            mem_pool.Add(tx.Hash, tx);
+
+                        CheckMemPool();
                     }
-
-                    if (verified.Count == 0) continue;
-                    lastTransactionCount = verified.Count;
-                    lastBlockHeight = currentHeight;
-
-                    foreach (Transaction tx in verified)
-                        mem_pool.Add(tx.Hash, tx);
-
-                    CheckMemPool();
                 }
                 RelayDirectly(verified);
                 if (InventoryReceived != null)
                     foreach (Transaction tx in verified)
                         InventoryReceived(this, tx);
-            }
-        }
-
-        private void MemPoolUpdateLoop()
-        {
-            while (!cancellationTokenSource.IsCancellationRequested)
-            {
-                persisted_block_event.WaitOne();
-
-                List<UInt256> persistedTxHashes;
-                lock (persistedTxHashQueue)
-                {
-                    persistedTxHashes = new List<UInt256>(persistedTxHashQueue.Count);
-                    while (persistedTxHashQueue.Count > 0)
-                        persistedTxHashes.Add(persistedTxHashQueue.Dequeue());
-                }
-
-                lock (mem_pool)
-                {
-                    foreach (var persistedTxHash in persistedTxHashes)
-                        mem_pool.Remove(persistedTxHash);
-                }
-                
-                new_tx_event.Set();
             }
         }
 
@@ -244,13 +213,13 @@ namespace Neo.Network
 
         private void Blockchain_PersistCompleted(object sender, Block block)
         {
-            lock (persistedTxHashQueue)
+            lock (mem_pool)
             {
                 foreach (Transaction tx in block.Transactions)
-                    persistedTxHashQueue.Enqueue(tx.Hash);                
+                    mem_pool.Remove(tx.Hash);
             }
-
-            persisted_block_event.Set();
+            
+            new_tx_event.Set();
         }
 
         private static bool CheckKnownHashes(UInt256 hash)
@@ -414,10 +383,6 @@ namespace Neo.Network
                     }
                     Task.WaitAll(nodes.Select(p => Task.Run(() => p.Disconnect(false))).ToArray());
 
-                    persisted_block_event.Set();
-                    if (memPoolUpdaterThread?.ThreadState.HasFlag(ThreadState.Unstarted) == false)
-                        memPoolUpdaterThread.Join();
-                    
                     new_tx_event.Set();
                     if (poolThread?.ThreadState.HasFlag(ThreadState.Unstarted) == false)
                         poolThread.Join();
@@ -681,7 +646,6 @@ namespace Neo.Network
                         catch { }
                     }
                     connectThread.Start();
-                    memPoolUpdaterThread?.Start();
                     poolThread?.Start();
                     if (port > 0)
                     {
