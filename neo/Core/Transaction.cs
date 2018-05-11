@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.IO.Caching;
 using Neo.IO.Json;
 using Neo.Network;
+using Neo.SmartContract;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -374,7 +375,32 @@ namespace Neo.Core
             }
             if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
                 return false;
+            if (!VerifyReceivingScripts()) return false;
             return this.VerifyScripts();
+        }
+
+        private bool VerifyReceivingScripts()
+        {
+            foreach (UInt160 hash in Outputs.Select(p => p.ScriptHash).Distinct())
+            {
+                ContractState contract = Blockchain.Default.GetContract(hash);
+                if (contract == null) continue;
+                using (StateReader service = new StateReader())
+                {
+                    ApplicationEngine engine = new ApplicationEngine(TriggerType.VerificationR, this, Blockchain.Default, service, Fixed8.Zero);
+                    engine.LoadScript(contract.Script, false);
+                    using (ScriptBuilder sb = new ScriptBuilder())
+                    {
+                        sb.EmitPush(0);
+                        sb.Emit(OpCode.PACK);
+                        sb.EmitPush("receiving");
+                        engine.LoadScript(sb.ToArray(), false);
+                    }
+                    if (!engine.Execute()) return false;
+                    if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
+                }
+            }
+            return true;
         }
     }
 }

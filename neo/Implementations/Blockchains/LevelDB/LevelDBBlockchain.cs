@@ -5,6 +5,7 @@ using Neo.IO;
 using Neo.IO.Caching;
 using Neo.IO.Data.LevelDB;
 using Neo.SmartContract;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -455,6 +456,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             DbCache<UInt160, ContractState> contracts = new DbCache<UInt160, ContractState>(db, DataEntryPrefix.ST_Contract, batch);
             DbCache<StorageKey, StorageItem> storages = new DbCache<StorageKey, StorageItem>(db, DataEntryPrefix.ST_Storage, batch);
             DbMetaDataCache<ValidatorsCountState> validators_count = new DbMetaDataCache<ValidatorsCountState>(db, DataEntryPrefix.IX_ValidatorsCount);
+            CachedScriptTable script_table = new CachedScriptTable(contracts);
             long amount_sysfee = GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.SystemFee);
             batch.Put(SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(block.Hash), SliceBuilder.Begin().Add(amount_sysfee).Add(block.Trim()));
             foreach (Transaction tx in block.Transactions)
@@ -576,7 +578,6 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         break;
 #pragma warning restore CS0612
                     case InvocationTransaction tx_invocation:
-                        CachedScriptTable script_table = new CachedScriptTable(contracts);
                         using (StateMachine service = new StateMachine(block, accounts, assets, contracts, storages))
                         {
                             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, script_table, service, tx_invocation.Gas);
@@ -588,6 +589,27 @@ namespace Neo.Implementations.Blockchains.LevelDB
                             ApplicationExecuted?.Invoke(this, new ApplicationExecutedEventArgs(tx_invocation, service.Notifications.ToArray(), engine));
                         }
                         break;
+                }
+                foreach (UInt160 hash in tx.Outputs.Select(p => p.ScriptHash).Distinct())
+                {
+                    ContractState contract = contracts.TryGet(hash);
+                    if (contract == null) continue;
+                    using (StateMachine service = new StateMachine(block, accounts, assets, contracts, storages))
+                    {
+                        ApplicationEngine engine = new ApplicationEngine(TriggerType.ApplicationR, tx, script_table, service, Fixed8.Zero);
+                        engine.LoadScript(contract.Script, false);
+                        using (ScriptBuilder sb = new ScriptBuilder())
+                        {
+                            sb.EmitPush(0);
+                            sb.Emit(OpCode.PACK);
+                            sb.EmitPush("received");
+                            engine.LoadScript(sb.ToArray(), false);
+                        }
+                        if (engine.Execute())
+                        {
+                            service.Commit();
+                        }
+                    }
                 }
             }
             accounts.DeleteWhere((k, v) => !v.IsFrozen && v.Votes.Length == 0 && v.Balances.All(p => p.Value <= Fixed8.Zero));
