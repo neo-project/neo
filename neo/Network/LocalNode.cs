@@ -233,7 +233,7 @@ namespace Neo.Network
                 mem_pool.Remove(hash);
         }
 
-        public async Task ConnectToPeerAsync(string hostNameOrAddress, int port)
+        public async Task<IPEndPoint> GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
         {
             IPAddress ipAddress;
             if (IPAddress.TryParse(hostNameOrAddress, out ipAddress))
@@ -249,12 +249,21 @@ namespace Neo.Network
                 }
                 catch (SocketException)
                 {
-                    return;
+                    return null;
                 }
                 ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo)?.MapToIPv6();
-                if (ipAddress == null) return;
+                if (ipAddress == null) return null;
             }
-            await ConnectToPeerAsync(new IPEndPoint(ipAddress, port));
+
+            return new IPEndPoint(ipAddress, port);
+        }
+        
+        public async Task ConnectToPeerAsync(string hostNameOrAddress, int port)
+        {
+            IPEndPoint ipEndpoint = await GetIPEndpointFromHostPort(hostNameOrAddress, port);
+            
+            if (ipEndpoint == null) return;
+            await ConnectToPeerAsync(ipEndpoint);
         }
 
         public async Task ConnectToPeerAsync(IPEndPoint remoteEndpoint)
@@ -276,10 +285,47 @@ namespace Neo.Network
             }
         }
 
+        private IPEndPoint[] getIPEndPointsFromSeedList(int seedsToTake)
+        {
+            Random rand = new Random();
+            IPEndPoint[] endpoints = Settings.Default.SeedList
+                .OrderBy(p => rand.Next()).Take(seedsToTake)
+                .OfType<string>().Select(p => p.Split(':'))
+                .Select(p =>
+                {
+                    try
+                    {
+                        return GetIPEndpointFromHostPort(p[0], int.Parse(p[1])).Result;
+                    }
+                    catch (AggregateException)
+                    {
+                        return null;
+                    }
+                })
+                .ToArray();
+            return endpoints;
+        }
+        
         private void ConnectToPeersLoop()
         {
-            List<Task> tasksList = new List<Task>();
+            Dictionary<Task, IPAddress> tasksDict = new Dictionary<Task, IPAddress>();
             DateTime lastSufficientPeersTimestamp = DateTime.UtcNow;
+            Dictionary<IPAddress, Task> currentlyConnectingIPs = new Dictionary<IPAddress, Task>();
+
+            void connectToPeers(IPEndPoint[] ipEndPoints)
+            {
+                foreach (var ipEndPoint in ipEndPoints)
+                {
+                    // Protect from the case same IP is in the endpoint array twice
+                    if (ipEndPoint == null || currentlyConnectingIPs.ContainsKey(ipEndPoint.Address))
+                        continue;
+
+                    var connectTask = ConnectToPeerAsync(ipEndPoint);
+
+                    tasksDict.Add(connectTask, ipEndPoint.Address);
+                    currentlyConnectingIPs.Add(ipEndPoint.Address, connectTask);
+                }
+            }
 
             while (!cancellationTokenSource.IsCancellationRequested)
             {
@@ -292,9 +338,11 @@ namespace Neo.Network
                         IPEndPoint[] endpoints;
                         lock (unconnectedPeers)
                         {
-                            endpoints = unconnectedPeers.Take(ConnectedMax - connectedCount).ToArray();
+                            endpoints = unconnectedPeers.Where(x => !currentlyConnectingIPs.ContainsKey(x.Address))
+                                .Take(ConnectedMax - connectedCount).ToArray();
                         }
-                        tasksList.AddRange(endpoints.Select(p => ConnectToPeerAsync(p)));
+
+                        connectToPeers(endpoints);
                     }
 
                     if (connectedCount > 0)
@@ -309,14 +357,8 @@ namespace Neo.Network
 
                             if (lastSufficientPeersTimestamp < DateTime.UtcNow.AddSeconds(-180))
                             {
-                                Random rand = new Random();
-                                tasksList.AddRange(Settings.Default.SeedList
-                                    .OrderBy(p => rand.Next()).Take(2)
-                                    .OfType<string>().Select(p => p.Split(':'))
-                                    .Select(p => ConnectToPeerAsync(p[0], int.Parse(p[1]))));
-                                
-                                // Reset this so we try to get more peers from the seed nodes before trying to connect
-                                // to seed nodes again.
+                                IPEndPoint[] endpoints = getIPEndPointsFromSeedList(2);
+                                connectToPeers(endpoints);
                                 lastSufficientPeersTimestamp = DateTime.UtcNow;
                             }
                         }
@@ -327,26 +369,23 @@ namespace Neo.Network
                     }
                     else
                     {
-                        Random rand = new Random();
-                        tasksList.AddRange(Settings.Default.SeedList
-                            .OrderBy(p => rand.Next()).Take(5)
-                            .OfType<string>().Select(p => p.Split(':'))
-                            .Select(p => ConnectToPeerAsync(p[0], int.Parse(p[1]))));
-			// Reset this since we have connected to seed nodes.
+                        IPEndPoint[] endpoints = getIPEndPointsFromSeedList(5);
+                        connectToPeers(endpoints);
                         lastSufficientPeersTimestamp = DateTime.UtcNow;
                     }
                     
                     try
                     {
-                        var tasksArray = tasksList.ToArray();
+                        var tasksArray = tasksDict.Keys.ToArray();
                         Task.WaitAny(tasksArray, 5000, cancellationTokenSource.Token);
 
                         foreach (var task in tasksArray)
                         {
-                            if (!task.IsCanceled && !task.IsCompleted && !task.IsFaulted) continue;
-                            
+                            if (!task.IsCompleted) continue;
+                            if (tasksDict.TryGetValue(task, out IPAddress ip))
+                                currentlyConnectingIPs.Remove(ip);
                             // Clean-up task no longer running.
-                            tasksList.Remove(task);
+                            tasksDict.Remove(task);
                             task.Dispose();
                         }
                     }
