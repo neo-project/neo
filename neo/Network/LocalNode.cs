@@ -278,25 +278,28 @@ namespace Neo.Network
             }
         }
 
-        private IPEndPoint[] GetIPEndPointsFromSeedList(int seedsToTake)
+        private IEnumerable<IPEndPoint> GetIPEndPointsFromSeedList(int seedsToTake)
         {
-            Random rand = new Random();
-            IPEndPoint[] endpoints = Settings.Default.SeedList
-                .OrderBy(p => rand.Next()).Take(seedsToTake)
-                .OfType<string>().Select(p => p.Split(':'))
-                .Select(p =>
+            if (seedsToTake > 0)
+            {
+                Random rand = new Random();
+                foreach (string hostAndPort in Settings.Default.SeedList.OrderBy(p => rand.Next()))
                 {
+                    if (seedsToTake == 0) break;
+                    string[] p = hostAndPort.Split(':');
+                    IPEndPoint seed;
                     try
                     {
-                        return GetIPEndpointFromHostPortAsync(p[0], int.Parse(p[1])).Result;
+                        seed = GetIPEndpointFromHostPortAsync(p[0], int.Parse(p[1])).Result;
                     }
                     catch (AggregateException)
                     {
-                        return null;
+                        continue;
                     }
-                })
-                .ToArray();
-            return endpoints;
+                    seedsToTake--;
+                    yield return seed;
+                }
+            }
         }
 
         private void ConnectToPeersLoop()
@@ -305,12 +308,12 @@ namespace Neo.Network
             DateTime lastSufficientPeersTimestamp = DateTime.UtcNow;
             Dictionary<IPAddress, Task> currentlyConnectingIPs = new Dictionary<IPAddress, Task>();
 
-            void connectToPeers(IPEndPoint[] ipEndPoints)
+            void connectToPeers(IEnumerable<IPEndPoint> ipEndPoints)
             {
                 foreach (var ipEndPoint in ipEndPoints)
                 {
                     // Protect from the case same IP is in the endpoint array twice
-                    if (ipEndPoint == null || currentlyConnectingIPs.ContainsKey(ipEndPoint.Address))
+                    if (currentlyConnectingIPs.ContainsKey(ipEndPoint.Address))
                         continue;
 
                     var connectTask = ConnectToPeerAsync(ipEndPoint);
@@ -350,7 +353,7 @@ namespace Neo.Network
 
                             if (lastSufficientPeersTimestamp < DateTime.UtcNow.AddSeconds(-180))
                             {
-                                IPEndPoint[] endpoints = GetIPEndPointsFromSeedList(2);
+                                IEnumerable<IPEndPoint> endpoints = GetIPEndPointsFromSeedList(2);
                                 connectToPeers(endpoints);
                                 lastSufficientPeersTimestamp = DateTime.UtcNow;
                             }
@@ -362,7 +365,7 @@ namespace Neo.Network
                     }
                     else
                     {
-                        IPEndPoint[] endpoints = GetIPEndPointsFromSeedList(5);
+                        IEnumerable<IPEndPoint> endpoints = GetIPEndPointsFromSeedList(5);
                         connectToPeers(endpoints);
                         lastSufficientPeersTimestamp = DateTime.UtcNow;
                     }
