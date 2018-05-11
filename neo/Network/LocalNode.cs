@@ -233,10 +233,9 @@ namespace Neo.Network
                 mem_pool.Remove(hash);
         }
 
-        public async Task<IPEndPoint> GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
+        public async Task<IPEndPoint> GetIPEndpointFromHostPortAsync(string hostNameOrAddress, int port)
         {
-            IPAddress ipAddress;
-            if (IPAddress.TryParse(hostNameOrAddress, out ipAddress))
+            if (IPAddress.TryParse(hostNameOrAddress, out IPAddress ipAddress))
             {
                 ipAddress = ipAddress.MapToIPv6();
             }
@@ -257,11 +256,11 @@ namespace Neo.Network
 
             return new IPEndPoint(ipAddress, port);
         }
-        
+
         public async Task ConnectToPeerAsync(string hostNameOrAddress, int port)
         {
-            IPEndPoint ipEndpoint = await GetIPEndpointFromHostPort(hostNameOrAddress, port);
-            
+            IPEndPoint ipEndpoint = await GetIPEndpointFromHostPortAsync(hostNameOrAddress, port);
+
             if (ipEndpoint == null) return;
             await ConnectToPeerAsync(ipEndpoint);
         }
@@ -285,7 +284,7 @@ namespace Neo.Network
             }
         }
 
-        private IPEndPoint[] getIPEndPointsFromSeedList(int seedsToTake)
+        private IPEndPoint[] GetIPEndPointsFromSeedList(int seedsToTake)
         {
             Random rand = new Random();
             IPEndPoint[] endpoints = Settings.Default.SeedList
@@ -295,7 +294,7 @@ namespace Neo.Network
                 {
                     try
                     {
-                        return GetIPEndpointFromHostPort(p[0], int.Parse(p[1])).Result;
+                        return GetIPEndpointFromHostPortAsync(p[0], int.Parse(p[1])).Result;
                     }
                     catch (AggregateException)
                     {
@@ -305,7 +304,7 @@ namespace Neo.Network
                 .ToArray();
             return endpoints;
         }
-        
+
         private void ConnectToPeersLoop()
         {
             Dictionary<Task, IPAddress> tasksDict = new Dictionary<Task, IPAddress>();
@@ -357,7 +356,7 @@ namespace Neo.Network
 
                             if (lastSufficientPeersTimestamp < DateTime.UtcNow.AddSeconds(-180))
                             {
-                                IPEndPoint[] endpoints = getIPEndPointsFromSeedList(2);
+                                IPEndPoint[] endpoints = GetIPEndPointsFromSeedList(2);
                                 connectToPeers(endpoints);
                                 lastSufficientPeersTimestamp = DateTime.UtcNow;
                             }
@@ -369,11 +368,11 @@ namespace Neo.Network
                     }
                     else
                     {
-                        IPEndPoint[] endpoints = getIPEndPointsFromSeedList(5);
+                        IPEndPoint[] endpoints = GetIPEndPointsFromSeedList(5);
                         connectToPeers(endpoints);
                         lastSufficientPeersTimestamp = DateTime.UtcNow;
                     }
-                    
+
                     try
                     {
                         var tasksArray = tasksDict.Keys.ToArray();
