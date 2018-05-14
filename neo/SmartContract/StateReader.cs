@@ -124,6 +124,7 @@ namespace Neo.SmartContract
             Register("Neo.Asset.GetAdmin", Asset_GetAdmin);
             Register("Neo.Asset.GetIssuer", Asset_GetIssuer);
             Register("Neo.Contract.GetScript", Contract_GetScript);
+            Register("Neo.Contract.IsPayable", Contract_IsPayable);
             Register("Neo.Storage.GetContext", Storage_GetContext);
             Register("Neo.Storage.Get", Storage_Get);
             Register("Neo.Storage.Find", Storage_Find);
@@ -945,6 +946,18 @@ namespace Neo.SmartContract
                 ContractState contract = _interface.GetInterface<ContractState>();
                 if (contract == null) return false;
                 engine.EvaluationStack.Push(contract.Script);
+                return true;
+            }
+            return false;
+        }
+
+        protected virtual bool Contract_IsPayable(ExecutionEngine engine)
+        {
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                ContractState contract = _interface.GetInterface<ContractState>();
+                if (contract == null) return false;
+                engine.EvaluationStack.Push(contract.Payable);
                 return true;
             }
             return false;
