@@ -29,6 +29,7 @@ namespace Neo.Network
 
         public const uint ProtocolVersion = 0;
         private const int ConnectedMax = 10;
+        private const int DesiredAvailablePeers = (int)(ConnectedMax * 1.5);
         private const int UnconnectedMax = 1000;
         public const int MemoryPoolSize = 50000;
         internal static readonly TimeSpan HashesExpiration = TimeSpan.FromSeconds(30);
@@ -232,10 +233,9 @@ namespace Neo.Network
                 mem_pool.Remove(hash);
         }
 
-        public async Task ConnectToPeerAsync(string hostNameOrAddress, int port)
+        public async Task<IPEndPoint> GetIPEndpointFromHostPortAsync(string hostNameOrAddress, int port)
         {
-            IPAddress ipAddress;
-            if (IPAddress.TryParse(hostNameOrAddress, out ipAddress))
+            if (IPAddress.TryParse(hostNameOrAddress, out IPAddress ipAddress))
             {
                 ipAddress = ipAddress.MapToIPv6();
             }
@@ -248,12 +248,21 @@ namespace Neo.Network
                 }
                 catch (SocketException)
                 {
-                    return;
+                    return null;
                 }
                 ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo)?.MapToIPv6();
-                if (ipAddress == null) return;
+                if (ipAddress == null) return null;
             }
-            await ConnectToPeerAsync(new IPEndPoint(ipAddress, port));
+
+            return new IPEndPoint(ipAddress, port);
+        }
+
+        public async Task ConnectToPeerAsync(string hostNameOrAddress, int port)
+        {
+            IPEndPoint ipEndpoint = await GetIPEndpointFromHostPortAsync(hostNameOrAddress, port);
+
+            if (ipEndpoint == null) return;
+            await ConnectToPeerAsync(ipEndpoint);
         }
 
         public async Task ConnectToPeerAsync(IPEndPoint remoteEndpoint)
@@ -275,40 +284,112 @@ namespace Neo.Network
             }
         }
 
+        private IEnumerable<IPEndPoint> GetIPEndPointsFromSeedList(int seedsToTake)
+        {
+            if (seedsToTake > 0)
+            {
+                Random rand = new Random();
+                foreach (string hostAndPort in Settings.Default.SeedList.OrderBy(p => rand.Next()))
+                {
+                    if (seedsToTake == 0) break;
+                    string[] p = hostAndPort.Split(':');
+                    IPEndPoint seed;
+                    try
+                    {
+                        seed = GetIPEndpointFromHostPortAsync(p[0], int.Parse(p[1])).Result;
+                    }
+                    catch (AggregateException)
+                    {
+                        continue;
+                    }
+                    seedsToTake--;
+                    yield return seed;
+                }
+            }
+        }
+
         private void ConnectToPeersLoop()
         {
+            Dictionary<Task, IPAddress> tasksDict = new Dictionary<Task, IPAddress>();
+            DateTime lastSufficientPeersTimestamp = DateTime.UtcNow;
+            Dictionary<IPAddress, Task> currentlyConnectingIPs = new Dictionary<IPAddress, Task>();
+
+            void connectToPeers(IEnumerable<IPEndPoint> ipEndPoints)
+            {
+                foreach (var ipEndPoint in ipEndPoints)
+                {
+                    // Protect from the case same IP is in the endpoint array twice
+                    if (currentlyConnectingIPs.ContainsKey(ipEndPoint.Address))
+                        continue;
+
+                    var connectTask = ConnectToPeerAsync(ipEndPoint);
+
+                    tasksDict.Add(connectTask, ipEndPoint.Address);
+                    currentlyConnectingIPs.Add(ipEndPoint.Address, connectTask);
+                }
+            }
+
             while (!cancellationTokenSource.IsCancellationRequested)
             {
                 int connectedCount = connectedPeers.Count;
                 int unconnectedCount = unconnectedPeers.Count;
                 if (connectedCount < ConnectedMax)
                 {
-                    Task[] tasks = { };
                     if (unconnectedCount > 0)
                     {
                         IPEndPoint[] endpoints;
                         lock (unconnectedPeers)
                         {
-                            endpoints = unconnectedPeers.Take(ConnectedMax - connectedCount).ToArray();
+                            endpoints = unconnectedPeers.Where(x => !currentlyConnectingIPs.ContainsKey(x.Address))
+                                .Take(ConnectedMax - connectedCount).ToArray();
                         }
-                        tasks = endpoints.Select(p => ConnectToPeerAsync(p)).ToArray();
+
+                        connectToPeers(endpoints);
                     }
-                    else if (connectedCount > 0)
+
+                    if (connectedCount > 0)
                     {
-                        lock (connectedPeers)
+                        if (unconnectedCount + connectedCount < DesiredAvailablePeers)
                         {
-                            foreach (RemoteNode node in connectedPeers)
-                                node.RequestPeers();
+                            lock (connectedPeers)
+                            {
+                                foreach (RemoteNode node in connectedPeers)
+                                    node.RequestPeers();
+                            }
+
+                            if (lastSufficientPeersTimestamp < DateTime.UtcNow.AddSeconds(-180))
+                            {
+                                IEnumerable<IPEndPoint> endpoints = GetIPEndPointsFromSeedList(2);
+                                connectToPeers(endpoints);
+                                lastSufficientPeersTimestamp = DateTime.UtcNow;
+                            }
+                        }
+                        else
+                        {
+                            lastSufficientPeersTimestamp = DateTime.UtcNow;
                         }
                     }
                     else
                     {
-                        Random rand = new Random();
-                        tasks = Settings.Default.SeedList.OrderBy(p => rand.Next()).Take(5).OfType<string>().Select(p => p.Split(':')).Select(p => ConnectToPeerAsync(p[0], int.Parse(p[1]))).ToArray();
+                        IEnumerable<IPEndPoint> endpoints = GetIPEndPointsFromSeedList(5);
+                        connectToPeers(endpoints);
+                        lastSufficientPeersTimestamp = DateTime.UtcNow;
                     }
+
                     try
                     {
-                        Task.WaitAll(tasks, cancellationTokenSource.Token);
+                        var tasksArray = tasksDict.Keys.ToArray();
+                        Task.WaitAny(tasksArray, 5000, cancellationTokenSource.Token);
+
+                        foreach (var task in tasksArray)
+                        {
+                            if (!task.IsCompleted) continue;
+                            if (tasksDict.TryGetValue(task, out IPAddress ip))
+                                currentlyConnectingIPs.Remove(ip);
+                            // Clean-up task no longer running.
+                            tasksDict.Remove(task);
+                            task.Dispose();
+                        }
                     }
                     catch (OperationCanceledException)
                     {
