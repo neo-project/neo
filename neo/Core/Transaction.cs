@@ -385,6 +385,7 @@ namespace Neo.Core
             {
                 ContractState contract = Blockchain.Default.GetContract(hash);
                 if (contract == null) continue;
+                if (!contract.Payable) return false;
                 using (StateReader service = new StateReader())
                 {
                     ApplicationEngine engine = new ApplicationEngine(TriggerType.VerificationR, this, Blockchain.Default, service, Fixed8.Zero);
