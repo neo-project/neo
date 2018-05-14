@@ -20,8 +20,8 @@ namespace Neo.Core
 
 
         public bool HasStorage => ContractProperties.HasFlag(ContractPropertyState.HasStorage);
-
         public bool HasDynamicInvoke => ContractProperties.HasFlag(ContractPropertyState.HasDynamicInvoke);
+        public bool Payable => ContractProperties.HasFlag(ContractPropertyState.Payable);
 
         private UInt160 _scriptHash;
         public UInt160 ScriptHash
