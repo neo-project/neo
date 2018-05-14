@@ -180,8 +180,12 @@ namespace Neo.Network
                             });
                         } catch (OperationCanceledException) 
                         {
-                            foreach (Transaction tx in transactions)
-                                mem_pool.Add(tx.Hash, tx);
+                            lock (temp_pool)
+                            {
+                                foreach (Transaction tx in transactions)
+                                    temp_pool.Add(tx);
+                            }
+
                             continue;
                         }
 
@@ -213,12 +217,22 @@ namespace Neo.Network
 
         private void Blockchain_PersistCompleted(object sender, Block block)
         {
+            Transaction[] remain;
             lock (mem_pool)
             {
                 foreach (Transaction tx in block.Transactions)
+                {
                     mem_pool.Remove(tx.Hash);
+                }
+                if (mem_pool.Count == 0) return;
+
+                remain = mem_pool.Values.ToArray();
+                mem_pool.Clear();
             }
-            
+            lock (temp_pool)
+            {
+                temp_pool.UnionWith(remain);
+            }
             new_tx_event.Set();
         }
 
