@@ -78,8 +78,7 @@ namespace Neo.Network
                 this.poolThread = new Thread(AddTransactionLoop)
                 {
                     IsBackground = true,
-                    Name = "LocalNode.AddTransactionLoop",
-                    Priority = ThreadPriority.BelowNormal
+                    Name = "LocalNode.AddTransactionLoop"
                 };
             }
             this.UserAgent = string.Format("/NEO:{0}/", GetType().GetTypeInfo().Assembly.GetName().Version.ToString(3));
