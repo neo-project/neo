@@ -132,41 +132,27 @@ namespace Neo.Network
 
         private void AddTransactionLoop()
         {
-            int lastTransactionCount = 0;
-            uint lastBlockHeight = 0;
-            
             while (!cancellationTokenSource.IsCancellationRequested)
             {
                 new_tx_event.WaitOne();
-
+                Transaction[] transactions;
+                lock (temp_pool)
+                {
+                    if (temp_pool.Count == 0) continue;
+                    transactions = temp_pool.ToArray();
+                    temp_pool.Clear();
+                }
                 ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
                 lock (Blockchain.Default.PersistLock)
                 {
                     lock (mem_pool)
                     {
-                        Transaction[] transactions;
-                        lock (temp_pool)
-                        {
-                            temp_pool.UnionWith(mem_pool.Values);
-                            mem_pool.Clear();
-                            transactions = temp_pool.ToArray();
-                            temp_pool.Clear();
-                        }
+                        transactions = transactions.Where(p => !mem_pool.ContainsKey(p.Hash) && !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
 
-                        uint currentHeight;
-
-                        transactions = transactions.Where(p => !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
-                        if (transactions.Length == 0) continue;
-
-                        currentHeight = Blockchain.Default.Height;
-                        // if same number of transactions as last call and previously verified 0, and we are currenyly 
-                        // on the same block as last call, exit early and avoid wasting CPU cycles and keeping mem_pool locked.
-                        if (currentHeight == lastBlockHeight && lastTransactionCount == transactions.Length)
-                        {
-                            foreach (var tx in transactions)
-                                mem_pool.Add(tx.Hash, tx);
+                        if (transactions.Length == 0)
                             continue;
-                        }
+
+                        Transaction[] tmpool = mem_pool.Values.Concat(transactions).ToArray();
 
                         ParallelOptions po = new ParallelOptions();
                         po.CancellationToken = Blockchain.Default.VerificationCancellationToken.Token;
@@ -176,10 +162,11 @@ namespace Neo.Network
                         {
                             Parallel.ForEach(transactions.AsParallel(), po, tx =>
                             {
-                                if (tx.Verify(transactions))
+                                if (tx.Verify(tmpool))
                                     verified.Add(tx);
                             });
-                        } catch (OperationCanceledException) 
+                        }
+                        catch (OperationCanceledException)
                         {
                             lock (temp_pool)
                             {
@@ -191,8 +178,6 @@ namespace Neo.Network
                         }
 
                         if (verified.Count == 0) continue;
-                        lastTransactionCount = verified.Count;
-                        lastBlockHeight = currentHeight;
 
                         foreach (Transaction tx in verified)
                             mem_pool.Add(tx.Hash, tx);
