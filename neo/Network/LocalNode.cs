@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Neo.Core;
-using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Network.Payloads;
 using System;
@@ -132,16 +131,13 @@ namespace Neo.Network
 
         private void AddTransactionLoop()
         {
+            int lastTransactionCount = 0;
+            uint lastBlockHeight = 0;
+            
             while (!cancellationTokenSource.IsCancellationRequested)
             {
                 new_tx_event.WaitOne();
-                Transaction[] transactions;
-                lock (temp_pool)
-                {
-                    if (temp_pool.Count == 0) continue;
-                    transactions = temp_pool.ToArray();
-                    temp_pool.Clear();
-                }
+
                 ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
                 lock (Blockchain.Default.PersistLock)
                 {

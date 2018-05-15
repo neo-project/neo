@@ -591,6 +591,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         }
                         break;
                 }
+
                 foreach (UInt160 hash in tx.Outputs.Select(p => p.ScriptHash).Distinct())
                 {
                     ContractState contract = contracts.TryGet(hash);
