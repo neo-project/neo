@@ -7,6 +7,7 @@ using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Neo.Core
 {
@@ -16,6 +17,9 @@ namespace Neo.Core
     public abstract class Blockchain : IDisposable, IScriptTable
     {
         public static event EventHandler<Block> PersistCompleted;
+
+        public CancellationTokenSource VerificationCancellationToken { get; protected set; } = new CancellationTokenSource();
+        public object PersistLock { get; } = new object();
 
         /// <summary>
         /// 产生每个区块的时间间隔，已秒为单位

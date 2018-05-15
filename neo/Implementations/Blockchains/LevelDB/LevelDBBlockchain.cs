@@ -113,6 +113,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             }
             thread_persistence = new Thread(PersistBlocks);
             thread_persistence.Name = "LevelDBBlockchain.PersistBlocks";
+            thread_persistence.Priority = ThreadPriority.AboveNormal;
             thread_persistence.Start();
         }
 
@@ -647,8 +648,16 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         if (!block_cache.TryGetValue(hash, out block))
                             break;
                     }
-                    Persist(block);
-                    OnPersistCompleted(block);
+
+                    VerificationCancellationToken.Cancel();
+                    lock (PersistLock)
+                    {
+                        Persist(block);
+                        OnPersistCompleted(block);
+                        // Reset cancellation token.
+                        VerificationCancellationToken = new CancellationTokenSource();
+                    }
+
                     lock (block_cache)
                     {
                         block_cache.Remove(hash);
