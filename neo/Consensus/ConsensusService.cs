@@ -3,6 +3,7 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network;
 using Neo.Network.Payloads;
+using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
@@ -76,8 +77,11 @@ namespace Neo.Consensus
             }
         }
 
-        protected virtual bool CheckPolicy(Transaction tx)
+        private bool CheckPolicy(Transaction tx)
         {
+            foreach (PolicyPlugin plugin in PolicyPlugin.Instances)
+                if (!plugin.CheckPolicy(tx))
+                    return false;
             return true;
         }
 
