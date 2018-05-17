@@ -152,8 +152,12 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 OnAddHeader(block.Header, batch);
                 db.Write(WriteOptions.Default, batch);
             }
-            Persist(block);
-            OnPersistCompleted(block);
+
+            lock (PersistLock)
+            {
+                Persist(block);
+                OnPersistCompleted(block);
+            }
         }
 
         protected internal override void AddHeaders(IEnumerable<Header> headers)

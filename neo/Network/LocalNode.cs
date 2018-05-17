@@ -327,6 +327,9 @@ namespace Neo.Network
                     {
                         continue;
                     }
+
+                    if (seed == null) continue;
+
                     seedsToTake--;
                     yield return seed;
                 }
@@ -443,7 +446,12 @@ namespace Neo.Network
                 cancellationTokenSource.Cancel();
                 if (started > 0)
                 {
-                    Blockchain.PersistCompleted -= Blockchain_PersistCompleted;
+                    // Ensure any outstanding calls to Blockchain_PersistCompleted are not in progress
+                    lock (Blockchain.Default.PersistLock)
+                    {
+                        Blockchain.PersistCompleted -= Blockchain_PersistCompleted;                        
+                    }
+
                     if (listener != null) listener.Stop();
                     if (!connectThread.ThreadState.HasFlag(ThreadState.Unstarted)) connectThread.Join();
                     lock (unconnectedPeers)
@@ -466,10 +474,7 @@ namespace Neo.Network
                     new_tx_event.Set();
                     if (poolThread?.ThreadState.HasFlag(ThreadState.Unstarted) == false)
                         poolThread.Join();
-                    
-                    // Need to ensure any outstanding calls to Blockchain_PersistCompleted are not in progress.
-                    // TODO: could add locking instead of using an arbitrarily long sleep here.
-                    Thread.Sleep(3000);
+                                        
                     new_tx_event.Dispose();
                 }
             }
