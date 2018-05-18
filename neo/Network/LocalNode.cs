@@ -116,13 +116,16 @@ namespace Neo.Network
         private static bool AddTransaction(Transaction tx)
         {
             if (Blockchain.Default == null) return false;
-            lock (mem_pool)
+            lock (Blockchain.Default.PersistLock)
             {
-                if (mem_pool.ContainsKey(tx.Hash)) return false;
-                if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
-                if (!tx.Verify(mem_pool.Values)) return false;
-                mem_pool.Add(tx.Hash, tx);
-                CheckMemPool();
+                lock (mem_pool)
+                {
+                    if (mem_pool.ContainsKey(tx.Hash)) return false;
+                    if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
+                    if (!tx.Verify(mem_pool.Values)) return false;
+                        mem_pool.Add(tx.Hash, tx);
+                    CheckMemPool();
+                }
             }
             return true;
         }
@@ -140,25 +143,47 @@ namespace Neo.Network
                     temp_pool.Clear();
                 }
                 ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
-                lock (mem_pool)
+                lock (Blockchain.Default.PersistLock)
                 {
-                    transactions = transactions.Where(p => !mem_pool.ContainsKey(p.Hash) && !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
-                    if (transactions.Length == 0) continue;
-
-                    Transaction[] tmpool = mem_pool.Values.Concat(transactions).ToArray();
-
-                    transactions.AsParallel().ForAll(tx =>
+                    lock (mem_pool)
                     {
-                        if (tx.Verify(tmpool))
-                            verified.Add(tx);
-                    });
+                        transactions = transactions.Where(p => !mem_pool.ContainsKey(p.Hash) && !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
 
-                    if (verified.Count == 0) continue;
+                        if (transactions.Length == 0)
+                            continue;
 
-                    foreach (Transaction tx in verified)
-                        mem_pool.Add(tx.Hash, tx);
+                        Transaction[] tmpool = mem_pool.Values.Concat(transactions).ToArray();
 
-                    CheckMemPool();
+                        ParallelOptions po = new ParallelOptions();
+                        po.CancellationToken = Blockchain.Default.VerificationCancellationToken.Token;
+                        po.MaxDegreeOfParallelism = System.Environment.ProcessorCount;
+
+                        try
+                        {
+                            Parallel.ForEach(transactions.AsParallel(), po, tx =>
+                            {
+                                if (tx.Verify(tmpool))
+                                    verified.Add(tx);
+                            });
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            lock (temp_pool)
+                            {
+                                foreach (Transaction tx in transactions)
+                                    temp_pool.Add(tx);
+                            }
+
+                            continue;
+                        }
+
+                        if (verified.Count == 0) continue;
+
+                        foreach (Transaction tx in verified)
+                            mem_pool.Add(tx.Hash, tx);
+
+                        CheckMemPool();
+                    }
                 }
                 RelayDirectly(verified);
                 if (InventoryReceived != null)
@@ -419,7 +444,12 @@ namespace Neo.Network
                 cancellationTokenSource.Cancel();
                 if (started > 0)
                 {
-                    Blockchain.PersistCompleted -= Blockchain_PersistCompleted;
+                    // Ensure any outstanding calls to Blockchain_PersistCompleted are not in progress
+                    lock (Blockchain.Default.PersistLock)
+                    {
+                        Blockchain.PersistCompleted -= Blockchain_PersistCompleted;                        
+                    }
+
                     if (listener != null) listener.Stop();
                     if (!connectThread.ThreadState.HasFlag(ThreadState.Unstarted)) connectThread.Join();
                     lock (unconnectedPeers)
@@ -438,9 +468,11 @@ namespace Neo.Network
                         nodes = connectedPeers.ToArray();
                     }
                     Task.WaitAll(nodes.Select(p => Task.Run(() => p.Disconnect(false))).ToArray());
+
                     new_tx_event.Set();
                     if (poolThread?.ThreadState.HasFlag(ThreadState.Unstarted) == false)
                         poolThread.Join();
+                                        
                     new_tx_event.Dispose();
                 }
             }
