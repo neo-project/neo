@@ -327,9 +327,7 @@ namespace Neo.Network
                     {
                         continue;
                     }
-
                     if (seed == null) continue;
-
                     seedsToTake--;
                     yield return seed;
                 }
