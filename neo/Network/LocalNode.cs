@@ -123,7 +123,7 @@ namespace Neo.Network
                     if (mem_pool.ContainsKey(tx.Hash)) return false;
                     if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
                     if (!tx.Verify(mem_pool.Values)) return false;
-                        mem_pool.Add(tx.Hash, tx);
+                    mem_pool.Add(tx.Hash, tx);
                     CheckMemPool();
                 }
             }
@@ -336,7 +336,6 @@ namespace Neo.Network
 
         private void ConnectToPeersLoop()
         {
-            Dictionary<Task, IPAddress> tasksDict = new Dictionary<Task, IPAddress>();
             DateTime lastSufficientPeersTimestamp = DateTime.UtcNow;
             Dictionary<IPAddress, Task> currentlyConnectingIPs = new Dictionary<IPAddress, Task>();
 
@@ -350,7 +349,6 @@ namespace Neo.Network
 
                     var connectTask = ConnectToPeerAsync(ipEndPoint);
 
-                    tasksDict.Add(connectTask, ipEndPoint.Address);
                     currentlyConnectingIPs.Add(ipEndPoint.Address, connectTask);
                 }
             }
@@ -404,17 +402,13 @@ namespace Neo.Network
 
                     try
                     {
-                        var tasksArray = tasksDict.Keys.ToArray();
-                        Task.WaitAny(tasksArray, 5000, cancellationTokenSource.Token);
-
-                        foreach (var task in tasksArray)
+                        var pairs = currentlyConnectingIPs.ToArray();
+                        var tasksArray = pairs.Select(p => p.Value).ToArray();
+                        int index = Task.WaitAny(tasksArray, 5000, cancellationTokenSource.Token);
+                        if (index >= 0)
                         {
-                            if (!task.IsCompleted) continue;
-                            if (tasksDict.TryGetValue(task, out IPAddress ip))
-                                currentlyConnectingIPs.Remove(ip);
-                            // Clean-up task no longer running.
-                            tasksDict.Remove(task);
-                            task.Dispose();
+                            currentlyConnectingIPs.Remove(pairs[index].Key);
+                            tasksArray[index].Dispose();
                         }
                     }
                     catch (OperationCanceledException)
@@ -447,7 +441,7 @@ namespace Neo.Network
                     // Ensure any outstanding calls to Blockchain_PersistCompleted are not in progress
                     lock (Blockchain.Default.PersistLock)
                     {
-                        Blockchain.PersistCompleted -= Blockchain_PersistCompleted;                        
+                        Blockchain.PersistCompleted -= Blockchain_PersistCompleted;
                     }
 
                     if (listener != null) listener.Stop();
@@ -472,7 +466,7 @@ namespace Neo.Network
                     new_tx_event.Set();
                     if (poolThread?.ThreadState.HasFlag(ThreadState.Unstarted) == false)
                         poolThread.Join();
-                                        
+
                     new_tx_event.Dispose();
                 }
             }
