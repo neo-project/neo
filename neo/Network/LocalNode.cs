@@ -350,8 +350,19 @@ namespace Neo.Network
 
                     var connectTask = ConnectToPeerAsync(ipEndPoint);
 
-                    tasksDict.Add(connectTask, ipEndPoint.Address);
-                    currentlyConnectingIPs.Add(ipEndPoint.Address, connectTask);
+                    try
+                    {
+                        tasksDict.Add(connectTask, ipEndPoint.Address);
+                        currentlyConnectingIPs.Add(ipEndPoint.Address, connectTask);
+                    }
+                    catch (ArgumentException)
+                    {
+                        // On some versions of dotnet (earlier than 2.1 RC1), adding the task to the tasksDict occasionally
+                        // throws an exception that the task has already been added to the dictionary; this shouldn't be
+                        // possible since tasks should be unique and it is indicative of a possible bug in the dotnet runtime.
+                        // By swallowing this exeption, we prevent crash, and can attempt to connect to the peer again.
+                        // TODO: Understand why this can happen on some versions of dotnet.
+                    }
                 }
             }
 
