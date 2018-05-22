@@ -92,12 +92,13 @@ namespace Neo.Cryptography
             return Base58.Encode(buffer);
         }
 
-        /// <summary>
-        /// 求字节数组的ripemd160散列值
-        /// </summary>
-        /// <param name="value">字节数组</param>
-        /// <returns>返回该散列值</returns>
-        public static byte[] RIPEMD160(this IEnumerable<byte> value)
+		/// <summary>
+		/// 求字节数组的ripemd160散列值
+		/// Ripemd160 hash value of a byte array
+		/// </summary>
+		/// <param name="value">字节数组 Byte array</param>
+		/// <returns>返回该散列值 returns ripemd160 hash value</returns>
+		public static byte[] RIPEMD160(this IEnumerable<byte> value)
         {
             return _ripemd160.Value.ComputeHash(value.ToArray());
         }
@@ -110,24 +111,26 @@ namespace Neo.Cryptography
             }
         }
 
-        /// <summary>
-        /// 求字节数组的sha256散列值
-        /// </summary>
-        /// <param name="value">字节数组</param>
-        /// <returns>返回该散列值</returns>
-        public static byte[] Sha256(this IEnumerable<byte> value)
+		/// <summary>
+		/// 求字节数组的sha256散列值
+		/// Sha256 hash value of a byte array
+		/// </summary>
+		/// <param name="value">字节数组 Byte array</param>
+		/// <returns>返回该散列值 returns sha256 hash value</returns>
+		public static byte[] Sha256(this IEnumerable<byte> value)
         {
             return _sha256.Value.ComputeHash(value.ToArray());
         }
 
-        /// <summary>
-        /// 求字节数组的sha256散列值
-        /// </summary>
-        /// <param name="value">字节数组</param>
-        /// <param name="offset">偏移量，散列计算时从该偏移量处开始</param>
-        /// <param name="count">要计算散列值的字节数量</param>
-        /// <returns>返回该散列值</returns>
-        public static byte[] Sha256(this byte[] value, int offset, int count)
+		/// <summary>
+		/// 求字节数组的sha256散列值
+		/// Sha256 hash value of a byte array
+		/// </summary>
+		/// <param name="value">字节数组</param>
+		/// <param name="offset">偏移量，散列计算时从该偏移量处开始 Offset for hash calculation</param>
+		/// <param name="count">要计算散列值的字节数量 Number of bytes used to compute the hash value</param>
+		/// <returns>返回该散列值  returns sha256 hash value</returns>
+		public static byte[] Sha256(this byte[] value, int offset, int count)
         {
             return _sha256.Value.ComputeHash(value, offset, count);
         }

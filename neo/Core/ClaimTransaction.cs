@@ -20,22 +20,24 @@ namespace Neo.Core
         {
         }
 
-        /// <summary>
-        /// 反序列化交易中的额外数据
-        /// </summary>
-        /// <param name="reader">数据来源</param>
-        protected override void DeserializeExclusiveData(BinaryReader reader)
+		/// <summary>
+		/// 反序列化交易中的额外数据
+		/// Deserialize additional data in the transaction
+		/// </summary>
+		/// <param name="reader">数据来源 Sources</param>
+		protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             if (Version != 0) throw new FormatException();
             Claims = reader.ReadSerializableArray<CoinReference>();
             if (Claims.Length == 0) throw new FormatException();
         }
 
-        /// <summary>
-        /// 获得需要校验的脚本Hash
-        /// </summary>
-        /// <returns>返回需要校验的脚本Hash</returns>
-        public override UInt160[] GetScriptHashesForVerifying()
+		/// <summary>
+		/// 获得需要校验的脚本Hash
+		/// Get the script Hash that needs validation
+		/// </summary>
+		/// <returns>返回需要校验的脚本Hash returns the script Hash that needs validation</returns>
+		public override UInt160[] GetScriptHashesForVerifying()
         {
             HashSet<UInt160> hashes = new HashSet<UInt160>(base.GetScriptHashesForVerifying());
             foreach (var group in Claims.GroupBy(p => p.PrevHash))
@@ -51,31 +53,34 @@ namespace Neo.Core
             return hashes.OrderBy(p => p).ToArray();
         }
 
-        /// <summary>
-        /// 序列化交易中的额外数据
-        /// </summary>
-        /// <param name="writer">存放序列化后的结果</param>
-        protected override void SerializeExclusiveData(BinaryWriter writer)
+		/// <summary>
+		/// 序列化交易中的额外数据
+		///  Extra data in the serialized transaction
+		/// </summary>
+		/// <param name="writer">存放序列化后的结果 Stores the serialized result</param>
+		protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(Claims);
         }
 
-        /// <summary>
-        /// 变成json对象
-        /// </summary>
-        /// <returns>返回json对象</returns>
-        public override JObject ToJson()
+		/// <summary>
+		/// 变成json对象
+		/// Become a json object
+		/// </summary>
+		/// <returns>返回json对象 returns json representation of the object</returns>
+		public override JObject ToJson()
         {
             JObject json = base.ToJson();
             json["claims"] = new JArray(Claims.Select(p => p.ToJson()).ToArray());
             return json;
         }
 
-        /// <summary>
-        /// 验证交易
-        /// </summary>
-        /// <returns>返回验证结果</returns>
-        public override bool Verify(IEnumerable<Transaction> mempool)
+		/// <summary>
+		/// 验证交易
+		/// Verification transaction
+		/// </summary>
+		/// <returns>返回验证结果 returns verification result</returns>
+		public override bool Verify(IEnumerable<Transaction> mempool)
         {
             if (!base.Verify(mempool)) return false;
             if (Claims.Length != Claims.Distinct().Count())

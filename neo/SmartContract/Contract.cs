@@ -13,10 +13,11 @@ namespace Neo.SmartContract
         public ContractParameterType[] ParameterList;
 
         private string _address;
-        /// <summary>
-        /// 合约地址
-        /// </summary>
-        public string Address
+		/// <summary>
+		/// 合约地址
+		/// Contract address
+		/// </summary>
+		public string Address
         {
             get
             {

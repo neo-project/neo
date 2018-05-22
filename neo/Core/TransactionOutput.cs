@@ -9,19 +9,23 @@ namespace Neo.Core
 {
     /// <summary>
     /// 交易输出
+	/// Transaction output
     /// </summary>
     public class TransactionOutput : IInteropInterface, ISerializable
     {
-        /// <summary>
-        /// 资产编号
-        /// </summary>
-        public UInt256 AssetId;
-        /// <summary>
-        /// 金额
-        /// </summary>
-        public Fixed8 Value;
+		/// <summary>
+		/// 资产编号
+		/// asset ID
+		/// </summary>
+		public UInt256 AssetId;
+		/// <summary>
+		/// 金额
+		/// amount
+		/// </summary>
+		public Fixed8 Value;
         /// <summary>
         /// 收款地址
+		/// Recipient Address
         /// </summary>
         public UInt160 ScriptHash;
 
@@ -42,12 +46,13 @@ namespace Neo.Core
             writer.Write(ScriptHash);
         }
 
-        /// <summary>
-        /// 将交易输出转变为json对象
-        /// </summary>
-        /// <param name="index">该交易输出在交易中的索引</param>
-        /// <returns>返回json对象</returns>
-        public JObject ToJson(ushort index)
+		/// <summary>
+		/// 将交易输出转变为json对象
+		/// Turn the transaction output into a json object
+		/// </summary>
+		/// <param name="index">该交易输出在交易中的索引 The index of the transaction output in the transaction</param>
+		/// <returns>返回json对象 returns json object</returns>
+		public JObject ToJson(ushort index)
         {
             JObject json = new JObject();
             json["n"] = index;

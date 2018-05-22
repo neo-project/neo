@@ -10,35 +10,42 @@ namespace Neo.Core
 {
     public abstract class BlockBase : IVerifiable
     {
-        /// <summary>
-        /// 区块版本
-        /// </summary>
-        public uint Version;
-        /// <summary>
-        /// 前一个区块的散列值
-        /// </summary>
-        public UInt256 PrevHash;
-        /// <summary>
-        /// 该区块中所有交易的Merkle树的根
-        /// </summary>
-        public UInt256 MerkleRoot;
-        /// <summary>
-        /// 时间戳
-        /// </summary>
-        public uint Timestamp;
-        /// <summary>
-        /// 区块高度
-        /// </summary>
-        public uint Index;
+		/// <summary>
+		/// 区块版本
+		/// Block version
+		/// </summary>
+		public uint Version;
+		/// <summary>
+		/// 前一个区块的散列值
+		/// The hash value of the previous block
+		/// </summary>
+		public UInt256 PrevHash;
+		/// <summary>
+		/// 该区块中所有交易的Merkle树的根
+		/// The root of the Merkle tree for all transactions in this block
+		/// </summary>
+		public UInt256 MerkleRoot;
+		/// <summary>
+		/// 时间戳
+		/// Timestamp
+		/// </summary>
+		public uint Timestamp;
+		/// <summary>
+		/// 区块高度
+		/// Block height
+		/// </summary>
+		public uint Index;
         public ulong ConsensusData;
-        /// <summary>
-        /// 下一个区块的记账合约的散列值
-        /// </summary>
-        public UInt160 NextConsensus;
-        /// <summary>
-        /// 用于验证该区块的脚本
-        /// </summary>
-        public Witness Script;
+		/// <summary>
+		/// 下一个区块的记账合约的散列值
+		/// The hash value of the accounting contract for the next block
+		/// </summary>
+		public UInt160 NextConsensus;
+		/// <summary>
+		/// 用于验证该区块的脚本
+		/// Script to verify the block
+		/// </summary>
+		public Witness Script;
 
         private UInt256 _hash = null;
         public UInt256 Hash

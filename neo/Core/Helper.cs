@@ -8,10 +8,11 @@ using System.Linq;
 
 namespace Neo.Core
 {
-    /// <summary>
-    /// 包含一系列签名与验证的扩展方法
-    /// </summary>
-    public static class Helper
+	/// <summary>
+	/// 包含一系列签名与验证的扩展方法
+	/// Contains a series of extensions for signing and verification
+	/// </summary>
+	public static class Helper
     {
         public static byte[] GetHashData(this IVerifiable verifiable)
         {
@@ -24,13 +25,14 @@ namespace Neo.Core
             }
         }
 
-        /// <summary>
-        /// 根据传入的账户信息，对可签名的对象进行签名
-        /// </summary>
-        /// <param name="verifiable">要签名的数据</param>
-        /// <param name="key">用于签名的账户</param>
-        /// <returns>返回签名后的结果</returns>
-        public static byte[] Sign(this IVerifiable verifiable, KeyPair key)
+		/// <summary>
+		/// 根据传入的账户信息，对可签名的对象进行签名
+		/// Sign the verifiable object based on the incoming account information
+		/// </summary>
+		/// <param name="verifiable">要签名的数据 Data to be signed</param>
+		/// <param name="key">用于签名的账户 The account used for sign</param>
+		/// <returns>返回签名后的结果  returns the signed data</returns>
+		public static byte[] Sign(this IVerifiable verifiable, KeyPair key)
         {
             using (key.Decrypt())
             {

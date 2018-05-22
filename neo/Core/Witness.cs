@@ -36,11 +36,12 @@ namespace Neo.Core
             writer.WriteVarBytes(VerificationScript);
         }
 
-        /// <summary>
-        /// 变成json对象
-        /// </summary>
-        /// <returns>返回json对象</returns>
-        public JObject ToJson()
+		/// <summary>
+		/// 将交易输入转变为json对象
+		/// Convert transaction input to json object
+		/// </summary>
+		/// <returns>返回json对象 json representation of the object</returns>
+		public JObject ToJson()
         {
             JObject json = new JObject();
             json["invocation"] = InvocationScript.ToHexString();

@@ -13,45 +13,54 @@ using System.Text;
 
 namespace Neo.Core
 {
-    /// <summary>
-    /// 一切交易的基类
-    /// </summary>
-    public abstract class Transaction : IEquatable<Transaction>, IInventory
+	/// <summary>
+	/// 一切交易的基类
+	/// Base class for all transactions
+	/// </summary>
+	public abstract class Transaction : IEquatable<Transaction>, IInventory
     {
-        /// <summary>
-        /// Maximum number of attributes that can be contained within a transaction
-        /// </summary>
-        private const int MaxTransactionAttributes = 16;
+		/// <summary>
+		/// 事务中可以包含的最大属性数量
+		/// Maximum number of attributes that can be contained within a transaction
+		/// </summary>
+		private const int MaxTransactionAttributes = 16;
 
-        /// <summary>
-        /// Reflection cache for TransactionType
-        /// </summary>
-        private static ReflectionCache<byte> ReflectionCache = ReflectionCache<byte>.CreateFromEnum<TransactionType>();
+		/// <summary>
+		/// TransactionType的反射缓存
+		/// Reflection cache for TransactionType
+		/// </summary>
+		private static ReflectionCache<byte> ReflectionCache = ReflectionCache<byte>.CreateFromEnum<TransactionType>();
 
-        /// <summary>
-        /// 交易类型
-        /// </summary>
-        public readonly TransactionType Type;
-        /// <summary>
-        /// 版本
-        /// </summary>
-        public byte Version;
-        /// <summary>
-        /// 该交易所具备的额外特性
-        /// </summary>
-        public TransactionAttribute[] Attributes;
-        /// <summary>
-        /// 输入列表
-        /// </summary>
-        public CoinReference[] Inputs;
-        /// <summary>
-        /// 输出列表
-        /// </summary>
-        public TransactionOutput[] Outputs;
-        /// <summary>
-        /// 用于验证该交易的脚本列表
-        /// </summary>
-        public Witness[] Scripts { get; set; }
+		/// <summary>
+		/// 交易类型
+		/// Transaction Type
+		/// </summary>
+		public readonly TransactionType Type;
+		/// <summary>
+		/// 版本
+		/// Version
+		/// </summary>
+		public byte Version;
+		/// <summary>
+		/// 该交易所具备的额外特性.
+		/// The extra attribute that the transaction has
+		/// </summary>
+		public TransactionAttribute[] Attributes;
+		/// <summary>
+		/// 输入列表
+		/// Input list
+		/// </summary>
+		public CoinReference[] Inputs;
+		/// <summary>
+		/// 输出列表
+		/// Output list
+		/// </summary>
+		public TransactionOutput[] Outputs;
+		/// <summary>
+		/// 用于验证该交易的脚本列表
+		/// List of scripts used to verify the transaction
+		/// </summary>
+		public Witness[] Scripts { get; set; }
 
         private UInt256 _hash = null;
         public UInt256 Hash
@@ -66,10 +75,11 @@ namespace Neo.Core
             }
         }
 
-        /// <summary>
-        /// 清单类型
-        /// </summary>
-        InventoryType IInventory.InventoryType => InventoryType.TX;
+		/// <summary>
+		/// 清单类型
+		/// List type
+		/// </summary>
+		InventoryType IInventory.InventoryType => InventoryType.TX;
 
         private Fixed8 _network_fee = -Fixed8.Satoshi;
         public virtual Fixed8 NetworkFee
@@ -87,10 +97,11 @@ namespace Neo.Core
         }
 
         private IReadOnlyDictionary<CoinReference, TransactionOutput> _references;
-        /// <summary>
-        /// 每一个交易输入所引用的交易输出
-        /// </summary>
-        public IReadOnlyDictionary<CoinReference, TransactionOutput> References
+		/// <summary>
+		/// 每一个交易输入所引用的交易输出
+		/// Each transaction input that references a transaction output
+		/// </summary>
+		public IReadOnlyDictionary<CoinReference, TransactionOutput> References
         {
             get
             {
@@ -118,60 +129,66 @@ namespace Neo.Core
 
         public virtual int Size => sizeof(TransactionType) + sizeof(byte) + Attributes.GetVarSize() + Inputs.GetVarSize() + Outputs.GetVarSize() + Scripts.GetVarSize();
 
-        /// <summary>
-        /// 系统费用
-        /// </summary>
-        public virtual Fixed8 SystemFee => Settings.Default.SystemFee.TryGetValue(Type, out Fixed8 fee) ? fee : Fixed8.Zero;
+		/// <summary>
+		/// 系统费用
+		/// System fee
+		/// </summary>
+		public virtual Fixed8 SystemFee => Settings.Default.SystemFee.TryGetValue(Type, out Fixed8 fee) ? fee : Fixed8.Zero;
 
-        /// <summary>
-        /// 用指定的类型初始化Transaction对象
-        /// </summary>
-        /// <param name="type">交易类型</param>
-        protected Transaction(TransactionType type)
+		/// <summary>
+		/// 用指定的类型初始化Transaction对象
+		/// Initialize the Transaction object with the specified type
+		/// </summary>
+		/// <param name="type">交易类型</param>
+		protected Transaction(TransactionType type)
         {
             this.Type = type;
         }
 
-        /// <summary>
-        /// 反序列化
-        /// </summary>
-        /// <param name="reader">数据来源</param>
-        void ISerializable.Deserialize(BinaryReader reader)
+		/// <summary>
+		/// 反序列化
+		/// Deserialization
+		/// </summary>
+		/// <param name="reader">数据来源 Sources</param>
+		void ISerializable.Deserialize(BinaryReader reader)
         {
             ((IVerifiable)this).DeserializeUnsigned(reader);
             Scripts = reader.ReadSerializableArray<Witness>();
             OnDeserialized();
-        }
+		}
 
-        /// <summary>
-        /// 反序列化交易中的额外数据
-        /// </summary>
-        /// <param name="reader">数据来源</param>
-        protected virtual void DeserializeExclusiveData(BinaryReader reader)
+		/// <summary>
+		/// 反序列化交易中的额外数据
+		/// Deserializing additional data in transactions
+		/// </summary>
+		/// <param name="reader">数据来源 Data Sources</param>
+		protected virtual void DeserializeExclusiveData(BinaryReader reader)
         {
         }
 
-        /// <summary>
-        /// 从指定的字节数组反序列化一笔交易
-        /// </summary>
-        /// <param name="value">字节数组</param>
-        /// <param name="offset">偏移量，反序列化从该偏移量处开始</param>
-        /// <returns>返回反序列化后的结果</returns>
-        public static Transaction DeserializeFrom(byte[] value, int offset = 0)
+		/// <summary>
+		/// 从指定的字节数组反序列化一笔交易
+		/// Deserialize a transaction from the specified byte array
+		/// </summary>
+		/// <param name="value">字节数组  byte array</param>
+		/// <param name="offset">偏移量，反序列化从该偏移量处开始 Deserialization starts after this offset</param>
+		/// <returns>返回反序列化后的结果  returns the deserialized result</returns>
+		public static Transaction DeserializeFrom(byte[] value, int offset = 0)
         {
             using (MemoryStream ms = new MemoryStream(value, offset, value.Length - offset, false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
                 return DeserializeFrom(reader);
             }
-        }
+		}
 
-        /// <summary>
-        /// 反序列化
-        /// </summary>
-        /// <param name="reader">数据来源</param>
-        /// <returns>返回反序列化后的结果</returns>
-        internal static Transaction DeserializeFrom(BinaryReader reader)
+		/// <summary>
+		/// 反序列化
+		/// Deserialization
+		/// </summary>
+		/// <param name="reader">数据来源 Data Sources</param>
+		/// <returns>返回反序列化后的结果 Return the deserialized result</returns>
+		internal static Transaction DeserializeFrom(BinaryReader reader)
         {
             // Looking for type in reflection cache
             Transaction transaction = ReflectionCache.CreateInstance<Transaction>(reader.ReadByte());
@@ -221,11 +238,12 @@ namespace Neo.Core
             return this.GetHashData();
         }
 
-        /// <summary>
-        /// 获取需要校验的脚本散列值
-        /// </summary>
-        /// <returns>返回需要校验的脚本散列值</returns>
-        public virtual UInt160[] GetScriptHashesForVerifying()
+		/// <summary>
+		/// 获取需要校验的脚本散列值
+		/// Get the script hash value that needs validation
+		/// </summary>
+		/// <returns>返回需要校验的脚本散列值 returns the script hash value to be validated</returns>
+		public virtual UInt160[] GetScriptHashesForVerifying()
         {
             if (References == null) throw new InvalidOperationException();
             HashSet<UInt160> hashes = new HashSet<UInt160>(Inputs.Select(p => References[p].ScriptHash));
@@ -242,11 +260,12 @@ namespace Neo.Core
             return hashes.OrderBy(p => p).ToArray();
         }
 
-        /// <summary>
-        /// 获取交易后各资产的变化量
-        /// </summary>
-        /// <returns>返回交易后各资产的变化量</returns>
-        public IEnumerable<TransactionResult> GetTransactionResults()
+		/// <summary>
+		/// 获取交易后各资产的变化量
+		/// Change in assets after transaction
+		/// </summary>
+		/// <returns>返回交易后各资产的变化量 Return the amount of change in each asset after the transaction</returns>
+		public IEnumerable<TransactionResult> GetTransactionResults()
         {
             if (References == null) return null;
             return References.Values.Select(p => new
@@ -264,28 +283,31 @@ namespace Neo.Core
             }).Where(p => p.Amount != Fixed8.Zero);
         }
 
-        /// <summary>
-        /// 通知子类反序列化完毕
-        /// </summary>
-        protected virtual void OnDeserialized()
+		/// <summary>
+		/// 通知子类反序列化完毕
+		/// Triggered when deserialization is completed
+		/// </summary>
+		protected virtual void OnDeserialized()
         {
         }
 
-        /// <summary>
-        /// 序列化
-        /// </summary>
-        /// <param name="writer">存放序列化后的结果</param>
-        void ISerializable.Serialize(BinaryWriter writer)
+		/// <summary>
+		/// 序列化
+		/// Serialization
+		/// </summary>
+		/// <param name="writer">存放序列化后的结果 Store serialized results</param>
+		void ISerializable.Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
             writer.Write(Scripts);
         }
 
-        /// <summary>
-        /// 序列化交易中的额外数据
-        /// </summary>
-        /// <param name="writer">存放序列化后的结果</param>
-        protected virtual void SerializeExclusiveData(BinaryWriter writer)
+		/// <summary>
+		/// 序列化交易中的额外数据
+		/// Serialize additional data from this transaction
+		/// </summary>
+		/// <param name="writer">存放序列化后的结果 Store serialized results</param>
+		protected virtual void SerializeExclusiveData(BinaryWriter writer)
         {
         }
 
@@ -299,11 +321,12 @@ namespace Neo.Core
             writer.Write(Outputs);
         }
 
-        /// <summary>
-        /// 变成json对象
-        /// </summary>
-        /// <returns>返回json对象</returns>
-        public virtual JObject ToJson()
+		/// <summary>
+		/// 变成json对象
+		/// Become a json object
+		/// </summary>
+		/// <returns>返回json对象 Json object</returns>
+		public virtual JObject ToJson()
         {
             JObject json = new JObject();
             json["txid"] = Hash.ToString();
@@ -324,11 +347,12 @@ namespace Neo.Core
             return Verify(Enumerable.Empty<Transaction>());
         }
 
-        /// <summary>
-        /// 验证交易
-        /// </summary>
-        /// <returns>返回验证的结果</returns>
-        public virtual bool Verify(IEnumerable<Transaction> mempool)
+		/// <summary>
+		/// 验证交易
+		/// Verify the transaction
+		/// </summary>
+		/// <returns>返回验证的结果 returns the result of the verification</returns>
+		public virtual bool Verify(IEnumerable<Transaction> mempool)
         {
             for (int i = 1; i < Inputs.Length; i++)
                 for (int j = 0; j < i; j++)

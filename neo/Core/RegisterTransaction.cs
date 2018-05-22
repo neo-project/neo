@@ -13,34 +13,42 @@ namespace Neo.Core
     [Obsolete]
     public class RegisterTransaction : Transaction
     {
-        /// <summary>
-        /// 资产类别
-        /// </summary>
-        public AssetType AssetType;
+		/// <summary>
+		/// 资产类别
+		/// Asset Type
+		/// </summary>
+		public AssetType AssetType;
         /// <summary>
         /// 资产名称
+		/// Asset Name
         /// </summary>
         public string Name;
-        /// <summary>
-        /// 发行总量，共有2种模式：
-        /// 1. 限量模式：当Amount为正数时，表示当前资产的最大总量为Amount，且不可修改（股权在未来可能会支持扩股或增发，会考虑需要公司签名或一定比例的股东签名认可）。
-        /// 2. 不限量模式：当Amount等于-1时，表示当前资产可以由创建者无限量发行。这种模式的自由度最大，但是公信力最低，不建议使用。
-        /// </summary>
-        public Fixed8 Amount;
+		/// <summary>
+		/// 发行总量，共有2种模式：
+		/// 1. 限量模式：当Amount为正数时，表示当前资产的最大总量为Amount，且不可修改（股权在未来可能会支持扩股或增发，会考虑需要公司签名或一定比例的股东签名认可）。
+		/// 2. 不限量模式：当Amount等于-1时，表示当前资产可以由创建者无限量发行。这种模式的自由度最大，但是公信力最低，不建议使用。
+		/// Issue total, a total of 2 modes:
+	    /// 1. Limited Mode: When Amount is positive, the maximum total amount of the current asset is Amount, and cannot be modified (Equities may support expansion or additional issuance in the future, and will consider the company’s signature or a certain proportion of shareholders Signature recognition).
+		/// 2. Unlimited mode: When Amount is equal to -1, the current asset can be issued by the creator indefinitely. This model has the greatest degree of freedom, but it has the lowest credibility and is not recommended for use.
+		/// </summary>
+		public Fixed8 Amount;
         public byte Precision;
-        /// <summary>
-        /// 发行者的公钥
-        /// </summary>
-        public ECPoint Owner;
-        /// <summary>
-        /// 资产管理员的合约散列值
-        /// </summary>
-        public UInt160 Admin;
+		/// <summary>
+		/// 发行者的公钥
+		/// Owner's public key
+		/// </summary>
+		public ECPoint Owner;
+		/// <summary>
+		/// 资产管理员的合约散列值
+		/// Asset Admin Address
+		/// </summary>
+		public UInt160 Admin;
 
         public override int Size => base.Size + sizeof(AssetType) + Name.GetVarSize() + Amount.Size + sizeof(byte) + Owner.Size + Admin.Size;
 
         /// <summary>
         /// 系统费用
+		/// System Fee
         /// </summary>
         public override Fixed8 SystemFee
         {
@@ -55,13 +63,14 @@ namespace Neo.Core
         public RegisterTransaction()
             : base(TransactionType.RegisterTransaction)
         {
-        }
+		}
 
-        /// <summary>
-        /// 反序列化交易中额外的数据
-        /// </summary>
-        /// <param name="reader">数据来源</param>
-        protected override void DeserializeExclusiveData(BinaryReader reader)
+		/// <summary>
+		/// 反序列化交易中额外的数据
+		/// Deserialize additional data in the transaction
+		/// </summary>
+		/// <param name="reader">数据来源 Data Sources</param>
+		protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             if (Version != 0) throw new FormatException();
             AssetType = (AssetType)reader.ReadByte();
@@ -76,6 +85,7 @@ namespace Neo.Core
 
         /// <summary>
         /// 获取需要校验的脚本Hash值
+		/// Get the hash value of the script to be verified
         /// </summary>
         /// <returns>返回需要校验的脚本Hash值</returns>
         public override UInt160[] GetScriptHashesForVerifying()
@@ -84,7 +94,11 @@ namespace Neo.Core
             return base.GetScriptHashesForVerifying().Union(new[] { owner }).OrderBy(p => p).ToArray();
         }
 
-        protected override void OnDeserialized()
+		/// <summary>
+		/// 反序列化进行完毕时触发
+		/// Triggered when deserialization is completed
+		/// </summary>
+		protected override void OnDeserialized()
         {
             base.OnDeserialized();
             if (AssetType == AssetType.GoverningToken && !Hash.Equals(Blockchain.GoverningToken.Hash))
@@ -93,11 +107,12 @@ namespace Neo.Core
                 throw new FormatException();
         }
 
-        /// <summary>
-        /// 序列化交易中额外的数据
-        /// </summary>
-        /// <param name="writer">存放序列化后的结果</param>
-        protected override void SerializeExclusiveData(BinaryWriter writer)
+		/// <summary>
+		/// 序列化交易中额外的数据
+		/// Serialize additional data from this transaction
+		/// </summary>
+		/// <param name="writer">存放序列化后的结果 Store serialized results</param>
+		protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write((byte)AssetType);
             writer.WriteVarString(Name);
@@ -107,11 +122,12 @@ namespace Neo.Core
             writer.Write(Admin);
         }
 
-        /// <summary>
-        /// 变成json对象
-        /// </summary>
-        /// <returns>返回json对象</returns>
-        public override JObject ToJson()
+		/// <summary>
+		/// 变成json对象
+		/// Become a json object
+		/// </summary>
+		/// <returns>返回json对象 Json object</returns>
+		public override JObject ToJson()
         {
             JObject json = base.ToJson();
             json["asset"] = new JObject();

@@ -5,31 +5,34 @@ using System.Security.Cryptography;
 
 namespace Neo.Cryptography.ECC
 {
-    /// <summary>
-    /// 提供椭圆曲线数字签名算法（ECDSA）的功能
-    /// </summary>
-    public class ECDsa
+	/// <summary>
+	/// 提供椭圆曲线数字签名算法（ECDSA）的功能
+	/// Provides functions of the Elliptic Curve Digital Signature Algorithm (ECDSA)
+	/// </summary>
+	public class ECDsa
     {
         private readonly byte[] privateKey;
         private readonly ECPoint publicKey;
         private readonly ECCurve curve;
 
-        /// <summary>
-        /// 根据指定的私钥和曲线参数来创建新的ECDsa对象，该对象可用于签名
-        /// </summary>
-        /// <param name="privateKey">私钥</param>
-        /// <param name="curve">椭圆曲线参数</param>
-        public ECDsa(byte[] privateKey, ECCurve curve)
+		/// <summary>
+		/// 根据指定的私钥和曲线参数来创建新的ECDsa对象，该对象可用于签名
+		/// Creates a new ECDsa object based on the specified private key and curve parameters, which can be used for signing
+		/// </summary>
+		/// <param name="privateKey">私钥 private key</param>
+		/// <param name="curve">椭圆曲线参数 Elliptic curve parameters</param>
+		public ECDsa(byte[] privateKey, ECCurve curve)
             : this(curve.G * privateKey)
         {
             this.privateKey = privateKey;
         }
 
-        /// <summary>
-        /// 根据指定的公钥来创建新的ECDsa对象，该对象可用于验证签名
-        /// </summary>
-        /// <param name="publicKey">公钥</param>
-        public ECDsa(ECPoint publicKey)
+		/// <summary>
+		/// 根据指定的公钥来创建新的ECDsa对象，该对象可用于验证签名
+		/// Creates a new ECDsa object based on the specified public key, which can be used to verify the signature
+		/// </summary>
+		/// <param name="publicKey">公钥</param>
+		public ECDsa(ECPoint publicKey)
         {
             this.publicKey = publicKey;
             this.curve = publicKey.Curve;
@@ -46,12 +49,13 @@ namespace Neo.Cryptography.ECC
             return trunc;
         }
 
-        /// <summary>
-        /// 生成椭圆曲线数字签名
-        /// </summary>
-        /// <param name="message">要签名的消息</param>
-        /// <returns>返回签名的数字编码（r,s）</returns>
-        public BigInteger[] GenerateSignature(byte[] message)
+		/// <summary>
+		/// 生成椭圆曲线数字签名
+		/// Generate elliptic curve digital signature
+		/// </summary>
+		/// <param name="message">要签名的消息 Message to sign</param>
+		/// <returns>返回签名的数字编码（r,s）Returns the signature (r,s)</returns>
+		public BigInteger[] GenerateSignature(byte[] message)
         {
             if (privateKey == null) throw new InvalidOperationException();
             BigInteger e = CalculateE(curve.N, message);
@@ -109,14 +113,15 @@ namespace Neo.Cryptography.ECC
             return R;
         }
 
-        /// <summary>
-        /// 验证签名的合法性
-        /// </summary>
-        /// <param name="message">要验证的消息</param>
-        /// <param name="r">签名的数字编码</param>
-        /// <param name="s">签名的数字编码</param>
-        /// <returns>返回验证的结果</returns>
-        public bool VerifySignature(byte[] message, BigInteger r, BigInteger s)
+		/// <summary>
+		/// 验证签名的合法性
+		/// Verify the validity of the signature
+		/// </summary>
+		/// <param name="message">要验证的消息 Message to verify</param>
+		/// <param name="r">签名的数字编码 Signature Encoding Number</param>
+		/// <param name="s">签名的数字编码 Signature Encoding Number</param>
+		/// <returns>返回验证的结果</returns>
+		public bool VerifySignature(byte[] message, BigInteger r, BigInteger s)
         {
             if (r.Sign < 1 || s.Sign < 1 || r.CompareTo(curve.N) >= 0 || s.CompareTo(curve.N) >= 0)
                 return false;
