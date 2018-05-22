@@ -350,6 +350,10 @@ namespace Neo.Network
 
                     var connectTask = ConnectToPeerAsync(ipEndPoint);
 
+                    // Completed tasks that run synchronously may use a non-unique cached task object.
+                    if (connectTask.IsCompleted)
+                        continue;
+
                     tasksDict.Add(connectTask, ipEndPoint.Address);
                     currentlyConnectingIPs.Add(ipEndPoint.Address, connectTask);
                 }
@@ -401,10 +405,13 @@ namespace Neo.Network
                         connectToPeers(endpoints);
                         lastSufficientPeersTimestamp = DateTime.UtcNow;
                     }
+                }
 
-                    try
+                try
+                {
+                    var tasksArray = tasksDict.Keys.ToArray();
+                    if (tasksArray.Length > 0)
                     {
-                        var tasksArray = tasksDict.Keys.ToArray();
                         Task.WaitAny(tasksArray, 5000, cancellationTokenSource.Token);
 
                         foreach (var task in tasksArray)
@@ -417,11 +424,12 @@ namespace Neo.Network
                             task.Dispose();
                         }
                     }
-                    catch (OperationCanceledException)
-                    {
-                        break;
-                    }
                 }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+
                 for (int i = 0; i < 50 && !cancellationTokenSource.IsCancellationRequested; i++)
                 {
                     Thread.Sleep(100);
