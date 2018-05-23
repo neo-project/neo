@@ -7,19 +7,22 @@ using System.Linq;
 
 namespace Neo.Core
 {
-    /// <summary>
-    /// 交易特性
-    /// </summary>
-    public class TransactionAttribute : IInteropInterface, ISerializable
+	/// <summary>
+	/// 交易特性
+	/// Transaction Attributes
+	/// </summary>
+	public class TransactionAttribute : IInteropInterface, ISerializable
     {
         /// <summary>
         /// 用途
+		/// Use
         /// </summary>
         public TransactionAttributeUsage Usage;
-        /// <summary>
-        /// 特定于用途的外部数据
-        /// </summary>
-        public byte[] Data;
+		/// <summary>
+		/// 特定于用途的外部数据
+		/// User-specific data
+		/// </summary>
+		public byte[] Data;
 
         public int Size
         {

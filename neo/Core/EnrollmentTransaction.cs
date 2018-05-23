@@ -12,10 +12,11 @@ namespace Neo.Core
     [Obsolete]
     public class EnrollmentTransaction : Transaction
     {
-        /// <summary>
-        /// 记账人的公钥
-        /// </summary>
-        public ECPoint PublicKey;
+		/// <summary>
+		/// 记账人的公钥
+		/// The public key of the booker
+		/// </summary>
+		public ECPoint PublicKey;
 
         private UInt160 _script_hash = null;
         private UInt160 ScriptHash
@@ -37,39 +38,43 @@ namespace Neo.Core
         {
         }
 
-        /// <summary>
-        /// 序列化交易中的额外数据
-        /// </summary>
-        /// <param name="reader">数据来源</param>
-        protected override void DeserializeExclusiveData(BinaryReader reader)
+		/// <summary>
+		/// 序列化交易中的额外数据
+		/// Extra data in the serialized transaction
+		/// </summary>
+		/// <param name="reader">数据来源 Sources</param>
+		protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             if (Version != 0) throw new FormatException();
             PublicKey = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
         }
 
-        /// <summary>
-        /// 获取需要校验的脚本Hash
-        /// </summary>
-        /// <returns>返回需要校验的脚本Hash</returns>
-        public override UInt160[] GetScriptHashesForVerifying()
+		/// <summary>
+		/// 获取需要校验的脚本Hash
+		/// Get the script Hash that needs verification
+		/// </summary>
+		/// <returns>返回需要校验的脚本Hash returns the script Hash that needs validation</returns>
+		public override UInt160[] GetScriptHashesForVerifying()
         {
             return base.GetScriptHashesForVerifying().Union(new UInt160[] { ScriptHash }).OrderBy(p => p).ToArray();
         }
 
-        /// <summary>
-        /// 序列化交易中的额外数据
-        /// </summary>
-        /// <param name="writer">存放序列化后的结果</param>
-        protected override void SerializeExclusiveData(BinaryWriter writer)
+		/// <summary>
+		/// 序列化交易中的额外数据
+		/// Serialize additional data from this transaction
+		/// </summary>
+		/// <param name="writer">存放序列化后的结果 Store serialized results</param>
+		protected override void SerializeExclusiveData(BinaryWriter writer)
         {
             writer.Write(PublicKey);
         }
 
-        /// <summary>
-        /// 变成json对象
-        /// </summary>
-        /// <returns>返回json对象</returns>
-        public override JObject ToJson()
+		/// <summary>
+		/// 变成json对象
+		/// becomes a json object
+		/// </summary>
+		/// <returns>返回json对象  returns json representation</returns>
+		public override JObject ToJson()
         {
             JObject json = base.ToJson();
             json["pubkey"] = PublicKey.ToString();

@@ -7,17 +7,19 @@ namespace Neo.Cryptography
 {
     public static class Base58
     {
-        /// <summary>
-        /// base58编码的字母表
-        /// </summary>
-        public const string Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+		/// <summary>
+		/// base58编码的字母表
+		/// Base58 encoded alphabet
+		/// </summary>
+		public const string Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
-        /// <summary>
-        /// 解码
-        /// </summary>
-        /// <param name="input">要解码的字符串</param>
-        /// <returns>返回解码后的字节数组</returns>
-        public static byte[] Decode(string input)
+		/// <summary>
+		/// 解码
+		/// Decoding
+		/// </summary>
+		/// <param name="input">要解码的字符串 The string to be decoded</param>
+		/// <returns>返回解码后的字节数组 Return decoded byte array</returns>
+		public static byte[] Decode(string input)
         {
             BigInteger bi = BigInteger.Zero;
             for (int i = input.Length - 1; i >= 0; i--)
@@ -40,12 +42,13 @@ namespace Neo.Cryptography
             return tmp;
         }
 
-        /// <summary>
-        /// 编码
-        /// </summary>
-        /// <param name="input">要编码的字节数组</param>
-        /// <returns>返回编码后的字符串</returns>
-        public static string Encode(byte[] input)
+		/// <summary>
+		/// 编码
+		/// Encoding
+		/// </summary>
+		/// <param name="input">要编码的字节数组 The byte array to encode</param>
+		/// <returns>返回编码后的字符串 returns encoded string</returns>
+		public static string Encode(byte[] input)
         {
             BigInteger value = new BigInteger(new byte[1].Concat(input).Reverse().ToArray());
             StringBuilder sb = new StringBuilder();

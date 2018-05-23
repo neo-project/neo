@@ -7,6 +7,7 @@ namespace Neo.Cryptography
 {
     /// <summary>
     /// 哈希树
+	/// MerkleTree
     /// </summary>
     public class MerkleTree
     {
@@ -50,9 +51,10 @@ namespace Neo.Cryptography
 
         /// <summary>
         /// 计算根节点的值
+		/// Calculate the root of the tree based on a list of hashes
         /// </summary>
-        /// <param name="hashes">子节点列表</param>
-        /// <returns>返回计算的结果</returns>
+        /// <param name="hashes">子节点列表 Hash list</param>
+        /// <returns>返回计算的结果 returns the result of the calculation</returns>
         public static UInt256 ComputeRoot(UInt256[] hashes)
         {
             if (hashes.Length == 0) throw new ArgumentException();

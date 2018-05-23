@@ -5,13 +5,15 @@ using System.Linq;
 
 namespace Neo.Core
 {
-    /// <summary>
-    /// 用于分发资产的特殊交易
-    /// </summary>
-    public class IssueTransaction : Transaction
+	/// <summary>
+	/// 用于分发资产的特殊交易
+	/// Special transactions for distributing assets
+	/// </summary>
+	public class IssueTransaction : Transaction
     {
         /// <summary>
         /// 系统费用
+		/// System Fee
         /// </summary>
         public override Fixed8 SystemFee
         {
@@ -34,11 +36,12 @@ namespace Neo.Core
             if (Version > 1) throw new FormatException();
         }
 
-        /// <summary>
-        /// 获取需要校验的脚本散列值
-        /// </summary>
-        /// <returns>返回需要校验的脚本散列值</returns>
-        public override UInt160[] GetScriptHashesForVerifying()
+		/// <summary>
+		/// 获取需要校验的脚本散列值
+		/// Get the script hash value that needs validation
+		/// </summary>
+		/// <returns>返回需要校验的脚本散列值 returns the script hash value to be validated</returns>
+		public override UInt160[] GetScriptHashesForVerifying()
         {
             HashSet<UInt160> hashes = new HashSet<UInt160>(base.GetScriptHashesForVerifying());
             foreach (TransactionResult result in GetTransactionResults().Where(p => p.Amount < Fixed8.Zero))
@@ -50,11 +53,12 @@ namespace Neo.Core
             return hashes.OrderBy(p => p).ToArray();
         }
 
-        /// <summary>
-        /// 验证交易
-        /// </summary>
-        /// <returns>返回验证后的结果</returns>
-        public override bool Verify(IEnumerable<Transaction> mempool)
+		/// <summary>
+		/// 验证交易
+		/// Verify the transaction
+		/// </summary>
+		/// <returns>返回验证后的结果 returns verified results</returns>
+		public override bool Verify(IEnumerable<Transaction> mempool)
         {
             if (!base.Verify(mempool)) return false;
             TransactionResult[] results = GetTransactionResults()?.Where(p => p.Amount < Fixed8.Zero).ToArray();

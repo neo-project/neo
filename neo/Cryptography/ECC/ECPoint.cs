@@ -12,10 +12,11 @@ namespace Neo.Cryptography.ECC
         internal ECFieldElement X, Y;
         internal readonly ECCurve Curve;
 
-        /// <summary>
-        /// 判断是否为无穷远点
-        /// </summary>
-        public bool IsInfinity
+		/// <summary>
+		/// 判断是否为无穷远点
+		/// Judging if it is infinity
+		/// </summary>
+		public bool IsInfinity
         {
             get { return X == null && Y == null; }
         }
@@ -36,12 +37,13 @@ namespace Neo.Cryptography.ECC
             this.Curve = curve;
         }
 
-        /// <summary>
-        /// 与另一对象进行比较
-        /// </summary>
-        /// <param name="other">另一对象</param>
-        /// <returns>返回比较的结果</returns>
-        public int CompareTo(ECPoint other)
+		/// <summary>
+		/// 与另一对象进行比较
+		/// Compare with another object
+		/// </summary>
+		/// <param name="other">另一对象 Another object</param>
+		/// <returns>返回比较的结果 Return the result of comparison</returns>
+		public int CompareTo(ECPoint other)
         {
             if (ReferenceEquals(this, other)) return 0;
             int result = X.CompareTo(other.X);
@@ -49,13 +51,14 @@ namespace Neo.Cryptography.ECC
             return Y.CompareTo(other.Y);
         }
 
-        /// <summary>
-        /// 从字节数组中解码
-        /// </summary>
-        /// <param name="encoded">要解码的字节数组</param>
-        /// <param name="curve">曲线参数</param>
-        /// <returns></returns>
-        public static ECPoint DecodePoint(byte[] encoded, ECCurve curve)
+		/// <summary>
+		/// 从字节数组中解码
+		/// Decode from byte array
+		/// </summary>
+		/// <param name="encoded">要解码的字节数组 The byte array to decode</param>
+		/// <param name="curve">曲线参数 Curve parameters</param>
+		/// <returns></returns>
+		public static ECPoint DecodePoint(byte[] encoded, ECCurve curve)
         {
             ECPoint p = null;
             int expectedLength = (curve.Q.GetBitLength() + 7) / 8;
@@ -125,15 +128,16 @@ namespace Neo.Cryptography.ECC
             ECPoint p = DeserializeFrom(reader, Curve);
             X = p.X;
             Y = p.Y;
-        }
+		}
 
-        /// <summary>
-        /// 反序列化
-        /// </summary>
-        /// <param name="reader">数据来源</param>
-        /// <param name="curve">椭圆曲线参数</param>
-        /// <returns></returns>
-        public static ECPoint DeserializeFrom(BinaryReader reader, ECCurve curve)
+		/// <summary>
+		/// 反序列化
+		/// Deserialization
+		/// </summary>
+		/// <param name="reader">数据来源 Data Sources</param>
+		/// <param name="curve">椭圆曲线参数 Elliptic curve parameters</param>
+		/// <returns></returns>
+		public static ECPoint DeserializeFrom(BinaryReader reader, ECCurve curve)
         {
             int expectedLength = (curve.Q.GetBitLength() + 7) / 8;
             byte[] buffer = new byte[1 + expectedLength * 2];
@@ -156,12 +160,13 @@ namespace Neo.Cryptography.ECC
             }
         }
 
-        /// <summary>
-        /// 将对象编码到字节数组
-        /// </summary>
-        /// <param name="commpressed">是否为压缩格式的编码</param>
-        /// <returns>返回编码后的字节数组</returns>
-        public byte[] EncodePoint(bool commpressed)
+		/// <summary>
+		/// 将对象编码到字节数组
+		/// Encode object to byte array
+		/// </summary>
+		/// <param name="commpressed">是否为压缩格式的编码 Whether it is a compressed format</param>
+		/// <returns>返回编码后的字节数组 Return encoded array of bytes</returns>
+		public byte[] EncodePoint(bool commpressed)
         {
             if (IsInfinity) return new byte[1];
             byte[] data;
@@ -181,12 +186,13 @@ namespace Neo.Cryptography.ECC
             return data;
         }
 
-        /// <summary>
-        /// 比较与另一个对象是否相等
-        /// </summary>
-        /// <param name="other">另一个对象</param>
-        /// <returns>返回比较的结果</returns>
-        public bool Equals(ECPoint other)
+		/// <summary>
+		/// 比较与另一个对象是否相等
+		/// Compare with another object
+		/// </summary>
+		/// <param name="other">另一个对象 other object</param>
+		/// <returns>返回比较的结果 Return the result of comparison </returns>
+		public bool Equals(ECPoint other)
         {
             if (ReferenceEquals(this, other)) return true;
             if (ReferenceEquals(null, other)) return false;
@@ -195,23 +201,25 @@ namespace Neo.Cryptography.ECC
             return X.Equals(other.X) && Y.Equals(other.Y);
         }
 
-        /// <summary>
-        /// 比较与另一个对象是否相等
-        /// </summary>
-        /// <param name="obj">另一个对象</param>
-        /// <returns>返回比较的结果</returns>
-        public override bool Equals(object obj)
+		/// <summary>
+		/// 比较与另一个对象是否相等
+		/// Compare with another object
+		/// </summary>
+		/// <param name="obj">另一个对象 other object</param>
+		/// <returns>返回比较的结果 Return the result of comparison </returns>
+		public override bool Equals(object obj)
         {
             return Equals(obj as ECPoint);
-        }
+		}
 
-        /// <summary>   
-        /// 从指定的字节数组中解析出公钥，这个字节数组可以是任意形式的公钥编码、或者包含私钥的内容
-        /// </summary>
-        /// <param name="pubkey">要解析的字节数组</param>
-        /// <param name="curve">椭圆曲线参数</param>
-        /// <returns>返回解析出的公钥</returns>
-        public static ECPoint FromBytes(byte[] pubkey, ECCurve curve)
+		/// <summary>   
+		/// 从指定的字节数组中解析出公钥，这个字节数组可以是任意形式的公钥编码、或者包含私钥的内容
+		/// Parse the public key from the specified byte array. This byte array can be any form of public key encoding, or contain the contents of the private key
+		/// </summary>
+		/// <param name="pubkey">要解析的字节数组 The array of bytes to parse</param>
+		/// <param name="curve">椭圆曲线参数 Elliptic curve parameters</param>
+		/// <returns>返回解析出的公钥 Return the parsed public key</returns>
+		public static ECPoint FromBytes(byte[] pubkey, ECCurve curve)
         {
             switch (pubkey.Length)
             {
@@ -229,11 +237,12 @@ namespace Neo.Cryptography.ECC
             }
         }
 
-        /// <summary>
-        /// 获取HashCode
-        /// </summary>
-        /// <returns>返回HashCode</returns>
-        public override int GetHashCode()
+		/// <summary>
+		/// 获取HashCode
+		/// HashCode
+		/// </summary>
+		/// <returns>返回HashCode returns HashCode</returns>
+		public override int GetHashCode()
         {
             return X.GetHashCode() + Y.GetHashCode();
         }
@@ -428,8 +437,9 @@ namespace Neo.Cryptography.ECC
                 throw new ArgumentException();
             if (p.IsInfinity)
                 return p;
-            //BigInteger的内存无法被保护，可能会有安全隐患。此处的k需要重写一个SecureBigInteger类来代替
-            BigInteger k = new BigInteger(n.Reverse().Concat(new byte[1]).ToArray());
+			//BigInteger的内存无法被保护，可能会有安全隐患。此处的k需要重写一个SecureBigInteger类来代替
+			//BigInteger's memory cannot be protected and there may be a security risk. Here k needs to override a SecureBigInteger class instead
+			BigInteger k = new BigInteger(n.Reverse().Concat(new byte[1]).ToArray());
             if (k.Sign == 0)
                 return p.Curve.Infinity;
             return Multiply(p, k);

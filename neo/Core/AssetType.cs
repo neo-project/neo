@@ -1,9 +1,10 @@
 ﻿namespace Neo.Core
 {
-    /// <summary>
-    /// 资产类别
-    /// </summary>
-    public enum AssetType : byte
+	/// <summary>
+	/// 资产类别
+	/// Asset Class
+	/// </summary>
+	public enum AssetType : byte
     {
         CreditFlag = 0x40,
         DutyFlag = 0x80,

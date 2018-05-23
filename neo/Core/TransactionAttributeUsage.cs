@@ -1,28 +1,33 @@
 ﻿namespace Neo.Core
 {
-    /// <summary>
-    /// 表示交易特性的用途
-    /// </summary>
-    public enum TransactionAttributeUsage : byte
+	/// <summary>
+	/// 表示交易特性的用途
+	///  Indicates the use of transaction attributes
+	/// </summary>
+	public enum TransactionAttributeUsage : byte
     {
-        /// <summary>
-        /// 外部合同的散列值
-        /// </summary>
-        ContractHash = 0x00,
+		/// <summary>
+		/// 外部合同的散列值
+		/// Hash value of contract
+		/// </summary>
+		ContractHash = 0x00,
 
-        /// <summary>
-        /// 用于ECDH密钥交换的公钥，该公钥的第一个字节为0x02
-        /// </summary>
-        ECDH02 = 0x02,
-        /// <summary>
-        /// 用于ECDH密钥交换的公钥，该公钥的第一个字节为0x03
-        /// </summary>
-        ECDH03 = 0x03,
+		/// <summary>
+		/// 用于ECDH密钥交换的公钥，该公钥的第一个字节为0x02
+		/// The public key used for the exchange of the ECDH keys. The first byte of the public key is 0x02
+		/// </summary>
+		ECDH02 = 0x02,
+		/// <summary>
+		/// 用于ECDH密钥交换的公钥，该公钥的第一个字节为0x03
+		/// Public key used for ECDH key exchange. The first byte of the public key is 0x03
+		/// </summary>
+		ECDH03 = 0x03,
 
-        /// <summary>
-        /// 用于对交易进行额外的验证
-        /// </summary>
-        Script = 0x20,
+		/// <summary>
+		/// 用于对交易进行额外的验证
+		/// Used for additional verification of transactions
+		/// </summary>
+		Script = 0x20,
 
         Vote = 0x30,
 
@@ -45,10 +50,11 @@
         Hash14 = 0xae,
         Hash15 = 0xaf,
 
-        /// <summary>
-        /// 备注
-        /// </summary>
-        Remark = 0xf0,
+		/// <summary>
+		/// 备注
+		/// Note
+		/// </summary>
+		Remark = 0xf0,
         Remark1 = 0xf1,
         Remark2 = 0xf2,
         Remark3 = 0xf3,

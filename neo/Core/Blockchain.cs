@@ -11,31 +11,35 @@ using System.Threading;
 
 namespace Neo.Core
 {
-    /// <summary>
-    /// 实现区块链功能的基类
-    /// </summary>
-    public abstract class Blockchain : IDisposable, IScriptTable
+	/// <summary>
+	/// 实现区块链功能的基类
+	/// Base classes that implement blockchain functionality
+	/// </summary>
+	public abstract class Blockchain : IDisposable, IScriptTable
     {
         public static event EventHandler<Block> PersistCompleted;
-
+		
         public CancellationTokenSource VerificationCancellationToken { get; protected set; } = new CancellationTokenSource();
         public object PersistLock { get; } = new object();
 
-        /// <summary>
-        /// 产生每个区块的时间间隔，已秒为单位
-        /// </summary>
-        public static readonly uint SecondsPerBlock = Settings.Default.SecondsPerBlock;
+		/// <summary>
+		/// 产生每个区块的时间间隔，已秒为单位
+		/// The interval at which each block is generated, in seconds
+		/// </summary>
+		public static readonly uint SecondsPerBlock = Settings.Default.SecondsPerBlock;
         public const uint DecrementInterval = 2000000;
         public const uint MaxValidators = 1024;
         public static readonly uint[] GenerationAmount = { 8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-        /// <summary>
-        /// 产生每个区块的时间间隔
-        /// </summary>
-        public static readonly TimeSpan TimePerBlock = TimeSpan.FromSeconds(SecondsPerBlock);
-        /// <summary>
-        /// 后备记账人列表
-        /// </summary>
-        public static readonly ECPoint[] StandbyValidators = Settings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+		/// <summary>
+		/// 产生每个区块的时间间隔
+		/// Generate interval for each block
+		/// </summary>
+		public static readonly TimeSpan TimePerBlock = TimeSpan.FromSeconds(SecondsPerBlock);
+		/// <summary>
+		/// 后备记账人列表
+		/// Backup booker list
+		/// </summary>
+		public static readonly ECPoint[] StandbyValidators = Settings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
 
         /// <summary>
         /// Return true if haven't got valid handle
@@ -72,10 +76,11 @@ namespace Neo.Core
         };
 #pragma warning restore CS0612
 
-        /// <summary>
-        /// 创世区块
-        /// </summary>
-        public static readonly Block GenesisBlock = new Block
+		/// <summary>
+		/// 创世区块
+		/// Genesis block
+		/// </summary>
+		public static readonly Block GenesisBlock = new Block
         {
             PrevHash = UInt256.Zero,
             Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestamp(),
@@ -124,44 +129,51 @@ namespace Neo.Core
             }
         };
 
-        /// <summary>
-        /// 当前最新区块散列值
-        /// </summary>
-        public abstract UInt256 CurrentBlockHash { get; }
-        /// <summary>
-        /// 当前最新区块头的散列值
-        /// </summary>
-        public abstract UInt256 CurrentHeaderHash { get; }
-        /// <summary>
-        /// 默认的区块链实例
-        /// </summary>
-        public static Blockchain Default { get; private set; } = null;
-        /// <summary>
-        /// 区块头高度
-        /// </summary>
-        public abstract uint HeaderHeight { get; }
-        /// <summary>
-        /// 区块高度
-        /// </summary>
-        public abstract uint Height { get; }
+		/// <summary>
+		/// 当前最新区块散列值
+		/// Current block hash value
+		/// </summary>
+		public abstract UInt256 CurrentBlockHash { get; }
+		/// <summary>
+		/// 当前最新区块头的散列值
+		/// The current block header hash value
+		/// </summary>
+		public abstract UInt256 CurrentHeaderHash { get; }
+		/// <summary>
+		/// 默认的区块链实例
+		/// The default blockchain instance
+		/// </summary>
+		public static Blockchain Default { get; private set; } = null;
+		/// <summary>
+		/// 区块头高度
+		/// Header height
+		/// </summary>
+		public abstract uint HeaderHeight { get; }
+		/// <summary>
+		/// 区块高度
+		/// Block height
+		/// </summary>
+		public abstract uint Height { get; }
 
         static Blockchain()
         {
             GenesisBlock.RebuildMerkleRoot();
         }
 
-        /// <summary>
-        /// 将指定的区块添加到区块链中
-        /// </summary>
-        /// <param name="block">要添加的区块</param>
-        /// <returns>返回是否添加成功</returns>
-        public abstract bool AddBlock(Block block);
+		/// <summary>
+		/// 将指定的区块添加到区块链中
+		/// Add the specified block to the blockchain
+		/// </summary>
+		/// <param name="block">要添加的区块 The block to add</param>
+		/// <returns>返回是否添加成功  returns whether it was added successfully</returns>
+		public abstract bool AddBlock(Block block);
 
-        /// <summary>
-        /// 将指定的区块头添加到区块头链中
-        /// </summary>
-        /// <param name="headers">要添加的区块头列表</param>
-        protected internal abstract void AddHeaders(IEnumerable<Header> headers);
+		/// <summary>
+		/// 将指定的区块头添加到区块头链中
+		/// Add the specified block header to the block header
+		/// </summary>
+		/// <param name="headers">要添加的区块头列表 List of headers to add</param>
+		protected internal abstract void AddHeaders(IEnumerable<Header> headers);
 
         public static Fixed8 CalculateBonus(IEnumerable<CoinReference> inputs, bool ignoreClaimed = true)
         {
@@ -246,19 +258,21 @@ namespace Neo.Core
             return amount_claimed;
         }
 
-        /// <summary>
-        /// 判断区块链中是否包含指定的区块
-        /// </summary>
-        /// <param name="hash">区块编号</param>
-        /// <returns>如果包含指定区块则返回true</returns>
-        public abstract bool ContainsBlock(UInt256 hash);
+		/// <summary>
+		/// 判断区块链中是否包含指定的区块
+		/// Determine if the specified block is contained in the blockchain
+		/// </summary>
+		/// <param name="hash">区块编号 Blcok Hash</param>
+		/// <returns>如果包含指定区块则返回true returns true if the specified block is included</returns>
+		public abstract bool ContainsBlock(UInt256 hash);
 
-        /// <summary>
-        /// 判断区块链中是否包含指定的交易
-        /// </summary>
-        /// <param name="hash">交易编号</param>
-        /// <returns>如果包含指定交易则返回true</returns>
-        public abstract bool ContainsTransaction(UInt256 hash);
+		/// <summary>
+		/// 判断区块链中是否包含指定的交易
+		/// Determine whether the specified transaction is included in the blockchain
+		/// </summary>
+		/// <param name="hash">交易编号 Transaction Hash</param>
+		/// <returns>如果包含指定交易则返回true returns true if the specified transaction is included in the blockchain </returns>
+		public abstract bool ContainsTransaction(UInt256 hash);
 
         public bool ContainsUnspent(CoinReference input)
         {
@@ -279,66 +293,73 @@ namespace Neo.Core
 
         public abstract AssetState GetAssetState(UInt256 asset_id);
 
-        /// <summary>
-        /// 根据指定的高度，返回对应的区块信息
-        /// </summary>
-        /// <param name="height">区块高度</param>
-        /// <returns>返回对应的区块信息</returns>
-        public Block GetBlock(uint height)
+		/// <summary>
+		/// 根据指定的高度，返回对应的区块信息
+		/// Return the corresponding block information based on the specified height
+		/// </summary>
+		/// <param name="height">区块高度 Block height</param>
+		/// <returns>返回对应的区块信息 returns the corresponding block information</returns>
+		public Block GetBlock(uint height)
         {
             UInt256 hash = GetBlockHash(height);
             if (hash == null) return null;
             return GetBlock(hash);
         }
 
-        /// <summary>
-        /// 根据指定的散列值，返回对应的区块信息
-        /// </summary>
-        /// <param name="hash">散列值</param>
-        /// <returns>返回对应的区块信息</returns>
-        public abstract Block GetBlock(UInt256 hash);
+		/// <summary>
+		/// 根据指定的散列值，返回对应的区块信息
+		/// Returns the corresponding block information according to the specified hash value
+		/// </summary>
+		/// <param name="hash">散列值 Block Hash</param>
+		/// <returns>返回对应的区块信息 returns the corresponding block info</returns>
+		public abstract Block GetBlock(UInt256 hash);
 
-        /// <summary>
-        /// 根据指定的高度，返回对应区块的散列值
-        /// </summary>
-        /// <param name="height">区块高度</param>
-        /// <returns>返回对应区块的散列值</returns>
-        public abstract UInt256 GetBlockHash(uint height);
+		/// <summary>
+		/// 根据指定的高度，返回对应区块的散列值
+		/// Returns the hash value of the corresponding block based on the specified height
+		/// </summary>
+		/// <param name="height">区块高度 block height</param>
+		/// <returns>返回对应区块的散列值 returns the hash value of the corresponding block</returns>
+		public abstract UInt256 GetBlockHash(uint height);
 
         public abstract ContractState GetContract(UInt160 hash);
 
         public abstract IEnumerable<ValidatorState> GetEnrollments();
 
-        /// <summary>
-        /// 根据指定的高度，返回对应的区块头信息
-        /// </summary>
-        /// <param name="height">区块高度</param>
-        /// <returns>返回对应的区块头信息</returns>
-        public abstract Header GetHeader(uint height);
+		/// <summary>
+		/// 根据指定的高度，返回对应的区块头信息
+		///  Returns the corresponding block header information according to the specified height
+		/// </summary>
+		/// <param name="height">区块高度 block height</param>
+		/// <returns>返回对应的区块头信息 returns corresponding header information</returns>
+		public abstract Header GetHeader(uint height);
 
-        /// <summary>
-        /// 根据指定的散列值，返回对应的区块头信息
-        /// </summary>
-        /// <param name="hash">散列值</param>
-        /// <returns>返回对应的区块头信息</returns>
-        public abstract Header GetHeader(UInt256 hash);
+		/// <summary>
+		/// 根据指定的散列值，返回对应的区块头信息
+		/// Returns the corresponding block header information according to the specified hash value
+		/// </summary>
+		/// <param name="hash">散列值 hash value</param>
+		/// <returns>返回对应的区块头信息</returns>
+		public abstract Header GetHeader(UInt256 hash);
 
-        /// <summary>
-        /// 获取记账人的合约地址
-        /// </summary>
-        /// <param name="validators">记账人的公钥列表</param>
-        /// <returns>返回记账人的合约地址</returns>
-        public static UInt160 GetConsensusAddress(ECPoint[] validators)
+		/// <summary>
+		/// 获取记账人的合约地址
+		/// Get the contractor's contract address 
+		/// </summary>
+		/// <param name="validators">记账人的公钥列表 list of public keys of the booker</param>
+		/// <returns>返回记账人的合约地址 returns the contractor's contract address</returns>
+		public static UInt160 GetConsensusAddress(ECPoint[] validators)
         {
             return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
         }
 
         private List<ECPoint> _validators = new List<ECPoint>();
-        /// <summary>
-        /// 获取下一个区块的记账人列表
-        /// </summary>
-        /// <returns>返回一组公钥，表示下一个区块的记账人列表</returns>
-        public ECPoint[] GetValidators()
+		/// <summary>
+		/// 获取下一个区块的记账人列表
+		/// Get the list of the accounts of the next block
+		/// </summary>
+		/// <returns>返回一组公钥，表示下一个区块的记账人列表 returns a set of public keys representing the list of accounts for the next block</returns>
+		public ECPoint[] GetValidators()
         {
             lock (_validators)
             {
@@ -443,19 +464,21 @@ namespace Neo.Core
             return result.OrderBy(p => p);
         }
 
-        /// <summary>
-        /// 根据指定的散列值，返回下一个区块的信息
-        /// </summary>
-        /// <param name="hash">散列值</param>
-        /// <returns>返回下一个区块的信息>
-        public abstract Block GetNextBlock(UInt256 hash);
+		/// <summary>
+		/// 根据指定的散列值，返回下一个区块的信息
+		///  Returns the information of the next block based on the specified hash value
+		/// </summary>
+		/// <param name="hash">散列值 hash value</param>
+		/// <returns>返回下一个区块的信息  returns information for the next block</returns>
+		public abstract Block GetNextBlock(UInt256 hash);
 
-        /// <summary>
-        /// 根据指定的散列值，返回下一个区块的散列值
-        /// </summary>
-        /// <param name="hash">散列值</param>
-        /// <returns>返回下一个区块的散列值</returns>
-        public abstract UInt256 GetNextBlockHash(UInt256 hash);
+		/// <summary>
+		/// 根据指定的散列值，返回下一个区块的散列值
+		/// Returns the hash value of the next block based on the specified hash value
+		/// </summary>
+		/// <param name="hash">散列值 hash value</param>
+		/// <returns>返回下一个区块的散列值 returns the hash value of the next block</returns>
+		public abstract UInt256 GetNextBlockHash(UInt256 hash);
 
         byte[] IScriptTable.GetScript(byte[] script_hash)
         {
@@ -464,65 +487,72 @@ namespace Neo.Core
 
         public abstract StorageItem GetStorageItem(StorageKey key);
 
-        /// <summary>
-        /// 根据指定的区块高度，返回对应区块及之前所有区块中包含的系统费用的总量
-        /// </summary>
-        /// <param name="height">区块高度</param>
-        /// <returns>返回对应的系统费用的总量</returns>
-        public virtual long GetSysFeeAmount(uint height)
+		/// <summary>
+		/// 根据指定的区块高度，返回对应区块及之前所有区块中包含的系统费用的总量
+		///  Returns the total system cost contained in the corresponding block and all previous blocks based on the specified block heigh
+		/// </summary>
+		/// <param name="height">区块高度 block height</param>
+		/// <returns>返回对应的系统费用的总量 returns the total amount of the corresponding system fee</returns>
+		public virtual long GetSysFeeAmount(uint height)
         {
             return GetSysFeeAmount(GetBlockHash(height));
         }
 
-        /// <summary>
-        /// 根据指定的区块散列值，返回对应区块及之前所有区块中包含的系统费用的总量
-        /// </summary>
-        /// <param name="hash">散列值</param>
-        /// <returns>返回系统费用的总量</returns>
-        public abstract long GetSysFeeAmount(UInt256 hash);
+		/// <summary>
+		/// 根据指定的区块散列值，返回对应区块及之前所有区块中包含的系统费用的总量
+		///  Returns the total amount of system costs contained in the corresponding block and all previous blocks based on the specified block hash value
+		/// </summary>
+		/// <param name="hash">散列值 hash value</param>
+		/// <returns>返回系统费用的总量 returns the total amount of system fees</returns>
+		public abstract long GetSysFeeAmount(UInt256 hash);
 
-        /// <summary>
-        /// 根据指定的散列值，返回对应的交易信息
-        /// </summary>
-        /// <param name="hash">散列值</param>
-        /// <returns>返回对应的交易信息</returns>
-        public Transaction GetTransaction(UInt256 hash)
+		/// <summary>
+		/// 根据指定的散列值，返回对应的交易信息
+		/// Return the corresponding transaction information based on the specified hash value
+		/// </summary>
+		/// <param name="hash">散列值 hash value</param>
+		/// <returns>返回对应的交易信息 returns corresponding transaction information</returns>
+		public Transaction GetTransaction(UInt256 hash)
         {
             return GetTransaction(hash, out _);
         }
 
-        /// <summary>
-        /// 根据指定的散列值，返回对应的交易信息与该交易所在区块的高度
-        /// </summary>
-        /// <param name="hash">交易散列值</param>
-        /// <param name="height">返回该交易所在区块的高度</param>
-        /// <returns>返回对应的交易信息</returns>
-        public abstract Transaction GetTransaction(UInt256 hash, out int height);
+		/// <summary>
+		/// 根据指定的散列值，返回对应的交易信息与该交易所在区块的高度
+		/// According to the specified hash value, return the corresponding transaction information and the height of the block where the transaction is located
+		/// </summary>
+		/// <param name="hash">交易散列值 Transaction hash value</param>
+		/// <param name="height">返回该交易所在区块的高度 Returns the height of the block where the transaction is located</param>
+		/// <returns>返回对应的交易信息 returns corresponding transaction information</returns>
+		public abstract Transaction GetTransaction(UInt256 hash, out int height);
 
         public abstract Dictionary<ushort, SpentCoin> GetUnclaimed(UInt256 hash);
 
-        /// <summary>
-        /// 根据指定的散列值和索引，获取对应的未花费的资产
-        /// </summary>
-        /// <param name="hash">交易散列值</param>
-        /// <param name="index">输出的索引</param>
-        /// <returns>返回一个交易输出，表示一个未花费的资产</returns>
-        public abstract TransactionOutput GetUnspent(UInt256 hash, ushort index);
+		/// <summary>
+		/// 根据指定的散列值和索引，获取对应的未花费的资产
+		/// Get the corresponding unspent assets based on the specified hash value and index
+		/// </summary>
+		/// <param name="hash">交易散列值 Transaction hash value</param>
+		/// <param name="index">输出的索引 Output Index</param>
+		/// <returns>返回一个交易输出，表示一个未花费的资产 returns a transaction output representing an unspent asset</returns>
+		public abstract TransactionOutput GetUnspent(UInt256 hash, ushort index);
 
         public abstract IEnumerable<TransactionOutput> GetUnspent(UInt256 hash);
 
-        /// <summary>
-        /// 判断交易是否双花
-        /// </summary>
-        /// <param name="tx">交易</param>
-        /// <returns>返回交易是否双花</returns>
-        public abstract bool IsDoubleSpend(Transaction tx);
+		/// <summary>
+		/// 判断交易是否双花
+		///  Determine if the transaction is double spend
+		/// </summary>
+		/// <param name="tx">交易 Transaction</param>
+		/// <returns>返回交易是否双花 returns if the transaction is double spend</returns>
+		public abstract bool IsDoubleSpend(Transaction tx);
 
-        /// <summary>
-        /// 当区块被写入到硬盘后调用
-        /// </summary>
-        /// <param name="block">区块</param>
-        protected void OnPersistCompleted(Block block)
+		/// <summary>
+		/// 当区块被写入到硬盘后调用
+		/// Called after the block was written to the hard disk
+		/// </summary>
+		/// <param name="block">区块</param>
+		protected void OnPersistCompleted(Block block)
         {
             lock (_validators)
             {
@@ -574,12 +604,13 @@ namespace Neo.Core
             }
         }
 
-        /// <summary>
-        /// 注册默认的区块链实例
-        /// </summary>
-        /// <param name="blockchain">区块链实例</param>
-        /// <returns>返回注册后的区块链实例</returns>
-        public static Blockchain RegisterBlockchain(Blockchain blockchain)
+		/// <summary>
+		/// 注册默认的区块链实例
+		/// Register the default blockchain instance
+		/// </summary>
+		/// <param name="blockchain">区块链实例 blockchain instance<</param>
+		/// <returns>返回注册后的区块链实例 returns registered blockchain instances</returns>
+		public static Blockchain RegisterBlockchain(Blockchain blockchain)
         {
             if (Default != null) Default.Dispose();
             Default = blockchain ?? throw new ArgumentNullException();
