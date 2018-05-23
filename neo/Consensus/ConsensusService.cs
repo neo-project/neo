@@ -101,8 +101,21 @@ namespace Neo.Consensus
                 sc.Verifiable.Scripts = sc.GetScripts();
                 block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
                 Log($"relay block: {block.Hash}");
+                
+				// to reduce the time of taking lock.                            
+                if (ThreadPriority.Highest != System.Threading.Thread.CurrentThread.Priority)
+                {
+                    System.Threading.Thread.CurrentThread.Priority = ThreadPriority.Highest;
+                }
+
                 if (!localNode.Relay(block))
                     Log($"reject block: {block.Hash}");
+                
+                if (ThreadPriority.Normal != System.Threading.Thread.CurrentThread.Priority)
+                {
+                    System.Threading.Thread.CurrentThread.Priority = ThreadPriority.Normal;
+                }
+				
                 context.State |= ConsensusState.BlockSent;
             }
         }
@@ -383,7 +396,20 @@ namespace Neo.Consensus
                 return;
             }
             sc.Verifiable.Scripts = sc.GetScripts();
+
+            // to reduce the time of taking lock.            
+            if (ThreadPriority.Highest != System.Threading.Thread.CurrentThread.Priority)
+            {
+                System.Threading.Thread.CurrentThread.Priority = ThreadPriority.Highest;
+            }
+
             localNode.RelayDirectly(payload);
+			
+            if (ThreadPriority.Normal != System.Threading.Thread.CurrentThread.Priority)
+            {
+                System.Threading.Thread.CurrentThread.Priority = ThreadPriority.Normal;
+            }
+
         }
 
         public void Start()
