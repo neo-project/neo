@@ -82,6 +82,7 @@ namespace Neo.SmartContract
             Register("Neo.Blockchain.GetHeader", Blockchain_GetHeader);
             Register("Neo.Blockchain.GetBlock", Blockchain_GetBlock);
             Register("Neo.Blockchain.GetTransaction", Blockchain_GetTransaction);
+            Register("Neo.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight);
             Register("Neo.Blockchain.GetAccount", Blockchain_GetAccount);
             Register("Neo.Blockchain.GetValidators", Blockchain_GetValidators);
             Register("Neo.Blockchain.GetAsset", Blockchain_GetAsset);
@@ -454,6 +455,18 @@ namespace Neo.SmartContract
             byte[] hash = engine.EvaluationStack.Pop().GetByteArray();
             Transaction tx = Blockchain.Default?.GetTransaction(new UInt256(hash));
             engine.EvaluationStack.Push(StackItem.FromInterface(tx));
+            return true;
+        }
+
+        protected virtual bool Blockchain_GetTransactionHeight(ExecutionEngine engine)
+        {
+            byte[] hash = engine.EvaluationStack.Pop().GetByteArray();
+            int height;
+            if (Blockchain.Default == null)
+                height = -1;
+            else
+                Blockchain.Default.GetTransaction(new UInt256(hash), out height);
+            engine.EvaluationStack.Push(height);
             return true;
         }
 
