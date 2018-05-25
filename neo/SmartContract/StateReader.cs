@@ -126,8 +126,10 @@ namespace Neo.SmartContract
             Register("Neo.Contract.GetScript", Contract_GetScript);
             Register("Neo.Contract.IsPayable", Contract_IsPayable);
             Register("Neo.Storage.GetContext", Storage_GetContext);
+            Register("Neo.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext);
             Register("Neo.Storage.Get", Storage_Get);
             Register("Neo.Storage.Find", Storage_Find);
+            Register("Neo.StorageContext.AsReadOnly", StorageContext_AsReadOnly);
             Register("Neo.Iterator.Next", Iterator_Next);
             Register("Neo.Iterator.Key", Iterator_Key);
             Register("Neo.Iterator.Value", Iterator_Value);
@@ -967,7 +969,18 @@ namespace Neo.SmartContract
         {
             engine.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
             {
-                ScriptHash = new UInt160(engine.CurrentContext.ScriptHash)
+                ScriptHash = new UInt160(engine.CurrentContext.ScriptHash),
+                IsReadOnly = false
+            }));
+            return true;
+        }
+
+        protected virtual bool Storage_GetReadOnlyContext(ExecutionEngine engine)
+        {
+            engine.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
+            {
+                ScriptHash = new UInt160(engine.CurrentContext.ScriptHash),
+                IsReadOnly = true
             }));
             return true;
         }
@@ -1016,6 +1029,23 @@ namespace Neo.SmartContract
                 StorageIterator iterator = new StorageIterator(Storages.Find(prefix_key).Where(p => p.Key.Key.Take(prefix.Length).SequenceEqual(prefix)).GetEnumerator());
                 engine.EvaluationStack.Push(StackItem.FromInterface(iterator));
                 disposables.Add(iterator);
+                return true;
+            }
+            return false;
+        }
+
+        protected virtual bool StorageContext_AsReadOnly(ExecutionEngine engine)
+        {
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                StorageContext context = _interface.GetInterface<StorageContext>();
+                if (!context.IsReadOnly)
+                    context = new StorageContext
+                    {
+                        ScriptHash = context.ScriptHash,
+                        IsReadOnly = true
+                    };
+                engine.EvaluationStack.Push(StackItem.FromInterface(context));
                 return true;
             }
             return false;

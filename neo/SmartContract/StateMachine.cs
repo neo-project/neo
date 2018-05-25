@@ -239,7 +239,8 @@ namespace Neo.SmartContract
                 if (!created.Equals(new UInt160(engine.CurrentContext.ScriptHash))) return false;
                 engine.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
                 {
-                    ScriptHash = contract.ScriptHash
+                    ScriptHash = contract.ScriptHash,
+                    IsReadOnly = false
                 }));
                 return true;
             }
@@ -263,6 +264,7 @@ namespace Neo.SmartContract
             if (engine.EvaluationStack.Pop() is InteropInterface _interface)
             {
                 StorageContext context = _interface.GetInterface<StorageContext>();
+                if (context.IsReadOnly) return false;
                 if (!CheckStorageContext(context)) return false;
                 byte[] key = engine.EvaluationStack.Pop().GetByteArray();
                 if (key.Length > 1024) return false;
@@ -282,6 +284,7 @@ namespace Neo.SmartContract
             if (engine.EvaluationStack.Pop() is InteropInterface _interface)
             {
                 StorageContext context = _interface.GetInterface<StorageContext>();
+                if (context.IsReadOnly) return false;
                 if (!CheckStorageContext(context)) return false;
                 byte[] key = engine.EvaluationStack.Pop().GetByteArray();
                 storages.Delete(new StorageKey
