@@ -84,6 +84,7 @@ namespace Neo.SmartContract
             Register("Neo.Blockchain.GetHeader", Blockchain_GetHeader);
             Register("Neo.Blockchain.GetBlock", Blockchain_GetBlock);
             Register("Neo.Blockchain.GetTransaction", Blockchain_GetTransaction);
+            Register("Neo.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight);
             Register("Neo.Blockchain.GetAccount", Blockchain_GetAccount);
             Register("Neo.Blockchain.GetValidators", Blockchain_GetValidators);
             Register("Neo.Blockchain.GetAsset", Blockchain_GetAsset);
@@ -128,8 +129,10 @@ namespace Neo.SmartContract
             Register("Neo.Contract.GetScript", Contract_GetScript);
             Register("Neo.Contract.IsPayable", Contract_IsPayable);
             Register("Neo.Storage.GetContext", Storage_GetContext);
+            Register("Neo.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext);
             Register("Neo.Storage.Get", Storage_Get);
             Register("Neo.Storage.Find", Storage_Find);
+            Register("Neo.StorageContext.AsReadOnly", StorageContext_AsReadOnly);
             Register("Neo.Enumerator.Create", Enumerator_Create);
             Register("Neo.Enumerator.Next", Enumerator_Next);
             Register("Neo.Enumerator.Value", Enumerator_Value);
@@ -462,6 +465,18 @@ namespace Neo.SmartContract
             byte[] hash = engine.EvaluationStack.Pop().GetByteArray();
             Transaction tx = Blockchain.Default?.GetTransaction(new UInt256(hash));
             engine.EvaluationStack.Push(StackItem.FromInterface(tx));
+            return true;
+        }
+
+        protected virtual bool Blockchain_GetTransactionHeight(ExecutionEngine engine)
+        {
+            byte[] hash = engine.EvaluationStack.Pop().GetByteArray();
+            int height;
+            if (Blockchain.Default == null)
+                height = -1;
+            else
+                Blockchain.Default.GetTransaction(new UInt256(hash), out height);
+            engine.EvaluationStack.Push(height);
             return true;
         }
 
@@ -977,7 +992,18 @@ namespace Neo.SmartContract
         {
             engine.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
             {
-                ScriptHash = new UInt160(engine.CurrentContext.ScriptHash)
+                ScriptHash = new UInt160(engine.CurrentContext.ScriptHash),
+                IsReadOnly = false
+            }));
+            return true;
+        }
+
+        protected virtual bool Storage_GetReadOnlyContext(ExecutionEngine engine)
+        {
+            engine.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
+            {
+                ScriptHash = new UInt160(engine.CurrentContext.ScriptHash),
+                IsReadOnly = true
             }));
             return true;
         }
@@ -1026,6 +1052,23 @@ namespace Neo.SmartContract
                 StorageIterator iterator = new StorageIterator(Storages.Find(prefix_key).Where(p => p.Key.Key.Take(prefix.Length).SequenceEqual(prefix)).GetEnumerator());
                 engine.EvaluationStack.Push(StackItem.FromInterface(iterator));
                 disposables.Add(iterator);
+                return true;
+            }
+            return false;
+        }
+
+        protected virtual bool StorageContext_AsReadOnly(ExecutionEngine engine)
+        {
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                StorageContext context = _interface.GetInterface<StorageContext>();
+                if (!context.IsReadOnly)
+                    context = new StorageContext
+                    {
+                        ScriptHash = context.ScriptHash,
+                        IsReadOnly = true
+                    };
+                engine.EvaluationStack.Push(StackItem.FromInterface(context));
                 return true;
             }
             return false;
