@@ -2,6 +2,8 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Caching;
+using Neo.SmartContract.Enumerators;
+using Neo.SmartContract.Iterators;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -131,9 +133,17 @@ namespace Neo.SmartContract
             Register("Neo.Storage.Get", Storage_Get);
             Register("Neo.Storage.Find", Storage_Find);
             Register("Neo.StorageContext.AsReadOnly", StorageContext_AsReadOnly);
-            Register("Neo.Iterator.Next", Iterator_Next);
+            Register("Neo.Enumerator.Create", Enumerator_Create);
+            Register("Neo.Enumerator.Next", Enumerator_Next);
+            Register("Neo.Enumerator.Value", Enumerator_Value);
+            Register("Neo.Enumerator.Concat", Enumerator_Concat);
             Register("Neo.Iterator.Key", Iterator_Key);
-            Register("Neo.Iterator.Value", Iterator_Value);
+            Register("Neo.Iterator.Keys", Iterator_Keys);
+            Register("Neo.Iterator.Values", Iterator_Values);
+            #region Aliases
+            Register("Neo.Iterator.Next", Enumerator_Next);
+            Register("Neo.Iterator.Value", Enumerator_Value);
+            #endregion
             #region Old AntShares APIs
             Register("AntShares.Runtime.CheckWitness", Runtime_CheckWitness);
             Register("AntShares.Runtime.Notify", Runtime_Notify);
@@ -1064,34 +1074,78 @@ namespace Neo.SmartContract
             return false;
         }
 
-        protected virtual bool Iterator_Next(ExecutionEngine engine)
+        protected virtual bool Enumerator_Create(ExecutionEngine engine)
         {
-            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            if (engine.EvaluationStack.Pop() is VMArray array)
             {
-                Iterator iterator = _interface.GetInterface<Iterator>();
-                engine.EvaluationStack.Push(iterator.Next());
+                IEnumerator enumerator = new ArrayWrapper(array);
+                engine.EvaluationStack.Push(StackItem.FromInterface(enumerator));
                 return true;
             }
             return false;
+        }
+
+        protected virtual bool Enumerator_Next(ExecutionEngine engine)
+        {
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                IEnumerator enumerator = _interface.GetInterface<IEnumerator>();
+                engine.EvaluationStack.Push(enumerator.Next());
+                return true;
+            }
+            return false;
+        }
+
+        protected virtual bool Enumerator_Value(ExecutionEngine engine)
+        {
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                IEnumerator enumerator = _interface.GetInterface<IEnumerator>();
+                engine.EvaluationStack.Push(enumerator.Value());
+                return true;
+            }
+            return false;
+        }
+
+        protected virtual bool Enumerator_Concat(ExecutionEngine engine)
+        {
+            if (!(engine.EvaluationStack.Pop() is InteropInterface _interface1)) return false;
+            if (!(engine.EvaluationStack.Pop() is InteropInterface _interface2)) return false;
+            IEnumerator first = _interface1.GetInterface<IEnumerator>();
+            IEnumerator second = _interface2.GetInterface<IEnumerator>();
+            IEnumerator result = new ConcatenatedEnumerator(first, second);
+            engine.EvaluationStack.Push(StackItem.FromInterface(result));
+            return true;
         }
 
         protected virtual bool Iterator_Key(ExecutionEngine engine)
         {
             if (engine.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                Iterator iterator = _interface.GetInterface<Iterator>();
+                IIterator iterator = _interface.GetInterface<IIterator>();
                 engine.EvaluationStack.Push(iterator.Key());
                 return true;
             }
             return false;
         }
 
-        protected virtual bool Iterator_Value(ExecutionEngine engine)
+        protected virtual bool Iterator_Keys(ExecutionEngine engine)
         {
             if (engine.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                Iterator iterator = _interface.GetInterface<Iterator>();
-                engine.EvaluationStack.Push(iterator.Value());
+                IIterator iterator = _interface.GetInterface<IIterator>();
+                engine.EvaluationStack.Push(StackItem.FromInterface(new IteratorKeysWrapper(iterator)));
+                return true;
+            }
+            return false;
+        }
+
+        protected virtual bool Iterator_Values(ExecutionEngine engine)
+        {
+            if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                IIterator iterator = _interface.GetInterface<IIterator>();
+                engine.EvaluationStack.Push(StackItem.FromInterface(new IteratorValuesWrapper(iterator)));
                 return true;
             }
             return false;
