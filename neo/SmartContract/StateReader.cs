@@ -137,6 +137,7 @@ namespace Neo.SmartContract
             Register("Neo.Enumerator.Next", Enumerator_Next);
             Register("Neo.Enumerator.Value", Enumerator_Value);
             Register("Neo.Enumerator.Concat", Enumerator_Concat);
+            Register("Neo.Iterator.Create", Iterator_Create);
             Register("Neo.Iterator.Key", Iterator_Key);
             Register("Neo.Iterator.Keys", Iterator_Keys);
             Register("Neo.Iterator.Values", Iterator_Values);
@@ -1116,6 +1117,17 @@ namespace Neo.SmartContract
             IEnumerator result = new ConcatenatedEnumerator(first, second);
             engine.EvaluationStack.Push(StackItem.FromInterface(result));
             return true;
+        }
+
+        protected virtual bool Iterator_Create(ExecutionEngine engine)
+        {
+            if (engine.EvaluationStack.Pop() is Map map)
+            {
+                IIterator iterator = new MapWrapper(map);
+                engine.EvaluationStack.Push(StackItem.FromInterface(iterator));
+                return true;
+            }
+            return false;
         }
 
         protected virtual bool Iterator_Key(ExecutionEngine engine)
