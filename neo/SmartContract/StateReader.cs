@@ -85,6 +85,7 @@ namespace Neo.SmartContract
             Register("System.Blockchain.GetHeader", Blockchain_GetHeader);
             Register("System.Blockchain.GetBlock", Blockchain_GetBlock);
             Register("System.Blockchain.GetTransaction", Blockchain_GetTransaction);
+            Register("System.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight);
             Register("System.Blockchain.GetContract", Blockchain_GetContract);
             Register("System.Header.GetIndex", Header_GetIndex);
             Register("System.Header.GetHash", Header_GetHash);
@@ -95,10 +96,11 @@ namespace Neo.SmartContract
             Register("System.Block.GetTransaction", Block_GetTransaction);
             Register("System.Transaction.GetHash", Transaction_GetHash);
             Register("System.Storage.GetContext", Storage_GetContext);
+            Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext);
             Register("System.Storage.Get", Storage_Get);
+            Register("System.StorageContext.AsReadOnly", StorageContext_AsReadOnly);
 
             //Neo Specified
-            Register("Neo.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight);
             Register("Neo.Blockchain.GetAccount", Blockchain_GetAccount);
             Register("Neo.Blockchain.GetValidators", Blockchain_GetValidators);
             Register("Neo.Blockchain.GetAsset", Blockchain_GetAsset);
@@ -133,9 +135,7 @@ namespace Neo.SmartContract
             Register("Neo.Asset.GetIssuer", Asset_GetIssuer);
             Register("Neo.Contract.GetScript", Contract_GetScript);
             Register("Neo.Contract.IsPayable", Contract_IsPayable);
-            Register("Neo.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext);
             Register("Neo.Storage.Find", Storage_Find);
-            Register("Neo.StorageContext.AsReadOnly", StorageContext_AsReadOnly);
             Register("Neo.Enumerator.Create", Enumerator_Create);
             Register("Neo.Enumerator.Next", Enumerator_Next);
             Register("Neo.Enumerator.Value", Enumerator_Value);
@@ -169,6 +169,7 @@ namespace Neo.SmartContract
             Register("AntShares.Blockchain.GetBlock", Blockchain_GetBlock);
             Register("Neo.Blockchain.GetTransaction", Blockchain_GetTransaction);
             Register("AntShares.Blockchain.GetTransaction", Blockchain_GetTransaction);
+            Register("Neo.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight);
             Register("AntShares.Blockchain.GetAccount", Blockchain_GetAccount);
             Register("AntShares.Blockchain.GetValidators", Blockchain_GetValidators);
             Register("AntShares.Blockchain.GetAsset", Blockchain_GetAsset);
@@ -219,8 +220,10 @@ namespace Neo.SmartContract
             Register("AntShares.Contract.GetScript", Contract_GetScript);
             Register("Neo.Storage.GetContext", Storage_GetContext);
             Register("AntShares.Storage.GetContext", Storage_GetContext);
+            Register("Neo.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext);
             Register("Neo.Storage.Get", Storage_Get);
             Register("AntShares.Storage.Get", Storage_Get);
+            Register("Neo.StorageContext.AsReadOnly", StorageContext_AsReadOnly);
             #endregion
         }
 
