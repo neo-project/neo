@@ -140,7 +140,9 @@ namespace Neo.SmartContract
             if (script.Length > 1024 * 1024) return false;
             ContractParameterType[] parameter_list = engine.EvaluationStack.Pop().GetByteArray().Select(p => (ContractParameterType)p).ToArray();
             if (parameter_list.Length > 252) return false;
-            ContractParameterType return_type = (ContractParameterType)(byte)engine.EvaluationStack.Pop().GetBigInteger();
+            byte[] retbyte = engine.EvaluationStack.Pop().GetByteArray();
+            if (retbyte.Length != 1) return false;
+            ContractParameterType return_type = (ContractParameterType)retbyte[0];
             ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.EvaluationStack.Pop().GetBigInteger();
             if (engine.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
             string name = Encoding.UTF8.GetString(engine.EvaluationStack.Pop().GetByteArray());
