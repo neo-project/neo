@@ -516,6 +516,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         account.Balances[out_prev.AssetId] -= out_prev.Value;
                     }
                 }
+                List<ApplicationExecutionResult> execution_results = new List<ApplicationExecutionResult>();
                 switch (tx)
                 {
 #pragma warning disable CS0612
@@ -591,7 +592,15 @@ namespace Neo.Implementations.Blockchains.LevelDB
                             {
                                 service.Commit();
                             }
-                            ApplicationExecuted?.Invoke(this, new ApplicationExecutedEventArgs(tx_invocation, service.Notifications.ToArray(), engine));
+                            execution_results.Add(new ApplicationExecutionResult
+                            {
+                                Trigger = TriggerType.Application,
+                                ScriptHash = tx_invocation.Script.ToScriptHash(),
+                                VMState = engine.State,
+                                GasConsumed = engine.GasConsumed,
+                                Stack = engine.EvaluationStack.ToArray(),
+                                Notifications = service.Notifications.ToArray()
+                            });
                         }
                         break;
                 }
@@ -614,8 +623,23 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         {
                             service.Commit();
                         }
+                        execution_results.Add(new ApplicationExecutionResult
+                        {
+                            Trigger = TriggerType.ApplicationR,
+                            ScriptHash = hash,
+                            VMState = engine.State,
+                            GasConsumed = engine.GasConsumed,
+                            Stack = engine.EvaluationStack.ToArray(),
+                            Notifications = service.Notifications.ToArray()
+                        });
                     }
                 }
+                if (execution_results.Count > 0)
+                    ApplicationExecuted?.Invoke(this, new ApplicationExecutedEventArgs
+                    {
+                        Transaction = tx,
+                        ExecutionResults = execution_results.ToArray()
+                    });
             }
             accounts.DeleteWhere((k, v) => !v.IsFrozen && v.Votes.Length == 0 && v.Balances.All(p => p.Value <= Fixed8.Zero));
             accounts.Commit();
