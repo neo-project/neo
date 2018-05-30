@@ -258,7 +258,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
         public override IEnumerable<ValidatorState> GetEnrollments()
         {
             HashSet<ECPoint> sv = new HashSet<ECPoint>(StandbyValidators);
-            return db.Find<ValidatorState>(ReadOptions.Default, DataEntryPrefix.ST_Validator).Where(p => (p.Registered && p.Votes > Fixed8.Zero) || sv.Contains(p.PublicKey));
+            return db.Find<ValidatorState>(ReadOptions.Default, DataEntryPrefix.ST_Validator).Where(p => p.Registered || sv.Contains(p.PublicKey));
         }
 
         public override Header GetHeader(uint height)
