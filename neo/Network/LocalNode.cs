@@ -206,20 +206,34 @@ namespace Neo.Network
             Transaction[] remain;
             lock (mem_pool)
             {
+                // Remove the transactions that made it into the block
                 foreach (Transaction tx in block.Transactions)
-                {
                     mem_pool.Remove(tx.Hash);
-                }
                 if (mem_pool.Count == 0) return;
 
                 remain = mem_pool.Values.ToArray();
                 mem_pool.Clear();
+                
+                ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
+                // Reverify the remaining transactions in the mem_pool
+                remain.AsParallel().ForAll(tx =>
+                {
+                    if (tx.Verify(remain))
+                        verified.Add(tx);
+                });
+                
+                // Note, when running 
+                foreach (Transaction tx in verified)
+                    mem_pool.Add(tx.Hash, tx);
             }
+
             lock (temp_pool)
             {
-                temp_pool.UnionWith(remain);
+                if (temp_pool.Count > 0)
+                {
+                    new_tx_event.Set();                
+                }
             }
-            new_tx_event.Set();
         }
 
         private static bool CheckKnownHashes(UInt256 hash)

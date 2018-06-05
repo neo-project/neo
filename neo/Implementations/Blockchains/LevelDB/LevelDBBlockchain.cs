@@ -685,6 +685,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         // Reset cancellation token.
                         VerificationCancellationToken = new CancellationTokenSource();
                     }
+                    OnPersistUnlocked(block);
 
                     lock (block_cache)
                     {
