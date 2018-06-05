@@ -222,7 +222,6 @@ namespace Neo.Network
                         verified.Add(tx);
                 });
                 
-                // Note, when running 
                 foreach (Transaction tx in verified)
                     mem_pool.Add(tx.Hash, tx);
             }
