@@ -33,6 +33,7 @@ namespace Neo.Network
         private const int UnconnectedMax = 1000;
         public const int MemoryPoolSize = 50000;
         internal static readonly TimeSpan HashesExpiration = TimeSpan.FromSeconds(30);
+        private DateTime LastBlockReceived = DateTime.UtcNow;
 
         private static readonly Dictionary<UInt256, Transaction> mem_pool = new Dictionary<UInt256, Transaction>();
         private readonly HashSet<Transaction> temp_pool = new HashSet<Transaction>();
