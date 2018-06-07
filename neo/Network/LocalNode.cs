@@ -204,6 +204,9 @@ namespace Neo.Network
         private void Blockchain_PersistCompleted(object sender, Block block)
         {
             Transaction[] remain;
+            var millisSinceLastBlock = TimeSpan.FromTicks(DateTimeOffset.UtcNow.Ticks)
+                .Subtract(TimeSpan.FromTicks(LastBlockReceived.Ticks)).TotalMilliseconds;
+
             lock (mem_pool)
             {
                 // Remove the transactions that made it into the block
@@ -214,23 +217,34 @@ namespace Neo.Network
                 remain = mem_pool.Values.ToArray();
                 mem_pool.Clear();
                 
-                ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
-                // Reverify the remaining transactions in the mem_pool
-                remain.AsParallel().ForAll(tx =>
+                if (millisSinceLastBlock > 10000)
                 {
-                    if (tx.Verify(remain))
-                        verified.Add(tx);
-                });
+                    ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
+                    // Reverify the remaining transactions in the mem_pool
+                    remain.AsParallel().ForAll(tx =>
+                    {
+                        if (tx.Verify(remain))
+                            verified.Add(tx);
+                    });
                 
-                foreach (Transaction tx in verified)
-                    mem_pool.Add(tx.Hash, tx);
+                    // Note, when running 
+                    foreach (Transaction tx in verified)
+                        mem_pool.Add(tx.Hash, tx);                    
+                }
             }
-
+            LastBlockReceived = DateTime.UtcNow;
+            
             lock (temp_pool)
             {
-                if (temp_pool.Count > 0)
+                if (millisSinceLastBlock > 10000)
                 {
-                    new_tx_event.Set();                
+                    if (temp_pool.Count > 0)
+                        new_tx_event.Set();
+                }
+                else
+                {
+                    temp_pool.UnionWith(remain);
+                    new_tx_event.Set();
                 }
             }
         }
