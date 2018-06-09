@@ -2,7 +2,7 @@
 
 namespace Neo.IO.Data.LevelDB
 {
-    internal class DB : IDisposable
+    public class DB : IDisposable
     {
         private IntPtr handle;
 

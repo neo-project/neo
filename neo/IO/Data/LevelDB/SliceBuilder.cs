@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Neo.IO.Data.LevelDB
 {
-    internal class SliceBuilder
+    public class SliceBuilder
     {
         private List<byte> data = new List<byte>();
 
