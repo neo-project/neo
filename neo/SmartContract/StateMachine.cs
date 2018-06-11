@@ -32,22 +32,31 @@ namespace Neo.SmartContract
             this.assets = assets.CreateSnapshot();
             this.contracts = contracts.CreateSnapshot();
             this.storages = storages.CreateSnapshot();
+
+            //Standard Library
+            Register("System.Contract.GetStorageContext", Contract_GetStorageContext);
+            Register("System.Contract.Destroy", Contract_Destroy);
+            Register("System.Storage.Put", Storage_Put);
+            Register("System.Storage.Delete", Storage_Delete);
+
+            //Neo Specified
             Register("Neo.Asset.Create", Asset_Create);
             Register("Neo.Asset.Renew", Asset_Renew);
             Register("Neo.Contract.Create", Contract_Create);
             Register("Neo.Contract.Migrate", Contract_Migrate);
-            Register("Neo.Contract.GetStorageContext", Contract_GetStorageContext);
-            Register("Neo.Contract.Destroy", Contract_Destroy);
-            Register("Neo.Storage.Put", Storage_Put);
-            Register("Neo.Storage.Delete", Storage_Delete);
-            #region Old AntShares APIs
+
+            #region Old APIs
             Register("AntShares.Asset.Create", Asset_Create);
             Register("AntShares.Asset.Renew", Asset_Renew);
             Register("AntShares.Contract.Create", Contract_Create);
             Register("AntShares.Contract.Migrate", Contract_Migrate);
+            Register("Neo.Contract.GetStorageContext", Contract_GetStorageContext);
             Register("AntShares.Contract.GetStorageContext", Contract_GetStorageContext);
+            Register("Neo.Contract.Destroy", Contract_Destroy);
             Register("AntShares.Contract.Destroy", Contract_Destroy);
+            Register("Neo.Storage.Put", Storage_Put);
             Register("AntShares.Storage.Put", Storage_Put);
+            Register("Neo.Storage.Delete", Storage_Delete);
             Register("AntShares.Storage.Delete", Storage_Delete);
             #endregion
         }

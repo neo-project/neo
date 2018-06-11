@@ -3,7 +3,7 @@ using System;
 
 namespace Neo.IO.Data.LevelDB
 {
-    internal class DbMetaDataCache<T> : MetaDataCache<T> where T : class, ISerializable, new()
+    public class DbMetaDataCache<T> : MetaDataCache<T> where T : class, ISerializable, new()
     {
         private DB db;
         private byte prefix;

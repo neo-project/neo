@@ -2,7 +2,7 @@
 
 namespace Neo.IO.Data.LevelDB
 {
-    internal class Options
+    public class Options
     {
         public static readonly Options Default = new Options();
         internal readonly IntPtr handle = Native.leveldb_options_create();

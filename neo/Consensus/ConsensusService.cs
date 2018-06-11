@@ -220,7 +220,7 @@ namespace Neo.Consensus
 
                         if (Blockchain.Default?.Height + 1 < payload.BlockIndex)
                         {
-                            Log($"chain sync: expected={payload.BlockIndex} current: {Blockchain.Default?.Height}");
+                            Log($"chain sync: expected={payload.BlockIndex} current: {Blockchain.Default?.Height} nodes={localNode.RemoteNodeCount}");
 
                             localNode.RequestGetBlocks();
                         }
