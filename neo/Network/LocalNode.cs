@@ -292,7 +292,7 @@ namespace Neo.Network
 
         public async Task ConnectToPeerAsync(IPEndPoint remoteEndpoint)
         {
-            if (remoteEndpoint.Port == Port && LocalAddresses.Contains(remoteEndpoint.Address)) return;
+            if (remoteEndpoint.Port == Port && LocalAddresses.Contains(remoteEndpoint.Address.MapToIPv6())) return;
             lock (unconnectedPeers)
             {
                 unconnectedPeers.Remove(remoteEndpoint);
@@ -728,7 +728,7 @@ namespace Neo.Network
                     {
                         try
                         {
-                            LocalAddresses.Add(await UPnP.GetExternalIPAsync());
+                            LocalAddresses.Add((await UPnP.GetExternalIPAsync()).MapToIPv6());
                             if (port > 0)
                                 await UPnP.ForwardPortAsync(port, ProtocolType.Tcp, "NEO");
                             if (ws_port > 0)

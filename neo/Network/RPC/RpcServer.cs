@@ -197,6 +197,18 @@ namespace Neo.Network.RPC
                         ushort index = (ushort)_params[1].AsNumber();
                         return Blockchain.Default.GetUnspent(hash, index)?.ToJson(index);
                     }
+                case "getvalidators":
+                    {
+                        var validators = Blockchain.Default.GetValidators();
+                        return Blockchain.Default.GetEnrollments().Select(p =>
+                        {
+                            JObject validator = new JObject();
+                            validator["publickey"] = p.PublicKey.ToString();
+                            validator["votes"] = p.Votes.ToString();
+                            validator["active"] = validators.Contains(p.PublicKey);
+                            return validator;
+                        }).ToArray();
+                    }
                 case "invoke":
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
