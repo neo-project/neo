@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Neo.IO.Data.LevelDB
 {
-    internal struct Slice : IComparable<Slice>, IEquatable<Slice>
+    public struct Slice : IComparable<Slice>, IEquatable<Slice>
     {
         internal byte[] buffer;
 

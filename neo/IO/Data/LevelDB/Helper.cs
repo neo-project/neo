@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Neo.IO.Data.LevelDB
 {
-    internal static class Helper
+    public static class Helper
     {
         public static void Delete(this WriteBatch batch, byte prefix, ISerializable key)
         {

@@ -2,9 +2,9 @@
 using Neo.VM;
 using System.Collections.Generic;
 
-namespace Neo.SmartContract
+namespace Neo.SmartContract.Iterators
 {
-    internal class StorageIterator : Iterator
+    internal class StorageIterator : IIterator
     {
         private readonly IEnumerator<KeyValuePair<StorageKey, StorageItem>> enumerator;
 
@@ -13,22 +13,22 @@ namespace Neo.SmartContract
             this.enumerator = enumerator;
         }
 
-        public override void Dispose()
+        public void Dispose()
         {
             enumerator.Dispose();
         }
 
-        public override StackItem Key()
+        public StackItem Key()
         {
             return enumerator.Current.Key.Key;
         }
 
-        public override bool Next()
+        public bool Next()
         {
             return enumerator.MoveNext();
         }
 
-        public override StackItem Value()
+        public StackItem Value()
         {
             return enumerator.Current.Value.Value;
         }

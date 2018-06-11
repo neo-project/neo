@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Neo.Core;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.Wallets;
@@ -196,6 +197,18 @@ namespace Neo.Network.RPC
                         ushort index = (ushort)_params[1].AsNumber();
                         return Blockchain.Default.GetUnspent(hash, index)?.ToJson(index);
                     }
+                case "getvalidators":
+                    {
+                        var validators = Blockchain.Default.GetValidators();
+                        return Blockchain.Default.GetEnrollments().Select(p =>
+                        {
+                            JObject validator = new JObject();
+                            validator["publickey"] = p.PublicKey.ToString();
+                            validator["votes"] = p.Votes.ToString();
+                            validator["active"] = validators.Contains(p.PublicKey);
+                            return validator;
+                        }).ToArray();
+                    }
                 case "invoke":
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
@@ -358,19 +371,19 @@ namespace Neo.Network.RPC
                 }
                 else
                 {
-                    response = array.Select(p => ProcessRequest(p)).Where(p => p != null).ToArray();
+                    response = array.Select(p => ProcessRequest(context, p)).Where(p => p != null).ToArray();
                 }
             }
             else
             {
-                response = ProcessRequest(request);
+                response = ProcessRequest(context, request);
             }
             if (response == null || (response as JArray)?.Count == 0) return;
             context.Response.ContentType = "application/json-rpc";
             await context.Response.WriteAsync(response.ToString(), Encoding.UTF8);
         }
 
-        private JObject ProcessRequest(JObject request)
+        private JObject ProcessRequest(HttpContext context, JObject request)
         {
             if (!request.ContainsProperty("id")) return null;
             if (!request.ContainsProperty("method") || !request.ContainsProperty("params") || !(request["params"] is JArray))
@@ -380,7 +393,15 @@ namespace Neo.Network.RPC
             JObject result = null;
             try
             {
-                result = Process(request["method"].AsString(), (JArray)request["params"]);
+                string method = request["method"].AsString();
+                JArray _params = (JArray)request["params"];
+                foreach (RpcPlugin plugin in RpcPlugin.Instances)
+                {
+                    result = plugin.OnProcess(context, method, _params);
+                    if (result != null) break;
+                }
+                if (result == null)
+                    result = Process(method, _params);
             }
             catch (Exception ex)
             {

@@ -4,13 +4,13 @@ using System.Runtime.InteropServices;
 
 namespace Neo.IO.Data.LevelDB
 {
-    internal enum CompressionType : byte
+    public enum CompressionType : byte
     {
         kNoCompression = 0x0,
         kSnappyCompression = 0x1
     }
 
-    internal static class Native
+    public static class Native
     {
 #if NET47
         static Native()
