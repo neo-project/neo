@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -48,6 +49,13 @@ namespace Neo
                 if ((b[w] & 1 << x) > 0)
                     return x + w * 8;
             throw new Exception();
+        }
+
+        internal static string GetVersion(this Assembly assembly)
+        {
+            CustomAttributeData attribute = assembly.CustomAttributes.FirstOrDefault(p => p.AttributeType == typeof(AssemblyInformationalVersionAttribute));
+            if (attribute == null) return assembly.GetName().Version.ToString(3);
+            return (string)attribute.ConstructorArguments[0].Value;
         }
 
         public static byte[] HexToBytes(this string value)
