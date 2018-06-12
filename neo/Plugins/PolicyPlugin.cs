@@ -14,6 +14,7 @@ namespace Neo.Plugins
             instances.Add(this);
         }
 
-        internal protected abstract bool CheckPolicy(Transaction tx);
+        internal protected virtual bool CheckPolicy(Transaction tx) => true;
+        internal protected virtual IEnumerable<Transaction> Filter(IEnumerable<Transaction> transactions) => transactions;
     }
 }
