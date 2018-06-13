@@ -57,10 +57,15 @@ namespace Neo.Core
         {
             writer.Write((byte)Usage);
             if (Usage == TransactionAttributeUsage.DescriptionUrl)
+            {
                 writer.Write((byte)Data.Length);
+                writer.Write(Data);
+            }
             else if (Usage == TransactionAttributeUsage.Description || Usage >= TransactionAttributeUsage.Remark)
-                writer.WriteVarInt(Data.Length);
-            if (Usage == TransactionAttributeUsage.ECDH02 || Usage == TransactionAttributeUsage.ECDH03)
+                writer.WriteVarBytes(Data);
+            else if (Usage == TransactionAttributeUsage.Script)
+                writer.Write(Data, 0, 20);
+            else if (Usage == TransactionAttributeUsage.ECDH02 || Usage == TransactionAttributeUsage.ECDH03)
                 writer.Write(Data, 1, 32);
             else
                 writer.Write(Data);
