@@ -2,7 +2,7 @@
 
 namespace Neo.IO.Data.LevelDB
 {
-    internal class WriteOptions
+    public class WriteOptions
     {
         public static readonly WriteOptions Default = new WriteOptions();
         internal readonly IntPtr handle = Native.leveldb_writeoptions_create();

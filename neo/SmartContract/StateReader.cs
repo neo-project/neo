@@ -73,34 +73,41 @@ namespace Neo.SmartContract
 
         public StateReader()
         {
-            Register("Neo.Runtime.GetTrigger", Runtime_GetTrigger);
-            Register("Neo.Runtime.CheckWitness", Runtime_CheckWitness);
-            Register("Neo.Runtime.Notify", Runtime_Notify);
-            Register("Neo.Runtime.Log", Runtime_Log);
-            Register("Neo.Runtime.GetTime", Runtime_GetTime);
-            Register("Neo.Runtime.Serialize", Runtime_Serialize);
-            Register("Neo.Runtime.Deserialize", Runtime_Deserialize);
-            Register("Neo.Blockchain.GetHeight", Blockchain_GetHeight);
-            Register("Neo.Blockchain.GetHeader", Blockchain_GetHeader);
-            Register("Neo.Blockchain.GetBlock", Blockchain_GetBlock);
-            Register("Neo.Blockchain.GetTransaction", Blockchain_GetTransaction);
-            Register("Neo.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight);
+            //Standard Library
+            Register("System.Runtime.GetTrigger", Runtime_GetTrigger);
+            Register("System.Runtime.CheckWitness", Runtime_CheckWitness);
+            Register("System.Runtime.Notify", Runtime_Notify);
+            Register("System.Runtime.Log", Runtime_Log);
+            Register("System.Runtime.GetTime", Runtime_GetTime);
+            Register("System.Runtime.Serialize", Runtime_Serialize);
+            Register("System.Runtime.Deserialize", Runtime_Deserialize);
+            Register("System.Blockchain.GetHeight", Blockchain_GetHeight);
+            Register("System.Blockchain.GetHeader", Blockchain_GetHeader);
+            Register("System.Blockchain.GetBlock", Blockchain_GetBlock);
+            Register("System.Blockchain.GetTransaction", Blockchain_GetTransaction);
+            Register("System.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight);
+            Register("System.Blockchain.GetContract", Blockchain_GetContract);
+            Register("System.Header.GetIndex", Header_GetIndex);
+            Register("System.Header.GetHash", Header_GetHash);
+            Register("System.Header.GetPrevHash", Header_GetPrevHash);
+            Register("System.Header.GetTimestamp", Header_GetTimestamp);
+            Register("System.Block.GetTransactionCount", Block_GetTransactionCount);
+            Register("System.Block.GetTransactions", Block_GetTransactions);
+            Register("System.Block.GetTransaction", Block_GetTransaction);
+            Register("System.Transaction.GetHash", Transaction_GetHash);
+            Register("System.Storage.GetContext", Storage_GetContext);
+            Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext);
+            Register("System.Storage.Get", Storage_Get);
+            Register("System.StorageContext.AsReadOnly", StorageContext_AsReadOnly);
+
+            //Neo Specified
             Register("Neo.Blockchain.GetAccount", Blockchain_GetAccount);
             Register("Neo.Blockchain.GetValidators", Blockchain_GetValidators);
             Register("Neo.Blockchain.GetAsset", Blockchain_GetAsset);
-            Register("Neo.Blockchain.GetContract", Blockchain_GetContract);
-            Register("Neo.Header.GetIndex", Header_GetIndex);
-            Register("Neo.Header.GetHash", Header_GetHash);
             Register("Neo.Header.GetVersion", Header_GetVersion);
-            Register("Neo.Header.GetPrevHash", Header_GetPrevHash);
             Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot);
-            Register("Neo.Header.GetTimestamp", Header_GetTimestamp);
             Register("Neo.Header.GetConsensusData", Header_GetConsensusData);
             Register("Neo.Header.GetNextConsensus", Header_GetNextConsensus);
-            Register("Neo.Block.GetTransactionCount", Block_GetTransactionCount);
-            Register("Neo.Block.GetTransactions", Block_GetTransactions);
-            Register("Neo.Block.GetTransaction", Block_GetTransaction);
-            Register("Neo.Transaction.GetHash", Transaction_GetHash);
             Register("Neo.Transaction.GetType", Transaction_GetType);
             Register("Neo.Transaction.GetAttributes", Transaction_GetAttributes);
             Register("Neo.Transaction.GetInputs", Transaction_GetInputs);
@@ -128,11 +135,7 @@ namespace Neo.SmartContract
             Register("Neo.Asset.GetIssuer", Asset_GetIssuer);
             Register("Neo.Contract.GetScript", Contract_GetScript);
             Register("Neo.Contract.IsPayable", Contract_IsPayable);
-            Register("Neo.Storage.GetContext", Storage_GetContext);
-            Register("Neo.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext);
-            Register("Neo.Storage.Get", Storage_Get);
             Register("Neo.Storage.Find", Storage_Find);
-            Register("Neo.StorageContext.AsReadOnly", StorageContext_AsReadOnly);
             Register("Neo.Enumerator.Create", Enumerator_Create);
             Register("Neo.Enumerator.Next", Enumerator_Next);
             Register("Neo.Enumerator.Value", Enumerator_Value);
@@ -141,32 +144,55 @@ namespace Neo.SmartContract
             Register("Neo.Iterator.Key", Iterator_Key);
             Register("Neo.Iterator.Keys", Iterator_Keys);
             Register("Neo.Iterator.Values", Iterator_Values);
+
             #region Aliases
             Register("Neo.Iterator.Next", Enumerator_Next);
             Register("Neo.Iterator.Value", Enumerator_Value);
             #endregion
-            #region Old AntShares APIs
+
+            #region Old APIs
+            Register("Neo.Runtime.GetTrigger", Runtime_GetTrigger);
+            Register("Neo.Runtime.CheckWitness", Runtime_CheckWitness);
             Register("AntShares.Runtime.CheckWitness", Runtime_CheckWitness);
+            Register("Neo.Runtime.Notify", Runtime_Notify);
             Register("AntShares.Runtime.Notify", Runtime_Notify);
+            Register("Neo.Runtime.Log", Runtime_Log);
             Register("AntShares.Runtime.Log", Runtime_Log);
+            Register("Neo.Runtime.GetTime", Runtime_GetTime);
+            Register("Neo.Runtime.Serialize", Runtime_Serialize);
+            Register("Neo.Runtime.Deserialize", Runtime_Deserialize);
+            Register("Neo.Blockchain.GetHeight", Blockchain_GetHeight);
             Register("AntShares.Blockchain.GetHeight", Blockchain_GetHeight);
+            Register("Neo.Blockchain.GetHeader", Blockchain_GetHeader);
             Register("AntShares.Blockchain.GetHeader", Blockchain_GetHeader);
+            Register("Neo.Blockchain.GetBlock", Blockchain_GetBlock);
             Register("AntShares.Blockchain.GetBlock", Blockchain_GetBlock);
+            Register("Neo.Blockchain.GetTransaction", Blockchain_GetTransaction);
             Register("AntShares.Blockchain.GetTransaction", Blockchain_GetTransaction);
+            Register("Neo.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight);
             Register("AntShares.Blockchain.GetAccount", Blockchain_GetAccount);
             Register("AntShares.Blockchain.GetValidators", Blockchain_GetValidators);
             Register("AntShares.Blockchain.GetAsset", Blockchain_GetAsset);
+            Register("Neo.Blockchain.GetContract", Blockchain_GetContract);
             Register("AntShares.Blockchain.GetContract", Blockchain_GetContract);
+            Register("Neo.Header.GetIndex", Header_GetIndex);
+            Register("Neo.Header.GetHash", Header_GetHash);
             Register("AntShares.Header.GetHash", Header_GetHash);
             Register("AntShares.Header.GetVersion", Header_GetVersion);
+            Register("Neo.Header.GetPrevHash", Header_GetPrevHash);
             Register("AntShares.Header.GetPrevHash", Header_GetPrevHash);
             Register("AntShares.Header.GetMerkleRoot", Header_GetMerkleRoot);
+            Register("Neo.Header.GetTimestamp", Header_GetTimestamp);
             Register("AntShares.Header.GetTimestamp", Header_GetTimestamp);
             Register("AntShares.Header.GetConsensusData", Header_GetConsensusData);
             Register("AntShares.Header.GetNextConsensus", Header_GetNextConsensus);
+            Register("Neo.Block.GetTransactionCount", Block_GetTransactionCount);
             Register("AntShares.Block.GetTransactionCount", Block_GetTransactionCount);
+            Register("Neo.Block.GetTransactions", Block_GetTransactions);
             Register("AntShares.Block.GetTransactions", Block_GetTransactions);
+            Register("Neo.Block.GetTransaction", Block_GetTransaction);
             Register("AntShares.Block.GetTransaction", Block_GetTransaction);
+            Register("Neo.Transaction.GetHash", Transaction_GetHash);
             Register("AntShares.Transaction.GetHash", Transaction_GetHash);
             Register("AntShares.Transaction.GetType", Transaction_GetType);
             Register("AntShares.Transaction.GetAttributes", Transaction_GetAttributes);
@@ -192,8 +218,12 @@ namespace Neo.SmartContract
             Register("AntShares.Asset.GetAdmin", Asset_GetAdmin);
             Register("AntShares.Asset.GetIssuer", Asset_GetIssuer);
             Register("AntShares.Contract.GetScript", Contract_GetScript);
+            Register("Neo.Storage.GetContext", Storage_GetContext);
             Register("AntShares.Storage.GetContext", Storage_GetContext);
+            Register("Neo.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext);
+            Register("Neo.Storage.Get", Storage_Get);
             Register("AntShares.Storage.Get", Storage_Get);
+            Register("Neo.StorageContext.AsReadOnly", StorageContext_AsReadOnly);
             #endregion
         }
 
