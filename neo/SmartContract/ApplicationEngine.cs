@@ -406,6 +406,7 @@ namespace Neo.SmartContract
                 case "AntShares.Blockchain.GetTransaction":
                     return 100;
                 case "System.Blockchain.GetTransactionHeight":
+                case "Neo.Blockchain.GetTransactionHeight":
                     return 100;
                 case "Neo.Blockchain.GetAccount":
                 case "AntShares.Blockchain.GetAccount":
