@@ -389,17 +389,23 @@ namespace Neo.SmartContract
             string api_name = Encoding.ASCII.GetString(CurrentContext.Script, CurrentContext.InstructionPointer + 2, length);
             switch (api_name)
             {
+                case "System.Runtime.CheckWitness":
                 case "Neo.Runtime.CheckWitness":
                 case "AntShares.Runtime.CheckWitness":
                     return 200;
+                case "System.Blockchain.GetHeader":
                 case "Neo.Blockchain.GetHeader":
                 case "AntShares.Blockchain.GetHeader":
                     return 100;
+                case "System.Blockchain.GetBlock":
                 case "Neo.Blockchain.GetBlock":
                 case "AntShares.Blockchain.GetBlock":
                     return 200;
+                case "System.Blockchain.GetTransaction":
                 case "Neo.Blockchain.GetTransaction":
                 case "AntShares.Blockchain.GetTransaction":
+                    return 100;
+                case "System.Blockchain.GetTransactionHeight":
                     return 100;
                 case "Neo.Blockchain.GetAccount":
                 case "AntShares.Blockchain.GetAccount":
@@ -410,6 +416,7 @@ namespace Neo.SmartContract
                 case "Neo.Blockchain.GetAsset":
                 case "AntShares.Blockchain.GetAsset":
                     return 100;
+                case "System.Blockchain.GetContract":
                 case "Neo.Blockchain.GetContract":
                 case "AntShares.Blockchain.GetContract":
                     return 100;
@@ -446,12 +453,15 @@ namespace Neo.SmartContract
                         fee += 500L;
                     }
                     return fee * 100000000L / ratio;
+                case "System.Storage.Get":
                 case "Neo.Storage.Get":
                 case "AntShares.Storage.Get":
                     return 100;
+                case "System.Storage.Put":
                 case "Neo.Storage.Put":
                 case "AntShares.Storage.Put":
                     return ((EvaluationStack.Peek(1).GetByteArray().Length + EvaluationStack.Peek(2).GetByteArray().Length - 1) / 1024 + 1) * 1000;
+                case "System.Storage.Delete":
                 case "Neo.Storage.Delete":
                 case "AntShares.Storage.Delete":
                     return 100;
