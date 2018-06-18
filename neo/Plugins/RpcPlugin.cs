@@ -15,6 +15,6 @@ namespace Neo.Plugins
             instances.Add(this);
         }
 
-        internal protected abstract JObject OnProcess(HttpContext context, string method, JArray _params);
+        internal protected virtual JObject OnProcess(HttpContext context, string method, JArray _params) => null;
     }
 }

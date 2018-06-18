@@ -84,7 +84,7 @@ namespace Neo.Network
                     Name = "LocalNode.AddTransactionLoop"
                 };
             }
-            this.UserAgent = string.Format("/NEO:{0}/", GetType().GetTypeInfo().Assembly.GetName().Version.ToString(3));
+            this.UserAgent = string.Format("/NEO:{0}/", Assembly.GetExecutingAssembly().GetVersion());
             Blockchain.PersistCompleted += Blockchain_PersistCompleted;
         }
 
@@ -124,7 +124,7 @@ namespace Neo.Network
                     if (mem_pool.ContainsKey(tx.Hash)) return false;
                     if (Blockchain.Default.ContainsTransaction(tx.Hash)) return false;
                     if (!tx.Verify(mem_pool.Values)) return false;
-                        mem_pool.Add(tx.Hash, tx);
+                    mem_pool.Add(tx.Hash, tx);
                     CheckMemPool();
                 }
             }
@@ -483,7 +483,7 @@ namespace Neo.Network
                     // Ensure any outstanding calls to Blockchain_PersistCompleted are not in progress
                     lock (Blockchain.Default.PersistLock)
                     {
-                        Blockchain.PersistCompleted -= Blockchain_PersistCompleted;                        
+                        Blockchain.PersistCompleted -= Blockchain_PersistCompleted;
                     }
 
                     if (listener != null) listener.Stop();
@@ -508,7 +508,7 @@ namespace Neo.Network
                     new_tx_event.Set();
                     if (poolThread?.ThreadState.HasFlag(ThreadState.Unstarted) == false)
                         poolThread.Join();
-                                        
+
                     new_tx_event.Dispose();
                 }
             }

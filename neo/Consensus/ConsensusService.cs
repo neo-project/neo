@@ -121,9 +121,10 @@ namespace Neo.Consensus
 
         private void FillContext()
         {
-            List<Transaction> transactions = LocalNode.GetMemoryPool().Where(p => CheckPolicy(p)).ToList();
-            if (transactions.Count >= Settings.Default.MaxTransactionsPerBlock)
-                transactions = transactions.OrderByDescending(p => p.NetworkFee / p.Size).Take(Settings.Default.MaxTransactionsPerBlock - 1).ToList();
+            IEnumerable<Transaction> mem_pool = LocalNode.GetMemoryPool().Where(p => CheckPolicy(p));
+            foreach (PolicyPlugin plugin in PolicyPlugin.Instances)
+                mem_pool = plugin.Filter(mem_pool);
+            List<Transaction> transactions = mem_pool.ToList();
             Fixed8 amount_netfee = Block.CalculateNetFee(transactions);
             TransactionOutput[] outputs = amount_netfee == Fixed8.Zero ? new TransactionOutput[0] : new[] { new TransactionOutput
             {
