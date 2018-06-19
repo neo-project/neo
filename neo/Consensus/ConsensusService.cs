@@ -61,7 +61,7 @@ namespace Neo.Consensus
             return true;
         }
 
-        private void Blockchain_PersistCompleted(object sender, Block block)
+        private void Blockchain_PersistUnlocked(object sender, Block block)
         {
             Log($"persist block: {block.Hash}");
             block_received_time = DateTime.Now;
@@ -113,7 +113,7 @@ namespace Neo.Consensus
             if (timer != null) timer.Dispose();
             if (started)
             {
-                Blockchain.PersistCompleted -= Blockchain_PersistCompleted;
+                Blockchain.PersistUnlocked -= Blockchain_PersistUnlocked;
                 LocalNode.InventoryReceiving -= LocalNode_InventoryReceiving;
                 LocalNode.InventoryReceived -= LocalNode_InventoryReceived;
             }
@@ -391,7 +391,7 @@ namespace Neo.Consensus
         {
             Log("OnStart");
             started = true;
-            Blockchain.PersistCompleted += Blockchain_PersistCompleted;
+            Blockchain.PersistUnlocked += Blockchain_PersistUnlocked;
             LocalNode.InventoryReceiving += LocalNode_InventoryReceiving;
             LocalNode.InventoryReceived += LocalNode_InventoryReceived;
             InitializeConsensus(0);

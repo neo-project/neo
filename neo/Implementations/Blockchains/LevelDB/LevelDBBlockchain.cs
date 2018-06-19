@@ -659,6 +659,8 @@ namespace Neo.Implementations.Blockchains.LevelDB
                     {
                         block_cache.Remove(hash);
                     }
+
+                    OnPersistUnlocked(block);
                 }
             }
         }

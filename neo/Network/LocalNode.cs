@@ -33,6 +33,7 @@ namespace Neo.Network
         private const int UnconnectedMax = 1000;
         public const int MemoryPoolSize = 50000;
         internal static readonly TimeSpan HashesExpiration = TimeSpan.FromSeconds(30);
+        private DateTime LastBlockReceived = DateTime.UtcNow;
 
         private static readonly Dictionary<UInt256, Transaction> mem_pool = new Dictionary<UInt256, Transaction>();
         private readonly HashSet<Transaction> temp_pool = new HashSet<Transaction>();
@@ -204,22 +205,49 @@ namespace Neo.Network
         private void Blockchain_PersistCompleted(object sender, Block block)
         {
             Transaction[] remain;
+            var millisSinceLastBlock = TimeSpan.FromTicks(DateTimeOffset.UtcNow.Ticks)
+                .Subtract(TimeSpan.FromTicks(LastBlockReceived.Ticks)).TotalMilliseconds;
+
             lock (mem_pool)
             {
+                // Remove the transactions that made it into the block
                 foreach (Transaction tx in block.Transactions)
-                {
                     mem_pool.Remove(tx.Hash);
-                }
                 if (mem_pool.Count == 0) return;
 
                 remain = mem_pool.Values.ToArray();
                 mem_pool.Clear();
+                
+                if (millisSinceLastBlock > 10000)
+                {
+                    ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
+                    // Reverify the remaining transactions in the mem_pool
+                    remain.AsParallel().ForAll(tx =>
+                    {
+                        if (tx.Verify(remain))
+                            verified.Add(tx);
+                    });
+                
+                    // Note, when running 
+                    foreach (Transaction tx in verified)
+                        mem_pool.Add(tx.Hash, tx);                    
+                }
             }
+            LastBlockReceived = DateTime.UtcNow;
+            
             lock (temp_pool)
             {
-                temp_pool.UnionWith(remain);
+                if (millisSinceLastBlock > 10000)
+                {
+                    if (temp_pool.Count > 0)
+                        new_tx_event.Set();
+                }
+                else
+                {
+                    temp_pool.UnionWith(remain);
+                    new_tx_event.Set();
+                }
             }
-            new_tx_event.Set();
         }
 
         private static bool CheckKnownHashes(UInt256 hash)
