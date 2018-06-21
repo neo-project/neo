@@ -1,5 +1,6 @@
 ﻿using Neo.IO;
 using Neo.IO.Json;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -75,7 +76,7 @@ namespace Neo.Core
         /// 验证交易
         /// </summary>
         /// <returns>返回验证结果</returns>
-        public override bool Verify(IEnumerable<Transaction> mempool)
+        public override bool Verify(IEnumerable<Transaction> mempool, InteropService service = null)
         {
             if (!base.Verify(mempool)) return false;
             if (Claims.Length != Claims.Distinct().Count())

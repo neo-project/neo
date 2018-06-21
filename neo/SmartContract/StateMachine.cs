@@ -12,7 +12,7 @@ namespace Neo.SmartContract
 {
     public class StateMachine : StateReader
     {
-        private readonly Block persisting_block;
+        private readonly uint timestamp;
         private readonly DataCache<UInt160, AccountState> accounts;
         private readonly DataCache<UInt256, AssetState> assets;
         private readonly DataCache<UInt160, ContractState> contracts;
@@ -25,9 +25,9 @@ namespace Neo.SmartContract
         protected override DataCache<UInt160, ContractState> Contracts => contracts;
         protected override DataCache<StorageKey, StorageItem> Storages => storages;
 
-        public StateMachine(Block persisting_block, DataCache<UInt160, AccountState> accounts, DataCache<UInt256, AssetState> assets, DataCache<UInt160, ContractState> contracts, DataCache<StorageKey, StorageItem> storages)
+        public StateMachine(uint timestamp, DataCache<UInt160, AccountState> accounts, DataCache<UInt256, AssetState> assets, DataCache<UInt160, ContractState> contracts, DataCache<StorageKey, StorageItem> storages)
         {
-            this.persisting_block = persisting_block;
+            this.timestamp = timestamp;
             this.accounts = accounts.CreateSnapshot();
             this.assets = assets.CreateSnapshot();
             this.contracts = contracts.CreateSnapshot();
@@ -71,7 +71,7 @@ namespace Neo.SmartContract
 
         protected override bool Runtime_GetTime(ExecutionEngine engine)
         {
-            engine.EvaluationStack.Push(persisting_block.Timestamp);
+            engine.EvaluationStack.Push(timestamp);
             return true;
         }
 

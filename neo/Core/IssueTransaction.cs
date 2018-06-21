@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Neo.VM;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -54,7 +55,7 @@ namespace Neo.Core
         /// 验证交易
         /// </summary>
         /// <returns>返回验证后的结果</returns>
-        public override bool Verify(IEnumerable<Transaction> mempool)
+        public override bool Verify(IEnumerable<Transaction> mempool, InteropService service = null)
         {
             if (!base.Verify(mempool)) return false;
             TransactionResult[] results = GetTransactionResults()?.Where(p => p.Amount < Fixed8.Zero).ToArray();

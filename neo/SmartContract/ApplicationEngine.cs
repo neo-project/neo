@@ -3,6 +3,7 @@ using Neo.IO.Caching;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Collections;
+using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
 
@@ -51,13 +52,15 @@ namespace Neo.SmartContract
 
         public TriggerType Trigger { get; }
         public Fixed8 GasConsumed => new Fixed8(gas_consumed);
+        private HashSet<UInt160> CalledContracts;
 
-        public ApplicationEngine(TriggerType trigger, IScriptContainer container, IScriptTable table, InteropService service, Fixed8 gas, bool testMode = false)
+        public ApplicationEngine(TriggerType trigger, IScriptContainer container, IScriptTable table, InteropService service, Fixed8 gas, HashSet<UInt160> calledContracts = null, bool testMode = false)
             : base(container, Cryptography.Crypto.Default, table, service)
         {
             this.gas_amount = gas_free + gas.GetData();
             this.testMode = testMode;
             this.Trigger = trigger;
+            this.CalledContracts = calledContracts == null ? new HashSet<UInt160>() : calledContracts;
             if (table is CachedScriptTable)
             {
                 this.script_table = (CachedScriptTable)table;
@@ -336,6 +339,8 @@ namespace Neo.SmartContract
                             State |= VMState.FAULT;
                             return false;
                         }
+
+                        AddCalledContract(nextOpcode);
                     }
                     StepInto();
                 }
@@ -471,6 +476,29 @@ namespace Neo.SmartContract
             }
         }
 
+        private void AddCalledContract(OpCode nextInstruction) {
+            if (nextInstruction == OpCode.APPCALL || nextInstruction == OpCode.TAILCALL) {
+                UInt160 hash;
+                if (this.IsDynamicCall()) {
+                    hash = new UInt160(EvaluationStack.Peek(0).GetByteArray());
+                } else {
+                    byte[] bytes = new byte[20];
+                    System.Array.Copy(CurrentContext.Script, CurrentContext.InstructionPointer + 1, bytes, 0, 20);
+                    hash = new UInt160(bytes);
+                }
+
+                this.CalledContracts.Add(hash);
+            }
+        }
+
+        private bool IsDynamicCall() {
+            for (int i = CurrentContext.InstructionPointer + 1; i < CurrentContext.InstructionPointer + 21; i++)
+                {
+                    if (CurrentContext.Script[i] != 0) return false;
+                }
+            return true;
+        }
+
         public static ApplicationEngine Run(byte[] script, IScriptContainer container = null, Block persisting_block = null)
         {
             if (persisting_block == null)
@@ -495,9 +523,9 @@ namespace Neo.SmartContract
             DataCache<UInt160, ContractState> contracts = Blockchain.Default.GetStates<UInt160, ContractState>();
             DataCache<StorageKey, StorageItem> storages = Blockchain.Default.GetStates<StorageKey, StorageItem>();
             CachedScriptTable script_table = new CachedScriptTable(contracts);
-            using (StateMachine service = new StateMachine(persisting_block, accounts, assets, contracts, storages))
+            using (StateMachine service = new StateMachine(persisting_block.Timestamp, accounts, assets, contracts, storages))
             {
-                ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, script_table, service, Fixed8.Zero, true);
+                ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, script_table, service, Fixed8.Zero, new HashSet<UInt160>(), true);
                 engine.LoadScript(script, false);
                 engine.Execute();
                 return engine;

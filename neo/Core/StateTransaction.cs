@@ -1,6 +1,7 @@
 ﻿using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.VM;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
@@ -82,7 +83,7 @@ namespace Neo.Core
             return json;
         }
 
-        public override bool Verify(IEnumerable<Transaction> mempool)
+        public override bool Verify(IEnumerable<Transaction> mempool, InteropService service = null)
         {
             foreach (StateDescriptor descriptor in Descriptors)
                 if (!descriptor.Verify())

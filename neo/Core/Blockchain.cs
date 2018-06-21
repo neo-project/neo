@@ -324,6 +324,8 @@ namespace Neo.Core
         /// <returns>返回对应的区块头信息</returns>
         public abstract Header GetHeader(UInt256 hash);
 
+        public abstract StateMachine GetTemporaryStateMachine(uint timestamp);
+
         /// <summary>
         /// 获取记账人的合约地址
         /// </summary>

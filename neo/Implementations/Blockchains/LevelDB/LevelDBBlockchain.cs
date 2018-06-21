@@ -339,6 +339,18 @@ namespace Neo.Implementations.Blockchains.LevelDB
             return GetTransaction(ReadOptions.Default, hash, out height);
         }
 
+        public override StateMachine GetTemporaryStateMachine(uint timestamp) {
+            DbCache<UInt160, AccountState> accounts = new DbCache<UInt160, AccountState>(db, DataEntryPrefix.ST_Account);
+            DbCache<UInt256, UnspentCoinState> unspentcoins = new DbCache<UInt256, UnspentCoinState>(db, DataEntryPrefix.ST_Coin);
+            DbCache<UInt256, SpentCoinState> spentcoins = new DbCache<UInt256, SpentCoinState>(db, DataEntryPrefix.ST_SpentCoin);
+            DbCache<ECPoint, ValidatorState> validators = new DbCache<ECPoint, ValidatorState>(db, DataEntryPrefix.ST_Validator);
+            DbCache<UInt256, AssetState> assets = new DbCache<UInt256, AssetState>(db, DataEntryPrefix.ST_Asset);
+            DbCache<UInt160, ContractState> contracts = new DbCache<UInt160, ContractState>(db, DataEntryPrefix.ST_Contract);
+            DbCache<StorageKey, StorageItem> storages = new DbCache<StorageKey, StorageItem>(db, DataEntryPrefix.ST_Storage);
+            DbMetaDataCache<ValidatorsCountState> validators_count = new DbMetaDataCache<ValidatorsCountState>(db, DataEntryPrefix.IX_ValidatorsCount);
+            return new StateMachine(timestamp, accounts, assets, contracts, storages);
+        }
+
         private Transaction GetTransaction(ReadOptions options, UInt256 hash, out int height)
         {
             Slice value;
@@ -583,7 +595,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         break;
 #pragma warning restore CS0612
                     case InvocationTransaction tx_invocation:
-                        using (StateMachine service = new StateMachine(block, accounts, assets, contracts, storages))
+                        using (StateMachine service = new StateMachine(block.Timestamp, accounts, assets, contracts, storages))
                         {
                             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, script_table, service, tx_invocation.Gas);
                             engine.LoadScript(tx_invocation.Script, false);

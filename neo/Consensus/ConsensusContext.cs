@@ -3,6 +3,7 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.Payloads;
+using Neo.SmartContract;
 using Neo.Wallets;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,6 +28,7 @@ namespace Neo.Consensus
         public byte[][] Signatures;
         public byte[] ExpectedView;
         public KeyPair KeyPair;
+        private StateMachine _service;
 
         public int M => Validators.Length - (Validators.Length - 1) / 3;
 
@@ -109,6 +111,13 @@ namespace Neo.Consensus
             });
         }
 
+        public StateMachine GetService() {
+            if (_service == null) {
+                _service = Blockchain.Default.GetTemporaryStateMachine(Timestamp);
+            }
+            return _service;
+        }
+
         public void Reset(Wallet wallet)
         {
             State = ConsensusState.Initial;
@@ -131,6 +140,10 @@ namespace Neo.Consensus
                     KeyPair = account.GetKey();
                     break;
                 }
+            }
+            if (_service != null) {
+                _service.Dispose();
+                _service = null;
             }
             _header = null;
         }

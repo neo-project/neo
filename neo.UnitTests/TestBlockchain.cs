@@ -1,6 +1,7 @@
 ﻿using Neo.Core;
 using Neo.Cryptography.ECC;
 using Neo.IO.Caching;
+using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 
@@ -149,6 +150,11 @@ namespace Neo.UnitTests
         }
 
         public override bool IsDoubleSpend(Transaction tx)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override StateMachine GetTemporaryStateMachine(uint timestamp)
         {
             throw new NotImplementedException();
         }

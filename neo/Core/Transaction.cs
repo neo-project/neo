@@ -327,7 +327,7 @@ namespace Neo.Core
         /// 验证交易
         /// </summary>
         /// <returns>返回验证的结果</returns>
-        public virtual bool Verify(IEnumerable<Transaction> mempool)
+        public virtual bool Verify(IEnumerable<Transaction> mempool, InteropService service = null)
         {
             for (int i = 1; i < Inputs.Length; i++)
                 for (int j = 0; j < i; j++)
@@ -374,7 +374,19 @@ namespace Neo.Core
             }
             if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
                 return false;
+
+            if (!VerifyReceivingScripts(service)) return false;
             return this.VerifyScripts();
+        }
+
+        protected virtual bool VerifyReceivingScripts(InteropService service = null)
+        {
+            foreach (UInt160 hash in Outputs.Select(p => p.ScriptHash).Distinct())
+            {
+                ContractState contract = Blockchain.Default.GetContract(hash);
+                if (contract != null) return false;
+            }
+            return true;
         }
     }
 }

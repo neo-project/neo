@@ -2,6 +2,7 @@
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -76,7 +77,7 @@ namespace Neo.Core
             return json;
         }
 
-        public override bool Verify(IEnumerable<Transaction> mempool)
+        public override bool Verify(IEnumerable<Transaction> mempool, InteropService service = null)
         {
             return false;
         }

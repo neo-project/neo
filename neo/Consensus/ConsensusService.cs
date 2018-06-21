@@ -34,7 +34,7 @@ namespace Neo.Consensus
         private bool AddTransaction(Transaction tx, bool verify)
         {
             if (Blockchain.Default.ContainsTransaction(tx.Hash) ||
-                (verify && !tx.Verify(context.Transactions.Values)) ||
+                (verify && !tx.Verify(context.Transactions.Values, context.GetService())) ||
                 !CheckPolicy(tx))
             {
                 Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}");
