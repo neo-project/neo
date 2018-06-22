@@ -17,6 +17,7 @@ namespace Neo.Core
     public abstract class Blockchain : IDisposable, IScriptTable
     {
         public static event EventHandler<Block> PersistCompleted;
+        public static event EventHandler<Block> PersistUnlocked;
 
         public CancellationTokenSource VerificationCancellationToken { get; protected set; } = new CancellationTokenSource();
         public object PersistLock { get; } = new object();
@@ -524,11 +525,16 @@ namespace Neo.Core
         /// <param name="block">区块</param>
         protected void OnPersistCompleted(Block block)
         {
+            PersistCompleted?.Invoke(this, block);
+        }
+
+        protected void OnPersistUnlocked(Block block)
+        {
             lock (_validators)
             {
                 _validators.Clear();
             }
-            PersistCompleted?.Invoke(this, block);
+            PersistUnlocked?.Invoke(this, block);
         }
 
         protected void ProcessAccountStateDescriptor(StateDescriptor descriptor, DataCache<UInt160, AccountState> accounts, DataCache<ECPoint, ValidatorState> validators, MetaDataCache<ValidatorsCountState> validators_count)
