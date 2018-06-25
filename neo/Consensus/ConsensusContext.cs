@@ -1,8 +1,8 @@
-﻿using Neo.Core;
-using Neo.Cryptography;
+﻿using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.Network.Payloads;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.Wallets;
 using System.Collections.Generic;
 using System.Linq;
@@ -112,10 +112,10 @@ namespace Neo.Consensus
         public void Reset(Wallet wallet)
         {
             State = ConsensusState.Initial;
-            PrevHash = Blockchain.Default.CurrentBlockHash;
-            BlockIndex = Blockchain.Default.Height + 1;
+            PrevHash = Blockchain.Singleton.Snapshot.CurrentBlockHash;
+            BlockIndex = Blockchain.Singleton.Snapshot.Height + 1;
             ViewNumber = 0;
-            Validators = Blockchain.Default.GetValidators();
+            Validators = Blockchain.Singleton.Snapshot.GetValidators();
             MyIndex = -1;
             PrimaryIndex = BlockIndex % (uint)Validators.Length;
             TransactionHashes = null;

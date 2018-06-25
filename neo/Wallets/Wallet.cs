@@ -1,5 +1,6 @@
-﻿using Neo.Core;
-using Neo.Cryptography;
+﻿using Neo.Cryptography;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
@@ -104,8 +105,10 @@ namespace Neo.Wallets
                     script = sb.ToArray();
                 }
                 ApplicationEngine engine = ApplicationEngine.Run(script);
-                byte decimals = (byte)engine.EvaluationStack.Pop().GetBigInteger();
-                BigInteger amount = ((VMArray)engine.EvaluationStack.Pop()).Aggregate(BigInteger.Zero, (x, y) => x + y.GetBigInteger());
+                if (engine.State.HasFlag(VMState.FAULT))
+                    return new BigDecimal(0, 0);
+                byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
+                BigInteger amount = ((VMArray)engine.ResultStack.Pop()).Aggregate(BigInteger.Zero, (x, y) => x + y.GetBigInteger());
                 return new BigDecimal(amount, decimals);
             }
             else
@@ -305,7 +308,7 @@ namespace Neo.Wallets
                         }
                         ApplicationEngine engine = ApplicationEngine.Run(script);
                         if (engine.State.HasFlag(VMState.FAULT)) return null;
-                        var balances = ((IEnumerable<StackItem>)(VMArray)engine.EvaluationStack.Pop()).Reverse().Zip(accounts, (i, a) => new
+                        var balances = ((IEnumerable<StackItem>)(VMArray)engine.ResultStack.Pop()).Reverse().Zip(accounts, (i, a) => new
                         {
                             Account = a,
                             Value = i.GetBigInteger()
@@ -356,7 +359,7 @@ namespace Neo.Wallets
             tx.Attributes = attributes.ToArray();
             tx.Inputs = new CoinReference[0];
             tx.Outputs = outputs.Where(p => p.IsGlobalAsset).Select(p => p.ToTxOutput()).ToArray();
-            tx.Scripts = new Witness[0];
+            tx.Witnesses = new Witness[0];
             if (tx is InvocationTransaction itx)
             {
                 ApplicationEngine engine = ApplicationEngine.Run(itx.Script, itx);

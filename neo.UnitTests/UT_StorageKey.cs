@@ -1,9 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Core;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+using Neo.Ledger;
 
 namespace Neo.UnitTests
 {

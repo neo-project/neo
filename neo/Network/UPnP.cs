@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace Neo.Network
@@ -15,7 +14,7 @@ namespace Neo.Network
 
         public static TimeSpan TimeOut { get; set; } = TimeSpan.FromSeconds(3);
 
-        public static async Task<bool> DiscoverAsync()
+        public static bool Discover()
         {
             Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             s.ReceiveTimeout = (int)TimeOut.TotalMilliseconds;
@@ -51,7 +50,7 @@ namespace Neo.Network
                 {
                     resp = resp.Substring(resp.ToLower().IndexOf("location:") + 9);
                     resp = resp.Substring(0, resp.IndexOf("\r")).Trim();
-                    if (!string.IsNullOrEmpty(_serviceUrl = await GetServiceUrlAsync(resp)))
+                    if (!string.IsNullOrEmpty(_serviceUrl = GetServiceUrl(resp)))
                     {
                         return true;
                     }
@@ -60,13 +59,13 @@ namespace Neo.Network
             return false;
         }
 
-        private static async Task<string> GetServiceUrlAsync(string resp)
+        private static string GetServiceUrl(string resp)
         {
             try
             {
                 XmlDocument desc = new XmlDocument();
                 HttpWebRequest request = WebRequest.CreateHttp(resp);
-                WebResponse response = await request.GetResponseAsync();
+                WebResponse response = request.GetResponse();
                 desc.Load(response.GetResponseStream());
                 XmlNamespaceManager nsMgr = new XmlNamespaceManager(desc.NameTable);
                 nsMgr.AddNamespace("tns", "urn:schemas-upnp-org:device-1-0");
@@ -89,22 +88,22 @@ namespace Neo.Network
             return resp.Substring(0, n) + p;
         }
 
-        public static async Task ForwardPortAsync(int port, ProtocolType protocol, string description)
+        public static void ForwardPort(int port, ProtocolType protocol, string description)
         {
             if (string.IsNullOrEmpty(_serviceUrl))
                 throw new Exception("No UPnP service available or Discover() has not been called");
-            XmlDocument xdoc = await SOAPRequestAsync(_serviceUrl, "<u:AddPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
+            XmlDocument xdoc = SOAPRequest(_serviceUrl, "<u:AddPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
                 "<NewRemoteHost></NewRemoteHost><NewExternalPort>" + port.ToString() + "</NewExternalPort><NewProtocol>" + protocol.ToString().ToUpper() + "</NewProtocol>" +
-                "<NewInternalPort>" + port.ToString() + "</NewInternalPort><NewInternalClient>" + (await Dns.GetHostAddressesAsync(Dns.GetHostName())).First(p => p.AddressFamily == AddressFamily.InterNetwork).ToString() +
+                "<NewInternalPort>" + port.ToString() + "</NewInternalPort><NewInternalClient>" + Dns.GetHostAddresses(Dns.GetHostName()).First(p => p.AddressFamily == AddressFamily.InterNetwork).ToString() +
                 "</NewInternalClient><NewEnabled>1</NewEnabled><NewPortMappingDescription>" + description +
             "</NewPortMappingDescription><NewLeaseDuration>0</NewLeaseDuration></u:AddPortMapping>", "AddPortMapping");
         }
 
-        public static async Task DeleteForwardingRuleAsync(int port, ProtocolType protocol)
+        public static void DeleteForwardingRule(int port, ProtocolType protocol)
         {
             if (string.IsNullOrEmpty(_serviceUrl))
                 throw new Exception("No UPnP service available or Discover() has not been called");
-            XmlDocument xdoc = await SOAPRequestAsync(_serviceUrl,
+            XmlDocument xdoc = SOAPRequest(_serviceUrl,
             "<u:DeletePortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
             "<NewRemoteHost>" +
             "</NewRemoteHost>" +
@@ -113,11 +112,11 @@ namespace Neo.Network
             "</u:DeletePortMapping>", "DeletePortMapping");
         }
 
-        public static async Task<IPAddress> GetExternalIPAsync()
+        public static IPAddress GetExternalIP()
         {
             if (string.IsNullOrEmpty(_serviceUrl))
                 throw new Exception("No UPnP service available or Discover() has not been called");
-            XmlDocument xdoc = await SOAPRequestAsync(_serviceUrl, "<u:GetExternalIPAddress xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
+            XmlDocument xdoc = SOAPRequest(_serviceUrl, "<u:GetExternalIPAddress xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
             "</u:GetExternalIPAddress>", "GetExternalIPAddress");
             XmlNamespaceManager nsMgr = new XmlNamespaceManager(xdoc.NameTable);
             nsMgr.AddNamespace("tns", "urn:schemas-upnp-org:device-1-0");
@@ -125,7 +124,7 @@ namespace Neo.Network
             return IPAddress.Parse(IP);
         }
 
-        private static async Task<XmlDocument> SOAPRequestAsync(string url, string soap, string function)
+        private static XmlDocument SOAPRequest(string url, string soap, string function)
         {
             string req = "<?xml version=\"1.0\"?>" +
             "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">" +
@@ -138,10 +137,10 @@ namespace Neo.Network
             byte[] b = Encoding.UTF8.GetBytes(req);
             r.Headers["SOAPACTION"] = "\"urn:schemas-upnp-org:service:WANIPConnection:1#" + function + "\"";
             r.ContentType = "text/xml; charset=\"utf-8\"";
-            Stream reqs = await r.GetRequestStreamAsync();
+            Stream reqs = r.GetRequestStream();
             reqs.Write(b, 0, b.Length);
             XmlDocument resp = new XmlDocument();
-            WebResponse wres = await r.GetResponseAsync();
+            WebResponse wres = r.GetResponse();
             Stream ress = wres.GetResponseStream();
             resp.Load(ress);
             return resp;

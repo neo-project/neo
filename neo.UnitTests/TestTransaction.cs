@@ -1,7 +1,4 @@
-﻿using Neo.Core;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Neo.Network.P2P.Payloads;
 
 namespace Neo.UnitTests
 {

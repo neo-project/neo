@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Core;
 using Neo.IO.Json;
+using Neo.Network.P2P.Payloads;
 
 namespace Neo.UnitTests
 {
@@ -57,7 +54,7 @@ namespace Neo.UnitTests
             uut.Attributes = new TransactionAttribute[0];
             uut.Inputs = new CoinReference[0];
             uut.Outputs = new TransactionOutput[0];
-            uut.Scripts = new Witness[0];
+            uut.Witnesses = new Witness[0];
 
             byte[] val = TestUtils.GetByteArray(32, 0x42);
             uut.Script = val;
@@ -97,7 +94,7 @@ namespace Neo.UnitTests
             uut.Attributes = new TransactionAttribute[0];
             uut.Inputs = new CoinReference[0];
             uut.Outputs = new TransactionOutput[0];
-            uut.Scripts = new Witness[0];
+            uut.Witnesses = new Witness[0];
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();

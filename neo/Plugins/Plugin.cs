@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -16,6 +17,12 @@ namespace Neo.Plugins
         protected Plugin()
         {
             instances.Add(this);
+        }
+
+        protected IConfigurationSection GetConfiguration()
+        {
+            string path = Path.Combine(GetType().Assembly.GetName().Name, "config.json");
+            return new ConfigurationBuilder().AddJsonFile(path).Build().GetSection("PluginConfiguration");
         }
 
         public static void LoadPlugins()

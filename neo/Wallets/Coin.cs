@@ -1,4 +1,5 @@
-﻿using Neo.Core;
+﻿using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using System;
 
 namespace Neo.Wallets

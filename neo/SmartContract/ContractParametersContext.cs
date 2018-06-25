@@ -1,6 +1,7 @@
-﻿using Neo.Core;
-using Neo.Cryptography.ECC;
+﻿using Neo.Cryptography.ECC;
 using Neo.IO.Json;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -77,7 +78,7 @@ namespace Neo.SmartContract
             {
                 if (_ScriptHashes == null)
                 {
-                    _ScriptHashes = Verifiable.GetScriptHashesForVerifying();
+                    _ScriptHashes = Verifiable.GetScriptHashesForVerifying(Blockchain.Singleton.Snapshot);
                 }
                 return _ScriptHashes;
             }
@@ -157,7 +158,8 @@ namespace Neo.SmartContract
                         else
                             index = i;
 
-                if(index == -1) {
+                if (index == -1)
+                {
                     // unable to find ContractParameterType.Signature in contract.ParameterList 
                     // return now to prevent array index out of bounds exception
                     return false;
@@ -206,10 +208,10 @@ namespace Neo.SmartContract
             return item.Parameters;
         }
 
-        public Witness[] GetScripts()
+        public Witness[] GetWitnesses()
         {
             if (!Completed) throw new InvalidOperationException();
-            Witness[] scripts = new Witness[ScriptHashes.Count];
+            Witness[] witnesses = new Witness[ScriptHashes.Count];
             for (int i = 0; i < ScriptHashes.Count; i++)
             {
                 ContextItem item = ContextItems[ScriptHashes[i]];
@@ -219,14 +221,14 @@ namespace Neo.SmartContract
                     {
                         sb.EmitPush(parameter);
                     }
-                    scripts[i] = new Witness
+                    witnesses[i] = new Witness
                     {
                         InvocationScript = sb.ToArray(),
                         VerificationScript = item.Script ?? new byte[0]
                     };
                 }
             }
-            return scripts;
+            return witnesses;
         }
 
         public static ContractParametersContext Parse(string value)

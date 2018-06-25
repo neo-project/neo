@@ -9,9 +9,6 @@ using System.Threading;
 
 namespace Neo.Cryptography
 {
-    /// <summary>
-    /// 包含一系列密码学算法的扩展方法
-    /// </summary>
     public static class Helper
     {
         private static ThreadLocal<SHA256> _sha256 = new ThreadLocal<SHA256>(() => SHA256.Create());
@@ -92,11 +89,6 @@ namespace Neo.Cryptography
             return Base58.Encode(buffer);
         }
 
-        /// <summary>
-        /// 求字节数组的ripemd160散列值
-        /// </summary>
-        /// <param name="value">字节数组</param>
-        /// <returns>返回该散列值</returns>
         public static byte[] RIPEMD160(this IEnumerable<byte> value)
         {
             return _ripemd160.Value.ComputeHash(value.ToArray());
@@ -110,23 +102,11 @@ namespace Neo.Cryptography
             }
         }
 
-        /// <summary>
-        /// 求字节数组的sha256散列值
-        /// </summary>
-        /// <param name="value">字节数组</param>
-        /// <returns>返回该散列值</returns>
         public static byte[] Sha256(this IEnumerable<byte> value)
         {
             return _sha256.Value.ComputeHash(value.ToArray());
         }
 
-        /// <summary>
-        /// 求字节数组的sha256散列值
-        /// </summary>
-        /// <param name="value">字节数组</param>
-        /// <param name="offset">偏移量，散列计算时从该偏移量处开始</param>
-        /// <param name="count">要计算散列值的字节数量</param>
-        /// <returns>返回该散列值</returns>
         public static byte[] Sha256(this byte[] value, int offset, int count)
         {
             return _sha256.Value.ComputeHash(value, offset, count);
