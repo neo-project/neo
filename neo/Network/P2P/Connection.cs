@@ -2,26 +2,27 @@
 using Akka.IO;
 using System;
 using System.Net;
-using System.Threading;
 
 namespace Neo.Network.P2P
 {
     public abstract class Connection : UntypedActor
     {
+        internal class Ack : Tcp.Event { public static Ack Instance = new Ack(); }
+
         public IPEndPoint Remote { get; }
         public IPEndPoint Local { get; }
         public abstract int ListenerPort { get; }
 
-        private readonly Timer timer;
-        private IActorRef tcp;
+        private ICancelable timer;
+        protected readonly IActorRef tcp;
+        protected bool ack = true;
 
         protected Connection(IActorRef tcp, IPEndPoint remote, IPEndPoint local)
         {
+            this.timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(10), tcp, Tcp.Abort.Instance, ActorRefs.NoSender);
             this.tcp = tcp;
-            this.timer = new Timer(OnTimer, null, Timeout.Infinite, Timeout.Infinite);
             this.Remote = remote;
             this.Local = local;
-            timer.Change(TimeSpan.FromSeconds(10), Timeout.InfiniteTimeSpan);
         }
 
         public void Disconnect()
@@ -35,16 +36,11 @@ namespace Neo.Network.P2P
         {
             switch (message)
             {
+                case Ack _:
+                    ack = true;
+                    break;
                 case Tcp.Received received:
-                    timer.Change(TimeSpan.FromMinutes(1), Timeout.InfiniteTimeSpan);
-                    try
-                    {
-                        OnData(received.Data);
-                    }
-                    catch
-                    {
-                        tcp.Tell(Tcp.Abort.Instance);
-                    }
+                    OnReceived(received.Data);
                     break;
                 case Tcp.ConnectionClosed _:
                     Context.Stop(Self);
@@ -52,20 +48,30 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnTimer(object state)
+        private void OnReceived(ByteString data)
         {
-            tcp.Tell(Tcp.Abort.Instance);
+            timer.CancelIfNotNull();
+            timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromMinutes(1), tcp, Tcp.Abort.Instance, ActorRefs.NoSender);
+            try
+            {
+                OnData(data);
+            }
+            catch
+            {
+                tcp.Tell(Tcp.Abort.Instance);
+            }
         }
 
         protected override void PostStop()
         {
-            timer.Dispose();
+            timer.CancelIfNotNull();
             base.PostStop();
         }
 
         protected void SendData(ByteString data)
         {
-            tcp.Tell(Tcp.Write.Create(data));
+            ack = false;
+            tcp.Tell(Tcp.Write.Create(data, Ack.Instance));
         }
     }
 }

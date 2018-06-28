@@ -3,7 +3,6 @@ using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -27,8 +26,7 @@ namespace Neo.Network.P2P
         protected override int ConnectedMax => 10;
         protected override int UnconnectedMax => 1000;
 
-        public readonly IActorRef Blockchain;
-        internal readonly IActorRef TaskManager = Context.ActorOf<TaskManager>();
+        private readonly NeoSystem system;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new ConcurrentDictionary<IActorRef, RemoteNode>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private readonly HashSet<IActorRef> subscribers = new HashSet<IActorRef>();
@@ -55,13 +53,13 @@ namespace Neo.Network.P2P
             UserAgent = $"/{Assembly.GetExecutingAssembly().GetName().Name}:{Assembly.GetExecutingAssembly().GetVersion()}/";
         }
 
-        public LocalNode(Store store)
+        public LocalNode(NeoSystem system)
         {
             lock (GetType())
             {
                 if (singleton != null)
                     throw new InvalidOperationException();
-                this.Blockchain = Context.ActorOf(Ledger.Blockchain.Props(store));
+                this.system = system;
                 singleton = this;
             }
         }
@@ -156,10 +154,10 @@ namespace Neo.Network.P2P
                 case MinerTransaction _:
                     return;
                 case Transaction transaction:
-                    Blockchain.Tell(new Blockchain.NewTransaction { Transaction = transaction });
+                    system.Blockchain.Tell(new Blockchain.NewTransaction { Transaction = transaction });
                     break;
                 case Block block:
-                    Blockchain.Tell(new Blockchain.NewBlock { Block = block });
+                    system.Blockchain.Tell(new Blockchain.NewBlock { Block = block });
                     break;
                 case ConsensusPayload payload:
                     if (!payload.Verify(Ledger.Blockchain.Singleton.Snapshot)) return;
@@ -171,6 +169,7 @@ namespace Neo.Network.P2P
 
         protected override void OnReceive(object message)
         {
+            base.OnReceive(message);
             switch (message)
             {
                 case Register _:
@@ -192,10 +191,6 @@ namespace Neo.Network.P2P
                     break;
                 case Terminated terminated:
                     subscribers.Remove(terminated.ActorRef);
-                    base.OnReceive(message);
-                    break;
-                default:
-                    base.OnReceive(message);
                     break;
             }
         }
@@ -211,14 +206,14 @@ namespace Neo.Network.P2P
             Connections.Tell(new RemoteNode.Relay { Inventory = inventory });
         }
 
-        public static Props Props(Store store)
+        public static Props Props(NeoSystem system)
         {
-            return Akka.Actor.Props.Create(() => new LocalNode(store));
+            return Akka.Actor.Props.Create(() => new LocalNode(system));
         }
 
         protected override Props ProtocolProps(IActorRef tcp, IPEndPoint remote, IPEndPoint local)
         {
-            return RemoteNode.Props(tcp, remote, local);
+            return RemoteNode.Props(system, tcp, remote, local);
         }
     }
 }

@@ -1,7 +1,9 @@
 ﻿using Akka.Actor;
+using Akka.Configuration;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.IO.Actors;
 using Neo.IO.Caching;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -115,6 +117,7 @@ namespace Neo.Ledger
             }
         };
 
+        private readonly NeoSystem system;
         private readonly Store store;
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
@@ -140,8 +143,9 @@ namespace Neo.Ledger
             GenesisBlock.RebuildMerkleRoot();
         }
 
-        public Blockchain(Store store)
+        public Blockchain(NeoSystem system, Store store)
         {
+            this.system = system;
             this.store = store;
             lock (GetType())
             {
@@ -248,7 +252,7 @@ namespace Neo.Ledger
                 return RelayResultReason.AlreadyExists;
             if (block.Index - 1 >= header_index.Count)
             {
-                LocalNode.Singleton.TaskManager.Tell(new TaskManager.AllowHashes { Hashes = new[] { block.Hash } });
+                system.TaskManager.Tell(new TaskManager.AllowHashes { Hashes = new[] { block.Hash } });
                 return RelayResultReason.UnableToVerify;
             }
             if (block.Index == header_index.Count)
@@ -269,7 +273,7 @@ namespace Neo.Ledger
                     Persist(block_persist);
                     if (block_persist == block)
                         if (block.Index + 100 >= header_index.Count)
-                            Context.Parent.Tell(new LocalNode.RelayDirectly { Inventory = block });
+                            system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                     if (block_persist.Index + 1 >= header_index.Count) break;
                     UInt256 hash = header_index[(int)block_persist.Index + 1];
                     if (!block_cache.TryGetValue(hash, out block_persist)) break;
@@ -280,7 +284,7 @@ namespace Neo.Ledger
             {
                 block_cache.Add(block.Hash, block);
                 if (block.Index + 100 >= header_index.Count)
-                    Context.Parent.Tell(new LocalNode.RelayDirectly { Inventory = block });
+                    system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 if (block.Index == header_index.Count)
                 {
                     header_index.Add(block.Hash);
@@ -324,7 +328,7 @@ namespace Neo.Ledger
                 snapshot.Commit();
             }
             UpdateCurrentSnapshot();
-            LocalNode.Singleton.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
+            system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
         private RelayResultReason OnNewTransaction(Transaction transaction)
@@ -352,7 +356,7 @@ namespace Neo.Ledger
             }
             if (!mem_pool.ContainsKey(transaction.Hash))
                 return RelayResultReason.OutOfMemory;
-            Context.Parent.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
+            system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
             return RelayResultReason.Succeed;
         }
 
@@ -625,9 +629,9 @@ namespace Neo.Ledger
             }
         }
 
-        public static Props Props(Store store)
+        public static Props Props(NeoSystem system, Store store)
         {
-            return Akka.Actor.Props.Create(() => new Blockchain(store));
+            return Akka.Actor.Props.Create(() => new Blockchain(system, store)).WithMailbox("blockchain-mailbox");
         }
 
         private void SaveHeaderHashList(Snapshot snapshot = null)
@@ -657,6 +661,27 @@ namespace Neo.Ledger
         private void UpdateCurrentSnapshot()
         {
             Interlocked.Exchange(ref currentSnapshot, GetSnapshot())?.Dispose();
+        }
+    }
+
+    internal class BlockchainMailbox : PriorityMailbox
+    {
+        public BlockchainMailbox(Akka.Actor.Settings settings, Config config)
+            : base(settings, config)
+        {
+        }
+
+        protected override bool IsHighPriority(object message)
+        {
+            switch (message)
+            {
+                case Blockchain.NewHeaders _:
+                case Blockchain.NewBlock _:
+                case Terminated _:
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }

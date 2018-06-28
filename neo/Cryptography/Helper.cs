@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Neo.IO;
+using Neo.Network.P2P.Payloads;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -110,6 +112,20 @@ namespace Neo.Cryptography
         public static byte[] Sha256(this byte[] value, int offset, int count)
         {
             return _sha256.Value.ComputeHash(value, offset, count);
+        }
+
+        internal static bool Test(this BloomFilter filter, Transaction tx)
+        {
+            if (filter.Check(tx.Hash.ToArray())) return true;
+            if (tx.Outputs.Any(p => filter.Check(p.ScriptHash.ToArray()))) return true;
+            if (tx.Inputs.Any(p => filter.Check(p.ToArray()))) return true;
+            if (tx.Witnesses.Any(p => filter.Check(p.ScriptHash.ToArray())))
+                return true;
+#pragma warning disable CS0612
+            if (tx is RegisterTransaction asset)
+                if (filter.Check(asset.Admin.ToArray())) return true;
+#pragma warning restore CS0612
+            return false;
         }
 
         internal static byte[] ToAesKey(this string password)

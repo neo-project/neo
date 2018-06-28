@@ -1,4 +1,6 @@
 ﻿using Akka.Actor;
+using Akka.Configuration;
+using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -21,12 +23,18 @@ namespace Neo.Network.P2P
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
 
+        private readonly NeoSystem system;
         private readonly HashSet<UInt256> knownHashes = new HashSet<UInt256>();
         private readonly HashSet<UInt256> globalTasks = new HashSet<UInt256>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
         private bool HeaderTask => sessions.Values.Any(p => p.HeaderTask);
+
+        public TaskManager(NeoSystem system)
+        {
+            this.system = system;
+        }
 
         private void OnAllowHashes(UInt256[] hashes)
         {
@@ -135,7 +143,7 @@ namespace Neo.Network.P2P
             OnAllowHashes(payload.Hashes);
             globalTasks.ExceptWith(payload.Hashes);
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
-                Context.Parent.Tell(new LocalNode.Broadcast
+                system.LocalNode.Tell(new LocalNode.Broadcast
                 {
                     Message = Message.Create("getdata", group)
                 });
@@ -179,6 +187,11 @@ namespace Neo.Network.P2P
         {
             timer.CancelIfNotNull();
             base.PostStop();
+        }
+
+        public static Props Props(NeoSystem system)
+        {
+            return Akka.Actor.Props.Create(() => new TaskManager(system)).WithMailbox("task-manager-mailbox");
         }
 
         private void RequestTasks(TaskSession session)
@@ -228,6 +241,26 @@ namespace Neo.Network.P2P
                 {
                     Message = Message.Create("getblocks", GetBlocksPayload.Create(hash))
                 });
+            }
+        }
+    }
+
+    internal class TaskManagerMailbox : PriorityMailbox
+    {
+        public TaskManagerMailbox(Akka.Actor.Settings settings, Config config)
+            : base(settings, config)
+        {
+        }
+
+        protected override bool IsHighPriority(object message)
+        {
+            switch (message)
+            {
+                case TaskManager.AllowHashes _:
+                case TaskManager.RestartTasks _:
+                    return true;
+                default:
+                    return false;
             }
         }
     }

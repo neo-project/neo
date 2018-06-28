@@ -1,6 +1,8 @@
 ﻿using Akka.Actor;
+using Akka.Configuration;
 using Neo.Cryptography;
 using Neo.IO;
+using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -16,14 +18,16 @@ namespace Neo.Consensus
     public sealed class ConsensusService : UntypedActor
     {
         public class Start { }
-        private class Timer { public uint Height; public byte ViewNumber; }
+        internal class Timer { public uint Height; public byte ViewNumber; }
 
-        private ConsensusContext context = new ConsensusContext();
-        private Wallet wallet;
+        private readonly ConsensusContext context = new ConsensusContext();
+        private readonly NeoSystem system;
+        private readonly Wallet wallet;
         private DateTime block_received_time;
 
-        public ConsensusService(Wallet wallet)
+        public ConsensusService(NeoSystem system, Wallet wallet)
         {
+            this.system = system;
             this.wallet = wallet;
         }
 
@@ -99,7 +103,7 @@ namespace Neo.Consensus
                 sc.Verifiable.Witnesses = sc.GetWitnesses();
                 block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
                 Log($"relay block: {block.Hash}");
-                Context.Parent.Tell(new LocalNode.Relay { Inventory = block });
+                system.LocalNode.Tell(new LocalNode.Relay { Inventory = block });
                 context.State |= ConsensusState.BlockSent;
             }
         }
@@ -166,7 +170,7 @@ namespace Neo.Consensus
                 if (context.TransactionHashes.Length > 1)
                 {
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
-                        Context.Parent.Tell(new LocalNode.Broadcast
+                        system.LocalNode.Tell(new LocalNode.Broadcast
                         {
                             Message = Message.Create("inv", payload)
                         });
@@ -288,7 +292,7 @@ namespace Neo.Consensus
             if (context.Transactions.Count < context.TransactionHashes.Length)
             {
                 UInt256[] hashes = context.TransactionHashes.Where(i => !context.Transactions.ContainsKey(i)).ToArray();
-                LocalNode.Singleton.TaskManager.Tell(new TaskManager.RestartTasks
+                system.TaskManager.Tell(new TaskManager.RestartTasks
                 {
                     Payload = InvPayload.Create(InventoryType.TX, hashes)
                 });
@@ -328,8 +332,8 @@ namespace Neo.Consensus
         private void OnStart()
         {
             Log("OnStart");
-            LocalNode.Singleton.Blockchain.Tell(new Blockchain.Register());
-            Context.Parent.Tell(new LocalNode.Register());
+            system.Blockchain.Tell(new Blockchain.Register());
+            system.LocalNode.Tell(new LocalNode.Register());
             InitializeConsensus(0);
         }
 
@@ -371,9 +375,9 @@ namespace Neo.Consensus
             base.PostStop();
         }
 
-        public Props Props(Wallet wallet)
+        public static Props Props(NeoSystem system, Wallet wallet)
         {
-            return Akka.Actor.Props.Create(() => new ConsensusService(wallet));
+            return Akka.Actor.Props.Create(() => new ConsensusService(system, wallet)).WithMailbox("consensus-service-mailbox");
         }
 
         private void RequestChangeView()
@@ -399,7 +403,27 @@ namespace Neo.Consensus
                 return;
             }
             sc.Verifiable.Witnesses = sc.GetWitnesses();
-            Context.Parent.Tell(new LocalNode.RelayDirectly { Inventory = payload });
+            system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = payload });
+        }
+    }
+
+    internal class ConsensusServiceMailbox : PriorityMailbox
+    {
+        public ConsensusServiceMailbox(Akka.Actor.Settings settings, Config config)
+            : base(settings, config)
+        {
+        }
+
+        protected override bool IsHighPriority(object message)
+        {
+            switch (message)
+            {
+                case ConsensusService.Timer _:
+                case Blockchain.PersistCompleted _:
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }
