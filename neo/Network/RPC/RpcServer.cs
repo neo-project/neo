@@ -72,6 +72,29 @@ namespace Neo.Network.RPC
             return json;
         }
 
+        private static JObject GetRelayResult(RelayResultReason reason)
+        {
+            JObject json = new JObject();
+            json["succeed"] = reason == RelayResultReason.Succeed;
+            json["reason"] = reason;
+            switch (reason)
+            {
+                case RelayResultReason.AlreadyExists:
+                    json["message"] = "Block or transaction already exists and cannot be sent repeatedly.";
+                    break;
+                case RelayResultReason.OutOfMemory:
+                    json["message"] = "The memory pool is full and no more transactions can be sent.";
+                    break;
+                case RelayResultReason.UnableToVerify:
+                    json["message"] = "The block cannot be validated.";
+                    break;
+                case RelayResultReason.Invalid:
+                    json["message"] = "Block or transaction validation failed.";
+                    break;
+            }
+            return json;
+        }
+
         protected virtual JObject Process(string method, JArray _params)
         {
             switch (method)
@@ -242,13 +265,13 @@ namespace Neo.Network.RPC
                     {
                         Transaction tx = Transaction.DeserializeFrom(_params[0].AsString().HexToBytes());
                         RelayResultReason reason = LocalNode.Ask<Blockchain.RelayResult>(new Blockchain.NewTransaction { Transaction = tx }).Result.Reason;
-                        return reason == RelayResultReason.Succeed;
+                        return GetRelayResult(reason);
                     }
                 case "submitblock":
                     {
                         Block block = _params[0].AsString().HexToBytes().AsSerializable<Block>();
                         RelayResultReason reason = LocalNode.Ask<Blockchain.RelayResult>(new Blockchain.NewBlock { Block = block }).Result.Reason;
-                        return reason == RelayResultReason.Succeed;
+                        return GetRelayResult(reason);
                     }
                 case "validateaddress":
                     {
