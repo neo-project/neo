@@ -11,7 +11,7 @@ namespace Neo.Network.P2P
 {
     public abstract class Peer : UntypedActor
     {
-        public class Start { public int Port; }
+        public class Start { public int Port; public int WsPort; }
         public class Peers { public IEnumerable<IPEndPoint> EndPoints; }
         public class Connect { public IPEndPoint EndPoint; }
         private class Timer { }
@@ -85,7 +85,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case Start start:
-                    OnStart(start.Port);
+                    OnStart(start.Port, start.WsPort);
                     break;
                 case Timer _:
                     OnTimer();
@@ -108,7 +108,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnStart(int port)
+        private void OnStart(int port, int ws_port)
         {
             ListenerPort = port;
             timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);

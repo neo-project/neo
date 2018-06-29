@@ -14,7 +14,7 @@ using System.Security.Cryptography;
 
 namespace Neo.Wallets.SQLite
 {
-    public class UserWallet : Wallet, IDisposable
+    public class UserWallet : Wallet
     {
         public override event EventHandler<BalanceEventArgs> BalanceChanged;
 
@@ -290,7 +290,7 @@ namespace Neo.Wallets.SQLite
             return false;
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             WalletIndexer.BalanceChanged -= WalletIndexer_BalanceChanged;
         }

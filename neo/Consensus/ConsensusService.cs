@@ -81,7 +81,7 @@ namespace Neo.Consensus
 
         private bool CheckPolicy(Transaction tx)
         {
-            foreach (PolicyPlugin plugin in PolicyPlugin.Instances)
+            foreach (IPolicyPlugin plugin in Plugin.Policies)
                 if (!plugin.CheckPolicy(tx))
                     return false;
             return true;
@@ -111,7 +111,7 @@ namespace Neo.Consensus
         private void FillContext()
         {
             IEnumerable<Transaction> mem_pool = Blockchain.Singleton.GetMemoryPool().Where(p => CheckPolicy(p));
-            foreach (PolicyPlugin plugin in PolicyPlugin.Instances)
+            foreach (IPolicyPlugin plugin in Plugin.Policies)
                 mem_pool = plugin.Filter(mem_pool);
             List<Transaction> transactions = mem_pool.ToList();
             Fixed8 amount_netfee = Block.CalculateNetFee(transactions);
@@ -190,7 +190,7 @@ namespace Neo.Consensus
 
         private void Log(string message, LogLevel level = LogLevel.Info)
         {
-            LogPlugin.Log(nameof(ConsensusService), level, message);
+            Plugin.Log(nameof(ConsensusService), level, message);
         }
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)

@@ -12,7 +12,7 @@ using UserWallet = Neo.Wallets.SQLite.UserWallet;
 
 namespace Neo.Wallets.NEP6
 {
-    public class NEP6Wallet : Wallet, IDisposable
+    public class NEP6Wallet : Wallet
     {
         public override event EventHandler<BalanceEventArgs> BalanceChanged;
 
@@ -180,7 +180,7 @@ namespace Neo.Wallets.NEP6
             return removed;
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             WalletIndexer.BalanceChanged -= WalletIndexer_BalanceChanged;
         }

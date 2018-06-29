@@ -4,6 +4,7 @@ using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.RPC;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.Wallets;
 using System;
 
@@ -11,7 +12,7 @@ namespace Neo
 {
     public class NeoSystem : IDisposable
     {
-        private readonly ActorSystem actorSystem = ActorSystem.Create(nameof(NeoSystem),
+        public readonly ActorSystem ActorSystem = ActorSystem.Create(nameof(NeoSystem),
             $"akka {{ log-dead-letters = off }}" +
             $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
             $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
@@ -26,32 +27,37 @@ namespace Neo
 
         public NeoSystem(Store store)
         {
-            this.Blockchain = actorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
-            this.LocalNode = actorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
-            this.TaskManager = actorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
+            this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
+            this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
+            this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
+            Plugin.LoadPlugins(this);
         }
 
         public void Dispose()
         {
             rpcServer?.Dispose();
-            actorSystem.Dispose();
+            ActorSystem.Dispose();
         }
 
         public void StartConsensus(Wallet wallet)
         {
-            consensus = actorSystem.ActorOf(ConsensusService.Props(this, wallet));
+            consensus = ActorSystem.ActorOf(ConsensusService.Props(this, wallet));
             consensus.Tell(new ConsensusService.Start());
         }
 
-        public void StartNode(int port)
+        public void StartNode(int port = 0, int ws_port = 0)
         {
-            LocalNode.Tell(new Peer.Start { Port = port });
+            LocalNode.Tell(new Peer.Start
+            {
+                Port = port,
+                WsPort = ws_port
+            });
         }
 
-        public void StartRpc(int port)
+        public void StartRpc(int port, string sslCert = null, string password = null)
         {
             rpcServer = new RpcServer(this);
-            rpcServer.Start(port);
+            rpcServer.Start(port, sslCert, password);
         }
     }
 }
