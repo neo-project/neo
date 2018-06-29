@@ -25,12 +25,12 @@ namespace Neo.Network.RPC
 {
     public class RpcServer : IDisposable
     {
-        protected readonly IActorRef LocalNode;
+        protected readonly NeoSystem System;
         private IWebHost host;
 
-        public RpcServer(IActorRef localNode)
+        public RpcServer(NeoSystem system)
         {
-            this.LocalNode = localNode;
+            this.System = system;
         }
 
         private static JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
@@ -264,13 +264,13 @@ namespace Neo.Network.RPC
                 case "sendrawtransaction":
                     {
                         Transaction tx = Transaction.DeserializeFrom(_params[0].AsString().HexToBytes());
-                        RelayResultReason reason = LocalNode.Ask<Blockchain.RelayResult>(new Blockchain.NewTransaction { Transaction = tx }).Result.Reason;
+                        RelayResultReason reason = System.Blockchain.Ask<Blockchain.RelayResult>(new Blockchain.NewTransaction { Transaction = tx }).Result.Reason;
                         return GetRelayResult(reason);
                     }
                 case "submitblock":
                     {
                         Block block = _params[0].AsString().HexToBytes().AsSerializable<Block>();
-                        RelayResultReason reason = LocalNode.Ask<Blockchain.RelayResult>(new Blockchain.NewBlock { Block = block }).Result.Reason;
+                        RelayResultReason reason = System.Blockchain.Ask<Blockchain.RelayResult>(new Blockchain.NewBlock { Block = block }).Result.Reason;
                         return GetRelayResult(reason);
                     }
                 case "validateaddress":

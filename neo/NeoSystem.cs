@@ -50,7 +50,7 @@ namespace Neo
 
         public void StartRpc(int port)
         {
-            rpcServer = new RpcServer(LocalNode);
+            rpcServer = new RpcServer(this);
             rpcServer.Start(port);
         }
     }
