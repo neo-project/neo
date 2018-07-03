@@ -128,6 +128,11 @@ namespace Neo.Network.P2P
             return RemoteNodes.Values;
         }
 
+        public IEnumerable<IPEndPoint> GetUnconnectedPeers()
+        {
+            return UnconnectedPeers;
+        }
+
         protected override void NeedMorePeers(int count)
         {
             count = Math.Max(count, 5);

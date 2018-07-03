@@ -22,8 +22,8 @@ namespace Neo.Network.P2P
         private readonly NeoSystem system;
         private readonly IActorRef protocol;
         private ByteString msg_buffer = ByteString.Empty;
-        private Queue<Message> message_queue_high = new Queue<Message>();
-        private Queue<Message> message_queue_low = new Queue<Message>();
+        private readonly Queue<Message> message_queue_high = new Queue<Message>();
+        private readonly Queue<Message> message_queue_low = new Queue<Message>();
         private BloomFilter bloom_filter;
         private bool verack = false;
 

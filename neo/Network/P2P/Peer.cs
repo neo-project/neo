@@ -1,7 +1,9 @@
 ﻿using Akka.Actor;
 using Akka.IO;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -24,9 +26,8 @@ namespace Neo.Network.P2P
 
         private static readonly HashSet<IPAddress> localAddresses = new HashSet<IPAddress>();
         private readonly Dictionary<IPAddress, int> ConnectedAddresses = new Dictionary<IPAddress, int>();
-        protected readonly Dictionary<IActorRef, IPEndPoint> ConnectedPeers = new Dictionary<IActorRef, IPEndPoint>();
-        protected readonly HashSet<IPEndPoint> UnconnectedPeers = new HashSet<IPEndPoint>();
-        //TODO: badPeers
+        protected readonly ConcurrentDictionary<IActorRef, IPEndPoint> ConnectedPeers = new ConcurrentDictionary<IActorRef, IPEndPoint>();
+        protected ImmutableHashSet<IPEndPoint> UnconnectedPeers = ImmutableHashSet<IPEndPoint>.Empty;
 
         public int ListenerPort { get; private set; }
         protected abstract int ConnectedMax { get; }
@@ -42,7 +43,7 @@ namespace Neo.Network.P2P
             if (UnconnectedPeers.Count < UnconnectedMax)
             {
                 peers = peers.Where(p => p.Port != ListenerPort || !localAddresses.Contains(p.Address));
-                UnconnectedPeers.UnionWith(peers);
+                ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Union(peers));
             }
         }
 
@@ -75,7 +76,7 @@ namespace Neo.Network.P2P
             Sender.Tell(new Tcp.Register(connection));
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             ConnectedAddresses[remote.Address] = ++count;
-            ConnectedPeers.Add(connection, remote);
+            ConnectedPeers.TryAdd(connection, remote);
             if (count > MaxConnectionsPerAddress)
                 Sender.Tell(Tcp.Abort.Instance);
         }
@@ -130,7 +131,7 @@ namespace Neo.Network.P2P
 
         private void OnTerminated(IActorRef actorRef)
         {
-            if (ConnectedPeers.TryGetValue(actorRef, out IPEndPoint endPoint))
+            if (ConnectedPeers.TryRemove(actorRef, out IPEndPoint endPoint))
             {
                 ConnectedAddresses.TryGetValue(endPoint.Address, out int count);
                 if (count > 0) count--;
@@ -138,7 +139,6 @@ namespace Neo.Network.P2P
                     ConnectedAddresses.Remove(endPoint.Address);
                 else
                     ConnectedAddresses[endPoint.Address] = count;
-                ConnectedPeers.Remove(actorRef);
             }
         }
 
@@ -148,10 +148,10 @@ namespace Neo.Network.P2P
             if (UnconnectedPeers.Count == 0)
                 NeedMorePeers(ConnectedMax - ConnectedPeers.Count);
             IPEndPoint[] endpoints = UnconnectedPeers.Take(ConnectedMax - ConnectedPeers.Count).ToArray();
+            ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Except(endpoints));
             foreach (IPEndPoint endpoint in endpoints)
             {
                 ConnectToPeer(endpoint);
-                UnconnectedPeers.Remove(endpoint);
             }
         }
 

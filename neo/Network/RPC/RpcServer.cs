@@ -245,45 +245,21 @@ namespace Neo.Network.RPC
                 case "getpeers":
                     {
                         JObject json = new JObject();
-
+                        json["unconnected"] = new JArray(LocalNode.Singleton.GetUnconnectedPeers().Select(p =>
                         {
-                            JArray unconnectedPeers = new JArray();
-                            //TODO: unconnectedPeers
-                            //foreach (IPEndPoint peer in LocalNode.GetUnconnectedPeers())
-                            //{
-                            //    JObject peerJson = new JObject();
-                            //    peerJson["address"] = peer.Address.ToString();
-                            //    peerJson["port"] = peer.Port;
-                            //    unconnectedPeers.Add(peerJson);
-                            //}
-                            json["unconnected"] = unconnectedPeers;
-                        }
-
+                            JObject peerJson = new JObject();
+                            peerJson["address"] = p.Address.ToString();
+                            peerJson["port"] = p.Port;
+                            return peerJson;
+                        }));
+                        json["bad"] = new JArray(); //badpeers has been removed
+                        json["connected"] = new JArray(LocalNode.Singleton.GetRemoteNodes().Select(p =>
                         {
-                            JArray badPeers = new JArray();
-                            //TODO: badPeers
-                            //foreach (IPEndPoint peer in LocalNode.GetBadPeers())
-                            //{
-                            //    JObject peerJson = new JObject();
-                            //    peerJson["address"] = peer.Address.ToString();
-                            //    peerJson["port"] = peer.Port;
-                            //    badPeers.Add(peerJson);
-                            //}
-                            json["bad"] = badPeers;
-                        }
-
-                        {
-                            JArray connectedPeers = new JArray();
-                            foreach (RemoteNode node in LocalNode.Singleton.GetRemoteNodes())
-                            {
-                                JObject peerJson = new JObject();
-                                peerJson["address"] = node.Remote.Address.ToString();
-                                peerJson["port"] = node.ListenerPort;
-                                connectedPeers.Add(peerJson);
-                            }
-                            json["connected"] = connectedPeers;
-                        }
-
+                            JObject peerJson = new JObject();
+                            peerJson["address"] = p.Remote.Address.ToString();
+                            peerJson["port"] = p.ListenerPort;
+                            return peerJson;
+                        }));
                         return json;
                     }
                 case "getrawmempool":
