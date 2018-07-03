@@ -1,5 +1,8 @@
 ﻿using Akka.Actor;
 using Akka.IO;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,6 +11,8 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Net.WebSockets;
+using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
 {
@@ -17,10 +22,12 @@ namespace Neo.Network.P2P
         public class Peers { public IEnumerable<IPEndPoint> EndPoints; }
         public class Connect { public IPEndPoint EndPoint; }
         private class Timer { }
+        private class WsConnected { public WebSocket Socket; public IPEndPoint Remote; public IPEndPoint Local; }
 
         private const int MaxConnectionsPerAddress = 3;
 
         private static readonly IActorRef tcp = Context.System.Tcp();
+        private IWebHost ws_host;
         private ICancelable timer;
         protected ActorSelection Connections => Context.ActorSelection("connection_*");
 
@@ -67,20 +74,6 @@ namespace Neo.Network.P2P
 
         protected abstract void NeedMorePeers(int count);
 
-        private void OnConnected(IPEndPoint remote, IPEndPoint local)
-        {
-            IActorRef connection = Context.ActorOf(
-                props: ProtocolProps(Sender, remote, local),
-                name: $"connection_{Guid.NewGuid()}");
-            Context.Watch(connection);
-            Sender.Tell(new Tcp.Register(connection));
-            ConnectedAddresses.TryGetValue(remote.Address, out int count);
-            ConnectedAddresses[remote.Address] = ++count;
-            ConnectedPeers.TryAdd(connection, remote);
-            if (count > MaxConnectionsPerAddress)
-                Sender.Tell(Tcp.Abort.Instance);
-        }
-
         protected override void OnReceive(object message)
         {
             switch (message)
@@ -97,8 +90,11 @@ namespace Neo.Network.P2P
                 case Connect connect:
                     ConnectToPeer(connect.EndPoint);
                     break;
+                case WsConnected ws:
+                    OnWsConnected(ws.Socket, ws.Remote, ws.Local);
+                    break;
                 case Tcp.Connected connected:
-                    OnConnected(((IPEndPoint)connected.RemoteAddress).Unmap(), ((IPEndPoint)connected.LocalAddress).Unmap());
+                    OnTcpConnected(((IPEndPoint)connected.RemoteAddress).Unmap(), ((IPEndPoint)connected.LocalAddress).Unmap());
                     break;
                 case Tcp.Bound _:
                 case Tcp.CommandFailed _:
@@ -113,19 +109,45 @@ namespace Neo.Network.P2P
         {
             ListenerPort = port;
             timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
-            if (ListenerPort > 0)
+            if ((port > 0 || ws_port > 0)
+                && localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
+                && UPnP.Discover())
             {
-                if (localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p)) && UPnP.Discover())
+                try
                 {
-                    try
-                    {
-                        localAddresses.Add(UPnP.GetExternalIP());
-                        UPnP.ForwardPort(ListenerPort, ProtocolType.Tcp, "NEO");
-                    }
-                    catch { }
+                    localAddresses.Add(UPnP.GetExternalIP());
+                    if (port > 0)
+                        UPnP.ForwardPort(port, ProtocolType.Tcp, "NEO");
+                    if (ws_port > 0)
+                        UPnP.ForwardPort(ws_port, ProtocolType.Tcp, "NEO WebSocket");
                 }
-                tcp.Tell(new Tcp.Bind(Self, new IPEndPoint(IPAddress.Any, ListenerPort), options: new[] { new Inet.SO.ReuseAddress(true) }));
-                //TODO: Websocket
+                catch { }
+            }
+            if (port > 0)
+            {
+                tcp.Tell(new Tcp.Bind(Self, new IPEndPoint(IPAddress.Any, port), options: new[] { new Inet.SO.ReuseAddress(true) }));
+            }
+            if (ws_port > 0)
+            {
+                ws_host = new WebHostBuilder().UseKestrel().UseUrls($"http://*:{ws_port}").Configure(app => app.UseWebSockets().Run(ProcessWebSocketAsync)).Build();
+                ws_host.Start();
+            }
+        }
+
+        private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
+        {
+            ConnectedAddresses.TryGetValue(remote.Address, out int count);
+            if (count >= MaxConnectionsPerAddress)
+            {
+                Sender.Tell(Tcp.Abort.Instance);
+            }
+            else
+            {
+                ConnectedAddresses[remote.Address] = count + 1;
+                IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
+                Context.Watch(connection);
+                Sender.Tell(new Tcp.Register(connection));
+                ConnectedPeers.TryAdd(connection, remote);
             }
         }
 
@@ -155,12 +177,38 @@ namespace Neo.Network.P2P
             }
         }
 
+        private void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local)
+        {
+            ConnectedAddresses.TryGetValue(remote.Address, out int count);
+            if (count >= MaxConnectionsPerAddress)
+            {
+                ws.Abort();
+            }
+            else
+            {
+                ConnectedAddresses[remote.Address] = count + 1;
+                Context.ActorOf(ProtocolProps(ws, remote, local), $"connection_{Guid.NewGuid()}");
+            }
+        }
+
         protected override void PostStop()
         {
             timer.CancelIfNotNull();
             base.PostStop();
         }
 
-        protected abstract Props ProtocolProps(IActorRef tcp, IPEndPoint remote, IPEndPoint local);
+        private async Task ProcessWebSocketAsync(HttpContext context)
+        {
+            if (!context.WebSockets.IsWebSocketRequest) return;
+            WebSocket ws = await context.WebSockets.AcceptWebSocketAsync();
+            Self.Tell(new WsConnected
+            {
+                Socket = ws,
+                Remote = new IPEndPoint(context.Connection.RemoteIpAddress, context.Connection.RemotePort),
+                Local = new IPEndPoint(context.Connection.LocalIpAddress, context.Connection.LocalPort)
+            });
+        }
+
+        protected abstract Props ProtocolProps(object connection, IPEndPoint remote, IPEndPoint local);
     }
 }

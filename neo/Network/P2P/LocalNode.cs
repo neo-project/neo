@@ -216,9 +216,9 @@ namespace Neo.Network.P2P
             return Akka.Actor.Props.Create(() => new LocalNode(system));
         }
 
-        protected override Props ProtocolProps(IActorRef tcp, IPEndPoint remote, IPEndPoint local)
+        protected override Props ProtocolProps(object connection, IPEndPoint remote, IPEndPoint local)
         {
-            return RemoteNode.Props(system, tcp, remote, local);
+            return RemoteNode.Props(system, connection, remote, local);
         }
     }
 }

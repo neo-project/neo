@@ -21,9 +21,10 @@ namespace Neo.Network.P2P
 
         private readonly NeoSystem system;
         private readonly IActorRef protocol;
-        private ByteString msg_buffer = ByteString.Empty;
         private readonly Queue<Message> message_queue_high = new Queue<Message>();
         private readonly Queue<Message> message_queue_low = new Queue<Message>();
+        private ByteString msg_buffer = ByteString.Empty;
+        private bool ack = true;
         private BloomFilter bloom_filter;
         private bool verack = false;
 
@@ -31,8 +32,8 @@ namespace Neo.Network.P2P
         public override int ListenerPort => Version?.Port ?? 0;
         public VersionPayload Version { get; private set; }
 
-        public RemoteNode(NeoSystem system, IActorRef tcp, IPEndPoint remote, IPEndPoint local)
-            : base(tcp, remote, local)
+        public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
+            : base(connection, remote, local)
         {
             this.system = system;
             this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
@@ -88,6 +89,12 @@ namespace Neo.Network.P2P
             CheckMessageQueue();
         }
 
+        protected override void OnAck()
+        {
+            ack = true;
+            CheckMessageQueue();
+        }
+
         protected override void OnData(ByteString data)
         {
             msg_buffer = msg_buffer.Concat(data);
@@ -116,9 +123,6 @@ namespace Neo.Network.P2P
                     break;
                 case Relay relay:
                     OnRelay(relay.Inventory);
-                    break;
-                case Ack _:
-                    CheckMessageQueue();
                     break;
                 case ProtocolHandler.SetVersion setVersion:
                     OnSetVersion(setVersion.Version);
@@ -160,12 +164,12 @@ namespace Neo.Network.P2P
             this.Version = version;
             if (version.Nonce == LocalNode.Nonce)
             {
-                tcp.Tell(Tcp.Abort.Instance);
+                Disconnect(true);
                 return;
             }
             if (LocalNode.Singleton.RemoteNodes.Values.Where(p => p != this).Any(p => p.Remote.Address.Equals(Remote.Address) && p.Version?.Nonce == version.Nonce))
             {
-                tcp.Tell(Tcp.Abort.Instance);
+                Disconnect(true);
                 return;
             }
             SendMessage(Message.Create("verack"));
@@ -177,13 +181,14 @@ namespace Neo.Network.P2P
             base.PostStop();
         }
 
-        internal static Props Props(NeoSystem system, IActorRef tcp, IPEndPoint remote, IPEndPoint local)
+        internal static Props Props(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
         {
-            return Akka.Actor.Props.Create(() => new RemoteNode(system, tcp, remote, local)).WithMailbox("remote-node-mailbox");
+            return Akka.Actor.Props.Create(() => new RemoteNode(system, connection, remote, local)).WithMailbox("remote-node-mailbox");
         }
 
         private void SendMessage(Message message)
         {
+            ack = false;
             SendData(ByteString.FromBytes(message.ToArray()));
         }
 
@@ -191,7 +196,7 @@ namespace Neo.Network.P2P
         {
             return new OneForOneStrategy(ex =>
             {
-                tcp.Tell(Tcp.Abort.Instance);
+                Disconnect(true);
                 return Directive.Stop;
             });
         }
@@ -209,6 +214,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case Tcp.ConnectionClosed _:
+                case Connection.Timer _:
                 case Connection.Ack _:
                     return true;
                 default:
