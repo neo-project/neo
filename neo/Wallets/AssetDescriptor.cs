@@ -30,7 +30,7 @@ namespace Neo.Wallets
             }
             else
             {
-                AssetState state = Blockchain.Singleton.Snapshot.Assets[(UInt256)asset_id];
+                AssetState state = Blockchain.Singleton.Store.GetAssets()[(UInt256)asset_id];
                 this.AssetId = state.AssetId;
                 this.AssetName = state.GetName();
                 this.Decimals = state.Precision;

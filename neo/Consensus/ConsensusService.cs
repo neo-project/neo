@@ -6,6 +6,7 @@ using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.Wallets;
@@ -33,8 +34,8 @@ namespace Neo.Consensus
 
         private bool AddTransaction(Transaction tx, bool verify)
         {
-            if (Blockchain.Singleton.Snapshot.ContainsTransaction(tx.Hash) ||
-                (verify && !tx.Verify(Blockchain.Singleton.Snapshot, context.Transactions.Values)) ||
+            if (context.Snapshot.ContainsTransaction(tx.Hash) ||
+                (verify && !tx.Verify(context.Snapshot, context.Transactions.Values)) ||
                 !CheckPolicy(tx))
             {
                 Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
@@ -44,7 +45,7 @@ namespace Neo.Consensus
             context.Transactions[tx.Hash] = tx;
             if (context.TransactionHashes.Length == context.Transactions.Count)
             {
-                if (Blockchain.GetConsensusAddress(Blockchain.Singleton.Snapshot.GetValidators(context.Transactions.Values).ToArray()).Equals(context.NextConsensus))
+                if (Blockchain.GetConsensusAddress(context.Snapshot.GetValidators(context.Transactions.Values).ToArray()).Equals(context.NextConsensus))
                 {
                     Log($"send prepare response");
                     context.State |= ConsensusState.SignatureSent;
@@ -132,7 +133,7 @@ namespace Neo.Consensus
                     Outputs = outputs,
                     Witnesses = new Witness[0]
                 };
-                if (!Blockchain.Singleton.Snapshot.ContainsTransaction(tx.Hash))
+                if (!context.Snapshot.ContainsTransaction(tx.Hash))
                 {
                     context.Nonce = nonce;
                     transactions.Insert(0, tx);
@@ -141,7 +142,7 @@ namespace Neo.Consensus
             }
             context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             context.Transactions = transactions.ToDictionary(p => p.Hash);
-            context.NextConsensus = Blockchain.GetConsensusAddress(Blockchain.Singleton.Snapshot.GetValidators(transactions).ToArray());
+            context.NextConsensus = Blockchain.GetConsensusAddress(context.Snapshot.GetValidators(transactions).ToArray());
         }
 
         private static ulong GetNonce()
@@ -170,10 +171,7 @@ namespace Neo.Consensus
                 if (context.TransactionHashes.Length > 1)
                 {
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
-                        system.LocalNode.Tell(new LocalNode.Broadcast
-                        {
-                            Message = Message.Create("inv", payload)
-                        });
+                        system.LocalNode.Tell(Message.Create("inv", payload));
                 }
                 TimeSpan span = DateTime.Now - block_received_time;
                 if (span >= Blockchain.TimePerBlock)
@@ -209,9 +207,9 @@ namespace Neo.Consensus
                 return;
             if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
             {
-                if (Blockchain.Singleton.Snapshot.Height + 1 < payload.BlockIndex)
+                if (context.Snapshot.Height + 1 < payload.BlockIndex)
                 {
-                    Log($"chain sync: expected={payload.BlockIndex} current: {Blockchain.Singleton.Snapshot.Height} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
+                    Log($"chain sync: expected={payload.BlockIndex} current: {context.Snapshot.Height} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
                 }
                 return;
             }
@@ -241,19 +239,6 @@ namespace Neo.Consensus
             }
         }
 
-        private void OnInventoryReceived(IInventory inventory)
-        {
-            switch (inventory)
-            {
-                case Transaction transaction:
-                    OnTransaction(transaction);
-                    break;
-                case ConsensusPayload payload:
-                    OnConsensusPayload(payload);
-                    break;
-            }
-        }
-
         private void OnPersistCompleted(Block block)
         {
             Log($"persist block: {block.Hash}");
@@ -267,7 +252,7 @@ namespace Neo.Consensus
             if (!context.State.HasFlag(ConsensusState.Backup) || context.State.HasFlag(ConsensusState.RequestReceived))
                 return;
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
-            if (payload.Timestamp <= Blockchain.Singleton.Snapshot.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.Now.AddMinutes(10).ToTimestamp())
+            if (payload.Timestamp <= context.Snapshot.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.Now.AddMinutes(10).ToTimestamp())
             {
                 Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
                 return;
@@ -320,11 +305,14 @@ namespace Neo.Consensus
                 case Timer timer:
                     OnTimer(timer);
                     break;
+                case ConsensusPayload payload:
+                    OnConsensusPayload(payload);
+                    break;
+                case Transaction transaction:
+                    OnTransaction(transaction);
+                    break;
                 case Blockchain.PersistCompleted completed:
                     OnPersistCompleted(completed.Block);
-                    break;
-                case LocalNode.InventoryReceived received:
-                    OnInventoryReceived(received.Inventory);
                     break;
             }
         }
@@ -332,8 +320,6 @@ namespace Neo.Consensus
         private void OnStart()
         {
             Log("OnStart");
-            system.Blockchain.Tell(new Blockchain.Register());
-            system.LocalNode.Tell(new LocalNode.Register());
             InitializeConsensus(0);
         }
 
@@ -347,7 +333,7 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.RequestSent;
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
-                    context.Timestamp = Math.Max(DateTime.Now.ToTimestamp(), Blockchain.Singleton.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
+                    context.Timestamp = Math.Max(DateTime.Now.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
                     context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
                 }
                 SignAndRelay(context.MakePrepareRequest());
@@ -372,6 +358,7 @@ namespace Neo.Consensus
         protected override void PostStop()
         {
             Log("OnStop");
+            context.Dispose();
             base.PostStop();
         }
 
@@ -418,6 +405,7 @@ namespace Neo.Consensus
         {
             switch (message)
             {
+                case ConsensusPayload _:
                 case ConsensusService.Timer _:
                 case Blockchain.PersistCompleted _:
                     return true;

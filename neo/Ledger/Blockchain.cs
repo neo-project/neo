@@ -26,10 +26,6 @@ namespace Neo.Ledger
         public class PersistCompleted { public Block Block; }
         public class Import { public IEnumerable<Block> Blocks; }
         public class ImportCompleted { }
-        public class NewHeaders { public Header[] Headers; }
-        public class NewBlock { public Block Block; }
-        public class NewTransaction { public Transaction Transaction; }
-        public class RelayResult { public RelayResultReason Reason; }
 
         public static readonly uint SecondsPerBlock = Settings.Default.SecondsPerBlock;
         public const uint DecrementInterval = 2000000;
@@ -118,15 +114,19 @@ namespace Neo.Ledger
         };
 
         private readonly NeoSystem system;
-        private readonly Store store;
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly ConcurrentDictionary<UInt256, Transaction> mem_pool = new ConcurrentDictionary<UInt256, Transaction>();
+        internal readonly RelayCache RelayCache = new RelayCache(100);
         private readonly HashSet<IActorRef> subscribers = new HashSet<IActorRef>();
         private Snapshot currentSnapshot;
 
-        public Snapshot Snapshot => currentSnapshot;
+        public Store Store { get; }
+        public uint Height => currentSnapshot.Height;
+        public uint HeaderHeight => (uint)header_index.Count - 1;
+        public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
+        public UInt256 CurrentHeaderHash => header_index[header_index.Count - 1];
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -146,7 +146,7 @@ namespace Neo.Ledger
         public Blockchain(NeoSystem system, Store store)
         {
             this.system = system;
-            this.store = store;
+            this.Store = store;
             lock (GetType())
             {
                 if (singleton != null)
@@ -181,13 +181,13 @@ namespace Neo.Ledger
         public bool ContainsBlock(UInt256 hash)
         {
             if (block_cache.ContainsKey(hash)) return true;
-            return Snapshot.ContainsBlock(hash);
+            return Store.ContainsBlock(hash);
         }
 
         public bool ContainsTransaction(UInt256 hash)
         {
             if (mem_pool.ContainsKey(hash)) return true;
-            return Snapshot.ContainsTransaction(hash);
+            return Store.ContainsTransaction(hash);
         }
 
         private void Distribute(object message)
@@ -200,7 +200,7 @@ namespace Neo.Ledger
         {
             if (block_cache.TryGetValue(hash, out Block block))
                 return block;
-            return Snapshot.GetBlock(hash);
+            return Store.GetBlock(hash);
         }
 
         public UInt256 GetBlockHash(uint index)
@@ -221,22 +221,22 @@ namespace Neo.Ledger
 
         public Snapshot GetSnapshot()
         {
-            return store.GetSnapshot();
+            return Store.GetSnapshot();
         }
 
         public Transaction GetTransaction(UInt256 hash)
         {
             if (mem_pool.TryGetValue(hash, out Transaction transaction))
                 return transaction;
-            return Snapshot.GetTransaction(hash);
+            return Store.GetTransaction(hash);
         }
 
         private void OnImport(IEnumerable<Block> blocks)
         {
             foreach (Block block in blocks)
             {
-                if (block.Index <= Snapshot.Height) continue;
-                if (block.Index != Snapshot.Height + 1)
+                if (block.Index <= Height) continue;
+                if (block.Index != Height + 1)
                     throw new InvalidOperationException();
                 Persist(block);
                 SaveHeaderHashList();
@@ -246,7 +246,7 @@ namespace Neo.Ledger
 
         private RelayResultReason OnNewBlock(Block block)
         {
-            if (block.Index <= Snapshot.Height)
+            if (block.Index <= Height)
                 return RelayResultReason.AlreadyExists;
             if (block_cache.ContainsKey(block.Hash))
                 return RelayResultReason.AlreadyExists;
@@ -257,7 +257,7 @@ namespace Neo.Ledger
             }
             if (block.Index == header_index.Count)
             {
-                if (!block.Verify(Snapshot))
+                if (!block.Verify(currentSnapshot))
                     return RelayResultReason.Invalid;
             }
             else
@@ -265,7 +265,7 @@ namespace Neo.Ledger
                 if (!block.Hash.Equals(header_index[(int)block.Index]))
                     return RelayResultReason.Invalid;
             }
-            if (block.Index == Snapshot.Height + 1)
+            if (block.Index == Height + 1)
             {
                 Block block_persist = block;
                 while (true)
@@ -306,6 +306,15 @@ namespace Neo.Ledger
             return RelayResultReason.Succeed;
         }
 
+        private RelayResultReason OnNewConsensus(ConsensusPayload payload)
+        {
+            if (!payload.Verify(currentSnapshot)) return RelayResultReason.Invalid;
+            system.Consensus?.Tell(payload);
+            RelayCache.Add(payload);
+            system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = payload });
+            return RelayResultReason.Succeed;
+        }
+
         private void OnNewHeaders(Header[] headers)
         {
             using (Snapshot snapshot = GetSnapshot())
@@ -336,11 +345,9 @@ namespace Neo.Ledger
             const int MemoryPoolSize = 50000;
             if (transaction.Type == TransactionType.MinerTransaction)
                 return RelayResultReason.Invalid;
-            if (mem_pool.ContainsKey(transaction.Hash))
+            if (ContainsTransaction(transaction.Hash))
                 return RelayResultReason.AlreadyExists;
-            if (Snapshot.ContainsTransaction(transaction.Hash))
-                return RelayResultReason.AlreadyExists;
-            if (!transaction.Verify(Snapshot, mem_pool.Values))
+            if (!transaction.Verify(currentSnapshot, mem_pool.Values))
                 return RelayResultReason.Invalid;
             mem_pool.TryAdd(transaction.Hash, transaction);
             if (mem_pool.Count > MemoryPoolSize)
@@ -369,10 +376,12 @@ namespace Neo.Ledger
             mem_pool.Clear();
             foreach (Transaction tx in remain)
             {
-                if (!tx.Verify(Snapshot, mem_pool.Values)) continue;
+                if (!tx.Verify(currentSnapshot, mem_pool.Values)) continue;
                 mem_pool.TryAdd(tx.Hash, tx);
             }
-            Distribute(new PersistCompleted { Block = block });
+            PersistCompleted completed = new PersistCompleted { Block = block };
+            system.Consensus?.Tell(completed);
+            Distribute(completed);
         }
 
         protected override void OnReceive(object message)
@@ -385,14 +394,17 @@ namespace Neo.Ledger
                 case Import import:
                     OnImport(import.Blocks);
                     break;
-                case NewHeaders newHeaders:
-                    OnNewHeaders(newHeaders.Headers);
+                case Header[] headers:
+                    OnNewHeaders(headers);
                     break;
-                case NewBlock newBlock:
-                    Sender.Tell(new RelayResult { Reason = OnNewBlock(newBlock.Block) });
+                case Block block:
+                    Sender.Tell(OnNewBlock(block));
                     break;
-                case NewTransaction newTransaction:
-                    Sender.Tell(new RelayResult { Reason = OnNewTransaction(newTransaction.Transaction) });
+                case Transaction transaction:
+                    Sender.Tell(OnNewTransaction(transaction));
+                    break;
+                case ConsensusPayload payload:
+                    Sender.Tell(OnNewConsensus(payload));
                     break;
                 case Terminated terminated:
                     subscribers.Remove(terminated.ActorRef);
@@ -675,8 +687,9 @@ namespace Neo.Ledger
         {
             switch (message)
             {
-                case Blockchain.NewHeaders _:
-                case Blockchain.NewBlock _:
+                case Header[] _:
+                case Block _:
+                case ConsensusPayload _:
                 case Terminated _:
                     return true;
                 default:

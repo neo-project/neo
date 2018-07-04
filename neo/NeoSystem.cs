@@ -22,7 +22,7 @@ namespace Neo
         public readonly IActorRef Blockchain;
         public readonly IActorRef LocalNode;
         internal readonly IActorRef TaskManager;
-        private IActorRef consensus;
+        internal IActorRef Consensus;
         private RpcServer rpcServer;
 
         public NeoSystem(Store store)
@@ -41,8 +41,8 @@ namespace Neo
 
         public void StartConsensus(Wallet wallet)
         {
-            consensus = ActorSystem.ActorOf(ConsensusService.Props(this, wallet));
-            consensus.Tell(new ConsensusService.Start());
+            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this, wallet));
+            Consensus.Tell(new ConsensusService.Start());
         }
 
         public void StartNode(int port = 0, int ws_port = 0)

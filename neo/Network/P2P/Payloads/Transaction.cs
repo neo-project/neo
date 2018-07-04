@@ -73,7 +73,7 @@ namespace Neo.Network.P2P.Payloads
                     Dictionary<CoinReference, TransactionOutput> dictionary = new Dictionary<CoinReference, TransactionOutput>();
                     foreach (var group in Inputs.GroupBy(p => p.PrevHash))
                     {
-                        Transaction tx = Blockchain.Singleton.Snapshot.GetTransaction(group.Key);
+                        Transaction tx = Blockchain.Singleton.Store.GetTransaction(group.Key);
                         if (tx == null) return null;
                         foreach (var reference in group.Select(p => new
                         {

@@ -84,7 +84,7 @@ namespace Neo.Wallets.NEP6
                 }
                 else
                 {
-                    WalletIndexer.RegisterAccounts(new[] { account.ScriptHash }, is_import ? 0 : Blockchain.Singleton.Snapshot.Height);
+                    WalletIndexer.RegisterAccounts(new[] { account.ScriptHash }, is_import ? 0 : Blockchain.Singleton.Height);
                 }
                 accounts[account.ScriptHash] = account;
             }

@@ -1,6 +1,5 @@
 ﻿using Akka.Actor;
 using Neo.IO;
-using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
@@ -16,9 +15,6 @@ namespace Neo.Network.P2P
 {
     public class LocalNode : Peer
     {
-        public class Register { }
-        public class InventoryReceived { public IInventory Inventory; }
-        public class Broadcast { public Message Message; }
         public class Relay { public IInventory Inventory; }
         internal class RelayDirectly { public IInventory Inventory; }
 
@@ -28,8 +24,6 @@ namespace Neo.Network.P2P
 
         private readonly NeoSystem system;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new ConcurrentDictionary<IActorRef, RemoteNode>();
-        internal readonly RelayCache RelayCache = new RelayCache(100);
-        private readonly HashSet<IActorRef> subscribers = new HashSet<IActorRef>();
 
         public int ConnectedCount => RemoteNodes.Count;
         public int UnconnectedCount => UnconnectedPeers.Count;
@@ -71,13 +65,7 @@ namespace Neo.Network.P2P
 
         private void BroadcastMessage(Message message)
         {
-            Connections.Tell(new RemoteNode.Send { Message = message });
-        }
-
-        private void Distribute(object message)
-        {
-            foreach (IActorRef subscriber in subscribers)
-                subscriber.Tell(message);
+            Connections.Tell(message);
         }
 
         private static IPEndPoint GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
@@ -146,69 +134,35 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnConsensusPayload(ConsensusPayload payload)
-        {
-            RelayCache.Add(payload);
-            OnRelayDirectly(payload);
-        }
-
-        private void OnInventoryReceived(IInventory inventory)
-        {
-            switch (inventory)
-            {
-                case MinerTransaction _:
-                    return;
-                case Transaction transaction:
-                    system.Blockchain.Tell(new Blockchain.NewTransaction { Transaction = transaction });
-                    break;
-                case Block block:
-                    system.Blockchain.Tell(new Blockchain.NewBlock { Block = block });
-                    break;
-                case ConsensusPayload payload:
-                    if (!payload.Verify(Ledger.Blockchain.Singleton.Snapshot)) return;
-                    OnConsensusPayload(payload);
-                    break;
-            }
-            Distribute(new InventoryReceived { Inventory = inventory });
-        }
-
         protected override void OnReceive(object message)
         {
             base.OnReceive(message);
             switch (message)
             {
-                case Register _:
-                    OnRegister();
-                    break;
-                case Broadcast broadcast:
-                    BroadcastMessage(broadcast.Message);
+                case Message msg:
+                    BroadcastMessage(msg);
                     break;
                 case Relay relay:
-                    OnInventoryReceived(relay.Inventory);
+                    OnRelay(relay.Inventory);
                     break;
                 case RelayDirectly relay:
                     OnRelayDirectly(relay.Inventory);
                     break;
-                case RemoteNode.InventoryReceived received:
-                    OnInventoryReceived(received.Inventory);
-                    break;
-                case Blockchain.RelayResult _:
-                    break;
-                case Terminated terminated:
-                    subscribers.Remove(terminated.ActorRef);
+                case RelayResultReason _:
                     break;
             }
         }
 
-        private void OnRegister()
+        private void OnRelay(IInventory inventory)
         {
-            subscribers.Add(Sender);
-            Context.Watch(Sender);
+            if (inventory is Transaction transaction)
+                system.Consensus?.Tell(transaction);
+            system.Blockchain.Tell(inventory);
         }
 
         private void OnRelayDirectly(IInventory inventory)
         {
-            Connections.Tell(new RemoteNode.Relay { Inventory = inventory });
+            Connections.Tell(inventory);
         }
 
         public static Props Props(NeoSystem system)

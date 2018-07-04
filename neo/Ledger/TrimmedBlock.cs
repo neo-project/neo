@@ -1,7 +1,7 @@
 ﻿using Neo.IO;
+using Neo.IO.Caching;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using System.IO;
 using System.Linq;
 
@@ -13,7 +13,7 @@ namespace Neo.Ledger
 
         public bool IsBlock => Hashes.Length > 0;
 
-        public Block GetBlock(Snapshot snapshot)
+        public Block GetBlock(DataCache<UInt256, TransactionState> cache)
         {
             return new Block
             {
@@ -25,7 +25,7 @@ namespace Neo.Ledger
                 ConsensusData = ConsensusData,
                 NextConsensus = NextConsensus,
                 Witness = Witness,
-                Transactions = Hashes.Select(p => snapshot.GetTransaction(p)).ToArray()
+                Transactions = Hashes.Select(p => cache[p].Transaction).ToArray()
             };
         }
 

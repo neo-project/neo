@@ -52,7 +52,7 @@ namespace Neo.Network.P2P
         private void OnNewTasks(InvPayload payload)
         {
             TaskSession session = sessions[Sender];
-            if (payload.Type == InventoryType.TX && Blockchain.Singleton.Snapshot.Height < Blockchain.Singleton.Snapshot.HeaderHeight)
+            if (payload.Type == InventoryType.TX && Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
             {
                 RequestTasks(session);
                 return;
@@ -93,10 +93,7 @@ namespace Neo.Network.P2P
             foreach (UInt256 hash in hashes)
                 session.Tasks[hash] = DateTime.UtcNow;
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, hashes.ToArray()))
-                Sender.Tell(new RemoteNode.Send
-                {
-                    Message = Message.Create("getdata", group)
-                });
+                Sender.Tell(Message.Create("getdata", group));
         }
 
         protected override void OnReceive(object message)
@@ -143,10 +140,7 @@ namespace Neo.Network.P2P
             OnAllowHashes(payload.Hashes);
             globalTasks.ExceptWith(payload.Hashes);
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
-                system.LocalNode.Tell(new LocalNode.Broadcast
-                {
-                    Message = Message.Create("getdata", group)
-                });
+                system.LocalNode.Tell(Message.Create("getdata", group));
         }
 
         private void OnTaskCompleted(UInt256 hash)
@@ -210,25 +204,19 @@ namespace Neo.Network.P2P
                     foreach (UInt256 hash in hashes)
                         session.Tasks[hash] = DateTime.UtcNow;
                     foreach (InvPayload group in InvPayload.CreateGroup(InventoryType.Block, hashes.ToArray()))
-                        session.RemoteNode.Tell(new RemoteNode.Send
-                        {
-                            Message = Message.Create("getdata", group)
-                        });
+                        session.RemoteNode.Tell(Message.Create("getdata", group));
                     return;
                 }
             }
-            if (!HeaderTask && Blockchain.Singleton.Snapshot.HeaderHeight < session.Version.StartHeight)
+            if (!HeaderTask && Blockchain.Singleton.HeaderHeight < session.Version.StartHeight)
             {
                 session.Tasks[UInt256.Zero] = DateTime.UtcNow;
-                session.RemoteNode.Tell(new RemoteNode.Send
-                {
-                    Message = Message.Create("getheaders", GetBlocksPayload.Create(Blockchain.Singleton.Snapshot.CurrentHeaderHash))
-                });
+                session.RemoteNode.Tell(Message.Create("getheaders", GetBlocksPayload.Create(Blockchain.Singleton.CurrentHeaderHash)));
             }
-            else if (Blockchain.Singleton.Snapshot.Height < session.Version.StartHeight)
+            else if (Blockchain.Singleton.Height < session.Version.StartHeight)
             {
-                UInt256 hash = Blockchain.Singleton.Snapshot.CurrentBlockHash;
-                for (uint i = Blockchain.Singleton.Snapshot.Height + 1; i <= Blockchain.Singleton.Snapshot.HeaderHeight; i++)
+                UInt256 hash = Blockchain.Singleton.CurrentBlockHash;
+                for (uint i = Blockchain.Singleton.Height + 1; i <= Blockchain.Singleton.HeaderHeight; i++)
                 {
                     hash = Blockchain.Singleton.GetBlockHash(i);
                     if (!globalTasks.Contains(hash))
@@ -237,10 +225,7 @@ namespace Neo.Network.P2P
                         break;
                     }
                 }
-                session.RemoteNode.Tell(new RemoteNode.Send
-                {
-                    Message = Message.Create("getblocks", GetBlocksPayload.Create(hash))
-                });
+                session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hash)));
             }
         }
     }

@@ -2,6 +2,7 @@
 using Neo.IO.Data.LevelDB;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -216,7 +217,7 @@ namespace Neo.Wallets
                             continue;
                         }
                         uint height = indexes.Keys.Min();
-                        Block block = Blockchain.Singleton.Snapshot.GetBlock(height);
+                        Block block = Blockchain.Singleton.Store.GetBlock(height);
                         if (block == null)
                         {
                             need_sleep = true;

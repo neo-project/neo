@@ -2,6 +2,7 @@
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -77,9 +78,10 @@ namespace Neo.SmartContract
             get
             {
                 if (_ScriptHashes == null)
-                {
-                    _ScriptHashes = Verifiable.GetScriptHashesForVerifying(Blockchain.Singleton.Snapshot);
-                }
+                    using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                    {
+                        _ScriptHashes = Verifiable.GetScriptHashesForVerifying(snapshot);
+                    }
                 return _ScriptHashes;
             }
         }

@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace Neo.Persistence
 {
-    public abstract class Snapshot : IDisposable, IScriptTable
+    public abstract class Snapshot : IDisposable, IPersistence, IScriptTable
     {
         public Block PersistingBlock { get; internal set; }
         public abstract DataCache<UInt256, BlockState> Blocks { get; }
@@ -109,7 +109,7 @@ namespace Neo.Persistence
                     }
                     amount += (iend - istart) * Blockchain.GenerationAmount[ustart];
                 }
-                amount += (uint)(GetSysFeeAmount(group.Key.EndHeight - 1) - (group.Key.StartHeight == 0 ? 0 : GetSysFeeAmount(group.Key.StartHeight - 1)));
+                amount += (uint)(this.GetSysFeeAmount(group.Key.EndHeight - 1) - (group.Key.StartHeight == 0 ? 0 : this.GetSysFeeAmount(group.Key.StartHeight - 1)));
                 amount_claimed += group.Sum(p => p.Value) / 100000000 * amount;
             }
             return amount_claimed;
@@ -140,83 +140,13 @@ namespace Neo.Persistence
             HeaderHashIndex.Commit();
         }
 
-        public bool ContainsBlock(UInt256 hash)
-        {
-            BlockState state = Blocks.TryGet(hash);
-            if (state == null) return false;
-            return state.TrimmedBlock.IsBlock;
-        }
-
-        public bool ContainsTransaction(UInt256 hash)
-        {
-            TransactionState state = Transactions.TryGet(hash);
-            return state != null;
-        }
-
         public virtual void Dispose()
         {
-        }
-
-        public Block GetBlock(uint index)
-        {
-            UInt256 hash = Blockchain.Singleton.GetBlockHash(index);
-            if (hash == null) return null;
-            return GetBlock(hash);
-        }
-
-        public Block GetBlock(UInt256 hash)
-        {
-            BlockState state = Blocks.TryGet(hash);
-            if (state == null) return null;
-            if (!state.TrimmedBlock.IsBlock) return null;
-            return state.TrimmedBlock.GetBlock(this);
-        }
-
-        public IEnumerable<ValidatorState> GetEnrollments()
-        {
-            HashSet<ECPoint> sv = new HashSet<ECPoint>(Blockchain.StandbyValidators);
-            return Validators.Find().Select(p => p.Value).Where(p => p.Registered || sv.Contains(p.PublicKey));
-        }
-
-        public Header GetHeader(uint index)
-        {
-            UInt256 hash = Blockchain.Singleton.GetBlockHash(index);
-            if (hash == null) return null;
-            return GetHeader(hash);
-        }
-
-        public Header GetHeader(UInt256 hash)
-        {
-            return Blocks.TryGet(hash)?.TrimmedBlock.Header;
-        }
-
-        public UInt256 GetNextBlockHash(UInt256 hash)
-        {
-            BlockState state = Blocks.TryGet(hash);
-            if (state == null) return null;
-            return Blockchain.Singleton.GetBlockHash(state.TrimmedBlock.Index + 1);
         }
 
         byte[] IScriptTable.GetScript(byte[] script_hash)
         {
             return Contracts[new UInt160(script_hash)].Script;
-        }
-
-        public long GetSysFeeAmount(uint height)
-        {
-            return GetSysFeeAmount(Blockchain.Singleton.GetBlockHash(height));
-        }
-
-        public long GetSysFeeAmount(UInt256 hash)
-        {
-            BlockState block_state = Blocks.TryGet(hash);
-            if (block_state == null) return 0;
-            return block_state.SystemFeeAmount;
-        }
-
-        public Transaction GetTransaction(UInt256 hash)
-        {
-            return Transactions.TryGet(hash)?.Transaction;
         }
 
         public Dictionary<ushort, SpentCoin> GetUnclaimed(UInt256 hash)
@@ -237,29 +167,6 @@ namespace Neo.Persistence
             {
                 return new Dictionary<ushort, SpentCoin>();
             }
-        }
-
-        public TransactionOutput GetUnspent(UInt256 hash, ushort index)
-        {
-            UnspentCoinState state = UnspentCoins.TryGet(hash);
-            if (state == null) return null;
-            if (index >= state.Items.Length) return null;
-            if (state.Items[index].HasFlag(CoinState.Spent)) return null;
-            return GetTransaction(hash).Outputs[index];
-        }
-
-        public IEnumerable<TransactionOutput> GetUnspent(UInt256 hash)
-        {
-            List<TransactionOutput> outputs = new List<TransactionOutput>();
-            UnspentCoinState state = UnspentCoins.TryGet(hash);
-            if (state != null)
-            {
-                Transaction tx = GetTransaction(hash);
-                for (int i = 0; i < state.Items.Length; i++)
-                    if (!state.Items[i].HasFlag(CoinState.Spent))
-                        outputs.Add(tx.Outputs[i]);
-            }
-            return outputs;
         }
 
         private ECPoint[] _validators = null;
@@ -361,19 +268,6 @@ namespace Neo.Persistence
                 result = hashSet;
             }
             return result.OrderBy(p => p);
-        }
-
-        public bool IsDoubleSpend(Transaction tx)
-        {
-            if (tx.Inputs.Length == 0) return false;
-            foreach (var group in tx.Inputs.GroupBy(p => p.PrevHash))
-            {
-                UnspentCoinState state = UnspentCoins.TryGet(group.Key);
-                if (state == null) return true;
-                if (group.Any(p => p.PrevIndex >= state.Items.Length || state.Items[p.PrevIndex].HasFlag(CoinState.Spent)))
-                    return true;
-            }
-            return false;
         }
     }
 }

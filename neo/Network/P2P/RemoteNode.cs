@@ -15,10 +15,6 @@ namespace Neo.Network.P2P
 {
     public class RemoteNode : Connection
     {
-        internal class Send { public Message Message; }
-        internal class Relay { public IInventory Inventory; }
-        internal class InventoryReceived { public IInventory Inventory; }
-
         private readonly NeoSystem system;
         private readonly IActorRef protocol;
         private readonly Queue<Message> message_queue_high = new Queue<Message>();
@@ -38,7 +34,7 @@ namespace Neo.Network.P2P
             this.system = system;
             this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
-            SendMessage(Message.Create("version", VersionPayload.Create(LocalNode.Singleton.ListenerPort, LocalNode.Nonce, LocalNode.UserAgent, Blockchain.Singleton.Snapshot.Height)));
+            SendMessage(Message.Create("version", VersionPayload.Create(LocalNode.Singleton.ListenerPort, LocalNode.Nonce, LocalNode.UserAgent, Blockchain.Singleton.Height)));
         }
 
         private void CheckMessageQueue()
@@ -118,11 +114,11 @@ namespace Neo.Network.P2P
             base.OnReceive(message);
             switch (message)
             {
-                case Send send:
-                    EnqueueMessage(send.Message);
+                case Message msg:
+                    EnqueueMessage(msg);
                     break;
-                case Relay relay:
-                    OnRelay(relay.Inventory);
+                case IInventory inventory:
+                    OnRelay(inventory);
                     break;
                 case ProtocolHandler.SetVersion setVersion:
                     OnSetVersion(setVersion.Version);

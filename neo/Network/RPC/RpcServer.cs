@@ -9,6 +9,7 @@ using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.VM;
@@ -138,13 +139,13 @@ namespace Neo.Network.RPC
                 case "getaccountstate":
                     {
                         UInt160 script_hash = _params[0].AsString().ToScriptHash();
-                        AccountState account = Blockchain.Singleton.Snapshot.Accounts.TryGet(script_hash) ?? new AccountState(script_hash);
+                        AccountState account = Blockchain.Singleton.Store.GetAccounts().TryGet(script_hash) ?? new AccountState(script_hash);
                         return account.ToJson();
                     }
                 case "getassetstate":
                     {
                         UInt256 asset_id = UInt256.Parse(_params[0].AsString());
-                        AssetState asset = Blockchain.Singleton.Snapshot.Assets.TryGet(asset_id);
+                        AssetState asset = Blockchain.Singleton.Store.GetAssets().TryGet(asset_id);
                         return asset?.ToJson() ?? throw new RpcException(-100, "Unknown asset");
                     }
                 case "getbalance":
@@ -167,19 +168,19 @@ namespace Neo.Network.RPC
                         return json;
                     }
                 case "getbestblockhash":
-                    return Blockchain.Singleton.Snapshot.CurrentBlockHash.ToString();
+                    return Blockchain.Singleton.CurrentBlockHash.ToString();
                 case "getblock":
                     {
                         Block block;
                         if (_params[0] is JNumber)
                         {
                             uint index = (uint)_params[0].AsNumber();
-                            block = Blockchain.Singleton.Snapshot.GetBlock(index);
+                            block = Blockchain.Singleton.Store.GetBlock(index);
                         }
                         else
                         {
                             UInt256 hash = UInt256.Parse(_params[0].AsString());
-                            block = Blockchain.Singleton.Snapshot.GetBlock(hash);
+                            block = Blockchain.Singleton.Store.GetBlock(hash);
                         }
                         if (block == null)
                             throw new RpcException(-100, "Unknown block");
@@ -187,8 +188,8 @@ namespace Neo.Network.RPC
                         if (verbose)
                         {
                             JObject json = block.ToJson();
-                            json["confirmations"] = Blockchain.Singleton.Snapshot.Height - block.Index + 1;
-                            UInt256 hash = Blockchain.Singleton.Snapshot.GetNextBlockHash(block.Hash);
+                            json["confirmations"] = Blockchain.Singleton.Height - block.Index + 1;
+                            UInt256 hash = Blockchain.Singleton.Store.GetNextBlockHash(block.Hash);
                             if (hash != null)
                                 json["nextblockhash"] = hash.ToString();
                             return json;
@@ -199,11 +200,11 @@ namespace Neo.Network.RPC
                         }
                     }
                 case "getblockcount":
-                    return Blockchain.Singleton.Snapshot.Height + 1;
+                    return Blockchain.Singleton.Height + 1;
                 case "getblockhash":
                     {
                         uint height = (uint)_params[0].AsNumber();
-                        if (height >= 0 && height <= Blockchain.Singleton.Snapshot.Height)
+                        if (height >= 0 && height <= Blockchain.Singleton.Height)
                         {
                             return Blockchain.Singleton.GetBlockHash(height).ToString();
                         }
@@ -215,9 +216,9 @@ namespace Neo.Network.RPC
                 case "getblocksysfee":
                     {
                         uint height = (uint)_params[0].AsNumber();
-                        if (height >= 0 && height <= Blockchain.Singleton.Snapshot.Height)
+                        if (height >= 0 && height <= Blockchain.Singleton.Height)
                         {
-                            return Blockchain.Singleton.Snapshot.GetSysFeeAmount(height).ToString();
+                            return Blockchain.Singleton.Store.GetSysFeeAmount(height).ToString();
                         }
                         else
                         {
@@ -229,7 +230,7 @@ namespace Neo.Network.RPC
                 case "getcontractstate":
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
-                        ContractState contract = Blockchain.Singleton.Snapshot.Contracts.TryGet(script_hash);
+                        ContractState contract = Blockchain.Singleton.Store.GetContracts().TryGet(script_hash);
                         return contract?.ToJson() ?? throw new RpcException(-100, "Unknown contract");
                     }
                 case "getnewaddress":
@@ -274,12 +275,12 @@ namespace Neo.Network.RPC
                         if (verbose)
                         {
                             JObject json = tx.ToJson();
-                            uint? height = Blockchain.Singleton.Snapshot.Transactions.TryGet(hash)?.BlockIndex;
+                            uint? height = Blockchain.Singleton.Store.GetTransactions().TryGet(hash)?.BlockIndex;
                             if (height != null)
                             {
-                                Header header = Blockchain.Singleton.Snapshot.GetHeader((uint)height);
+                                Header header = Blockchain.Singleton.Store.GetHeader((uint)height);
                                 json["blockhash"] = header.Hash.ToString();
-                                json["confirmations"] = Blockchain.Singleton.Snapshot.Height - header.Index + 1;
+                                json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
                                 json["blocktime"] = header.Timestamp;
                             }
                             return json;
@@ -293,7 +294,7 @@ namespace Neo.Network.RPC
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
                         byte[] key = _params[1].AsString().HexToBytes();
-                        StorageItem item = Blockchain.Singleton.Snapshot.Storages.TryGet(new StorageKey
+                        StorageItem item = Blockchain.Singleton.Store.GetStorages().TryGet(new StorageKey
                         {
                             ScriptHash = script_hash,
                             Key = key
@@ -304,12 +305,13 @@ namespace Neo.Network.RPC
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
                         ushort index = (ushort)_params[1].AsNumber();
-                        return Blockchain.Singleton.Snapshot.GetUnspent(hash, index)?.ToJson(index);
+                        return Blockchain.Singleton.Store.GetUnspent(hash, index)?.ToJson(index);
                     }
                 case "getvalidators":
+                    using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                     {
-                        var validators = Blockchain.Singleton.Snapshot.GetValidators();
-                        return Blockchain.Singleton.Snapshot.GetEnrollments().Select(p =>
+                        var validators = snapshot.GetValidators();
+                        return snapshot.GetEnrollments().Select(p =>
                         {
                             JObject validator = new JObject();
                             validator["publickey"] = p.PublicKey.ToString();
@@ -454,7 +456,7 @@ namespace Neo.Network.RPC
                 case "sendrawtransaction":
                     {
                         Transaction tx = Transaction.DeserializeFrom(_params[0].AsString().HexToBytes());
-                        RelayResultReason reason = system.Blockchain.Ask<Blockchain.RelayResult>(new Blockchain.NewTransaction { Transaction = tx }).Result.Reason;
+                        RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
                         return GetRelayResult(reason);
                     }
                 case "sendtoaddress":
@@ -500,7 +502,7 @@ namespace Neo.Network.RPC
                 case "submitblock":
                     {
                         Block block = _params[0].AsString().HexToBytes().AsSerializable<Block>();
-                        RelayResultReason reason = system.Blockchain.Ask<Blockchain.RelayResult>(new Blockchain.NewBlock { Block = block }).Result.Reason;
+                        RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(block).Result;
                         return GetRelayResult(reason);
                     }
                 case "validateaddress":
