@@ -25,7 +25,7 @@ namespace Neo.Plugins
         internal static void LoadPlugins(NeoSystem system)
         {
             System = system;
-            string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Plugins");
+            string path = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
             if (!Directory.Exists(path)) return;
             foreach (string filename in Directory.EnumerateFiles(path, "*.dll", SearchOption.TopDirectoryOnly))
             {

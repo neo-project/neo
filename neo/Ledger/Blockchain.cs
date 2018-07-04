@@ -239,8 +239,8 @@ namespace Neo.Ledger
                 if (block.Index != Snapshot.Height + 1)
                     throw new InvalidOperationException();
                 Persist(block);
+                SaveHeaderHashList();
             }
-            SaveHeaderHashList();
             Sender.Tell(new ImportCompleted());
         }
 
