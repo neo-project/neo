@@ -194,7 +194,7 @@ namespace Neo.Network.P2P
             {
                 Disconnect(true);
                 return Directive.Stop;
-            });
+            }, loggingEnabled: false);
         }
     }
 
