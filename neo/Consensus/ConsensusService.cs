@@ -85,25 +85,40 @@ namespace Neo.Consensus
             return true;
         }
 
+        private void OnCommitAgreement(ConsensusPayload payload, CommitAgreement message)
+        {
+            if (!context.TryToCommit(payload, message)) return;
+
+            Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
+            Block block = context.MakeHeader();
+            ContractParametersContext sc = new ContractParametersContext(block);
+            for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
+                if (context.Signatures[i] != null)
+                {
+                    sc.AddSignature(contract, context.Validators[i], context.Signatures[i]);
+                    j++;
+                }
+            sc.Verifiable.Scripts = sc.GetScripts();
+            block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
+            Log($"relay block: {block.Hash}");
+
+            if (!localNode.Relay(block))
+                Log($"reject block: {block.Hash}");
+
+            context.State |= ConsensusState.BlockSent;
+        }
+
         private void CheckSignatures()
         {
-            if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
+            if (!context.CommitAgreementSent)
             {
-                Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
-                Block block = context.MakeHeader();
-                ContractParametersContext sc = new ContractParametersContext(block);
-                for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
-                    if (context.Signatures[i] != null)
-                    {
-                        sc.AddSignature(contract, context.Validators[i], context.Signatures[i]);
-                        j++;
-                    }
-                sc.Verifiable.Scripts = sc.GetScripts();
-                block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
-                Log($"relay block: {block.Hash}");
-                if (!localNode.Relay(block))
-                    Log($"reject block: {block.Hash}");
-                context.State |= ConsensusState.BlockSent;
+                if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
+                {
+                    // Sent i'm ready!
+
+                    context.CommitAgreementSent = true;
+                    SignAndRelay(context.MakeCommitAgreement());
+                }
             }
         }
 
@@ -206,61 +221,62 @@ namespace Neo.Consensus
 
         private void LocalNode_InventoryReceived(object sender, IInventory inventory)
         {
-            ConsensusPayload payload = inventory as ConsensusPayload;
-            if (payload != null)
+            if (inventory == null || !(inventory is ConsensusPayload payload)) return;
+
+            lock (context)
             {
-                lock (context)
+                if (payload.ValidatorIndex == context.MyIndex ||
+                    payload.ValidatorIndex >= context.Validators.Length ||
+                    payload.Version != ConsensusContext.Version) return;
+
+                if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
                 {
-                    if (payload.ValidatorIndex == context.MyIndex) return;
+                    // Request blocks
 
-                    if (payload.Version != ConsensusContext.Version)
-                        return;
-                    if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
+                    if (Blockchain.Default?.Height + 1 < payload.BlockIndex)
                     {
-                        // Request blocks
+                        Log($"chain sync: expected={payload.BlockIndex} current: {Blockchain.Default?.Height} nodes={localNode.RemoteNodeCount}");
 
-                        if (Blockchain.Default?.Height + 1 < payload.BlockIndex)
-                        {
-                            Log($"chain sync: expected={payload.BlockIndex} current: {Blockchain.Default?.Height} nodes={localNode.RemoteNodeCount}");
-
-                            localNode.RequestGetBlocks();
-                        }
-
-                        return;
+                        localNode.RequestGetBlocks();
                     }
 
-                    if (payload.ValidatorIndex >= context.Validators.Length) return;
-                    ConsensusMessage message;
-                    try
-                    {
-                        message = ConsensusMessage.DeserializeFrom(payload.Data);
-                    }
-                    catch
-                    {
-                        return;
-                    }
-                    if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView)
-                        return;
-                    switch (message.Type)
-                    {
-                        case ConsensusMessageType.ChangeView:
-                            OnChangeViewReceived(payload, (ChangeView)message);
-                            break;
-                        case ConsensusMessageType.PrepareRequest:
-                            OnPrepareRequestReceived(payload, (PrepareRequest)message);
-                            break;
-                        case ConsensusMessageType.PrepareResponse:
-                            OnPrepareResponseReceived(payload, (PrepareResponse)message);
-                            break;
-                    }
+                    return;
+                }
+
+                ConsensusMessage message;
+                try
+                {
+                    message = ConsensusMessage.DeserializeFrom(payload.Data);
+                }
+                catch
+                {
+                    return;
+                }
+
+                if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView)
+                    return;
+
+                switch (message.Type)
+                {
+                    case ConsensusMessageType.ChangeView:
+                        OnChangeViewReceived(payload, (ChangeView)message);
+                        break;
+                    case ConsensusMessageType.PrepareRequest:
+                        OnPrepareRequestReceived(payload, (PrepareRequest)message);
+                        break;
+                    case ConsensusMessageType.PrepareResponse:
+                        OnPrepareResponseReceived(payload, (PrepareResponse)message);
+                        break;
+                    case ConsensusMessageType.CommitAgreement:
+                        OnCommitAgreement(payload, (CommitAgreement)message);
+                        break;
                 }
             }
         }
 
         private void LocalNode_InventoryReceiving(object sender, InventoryReceivingEventArgs e)
         {
-            Transaction tx = e.Inventory as Transaction;
-            if (tx != null)
+            if (e.Inventory is Transaction tx)
             {
                 lock (context)
                 {
@@ -373,6 +389,8 @@ namespace Neo.Consensus
 
         private void SignAndRelay(ConsensusPayload payload)
         {
+            if (payload == null) return;
+
             ContractParametersContext sc;
             try
             {

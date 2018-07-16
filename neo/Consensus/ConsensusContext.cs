@@ -1,11 +1,11 @@
-﻿using Neo.Core;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Neo.Core;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.Payloads;
 using Neo.Wallets;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Neo.Consensus
 {
@@ -28,7 +28,42 @@ namespace Neo.Consensus
         public byte[] ExpectedView;
         public KeyPair KeyPair;
 
+        private UInt256[] Commits;
+        private Block _header = null;
+        public bool CommitAgreementSent = false;
+
         public int M => Validators.Length - (Validators.Length - 1) / 3;
+
+        public bool TryToCommit(ConsensusPayload payload, CommitAgreement message)
+        {
+            // Already received
+
+            if (Commits[payload.ValidatorIndex] != null)
+            {
+                return false;
+            }
+
+            // Check signature of the validator
+
+            if (!Crypto.Default.VerifySignature
+                (
+                    message.BlockHash.ToArray(), message.Signature,
+                    Validators[payload.ValidatorIndex].EncodePoint(false)
+                ))
+            {
+                return false;
+            }
+
+            // Store received block hash
+
+            Commits[payload.ValidatorIndex] = message.BlockHash;
+
+            // Check count
+
+            if (_header == null) return false;
+            
+            return Commits.Where(u => u != null && u == _header.Hash).Count() >= M;
+        }
 
         public void ChangeView(byte view_number)
         {
@@ -36,13 +71,20 @@ namespace Neo.Consensus
             State &= ConsensusState.SignatureSent;
             ViewNumber = view_number;
             PrimaryIndex = p >= 0 ? (uint)p : (uint)(p + Validators.Length);
+
             if (State == ConsensusState.Initial)
             {
                 TransactionHashes = null;
                 Signatures = new byte[Validators.Length][];
+                Commits = new UInt256[Validators.Length];
+                CommitAgreementSent = false;
             }
+
             if (MyIndex >= 0)
+            {
                 ExpectedView[MyIndex] = view_number;
+            }
+
             _header = null;
         }
 
@@ -54,10 +96,10 @@ namespace Neo.Consensus
             });
         }
 
-        private Block _header = null;
         public Block MakeHeader()
         {
             if (TransactionHashes == null) return null;
+
             if (_header == null)
             {
                 _header = new Block
@@ -71,8 +113,22 @@ namespace Neo.Consensus
                     NextConsensus = NextConsensus,
                     Transactions = new Transaction[0]
                 };
+
+                Commits[MyIndex] = _header.Hash;
             }
+
             return _header;
+        }
+
+        public ConsensusPayload MakeCommitAgreement()
+        {
+            if (_header == null) return null;
+
+            return MakePayload(new CommitAgreement()
+            {
+                BlockHash = _header.Hash,
+                Signature = _header.Hash.ToArray().Sign(KeyPair)
+            });
         }
 
         private ConsensusPayload MakePayload(ConsensusMessage message)
@@ -122,6 +178,9 @@ namespace Neo.Consensus
             Signatures = new byte[Validators.Length][];
             ExpectedView = new byte[Validators.Length];
             KeyPair = null;
+            Commits = new UInt256[Validators.Length];
+            CommitAgreementSent = false;
+
             for (int i = 0; i < Validators.Length; i++)
             {
                 WalletAccount account = wallet.GetAccount(Validators[i]);

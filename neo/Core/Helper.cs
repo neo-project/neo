@@ -38,6 +38,14 @@ namespace Neo.Core
             }
         }
 
+        public static byte[] Sign(this byte[] message, KeyPair key)
+        {
+            using (key.Decrypt())
+            {
+                return Crypto.Default.Sign(message, key.PrivateKey, key.PublicKey.EncodePoint(false).Skip(1).ToArray());
+            }
+        }
+
         public static UInt160 ToScriptHash(this byte[] script)
         {
             return new UInt160(Crypto.Default.Hash160(script));
