@@ -87,6 +87,7 @@ namespace Neo.Consensus
 
         private void OnCommitAgreement(ConsensusPayload payload, CommitAgreement message)
         {
+            if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (!context.TryToCommit(payload, message)) return;
 
             Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
