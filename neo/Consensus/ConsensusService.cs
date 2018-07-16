@@ -87,25 +87,29 @@ namespace Neo.Consensus
 
         private void OnCommitAgreement(ConsensusPayload payload, CommitAgreement message)
         {
+            if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (!context.TryToCommit(payload, message)) return;
 
-            Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
-            Block block = context.MakeHeader();
-            ContractParametersContext sc = new ContractParametersContext(block);
-            for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
-                if (context.Signatures[i] != null)
-                {
-                    sc.AddSignature(contract, context.Validators[i], context.Signatures[i]);
-                    j++;
-                }
-            sc.Verifiable.Scripts = sc.GetScripts();
-            block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
-            Log($"relay block: {block.Hash}");
+            if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
+            {
+                Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
+                Block block = context.MakeHeader();
+                ContractParametersContext sc = new ContractParametersContext(block);
+                for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
+                    if (context.Signatures[i] != null)
+                    {
+                        sc.AddSignature(contract, context.Validators[i], context.Signatures[i]);
+                        j++;
+                    }
+                sc.Verifiable.Scripts = sc.GetScripts();
+                block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
+                Log($"relay block: {block.Hash}");
 
-            if (!localNode.Relay(block))
-                Log($"reject block: {block.Hash}");
+                if (!localNode.Relay(block))
+                    Log($"reject block: {block.Hash}");
 
-            context.State |= ConsensusState.BlockSent;
+                context.State |= ConsensusState.BlockSent;
+            }
         }
 
         private void CheckSignatures()
