@@ -87,8 +87,8 @@ namespace Neo.Consensus
 
         private void OnCommitAgreement(ConsensusPayload payload, CommitAgreement message)
         {
-            if (context.State.HasFlag(ConsensusState.BlockSent)) return;
-            if (!context.TryToCommit(payload, message)) return;
+            if (context.State.HasFlag(ConsensusState.BlockSent) ||
+                !context.TryToCommit(payload, message)) return;
 
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
@@ -114,15 +114,14 @@ namespace Neo.Consensus
 
         private void CheckSignatures()
         {
-            if (!context.CommitAgreementSent)
+            if (!context.CommitAgreementSent &&
+                context.Signatures.Count(p => p != null) >= context.M &&
+                context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
-                {
-                    // Sent i'm ready!
+                // Send my commit
 
-                    context.CommitAgreementSent = true;
-                    SignAndRelay(context.MakeCommitAgreement());
-                }
+                context.CommitAgreementSent = true;
+                SignAndRelay(context.MakeCommitAgreement());
             }
         }
 

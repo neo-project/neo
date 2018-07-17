@@ -38,10 +38,7 @@ namespace Neo.Consensus
         {
             // Already received
 
-            if (Commits[payload.ValidatorIndex] != null)
-            {
-                return false;
-            }
+            if (Commits[payload.ValidatorIndex] != null) return false;
 
             // Check signature of the validator
 
@@ -60,9 +57,7 @@ namespace Neo.Consensus
 
             // Check count
 
-            if (_header == null) return false;
-            
-            return Commits.Where(u => u != null && u == _header.Hash).Count() >= M;
+            return _header != null && Commits.Where(u => u != null && u == _header.Hash).Count() >= M;
         }
 
         public void ChangeView(byte view_number)
