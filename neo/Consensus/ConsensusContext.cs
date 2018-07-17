@@ -39,17 +39,6 @@ namespace Neo.Consensus
 
             if (Commits[payload.ValidatorIndex] != null) return false;
 
-            // Check signature of the validator
-
-            if (!Crypto.Default.VerifySignature
-                (
-                    message.BlockHash.ToArray(), message.Signature,
-                    Validators[payload.ValidatorIndex].EncodePoint(false)
-                ))
-            {
-                return false;
-            }
-
             // Store received block hash
 
             Commits[payload.ValidatorIndex] = message.BlockHash;
@@ -119,8 +108,7 @@ namespace Neo.Consensus
 
             return MakePayload(new CommitAgreement()
             {
-                BlockHash = _header.Hash,
-                Signature = _header.Hash.ToArray().Sign(KeyPair)
+                BlockHash = _header.Hash
             });
         }
 

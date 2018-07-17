@@ -11,11 +11,6 @@ namespace Neo.Consensus
         public UInt256 BlockHash;
 
         /// <summary>
-        /// Signature
-        /// </summary>
-        public byte[] Signature;
-
-        /// <summary>
         /// Constructors
         /// </summary>
         public CommitAgreement() : base(ConsensusMessageType.CommitAgreement) { }
@@ -25,7 +20,6 @@ namespace Neo.Consensus
             base.Deserialize(reader);
 
             BlockHash = reader.ReadSerializable<UInt256>();
-            Signature = reader.ReadBytes(64);
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -33,7 +27,6 @@ namespace Neo.Consensus
             base.Serialize(writer);
 
             writer.Write(BlockHash);
-            writer.Write(Signature);
         }
     }
 }
