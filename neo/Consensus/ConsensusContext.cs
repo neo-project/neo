@@ -30,7 +30,6 @@ namespace Neo.Consensus
 
         private UInt256[] Commits;
         private Block _header = null;
-        public bool CommitAgreementSent = false;
 
         public int M => Validators.Length - (Validators.Length - 1) / 3;
 
@@ -72,7 +71,6 @@ namespace Neo.Consensus
                 TransactionHashes = null;
                 Signatures = new byte[Validators.Length][];
                 Commits = new UInt256[Validators.Length];
-                CommitAgreementSent = false;
             }
 
             if (MyIndex >= 0)
@@ -174,7 +172,6 @@ namespace Neo.Consensus
             ExpectedView = new byte[Validators.Length];
             KeyPair = null;
             Commits = new UInt256[Validators.Length];
-            CommitAgreementSent = false;
 
             for (int i = 0; i < Validators.Length; i++)
             {

@@ -114,13 +114,13 @@ namespace Neo.Consensus
 
         private void CheckSignatures()
         {
-            if (!context.CommitAgreementSent &&
+            if (!context.State.HasFlag(ConsensusState.CommitSent) &&
                 context.Signatures.Count(p => p != null) >= context.M &&
                 context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 // Send my commit
 
-                context.CommitAgreementSent = true;
+                context.State |= ConsensusState.CommitSent;
                 SignAndRelay(context.MakeCommitAgreement());
             }
         }
