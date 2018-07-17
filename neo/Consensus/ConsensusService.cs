@@ -122,6 +122,8 @@ namespace Neo.Consensus
 
                 context.State |= ConsensusState.CommitSent;
                 SignAndRelay(context.MakeCommitAgreement());
+
+                Log($"Commit sent: signatures={context.Signatures.Count()}");
             }
         }
 
