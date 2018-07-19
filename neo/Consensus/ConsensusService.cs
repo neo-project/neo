@@ -114,8 +114,9 @@ namespace Neo.Consensus
 
         private void CheckSignatures()
         {
-            if (!context.State.HasFlag(ConsensusState.CommitSent) &&
-                context.Signatures.Count(p => p != null) >= context.M &&
+            var sigCount = context.Signatures.Count(p => p != null);
+
+            if (!context.State.HasFlag(ConsensusState.CommitSent) && sigCount >= context.M &&
                 context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 // Send my commit
@@ -123,7 +124,7 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.CommitSent;
                 SignAndRelay(context.MakeCommitAgreement());
 
-                Log($"Commit sent: signatures={context.Signatures.Count()}");
+                Log($"Commit sent: signatures={sigCount}");
             }
         }
 
