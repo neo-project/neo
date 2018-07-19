@@ -87,11 +87,15 @@ namespace Neo.Consensus
 
         private void OnCommitAgreement(ConsensusPayload payload, CommitAgreement message)
         {
+            Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+
             if (context.State.HasFlag(ConsensusState.BlockSent) ||
                 !context.TryToCommit(payload, message)) return;
 
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
+                context.State |= ConsensusState.BlockSent;
+
                 Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
                 Block block = context.MakeHeader();
                 ContractParametersContext sc = new ContractParametersContext(block);
@@ -106,17 +110,16 @@ namespace Neo.Consensus
                 Log($"relay block: {block.Hash}");
 
                 if (!localNode.Relay(block))
+                {
                     Log($"reject block: {block.Hash}");
-
-                context.State |= ConsensusState.BlockSent;
+                }
             }
         }
 
         private void CheckSignatures()
         {
-            var sigCount = context.Signatures.Count(p => p != null);
-
-            if (!context.State.HasFlag(ConsensusState.CommitSent) && sigCount >= context.M &&
+            if (!context.State.HasFlag(ConsensusState.CommitSent) &&
+                context.Signatures.Count(p => p != null) >= context.M &&
                 context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 // Send my commit
@@ -124,7 +127,7 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.CommitSent;
                 SignAndRelay(context.MakeCommitAgreement());
 
-                Log($"Commit sent: signatures={sigCount}");
+                Log($"Commit sent: height={context.BlockIndex} state={context.State}");
             }
         }
 
