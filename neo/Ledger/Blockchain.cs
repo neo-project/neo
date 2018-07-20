@@ -117,6 +117,7 @@ namespace Neo.Ledger
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
+        private readonly Dictionary<uint, Block> block_cache_unverified = new Dictionary<uint, Block>();
         private readonly ConcurrentDictionary<UInt256, Transaction> mem_pool = new ConcurrentDictionary<UInt256, Transaction>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private readonly HashSet<IActorRef> subscribers = new HashSet<IActorRef>();
@@ -252,7 +253,7 @@ namespace Neo.Ledger
                 return RelayResultReason.AlreadyExists;
             if (block.Index - 1 >= header_index.Count)
             {
-                system.TaskManager.Tell(new TaskManager.AllowHashes { Hashes = new[] { block.Hash } });
+                block_cache_unverified[block.Index] = block;
                 return RelayResultReason.UnableToVerify;
             }
             if (block.Index == header_index.Count)
@@ -270,6 +271,7 @@ namespace Neo.Ledger
                 Block block_persist = block;
                 while (true)
                 {
+                    block_cache_unverified.Remove(block_persist.Index);
                     Persist(block_persist);
                     if (block_persist == block)
                         if (block.Index + 100 >= header_index.Count)
@@ -279,6 +281,8 @@ namespace Neo.Ledger
                     if (!block_cache.TryGetValue(hash, out block_persist)) break;
                 }
                 SaveHeaderHashList();
+                if (block_cache_unverified.TryGetValue(Height + 1, out block_persist))
+                    Self.Tell(block_persist, ActorRefs.NoSender);
             }
             else
             {

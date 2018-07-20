@@ -16,7 +16,6 @@ namespace Neo.Network.P2P
         public class NewTasks { public InvPayload Payload; }
         public class TaskCompleted { public UInt256 Hash; }
         public class HeaderTaskCompleted { }
-        public class AllowHashes { public UInt256[] Hashes; }
         public class RestartTasks { public InvPayload Payload; }
         private class Timer { }
 
@@ -36,11 +35,6 @@ namespace Neo.Network.P2P
             this.system = system;
         }
 
-        private void OnAllowHashes(UInt256[] hashes)
-        {
-            knownHashes.ExceptWith(hashes);
-        }
-
         private void OnHeaderTaskCompleted()
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
@@ -51,7 +45,8 @@ namespace Neo.Network.P2P
 
         private void OnNewTasks(InvPayload payload)
         {
-            TaskSession session = sessions[Sender];
+            if (!sessions.TryGetValue(Sender, out TaskSession session))
+                return;
             if (payload.Type == InventoryType.TX && Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
             {
                 RequestTasks(session);
@@ -112,9 +107,6 @@ namespace Neo.Network.P2P
                 case HeaderTaskCompleted _:
                     OnHeaderTaskCompleted();
                     break;
-                case AllowHashes allow:
-                    OnAllowHashes(allow.Hashes);
-                    break;
                 case RestartTasks restart:
                     OnRestartTasks(restart.Payload);
                     break;
@@ -137,7 +129,7 @@ namespace Neo.Network.P2P
 
         private void OnRestartTasks(InvPayload payload)
         {
-            OnAllowHashes(payload.Hashes);
+            knownHashes.ExceptWith(payload.Hashes);
             globalTasks.ExceptWith(payload.Hashes);
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
                 system.LocalNode.Tell(Message.Create("getdata", group));
@@ -241,9 +233,12 @@ namespace Neo.Network.P2P
         {
             switch (message)
             {
-                case TaskManager.AllowHashes _:
                 case TaskManager.RestartTasks _:
                     return true;
+                case TaskManager.NewTasks tasks:
+                    if (tasks.Payload.Type == InventoryType.Block || tasks.Payload.Type == InventoryType.Consensus)
+                        return true;
+                    return false;
                 default:
                     return false;
             }
