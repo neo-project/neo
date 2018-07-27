@@ -94,19 +94,8 @@ namespace Neo.Network.P2P
         protected override void OnData(ByteString data)
         {
             msg_buffer = msg_buffer.Concat(data);
-            if (msg_buffer.Count < sizeof(uint)) return;
-            uint magic = msg_buffer.Slice(0, sizeof(uint)).ToArray().ToUInt32(0);
-            if (magic != Message.Magic)
-                throw new FormatException();
-            if (msg_buffer.Count < Message.HeaderSize) return;
-            int length = msg_buffer.Slice(16, sizeof(int)).ToArray().ToInt32(0);
-            if (length > Message.PayloadMaxSize)
-                throw new FormatException();
-            length += Message.HeaderSize;
-            if (msg_buffer.Count < length) return;
-            Message message = msg_buffer.Slice(0, length).ToArray().AsSerializable<Message>();
-            protocol.Tell(message);
-            msg_buffer = msg_buffer.Slice(length).Compact();
+            for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
+                protocol.Tell(message);
         }
 
         protected override void OnReceive(object message)
@@ -195,6 +184,23 @@ namespace Neo.Network.P2P
                 Disconnect(true);
                 return Directive.Stop;
             }, loggingEnabled: false);
+        }
+
+        private Message TryParseMessage()
+        {
+            if (msg_buffer.Count < sizeof(uint)) return null;
+            uint magic = msg_buffer.Slice(0, sizeof(uint)).ToArray().ToUInt32(0);
+            if (magic != Message.Magic)
+                throw new FormatException();
+            if (msg_buffer.Count < Message.HeaderSize) return null;
+            int length = msg_buffer.Slice(16, sizeof(int)).ToArray().ToInt32(0);
+            if (length > Message.PayloadMaxSize)
+                throw new FormatException();
+            length += Message.HeaderSize;
+            if (msg_buffer.Count < length) return null;
+            Message message = msg_buffer.Slice(0, length).ToArray().AsSerializable<Message>();
+            msg_buffer = msg_buffer.Slice(length).Compact();
+            return message;
         }
     }
 

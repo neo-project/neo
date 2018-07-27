@@ -228,28 +228,18 @@ namespace Neo.Network.P2P
         private void OnHeadersMessageReceived(HeadersPayload payload)
         {
             if (payload.Headers.Length == 0) return;
-            version.StartHeight = Math.Max(version.StartHeight, payload.Headers[payload.Headers.Length - 1].Index);
             system.Blockchain.Tell(payload.Headers, Context.Parent);
         }
 
         private void OnInventoryReceived(IInventory inventory)
         {
             system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash }, Context.Parent);
-            switch (inventory)
-            {
-                case MinerTransaction _:
-                    return;
-                case Block block:
-                    version.StartHeight = Math.Max(version.StartHeight, block.Index);
-                    break;
-            }
+            if (inventory is MinerTransaction) return;
             system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
         }
 
         private void OnInvMessageReceived(InvPayload payload)
         {
-            if (payload.Type != InventoryType.TX && payload.Type != InventoryType.Block && payload.Type != InventoryType.Consensus)
-                return;
             system.TaskManager.Tell(new TaskManager.NewTasks { Payload = payload }, Context.Parent);
         }
 

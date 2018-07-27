@@ -52,7 +52,7 @@ namespace Neo.Network.P2P
                 RequestTasks(session);
                 return;
             }
-            HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes.Take(InvPayload.MaxHashesCount));
+            HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
             hashes.ExceptWith(knownHashes);
             switch (payload.Type)
             {
