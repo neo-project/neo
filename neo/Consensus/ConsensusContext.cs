@@ -31,6 +31,7 @@ namespace Neo.Consensus
         private UInt256[] Commits;
         private Block _header = null;
 
+        public UInt256 CommitHash => _header?.Hash;
         public int M => Validators.Length - (Validators.Length - 1) / 3;
 
         public bool TryToCommit(ConsensusPayload payload, CommitAgreement message)

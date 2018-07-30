@@ -87,7 +87,7 @@ namespace Neo.Consensus
 
         private void OnCommitAgreement(ConsensusPayload payload, CommitAgreement message)
         {
-            Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+            Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} hash={message.BlockHash.ToString()} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
             if (context.State.HasFlag(ConsensusState.BlockSent) ||
                 !context.TryToCommit(payload, message)) return;
@@ -127,7 +127,7 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.CommitSent;
                 SignAndRelay(context.MakeCommitAgreement());
 
-                Log($"Commit sent: height={context.BlockIndex} state={context.State}");
+                Log($"Commit sent: height={context.BlockIndex} hash={context.CommitHash} state={context.State}");
             }
         }
 
@@ -299,15 +299,15 @@ namespace Neo.Consensus
             }
         }
 
-        protected virtual void Log(string message)
-        {
-        }
+        protected virtual void Log(string message) { }
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
+
             if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
                 return;
+
             context.ExpectedView[payload.ValidatorIndex] = message.NewViewNumber;
             CheckExpectedView(message.NewViewNumber);
         }
@@ -315,6 +315,7 @@ namespace Neo.Consensus
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
         {
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
+
             if (!context.State.HasFlag(ConsensusState.Backup) || context.State.HasFlag(ConsensusState.RequestReceived))
                 return;
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
@@ -323,6 +324,7 @@ namespace Neo.Consensus
                 Log($"Timestamp incorrect: {payload.Timestamp}");
                 return;
             }
+
             context.State |= ConsensusState.RequestReceived;
             context.Timestamp = payload.Timestamp;
             context.Nonce = message.Nonce;
@@ -353,8 +355,10 @@ namespace Neo.Consensus
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (context.Signatures[payload.ValidatorIndex] != null) return;
+
             Block header = context.MakeHeader();
             if (header == null || !Crypto.Default.VerifySignature(header.GetHashData(), message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
             context.Signatures[payload.ValidatorIndex] = message.Signature;
