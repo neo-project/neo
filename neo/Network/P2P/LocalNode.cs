@@ -17,6 +17,7 @@ namespace Neo.Network.P2P
     {
         public class Relay { public IInventory Inventory; }
         internal class RelayDirectly { public IInventory Inventory; }
+        internal class SendDirectly { public IInventory Inventory; }
 
         public const uint ProtocolVersion = 0;
         protected override int ConnectedMax => 10;
@@ -148,6 +149,9 @@ namespace Neo.Network.P2P
                 case RelayDirectly relay:
                     OnRelayDirectly(relay.Inventory);
                     break;
+                case SendDirectly send:
+                    OnSendDirectly(send.Inventory);
+                    break;
                 case RelayResultReason _:
                     break;
             }
@@ -161,6 +165,11 @@ namespace Neo.Network.P2P
         }
 
         private void OnRelayDirectly(IInventory inventory)
+        {
+            Connections.Tell(new RemoteNode.Relay { Inventory = inventory });
+        }
+
+        private void OnSendDirectly(IInventory inventory)
         {
             Connections.Tell(inventory);
         }

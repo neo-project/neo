@@ -15,6 +15,8 @@ namespace Neo.Network.P2P
 {
     public class RemoteNode : Connection
     {
+        internal class Relay { public IInventory Inventory; }
+
         private readonly NeoSystem system;
         private readonly IActorRef protocol;
         private readonly Queue<Message> message_queue_high = new Queue<Message>();
@@ -107,7 +109,10 @@ namespace Neo.Network.P2P
                     EnqueueMessage(msg);
                     break;
                 case IInventory inventory:
-                    OnRelay(inventory);
+                    OnSend(inventory);
+                    break;
+                case Relay relay:
+                    OnRelay(relay.Inventory);
                     break;
                 case ProtocolHandler.SetVersion setVersion:
                     OnSetVersion(setVersion.Version);
@@ -130,6 +135,17 @@ namespace Neo.Network.P2P
                     return;
             }
             EnqueueMessage("inv", InvPayload.Create(inventory.InventoryType, inventory.Hash));
+        }
+
+        private void OnSend(IInventory inventory)
+        {
+            if (Version?.Relay != true) return;
+            if (inventory.InventoryType == InventoryType.TX)
+            {
+                if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
+                    return;
+            }
+            EnqueueMessage(inventory.InventoryType.ToString().ToLower(), inventory);
         }
 
         private void OnSetFilter(BloomFilter filter)

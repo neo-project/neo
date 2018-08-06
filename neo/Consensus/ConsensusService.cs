@@ -390,7 +390,7 @@ namespace Neo.Consensus
                 return;
             }
             sc.Verifiable.Witnesses = sc.GetWitnesses();
-            system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = payload });
+            system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
         }
     }
 
