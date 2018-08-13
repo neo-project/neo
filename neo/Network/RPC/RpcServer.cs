@@ -22,6 +22,50 @@ namespace Neo.Network.RPC
 {
     public class RpcServer : IDisposable
     {
+        private class CheckWitnessHashes : IVerifiable
+        {
+            private readonly UInt160[] _scriptHashesForVerifying;
+
+            public CheckWitnessHashes(UInt160[] scriptHashesForVerifying)
+            {
+                _scriptHashesForVerifying = scriptHashesForVerifying;
+            }
+
+            public int Size { get; }
+
+            public void Serialize(BinaryWriter writer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Deserialize(BinaryReader reader)
+            {
+                throw new NotImplementedException();
+            }
+
+            public byte[] GetMessage()
+            {
+                throw new NotImplementedException();
+            }
+
+            public Witness[] Scripts { get; set; }
+
+            public void DeserializeUnsigned(BinaryReader reader)
+            {
+                throw new NotImplementedException();
+            }
+
+            public UInt160[] GetScriptHashesForVerifying()
+            {
+                return _scriptHashesForVerifying;
+            }
+
+            public void SerializeUnsigned(BinaryWriter writer)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         protected readonly LocalNode LocalNode;
         private IWebHost host;
 
@@ -58,9 +102,9 @@ namespace Neo.Network.RPC
             }
         }
 
-        private static JObject GetInvokeResult(byte[] script)
+        private static JObject GetInvokeResult(byte[] script, IVerifiable checkWitnessHashes = null)
         {
-            ApplicationEngine engine = ApplicationEngine.Run(script);
+            ApplicationEngine engine = ApplicationEngine.Run(script, checkWitnessHashes);
             JObject json = new JObject();
             json["script"] = script.ToHexString();
             json["state"] = engine.State;
@@ -235,7 +279,13 @@ namespace Neo.Network.RPC
                 case "invokescript":
                     {
                         byte[] script = _params[0].AsString().HexToBytes();
-                        return GetInvokeResult(script);
+                        CheckWitnessHashes checkWitnessHashes = null;
+                        if (_params.Count > 1)
+                        {
+                            UInt160[] scriptHashesForVerifying = { UInt160.Parse(_params[1].AsString()) };
+                            checkWitnessHashes = new CheckWitnessHashes(scriptHashesForVerifying);
+                        }
+                        return GetInvokeResult(script, checkWitnessHashes);
                     }
                 case "sendrawtransaction":
                     {
