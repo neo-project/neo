@@ -73,10 +73,10 @@ namespace Neo.Core
                 using (StateReader service = new StateReader())
                 {
                     ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, Blockchain.Default, service, Fixed8.Zero);
-                    engine.LoadScript(verification, false);
-                    engine.LoadScript(verifiable.Scripts[i].InvocationScript, true);
+                    engine.LoadScript(verification);
+                    engine.LoadScript(verifiable.Scripts[i].InvocationScript);
                     if (!engine.Execute()) return false;
-                    if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
+                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
                 }
             }
             return true;
