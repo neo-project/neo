@@ -67,8 +67,8 @@ namespace Neo.Network.P2P
             else
             {
                 ws.Abort();
-                Self.Tell(Tcp.Aborted.Instance);
             }
+            Context.Stop(Self);
         }
 
         protected virtual void OnAck()
