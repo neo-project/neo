@@ -146,8 +146,9 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private void SerializeStackItem(StackItem item, BinaryWriter writer)
+        private void SerializeStackItem(StackItem item, BinaryWriter writer, List<StackItem> serialized = null)
         {
+            if (serialized == null) serialized = new List<StackItem>();
             switch (item)
             {
                 case ByteArray _:
@@ -165,21 +166,27 @@ namespace Neo.SmartContract
                 case InteropInterface _:
                     throw new NotSupportedException();
                 case VMArray array:
+                    if (serialized.Any(p => ReferenceEquals(p, array)))
+                        throw new NotSupportedException();
+                    serialized.Add(array);
                     if (array is Struct)
                         writer.Write((byte)StackItemType.Struct);
                     else
                         writer.Write((byte)StackItemType.Array);
                     writer.WriteVarInt(array.Count);
                     foreach (StackItem subitem in array)
-                        SerializeStackItem(subitem, writer);
+                        SerializeStackItem(subitem, writer, serialized);
                     break;
                 case Map map:
+                    if (serialized.Any(p => ReferenceEquals(p, map)))
+                        throw new NotSupportedException();
+                    serialized.Add(map);
                     writer.Write((byte)StackItemType.Map);
                     writer.WriteVarInt(map.Count);
                     foreach (var pair in map)
                     {
-                        SerializeStackItem(pair.Key, writer);
-                        SerializeStackItem(pair.Value, writer);
+                        SerializeStackItem(pair.Key, writer, serialized);
+                        SerializeStackItem(pair.Value, writer, serialized);
                     }
                     break;
             }
