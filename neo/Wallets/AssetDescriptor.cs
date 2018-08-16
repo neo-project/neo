@@ -25,8 +25,8 @@ namespace Neo.Wallets
                 ApplicationEngine engine = ApplicationEngine.Run(script);
                 if (engine.State.HasFlag(VMState.FAULT)) throw new ArgumentException();
                 this.AssetId = asset_id;
-                this.AssetName = engine.EvaluationStack.Pop().GetString();
-                this.Decimals = (byte)engine.EvaluationStack.Pop().GetBigInteger();
+                this.AssetName = engine.ResultStack.Pop().GetString();
+                this.Decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
             }
             else
             {

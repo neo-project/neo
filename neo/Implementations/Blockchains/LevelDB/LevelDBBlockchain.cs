@@ -586,7 +586,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                         using (StateMachine service = new StateMachine(block, accounts, assets, contracts, storages))
                         {
                             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, script_table, service, tx_invocation.Gas);
-                            engine.LoadScript(tx_invocation.Script, false);
+                            engine.LoadScript(tx_invocation.Script);
                             if (engine.Execute())
                             {
                                 service.Commit();
@@ -597,7 +597,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                                 ScriptHash = tx_invocation.Script.ToScriptHash(),
                                 VMState = engine.State,
                                 GasConsumed = engine.GasConsumed,
-                                Stack = engine.EvaluationStack.ToArray(),
+                                Stack = engine.ResultStack.ToArray(),
                                 Notifications = service.Notifications.ToArray()
                             });
                         }
