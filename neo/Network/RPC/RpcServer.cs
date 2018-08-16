@@ -109,7 +109,7 @@ namespace Neo.Network.RPC
             json["script"] = script.ToHexString();
             json["state"] = engine.State;
             json["gas_consumed"] = engine.GasConsumed.ToString();
-            json["stack"] = new JArray(engine.EvaluationStack.Select(p => p.ToParameter().ToJson()));
+            json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
             return json;
         }
 
