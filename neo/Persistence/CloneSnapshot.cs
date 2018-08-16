@@ -23,6 +23,7 @@ namespace Neo.Persistence
 
         public CloneSnapshot(Snapshot snapshot)
         {
+            this.PersistingBlock = snapshot.PersistingBlock;
             this.Blocks = snapshot.Blocks.CreateSnapshot();
             this.Transactions = snapshot.Transactions.CreateSnapshot();
             this.Accounts = snapshot.Accounts.CreateSnapshot();
