@@ -18,7 +18,7 @@ namespace Neo.Plugins
             instances.Add(this);
         }
 
-        public static void LoadPlugins()
+        static Plugin()
         {
             string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Plugins");
             if (!Directory.Exists(path)) return;
