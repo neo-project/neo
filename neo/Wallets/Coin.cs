@@ -1,4 +1,5 @@
-﻿using Neo.Core;
+﻿using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using System;
 
 namespace Neo.Wallets
@@ -16,7 +17,7 @@ namespace Neo.Wallets
             {
                 if (_address == null)
                 {
-                    _address = Wallet.ToAddress(Output.ScriptHash);
+                    _address = Output.ScriptHash.ToAddress();
                 }
                 return _address;
             }
@@ -25,7 +26,7 @@ namespace Neo.Wallets
         public bool Equals(Coin other)
         {
             if (ReferenceEquals(this, other)) return true;
-            if (ReferenceEquals(null, other)) return false;
+            if (other is null) return false;
             return Reference.Equals(other.Reference);
         }
 

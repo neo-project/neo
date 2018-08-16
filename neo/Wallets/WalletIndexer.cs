@@ -1,6 +1,8 @@
-﻿using Neo.Core;
-using Neo.IO;
+﻿using Neo.IO;
 using Neo.IO.Data.LevelDB;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -109,14 +111,11 @@ namespace Neo.Wallets
         public static IEnumerable<UInt256> GetTransactions(IEnumerable<UInt160> accounts)
         {
             ReadOptions options = new ReadOptions { FillCache = false };
-            using (options.Snapshot = db.GetSnapshot())
-            {
-                IEnumerable<UInt256> results = Enumerable.Empty<UInt256>();
-                foreach (UInt160 account in accounts)
-                    results = results.Union(db.Find(options, SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account), (k, v) => new UInt256(k.ToArray().Skip(21).ToArray())));
-                foreach (UInt256 hash in results)
-                    yield return hash;
-            }
+            IEnumerable<UInt256> results = Enumerable.Empty<UInt256>();
+            foreach (UInt160 account in accounts)
+                results = results.Union(db.Find(options, SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account), (k, v) => new UInt256(k.ToArray().Skip(21).ToArray())));
+            foreach (UInt256 hash in results)
+                yield return hash;
         }
 
         private static void ProcessBlock(Block block, HashSet<UInt160> accounts, WriteBatch batch)
@@ -218,7 +217,7 @@ namespace Neo.Wallets
                             continue;
                         }
                         uint height = indexes.Keys.Min();
-                        Block block = Blockchain.Default?.GetBlock(height);
+                        Block block = Blockchain.Singleton.Store.GetBlock(height);
                         if (block == null)
                         {
                             need_sleep = true;
@@ -246,7 +245,7 @@ namespace Neo.Wallets
                         db.Write(WriteOptions.Default, batch);
                     }
                 }
-                catch when (Blockchain.Default == null || Blockchain.Default.IsDisposed || db.IsDisposed)
+                catch when (db.IsDisposed)
                 {
                     return;
                 }

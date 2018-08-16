@@ -1,4 +1,4 @@
-﻿using Neo.Core;
+﻿using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
@@ -25,12 +25,12 @@ namespace Neo.Wallets
                 ApplicationEngine engine = ApplicationEngine.Run(script);
                 if (engine.State.HasFlag(VMState.FAULT)) throw new ArgumentException();
                 this.AssetId = asset_id;
-                this.AssetName = engine.EvaluationStack.Pop().GetString();
-                this.Decimals = (byte)engine.EvaluationStack.Pop().GetBigInteger();
+                this.AssetName = engine.ResultStack.Pop().GetString();
+                this.Decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
             }
             else
             {
-                AssetState state = Blockchain.Default.GetAssetState((UInt256)asset_id);
+                AssetState state = Blockchain.Singleton.Store.GetAssets()[(UInt256)asset_id];
                 this.AssetId = state.AssetId;
                 this.AssetName = state.GetName();
                 this.Decimals = state.Precision;

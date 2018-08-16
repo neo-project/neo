@@ -183,8 +183,7 @@ namespace Neo.IO.Caching
         private void RemoveInternal(CacheItem item)
         {
             InnerDictionary.Remove(item.Key);
-            IDisposable disposable = item.Value as IDisposable;
-            if (disposable != null)
+            if (item.Value is IDisposable disposable)
             {
                 disposable.Dispose();
             }
