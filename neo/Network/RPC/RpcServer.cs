@@ -328,6 +328,11 @@ namespace Neo.Network.RPC
                         json["useragent"] = LocalNode.UserAgent;
                         return json;
                     }
+                case "getwalletheight":
+                    if (wallet == null)
+                        throw new RpcException(-400, "Access denied.");
+                    else
+                        return (wallet.WalletHeight > 0) ? wallet.WalletHeight - 1 : 0;
                 case "invoke":
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
