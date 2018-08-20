@@ -391,7 +391,7 @@ namespace Neo.SmartContract
                     case StackItemType.Array:
                     case StackItemType.Struct:
                         {
-                            int count = (int)reader.ReadVarInt();
+                            int count = (int)reader.ReadVarInt(ApplicationEngine.MaxArraySize);
                             deserialized.Push(new ContainerPlaceholder
                             {
                                 Type = type,
@@ -402,7 +402,7 @@ namespace Neo.SmartContract
                         break;
                     case StackItemType.Map:
                         {
-                            int count = (int)reader.ReadVarInt();
+                            int count = (int)reader.ReadVarInt(ApplicationEngine.MaxArraySize);
                             deserialized.Push(new ContainerPlaceholder
                             {
                                 Type = type,

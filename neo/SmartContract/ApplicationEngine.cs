@@ -15,31 +15,31 @@ namespace Neo.SmartContract
         /// <summary>
         /// Max value for SHL and SHR
         /// </summary>
-        private const int Max_SHL_SHR = ushort.MaxValue;
+        public const int Max_SHL_SHR = ushort.MaxValue;
         /// <summary>
         /// Min value for SHL and SHR
         /// </summary>
-        private const int Min_SHL_SHR = -Max_SHL_SHR;
+        public const int Min_SHL_SHR = -Max_SHL_SHR;
         /// <summary>
         /// Set the max size allowed size for BigInteger
         /// </summary>
-        private const int MaxSizeForBigInteger = 32;
+        public const int MaxSizeForBigInteger = 32;
         /// <summary>
         /// Set the max Stack Size
         /// </summary>
-        private const uint MaxStackSize = 2 * 1024;
+        public const uint MaxStackSize = 2 * 1024;
         /// <summary>
         /// Set Max Item Size
         /// </summary>
-        private const uint MaxItemSize = 1024 * 1024;
+        public const uint MaxItemSize = 1024 * 1024;
         /// <summary>
         /// Set Max Invocation Stack Size
         /// </summary>
-        private const uint MaxInvocationStackSize = 1024;
+        public const uint MaxInvocationStackSize = 1024;
         /// <summary>
         /// Set Max Array Size
         /// </summary>
-        private const uint MaxArraySize = 1024;
+        public const uint MaxArraySize = 1024;
         #endregion
 
         private const long ratio = 100000;
