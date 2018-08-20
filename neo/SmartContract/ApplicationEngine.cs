@@ -3,6 +3,7 @@ using Neo.IO.Caching;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -272,23 +273,33 @@ namespace Neo.SmartContract
             else
                 switch (nextInstruction)
                 {
+                    case OpCode.DUPFROMALTSTACK:
+                        size = GetItemCount(new[] { CurrentContext.AltStack.Peek() });
+                        break;
+                    case OpCode.XTUCK:
+                        size = GetItemCount(new[] { CurrentContext.EvaluationStack.Peek(1) }) - 1;
+                        break;
                     case OpCode.DEPTH:
-                    case OpCode.DUP:
-                    case OpCode.OVER:
-                    case OpCode.TUCK:
                     case OpCode.NEWMAP:
                         size = 1;
                         break;
-                    case OpCode.UNPACK:
-                        StackItem item = CurrentContext.EvaluationStack.Peek();
-                        if (item is Array array)
-                            size = array.Count;
-                        else
-                            return false;
+                    case OpCode.DUP:
+                    case OpCode.TUCK:
+                        size = GetItemCount(new[] { CurrentContext.EvaluationStack.Peek() });
+                        break;
+                    case OpCode.OVER:
+                        size = GetItemCount(new[] { CurrentContext.EvaluationStack.Peek(1) });
+                        break;
+                    case OpCode.PICK:
+                        size = GetItemCount(new[] { CurrentContext.EvaluationStack.Peek((int)CurrentContext.EvaluationStack.Peek().GetBigInteger() + 1) }) - 1;
+                        break;
+                    case OpCode.NEWARRAY:
+                    case OpCode.NEWSTRUCT:
+                        size = (int)CurrentContext.EvaluationStack.Pop().GetBigInteger();
                         break;
                 }
             if (size == 0) return true;
-            size += InvocationStack.Sum(p => p.EvaluationStack.Count + p.AltStack.Count);
+            size += InvocationStack.Sum(p => GetItemCount(p.EvaluationStack) + GetItemCount(p.AltStack));
             if (size > MaxStackSize) return false;
             return true;
         }
@@ -347,6 +358,25 @@ namespace Neo.SmartContract
                 return false;
             }
             return !State.HasFlag(VMState.FAULT);
+        }
+
+        private static int GetItemCount(IEnumerable<StackItem> items)
+        {
+            int count = 0;
+            foreach (StackItem item in items)
+            {
+                count++;
+                switch (item)
+                {
+                    case Array array:
+                        count += GetItemCount(array);
+                        break;
+                    case Map map:
+                        count += GetItemCount(map.Values);
+                        break;
+                }
+            }
+            return count;
         }
 
         protected virtual long GetPrice(OpCode nextInstruction)
