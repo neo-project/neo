@@ -106,7 +106,18 @@ namespace Neo.Core
             json["code_version"] = CodeVersion;
             json["author"] = Author;
             json["email"] = Email;
-            json["description"] = Description;
+            JObject DescriptionWithABI;
+            try
+            {
+                DescriptionWithABI = JObject.Parse(Description);
+                json["description"] = DescriptionWithABI["description"];
+                json["ABI"] = DescriptionWithABI["ABI"];
+            }
+            catch (FormatException)
+            {
+                json["description"] = Description;
+                json["ABI"] = "{}";
+            }
             json["properties"] = new JObject();
             json["properties"]["storage"] = HasStorage;
             json["properties"]["dynamic_invoke"] = HasDynamicInvoke;
