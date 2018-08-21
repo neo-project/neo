@@ -293,7 +293,7 @@ namespace Neo.SmartContract
                 }
             if (size == 0) return true;
             if (size > 0)
-                size += GetItemCount(InvocationStack.SelectMany(p => p.EvaluationStack.Concat(p.AltStack)));
+                size = checked(size + GetItemCount(InvocationStack.SelectMany(p => p.EvaluationStack.Concat(p.AltStack))));
             else
                 switch (nextInstruction)
                 {
