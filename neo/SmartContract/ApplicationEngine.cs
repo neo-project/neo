@@ -274,24 +274,17 @@ namespace Neo.SmartContract
                 switch (nextInstruction)
                 {
                     case OpCode.DUPFROMALTSTACK:
-                        size = GetItemCount(new[] { CurrentContext.AltStack.Peek() });
-                        break;
-                    case OpCode.XTUCK:
-                        size = GetItemCount(new[] { CurrentContext.EvaluationStack.Peek(1) }) - 1;
-                        break;
                     case OpCode.DEPTH:
+                    case OpCode.DUP:
+                    case OpCode.OVER:
+                    case OpCode.TUCK:
                     case OpCode.NEWMAP:
                         size = 1;
                         break;
-                    case OpCode.DUP:
-                    case OpCode.TUCK:
-                        size = GetItemCount(new[] { CurrentContext.EvaluationStack.Peek() });
-                        break;
-                    case OpCode.OVER:
-                        size = GetItemCount(new[] { CurrentContext.EvaluationStack.Peek(1) });
-                        break;
-                    case OpCode.PICK:
-                        size = GetItemCount(new[] { CurrentContext.EvaluationStack.Peek((int)CurrentContext.EvaluationStack.Peek().GetBigInteger() + 1) }) - 1;
+                    case OpCode.UNPACK:
+                    case OpCode.KEYS:
+                    case OpCode.VALUES:
+                        size = -1;
                         break;
                     case OpCode.NEWARRAY:
                     case OpCode.NEWSTRUCT:
@@ -299,9 +292,28 @@ namespace Neo.SmartContract
                         break;
                 }
             if (size == 0) return true;
-            size += InvocationStack.Sum(p => GetItemCount(p.EvaluationStack) + GetItemCount(p.AltStack));
-            if (size > MaxStackSize) return false;
-            return true;
+            if (size > 0)
+                size += GetItemCount(InvocationStack.SelectMany(p => p.EvaluationStack.Concat(p.AltStack)));
+            else
+                switch (nextInstruction)
+                {
+                    case OpCode.UNPACK:
+                    case OpCode.VALUES:
+                        switch (CurrentContext.EvaluationStack.Peek())
+                        {
+                            case Array array:
+                                size = GetItemCount(GetPopped().Concat(array)) + 1;
+                                break;
+                            case Map map:
+                                size = GetItemCount(GetPopped().Concat(map.Values)) + 1;
+                                break;
+                        }
+                        break;
+                    case OpCode.KEYS:
+                        size = GetItemCount(GetPopped()) + ((Map)CurrentContext.EvaluationStack.Peek()).Count + 1;
+                        break;
+                }
+            return size <= MaxStackSize;
         }
 
         private bool CheckDynamicInvoke(OpCode nextInstruction)
@@ -362,17 +374,28 @@ namespace Neo.SmartContract
 
         private static int GetItemCount(IEnumerable<StackItem> items)
         {
+            Queue<StackItem> queue = new Queue<StackItem>(items);
+            List<StackItem> counted = new List<StackItem>();
             int count = 0;
-            foreach (StackItem item in items)
+            while (queue.Count > 0)
             {
+                StackItem item = queue.Dequeue();
                 count++;
                 switch (item)
                 {
                     case Array array:
-                        count += GetItemCount(array);
+                        if (counted.Any(p => ReferenceEquals(p, array)))
+                            continue;
+                        counted.Add(array);
+                        foreach (StackItem subitem in array)
+                            queue.Enqueue(subitem);
                         break;
                     case Map map:
-                        count += GetItemCount(map.Values);
+                        if (counted.Any(p => ReferenceEquals(p, map)))
+                            continue;
+                        counted.Add(map);
+                        foreach (StackItem subitem in map.Values)
+                            queue.Enqueue(subitem);
                         break;
                 }
             }
@@ -500,6 +523,11 @@ namespace Neo.SmartContract
                 default:
                     return 1;
             }
+        }
+
+        private IEnumerable<StackItem> GetPopped()
+        {
+            return InvocationStack.Take(InvocationStack.Count - 1).SelectMany(p => p.EvaluationStack).Concat(CurrentContext.EvaluationStack.Take(CurrentContext.EvaluationStack.Count - 1)).Concat(InvocationStack.SelectMany(p => p.AltStack));
         }
 
         public static ApplicationEngine Run(byte[] script, IScriptContainer container = null, Block persisting_block = null)
