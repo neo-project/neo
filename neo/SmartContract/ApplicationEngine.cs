@@ -368,6 +368,7 @@ namespace Neo.SmartContract
                 case OpCode.HASH256:
                     return 20;
                 case OpCode.CHECKSIG:
+                case OpCode.VERIFY:
                     return 100;
                 case OpCode.CHECKMULTISIG:
                     {
