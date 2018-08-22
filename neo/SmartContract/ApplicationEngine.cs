@@ -288,7 +288,7 @@ namespace Neo.SmartContract
                         break;
                     case OpCode.NEWARRAY:
                     case OpCode.NEWSTRUCT:
-                        size = (int)CurrentContext.EvaluationStack.Pop().GetBigInteger();
+                        size = (int)CurrentContext.EvaluationStack.Peek().GetBigInteger();
                         break;
                 }
             if (size == 0) return true;
