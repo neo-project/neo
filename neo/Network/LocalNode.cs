@@ -277,6 +277,7 @@ namespace Neo.Network
 
             UInt256[] hashes = mem_pool.Values.AsParallel()
                 .OrderBy(p => p.NetworkFee / p.Size)
+                .ThenBy(p => p.NetworkFee)
                 .ThenBy(p => new BigInteger(p.Hash.ToArray()))
                 .Take(mem_pool.Count - MemoryPoolSize)
                 .Select(p => p.Hash)
