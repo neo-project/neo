@@ -22,7 +22,7 @@ namespace Neo.IO.Caching
             }
         }
 
-        protected readonly ReaderWriterLock RwSyncRootLock = new ReaderWriterLock();
+        protected readonly ReaderWriterLockSlim RwSyncRootLock = new ReaderWriterLockSlim();
         protected readonly Dictionary<TKey, CacheItem> InnerDictionary = new Dictionary<TKey, CacheItem>();
         private readonly int max_capacity;
 
@@ -30,7 +30,7 @@ namespace Neo.IO.Caching
         {
             get
             {
-                RwSyncRootLock.AcquireReaderLock(-1);
+                RwSyncRootLock.EnterReadLock();
                 try
                 {
                     if (!InnerDictionary.TryGetValue(key, out CacheItem item)) throw new KeyNotFoundException();
@@ -39,7 +39,7 @@ namespace Neo.IO.Caching
                 }
                 finally
                 {
-                    RwSyncRootLock.ReleaseReaderLock();
+                    RwSyncRootLock.ExitReadLock();
                 }
             }
         }
@@ -48,14 +48,14 @@ namespace Neo.IO.Caching
         {
             get
             {
-                RwSyncRootLock.AcquireReaderLock(-1);
+                RwSyncRootLock.EnterReadLock();
                 try
                 {
                     return InnerDictionary.Count;
                 }
                 finally
                 {
-                    RwSyncRootLock.ReleaseReaderLock();
+                    RwSyncRootLock.ExitReadLock();
                 }
             }
         }
@@ -76,14 +76,14 @@ namespace Neo.IO.Caching
         public void Add(TValue item)
         {
             TKey key = GetKeyForItem(item);
-            RwSyncRootLock.AcquireWriterLock(-1);
+            RwSyncRootLock.EnterWriteLock();
             try
             {
                 AddInternal(key, item);
             }
             finally
             {
-                RwSyncRootLock.ReleaseWriterLock();
+                RwSyncRootLock.ExitWriteLock();
             }
         }
 
@@ -109,7 +109,7 @@ namespace Neo.IO.Caching
 
         public void AddRange(IEnumerable<TValue> items)
         {
-            RwSyncRootLock.AcquireWriterLock(-1);
+            RwSyncRootLock.EnterWriteLock();
             try
             {
                 foreach (TValue item in items)
@@ -120,13 +120,13 @@ namespace Neo.IO.Caching
             }
             finally
             {
-                RwSyncRootLock.ReleaseWriterLock();
+                RwSyncRootLock.ExitWriteLock();
             }
         }
 
         public void Clear()
         {
-            RwSyncRootLock.AcquireWriterLock(-1);
+            RwSyncRootLock.EnterWriteLock();
             try
             {
                 foreach (CacheItem item_del in InnerDictionary.Values.ToArray())
@@ -136,13 +136,13 @@ namespace Neo.IO.Caching
             }
             finally
             {
-                RwSyncRootLock.ReleaseWriterLock();
+                RwSyncRootLock.ExitWriteLock();
             }
         }
 
         public bool Contains(TKey key)
         {
-            RwSyncRootLock.AcquireReaderLock(-1);
+            RwSyncRootLock.EnterReadLock();
             try
             {
                 if (!InnerDictionary.TryGetValue(key, out CacheItem cacheItem)) return false;
@@ -151,7 +151,7 @@ namespace Neo.IO.Caching
             }
             finally
             {
-                RwSyncRootLock.ReleaseReaderLock();
+                RwSyncRootLock.ExitReadLock();
             }
         }
 
@@ -178,7 +178,7 @@ namespace Neo.IO.Caching
 
         public IEnumerator<TValue> GetEnumerator()
         {
-            RwSyncRootLock.AcquireReaderLock(-1);
+            RwSyncRootLock.EnterReadLock();
             try
             {
                 foreach (TValue item in InnerDictionary.Values.Select(p => p.Value))
@@ -188,7 +188,7 @@ namespace Neo.IO.Caching
             }
             finally
             {
-                RwSyncRootLock.ReleaseReaderLock();
+                RwSyncRootLock.ExitReadLock();
             }
         }
 
@@ -201,7 +201,7 @@ namespace Neo.IO.Caching
 
         public bool Remove(TKey key)
         {
-            RwSyncRootLock.AcquireWriterLock(-1);
+            RwSyncRootLock.EnterWriteLock();
             try
             {
                 if (!InnerDictionary.TryGetValue(key, out CacheItem cacheItem)) return false;
@@ -210,7 +210,7 @@ namespace Neo.IO.Caching
             }
             finally
             {
-                RwSyncRootLock.ReleaseWriterLock();
+                RwSyncRootLock.ExitWriteLock();
             }
         }
 
@@ -232,7 +232,7 @@ namespace Neo.IO.Caching
 
         public bool TryGet(TKey key, out TValue item)
         {
-            RwSyncRootLock.AcquireReaderLock(-1);
+            RwSyncRootLock.EnterReadLock();
             try
             {
                 if (InnerDictionary.TryGetValue(key, out CacheItem cacheItem))
@@ -244,7 +244,7 @@ namespace Neo.IO.Caching
             }
             finally
             {
-                RwSyncRootLock.ReleaseReaderLock();
+                RwSyncRootLock.ExitReadLock();
             }
             item = default(TValue);
             return false;
