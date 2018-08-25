@@ -534,6 +534,7 @@ namespace Neo.Network
 
                     new_tx_event.Dispose();
                 }
+                MemPoolReadWriteLock.Dispose();
             }
         }
 

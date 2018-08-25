@@ -174,6 +174,7 @@ namespace Neo.IO.Caching
         public void Dispose()
         {
             Clear();
+            RwSyncRootLock.Dispose();
         }
 
         public IEnumerator<TValue> GetEnumerator()
