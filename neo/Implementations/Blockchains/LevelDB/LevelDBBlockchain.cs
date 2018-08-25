@@ -21,9 +21,9 @@ namespace Neo.Implementations.Blockchains.LevelDB
 
         private DB db;
         private Thread thread_persistence;
-        private ReaderWriterLockSlim headerIndexRwLock = new ReaderWriterLockSlim();
+        private ReaderWriterLockSlim headerIndexRwLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
         private List<UInt256> header_index = new List<UInt256>();
-        private ReaderWriterLockSlim headerCacheRwLock = new ReaderWriterLockSlim();
+        private ReaderWriterLockSlim headerCacheRwLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
         private Dictionary<UInt256, Header> header_cache = new Dictionary<UInt256, Header>();
         private Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private uint current_block_height = 0;
