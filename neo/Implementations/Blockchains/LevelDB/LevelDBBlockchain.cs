@@ -21,9 +21,9 @@ namespace Neo.Implementations.Blockchains.LevelDB
 
         private DB db;
         private Thread thread_persistence;
-        private ReaderWriterLock headerIndexRwLock = new ReaderWriterLock();
+        private ReaderWriterLockSlim headerIndexRwLock = new ReaderWriterLockSlim();
         private List<UInt256> header_index = new List<UInt256>();
-        private ReaderWriterLock headerCacheRwLock = new ReaderWriterLock();
+        private ReaderWriterLockSlim headerCacheRwLock = new ReaderWriterLockSlim();
         private Dictionary<UInt256, Header> header_cache = new Dictionary<UInt256, Header>();
         private Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private uint current_block_height = 0;
@@ -127,7 +127,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                     block_cache.Add(block.Hash, block);
                 }
             }
-            headerIndexRwLock.AcquireWriterLock(-1);
+            headerIndexRwLock.EnterWriteLock();
             try
             {
                 if (block.Index - 1 >= header_index.Count) return false;
@@ -143,7 +143,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             }
             finally
             {
-                headerIndexRwLock.ReleaseWriterLock();
+                headerIndexRwLock.ExitWriteLock();
             }
             return true;
         }
@@ -168,10 +168,10 @@ namespace Neo.Implementations.Blockchains.LevelDB
 
         protected internal override void AddHeaders(IEnumerable<Header> headers)
         {
-            headerIndexRwLock.AcquireWriterLock(-1);
+            headerIndexRwLock.EnterWriteLock();
             try
             {
-                headerCacheRwLock.AcquireWriterLock(-1);
+                headerCacheRwLock.EnterWriteLock();
                 try
                 {
                     WriteBatch batch = new WriteBatch();
@@ -188,13 +188,13 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 }
                 finally
                 {
-                    headerCacheRwLock.ReleaseWriterLock();                    
+                    headerCacheRwLock.ExitWriteLock();                    
                 }
                 
             }
             finally
             {
-                headerIndexRwLock.ReleaseWriterLock();
+                headerIndexRwLock.ExitWriteLock();
             }
         }
 
@@ -249,7 +249,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
         public override UInt256 GetBlockHash(uint height)
         {
             if (current_block_height < height) return null;
-            headerIndexRwLock.AcquireReaderLock(-1);
+            headerIndexRwLock.EnterReadLock();
             try
             {
                 if (header_index.Count <= height) return null;
@@ -257,7 +257,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             }
             finally
             {
-                headerIndexRwLock.ReleaseReaderLock();
+                headerIndexRwLock.ExitReadLock();
             }
         }
 
@@ -286,7 +286,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
         public override Header GetHeader(uint height)
         {
             UInt256 hash;
-            headerIndexRwLock.AcquireReaderLock(-1);
+            headerIndexRwLock.EnterReadLock();
             try
             {
                 if (header_index.Count <= height) return null;
@@ -294,14 +294,14 @@ namespace Neo.Implementations.Blockchains.LevelDB
             }
             finally
             {
-                headerIndexRwLock.ReleaseReaderLock();
+                headerIndexRwLock.ExitReadLock();
             }
             return GetHeader(hash);
         }
 
         public override Header GetHeader(UInt256 hash)
         {
-            headerCacheRwLock.AcquireReaderLock(-1);
+            headerCacheRwLock.EnterReadLock();
             try
             {
                 if (header_cache.TryGetValue(hash, out Header header))
@@ -309,7 +309,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             }
             finally
             {
-                headerCacheRwLock.ReleaseReaderLock();
+                headerCacheRwLock.ExitReadLock();
             }
             Slice value;
             if (!db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.DATA_Block).Add(hash), out value))
@@ -326,7 +326,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
         {
             Header header = GetHeader(hash);
             if (header == null) return null;
-            headerIndexRwLock.AcquireReaderLock(-1);
+            headerIndexRwLock.EnterReadLock();
             try
             {
                 if (header.Index + 1 >= header_index.Count)
@@ -335,7 +335,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
             }
             finally
             {
-                headerIndexRwLock.ReleaseReaderLock();
+                headerIndexRwLock.ExitReadLock();
             }
         }
 
@@ -672,7 +672,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 while (!disposed)
                 {
                     UInt256 hash;
-                    headerIndexRwLock.AcquireReaderLock(-1);
+                    headerIndexRwLock.EnterReadLock();
                     try
                     {
                         if (header_index.Count <= current_block_height + 1) break;
@@ -680,7 +680,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                     }
                     finally
                     {
-                        headerIndexRwLock.ReleaseReaderLock();
+                        headerIndexRwLock.ExitReadLock();
                     }
                     Block block;
                     lock (block_cache)

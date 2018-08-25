@@ -35,7 +35,7 @@ namespace Neo.Network
         internal static readonly TimeSpan HashesExpiration = TimeSpan.FromSeconds(30);
         private DateTime LastBlockReceived = DateTime.UtcNow;
 
-        private static readonly ReaderWriterLock MemPoolReadWriteLock = new ReaderWriterLock();
+        private static readonly ReaderWriterLockSlim MemPoolReadWriteLock = new ReaderWriterLockSlim();
         private static readonly Dictionary<UInt256, Transaction> mem_pool = new Dictionary<UInt256, Transaction>();
         private readonly HashSet<Transaction> temp_pool = new HashSet<Transaction>();
         internal static readonly Dictionary<UInt256, DateTime> KnownHashes = new Dictionary<UInt256, DateTime>();
@@ -120,7 +120,7 @@ namespace Neo.Network
             if (Blockchain.Default == null) return false;
             lock (Blockchain.Default.PersistLock)
             {
-                MemPoolReadWriteLock.AcquireWriterLock(-1);
+                MemPoolReadWriteLock.EnterReadLock();
                 try
                 {
                     if (mem_pool.ContainsKey(tx.Hash)) return false;
@@ -131,7 +131,7 @@ namespace Neo.Network
                 }
                 finally
                 {
-                    MemPoolReadWriteLock.ReleaseWriterLock();
+                    MemPoolReadWriteLock.ExitReadLock();
                 }
             }
             return true;
@@ -144,11 +144,11 @@ namespace Neo.Network
                 new_tx_event.WaitOne();
 
                 bool shouldCoolDown = false;
-                MemPoolReadWriteLock.AcquireReaderLock(-1);
+                MemPoolReadWriteLock.EnterReadLock();
                 if (mem_pool.Count > 1000 && temp_pool.Count > 1000) shouldCoolDown = true;
-                MemPoolReadWriteLock.ReleaseReaderLock();
+                MemPoolReadWriteLock.ExitReadLock();
                 // Don't starve readers wanting to acquire the mem_pool lock
-                if (shouldCoolDown) Thread.Sleep(50);
+                if (shouldCoolDown) Thread.Sleep(1000);
                 
                 Transaction[] transactions;
                 lock (temp_pool)
@@ -176,7 +176,7 @@ namespace Neo.Network
                 ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
                 lock (Blockchain.Default.PersistLock)
                 {
-                    MemPoolReadWriteLock.AcquireWriterLock(-1);
+                    MemPoolReadWriteLock.EnterWriteLock();
                     try
                     {
                         transactions = transactions.Where(p => !mem_pool.ContainsKey(p.Hash) && !Blockchain.Default.ContainsTransaction(p.Hash)).ToArray();
@@ -218,7 +218,7 @@ namespace Neo.Network
                     }
                     finally
                     {
-                        MemPoolReadWriteLock.ReleaseWriterLock();
+                        MemPoolReadWriteLock.ExitWriteLock();
                     }
                 }
                 RelayDirectly(verified);
@@ -243,7 +243,7 @@ namespace Neo.Network
             var millisSinceLastBlock = TimeSpan.FromTicks(DateTimeOffset.UtcNow.Ticks)
                 .Subtract(TimeSpan.FromTicks(LastBlockReceived.Ticks)).TotalMilliseconds;
 
-            MemPoolReadWriteLock.AcquireWriterLock(-1);
+            MemPoolReadWriteLock.EnterWriteLock();
             try
             {
                 // Remove the transactions that made it into the block
@@ -273,7 +273,7 @@ namespace Neo.Network
             }
             finally
             {
-                MemPoolReadWriteLock.ReleaseWriterLock();
+                MemPoolReadWriteLock.ExitWriteLock();
             }
             LastBlockReceived = DateTime.UtcNow;
             
@@ -510,14 +510,14 @@ namespace Neo.Network
 
         public static bool ContainsTransaction(UInt256 hash)
         {
-            MemPoolReadWriteLock.AcquireReaderLock(-1);
+            MemPoolReadWriteLock.EnterReadLock();
             try
             {
                 return mem_pool.ContainsKey(hash);
             }
             finally
             {
-                MemPoolReadWriteLock.ReleaseReaderLock();
+                MemPoolReadWriteLock.ExitReadLock();
             }
         }
 
@@ -564,14 +564,14 @@ namespace Neo.Network
 
         public static Transaction[] GetMemoryPool()
         {
-            MemPoolReadWriteLock.AcquireReaderLock(-1);
+            MemPoolReadWriteLock.EnterReadLock();
             try
             {
                 return mem_pool.Values.ToArray();
             }
             finally
             {
-                MemPoolReadWriteLock.ReleaseReaderLock();
+                MemPoolReadWriteLock.ExitReadLock();
             }
         }
 
@@ -585,7 +585,7 @@ namespace Neo.Network
 
         public static Transaction GetTransaction(UInt256 hash)
         {
-            MemPoolReadWriteLock.AcquireReaderLock(-1);
+            MemPoolReadWriteLock.EnterReadLock();
             try
             {
                 if (!mem_pool.TryGetValue(hash, out Transaction tx))
@@ -594,7 +594,7 @@ namespace Neo.Network
             }
             finally
             {
-                MemPoolReadWriteLock.ReleaseReaderLock();
+                MemPoolReadWriteLock.ExitReadLock();
             }
         }
 
