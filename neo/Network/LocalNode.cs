@@ -35,7 +35,7 @@ namespace Neo.Network
         internal static readonly TimeSpan HashesExpiration = TimeSpan.FromSeconds(30);
         private DateTime LastBlockReceived = DateTime.UtcNow;
 
-        private static readonly ReaderWriterLockSlim MemPoolReadWriteLock = new ReaderWriterLockSlim();
+        private static readonly ReaderWriterLockSlim MemPoolReadWriteLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
         private static readonly Dictionary<UInt256, Transaction> mem_pool = new Dictionary<UInt256, Transaction>();
         private readonly HashSet<Transaction> temp_pool = new HashSet<Transaction>();
         internal static readonly Dictionary<UInt256, DateTime> KnownHashes = new Dictionary<UInt256, DateTime>();
