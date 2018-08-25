@@ -120,7 +120,7 @@ namespace Neo.Network
             if (Blockchain.Default == null) return false;
             lock (Blockchain.Default.PersistLock)
             {
-                MemPoolReadWriteLock.EnterReadLock();
+                MemPoolReadWriteLock.EnterWriteLock();
                 try
                 {
                     if (mem_pool.ContainsKey(tx.Hash)) return false;
@@ -131,7 +131,7 @@ namespace Neo.Network
                 }
                 finally
                 {
-                    MemPoolReadWriteLock.ExitReadLock();
+                    MemPoolReadWriteLock.ExitWriteLock();
                 }
             }
             return true;
