@@ -229,6 +229,8 @@ namespace Neo.Implementations.Blockchains.LevelDB
                 db.Dispose();
                 db = null;
             }
+            headerCacheRwLock.Dispose();
+            headerIndexRwLock.Dispose();
         }
 
         public override AccountState GetAccountState(UInt160 script_hash)
