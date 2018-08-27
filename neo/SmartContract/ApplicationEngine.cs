@@ -370,11 +370,18 @@ namespace Neo.SmartContract
                 case OpCode.HASH256:
                     return 20;
                 case OpCode.CHECKSIG:
+                case OpCode.VERIFY:
                     return 100;
                 case OpCode.CHECKMULTISIG:
                     {
                         if (CurrentContext.EvaluationStack.Count == 0) return 1;
-                        int n = (int)CurrentContext.EvaluationStack.Peek().GetBigInteger();
+                        
+                        var item = CurrentContext.EvaluationStack.Peek();
+                        
+                        int n;
+                        if (item is Array array) n = array.Count;
+                        else n = (int)item.GetBigInteger();
+                        
                         if (n < 1) return 1;
                         return 100 * n;
                     }
