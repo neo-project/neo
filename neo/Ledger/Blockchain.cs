@@ -8,6 +8,7 @@ using Neo.IO.Caching;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
@@ -236,8 +237,12 @@ namespace Neo.Ledger
         {
             foreach (Block block in blocks)
             {
-                if (block.Index <= Height) continue;
-                if (block.Index != Height + 1)
+		uint maxHeight = Height;
+                foreach (ILoadingPlugin plugin in Plugin.LoadingPlugins)
+			plugin.UpdateMaxHeight(ref maxHeight);
+
+                if (block.Index <= maxHeight) continue;
+                if (block.Index != maxHeight + 1)
                     throw new InvalidOperationException();
                 Persist(block);
                 SaveHeaderHashList();
