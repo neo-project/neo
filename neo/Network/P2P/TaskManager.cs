@@ -3,7 +3,6 @@ using Akka.Configuration;
 using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,30 +53,8 @@ namespace Neo.Network.P2P
             }
             HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
             hashes.ExceptWith(knownHashes);
-            switch (payload.Type)
-            {
-                case InventoryType.Block:
-                    using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
-                        foreach (UInt256 hash in hashes.ToArray())
-                            if (snapshot.ContainsBlock(hash))
-                            {
-                                hashes.Remove(hash);
-                                knownHashes.Add(hash);
-                            }
-                    foreach (UInt256 hash in hashes)
-                        if (globalTasks.Contains(hash))
-                            session.AvailableTasks.Add(hash);
-                    break;
-                case InventoryType.TX:
-                    using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
-                        foreach (UInt256 hash in hashes.ToArray())
-                            if (snapshot.ContainsTransaction(hash))
-                            {
-                                hashes.Remove(hash);
-                                knownHashes.Add(hash);
-                            }
-                    break;
-            }
+            if (payload.Type == InventoryType.Block)
+                session.AvailableTasks.UnionWith(hashes.Where(p => globalTasks.Contains(p)));
             hashes.ExceptWith(globalTasks);
             if (hashes.Count == 0)
             {

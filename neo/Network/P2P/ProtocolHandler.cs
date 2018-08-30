@@ -6,6 +6,7 @@ using Neo.IO.Actors;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -21,6 +22,8 @@ namespace Neo.Network.P2P
         public class SetFilter { public BloomFilter Filter; }
 
         private readonly NeoSystem system;
+        private readonly HashSet<UInt256> knownHashes = new HashSet<UInt256>();
+        private readonly HashSet<UInt256> sentHashes = new HashSet<UInt256>();
         private VersionPayload version;
         private bool verack = false;
         private BloomFilter bloom_filter;
@@ -168,7 +171,8 @@ namespace Neo.Network.P2P
 
         private void OnGetDataMessageReceived(InvPayload payload)
         {
-            foreach (UInt256 hash in payload.Hashes.Distinct())
+            UInt256[] hashes = payload.Hashes.Where(p => sentHashes.Add(p)).ToArray();
+            foreach (UInt256 hash in hashes)
             {
                 Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventory);
                 switch (payload.Type)
@@ -240,7 +244,21 @@ namespace Neo.Network.P2P
 
         private void OnInvMessageReceived(InvPayload payload)
         {
-            system.TaskManager.Tell(new TaskManager.NewTasks { Payload = payload }, Context.Parent);
+            UInt256[] hashes = payload.Hashes.Where(p => knownHashes.Add(p)).ToArray();
+            if (hashes.Length == 0) return;
+            switch (payload.Type)
+            {
+                case InventoryType.Block:
+                    using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                        hashes = hashes.Where(p => !snapshot.ContainsBlock(p)).ToArray();
+                    break;
+                case InventoryType.TX:
+                    using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                        hashes = hashes.Where(p => !snapshot.ContainsTransaction(p)).ToArray();
+                    break;
+            }
+            if (hashes.Length == 0) return;
+            system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) }, Context.Parent);
         }
 
         private void OnMemPoolMessageReceived()
