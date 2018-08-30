@@ -26,7 +26,8 @@ namespace Neo.Network.P2P
 
         private const int MaxConnectionsPerAddress = 3;
 
-        private static readonly IActorRef tcp = Context.System.Tcp();
+        private static readonly IActorRef tcp_manager = Context.System.Tcp();
+        private IActorRef tcp_listener;
         private IWebHost ws_host;
         private ICancelable timer;
         protected ActorSelection Connections => Context.ActorSelection("connection_*");
@@ -61,7 +62,7 @@ namespace Neo.Network.P2P
             if (ConnectedAddresses.TryGetValue(endPoint.Address, out int count) && count >= MaxConnectionsPerAddress)
                 return;
             if (ConnectedPeers.Values.Contains(endPoint)) return;
-            tcp.Tell(new Tcp.Connect(endPoint));
+            tcp_manager.Tell(new Tcp.Connect(endPoint));
         }
 
         private static bool IsIntranetAddress(IPAddress address)
@@ -97,6 +98,8 @@ namespace Neo.Network.P2P
                     OnTcpConnected(((IPEndPoint)connected.RemoteAddress).Unmap(), ((IPEndPoint)connected.LocalAddress).Unmap());
                     break;
                 case Tcp.Bound _:
+                    tcp_listener = Sender;
+                    break;
                 case Tcp.CommandFailed _:
                     break;
                 case Terminated terminated:
@@ -125,7 +128,7 @@ namespace Neo.Network.P2P
             }
             if (port > 0)
             {
-                tcp.Tell(new Tcp.Bind(Self, new IPEndPoint(IPAddress.Any, port), options: new[] { new Inet.SO.ReuseAddress(true) }));
+                tcp_manager.Tell(new Tcp.Bind(Self, new IPEndPoint(IPAddress.Any, port), options: new[] { new Inet.SO.ReuseAddress(true) }));
             }
             if (ws_port > 0)
             {
@@ -194,6 +197,8 @@ namespace Neo.Network.P2P
         protected override void PostStop()
         {
             timer.CancelIfNotNull();
+            ws_host?.Dispose();
+            tcp_listener?.Tell(Tcp.Unbind.Instance);
             base.PostStop();
         }
 
