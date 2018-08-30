@@ -233,6 +233,7 @@ namespace Neo.Network.P2P
         {
             switch (message)
             {
+                case TaskManager.Register _:
                 case TaskManager.RestartTasks _:
                     return true;
                 case TaskManager.NewTasks tasks:
