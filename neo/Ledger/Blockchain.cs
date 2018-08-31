@@ -243,11 +243,9 @@ namespace Neo.Ledger
                 Persist(block);
                 SaveHeaderHashList();
 
-		uint maxHeight = 0;
-                foreach (ILoadingPlugin plugin in Plugin.LoadingPlugins)
-			plugin.UpdateMaxHeight(ref maxHeight);
-		if (maxHeight!= 0 && block.Index >= maxHeight)
-			break;
+                foreach (IPolicyPlugin plugin in Plugin.Policies)
+			if(plugin.CheckMaxOnImportHeight(block.Index))
+				break;
             }
             Sender.Tell(new ImportCompleted());
         }

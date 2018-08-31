@@ -9,7 +9,6 @@ namespace Neo.Plugins
     {
         internal static readonly List<ILogPlugin> Loggers = new List<ILogPlugin>();
         internal static readonly List<IPolicyPlugin> Policies = new List<IPolicyPlugin>();
-        internal static readonly List<ILoadingPlugin> LoadingPlugins = new List<ILoadingPlugin>();
         internal static readonly List<IRpcPlugin> RpcPlugins = new List<IRpcPlugin>();
 
         protected static NeoSystem System { get; private set; }
@@ -20,7 +19,6 @@ namespace Neo.Plugins
         {
             if (this is ILogPlugin logger) Loggers.Add(logger);
             if (this is IPolicyPlugin policy) Policies.Add(policy);
-            if (this is ILoadingPlugin loading) LoadingPlugins.Add(loading);
             if (this is IRpcPlugin rpc) RpcPlugins.Add(rpc);
         }
 
