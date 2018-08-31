@@ -237,15 +237,17 @@ namespace Neo.Ledger
         {
             foreach (Block block in blocks)
             {
-		uint maxHeight = Height;
-                foreach (ILoadingPlugin plugin in Plugin.LoadingPlugins)
-			plugin.UpdateMaxHeight(ref maxHeight);
-
-                if (block.Index <= maxHeight) continue;
-                if (block.Index != maxHeight + 1)
+                if (block.Index <= Height) continue;
+                if (block.Index != Height + 1)
                     throw new InvalidOperationException();
                 Persist(block);
                 SaveHeaderHashList();
+
+		uint maxHeight = 0;
+                foreach (ILoadingPlugin plugin in Plugin.LoadingPlugins)
+			plugin.UpdateMaxHeight(ref maxHeight);
+		if (maxHeight!= 0 && block.Index >= maxHeight)
+			break;
             }
             Sender.Tell(new ImportCompleted());
         }
