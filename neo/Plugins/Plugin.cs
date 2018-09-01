@@ -7,6 +7,7 @@ namespace Neo.Plugins
 {
     public abstract class Plugin
     {
+        private static readonly List<Plugin> Plugins = new List<Plugin>();
         internal static readonly List<ILogPlugin> Loggers = new List<ILogPlugin>();
         internal static readonly List<IPolicyPlugin> Policies = new List<IPolicyPlugin>();
         internal static readonly List<IRpcPlugin> RpcPlugins = new List<IRpcPlugin>();
@@ -15,8 +16,11 @@ namespace Neo.Plugins
         public virtual string Name => GetType().Name;
         public virtual Version Version => GetType().Assembly.GetName().Version;
 
+        protected virtual bool OnMessage(object message) => false;
+
         protected Plugin()
         {
+            Plugins.Add(this);
             if (this is ILogPlugin logger) Loggers.Add(logger);
             if (this is IPolicyPlugin policy) Policies.Add(policy);
             if (this is IRpcPlugin rpc) RpcPlugins.Add(rpc);
@@ -45,6 +49,14 @@ namespace Neo.Plugins
         {
             foreach (ILogPlugin plugin in Loggers)
                 plugin.Log(source, level, message);
+        }
+
+        public static bool SendMessage(object message)
+        {
+            foreach (Plugin plugin in Plugins)
+                if (plugin.OnMessage(message))
+                    return true;
+            return false;
         }
     }
 }
