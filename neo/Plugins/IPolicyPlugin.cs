@@ -6,6 +6,7 @@ namespace Neo.Plugins
     public interface IPolicyPlugin
     {
         bool CheckPolicy(Transaction tx);
+	bool CheckMaxOnImportHeight(uint currentImportBlockIndex);
         IEnumerable<Transaction> Filter(IEnumerable<Transaction> transactions);
     }
 }

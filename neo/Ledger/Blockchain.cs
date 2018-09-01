@@ -8,6 +8,7 @@ using Neo.IO.Caching;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
@@ -241,6 +242,10 @@ namespace Neo.Ledger
                     throw new InvalidOperationException();
                 Persist(block);
                 SaveHeaderHashList();
+
+                foreach (IPolicyPlugin plugin in Plugin.Policies)
+			if(plugin.CheckMaxOnImportHeight(block.Index))
+				break;
             }
             Sender.Tell(new ImportCompleted());
         }
