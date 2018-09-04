@@ -163,12 +163,33 @@ namespace Neo.Network
                     {
                         // Attempt verifying large fee transactions first.
                         transactions = temp_pool
-                            .OrderBy(p => p.NetworkFee / p.Size)
-                            .ThenBy(p => p.NetworkFee)
-                            .ThenBy(p => new BigInteger(p.Hash.ToArray()))
+                            .OrderByDescending(p =>
+                            {
+                                try
+                                {
+                                    var fee = p.NetworkFee;
+                                    return fee / p.Size;
+                                }
+                                catch (Exception)
+                                {
+                                    return Fixed8.Zero;
+                                }
+                            })
+                            .ThenByDescending(p =>
+                            {
+                                try
+                                {
+                                    return p.NetworkFee;
+                                }
+                                catch (Exception)
+                                {
+                                    return Fixed8.Zero;
+                                }
+                            })
+                            .ThenByDescending(p => new BigInteger(p.Hash.ToArray()))
                             .Take(1000)
                             .ToArray();
-                        
+
                         foreach (var tx in transactions)
                             temp_pool.Remove(tx);
                     }
