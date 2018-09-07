@@ -13,18 +13,20 @@ using System.Threading;
 
 namespace Neo.Wallets
 {
-    public static class WalletIndexer
+    public class WalletIndexer : IDisposable
     {
-        public static event EventHandler<BalanceEventArgs> BalanceChanged;
+        public event EventHandler<BalanceEventArgs> BalanceChanged;
 
-        private static readonly Dictionary<uint, HashSet<UInt160>> indexes = new Dictionary<uint, HashSet<UInt160>>();
-        private static readonly Dictionary<UInt160, HashSet<CoinReference>> accounts_tracked = new Dictionary<UInt160, HashSet<CoinReference>>();
-        private static readonly Dictionary<CoinReference, Coin> coins_tracked = new Dictionary<CoinReference, Coin>();
+        private readonly Dictionary<uint, HashSet<UInt160>> indexes = new Dictionary<uint, HashSet<UInt160>>();
+        private readonly Dictionary<UInt160, HashSet<CoinReference>> accounts_tracked = new Dictionary<UInt160, HashSet<CoinReference>>();
+        private readonly Dictionary<CoinReference, Coin> coins_tracked = new Dictionary<CoinReference, Coin>();
 
-        private static readonly DB db;
-        private static readonly object SyncRoot = new object();
+        private readonly DB db;
+        private readonly Thread thread;
+        private readonly object SyncRoot = new object();
+        private bool disposed = false;
 
-        public static uint IndexHeight
+        public uint IndexHeight
         {
             get
             {
@@ -36,9 +38,9 @@ namespace Neo.Wallets
             }
         }
 
-        static WalletIndexer()
+        public WalletIndexer(string path)
         {
-            string path = Path.GetFullPath($"Index_{Settings.Default.Magic:X8}");
+            path = Path.GetFullPath(path);
             Directory.CreateDirectory(path);
             db = DB.Open(path, new Options { CreateIfMissing = true });
             if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.SYS_Version), out Slice value) && Version.TryParse(value.ToString(), out Version version) && version >= Version.Parse("2.5.4"))
@@ -80,7 +82,7 @@ namespace Neo.Wallets
                 batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_Version), Assembly.GetExecutingAssembly().GetName().Version.ToString());
                 db.Write(WriteOptions.Default, batch);
             }
-            Thread thread = new Thread(ProcessBlocks)
+            thread = new Thread(ProcessBlocks)
             {
                 IsBackground = true,
                 Name = $"{nameof(WalletIndexer)}.{nameof(ProcessBlocks)}"
@@ -88,7 +90,14 @@ namespace Neo.Wallets
             thread.Start();
         }
 
-        public static IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts)
+        public void Dispose()
+        {
+            disposed = true;
+            thread.Join();
+            db.Dispose();
+        }
+
+        public IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts)
         {
             lock (SyncRoot)
             {
@@ -108,7 +117,7 @@ namespace Neo.Wallets
             return groupId;
         }
 
-        public static IEnumerable<UInt256> GetTransactions(IEnumerable<UInt160> accounts)
+        public IEnumerable<UInt256> GetTransactions(IEnumerable<UInt160> accounts)
         {
             ReadOptions options = new ReadOptions { FillCache = false };
             IEnumerable<UInt256> results = Enumerable.Empty<UInt256>();
@@ -118,7 +127,7 @@ namespace Neo.Wallets
                 yield return hash;
         }
 
-        private static void ProcessBlock(Block block, HashSet<UInt160> accounts, WriteBatch batch)
+        private void ProcessBlock(Block block, HashSet<UInt160> accounts, WriteBatch batch)
         {
             foreach (Transaction tx in block.Transactions)
             {
@@ -197,32 +206,17 @@ namespace Neo.Wallets
             }
         }
 
-        private static void ProcessBlocks()
+        private void ProcessBlocks()
         {
-            bool need_sleep = false;
-            for (; ; )
+            while (!disposed)
             {
-                if (need_sleep)
-                {
-                    Thread.Sleep(2000);
-                    need_sleep = false;
-                }
-                try
-                {
+                while (!disposed)
                     lock (SyncRoot)
                     {
-                        if (indexes.Count == 0)
-                        {
-                            need_sleep = true;
-                            continue;
-                        }
+                        if (indexes.Count == 0) break;
                         uint height = indexes.Keys.Min();
                         Block block = Blockchain.Singleton.Store.GetBlock(height);
-                        if (block == null)
-                        {
-                            need_sleep = true;
-                            continue;
-                        }
+                        if (block == null) break;
                         WriteBatch batch = new WriteBatch();
                         HashSet<UInt160> accounts = indexes[height];
                         ProcessBlock(block, accounts, batch);
@@ -244,15 +238,12 @@ namespace Neo.Wallets
                         }
                         db.Write(WriteOptions.Default, batch);
                     }
-                }
-                catch when (db.IsDisposed)
-                {
-                    return;
-                }
+                for (int i = 0; i < 20 && !disposed; i++)
+                    Thread.Sleep(100);
             }
         }
 
-        public static void RebuildIndex()
+        public void RebuildIndex()
         {
             lock (SyncRoot)
             {
@@ -283,7 +274,7 @@ namespace Neo.Wallets
             }
         }
 
-        public static void RegisterAccounts(IEnumerable<UInt160> accounts, uint height = 0)
+        public void RegisterAccounts(IEnumerable<UInt160> accounts, uint height = 0)
         {
             lock (SyncRoot)
             {
@@ -315,7 +306,7 @@ namespace Neo.Wallets
             }
         }
 
-        public static void UnregisterAccounts(IEnumerable<UInt160> accounts)
+        public void UnregisterAccounts(IEnumerable<UInt160> accounts)
         {
             lock (SyncRoot)
             {

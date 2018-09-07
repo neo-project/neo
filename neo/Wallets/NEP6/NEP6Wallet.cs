@@ -16,6 +16,7 @@ namespace Neo.Wallets.NEP6
     {
         public override event EventHandler<BalanceEventArgs> BalanceChanged;
 
+        private readonly WalletIndexer indexer;
         private readonly string path;
         private string password;
         private string name;
@@ -27,10 +28,11 @@ namespace Neo.Wallets.NEP6
 
         public override string Name => name;
         public override Version Version => version;
-        public override uint WalletHeight => WalletIndexer.IndexHeight;
+        public override uint WalletHeight => indexer.IndexHeight;
 
-        public NEP6Wallet(string path, string name = null)
+        public NEP6Wallet(WalletIndexer indexer, string path, string name = null)
         {
+            this.indexer = indexer;
             this.path = path;
             if (File.Exists(path))
             {
@@ -44,7 +46,7 @@ namespace Neo.Wallets.NEP6
                 this.Scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
                 this.accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p, this)).ToDictionary(p => p.ScriptHash);
                 this.extra = wallet["extra"];
-                WalletIndexer.RegisterAccounts(accounts.Keys);
+                indexer.RegisterAccounts(accounts.Keys);
             }
             else
             {
@@ -54,7 +56,7 @@ namespace Neo.Wallets.NEP6
                 this.accounts = new Dictionary<UInt160, NEP6Account>();
                 this.extra = JObject.Null;
             }
-            WalletIndexer.BalanceChanged += WalletIndexer_BalanceChanged;
+            indexer.BalanceChanged += WalletIndexer_BalanceChanged;
         }
 
         private void AddAccount(NEP6Account account, bool is_import)
@@ -84,7 +86,7 @@ namespace Neo.Wallets.NEP6
                 }
                 else
                 {
-                    WalletIndexer.RegisterAccounts(new[] { account.ScriptHash }, is_import ? 0 : Blockchain.Singleton.Height);
+                    indexer.RegisterAccounts(new[] { account.ScriptHash }, is_import ? 0 : Blockchain.Singleton.Height);
                 }
                 accounts[account.ScriptHash] = account;
             }
@@ -175,14 +177,14 @@ namespace Neo.Wallets.NEP6
             }
             if (removed)
             {
-                WalletIndexer.UnregisterAccounts(new[] { scriptHash });
+                indexer.UnregisterAccounts(new[] { scriptHash });
             }
             return removed;
         }
 
         public override void Dispose()
         {
-            WalletIndexer.BalanceChanged -= WalletIndexer_BalanceChanged;
+            indexer.BalanceChanged -= WalletIndexer_BalanceChanged;
         }
 
         public override Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount, UInt160[] from)
@@ -211,7 +213,7 @@ namespace Neo.Wallets.NEP6
         public override IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts)
         {
             if (unconfirmed.Count == 0)
-                return WalletIndexer.GetCoins(accounts);
+                return indexer.GetCoins(accounts);
             else
                 return GetCoinsInternal();
             IEnumerable<Coin> GetCoinsInternal()
@@ -233,7 +235,7 @@ namespace Neo.Wallets.NEP6
                         State = CoinState.Unconfirmed
                     })).SelectMany(p => p).ToArray();
                 }
-                foreach (Coin coin in WalletIndexer.GetCoins(accounts))
+                foreach (Coin coin in indexer.GetCoins(accounts))
                 {
                     if (inputs.Contains(coin.Reference))
                     {
@@ -263,7 +265,7 @@ namespace Neo.Wallets.NEP6
 
         public override IEnumerable<UInt256> GetTransactions()
         {
-            foreach (UInt256 hash in WalletIndexer.GetTransactions(accounts.Keys))
+            foreach (UInt256 hash in indexer.GetTransactions(accounts.Keys))
                 yield return hash;
             lock (unconfirmed)
             {
@@ -337,11 +339,11 @@ namespace Neo.Wallets.NEP6
             password = null;
         }
 
-        public static NEP6Wallet Migrate(string path, string db3path, string password)
+        public static NEP6Wallet Migrate(WalletIndexer indexer, string path, string db3path, string password)
         {
-            using (UserWallet wallet_old = UserWallet.Open(db3path, password))
+            using (UserWallet wallet_old = UserWallet.Open(indexer, db3path, password))
             {
-                NEP6Wallet wallet_new = new NEP6Wallet(path, wallet_old.Name);
+                NEP6Wallet wallet_new = new NEP6Wallet(indexer, path, wallet_old.Name);
                 using (wallet_new.Unlock(password))
                 {
                     foreach (WalletAccount account in wallet_old.GetAccounts())
