@@ -49,6 +49,9 @@ namespace Neo.SmartContract
         private long gas_consumed = 0;
         private readonly bool testMode;
 
+        private int stackitem_count = 0;
+        private bool is_stackitem_count_strict = true;
+
         private readonly CachedScriptTable script_table;
 
         public TriggerType Trigger { get; }
@@ -64,6 +67,12 @@ namespace Neo.SmartContract
             {
                 this.script_table = (CachedScriptTable)table;
             }
+        }
+
+        private bool AfterStepInto(OpCode nextOpcode)
+        {
+            if (!CheckStackSize(nextOpcode)) return false;
+            return true;
         }
 
         private bool CheckArraySize(OpCode nextInstruction)
@@ -267,53 +276,107 @@ namespace Neo.SmartContract
 
         private bool CheckStackSize(OpCode nextInstruction)
         {
-            int size = 0;
             if (nextInstruction <= OpCode.PUSH16)
-                size = 1;
+                stackitem_count += 1;
             else
                 switch (nextInstruction)
                 {
+                    case OpCode.JMPIF:
+                    case OpCode.JMPIFNOT:
+                    case OpCode.DROP:
+                    case OpCode.NIP:
+                    case OpCode.EQUAL:
+                    case OpCode.BOOLAND:
+                    case OpCode.BOOLOR:
+                    case OpCode.CHECKMULTISIG:
+                    case OpCode.REVERSE:
+                    case OpCode.HASKEY:
+                    case OpCode.THROWIFNOT:
+                        stackitem_count -= 1;
+                        is_stackitem_count_strict = false;
+                        break;
+                    case OpCode.XSWAP:
+                    case OpCode.ROLL:
+                    case OpCode.CAT:
+                    case OpCode.LEFT:
+                    case OpCode.RIGHT:
+                    case OpCode.AND:
+                    case OpCode.OR:
+                    case OpCode.XOR:
+                    case OpCode.ADD:
+                    case OpCode.SUB:
+                    case OpCode.MUL:
+                    case OpCode.DIV:
+                    case OpCode.MOD:
+                    case OpCode.SHL:
+                    case OpCode.SHR:
+                    case OpCode.NUMEQUAL:
+                    case OpCode.NUMNOTEQUAL:
+                    case OpCode.LT:
+                    case OpCode.GT:
+                    case OpCode.LTE:
+                    case OpCode.GTE:
+                    case OpCode.MIN:
+                    case OpCode.MAX:
+                    case OpCode.CHECKSIG:
+                    case OpCode.CALL_ED:
+                    case OpCode.CALL_EDT:
+                        stackitem_count -= 1;
+                        break;
+                    case OpCode.APPCALL:
+                    case OpCode.TAILCALL:
+                    case OpCode.NOT:
+                    case OpCode.ARRAYSIZE:
+                        is_stackitem_count_strict = false;
+                        break;
+                    case OpCode.SYSCALL:
+                        stackitem_count += 1;
+                        is_stackitem_count_strict = false;
+                        break;
                     case OpCode.DUPFROMALTSTACK:
                     case OpCode.DEPTH:
                     case OpCode.DUP:
                     case OpCode.OVER:
                     case OpCode.TUCK:
                     case OpCode.NEWMAP:
-                        size = 1;
+                        stackitem_count += 1;
+                        break;
+                    case OpCode.XDROP:
+                    case OpCode.REMOVE:
+                        stackitem_count -= 2;
+                        is_stackitem_count_strict = false;
+                        break;
+                    case OpCode.SUBSTR:
+                    case OpCode.WITHIN:
+                    case OpCode.VERIFY:
+                        stackitem_count -= 2;
                         break;
                     case OpCode.UNPACK:
-                    case OpCode.KEYS:
+                        stackitem_count += (int)CurrentContext.EvaluationStack.Peek().GetBigInteger();
+                        is_stackitem_count_strict = false;
+                        break;
+                    case OpCode.PICKITEM:
+                    case OpCode.SETITEM:
+                    case OpCode.APPEND:
                     case OpCode.VALUES:
-                        size = -1;
+                        stackitem_count = int.MaxValue;
+                        is_stackitem_count_strict = false;
                         break;
                     case OpCode.NEWARRAY:
                     case OpCode.NEWSTRUCT:
-                        size = (int)CurrentContext.EvaluationStack.Peek().GetBigInteger();
-                        break;
-                }
-            if (size == 0) return true;
-            if (size > 0)
-                size = checked(size + GetItemCount(InvocationStack.SelectMany(p => p.EvaluationStack.Concat(p.AltStack))));
-            else
-                switch (nextInstruction)
-                {
-                    case OpCode.UNPACK:
-                    case OpCode.VALUES:
-                        switch (CurrentContext.EvaluationStack.Peek())
-                        {
-                            case Array array:
-                                size = GetItemCount(GetPopped().Concat(array)) + 1;
-                                break;
-                            case Map map:
-                                size = GetItemCount(GetPopped().Concat(map.Values)) + 1;
-                                break;
-                        }
+                        stackitem_count += ((Array)CurrentContext.EvaluationStack.Peek()).Count;
                         break;
                     case OpCode.KEYS:
-                        size = GetItemCount(GetPopped()) + ((Map)CurrentContext.EvaluationStack.Peek()).Count + 1;
+                        stackitem_count += ((Array)CurrentContext.EvaluationStack.Peek()).Count;
+                        is_stackitem_count_strict = false;
                         break;
                 }
-            return size <= MaxStackSize;
+            if (stackitem_count <= MaxStackSize) return true;
+            if (is_stackitem_count_strict) return false;
+            stackitem_count = GetItemCount(InvocationStack.SelectMany(p => p.EvaluationStack.Concat(p.AltStack)));
+            if (stackitem_count > MaxStackSize) return false;
+            is_stackitem_count_strict = true;
+            return true;
         }
 
         private bool CheckDynamicInvoke(OpCode nextInstruction)
@@ -337,31 +400,22 @@ namespace Neo.SmartContract
         {
             try
             {
-                while (!State.HasFlag(VMState.HALT) && !State.HasFlag(VMState.FAULT))
+                while (true)
                 {
-                    if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
+                    OpCode nextOpcode = CurrentContext.InstructionPointer >= CurrentContext.Script.Length ? OpCode.RET : CurrentContext.NextInstruction;
+                    if (!PostStepInto(nextOpcode))
                     {
-                        OpCode nextOpcode = CurrentContext.NextInstruction;
-
-                        gas_consumed = checked(gas_consumed + GetPrice(nextOpcode) * ratio);
-                        if (!testMode && gas_consumed > gas_amount)
-                        {
-                            State |= VMState.FAULT;
-                            return false;
-                        }
-
-                        if (!CheckItemSize(nextOpcode) ||
-                            !CheckStackSize(nextOpcode) ||
-                            !CheckArraySize(nextOpcode) ||
-                            !CheckInvocationStack(nextOpcode) ||
-                            !CheckBigIntegers(nextOpcode) ||
-                            !CheckDynamicInvoke(nextOpcode))
-                        {
-                            State |= VMState.FAULT;
-                            return false;
-                        }
+                        State |= VMState.FAULT;
+                        return false;
                     }
                     StepInto();
+                    if (State.HasFlag(VMState.HALT) || State.HasFlag(VMState.FAULT))
+                        break;
+                    if (!AfterStepInto(nextOpcode))
+                    {
+                        State |= VMState.FAULT;
+                        return false;
+                    }
                 }
             }
             catch
@@ -426,13 +480,13 @@ namespace Neo.SmartContract
                 case OpCode.CHECKMULTISIG:
                     {
                         if (CurrentContext.EvaluationStack.Count == 0) return 1;
-                        
+
                         var item = CurrentContext.EvaluationStack.Peek();
-                        
+
                         int n;
                         if (item is Array array) n = array.Count;
                         else n = (int)item.GetBigInteger();
-                        
+
                         if (n < 1) return 1;
                         return 100 * n;
                     }
@@ -532,9 +586,16 @@ namespace Neo.SmartContract
             }
         }
 
-        private IEnumerable<StackItem> GetPopped()
+        private bool PostStepInto(OpCode nextOpcode)
         {
-            return InvocationStack.Take(InvocationStack.Count - 1).SelectMany(p => p.EvaluationStack).Concat(CurrentContext.EvaluationStack.Take(CurrentContext.EvaluationStack.Count - 1)).Concat(InvocationStack.SelectMany(p => p.AltStack));
+            gas_consumed = checked(gas_consumed + GetPrice(nextOpcode) * ratio);
+            if (!testMode && gas_consumed > gas_amount) return false;
+            if (!CheckItemSize(nextOpcode)) return false;
+            if (!CheckArraySize(nextOpcode)) return false;
+            if (!CheckInvocationStack(nextOpcode)) return false;
+            if (!CheckBigIntegers(nextOpcode)) return false;
+            if (!CheckDynamicInvoke(nextOpcode)) return false;
+            return true;
         }
 
         public static ApplicationEngine Run(byte[] script, IScriptContainer container = null, Block persisting_block = null)
