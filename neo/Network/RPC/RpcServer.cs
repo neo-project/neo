@@ -467,10 +467,5 @@ namespace Neo.Network.RPC
 
             host.Start();
         }
-
-        public void Stop()
-        {
-            host.StopAsync();
-        }
     }
 }
