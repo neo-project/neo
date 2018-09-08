@@ -194,36 +194,56 @@ namespace Neo.Network.RPC
                                 json["nextblockhash"] = hash.ToString();
                             return json;
                         }
-                        else
-                        {
-                            return block.ToArray().ToHexString();
-                        }
+                        return block.ToArray().ToHexString();
                     }
                 case "getblockcount":
                     return Blockchain.Singleton.Height + 1;
                 case "getblockhash":
                     {
                         uint height = (uint)_params[0].AsNumber();
-                        if (height >= 0 && height <= Blockchain.Singleton.Height)
+                        if (height <= Blockchain.Singleton.Height)
                         {
                             return Blockchain.Singleton.GetBlockHash(height).ToString();
                         }
+                        throw new RpcException(-100, "Invalid Height");
+                    }
+                case "getblockheader":
+                    {
+                        Header header;
+                        if (_params[0] is JNumber)
+                        {
+                            uint height = (uint)_params[0].AsNumber();
+                            header = Blockchain.Singleton.Store.GetHeader(height);
+                        }
                         else
                         {
-                            throw new RpcException(-100, "Invalid Height");
+                            UInt256 hash = UInt256.Parse(_params[0].AsString());
+                            header = Blockchain.Singleton.Store.GetHeader(hash);
                         }
+                        if (header == null)
+                            throw new RpcException(-100, "Unknown block");
+
+                        bool verbose = _params.Count >= 2 && _params[1].AsBooleanOrDefault(false);
+                        if (verbose)
+                        {
+                            JObject json = header.ToJson();
+                            json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
+                            UInt256 hash = Blockchain.Singleton.Store.GetNextBlockHash(header.Hash);
+                            if (hash != null)
+                                json["nextblockhash"] = hash.ToString();
+                            return json;
+                        }
+
+                        return header.ToArray().ToHexString();
                     }
                 case "getblocksysfee":
                     {
                         uint height = (uint)_params[0].AsNumber();
-                        if (height >= 0 && height <= Blockchain.Singleton.Height)
+                        if (height <= Blockchain.Singleton.Height)
                         {
                             return Blockchain.Singleton.Store.GetSysFeeAmount(height).ToString();
                         }
-                        else
-                        {
-                            throw new RpcException(-100, "Invalid Height");
-                        }
+                        throw new RpcException(-100, "Invalid Height");
                     }
                 case "getconnectioncount":
                     return LocalNode.Singleton.ConnectedCount;
@@ -285,10 +305,7 @@ namespace Neo.Network.RPC
                             }
                             return json;
                         }
-                        else
-                        {
-                            return tx.ToArray().ToHexString();
-                        }
+                        return tx.ToArray().ToHexString();
                     }
                 case "getstorage":
                     {
