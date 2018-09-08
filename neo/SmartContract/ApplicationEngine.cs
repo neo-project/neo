@@ -403,7 +403,7 @@ namespace Neo.SmartContract
                 while (true)
                 {
                     OpCode nextOpcode = CurrentContext.InstructionPointer >= CurrentContext.Script.Length ? OpCode.RET : CurrentContext.NextInstruction;
-                    if (!PostStepInto(nextOpcode))
+                    if (nextOpcode != OpCode.RET && !PostStepInto(nextOpcode))
                     {
                         State |= VMState.FAULT;
                         return false;
