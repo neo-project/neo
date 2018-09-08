@@ -403,7 +403,7 @@ namespace Neo.SmartContract
                 while (true)
                 {
                     OpCode nextOpcode = CurrentContext.InstructionPointer >= CurrentContext.Script.Length ? OpCode.RET : CurrentContext.NextInstruction;
-                    if (nextOpcode != OpCode.RET && !PostStepInto(nextOpcode))
+                    if (!PostStepInto(nextOpcode))
                     {
                         State |= VMState.FAULT;
                         return false;
@@ -588,6 +588,8 @@ namespace Neo.SmartContract
 
         private bool PostStepInto(OpCode nextOpcode)
         {
+            if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
+                return true;
             gas_consumed = checked(gas_consumed + GetPrice(nextOpcode) * ratio);
             if (!testMode && gas_consumed > gas_amount) return false;
             if (!CheckItemSize(nextOpcode)) return false;
