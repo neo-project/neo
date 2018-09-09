@@ -178,7 +178,13 @@ namespace Neo.VM
                     return new ContractParameter
                     {
                         Type = ContractParameterType.Array,
-                        Value = array.Select(p => p.ToParameter()).ToArray()
+                        Value = array.Select(p => p.ToParameter()).ToList()
+                    };
+                case Map map:
+                    return new ContractParameter
+                    {
+                        Type = ContractParameterType.Map,
+                        Value = map.Select(p => new KeyValuePair<ContractParameter, ContractParameter>(p.Key.ToParameter(), p.Value.ToParameter())).ToList()
                     };
                 case VMBoolean _:
                     return new ContractParameter
