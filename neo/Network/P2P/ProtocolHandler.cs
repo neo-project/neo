@@ -180,13 +180,13 @@ namespace Neo.Network.P2P
                     case InventoryType.TX:
                         if (inventory == null)
                             inventory = Blockchain.Singleton.GetTransaction(hash);
-                        if (inventory != null)
+                        if (inventory is Transaction)
                             Context.Parent.Tell(Message.Create("tx", inventory));
                         break;
                     case InventoryType.Block:
                         if (inventory == null)
                             inventory = Blockchain.Singleton.GetBlock(hash);
-                        if (inventory != null)
+                        if (inventory is Block block)
                         {
                             if (bloom_filter == null)
                             {
@@ -194,7 +194,6 @@ namespace Neo.Network.P2P
                             }
                             else
                             {
-                                Block block = (Block)inventory;
                                 BitArray flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
                                 Context.Parent.Tell(Message.Create("merkleblock", MerkleBlockPayload.Create(block, flags)));
                             }
