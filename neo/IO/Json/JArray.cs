@@ -87,8 +87,9 @@ namespace Neo.IO.Json
             items.Insert(index, item);
         }
 
-        internal new static JArray Parse(TextReader reader)
+        internal new static JArray Parse(TextReader reader, int max_nest)
         {
+            if (max_nest < 0) throw new FormatException();
             SkipSpace(reader);
             if (reader.Read() != '[') throw new FormatException();
             SkipSpace(reader);
@@ -96,7 +97,7 @@ namespace Neo.IO.Json
             while (reader.Peek() != ']')
             {
                 if (reader.Peek() == ',') reader.Read();
-                JObject obj = JObject.Parse(reader);
+                JObject obj = JObject.Parse(reader, max_nest - 1);
                 array.items.Add(obj);
                 SkipSpace(reader);
             }
