@@ -18,6 +18,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
     {
         public override event EventHandler<BalanceEventArgs> BalanceChanged;
 
+        private readonly WalletIndexer indexer;
         private readonly string path;
         private readonly byte[] iv;
         private readonly byte[] masterKey;
@@ -25,7 +26,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
         private readonly Dictionary<UInt256, Transaction> unconfirmed = new Dictionary<UInt256, Transaction>();
 
         public override string Name => Path.GetFileNameWithoutExtension(path);
-        public override uint WalletHeight => WalletIndexer.IndexHeight;
+        public override uint WalletHeight => indexer.IndexHeight;
 
         public override Version Version
         {
@@ -41,8 +42,9 @@ namespace Neo.Implementations.Wallets.EntityFramework
             }
         }
 
-        private UserWallet(string path, byte[] passwordKey, bool create)
+        private UserWallet(WalletIndexer indexer, string path, byte[] passwordKey, bool create)
         {
+            this.indexer = indexer;
             this.path = path;
             if (create)
             {
@@ -75,9 +77,9 @@ namespace Neo.Implementations.Wallets.EntityFramework
                 ProtectedMemory.Protect(masterKey, MemoryProtectionScope.SameProcess);
 #endif
                 this.accounts = LoadAccounts();
-                WalletIndexer.RegisterAccounts(accounts.Keys);
+                indexer.RegisterAccounts(accounts.Keys);
             }
-            WalletIndexer.BalanceChanged += WalletIndexer_BalanceChanged;
+            indexer.BalanceChanged += WalletIndexer_BalanceChanged;
         }
 
         private void AddAccount(UserWalletAccount account, bool is_import)
@@ -93,7 +95,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
                 }
                 else
                 {
-                    WalletIndexer.RegisterAccounts(new[] { account.ScriptHash }, is_import ? 0 : Blockchain.Default?.Height ?? 0);
+                    indexer.RegisterAccounts(new[] { account.ScriptHash }, is_import ? 0 : Blockchain.Default?.Height ?? 0);
                 }
                 accounts[account.ScriptHash] = account;
             }
@@ -208,14 +210,14 @@ namespace Neo.Implementations.Wallets.EntityFramework
             }
         }
 
-        public static UserWallet Create(string path, string password)
+        public static UserWallet Create(WalletIndexer indexer, string path, string password)
         {
-            return new UserWallet(path, password.ToAesKey(), true);
+            return new UserWallet(indexer, path, password.ToAesKey(), true);
         }
 
-        public static UserWallet Create(string path, SecureString password)
+        public static UserWallet Create(WalletIndexer indexer, string path, SecureString password)
         {
-            return new UserWallet(path, password.ToAesKey(), true);
+            return new UserWallet(indexer, path, password.ToAesKey(), true);
         }
 
         public override WalletAccount CreateAccount(byte[] privateKey)
@@ -284,7 +286,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
             }
             if (account != null)
             {
-                WalletIndexer.UnregisterAccounts(new[] { scriptHash });
+                indexer.UnregisterAccounts(new[] { scriptHash });
                 using (WalletDataContext ctx = new WalletDataContext(path))
                 {
                     if (account.HasKey)
@@ -311,7 +313,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
 
         public void Dispose()
         {
-            WalletIndexer.BalanceChanged -= WalletIndexer_BalanceChanged;
+            indexer.BalanceChanged -= WalletIndexer_BalanceChanged;
         }
 
         private byte[] EncryptPrivateKey(byte[] decryptedPrivateKey)
@@ -350,7 +352,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
         public override IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts)
         {
             if (unconfirmed.Count == 0)
-                return WalletIndexer.GetCoins(accounts);
+                return indexer.GetCoins(accounts);
             else
                 return GetCoinsInternal();
             IEnumerable<Coin> GetCoinsInternal()
@@ -372,7 +374,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
                         State = CoinState.Unconfirmed
                     })).SelectMany(p => p).ToArray();
                 }
-                foreach (Coin coin in WalletIndexer.GetCoins(accounts))
+                foreach (Coin coin in indexer.GetCoins(accounts))
                 {
                     if (inputs.Contains(coin.Reference))
                     {
@@ -402,7 +404,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
 
         public override IEnumerable<UInt256> GetTransactions()
         {
-            foreach (UInt256 hash in WalletIndexer.GetTransactions(accounts.Keys))
+            foreach (UInt256 hash in indexer.GetTransactions(accounts.Keys))
                 yield return hash;
             lock (unconfirmed)
             {
@@ -435,14 +437,14 @@ namespace Neo.Implementations.Wallets.EntityFramework
             }
         }
 
-        public static UserWallet Open(string path, string password)
+        public static UserWallet Open(WalletIndexer indexer, string path, string password)
         {
-            return new UserWallet(path, password.ToAesKey(), false);
+            return new UserWallet(indexer, path, password.ToAesKey(), false);
         }
 
-        public static UserWallet Open(string path, SecureString password)
+        public static UserWallet Open(WalletIndexer indexer, string path, SecureString password)
         {
-            return new UserWallet(path, password.ToAesKey(), false);
+            return new UserWallet(indexer, path, password.ToAesKey(), false);
         }
 
         private void SaveStoredData(string name, byte[] value)
