@@ -4,6 +4,7 @@ using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -49,6 +50,9 @@ namespace Neo.SmartContract
         private long gas_consumed = 0;
         private readonly bool testMode;
         private readonly Snapshot snapshot;
+
+        private int stackitem_count = 0;
+        private bool is_stackitem_count_strict = true;
 
         public Fixed8 GasConsumed => new Fixed8(gas_consumed);
         public new NeoService Service => (NeoService)base.Service;
@@ -262,30 +266,106 @@ namespace Neo.SmartContract
 
         private bool CheckStackSize(OpCode nextInstruction)
         {
-            int size = 0;
             if (nextInstruction <= OpCode.PUSH16)
-                size = 1;
+                stackitem_count += 1;
             else
                 switch (nextInstruction)
                 {
+                    case OpCode.JMPIF:
+                    case OpCode.JMPIFNOT:
+                    case OpCode.DROP:
+                    case OpCode.NIP:
+                    case OpCode.EQUAL:
+                    case OpCode.BOOLAND:
+                    case OpCode.BOOLOR:
+                    case OpCode.CHECKMULTISIG:
+                    case OpCode.REVERSE:
+                    case OpCode.HASKEY:
+                    case OpCode.THROWIFNOT:
+                        stackitem_count -= 1;
+                        is_stackitem_count_strict = false;
+                        break;
+                    case OpCode.XSWAP:
+                    case OpCode.ROLL:
+                    case OpCode.CAT:
+                    case OpCode.LEFT:
+                    case OpCode.RIGHT:
+                    case OpCode.AND:
+                    case OpCode.OR:
+                    case OpCode.XOR:
+                    case OpCode.ADD:
+                    case OpCode.SUB:
+                    case OpCode.MUL:
+                    case OpCode.DIV:
+                    case OpCode.MOD:
+                    case OpCode.SHL:
+                    case OpCode.SHR:
+                    case OpCode.NUMEQUAL:
+                    case OpCode.NUMNOTEQUAL:
+                    case OpCode.LT:
+                    case OpCode.GT:
+                    case OpCode.LTE:
+                    case OpCode.GTE:
+                    case OpCode.MIN:
+                    case OpCode.MAX:
+                    case OpCode.CHECKSIG:
+                    case OpCode.CALL_ED:
+                    case OpCode.CALL_EDT:
+                        stackitem_count -= 1;
+                        break;
+                    case OpCode.APPCALL:
+                    case OpCode.TAILCALL:
+                    case OpCode.NOT:
+                    case OpCode.ARRAYSIZE:
+                        is_stackitem_count_strict = false;
+                        break;
+                    case OpCode.SYSCALL:
+                        stackitem_count += 1;
+                        is_stackitem_count_strict = false;
+                        break;
+                    case OpCode.DUPFROMALTSTACK:
                     case OpCode.DEPTH:
                     case OpCode.DUP:
                     case OpCode.OVER:
                     case OpCode.TUCK:
                     case OpCode.NEWMAP:
-                        size = 1;
+                        stackitem_count += 1;
+                        break;
+                    case OpCode.XDROP:
+                    case OpCode.REMOVE:
+                        stackitem_count -= 2;
+                        is_stackitem_count_strict = false;
+                        break;
+                    case OpCode.SUBSTR:
+                    case OpCode.WITHIN:
+                    case OpCode.VERIFY:
+                        stackitem_count -= 2;
                         break;
                     case OpCode.UNPACK:
-                        StackItem item = CurrentContext.EvaluationStack.Peek();
-                        if (item is Array array)
-                            size = array.Count;
-                        else
-                            return false;
+                        stackitem_count += (int)CurrentContext.EvaluationStack.Peek().GetBigInteger();
+                        is_stackitem_count_strict = false;
+                        break;
+                    case OpCode.PICKITEM:
+                    case OpCode.SETITEM:
+                    case OpCode.APPEND:
+                    case OpCode.VALUES:
+                        stackitem_count = int.MaxValue;
+                        is_stackitem_count_strict = false;
+                        break;
+                    case OpCode.NEWARRAY:
+                    case OpCode.NEWSTRUCT:
+                        stackitem_count += ((Array)CurrentContext.EvaluationStack.Peek()).Count;
+                        break;
+                    case OpCode.KEYS:
+                        stackitem_count += ((Array)CurrentContext.EvaluationStack.Peek()).Count;
+                        is_stackitem_count_strict = false;
                         break;
                 }
-            if (size == 0) return true;
-            size += InvocationStack.Sum(p => p.EvaluationStack.Count + p.AltStack.Count);
-            if (size > MaxStackSize) return false;
+            if (stackitem_count <= MaxStackSize) return true;
+            if (is_stackitem_count_strict) return false;
+            stackitem_count = GetItemCount(InvocationStack.SelectMany(p => p.EvaluationStack.Concat(p.AltStack)));
+            if (stackitem_count > MaxStackSize) return false;
+            is_stackitem_count_strict = true;
             return true;
         }
 
@@ -316,31 +396,22 @@ namespace Neo.SmartContract
         {
             try
             {
-                while (!State.HasFlag(VMState.HALT) && !State.HasFlag(VMState.FAULT))
+                while (true)
                 {
-                    if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
+                    OpCode nextOpcode = CurrentContext.InstructionPointer >= CurrentContext.Script.Length ? OpCode.RET : CurrentContext.NextInstruction;
+                    if (!PreStepInto(nextOpcode))
                     {
-                        OpCode nextOpcode = CurrentContext.NextInstruction;
-
-                        gas_consumed = checked(gas_consumed + GetPrice(nextOpcode) * ratio);
-                        if (!testMode && gas_consumed > gas_amount)
-                        {
-                            State |= VMState.FAULT;
-                            return false;
-                        }
-
-                        if (!CheckItemSize(nextOpcode) ||
-                            !CheckStackSize(nextOpcode) ||
-                            !CheckArraySize(nextOpcode) ||
-                            !CheckInvocationStack(nextOpcode) ||
-                            !CheckBigIntegers(nextOpcode) ||
-                            !CheckDynamicInvoke(nextOpcode))
-                        {
-                            State |= VMState.FAULT;
-                            return false;
-                        }
+                        State |= VMState.FAULT;
+                        return false;
                     }
                     StepInto();
+                    if (State.HasFlag(VMState.HALT) || State.HasFlag(VMState.FAULT))
+                        break;
+                    if (!PostStepInto(nextOpcode))
+                    {
+                        State |= VMState.FAULT;
+                        return false;
+                    }
                 }
             }
             catch
@@ -349,6 +420,36 @@ namespace Neo.SmartContract
                 return false;
             }
             return !State.HasFlag(VMState.FAULT);
+        }
+
+        private static int GetItemCount(IEnumerable<StackItem> items)
+        {
+            Queue<StackItem> queue = new Queue<StackItem>(items);
+            List<StackItem> counted = new List<StackItem>();
+            int count = 0;
+            while (queue.Count > 0)
+            {
+                StackItem item = queue.Dequeue();
+                count++;
+                switch (item)
+                {
+                    case Array array:
+                        if (counted.Any(p => ReferenceEquals(p, array)))
+                            continue;
+                        counted.Add(array);
+                        foreach (StackItem subitem in array)
+                            queue.Enqueue(subitem);
+                        break;
+                    case Map map:
+                        if (counted.Any(p => ReferenceEquals(p, map)))
+                            continue;
+                        counted.Add(map);
+                        foreach (StackItem subitem in map.Values)
+                            queue.Enqueue(subitem);
+                        break;
+                }
+            }
+            return count;
         }
 
         protected virtual long GetPrice(OpCode nextInstruction)
@@ -375,13 +476,13 @@ namespace Neo.SmartContract
                 case OpCode.CHECKMULTISIG:
                     {
                         if (CurrentContext.EvaluationStack.Count == 0) return 1;
-                        
+
                         var item = CurrentContext.EvaluationStack.Peek();
-                        
+
                         int n;
                         if (item is Array array) n = array.Count;
                         else n = (int)item.GetBigInteger();
-                        
+
                         if (n < 1) return 1;
                         return 100 * n;
                     }
@@ -474,6 +575,26 @@ namespace Neo.SmartContract
                 default:
                     return 1;
             }
+        }
+
+        private bool PostStepInto(OpCode nextOpcode)
+        {
+            if (!CheckStackSize(nextOpcode)) return false;
+            return true;
+        }
+
+        private bool PreStepInto(OpCode nextOpcode)
+        {
+            if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
+                return true;
+            gas_consumed = checked(gas_consumed + GetPrice(nextOpcode) * ratio);
+            if (!testMode && gas_consumed > gas_amount) return false;
+            if (!CheckItemSize(nextOpcode)) return false;
+            if (!CheckArraySize(nextOpcode)) return false;
+            if (!CheckInvocationStack(nextOpcode)) return false;
+            if (!CheckBigIntegers(nextOpcode)) return false;
+            if (!CheckDynamicInvoke(nextOpcode)) return false;
+            return true;
         }
 
         public static ApplicationEngine Run(byte[] script, IScriptContainer container = null, Block persisting_block = null, bool testMode = false)
