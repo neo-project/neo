@@ -69,12 +69,6 @@ namespace Neo.SmartContract
             }
         }
 
-        private bool AfterStepInto(OpCode nextOpcode)
-        {
-            if (!CheckStackSize(nextOpcode)) return false;
-            return true;
-        }
-
         private bool CheckArraySize(OpCode nextInstruction)
         {
             int size;
@@ -403,7 +397,7 @@ namespace Neo.SmartContract
                 while (true)
                 {
                     OpCode nextOpcode = CurrentContext.InstructionPointer >= CurrentContext.Script.Length ? OpCode.RET : CurrentContext.NextInstruction;
-                    if (!PostStepInto(nextOpcode))
+                    if (!PreStepInto(nextOpcode))
                     {
                         State |= VMState.FAULT;
                         return false;
@@ -411,7 +405,7 @@ namespace Neo.SmartContract
                     StepInto();
                     if (State.HasFlag(VMState.HALT) || State.HasFlag(VMState.FAULT))
                         break;
-                    if (!AfterStepInto(nextOpcode))
+                    if (!PostStepInto(nextOpcode))
                     {
                         State |= VMState.FAULT;
                         return false;
@@ -587,6 +581,12 @@ namespace Neo.SmartContract
         }
 
         private bool PostStepInto(OpCode nextOpcode)
+        {
+            if (!CheckStackSize(nextOpcode)) return false;
+            return true;
+        }
+
+        private bool PreStepInto(OpCode nextOpcode)
         {
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
                 return true;
