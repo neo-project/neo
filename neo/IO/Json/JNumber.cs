@@ -70,7 +70,7 @@ namespace Neo.IO.Json
             return false;
         }
 
-        internal new static JNumber Parse(TextReader reader)
+        internal static JNumber Parse(TextReader reader)
         {
             SkipSpace(reader);
             StringBuilder sb = new StringBuilder();

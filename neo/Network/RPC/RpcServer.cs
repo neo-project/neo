@@ -73,7 +73,14 @@ namespace Neo.Network.RPC
             json["script"] = script.ToHexString();
             json["state"] = engine.State;
             json["gas_consumed"] = engine.GasConsumed.ToString();
-            json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
+            try
+            {
+                json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
+            }
+            catch (InvalidOperationException)
+            {
+                json["stack"] = "error: recursive reference";
+            }
             if (wallet != null)
             {
                 InvocationTransaction tx = new InvocationTransaction
