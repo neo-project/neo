@@ -18,6 +18,7 @@ namespace Neo.Implementations.Wallets.EntityFramework
     {
         public override event EventHandler<BalanceEventArgs> BalanceChanged;
 
+        private readonly object db_lock = new object();
         private readonly WalletIndexer indexer;
         private readonly string path;
         private readonly byte[] iv;
@@ -99,62 +100,63 @@ namespace Neo.Implementations.Wallets.EntityFramework
                 }
                 accounts[account.ScriptHash] = account;
             }
-            using (WalletDataContext ctx = new WalletDataContext(path))
-            {
-                if (account.HasKey)
+            lock (db_lock)
+                using (WalletDataContext ctx = new WalletDataContext(path))
                 {
-                    byte[] decryptedPrivateKey = new byte[96];
-                    Buffer.BlockCopy(account.Key.PublicKey.EncodePoint(false), 1, decryptedPrivateKey, 0, 64);
-                    using (account.Key.Decrypt())
+                    if (account.HasKey)
                     {
-                        Buffer.BlockCopy(account.Key.PrivateKey, 0, decryptedPrivateKey, 64, 32);
-                    }
-                    byte[] encryptedPrivateKey = EncryptPrivateKey(decryptedPrivateKey);
-                    Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
-                    Account db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash.SequenceEqual(account.Key.PublicKeyHash.ToArray()));
-                    if (db_account == null)
-                    {
-                        db_account = ctx.Accounts.Add(new Account
+                        byte[] decryptedPrivateKey = new byte[96];
+                        Buffer.BlockCopy(account.Key.PublicKey.EncodePoint(false), 1, decryptedPrivateKey, 0, 64);
+                        using (account.Key.Decrypt())
                         {
-                            PrivateKeyEncrypted = encryptedPrivateKey,
-                            PublicKeyHash = account.Key.PublicKeyHash.ToArray()
-                        }).Entity;
-                    }
-                    else
-                    {
-                        db_account.PrivateKeyEncrypted = encryptedPrivateKey;
-                    }
-                }
-                if (account.Contract != null)
-                {
-                    Contract db_contract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash.SequenceEqual(account.Contract.ScriptHash.ToArray()));
-                    if (db_contract != null)
-                    {
-                        db_contract.PublicKeyHash = account.Key.PublicKeyHash.ToArray();
-                    }
-                    else
-                    {
-                        ctx.Contracts.Add(new Contract
+                            Buffer.BlockCopy(account.Key.PrivateKey, 0, decryptedPrivateKey, 64, 32);
+                        }
+                        byte[] encryptedPrivateKey = EncryptPrivateKey(decryptedPrivateKey);
+                        Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
+                        Account db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash.SequenceEqual(account.Key.PublicKeyHash.ToArray()));
+                        if (db_account == null)
                         {
-                            RawData = ((VerificationContract)account.Contract).ToArray(),
-                            ScriptHash = account.Contract.ScriptHash.ToArray(),
-                            PublicKeyHash = account.Key.PublicKeyHash.ToArray()
-                        });
-                    }
-                }
-                //add address
-                {
-                    Address db_address = ctx.Addresses.FirstOrDefault(p => p.ScriptHash.SequenceEqual(account.Contract.ScriptHash.ToArray()));
-                    if (db_address == null)
-                    {
-                        ctx.Addresses.Add(new Address
+                            db_account = ctx.Accounts.Add(new Account
+                            {
+                                PrivateKeyEncrypted = encryptedPrivateKey,
+                                PublicKeyHash = account.Key.PublicKeyHash.ToArray()
+                            }).Entity;
+                        }
+                        else
                         {
-                            ScriptHash = account.Contract.ScriptHash.ToArray()
-                        });
+                            db_account.PrivateKeyEncrypted = encryptedPrivateKey;
+                        }
                     }
+                    if (account.Contract != null)
+                    {
+                        Contract db_contract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash.SequenceEqual(account.Contract.ScriptHash.ToArray()));
+                        if (db_contract != null)
+                        {
+                            db_contract.PublicKeyHash = account.Key.PublicKeyHash.ToArray();
+                        }
+                        else
+                        {
+                            ctx.Contracts.Add(new Contract
+                            {
+                                RawData = ((VerificationContract)account.Contract).ToArray(),
+                                ScriptHash = account.Contract.ScriptHash.ToArray(),
+                                PublicKeyHash = account.Key.PublicKeyHash.ToArray()
+                            });
+                        }
+                    }
+                    //add address
+                    {
+                        Address db_address = ctx.Addresses.FirstOrDefault(p => p.ScriptHash.SequenceEqual(account.Contract.ScriptHash.ToArray()));
+                        if (db_address == null)
+                        {
+                            ctx.Addresses.Add(new Address
+                            {
+                                ScriptHash = account.Contract.ScriptHash.ToArray()
+                            });
+                        }
+                    }
+                    ctx.SaveChanges();
                 }
-                ctx.SaveChanges();
-            }
         }
 
         public override void ApplyTransaction(Transaction tx)
@@ -287,25 +289,26 @@ namespace Neo.Implementations.Wallets.EntityFramework
             if (account != null)
             {
                 indexer.UnregisterAccounts(new[] { scriptHash });
-                using (WalletDataContext ctx = new WalletDataContext(path))
-                {
-                    if (account.HasKey)
+                lock (db_lock)
+                    using (WalletDataContext ctx = new WalletDataContext(path))
                     {
-                        Account db_account = ctx.Accounts.First(p => p.PublicKeyHash.SequenceEqual(account.Key.PublicKeyHash.ToArray()));
-                        ctx.Accounts.Remove(db_account);
+                        if (account.HasKey)
+                        {
+                            Account db_account = ctx.Accounts.First(p => p.PublicKeyHash.SequenceEqual(account.Key.PublicKeyHash.ToArray()));
+                            ctx.Accounts.Remove(db_account);
+                        }
+                        if (account.Contract != null)
+                        {
+                            Contract db_contract = ctx.Contracts.First(p => p.ScriptHash.SequenceEqual(scriptHash.ToArray()));
+                            ctx.Contracts.Remove(db_contract);
+                        }
+                        //delete address
+                        {
+                            Address db_address = ctx.Addresses.First(p => p.ScriptHash.SequenceEqual(scriptHash.ToArray()));
+                            ctx.Addresses.Remove(db_address);
+                        }
+                        ctx.SaveChanges();
                     }
-                    if (account.Contract != null)
-                    {
-                        Contract db_contract = ctx.Contracts.First(p => p.ScriptHash.SequenceEqual(scriptHash.ToArray()));
-                        ctx.Contracts.Remove(db_contract);
-                    }
-                    //delete address
-                    {
-                        Address db_address = ctx.Addresses.First(p => p.ScriptHash.SequenceEqual(scriptHash.ToArray()));
-                        ctx.Addresses.Remove(db_address);
-                    }
-                    ctx.SaveChanges();
-                }
                 return true;
             }
             return false;
@@ -449,11 +452,12 @@ namespace Neo.Implementations.Wallets.EntityFramework
 
         private void SaveStoredData(string name, byte[] value)
         {
-            using (WalletDataContext ctx = new WalletDataContext(path))
-            {
-                SaveStoredData(ctx, name, value);
-                ctx.SaveChanges();
-            }
+            lock (db_lock)
+                using (WalletDataContext ctx = new WalletDataContext(path))
+                {
+                    SaveStoredData(ctx, name, value);
+                    ctx.SaveChanges();
+                }
         }
 
         private static void SaveStoredData(WalletDataContext ctx, string name, byte[] value)
