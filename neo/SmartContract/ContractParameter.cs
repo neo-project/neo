@@ -47,6 +47,9 @@ namespace Neo.SmartContract
                 case ContractParameterType.Array:
                     this.Value = new List<ContractParameter>();
                     break;
+                case ContractParameterType.Map:
+                    this.Value = new List<KeyValuePair<ContractParameter, ContractParameter>>();
+                    break;
                 default:
                     throw new ArgumentException();
             }
@@ -58,8 +61,7 @@ namespace Neo.SmartContract
             {
                 Type = json["type"].AsEnum<ContractParameterType>()
             };
-            JObject value = json["value"];
-            if (value != null)
+            if (json["value"] != null)
                 switch (parameter.Type)
                 {
                     case ContractParameterType.Signature:
@@ -85,7 +87,10 @@ namespace Neo.SmartContract
                         parameter.Value = json["value"].AsString();
                         break;
                     case ContractParameterType.Array:
-                        parameter.Value = ((JArray)json["value"]).Select(p => FromJson(p)).ToArray();
+                        parameter.Value = ((JArray)json["value"]).Select(p => FromJson(p)).ToList();
+                        break;
+                    case ContractParameterType.Map:
+                        parameter.Value = ((JArray)json["value"]).Select(p => new KeyValuePair<ContractParameter, ContractParameter>(FromJson(p["key"]), FromJson(p["value"]))).ToList();
                         break;
                     default:
                         throw new ArgumentException();
@@ -152,6 +157,15 @@ namespace Neo.SmartContract
                     case ContractParameterType.Array:
                         json["value"] = new JArray(((IList<ContractParameter>)Value).Select(p => p.ToJson()));
                         break;
+                    case ContractParameterType.Map:
+                        json["value"] = new JArray(((IList<KeyValuePair<ContractParameter, ContractParameter>>)Value).Select(p =>
+                        {
+                            JObject item = new JObject();
+                            item["key"] = p.Key.ToJson();
+                            item["value"] = p.Value.ToJson();
+                            return item;
+                        }));
+                        break;
                 }
             return json;
         }
@@ -165,17 +179,37 @@ namespace Neo.SmartContract
                 case byte[] data:
                     return data.ToHexString();
                 case IList<ContractParameter> data:
-                    StringBuilder sb = new StringBuilder();
-                    sb.Append('[');
-                    foreach (ContractParameter item in data)
                     {
-                        sb.Append(item);
-                        sb.Append(", ");
+                        StringBuilder sb = new StringBuilder();
+                        sb.Append('[');
+                        foreach (ContractParameter item in data)
+                        {
+                            sb.Append(item);
+                            sb.Append(", ");
+                        }
+                        if (data.Count > 0)
+                            sb.Length -= 2;
+                        sb.Append(']');
+                        return sb.ToString();
                     }
-                    if (data.Count > 0)
-                        sb.Length -= 2;
-                    sb.Append(']');
-                    return sb.ToString();
+                case IList<KeyValuePair<ContractParameter, ContractParameter>> data:
+                    {
+                        StringBuilder sb = new StringBuilder();
+                        sb.Append('[');
+                        foreach (var item in data)
+                        {
+                            sb.Append('{');
+                            sb.Append(item.Key);
+                            sb.Append(',');
+                            sb.Append(item.Value);
+                            sb.Append('}');
+                            sb.Append(", ");
+                        }
+                        if (data.Count > 0)
+                            sb.Length -= 2;
+                        sb.Append(']');
+                        return sb.ToString();
+                    }
                 default:
                     return Value.ToString();
             }
