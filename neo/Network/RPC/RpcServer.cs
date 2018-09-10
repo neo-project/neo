@@ -65,7 +65,14 @@ namespace Neo.Network.RPC
             json["script"] = script.ToHexString();
             json["state"] = engine.State;
             json["gas_consumed"] = engine.GasConsumed.ToString();
-            json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
+            try
+            {
+                json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
+            }
+            catch (InvalidOperationException)
+            {
+                json["stack"] = "error: recursive reference";
+            }
             return json;
         }
 
@@ -141,7 +148,7 @@ namespace Neo.Network.RPC
                             UInt256 hash = Blockchain.Default.GetNextBlockHash(header.Hash);
                             if (hash != null)
                                 json["nextblockhash"] = hash.ToString();
-                            return json;                            
+                            return json;
                         }
 
                         return header.ToArray().ToHexString();
