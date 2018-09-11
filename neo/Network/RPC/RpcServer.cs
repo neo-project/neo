@@ -109,25 +109,21 @@ namespace Neo.Network.RPC
 
         private static JObject GetRelayResult(RelayResultReason reason)
         {
-            JObject json = new JObject();
-            json["succeed"] = reason == RelayResultReason.Succeed;
-            json["reason"] = reason;
             switch (reason)
             {
+                case RelayResultReason.Succeed:
+                    return true;
                 case RelayResultReason.AlreadyExists:
-                    json["message"] = "Block or transaction already exists and cannot be sent repeatedly.";
-                    break;
+                    throw new RpcException(-501, "Block or transaction already exists and cannot be sent repeatedly.");
                 case RelayResultReason.OutOfMemory:
-                    json["message"] = "The memory pool is full and no more transactions can be sent.";
-                    break;
+                    throw new RpcException(-502, "The memory pool is full and no more transactions can be sent.");
                 case RelayResultReason.UnableToVerify:
-                    json["message"] = "The block cannot be validated.";
-                    break;
+                    throw new RpcException(-503, "The block cannot be validated.");
                 case RelayResultReason.Invalid:
-                    json["message"] = "Block or transaction validation failed.";
-                    break;
+                    throw new RpcException(-504, "Block or transaction validation failed.");
+                default:
+                    throw new RpcException(-500, "Unkown error.");
             }
-            return json;
         }
 
         private JObject Process(string method, JArray _params)
