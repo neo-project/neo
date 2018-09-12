@@ -324,7 +324,11 @@ namespace Neo.SmartContract
                         is_stackitem_count_strict = false;
                         break;
                     case OpCode.SYSCALL:
-                        stackitem_count += 1;
+                    case OpCode.PICKITEM:
+                    case OpCode.SETITEM:
+                    case OpCode.APPEND:
+                    case OpCode.VALUES:
+                        stackitem_count = int.MaxValue;
                         is_stackitem_count_strict = false;
                         break;
                     case OpCode.DUPFROMALTSTACK:
@@ -347,13 +351,6 @@ namespace Neo.SmartContract
                         break;
                     case OpCode.UNPACK:
                         stackitem_count += (int)CurrentContext.EvaluationStack.Peek().GetBigInteger();
-                        is_stackitem_count_strict = false;
-                        break;
-                    case OpCode.PICKITEM:
-                    case OpCode.SETITEM:
-                    case OpCode.APPEND:
-                    case OpCode.VALUES:
-                        stackitem_count = int.MaxValue;
                         is_stackitem_count_strict = false;
                         break;
                     case OpCode.NEWARRAY:
