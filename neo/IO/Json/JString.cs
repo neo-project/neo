@@ -76,7 +76,7 @@ namespace Neo.IO.Json
             return false;
         }
 
-        internal new static JString Parse(TextReader reader)
+        internal static JString Parse(TextReader reader)
         {
             SkipSpace(reader);
             char[] buffer = new char[4];

@@ -31,7 +31,7 @@ namespace Neo.IO.Json
             return false;
         }
 
-        internal new static JBoolean Parse(TextReader reader)
+        internal static JBoolean Parse(TextReader reader)
         {
             SkipSpace(reader);
             char firstChar = (char)reader.Read();

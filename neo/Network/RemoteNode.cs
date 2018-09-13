@@ -179,13 +179,13 @@ namespace Neo.Network
                             inventory = LocalNode.GetTransaction(hash);
                         if (inventory == null && Blockchain.Default != null)
                             inventory = Blockchain.Default.GetTransaction(hash);
-                        if (inventory != null)
+                        if (inventory is Transaction)
                             EnqueueMessage("tx", inventory);
                         break;
                     case InventoryType.Block:
                         if (inventory == null && Blockchain.Default != null)
                             inventory = Blockchain.Default.GetBlock(hash);
-                        if (inventory != null)
+                        if (inventory is Block block)
                         {
                             BloomFilter filter = bloom_filter;
                             if (filter == null)
@@ -194,7 +194,6 @@ namespace Neo.Network
                             }
                             else
                             {
-                                Block block = (Block)inventory;
                                 BitArray flags = new BitArray(block.Transactions.Select(p => TestFilter(filter, p)).ToArray());
                                 EnqueueMessage("merkleblock", MerkleBlockPayload.Create(block, flags));
                             }

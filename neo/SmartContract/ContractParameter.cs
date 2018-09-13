@@ -47,6 +47,9 @@ namespace Neo.SmartContract
                 case ContractParameterType.Array:
                     this.Value = new List<ContractParameter>();
                     break;
+                case ContractParameterType.Map:
+                    this.Value = new List<KeyValuePair<ContractParameter, ContractParameter>>();
+                    break;
                 default:
                     throw new ArgumentException();
             }
@@ -58,8 +61,7 @@ namespace Neo.SmartContract
             {
                 Type = json["type"].AsEnum<ContractParameterType>()
             };
-            JObject value = json["value"];
-            if (value != null)
+            if (json["value"] != null)
                 switch (parameter.Type)
                 {
                     case ContractParameterType.Signature:
@@ -85,7 +87,10 @@ namespace Neo.SmartContract
                         parameter.Value = json["value"].AsString();
                         break;
                     case ContractParameterType.Array:
-                        parameter.Value = ((JArray)json["value"]).Select(p => FromJson(p)).ToArray();
+                        parameter.Value = ((JArray)json["value"]).Select(p => FromJson(p)).ToList();
+                        break;
+                    case ContractParameterType.Map:
+                        parameter.Value = ((JArray)json["value"]).Select(p => new KeyValuePair<ContractParameter, ContractParameter>(FromJson(p["key"]), FromJson(p["value"]))).ToList();
                         break;
                     default:
                         throw new ArgumentException();
@@ -130,27 +135,51 @@ namespace Neo.SmartContract
 
         public JObject ToJson()
         {
+            return ToJson(this, null);
+        }
+
+        private static JObject ToJson(ContractParameter parameter, HashSet<ContractParameter> context)
+        {
             JObject json = new JObject();
-            json["type"] = Type;
-            if (Value != null)
-                switch (Type)
+            json["type"] = parameter.Type;
+            if (parameter.Value != null)
+                switch (parameter.Type)
                 {
                     case ContractParameterType.Signature:
                     case ContractParameterType.ByteArray:
-                        json["value"] = ((byte[])Value).ToHexString();
+                        json["value"] = ((byte[])parameter.Value).ToHexString();
                         break;
                     case ContractParameterType.Boolean:
-                        json["value"] = (bool)Value;
+                        json["value"] = (bool)parameter.Value;
                         break;
                     case ContractParameterType.Integer:
                     case ContractParameterType.Hash160:
                     case ContractParameterType.Hash256:
                     case ContractParameterType.PublicKey:
                     case ContractParameterType.String:
-                        json["value"] = Value.ToString();
+                        json["value"] = parameter.Value.ToString();
                         break;
                     case ContractParameterType.Array:
-                        json["value"] = new JArray(((IList<ContractParameter>)Value).Select(p => p.ToJson()));
+                        if (context is null)
+                            context = new HashSet<ContractParameter>();
+                        else if (context.Contains(parameter))
+                            throw new InvalidOperationException();
+                        context.Add(parameter);
+                        json["value"] = new JArray(((IList<ContractParameter>)parameter.Value).Select(p => ToJson(p, context)));
+                        break;
+                    case ContractParameterType.Map:
+                        if (context is null)
+                            context = new HashSet<ContractParameter>();
+                        else if (context.Contains(parameter))
+                            throw new InvalidOperationException();
+                        context.Add(parameter);
+                        json["value"] = new JArray(((IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value).Select(p =>
+                        {
+                            JObject item = new JObject();
+                            item["key"] = ToJson(p.Key, context);
+                            item["value"] = ToJson(p.Value, context);
+                            return item;
+                        }));
                         break;
                 }
             return json;
@@ -158,26 +187,65 @@ namespace Neo.SmartContract
 
         public override string ToString()
         {
-            switch (Value)
+            return ToString(this, null);
+        }
+
+        private static string ToString(ContractParameter parameter, HashSet<ContractParameter> context)
+        {
+            switch (parameter.Value)
             {
                 case null:
                     return "(null)";
                 case byte[] data:
                     return data.ToHexString();
                 case IList<ContractParameter> data:
-                    StringBuilder sb = new StringBuilder();
-                    sb.Append('[');
-                    foreach (ContractParameter item in data)
+                    if (context is null) context = new HashSet<ContractParameter>();
+                    if (context.Contains(parameter))
                     {
-                        sb.Append(item);
-                        sb.Append(", ");
+                        return "(array)";
                     }
-                    if (data.Count > 0)
-                        sb.Length -= 2;
-                    sb.Append(']');
-                    return sb.ToString();
+                    else
+                    {
+                        context.Add(parameter);
+                        StringBuilder sb = new StringBuilder();
+                        sb.Append('[');
+                        foreach (ContractParameter item in data)
+                        {
+                            sb.Append(ToString(item, context));
+                            sb.Append(", ");
+                        }
+                        if (data.Count > 0)
+                            sb.Length -= 2;
+                        sb.Append(']');
+                        return sb.ToString();
+                    }
+                case IList<KeyValuePair<ContractParameter, ContractParameter>> data:
+                    if (context is null) context = new HashSet<ContractParameter>();
+                    if (context.Contains(parameter))
+                    {
+                        return "(map)";
+                    }
+                    else
+                    {
+                        context.Add(parameter);
+                        StringBuilder sb = new StringBuilder();
+                        sb.Append('[');
+                        foreach (var item in data)
+                        {
+                            sb.Append('{');
+                            sb.Append(ToString(item.Key, context));
+                            sb.Append(',');
+                            sb.Append(ToString(item.Value, context));
+                            sb.Append('}');
+                            sb.Append(", ");
+                        }
+                        if (data.Count > 0)
+                            sb.Length -= 2;
+                        sb.Append(']');
+                        return sb.ToString();
+                    }
                 default:
-                    return Value.ToString();
+                    return parameter.Value.ToString();
             }
         }
     }

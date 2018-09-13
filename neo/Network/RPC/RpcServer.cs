@@ -65,7 +65,14 @@ namespace Neo.Network.RPC
             json["script"] = script.ToHexString();
             json["state"] = engine.State;
             json["gas_consumed"] = engine.GasConsumed.ToString();
-            json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
+            try
+            {
+                json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
+            }
+            catch (InvalidOperationException)
+            {
+                json["stack"] = "error: recursive reference";
+            }
             return json;
         }
 
@@ -112,36 +119,59 @@ namespace Neo.Network.RPC
                                 json["nextblockhash"] = hash.ToString();
                             return json;
                         }
-                        else
-                        {
-                            return block.ToArray().ToHexString();
-                        }
+
+                        return block.ToArray().ToHexString();
                     }
                 case "getblockcount":
                     return Blockchain.Default.Height + 1;
-                case "getblockhash":
+                case "getblockheader":
                     {
-                        uint height = (uint)_params[0].AsNumber();
-                        if (height >= 0 && height <= Blockchain.Default.Height)
+                        Header header;
+                        if (_params[0] is JNumber)
                         {
-                            return Blockchain.Default.GetBlockHash(height).ToString();
+                            uint height = (uint)_params[0].AsNumber();
+                            header = Blockchain.Default.GetHeader(height);
                         }
                         else
                         {
-                            throw new RpcException(-100, "Invalid Height");
+                            UInt256 hash = UInt256.Parse(_params[0].AsString());
+                            header = Blockchain.Default.GetHeader(hash);
                         }
+                        if (header == null)
+                            throw new RpcException(-100, "Unknown block");
+
+                        bool verbose = _params.Count >= 2 && _params[1].AsBooleanOrDefault(false);
+                        if (verbose)
+                        {
+                            JObject json = header.ToJson();
+                            json["confirmations"] = Blockchain.Default.Height - header.Index + 1;
+                            UInt256 hash = Blockchain.Default.GetNextBlockHash(header.Hash);
+                            if (hash != null)
+                                json["nextblockhash"] = hash.ToString();
+                            return json;
+                        }
+
+                        return header.ToArray().ToHexString();
+                    }
+                case "getblockhash":
+                    {
+                        uint height = (uint)_params[0].AsNumber();
+                        if (height <= Blockchain.Default.Height)
+                        {
+                            return Blockchain.Default.GetBlockHash(height).ToString();
+                        }
+
+                        throw new RpcException(-100, "Invalid Height");
                     }
                 case "getblocksysfee":
                     {
                         uint height = (uint)_params[0].AsNumber();
-                        if (height >= 0 && height <= Blockchain.Default.Height)
+                        if (height <= Blockchain.Default.Height)
                         {
                             return Blockchain.Default.GetSysFeeAmount(height).ToString();
                         }
-                        else
-                        {
-                            throw new RpcException(-100, "Invalid Height");
-                        }
+
+                        throw new RpcException(-100, "Invalid Height");
                     }
                 case "getconnectioncount":
                     return LocalNode.RemoteNodeCount;
@@ -175,10 +205,8 @@ namespace Neo.Network.RPC
                             }
                             return json;
                         }
-                        else
-                        {
-                            return tx.ToArray().ToHexString();
-                        }
+
+                        return tx.ToArray().ToHexString();
                     }
                 case "getstorage":
                     {
