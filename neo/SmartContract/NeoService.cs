@@ -251,6 +251,8 @@ namespace Neo.SmartContract
             {
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
+                if (tx.Attributes.Length > ApplicationEngine.MaxArraySize)
+                    return false;
                 engine.CurrentContext.EvaluationStack.Push(tx.Attributes.Select(p => StackItem.FromInterface(p)).ToArray());
                 return true;
             }
@@ -263,6 +265,8 @@ namespace Neo.SmartContract
             {
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
+                if (tx.Inputs.Length > ApplicationEngine.MaxArraySize)
+                    return false;
                 engine.CurrentContext.EvaluationStack.Push(tx.Inputs.Select(p => StackItem.FromInterface(p)).ToArray());
                 return true;
             }
@@ -275,6 +279,8 @@ namespace Neo.SmartContract
             {
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
+                if (tx.Outputs.Length > ApplicationEngine.MaxArraySize)
+                    return false;
                 engine.CurrentContext.EvaluationStack.Push(tx.Outputs.Select(p => StackItem.FromInterface(p)).ToArray());
                 return true;
             }
@@ -287,6 +293,8 @@ namespace Neo.SmartContract
             {
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
+                if (tx.Inputs.Length > ApplicationEngine.MaxArraySize)
+                    return false;
                 engine.CurrentContext.EvaluationStack.Push(tx.Inputs.Select(p => StackItem.FromInterface(tx.References[p])).ToArray());
                 return true;
             }
@@ -299,7 +307,10 @@ namespace Neo.SmartContract
             {
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(Snapshot.GetUnspent(tx.Hash).Select(p => StackItem.FromInterface(p)).ToArray());
+                TransactionOutput[] outputs = Snapshot.GetUnspent(tx.Hash).ToArray();
+                if (outputs.Length > ApplicationEngine.MaxArraySize)
+                    return false;
+                engine.CurrentContext.EvaluationStack.Push(outputs.Select(p => StackItem.FromInterface(p)).ToArray());
                 return true;
             }
             return false;
