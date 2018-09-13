@@ -164,15 +164,6 @@ namespace Neo.Consensus
             if (context.MyIndex == context.PrimaryIndex)
             {
                 context.State |= ConsensusState.Primary;
-                if (!context.State.HasFlag(ConsensusState.SignatureSent))
-                {
-                    FillContext();
-                }
-                if (context.TransactionHashes.Length > 1)
-                {
-                    foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
-                        system.LocalNode.Tell(Message.Create("inv", payload));
-                }
                 TimeSpan span = DateTime.Now - block_received_time;
                 if (span >= Blockchain.TimePerBlock)
                     ChangeTimer(TimeSpan.Zero);
@@ -333,10 +324,16 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.RequestSent;
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
+                    FillContext();
                     context.Timestamp = Math.Max(DateTime.Now.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
                     context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
                 }
                 SignAndRelay(context.MakePrepareRequest());
+                if (context.TransactionHashes.Length > 1)
+                {
+                    foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
+                        system.LocalNode.Tell(Message.Create("inv", payload));
+                }
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer.ViewNumber + 1)));
             }
             else if ((context.State.HasFlag(ConsensusState.Primary) && context.State.HasFlag(ConsensusState.RequestSent)) || context.State.HasFlag(ConsensusState.Backup))
