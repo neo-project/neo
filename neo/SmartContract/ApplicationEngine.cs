@@ -111,6 +111,9 @@ namespace Neo.SmartContract
             {
                 case OpCode.CALL:
                 case OpCode.APPCALL:
+                case OpCode.CALL_I:
+                case OpCode.CALL_E:
+                case OpCode.CALL_ED:
                     if (InvocationStack.Count >= MaxInvocationStackSize) return false;
                     return true;
                 default:
