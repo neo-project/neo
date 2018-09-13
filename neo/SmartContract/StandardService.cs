@@ -468,6 +468,8 @@ namespace Neo.SmartContract
             {
                 Block block = _interface.GetInterface<Block>();
                 if (block == null) return false;
+                if (block.Transactions.Length > ApplicationEngine.MaxArraySize)
+                    return false;
                 engine.CurrentContext.EvaluationStack.Push(block.Transactions.Select(p => StackItem.FromInterface(p)).ToArray());
                 return true;
             }
