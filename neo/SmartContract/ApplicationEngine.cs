@@ -375,19 +375,24 @@ namespace Neo.SmartContract
 
         private bool CheckDynamicInvoke(OpCode nextInstruction)
         {
-            if (nextInstruction == OpCode.APPCALL || nextInstruction == OpCode.TAILCALL)
+            switch (nextInstruction)
             {
-                for (int i = CurrentContext.InstructionPointer + 1; i < CurrentContext.InstructionPointer + 21; i++)
-                {
-                    if (CurrentContext.Script[i] != 0) return true;
-                }
-                // if we get this far it is a dynamic call
-                // now look at the current executing script
-                // to determine if it can do dynamic calls
-                ContractState contract = script_table.GetContractState(CurrentContext.ScriptHash);
-                return contract.HasDynamicInvoke;
+                case OpCode.APPCALL:
+                case OpCode.TAILCALL:
+                    for (int i = CurrentContext.InstructionPointer + 1; i < CurrentContext.InstructionPointer + 21; i++)
+                    {
+                        if (CurrentContext.Script[i] != 0) return true;
+                    }
+                    // if we get this far it is a dynamic call
+                    // now look at the current executing script
+                    // to determine if it can do dynamic calls
+                    return script_table.GetContractState(CurrentContext.ScriptHash).HasDynamicInvoke;
+                case OpCode.CALL_ED:
+                case OpCode.CALL_EDT:
+                    return script_table.GetContractState(CurrentContext.ScriptHash).HasDynamicInvoke;
+                default:
+                    return true;
             }
-            return true;
         }
 
         public new bool Execute()
