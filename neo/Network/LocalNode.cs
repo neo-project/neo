@@ -143,12 +143,56 @@ namespace Neo.Network
             {
                 new_tx_event.WaitOne();
 
+                bool shouldCoolDown = false;
+                MemPoolReadWriteLock.EnterReadLock();
+                if (mem_pool.Count > 1000 && temp_pool.Count > 1000) shouldCoolDown = true;
+                MemPoolReadWriteLock.ExitReadLock();
+                // Don't starve readers wanting to acquire the mem_pool lock
+                if (shouldCoolDown) Thread.Sleep(1000);
+                
                 Transaction[] transactions;
                 lock (temp_pool)
                 {
                     if (temp_pool.Count == 0) continue;
-                    transactions = temp_pool.ToArray();
-                    temp_pool.Clear();
+                    if (temp_pool.Count < 1000)
+                    {
+                        transactions = temp_pool.ToArray();
+                        temp_pool.Clear();
+                    }
+                    else
+                    {
+                        // Attempt verifying large fee transactions first.
+                        transactions = temp_pool
+                            .OrderByDescending(p =>
+                            {
+                                try
+                                {
+                                    var fee = p.NetworkFee;
+                                    return fee / p.Size;
+                                }
+                                catch (Exception)
+                                {
+                                    return Fixed8.Zero;
+                                }
+                            })
+                            .ThenByDescending(p =>
+                            {
+                                try
+                                {
+                                    return p.NetworkFee;
+                                }
+                                catch (Exception)
+                                {
+                                    return Fixed8.Zero;
+                                }
+                            })
+                            .ThenByDescending(p => new BigInteger(p.Hash.ToArray()))
+                            .Take(1000)
+                            .ToArray();
+
+                        foreach (var tx in transactions)
+                            temp_pool.Remove(tx);
+                    }
                 }
                 ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
                 lock (Blockchain.Default.PersistLock)
@@ -230,8 +274,10 @@ namespace Neo.Network
 
                 remain = mem_pool.Values.ToArray();
                 mem_pool.Clear();
-                
-                if (millisSinceLastBlock > 10000)
+
+                // Use normal AddTransactionLoop to verify if there is a large mem_pool to avoid
+                // starvation of RpcSerer with large mem_pool.
+                if (millisSinceLastBlock > 10000 && remain.Length < 1000)
                 {
                     ConcurrentBag<Transaction> verified = new ConcurrentBag<Transaction>();
                     // Reverify the remaining transactions in the mem_pool
