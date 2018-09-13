@@ -377,13 +377,9 @@ namespace Neo.Ledger
             block_cache.Remove(block.Hash);
             foreach (Transaction tx in block.Transactions)
                 mem_pool.TryRemove(tx.Hash, out _);
-            Transaction[] remain = mem_pool.Values.ToArray();
+            foreach (Transaction tx in mem_pool.Values)
+                Self.Tell(tx, ActorRefs.NoSender);
             mem_pool.Clear();
-            foreach (Transaction tx in remain)
-            {
-                if (!tx.Verify(currentSnapshot, mem_pool.Values)) continue;
-                mem_pool.TryAdd(tx.Hash, tx);
-            }
             PersistCompleted completed = new PersistCompleted { Block = block };
             system.Consensus?.Tell(completed);
             Distribute(completed);
