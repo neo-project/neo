@@ -212,6 +212,8 @@ namespace Neo.SmartContract
                     return false;
                 }
                 writer.Flush();
+                if (ms.Length > ApplicationEngine.MaxItemSize)
+                    return false;
                 engine.CurrentContext.EvaluationStack.Push(ms.ToArray());
             }
             return true;
