@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -170,6 +170,8 @@ namespace Neo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         unsafe internal static int ToInt32(this byte[] value, int startIndex)
         {
+            if (value.Length < startIndex + 4) throw new IndexOutOfRangeException();
+
             fixed (byte* pbyte = &value[startIndex])
             {
                 return *((int*)pbyte);
@@ -179,6 +181,8 @@ namespace Neo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         unsafe internal static long ToInt64(this byte[] value, int startIndex)
         {
+            if (value.Length < startIndex + 8) throw new IndexOutOfRangeException();
+
             fixed (byte* pbyte = &value[startIndex])
             {
                 return *((long*)pbyte);
@@ -193,6 +197,8 @@ namespace Neo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         unsafe internal static ushort ToUInt16(this byte[] value, int startIndex)
         {
+            if (value.Length < startIndex + 2) throw new IndexOutOfRangeException();
+
             fixed (byte* pbyte = &value[startIndex])
             {
                 return *((ushort*)pbyte);
@@ -202,6 +208,8 @@ namespace Neo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         unsafe internal static uint ToUInt32(this byte[] value, int startIndex)
         {
+            if (value.Length < startIndex + 4) throw new IndexOutOfRangeException();
+
             fixed (byte* pbyte = &value[startIndex])
             {
                 return *((uint*)pbyte);
@@ -211,6 +219,8 @@ namespace Neo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         unsafe internal static ulong ToUInt64(this byte[] value, int startIndex)
         {
+            if (value.Length < startIndex + 8) throw new IndexOutOfRangeException();
+
             fixed (byte* pbyte = &value[startIndex])
             {
                 return *((ulong*)pbyte);
