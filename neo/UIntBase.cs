@@ -73,10 +73,6 @@ namespace Neo
             return data_bytes;
         }
 
-        /// <summary>
-        /// 转为16进制字符串
-        /// </summary>
-        /// <returns>返回16进制字符串</returns>
         public override string ToString()
         {
             return "0x" + data_bytes.Reverse().ToHexString();

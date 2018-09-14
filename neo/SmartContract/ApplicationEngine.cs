@@ -1,5 +1,6 @@
-﻿using Neo.Core;
-using Neo.IO.Caching;
+﻿using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Collections;
@@ -48,25 +49,20 @@ namespace Neo.SmartContract
         private readonly long gas_amount;
         private long gas_consumed = 0;
         private readonly bool testMode;
+        private readonly Snapshot snapshot;
 
         private int stackitem_count = 0;
         private bool is_stackitem_count_strict = true;
 
-        private readonly CachedScriptTable script_table;
-
-        public TriggerType Trigger { get; }
         public Fixed8 GasConsumed => new Fixed8(gas_consumed);
+        public new NeoService Service => (NeoService)base.Service;
 
-        public ApplicationEngine(TriggerType trigger, IScriptContainer container, IScriptTable table, InteropService service, Fixed8 gas, bool testMode = false)
-            : base(container, Cryptography.Crypto.Default, table, service)
+        public ApplicationEngine(TriggerType trigger, IScriptContainer container, Snapshot snapshot, Fixed8 gas, bool testMode = false)
+            : base(container, Cryptography.Crypto.Default, snapshot, new NeoService(trigger, snapshot))
         {
             this.gas_amount = gas_free + gas.GetData();
             this.testMode = testMode;
-            this.Trigger = trigger;
-            if (table is CachedScriptTable)
-            {
-                this.script_table = (CachedScriptTable)table;
-            }
+            this.snapshot = snapshot;
         }
 
         private bool CheckArraySize(OpCode nextInstruction)
@@ -386,13 +382,19 @@ namespace Neo.SmartContract
                     // if we get this far it is a dynamic call
                     // now look at the current executing script
                     // to determine if it can do dynamic calls
-                    return script_table.GetContractState(CurrentContext.ScriptHash).HasDynamicInvoke;
+                    return snapshot.Contracts[new UInt160(CurrentContext.ScriptHash)].HasDynamicInvoke;
                 case OpCode.CALL_ED:
                 case OpCode.CALL_EDT:
-                    return script_table.GetContractState(CurrentContext.ScriptHash).HasDynamicInvoke;
+                    return snapshot.Contracts[new UInt160(CurrentContext.ScriptHash)].HasDynamicInvoke;
                 default:
                     return true;
             }
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            Service.Dispose();
         }
 
         public new bool Execute()
@@ -537,14 +539,9 @@ namespace Neo.SmartContract
                     return 100;
                 case "Neo.Transaction.GetReferences":
                 case "AntShares.Transaction.GetReferences":
+                    return 200;
                 case "Neo.Transaction.GetUnspentCoins":
                     return 200;
-                case "Neo.Account.SetVotes":
-                case "AntShares.Account.SetVotes":
-                    return 1000;
-                case "Neo.Validator.Register":
-                case "AntShares.Validator.Register":
-                    return 1000L * 100000000L / ratio;
                 case "Neo.Asset.Create":
                 case "AntShares.Asset.Create":
                     return 5000L * 100000000L / ratio;
@@ -605,33 +602,27 @@ namespace Neo.SmartContract
             return true;
         }
 
-        public static ApplicationEngine Run(byte[] script, IScriptContainer container = null, Block persisting_block = null)
+        public static ApplicationEngine Run(byte[] script, IScriptContainer container = null, Block persisting_block = null, bool testMode = false)
         {
-            if (persisting_block == null)
-                persisting_block = new Block
+            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+            {
+                snapshot.PersistingBlock = persisting_block ?? new Block
                 {
                     Version = 0,
-                    PrevHash = Blockchain.Default.CurrentBlockHash,
+                    PrevHash = snapshot.CurrentBlockHash,
                     MerkleRoot = new UInt256(),
-                    Timestamp = Blockchain.Default.GetHeader(Blockchain.Default.Height).Timestamp + Blockchain.SecondsPerBlock,
-                    Index = Blockchain.Default.Height + 1,
+                    Timestamp = snapshot.Blocks[snapshot.CurrentBlockHash].TrimmedBlock.Timestamp + Blockchain.SecondsPerBlock,
+                    Index = snapshot.Height + 1,
                     ConsensusData = 0,
-                    NextConsensus = Blockchain.Default.GetHeader(Blockchain.Default.Height).NextConsensus,
-                    Script = new Witness
+                    NextConsensus = snapshot.Blocks[snapshot.CurrentBlockHash].TrimmedBlock.NextConsensus,
+                    Witness = new Witness
                     {
                         InvocationScript = new byte[0],
                         VerificationScript = new byte[0]
                     },
                     Transactions = new Transaction[0]
                 };
-            DataCache<UInt160, AccountState> accounts = Blockchain.Default.GetStates<UInt160, AccountState>();
-            DataCache<UInt256, AssetState> assets = Blockchain.Default.GetStates<UInt256, AssetState>();
-            DataCache<UInt160, ContractState> contracts = Blockchain.Default.GetStates<UInt160, ContractState>();
-            DataCache<StorageKey, StorageItem> storages = Blockchain.Default.GetStates<StorageKey, StorageItem>();
-            CachedScriptTable script_table = new CachedScriptTable(contracts);
-            using (StateMachine service = new StateMachine(persisting_block, accounts, assets, contracts, storages))
-            {
-                ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, script_table, service, Fixed8.Zero, true);
+                ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, Fixed8.Zero, testMode);
                 engine.LoadScript(script);
                 engine.Execute();
                 return engine;

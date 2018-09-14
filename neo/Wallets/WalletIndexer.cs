@@ -1,6 +1,8 @@
-﻿using Neo.Core;
-using Neo.IO;
+﻿using Neo.IO;
 using Neo.IO.Data.LevelDB;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -118,14 +120,11 @@ namespace Neo.Wallets
         public IEnumerable<UInt256> GetTransactions(IEnumerable<UInt160> accounts)
         {
             ReadOptions options = new ReadOptions { FillCache = false };
-            using (options.Snapshot = db.GetSnapshot())
-            {
-                IEnumerable<UInt256> results = Enumerable.Empty<UInt256>();
-                foreach (UInt160 account in accounts)
-                    results = results.Union(db.Find(options, SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account), (k, v) => new UInt256(k.ToArray().Skip(21).ToArray())));
-                foreach (UInt256 hash in results)
-                    yield return hash;
-            }
+            IEnumerable<UInt256> results = Enumerable.Empty<UInt256>();
+            foreach (UInt160 account in accounts)
+                results = results.Union(db.Find(options, SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account), (k, v) => new UInt256(k.ToArray().Skip(21).ToArray())));
+            foreach (UInt256 hash in results)
+                yield return hash;
         }
 
         private void ProcessBlock(Block block, HashSet<UInt160> accounts, WriteBatch batch)
@@ -209,45 +208,38 @@ namespace Neo.Wallets
 
         private void ProcessBlocks()
         {
-            try
+            while (!disposed)
             {
                 while (!disposed)
-                {
-                    while (!disposed)
-                        lock (SyncRoot)
+                    lock (SyncRoot)
+                    {
+                        if (indexes.Count == 0) break;
+                        uint height = indexes.Keys.Min();
+                        Block block = Blockchain.Singleton.Store.GetBlock(height);
+                        if (block == null) break;
+                        WriteBatch batch = new WriteBatch();
+                        HashSet<UInt160> accounts = indexes[height];
+                        ProcessBlock(block, accounts, batch);
+                        ReadOptions options = ReadOptions.Default;
+                        byte[] groupId = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height)).ToArray();
+                        indexes.Remove(height);
+                        batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height));
+                        height++;
+                        if (indexes.TryGetValue(height, out HashSet<UInt160> accounts_next))
                         {
-                            if (indexes.Count == 0) break;
-                            uint height = indexes.Keys.Min();
-                            Block block = Blockchain.Default?.GetBlock(height);
-                            if (block == null) break;
-                            WriteBatch batch = new WriteBatch();
-                            HashSet<UInt160> accounts = indexes[height];
-                            ProcessBlock(block, accounts, batch);
-                            ReadOptions options = ReadOptions.Default;
-                            byte[] groupId = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height)).ToArray();
-                            indexes.Remove(height);
-                            batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height));
-                            height++;
-                            if (indexes.TryGetValue(height, out HashSet<UInt160> accounts_next))
-                            {
-                                accounts_next.UnionWith(accounts);
-                                groupId = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height)).ToArray();
-                                batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Accounts).Add(groupId), accounts_next.ToArray().ToByteArray());
-                            }
-                            else
-                            {
-                                indexes.Add(height, accounts);
-                                batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height), groupId);
-                            }
-                            db.Write(WriteOptions.Default, batch);
+                            accounts_next.UnionWith(accounts);
+                            groupId = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height)).ToArray();
+                            batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Accounts).Add(groupId), accounts_next.ToArray().ToByteArray());
                         }
-                    for (int i = 0; i < 20 && !disposed; i++)
-                        Thread.Sleep(100);
-                }
-            }
-            catch when (Blockchain.Default == null || Blockchain.Default.IsDisposed)
-            {
-                return;
+                        else
+                        {
+                            indexes.Add(height, accounts);
+                            batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height), groupId);
+                        }
+                        db.Write(WriteOptions.Default, batch);
+                    }
+                for (int i = 0; i < 20 && !disposed; i++)
+                    Thread.Sleep(100);
             }
         }
 

@@ -13,9 +13,7 @@ namespace Neo.IO.Json
 
         public JString(string value)
         {
-            if (value == null)
-                throw new ArgumentNullException();
-            this.Value = value;
+            this.Value = value ?? throw new ArgumentNullException();
         }
 
         public override bool AsBoolean()

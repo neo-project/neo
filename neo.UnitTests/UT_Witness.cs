@@ -1,7 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Core;
 using Neo.IO.Json;
+using Neo.Network.P2P.Payloads;
 
 namespace Neo.UnitTests
 {
