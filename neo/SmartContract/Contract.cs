@@ -138,7 +138,7 @@ namespace Neo.SmartContract
                     ++i;
                     break;
                 case 2:
-                    if (Script.Length < i + 3 && n != Script.ToUInt16(++i)) return false;
+                    if (Script.Length < i + 3 || n != Script.ToUInt16(++i)) return false;
                     i += 2;
                     break;
                 default:
