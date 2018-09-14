@@ -5,7 +5,7 @@ namespace Neo.Plugins
 {
     public interface IPolicyPlugin
     {
-        bool CheckPolicy(Transaction tx);
-        IEnumerable<Transaction> Filter(IEnumerable<Transaction> transactions);
+        bool FilterForMemoryPool(Transaction tx);
+        IEnumerable<Transaction> FilterForBlock(IEnumerable<Transaction> transactions);
     }
 }
