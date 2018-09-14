@@ -36,7 +36,7 @@ namespace Neo.Consensus
         {
             if (context.Snapshot.ContainsTransaction(tx.Hash) ||
                 (verify && !tx.Verify(context.Snapshot, context.Transactions.Values)) ||
-                !CheckPolicy(tx))
+                !Plugin.CheckPolicy(tx))
             {
                 Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
                 RequestChangeView();
@@ -80,14 +80,6 @@ namespace Neo.Consensus
             }
         }
 
-        private bool CheckPolicy(Transaction tx)
-        {
-            foreach (IPolicyPlugin plugin in Plugin.Policies)
-                if (!plugin.CheckPolicy(tx))
-                    return false;
-            return true;
-        }
-
         private void CheckSignatures()
         {
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
@@ -111,9 +103,9 @@ namespace Neo.Consensus
 
         private void FillContext()
         {
-            IEnumerable<Transaction> mem_pool = Blockchain.Singleton.GetMemoryPool().Where(p => CheckPolicy(p));
+            IEnumerable<Transaction> mem_pool = Blockchain.Singleton.GetMemoryPool();
             foreach (IPolicyPlugin plugin in Plugin.Policies)
-                mem_pool = plugin.Filter(mem_pool);
+                mem_pool = plugin.FilterForBlock(mem_pool);
             List<Transaction> transactions = mem_pool.ToList();
             Fixed8 amount_netfee = Block.CalculateNetFee(transactions);
             TransactionOutput[] outputs = amount_netfee == Fixed8.Zero ? new TransactionOutput[0] : new[] { new TransactionOutput

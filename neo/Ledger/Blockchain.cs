@@ -8,6 +8,7 @@ using Neo.IO.Caching;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
@@ -353,6 +354,8 @@ namespace Neo.Ledger
                 return RelayResultReason.AlreadyExists;
             if (!transaction.Verify(currentSnapshot, mem_pool.Values))
                 return RelayResultReason.Invalid;
+            if (!Plugin.CheckPolicy(transaction))
+                return RelayResultReason.Unknown;
             mem_pool.TryAdd(transaction.Hash, transaction);
             if (mem_pool.Count > MemoryPoolSize)
             {

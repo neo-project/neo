@@ -6,6 +6,7 @@
         AlreadyExists,
         OutOfMemory,
         UnableToVerify,
-        Invalid
+        Invalid,
+        Unknown
     }
 }
