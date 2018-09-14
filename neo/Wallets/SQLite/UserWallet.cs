@@ -34,7 +34,7 @@ namespace Neo.Wallets.SQLite
             get
             {
                 byte[] buffer = LoadStoredData("Version");
-                if (buffer == null) return new Version(0, 0);
+                if (buffer == null || buffer.Length < 16) return new Version(0, 0);
                 int major = buffer.ToInt32(0);
                 int minor = buffer.ToInt32(4);
                 int build = buffer.ToInt32(8);
