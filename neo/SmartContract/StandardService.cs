@@ -146,49 +146,55 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private void SerializeStackItem(StackItem item, BinaryWriter writer, List<StackItem> serialized = null)
+        private void SerializeStackItem(StackItem item, BinaryWriter writer)
         {
-            if (serialized == null) serialized = new List<StackItem>();
-            switch (item)
+            List<StackItem> serialized = new List<StackItem>();
+            Stack<StackItem> unserialized = new Stack<StackItem>();
+            unserialized.Push(item);
+            while (unserialized.Count > 0)
             {
-                case ByteArray _:
-                    writer.Write((byte)StackItemType.ByteArray);
-                    writer.WriteVarBytes(item.GetByteArray());
-                    break;
-                case VMBoolean _:
-                    writer.Write((byte)StackItemType.Boolean);
-                    writer.Write(item.GetBoolean());
-                    break;
-                case Integer _:
-                    writer.Write((byte)StackItemType.Integer);
-                    writer.WriteVarBytes(item.GetByteArray());
-                    break;
-                case InteropInterface _:
-                    throw new NotSupportedException();
-                case VMArray array:
-                    if (serialized.Any(p => ReferenceEquals(p, array)))
+                item = unserialized.Pop();
+                switch (item)
+                {
+                    case ByteArray _:
+                        writer.Write((byte)StackItemType.ByteArray);
+                        writer.WriteVarBytes(item.GetByteArray());
+                        break;
+                    case VMBoolean _:
+                        writer.Write((byte)StackItemType.Boolean);
+                        writer.Write(item.GetBoolean());
+                        break;
+                    case Integer _:
+                        writer.Write((byte)StackItemType.Integer);
+                        writer.WriteVarBytes(item.GetByteArray());
+                        break;
+                    case InteropInterface _:
                         throw new NotSupportedException();
-                    serialized.Add(array);
-                    if (array is Struct)
-                        writer.Write((byte)StackItemType.Struct);
-                    else
-                        writer.Write((byte)StackItemType.Array);
-                    writer.WriteVarInt(array.Count);
-                    foreach (StackItem subitem in array)
-                        SerializeStackItem(subitem, writer, serialized);
-                    break;
-                case Map map:
-                    if (serialized.Any(p => ReferenceEquals(p, map)))
-                        throw new NotSupportedException();
-                    serialized.Add(map);
-                    writer.Write((byte)StackItemType.Map);
-                    writer.WriteVarInt(map.Count);
-                    foreach (var pair in map)
-                    {
-                        SerializeStackItem(pair.Key, writer, serialized);
-                        SerializeStackItem(pair.Value, writer, serialized);
-                    }
-                    break;
+                    case VMArray array:
+                        if (serialized.Any(p => ReferenceEquals(p, array)))
+                            throw new NotSupportedException();
+                        serialized.Add(array);
+                        if (array is Struct)
+                            writer.Write((byte)StackItemType.Struct);
+                        else
+                            writer.Write((byte)StackItemType.Array);
+                        writer.WriteVarInt(array.Count);
+                        for (int i = array.Count - 1; i >= 0; i--)
+                            unserialized.Push(array[i]);
+                        break;
+                    case Map map:
+                        if (serialized.Any(p => ReferenceEquals(p, map)))
+                            throw new NotSupportedException();
+                        serialized.Add(map);
+                        writer.Write((byte)StackItemType.Map);
+                        writer.WriteVarInt(map.Count);
+                        foreach (var pair in map.Reverse())
+                        {
+                            unserialized.Push(pair.Value);
+                            unserialized.Push(pair.Key);
+                        }
+                        break;
+                }
             }
         }
 
@@ -206,6 +212,8 @@ namespace Neo.SmartContract
                     return false;
                 }
                 writer.Flush();
+                if (ms.Length > ApplicationEngine.MaxItemSize)
+                    return false;
                 engine.CurrentContext.EvaluationStack.Push(ms.ToArray());
             }
             return true;
@@ -213,39 +221,84 @@ namespace Neo.SmartContract
 
         private StackItem DeserializeStackItem(BinaryReader reader)
         {
-            StackItemType type = (StackItemType)reader.ReadByte();
-            switch (type)
+            Stack<StackItem> deserialized = new Stack<StackItem>();
+            int undeserialized = 1;
+            while (undeserialized-- > 0)
             {
-                case StackItemType.ByteArray:
-                    return new ByteArray(reader.ReadVarBytes());
-                case StackItemType.Boolean:
-                    return new VMBoolean(reader.ReadBoolean());
-                case StackItemType.Integer:
-                    return new Integer(new BigInteger(reader.ReadVarBytes()));
-                case StackItemType.Array:
-                case StackItemType.Struct:
-                    {
-                        VMArray array = type == StackItemType.Struct ? new Struct() : new VMArray();
-                        ulong count = reader.ReadVarInt();
-                        while (count-- > 0)
-                            array.Add(DeserializeStackItem(reader));
-                        return array;
-                    }
-                case StackItemType.Map:
-                    {
-                        Map map = new Map();
-                        ulong count = reader.ReadVarInt();
-                        while (count-- > 0)
+                StackItemType type = (StackItemType)reader.ReadByte();
+                switch (type)
+                {
+                    case StackItemType.ByteArray:
+                        deserialized.Push(new ByteArray(reader.ReadVarBytes()));
+                        break;
+                    case StackItemType.Boolean:
+                        deserialized.Push(new VMBoolean(reader.ReadBoolean()));
+                        break;
+                    case StackItemType.Integer:
+                        deserialized.Push(new Integer(new BigInteger(reader.ReadVarBytes())));
+                        break;
+                    case StackItemType.Array:
+                    case StackItemType.Struct:
                         {
-                            StackItem key = DeserializeStackItem(reader);
-                            StackItem value = DeserializeStackItem(reader);
-                            map[key] = value;
+                            int count = (int)reader.ReadVarInt(ApplicationEngine.MaxArraySize);
+                            deserialized.Push(new ContainerPlaceholder
+                            {
+                                Type = type,
+                                ElementCount = count
+                            });
+                            undeserialized += count;
                         }
-                        return map;
-                    }
-                default:
-                    throw new FormatException();
+                        break;
+                    case StackItemType.Map:
+                        {
+                            int count = (int)reader.ReadVarInt(ApplicationEngine.MaxArraySize);
+                            deserialized.Push(new ContainerPlaceholder
+                            {
+                                Type = type,
+                                ElementCount = count
+                            });
+                            undeserialized += count * 2;
+                        }
+                        break;
+                    default:
+                        throw new FormatException();
+                }
             }
+            Stack<StackItem> stack_temp = new Stack<StackItem>();
+            while (deserialized.Count > 0)
+            {
+                StackItem item = deserialized.Pop();
+                if (item is ContainerPlaceholder placeholder)
+                {
+                    switch (placeholder.Type)
+                    {
+                        case StackItemType.Array:
+                            VMArray array = new VMArray();
+                            for (int i = 0; i < placeholder.ElementCount; i++)
+                                array.Add(stack_temp.Pop());
+                            item = array;
+                            break;
+                        case StackItemType.Struct:
+                            Struct @struct = new Struct();
+                            for (int i = 0; i < placeholder.ElementCount; i++)
+                                @struct.Add(stack_temp.Pop());
+                            item = @struct;
+                            break;
+                        case StackItemType.Map:
+                            Map map = new Map();
+                            for (int i = 0; i < placeholder.ElementCount; i++)
+                            {
+                                StackItem key = stack_temp.Pop();
+                                StackItem value = stack_temp.Pop();
+                                map.Add(key, value);
+                            }
+                            item = map;
+                            break;
+                    }
+                }
+                stack_temp.Push(item);
+            }
+            return stack_temp.Peek();
         }
 
         protected bool Runtime_Deserialize(ExecutionEngine engine)
@@ -415,6 +468,8 @@ namespace Neo.SmartContract
             {
                 Block block = _interface.GetInterface<Block>();
                 if (block == null) return false;
+                if (block.Transactions.Length > ApplicationEngine.MaxArraySize)
+                    return false;
                 engine.CurrentContext.EvaluationStack.Push(block.Transactions.Select(p => StackItem.FromInterface(p)).ToArray());
                 return true;
             }

@@ -19,6 +19,7 @@ namespace Neo.Network.P2P
         private ICancelable timer;
         private readonly IActorRef tcp;
         private readonly WebSocket ws;
+        private bool disconnected = false;
 
         protected Connection(object connection, IPEndPoint remote, IPEndPoint local)
         {
@@ -60,6 +61,7 @@ namespace Neo.Network.P2P
 
         public void Disconnect(bool abort = false)
         {
+            disconnected = true;
             if (tcp != null)
             {
                 tcp.Tell(abort ? (Tcp.CloseCommand)Tcp.Abort.Instance : Tcp.Close.Instance);
@@ -112,6 +114,8 @@ namespace Neo.Network.P2P
 
         protected override void PostStop()
         {
+            if (!disconnected)
+                tcp?.Tell(Tcp.Close.Instance);
             timer.CancelIfNotNull();
             ws?.Dispose();
             base.PostStop();

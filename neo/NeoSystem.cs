@@ -36,6 +36,7 @@ namespace Neo
         public void Dispose()
         {
             rpcServer?.Dispose();
+            ActorSystem.Stop(LocalNode);
             ActorSystem.Dispose();
         }
 

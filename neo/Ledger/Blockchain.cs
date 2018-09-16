@@ -8,6 +8,7 @@ using Neo.IO.Caching;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
@@ -353,11 +354,14 @@ namespace Neo.Ledger
                 return RelayResultReason.AlreadyExists;
             if (!transaction.Verify(currentSnapshot, mem_pool.Values))
                 return RelayResultReason.Invalid;
+            if (!Plugin.CheckPolicy(transaction))
+                return RelayResultReason.Unknown;
             mem_pool.TryAdd(transaction.Hash, transaction);
             if (mem_pool.Count > MemoryPoolSize)
             {
                 UInt256[] delete = mem_pool.Values.AsParallel()
                     .OrderBy(p => p.NetworkFee / p.Size)
+                    .ThenBy(p => p.NetworkFee)
                     .ThenBy(p => new BigInteger(p.Hash.ToArray()))
                     .Take(mem_pool.Count - MemoryPoolSize)
                     .Select(p => p.Hash)
@@ -376,13 +380,9 @@ namespace Neo.Ledger
             block_cache.Remove(block.Hash);
             foreach (Transaction tx in block.Transactions)
                 mem_pool.TryRemove(tx.Hash, out _);
-            Transaction[] remain = mem_pool.Values.ToArray();
+            foreach (Transaction tx in mem_pool.Values)
+                Self.Tell(tx, ActorRefs.NoSender);
             mem_pool.Clear();
-            foreach (Transaction tx in remain)
-            {
-                if (!tx.Verify(currentSnapshot, mem_pool.Values)) continue;
-                mem_pool.TryAdd(tx.Hash, tx);
-            }
             PersistCompleted completed = new PersistCompleted { Block = block };
             system.Consensus?.Tell(completed);
             Distribute(completed);

@@ -73,7 +73,14 @@ namespace Neo.Network.RPC
             json["script"] = script.ToHexString();
             json["state"] = engine.State;
             json["gas_consumed"] = engine.GasConsumed.ToString();
-            json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
+            try
+            {
+                json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
+            }
+            catch (InvalidOperationException)
+            {
+                json["stack"] = "error: recursive reference";
+            }
             if (wallet != null)
             {
                 InvocationTransaction tx = new InvocationTransaction
@@ -102,25 +109,21 @@ namespace Neo.Network.RPC
 
         private static JObject GetRelayResult(RelayResultReason reason)
         {
-            JObject json = new JObject();
-            json["succeed"] = reason == RelayResultReason.Succeed;
-            json["reason"] = reason;
             switch (reason)
             {
+                case RelayResultReason.Succeed:
+                    return true;
                 case RelayResultReason.AlreadyExists:
-                    json["message"] = "Block or transaction already exists and cannot be sent repeatedly.";
-                    break;
+                    throw new RpcException(-501, "Block or transaction already exists and cannot be sent repeatedly.");
                 case RelayResultReason.OutOfMemory:
-                    json["message"] = "The memory pool is full and no more transactions can be sent.";
-                    break;
+                    throw new RpcException(-502, "The memory pool is full and no more transactions can be sent.");
                 case RelayResultReason.UnableToVerify:
-                    json["message"] = "The block cannot be validated.";
-                    break;
+                    throw new RpcException(-503, "The block cannot be validated.");
                 case RelayResultReason.Invalid:
-                    json["message"] = "Block or transaction validation failed.";
-                    break;
+                    throw new RpcException(-504, "Block or transaction validation failed.");
+                default:
+                    throw new RpcException(-500, "Unkown error.");
             }
-            return json;
         }
 
         private JObject Process(string method, JArray _params)
@@ -194,36 +197,56 @@ namespace Neo.Network.RPC
                                 json["nextblockhash"] = hash.ToString();
                             return json;
                         }
-                        else
-                        {
-                            return block.ToArray().ToHexString();
-                        }
+                        return block.ToArray().ToHexString();
                     }
                 case "getblockcount":
                     return Blockchain.Singleton.Height + 1;
                 case "getblockhash":
                     {
                         uint height = (uint)_params[0].AsNumber();
-                        if (height >= 0 && height <= Blockchain.Singleton.Height)
+                        if (height <= Blockchain.Singleton.Height)
                         {
                             return Blockchain.Singleton.GetBlockHash(height).ToString();
                         }
+                        throw new RpcException(-100, "Invalid Height");
+                    }
+                case "getblockheader":
+                    {
+                        Header header;
+                        if (_params[0] is JNumber)
+                        {
+                            uint height = (uint)_params[0].AsNumber();
+                            header = Blockchain.Singleton.Store.GetHeader(height);
+                        }
                         else
                         {
-                            throw new RpcException(-100, "Invalid Height");
+                            UInt256 hash = UInt256.Parse(_params[0].AsString());
+                            header = Blockchain.Singleton.Store.GetHeader(hash);
                         }
+                        if (header == null)
+                            throw new RpcException(-100, "Unknown block");
+
+                        bool verbose = _params.Count >= 2 && _params[1].AsBooleanOrDefault(false);
+                        if (verbose)
+                        {
+                            JObject json = header.ToJson();
+                            json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
+                            UInt256 hash = Blockchain.Singleton.Store.GetNextBlockHash(header.Hash);
+                            if (hash != null)
+                                json["nextblockhash"] = hash.ToString();
+                            return json;
+                        }
+
+                        return header.ToArray().ToHexString();
                     }
                 case "getblocksysfee":
                     {
                         uint height = (uint)_params[0].AsNumber();
-                        if (height >= 0 && height <= Blockchain.Singleton.Height)
+                        if (height <= Blockchain.Singleton.Height)
                         {
                             return Blockchain.Singleton.Store.GetSysFeeAmount(height).ToString();
                         }
-                        else
-                        {
-                            throw new RpcException(-100, "Invalid Height");
-                        }
+                        throw new RpcException(-100, "Invalid Height");
                     }
                 case "getconnectioncount":
                     return LocalNode.Singleton.ConnectedCount;
@@ -285,10 +308,7 @@ namespace Neo.Network.RPC
                             }
                             return json;
                         }
-                        else
-                        {
-                            return tx.ToArray().ToHexString();
-                        }
+                        return tx.ToArray().ToHexString();
                     }
                 case "getstorage":
                     {
@@ -328,6 +348,11 @@ namespace Neo.Network.RPC
                         json["useragent"] = LocalNode.UserAgent;
                         return json;
                     }
+                case "getwalletheight":
+                    if (wallet == null)
+                        throw new RpcException(-400, "Access denied.");
+                    else
+                        return (wallet.WalletHeight > 0) ? wallet.WalletHeight - 1 : 0;
                 case "invoke":
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
