@@ -26,6 +26,17 @@ namespace Neo.Consensus
         private readonly Wallet wallet;
         private DateTime block_received_time;
 
+        //===================================
+        //=== Fine-Tunning time =============
+        //Opt variables
+        public DateTime? dInit;
+        //private DateTime block_last_time;
+        private bool firstIter = true;
+        int fixedNumberOfBlocksToGetAvg = 5;
+        int fixedFirstChangeViewTimeOut = 30;
+        List<double> blockTimes = new List<double>();
+        //===================================
+
         public ConsensusService(NeoSystem system, Wallet wallet)
         {
             this.system = system;
@@ -43,6 +54,13 @@ namespace Neo.Consensus
                 return false;
             }
             context.Transactions[tx.Hash] = tx;
+            
+            //===================================
+	    //=== Fine-Tunning time =============
+            Console.WriteLine("(CS-AD) context.TransactionHashes.Length:" + context.TransactionHashes.Length);
+            Console.WriteLine("(CS-AD) context.Transactions.Count:" + context.Transactions.Count);
+            //===================================
+
             if (context.TransactionHashes.Length == context.Transactions.Count)
             {
                 if (Blockchain.GetConsensusAddress(context.Snapshot.GetValidators(context.Transactions.Values).ToArray()).Equals(context.NextConsensus))
@@ -155,15 +173,59 @@ namespace Neo.Consensus
             Log($"initialize: height={context.BlockIndex} view={view_number} index={context.MyIndex} role={(context.MyIndex == context.PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup)}");
             if (context.MyIndex == context.PrimaryIndex)
             {
+
+                //=================================================
+                double predictedBlockTimeBasedOnAvg = 3; //Empirically, the minimum time that is being needed for generating a block
+                if (blockTimes.Count() > 0)
+                {
+                    predictedBlockTimeBasedOnAvg = Math.Ceiling(Math.Max(Math.Min(blockTimes.Average(), predictedBlockTimeBasedOnAvg), 10)) - 1;
+                    //Console.WriteLine($"(CS-IC) MaxMin:{predictedBlockTimeBasedOnAvg} Min:{Math.Min(blockTimes.Average(), 3)}");
+                }
+                predictedBlockTimeBasedOnAvg = 3;
+                TimeSpan span = DateTime.Now + TimeSpan.FromSeconds(predictedBlockTimeBasedOnAvg) - block_received_time;
+                //First iter means that consensus are starting, genesis block, or some unpected incident
+                //Give some for for nodes start and receive prepare request from speaker
+                if (firstIter)
+                {
+                    firstIter = false;
+                    //Wait until all nodes are on
+                    span = TimeSpan.FromSeconds(-5);
+                }
+
+                //if (view_number == 0)
+                //{
+                //    block_last_time = DateTime.Now;
+                //}
+                //=================================================
+
                 context.State |= ConsensusState.Primary;
                 TimeSpan span = DateTime.Now - block_received_time;
                 if (span >= Blockchain.TimePerBlock)
                     ChangeTimer(TimeSpan.Zero);
                 else
                     ChangeTimer(Blockchain.TimePerBlock - span);
+
+                //=================================================
+                    //Console.WriteLine($"(CS-IC) AVG:{blockTimes.Average()} count:{blockTimes.Count()}");
+                    Console.WriteLine($"(CS-IC) block_received_time={block_received_time} DateTime.Now={DateTime.Now} diff={DateTime.Now - block_received_time}");
+                    Console.WriteLine("(CS-IC) Blockchain.TimePerBlock: " + Blockchain.TimePerBlock);
+                    Console.WriteLine("(CS-IC) span.TotalSeconds: " + span.TotalSeconds);
+                    Console.WriteLine("(CS-IC) predictedBlockTimeBasedOnAvg: " + predictedBlockTimeBasedOnAvg);
+                    Console.WriteLine("(CS-IC) context.BlockIndex: " + context.BlockIndex);
+                    Console.WriteLine("(CS-IC) view_number:" + view_number);
+                    Console.WriteLine("(CS-IC) PRIMARY");
+                //=================================================
+
             }
             else
             {
+                //=================================================
+                    Console.WriteLine("(CS-IC) context.BlockIndex: " + context.BlockIndex);
+                    Console.WriteLine("(CS-IC) view_number:" + view_number);
+                    Console.WriteLine("(CS-IC) TimeSpan with normal formula would be:" + TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (view_number + 1)));
+                    Console.WriteLine("(CS-IC) BACKUP");
+                //=================================================
+
                 context.State = ConsensusState.Backup;
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (view_number + 1)));
             }
@@ -350,6 +412,19 @@ namespace Neo.Consensus
             context.Dispose();
             base.PostStop();
         }
+
+/*
+                    //===========================================================
+                    // Opt blocks
+                    if (dInit != DateTime.MinValue && timer_view == 0)
+                    {
+                        blockTimes.Add((double)(DateTime.Now - dInit).GetValueOrDefault().TotalSeconds);
+
+                        if (blockTimes.Count() > fixedNumberOfBlocksToGetAvg)
+                            blockTimes.RemoveAt(0);
+                    }
+                    //===========================================================
+*/
 
         public static Props Props(NeoSystem system, Wallet wallet)
         {
