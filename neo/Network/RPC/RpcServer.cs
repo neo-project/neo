@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
 using Neo.IO;
 using Neo.IO.Json;
@@ -21,6 +22,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -649,12 +651,24 @@ namespace Neo.Network.RPC
             return response;
         }
 
-        public void Start(int port, string sslCert = null, string password = null)
+        public void Start(int port, string sslCert = null, string password = null, string[] allowedClientNames = null)
         {
             host = new WebHostBuilder().UseKestrel(options => options.Listen(IPAddress.Any, port, listenOptions =>
             {
-                if (!string.IsNullOrEmpty(sslCert))
-                    listenOptions.UseHttps(sslCert, password);
+                if (string.IsNullOrEmpty(sslCert)) return;
+                listenOptions.UseHttps(sslCert, password, httpsConnectionAdapterOptions =>
+                {
+                    if (allowedClientNames is null || allowedClientNames.Length == 0)
+                        return;
+                    httpsConnectionAdapterOptions.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
+                    httpsConnectionAdapterOptions.ClientCertificateValidation = (cert, chain, err) =>
+                    {
+                        if (err != System.Net.Security.SslPolicyErrors.None)
+                            return false;
+                        string name = cert.GetNameInfo(X509NameType.SimpleName, false);
+                        return allowedClientNames.Contains(name);
+                    };
+                });
             }))
             .Configure(app =>
             {

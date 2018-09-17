@@ -55,10 +55,10 @@ namespace Neo
             });
         }
 
-        public void StartRpc(int port, Wallet wallet = null, string sslCert = null, string password = null)
+        public void StartRpc(int port, Wallet wallet = null, string sslCert = null, string password = null, string[] allowedClientNames = null)
         {
             rpcServer = new RpcServer(this, wallet);
-            rpcServer.Start(port, sslCert, password);
+            rpcServer.Start(port, sslCert, password, allowedClientNames);
         }
     }
 }
