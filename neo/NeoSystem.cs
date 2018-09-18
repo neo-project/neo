@@ -7,6 +7,7 @@ using Neo.Persistence;
 using Neo.Plugins;
 using Neo.Wallets;
 using System;
+using System.Net;
 
 namespace Neo
 {
@@ -55,10 +56,10 @@ namespace Neo
             });
         }
 
-        public void StartRpc(int port, Wallet wallet = null, string sslCert = null, string password = null, string[] allowedClientNames = null)
+        public void StartRpc(IPAddress bindAddress, int port, Wallet wallet = null, string sslCert = null, string password = null, string[] allowedClientNames = null)
         {
             rpcServer = new RpcServer(this, wallet);
-            rpcServer.Start(port, sslCert, password, allowedClientNames);
+            rpcServer.Start(bindAddress, port, sslCert, password, allowedClientNames);
         }
     }
 }

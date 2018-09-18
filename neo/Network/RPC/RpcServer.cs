@@ -651,9 +651,9 @@ namespace Neo.Network.RPC
             return response;
         }
 
-        public void Start(int port, string sslCert = null, string password = null, string[] allowedClientNames = null)
+        public void Start(IPAddress bindAddress, int port, string sslCert = null, string password = null, string[] allowedClientNames = null)
         {
-            host = new WebHostBuilder().UseKestrel(options => options.Listen(IPAddress.Any, port, listenOptions =>
+            host = new WebHostBuilder().UseKestrel(options => options.Listen(bindAddress, port, listenOptions =>
             {
                 if (string.IsNullOrEmpty(sslCert)) return;
                 listenOptions.UseHttps(sslCert, password, httpsConnectionAdapterOptions =>
