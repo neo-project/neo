@@ -83,8 +83,9 @@ namespace Neo.IO.Json
             return properties.ContainsKey(key);
         }
 
-        public static JObject Parse(TextReader reader)
+        public static JObject Parse(TextReader reader, int max_nest = 100)
         {
+            if (max_nest < 0) throw new FormatException();
             SkipSpace(reader);
             char firstChar = (char)reader.Peek();
             if (firstChar == '\"' || firstChar == '\'')
@@ -93,7 +94,7 @@ namespace Neo.IO.Json
             }
             if (firstChar == '[')
             {
-                return JArray.Parse(reader);
+                return JArray.Parse(reader, max_nest);
             }
             if ((firstChar >= '0' && firstChar <= '9') || firstChar == '-')
             {
@@ -117,7 +118,7 @@ namespace Neo.IO.Json
                 string name = JString.Parse(reader).Value;
                 SkipSpace(reader);
                 if (reader.Read() != ':') throw new FormatException();
-                JObject value = Parse(reader);
+                JObject value = Parse(reader, max_nest - 1);
                 obj.properties.Add(name, value);
                 SkipSpace(reader);
             }
@@ -125,11 +126,11 @@ namespace Neo.IO.Json
             return obj;
         }
 
-        public static JObject Parse(string value)
+        public static JObject Parse(string value, int max_nest = 100)
         {
             using (StringReader reader = new StringReader(value))
             {
-                return Parse(reader);
+                return Parse(reader, max_nest);
             }
         }
 

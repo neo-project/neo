@@ -1,4 +1,4 @@
-﻿using Neo.Core;
+﻿using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
@@ -30,7 +30,7 @@ namespace Neo.Wallets
             }
             else
             {
-                AssetState state = Blockchain.Default.GetAssetState((UInt256)asset_id);
+                AssetState state = Blockchain.Singleton.Store.GetAssets()[(UInt256)asset_id];
                 this.AssetId = state.AssetId;
                 this.AssetName = state.GetName();
                 this.Decimals = state.Precision;

@@ -1,5 +1,4 @@
-﻿using Neo.Core;
-using Neo.Cryptography.ECC;
+﻿using Neo.Cryptography.ECC;
 using Neo.VM;
 using Neo.Wallets;
 using System;
@@ -13,16 +12,13 @@ namespace Neo.SmartContract
         public ContractParameterType[] ParameterList;
 
         private string _address;
-        /// <summary>
-        /// 合约地址
-        /// </summary>
         public string Address
         {
             get
             {
                 if (_address == null)
                 {
-                    _address = Wallet.ToAddress(ScriptHash);
+                    _address = ScriptHash.ToAddress();
                 }
                 return _address;
             }
@@ -142,7 +138,7 @@ namespace Neo.SmartContract
                     ++i;
                     break;
                 case 2:
-                    if (n != Script.ToUInt16(++i)) return false;
+                    if (Script.Length < i + 3 || n != Script.ToUInt16(++i)) return false;
                     i += 2;
                     break;
                 default:

@@ -1,5 +1,6 @@
-﻿using Neo.Core;
-using Neo.Cryptography;
+﻿using Neo.Cryptography;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
@@ -14,7 +15,7 @@ using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.Wallets
 {
-    public abstract class Wallet
+    public abstract class Wallet : IDisposable
     {
         public abstract event EventHandler<BalanceEventArgs> BalanceChanged;
 
@@ -51,6 +52,10 @@ namespace Neo.Wallets
         {
             if (privateKey == null) return CreateAccount(contract);
             return CreateAccount(contract, new KeyPair(privateKey));
+        }
+
+        public virtual void Dispose()
+        {
         }
 
         public IEnumerable<Coin> FindUnspentCoins(params UInt160[] from)
@@ -104,6 +109,8 @@ namespace Neo.Wallets
                     script = sb.ToArray();
                 }
                 ApplicationEngine engine = ApplicationEngine.Run(script);
+                if (engine.State.HasFlag(VMState.FAULT))
+                    return new BigDecimal(0, 0);
                 byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
                 BigInteger amount = ((VMArray)engine.ResultStack.Pop()).Aggregate(BigInteger.Zero, (x, y) => x + y.GetBigInteger());
                 return new BigDecimal(amount, decimals);
@@ -154,7 +161,7 @@ namespace Neo.Wallets
             byte[] prikey = XOR(encryptedkey.AES256Decrypt(derivedhalf2), derivedhalf1);
             Cryptography.ECC.ECPoint pubkey = Cryptography.ECC.ECCurve.Secp256r1.G * prikey;
             UInt160 script_hash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-            string address = ToAddress(script_hash);
+            string address = script_hash.ToAddress();
             if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().Take(4).SequenceEqual(addresshash))
                 throw new FormatException();
             return prikey;
@@ -356,7 +363,7 @@ namespace Neo.Wallets
             tx.Attributes = attributes.ToArray();
             tx.Inputs = new CoinReference[0];
             tx.Outputs = outputs.Where(p => p.IsGlobalAsset).Select(p => p.ToTxOutput()).ToArray();
-            tx.Scripts = new Witness[0];
+            tx.Witnesses = new Witness[0];
             if (tx is InvocationTransaction itx)
             {
                 ApplicationEngine engine = ApplicationEngine.Run(itx.Script, itx);
@@ -387,24 +394,6 @@ namespace Neo.Wallets
                 fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
             }
             return fSuccess;
-        }
-
-        public static string ToAddress(UInt160 scriptHash)
-        {
-            byte[] data = new byte[21];
-            data[0] = Settings.Default.AddressVersion;
-            Buffer.BlockCopy(scriptHash.ToArray(), 0, data, 1, 20);
-            return data.Base58CheckEncode();
-        }
-
-        public static UInt160 ToScriptHash(string address)
-        {
-            byte[] data = address.Base58CheckDecode();
-            if (data.Length != 21)
-                throw new FormatException();
-            if (data[0] != Settings.Default.AddressVersion)
-                throw new FormatException();
-            return new UInt160(data.Skip(1).ToArray());
         }
 
         public abstract bool VerifyPassword(string password);
