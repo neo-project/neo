@@ -26,6 +26,19 @@ namespace Neo.Consensus
         private readonly Wallet wallet;
         private DateTime block_received_time;
 
+        //===================================
+        //Opt consensus values
+        //Opt variables
+        public DateTime? dInit;
+        //private DateTime block_last_time;
+        private bool firstIter = true;
+        int fixedNumberOfBlocksToGetAvg = 5;
+        int fixedFirstChangeViewTimeOut = 30;
+        List<double> blockTimes = new List<double>();
+        List<int> blockNumberOfTXs = new List<int>();
+        List<double> blockTxSize = new List<double>(); //size of txs
+        //===================================
+
         public ConsensusService(NeoSystem system, Wallet wallet)
         {
             this.system = system;
@@ -104,9 +117,13 @@ namespace Neo.Consensus
         private void FillContext()
         {
             IEnumerable<Transaction> mem_pool = Blockchain.Singleton.GetMemoryPool();
+
             foreach (IPolicyPlugin plugin in Plugin.Policies)
                 mem_pool = plugin.FilterForBlock(mem_pool);
             List<Transaction> transactions = mem_pool.ToList();
+	    //Maybe there is an attach here, the Primary can pick up the largest/worse TXs available in order to prejudicate Backups behavior and processing time
+	
+
             Fixed8 amount_netfee = Block.CalculateNetFee(transactions);
             TransactionOutput[] outputs = amount_netfee == Fixed8.Zero ? new TransactionOutput[0] : new[] { new TransactionOutput
             {
@@ -156,7 +173,35 @@ namespace Neo.Consensus
             if (context.MyIndex == context.PrimaryIndex)
             {
                 context.State |= ConsensusState.Primary;
-                TimeSpan span = DateTime.Now - block_received_time;
+		//=================================================.
+		// Motivation: Speaker is the main actor and should be one to coordinate the startup correctly in order to accomplish 15s (his knowledge should surpass a probabilistic idea of the behavior of the whole network. Like magic :D)
+		dInit = DateTime.MinValue; //Until here everything was quick
+		double minRequiredTimeFor = 3; //Empirically, the minimum time that is being needed for generating a block - Before Akka
+                double predictedBlockTimeBasedOnAvg = minRequiredTimeFor; 
+                if (blockTimes.Count() > 0)
+                {
+		    // predictedBlockTimeBasedOnAvg is the predicted time based on the last avg
+		    // it should work, because it intrinsic carrie the average number of TXS and their characteris (size, types of opcodes, etc...) 
+                    predictedBlockTimeBasedOnAvg = Math.Ceiling(Math.Max(Math.Min(blockTimes.Average(), predictedBlockTimeBasedOnAvg), 10)) - 1;
+
+		    // But a fine tunning can happen precisely using:
+                    // avgNumberOfTxs
+                    // avgSizeOfTxs
+                }
+                TimeSpan span = DateTime.Now + TimeSpan.FromSeconds(predictedBlockTimeBasedOnAvg) - block_received_time;
+                //First iter means that consensus are starting, genesis block, or some unpected incident
+                //Give some for for nodes start and receive prepare request from speaker
+                if (firstIter)
+                {
+                    firstIter = false;
+                    //Wait until all nodes are on
+                    span = TimeSpan.FromSeconds(-5);
+                }
+
+
+                //=================================================
+
+                //TimeSpan span = DateTime.Now - block_received_time; //Line commented due to the previous calculuss
                 if (span >= Blockchain.TimePerBlock)
                     ChangeTimer(TimeSpan.Zero);
                 else
@@ -326,6 +371,19 @@ namespace Neo.Consensus
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
                         system.LocalNode.Tell(Message.Create("inv", payload));
                 }
+
+                //===========================================================
+                // Opt blocks
+                if (dInit != DateTime.MinValue && timer_view == 0)
+                {
+                    blockTimes.Add((double)(DateTime.Now - dInit).GetValueOrDefault().TotalSeconds);
+                        if (blockTimes.Count() > fixedNumberOfBlocksToGetAvg)
+                            blockTimes.RemoveAt(0);
+                    blockNumberOfTXs.Add( context.TransactionHashes.size);
+                    blockTxSize.Add( context.TransactionHashes.sizeInKB);
+                }
+                //===========================================================
+
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer.ViewNumber + 1)));
             }
             else if ((context.State.HasFlag(ConsensusState.Primary) && context.State.HasFlag(ConsensusState.RequestSent)) || context.State.HasFlag(ConsensusState.Backup))
