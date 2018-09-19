@@ -152,6 +152,8 @@ namespace Neo.Consensus
             else
                 context.ChangeView(view_number);
             if (context.MyIndex < 0) return;
+            if (view_number > 0)
+                Log($"changeview: view={view_number} primary={context.Validators[context.GetPrimaryIndex((byte)(view_number - 1u))]}", LogLevel.Warning);
             Log($"initialize: height={context.BlockIndex} view={view_number} index={context.MyIndex} role={(context.MyIndex == context.PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup)}");
             if (context.MyIndex == context.PrimaryIndex)
             {
