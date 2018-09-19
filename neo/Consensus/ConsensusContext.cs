@@ -35,10 +35,9 @@ namespace Neo.Consensus
 
         public void ChangeView(byte view_number)
         {
-            int p = ((int)BlockIndex - view_number) % Validators.Length;
             State &= ConsensusState.SignatureSent;
             ViewNumber = view_number;
-            PrimaryIndex = p >= 0 ? (uint)p : (uint)(p + Validators.Length);
+            PrimaryIndex = GetPrimaryIndex(view_number);
             if (State == ConsensusState.Initial)
             {
                 TransactionHashes = null;
@@ -52,6 +51,12 @@ namespace Neo.Consensus
         public void Dispose()
         {
             Snapshot?.Dispose();
+        }
+
+        public uint GetPrimaryIndex(byte view_number)
+        {
+            int p = ((int)BlockIndex - view_number) % Validators.Length;
+            return p >= 0 ? (uint)p : (uint)(p + Validators.Length);
         }
 
         public ConsensusPayload MakeChangeView()
