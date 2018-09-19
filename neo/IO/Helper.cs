@@ -31,7 +31,7 @@ namespace Neo.IO
             return serializable;
         }
 
-        public static T[] AsSerializableArray<T>(this byte[] value, int max = 0x10000000) where T : ISerializable, new()
+        public static T[] AsSerializableArray<T>(this byte[] value, int max = 0x1000000) where T : ISerializable, new()
         {
             using (MemoryStream ms = new MemoryStream(value, false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
@@ -118,7 +118,7 @@ namespace Neo.IO
             return obj;
         }
 
-        public static T[] ReadSerializableArray<T>(this BinaryReader reader, int max = 0x10000000) where T : ISerializable, new()
+        public static T[] ReadSerializableArray<T>(this BinaryReader reader, int max = 0x1000000) where T : ISerializable, new()
         {
             T[] array = new T[reader.ReadVarInt((ulong)max)];
             for (int i = 0; i < array.Length; i++)
@@ -129,7 +129,7 @@ namespace Neo.IO
             return array;
         }
 
-        public static byte[] ReadVarBytes(this BinaryReader reader, int max = 0X7fffffc7)
+        public static byte[] ReadVarBytes(this BinaryReader reader, int max = 0x1000000)
         {
             return reader.ReadBytes((int)reader.ReadVarInt((ulong)max));
         }
@@ -150,7 +150,7 @@ namespace Neo.IO
             return value;
         }
 
-        public static string ReadVarString(this BinaryReader reader, int max = 0X7fffffc7)
+        public static string ReadVarString(this BinaryReader reader, int max = 0x1000000)
         {
             return Encoding.UTF8.GetString(reader.ReadVarBytes(max));
         }
