@@ -22,6 +22,19 @@ namespace Neo.Network.P2P.Payloads
         public ECPoint Owner;
         public UInt160 Admin;
 
+        private UInt160 _script_hash = null;
+        internal UInt160 OwnerScriptHash
+        {
+            get
+            {
+                if (_script_hash == null)
+                {
+                    _script_hash = Contract.CreateSignatureRedeemScript(Owner).ToScriptHash();
+                }
+                return _script_hash;
+            }
+        }
+
         public override int Size => base.Size + sizeof(AssetType) + Name.GetVarSize() + Amount.Size + sizeof(byte) + Owner.Size + Admin.Size;
 
         public override Fixed8 SystemFee

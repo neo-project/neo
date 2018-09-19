@@ -16,7 +16,7 @@ namespace Neo.Network.P2P.Payloads
         public ECPoint PublicKey;
 
         private UInt160 _script_hash = null;
-        private UInt160 ScriptHash
+        internal UInt160 ScriptHash
         {
             get
             {
