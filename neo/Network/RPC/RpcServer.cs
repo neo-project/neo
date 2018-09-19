@@ -22,6 +22,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
@@ -651,22 +652,22 @@ namespace Neo.Network.RPC
             return response;
         }
 
-        public void Start(IPAddress bindAddress, int port, string sslCert = null, string password = null, string[] allowedClientNames = null)
+        public void Start(IPAddress bindAddress, int port, string sslCert = null, string password = null, string[] trustedAuthorities = null)
         {
             host = new WebHostBuilder().UseKestrel(options => options.Listen(bindAddress, port, listenOptions =>
             {
                 if (string.IsNullOrEmpty(sslCert)) return;
                 listenOptions.UseHttps(sslCert, password, httpsConnectionAdapterOptions =>
                 {
-                    if (allowedClientNames is null || allowedClientNames.Length == 0)
+                    if (trustedAuthorities is null || trustedAuthorities.Length == 0)
                         return;
                     httpsConnectionAdapterOptions.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
                     httpsConnectionAdapterOptions.ClientCertificateValidation = (cert, chain, err) =>
                     {
-                        if (err != System.Net.Security.SslPolicyErrors.None)
+                        if (err != SslPolicyErrors.None)
                             return false;
-                        string name = cert.GetNameInfo(X509NameType.SimpleName, false);
-                        return allowedClientNames.Contains(name);
+                        X509Certificate2 authority = chain.ChainElements[chain.ChainElements.Count - 1].Certificate;
+                        return trustedAuthorities.Contains(authority.Thumbprint);
                     };
                 });
             }))
