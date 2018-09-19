@@ -17,7 +17,7 @@ namespace Neo.Wallets
 {
     public abstract class Wallet : IDisposable
     {
-        public abstract event EventHandler<BalanceEventArgs> BalanceChanged;
+        public abstract event EventHandler<WalletTransactionEventArgs> WalletTransaction;
 
         private static readonly Random rand = new Random();
 

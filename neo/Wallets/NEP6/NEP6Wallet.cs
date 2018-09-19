@@ -14,7 +14,7 @@ namespace Neo.Wallets.NEP6
 {
     public class NEP6Wallet : Wallet
     {
-        public override event EventHandler<BalanceEventArgs> BalanceChanged;
+        public override event EventHandler<WalletTransactionEventArgs> WalletTransaction;
 
         private readonly WalletIndexer indexer;
         private readonly string path;
@@ -56,7 +56,7 @@ namespace Neo.Wallets.NEP6
                 this.accounts = new Dictionary<UInt160, NEP6Account>();
                 this.extra = JObject.Null;
             }
-            indexer.BalanceChanged += WalletIndexer_BalanceChanged;
+            indexer.WalletTransaction += WalletIndexer_WalletTransaction;
         }
 
         private void AddAccount(NEP6Account account, bool is_import)
@@ -98,7 +98,7 @@ namespace Neo.Wallets.NEP6
             {
                 unconfirmed[tx.Hash] = tx;
             }
-            BalanceChanged?.Invoke(this, new BalanceEventArgs
+            WalletTransaction?.Invoke(this, new WalletTransactionEventArgs
             {
                 Transaction = tx,
                 RelatedAccounts = tx.Witnesses.Select(p => p.ScriptHash).Union(tx.Outputs.Select(p => p.ScriptHash)).Where(p => Contains(p)).ToArray(),
@@ -184,7 +184,7 @@ namespace Neo.Wallets.NEP6
 
         public override void Dispose()
         {
-            indexer.BalanceChanged -= WalletIndexer_BalanceChanged;
+            indexer.WalletTransaction -= WalletIndexer_WalletTransaction;
         }
 
         public override Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount, UInt160[] from)
@@ -403,7 +403,7 @@ namespace Neo.Wallets.NEP6
             }
         }
 
-        private void WalletIndexer_BalanceChanged(object sender, BalanceEventArgs e)
+        private void WalletIndexer_WalletTransaction(object sender, WalletTransactionEventArgs e)
         {
             lock (unconfirmed)
             {
@@ -416,7 +416,7 @@ namespace Neo.Wallets.NEP6
             }
             if (relatedAccounts.Length > 0)
             {
-                BalanceChanged?.Invoke(this, new BalanceEventArgs
+                WalletTransaction?.Invoke(this, new WalletTransactionEventArgs
                 {
                     Transaction = e.Transaction,
                     RelatedAccounts = relatedAccounts,

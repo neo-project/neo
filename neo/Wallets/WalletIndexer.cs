@@ -15,7 +15,7 @@ namespace Neo.Wallets
 {
     public class WalletIndexer : IDisposable
     {
-        public event EventHandler<BalanceEventArgs> BalanceChanged;
+        public event EventHandler<WalletTransactionEventArgs> WalletTransaction;
 
         private readonly Dictionary<uint, HashSet<UInt160>> indexes = new Dictionary<uint, HashSet<UInt160>>();
         private readonly Dictionary<UInt160, HashSet<CoinReference>> accounts_tracked = new Dictionary<UInt160, HashSet<CoinReference>>();
@@ -178,24 +178,47 @@ namespace Neo.Wallets
                         accounts_changed.Add(coin.Output.ScriptHash);
                     }
                 }
-                if (tx is ClaimTransaction ctx)
+                switch (tx)
                 {
-                    foreach (CoinReference claim in ctx.Claims)
-                    {
-                        if (coins_tracked.TryGetValue(claim, out Coin coin))
+                    case MinerTransaction _:
+                    case ContractTransaction _:
+#pragma warning disable CS0612
+                    case PublishTransaction _:
+#pragma warning restore CS0612
+                        break;
+                    case ClaimTransaction tx_claim:
+                        foreach (CoinReference claim in tx_claim.Claims)
                         {
-                            accounts_tracked[coin.Output.ScriptHash].Remove(claim);
-                            coins_tracked.Remove(claim);
-                            batch.Delete(DataEntryPrefix.ST_Coin, claim);
-                            accounts_changed.Add(coin.Output.ScriptHash);
+                            if (coins_tracked.TryGetValue(claim, out Coin coin))
+                            {
+                                accounts_tracked[coin.Output.ScriptHash].Remove(claim);
+                                coins_tracked.Remove(claim);
+                                batch.Delete(DataEntryPrefix.ST_Coin, claim);
+                                accounts_changed.Add(coin.Output.ScriptHash);
+                            }
                         }
-                    }
+                        break;
+#pragma warning disable CS0612
+                    case EnrollmentTransaction tx_enrollment:
+                        if (accounts_tracked.ContainsKey(tx_enrollment.ScriptHash))
+                            accounts_changed.Add(tx_enrollment.ScriptHash);
+                        break;
+                    case RegisterTransaction tx_register:
+                        if (accounts_tracked.ContainsKey(tx_register.OwnerScriptHash))
+                            accounts_changed.Add(tx_register.OwnerScriptHash);
+                        break;
+#pragma warning restore CS0612
+                    default:
+                        foreach (UInt160 hash in tx.Witnesses.Select(p => p.ScriptHash))
+                            if (accounts_tracked.ContainsKey(hash))
+                                accounts_changed.Add(hash);
+                        break;
                 }
                 if (accounts_changed.Count > 0)
                 {
                     foreach (UInt160 account in accounts_changed)
                         batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account).Add(tx.Hash), false);
-                    BalanceChanged?.Invoke(null, new BalanceEventArgs
+                    WalletTransaction?.Invoke(null, new WalletTransactionEventArgs
                     {
                         Transaction = tx,
                         RelatedAccounts = accounts_changed.ToArray(),

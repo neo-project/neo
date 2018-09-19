@@ -3,7 +3,7 @@ using System;
 
 namespace Neo.Wallets
 {
-    public class BalanceEventArgs : EventArgs
+    public class WalletTransactionEventArgs : EventArgs
     {
         public Transaction Transaction;
         public UInt160[] RelatedAccounts;
