@@ -34,28 +34,32 @@ namespace Neo.Network
             s.SendTo(data, ipe);
 
             byte[] buffer = new byte[0x1000];
+            
             do
             {
                 int length;
                 try
                 {
                     length = s.Receive(buffer);
+
+                    string resp = Encoding.ASCII.GetString(buffer, 0, length).ToLower();
+                    if (resp.Contains("upnp:rootdevice"))
+                    {
+                        resp = resp.Substring(resp.ToLower().IndexOf("location:") + 9);
+                        resp = resp.Substring(0, resp.IndexOf("\r")).Trim();
+                        if (!string.IsNullOrEmpty(_serviceUrl = GetServiceUrl(resp)))
+                        {
+                            return true;
+                        }
+                    }
                 }
-                catch (SocketException)
+                catch
                 {
                     continue;
                 }
-                string resp = Encoding.ASCII.GetString(buffer, 0, length).ToLower();
-                if (resp.Contains("upnp:rootdevice"))
-                {
-                    resp = resp.Substring(resp.ToLower().IndexOf("location:") + 9);
-                    resp = resp.Substring(0, resp.IndexOf("\r")).Trim();
-                    if (!string.IsNullOrEmpty(_serviceUrl = GetServiceUrl(resp)))
-                    {
-                        return true;
-                    }
-                }
-            } while (DateTime.Now - start < TimeOut);
+            }
+            while (DateTime.Now - start < TimeOut);
+
             return false;
         }
 
