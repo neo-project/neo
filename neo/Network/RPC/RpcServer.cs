@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
 using Neo.IO;
 using Neo.IO.Json;
@@ -21,6 +22,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -649,12 +652,24 @@ namespace Neo.Network.RPC
             return response;
         }
 
-        public void Start(IPAddress bindAddress, int port, string sslCert = null, string password = null)
+        public void Start(IPAddress bindAddress, int port, string sslCert = null, string password = null, string[] trustedAuthorities = null)
         {
             host = new WebHostBuilder().UseKestrel(options => options.Listen(bindAddress, port, listenOptions =>
             {
-                if (!string.IsNullOrEmpty(sslCert))
-                    listenOptions.UseHttps(sslCert, password);
+                if (string.IsNullOrEmpty(sslCert)) return;
+                listenOptions.UseHttps(sslCert, password, httpsConnectionAdapterOptions =>
+                {
+                    if (trustedAuthorities is null || trustedAuthorities.Length == 0)
+                        return;
+                    httpsConnectionAdapterOptions.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
+                    httpsConnectionAdapterOptions.ClientCertificateValidation = (cert, chain, err) =>
+                    {
+                        if (err != SslPolicyErrors.None)
+                            return false;
+                        X509Certificate2 authority = chain.ChainElements[chain.ChainElements.Count - 1].Certificate;
+                        return trustedAuthorities.Contains(authority.Thumbprint);
+                    };
+                });
             }))
             .Configure(app =>
             {
