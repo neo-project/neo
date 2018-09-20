@@ -578,7 +578,7 @@ namespace Neo.Network.RPC
                     request = new JObject();
                     if (!string.IsNullOrEmpty(jsonrpc))
                         request["jsonrpc"] = jsonrpc;
-                    request["id"] = double.Parse(id);
+                    request["id"] = id;
                     request["method"] = method;
                     request["params"] = JObject.Parse(_params);
                 }
