@@ -542,6 +542,8 @@ namespace Neo.SmartContract
                     return 200;
                 case "Neo.Transaction.GetUnspentCoins":
                     return 200;
+                case "Neo.Account.IsStandard":
+                    return 100;
                 case "Neo.Asset.Create":
                 case "AntShares.Asset.Create":
                     return 5000L * 100000000L / ratio;
