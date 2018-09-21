@@ -64,6 +64,7 @@ namespace Neo.SmartContract
             Register("Neo.Account.GetScriptHash", Account_GetScriptHash);
             Register("Neo.Account.GetVotes", Account_GetVotes);
             Register("Neo.Account.GetBalance", Account_GetBalance);
+            Register("Neo.Account.IsStandard", Account_IsStandard);
             Register("Neo.Asset.Create", Asset_Create);
             Register("Neo.Asset.Renew", Asset_Renew);
             Register("Neo.Asset.GetAssetId", Asset_GetAssetId);
@@ -448,6 +449,15 @@ namespace Neo.SmartContract
                 return true;
             }
             return false;
+        }
+
+        private bool Account_IsStandard(ExecutionEngine engine)
+        {
+            UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
+            ContractState contract = Snapshot.Contracts.TryGet(hash);
+            bool isStandard = contract is null || contract.Script.IsStandardContract();
+            engine.CurrentContext.EvaluationStack.Push(isStandard);
+            return true;
         }
 
         private bool Asset_Create(ExecutionEngine engine)
