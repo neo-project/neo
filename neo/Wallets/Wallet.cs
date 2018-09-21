@@ -131,7 +131,7 @@ namespace Neo.Wallets
             WalletAccount[] accounts = GetAccounts().ToArray();
             WalletAccount account = accounts.FirstOrDefault(p => p.IsDefault);
             if (account == null)
-                account = accounts.FirstOrDefault(p => p.Contract?.IsStandard == true);
+                account = accounts.FirstOrDefault(p => p.Contract?.Script.IsSignatureContract() == true);
             if (account == null)
                 account = accounts.FirstOrDefault(p => !p.WatchOnly);
             if (account == null)
