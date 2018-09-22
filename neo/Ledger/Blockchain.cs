@@ -362,6 +362,7 @@ namespace Neo.Ledger
                 UInt256[] delete = mem_pool.Values.AsParallel()
                     .OrderBy(p => p.NetworkFee / p.Size)
                     .ThenBy(p => p.NetworkFee)
+                    .ThenBy(p => p.RecivedTimestamp)
                     .ThenBy(p => new BigInteger(p.Hash.ToArray()))
                     .Take(mem_pool.Count - MemoryPoolSize)
                     .Select(p => p.Hash)
