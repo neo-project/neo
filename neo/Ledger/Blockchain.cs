@@ -12,7 +12,6 @@ using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -119,7 +118,8 @@ namespace Neo.Ledger
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, Block> block_cache_unverified = new Dictionary<uint, Block>();
-        private readonly ConcurrentDictionary<UInt256, Transaction> mem_pool = new ConcurrentDictionary<UInt256, Transaction>();
+        private static readonly MemPool mem_pool = new MemPool();
+
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private readonly HashSet<IActorRef> subscribers = new HashSet<IActorRef>();
         private Snapshot currentSnapshot;
@@ -359,15 +359,24 @@ namespace Neo.Ledger
             mem_pool.TryAdd(transaction.Hash, transaction);
             if (mem_pool.Count > MemoryPoolSize)
             {
-                UInt256[] delete = mem_pool.Values.AsParallel()
-                    .OrderBy(p => p.NetworkFee / p.Size)
-                    .ThenBy(p => p.NetworkFee)
-                    .ThenBy(p => new BigInteger(p.Hash.ToArray()))
-                    .Take(mem_pool.Count - MemoryPoolSize)
+                UInt256[] oldfree = mem_pool.GetValuesBy(p => p.timestamp < DateTime.Now.AddSeconds(-SecondsPerBlock * 20) && p.tx.NetworkFee == Fixed8.Zero)
                     .Select(p => p.Hash)
                     .ToArray();
-                foreach (UInt256 hash in delete)
+                foreach (UInt256 hash in oldfree)
                     mem_pool.TryRemove(hash, out _);
+
+                if (mem_pool.Count > MemoryPoolSize)
+                {
+                    UInt256[] delete = mem_pool.Values.AsParallel()
+                        .OrderBy(p => p.NetworkFee / p.Size)
+                        .ThenBy(p => p.NetworkFee)
+                        .ThenBy(p => new BigInteger(p.Hash.ToArray()))
+                        .Take(mem_pool.Count - MemoryPoolSize)
+                        .Select(p => p.Hash)
+                        .ToArray();
+                    foreach (UInt256 hash in delete)
+                        mem_pool.TryRemove(hash, out _);
+                }
             }
             if (!mem_pool.ContainsKey(transaction.Hash))
                 return RelayResultReason.OutOfMemory;
