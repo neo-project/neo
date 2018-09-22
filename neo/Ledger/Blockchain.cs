@@ -359,7 +359,7 @@ namespace Neo.Ledger
             mem_pool.TryAdd(transaction.Hash, transaction);
             if (mem_pool.Count > MemoryPoolSize)
             {
-                UInt256[] oldfree = mem_pool.GetValuesBy(p => p.timestamp < DateTime.Now.AddSeconds(-SecondsPerBlock * 20) && p.tx.NetworkFee == Fixed8.Zero)
+                UInt256[] oldfree = mem_pool.GetValuesBy(p => p.timestamp < DateTime.UtcNow.AddSeconds(-SecondsPerBlock * 20) && p.tx.NetworkFee == Fixed8.Zero)
                     .Select(p => p.Hash)
                     .ToArray();
                 foreach (UInt256 hash in oldfree)
