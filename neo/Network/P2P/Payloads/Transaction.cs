@@ -27,7 +27,7 @@ namespace Neo.Network.P2P.Payloads
         private static ReflectionCache<byte> ReflectionCache = ReflectionCache<byte>.CreateFromEnum<TransactionType>();
 
         public readonly TransactionType Type;
-        public readonly DateTime RecivedTimestamp;
+        public readonly long ReceptionTimestamp;
         public byte Version;
         public TransactionAttribute[] Attributes;
         public CoinReference[] Inputs;
@@ -98,7 +98,7 @@ namespace Neo.Network.P2P.Payloads
         protected Transaction(TransactionType type)
         {
             this.Type = type;
-            this.RecivedTimestamp = DateTime.UtcNow;
+            this.ReceptionTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
