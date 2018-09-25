@@ -604,30 +604,36 @@ namespace Neo.SmartContract
             return true;
         }
 
-        public static ApplicationEngine Run(byte[] script, IScriptContainer container = null, Block persisting_block = null, bool testMode = false)
+        public static ApplicationEngine Run(byte[] script, Snapshot snapshot,
+            IScriptContainer container = null, Block persistingBlock = null, bool testMode = false, Fixed8 extraGAS = default(Fixed8))
+        {
+            snapshot.PersistingBlock = persistingBlock ?? new Block
+            {
+                Version = 0,
+                PrevHash = snapshot.CurrentBlockHash,
+                MerkleRoot = new UInt256(),
+                Timestamp = snapshot.Blocks[snapshot.CurrentBlockHash].TrimmedBlock.Timestamp + Blockchain.SecondsPerBlock,
+                Index = snapshot.Height + 1,
+                ConsensusData = 0,
+                NextConsensus = snapshot.Blocks[snapshot.CurrentBlockHash].TrimmedBlock.NextConsensus,
+                Witness = new Witness
+                {
+                    InvocationScript = new byte[0],
+                    VerificationScript = new byte[0]
+                },
+                Transactions = new Transaction[0]
+            };
+            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, extraGAS, testMode);
+            engine.LoadScript(script);
+            engine.Execute();
+            return engine;
+        }
+        
+        public static ApplicationEngine Run(byte[] script, IScriptContainer container = null, Block persistingBlock = null, bool testMode = false, Fixed8 extraGAS = default(Fixed8))
         {
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                snapshot.PersistingBlock = persisting_block ?? new Block
-                {
-                    Version = 0,
-                    PrevHash = snapshot.CurrentBlockHash,
-                    MerkleRoot = new UInt256(),
-                    Timestamp = snapshot.Blocks[snapshot.CurrentBlockHash].TrimmedBlock.Timestamp + Blockchain.SecondsPerBlock,
-                    Index = snapshot.Height + 1,
-                    ConsensusData = 0,
-                    NextConsensus = snapshot.Blocks[snapshot.CurrentBlockHash].TrimmedBlock.NextConsensus,
-                    Witness = new Witness
-                    {
-                        InvocationScript = new byte[0],
-                        VerificationScript = new byte[0]
-                    },
-                    Transactions = new Transaction[0]
-                };
-                ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, Fixed8.Zero, testMode);
-                engine.LoadScript(script);
-                engine.Execute();
-                return engine;
+                return Run(script, snapshot, container, persistingBlock, testMode, extraGAS);
             }
         }
     }
