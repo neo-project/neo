@@ -71,7 +71,7 @@ namespace Neo.Network.RPC
 
         private JObject GetInvokeResult(byte[] script)
         {
-            ApplicationEngine engine = ApplicationEngine.Run(script, null, null, false, new Fixed8(29000000000L));
+            ApplicationEngine engine = ApplicationEngine.Run(script, null, null, false, new Fixed8(99000000000L));
             JObject json = new JObject();
             json["script"] = script.ToHexString();
             json["state"] = engine.State;
