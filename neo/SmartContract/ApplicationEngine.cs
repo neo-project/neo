@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Neo.SmartContract
@@ -146,6 +147,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="value">Value</param>
         /// <returns>Return True if are allowed, otherwise False</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool CheckBigInteger(BigInteger value)
         {
             return value.ToByteArray().Length <= MaxSizeForBigInteger;
