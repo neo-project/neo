@@ -34,11 +34,13 @@ namespace Neo.Network.RPC
         private readonly NeoSystem system;
         private readonly Wallet wallet;
         private IWebHost host;
+        private Fixed8 maxGasInvoke;
 
-        public RpcServer(NeoSystem system, Wallet wallet = null)
+        public RpcServer(NeoSystem system, Wallet wallet = null, long maxGasInvoke = 99000000000L)
         {
             this.system = system;
             this.wallet = wallet;
+            this.maxGasInvoke = new Fixed8(maxGasInvoke);
         }
 
         private static JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
@@ -71,7 +73,7 @@ namespace Neo.Network.RPC
 
         private JObject GetInvokeResult(byte[] script)
         {
-            ApplicationEngine engine = ApplicationEngine.Run(script, null, null, false, new Fixed8(99000000000L));
+            ApplicationEngine engine = ApplicationEngine.Run(script, null, null, false, maxGasInvoke);
             JObject json = new JObject();
             json["script"] = script.ToHexString();
             json["state"] = engine.State;
