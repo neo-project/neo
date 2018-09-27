@@ -385,6 +385,7 @@ namespace Neo.Ledger
             foreach (Transaction tx in mem_pool.Values
                 .OrderByDescending(p => p.NetworkFee / p.Size)
                 .ThenByDescending(p => p.NetworkFee)
+                .ThenBy(p => p.ReceptionTimestamp)
                 .ThenByDescending(p => new BigInteger(p.Hash.ToArray())))
                 Self.Tell(tx, ActorRefs.NoSender);
             mem_pool.Clear();
