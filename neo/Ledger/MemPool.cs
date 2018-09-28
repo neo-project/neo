@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 
 namespace Neo.Ledger
 {
@@ -43,6 +44,27 @@ namespace Neo.Ledger
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        public void RemoveLowestFee(int count)
+        {
+            if (count <= 0) return;
+            if (count >= mem_pool.Count)
+            {
+                mem_pool.Clear();
+            }
+            else
+            {
+                UInt256[] delete = mem_pool.AsParallel()
+                    .OrderBy(p => p.Value.Transaction.NetworkFee / p.Value.Transaction.Size)
+                    .ThenBy(p => p.Value.Transaction.NetworkFee)
+                    .ThenBy(p => new BigInteger(p.Key.ToArray()))
+                    .Take(count)
+                    .Select(p => p.Key)
+                    .ToArray();
+                foreach (UInt256 hash in delete)
+                    mem_pool.TryRemove(hash, out _);
+            }
         }
 
         public void RemoveOldFree(DateTime time)

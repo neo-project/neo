@@ -14,7 +14,6 @@ using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using System.Threading;
 
 namespace Neo.Ledger
@@ -362,15 +361,7 @@ namespace Neo.Ledger
                 mem_pool.RemoveOldFree(DateTime.UtcNow.AddSeconds(-SecondsPerBlock * 20));
                 if (mem_pool.Count > MemoryPoolSize)
                 {
-                    UInt256[] delete = mem_pool.AsParallel()
-                        .OrderBy(p => p.NetworkFee / p.Size)
-                        .ThenBy(p => p.NetworkFee)
-                        .ThenBy(p => new BigInteger(p.Hash.ToArray()))
-                        .Take(mem_pool.Count - MemoryPoolSize)
-                        .Select(p => p.Hash)
-                        .ToArray();
-                    foreach (UInt256 hash in delete)
-                        mem_pool.TryRemove(hash, out _);
+                    mem_pool.RemoveLowestFee(mem_pool.Count - MemoryPoolSize);
                 }
             }
             if (!mem_pool.ContainsKey(transaction.Hash))
