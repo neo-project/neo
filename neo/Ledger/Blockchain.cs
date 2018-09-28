@@ -218,7 +218,7 @@ namespace Neo.Ledger
 
         public IEnumerable<Transaction> GetMemoryPool()
         {
-            return mem_pool.Values;
+            return mem_pool;
         }
 
         public Snapshot GetSnapshot()
@@ -352,22 +352,17 @@ namespace Neo.Ledger
                 return RelayResultReason.Invalid;
             if (ContainsTransaction(transaction.Hash))
                 return RelayResultReason.AlreadyExists;
-            if (!transaction.Verify(currentSnapshot, mem_pool.Values))
+            if (!transaction.Verify(currentSnapshot, mem_pool))
                 return RelayResultReason.Invalid;
             if (!Plugin.CheckPolicy(transaction))
                 return RelayResultReason.Unknown;
             mem_pool.TryAdd(transaction.Hash, transaction);
             if (mem_pool.Count > MemoryPoolSize)
             {
-                UInt256[] oldfree = mem_pool.GetValuesBy(p => p.timestamp < DateTime.UtcNow.AddSeconds(-SecondsPerBlock * 20) && p.tx.NetworkFee == Fixed8.Zero)
-                    .Select(p => p.Hash)
-                    .ToArray();
-                foreach (UInt256 hash in oldfree)
-                    mem_pool.TryRemove(hash, out _);
-
+                mem_pool.RemoveOldFree(DateTime.UtcNow.AddSeconds(-SecondsPerBlock * 20));
                 if (mem_pool.Count > MemoryPoolSize)
                 {
-                    UInt256[] delete = mem_pool.Values.AsParallel()
+                    UInt256[] delete = mem_pool.AsParallel()
                         .OrderBy(p => p.NetworkFee / p.Size)
                         .ThenBy(p => p.NetworkFee)
                         .ThenBy(p => new BigInteger(p.Hash.ToArray()))
@@ -389,7 +384,7 @@ namespace Neo.Ledger
             block_cache.Remove(block.Hash);
             foreach (Transaction tx in block.Transactions)
                 mem_pool.TryRemove(tx.Hash, out _);
-            foreach (Transaction tx in mem_pool.Values)
+            foreach (Transaction tx in mem_pool)
                 Self.Tell(tx, ActorRefs.NoSender);
             mem_pool.Clear();
             PersistCompleted completed = new PersistCompleted { Block = block };
