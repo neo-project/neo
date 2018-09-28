@@ -14,6 +14,7 @@ using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Threading;
 
 namespace Neo.Ledger
@@ -375,7 +376,10 @@ namespace Neo.Ledger
             block_cache.Remove(block.Hash);
             foreach (Transaction tx in block.Transactions)
                 mem_pool.TryRemove(tx.Hash, out _);
-            foreach (Transaction tx in mem_pool)
+            foreach (Transaction tx in mem_pool
+                .OrderByDescending(p => p.NetworkFee / p.Size)
+                .ThenByDescending(p => p.NetworkFee)
+                .ThenByDescending(p => new BigInteger(p.Hash.ToArray())))
                 Self.Tell(tx, ActorRefs.NoSender);
             mem_pool.Clear();
             PersistCompleted completed = new PersistCompleted { Block = block };
