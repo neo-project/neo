@@ -543,6 +543,11 @@ namespace Neo.SmartContract
                     return 200;
                 case "Neo.Transaction.GetUnspentCoins":
                     return 200;
+                case "Neo.Transaction.GetWitnesses":
+                    return 200;
+                case "Neo.Witness.GetInvocationScript":
+                case "Neo.Witness.GetVerificationScript":
+                    return 100;
                 case "Neo.Account.IsStandard":
                     return 100;
                 case "Neo.Asset.Create":
