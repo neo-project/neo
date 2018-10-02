@@ -53,7 +53,10 @@ namespace Neo.SmartContract
             Register("Neo.Transaction.GetOutputs", Transaction_GetOutputs);
             Register("Neo.Transaction.GetReferences", Transaction_GetReferences);
             Register("Neo.Transaction.GetUnspentCoins", Transaction_GetUnspentCoins);
+            Register("Neo.Transaction.GetWitnesses", Transaction_GetWitnesses);
             Register("Neo.InvocationTransaction.GetScript", InvocationTransaction_GetScript);
+            Register("Neo.Witness.GetInvocationScript", Witness_GetInvocationScript);
+            Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript);
             Register("Neo.Attribute.GetUsage", Attribute_GetUsage);
             Register("Neo.Attribute.GetData", Attribute_GetData);
             Register("Neo.Input.GetHash", Input_GetHash);
@@ -64,6 +67,7 @@ namespace Neo.SmartContract
             Register("Neo.Account.GetScriptHash", Account_GetScriptHash);
             Register("Neo.Account.GetVotes", Account_GetVotes);
             Register("Neo.Account.GetBalance", Account_GetBalance);
+            Register("Neo.Account.IsStandard", Account_IsStandard);
             Register("Neo.Asset.Create", Asset_Create);
             Register("Neo.Asset.Renew", Asset_Renew);
             Register("Neo.Asset.GetAssetId", Asset_GetAssetId);
@@ -316,6 +320,20 @@ namespace Neo.SmartContract
             return false;
         }
 
+        private bool Transaction_GetWitnesses(ExecutionEngine engine)
+        {
+            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Transaction tx = _interface.GetInterface<Transaction>();
+                if (tx == null) return false;
+                if (tx.Witnesses.Length > ApplicationEngine.MaxArraySize)
+                    return false;
+                engine.CurrentContext.EvaluationStack.Push(tx.Witnesses.Select(p => StackItem.FromInterface(p)).ToArray());
+                return true;
+            }
+            return false;
+        }
+
         private bool InvocationTransaction_GetScript(ExecutionEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -327,6 +345,31 @@ namespace Neo.SmartContract
             }
             return false;
         }
+
+        private bool Witness_GetInvocationScript(ExecutionEngine engine)
+        {
+            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Witness witness = _interface.GetInterface<Witness>();
+                if (witness == null) return false;
+                engine.CurrentContext.EvaluationStack.Push(witness.InvocationScript);
+                return true;
+            }
+            return false;
+        }
+
+        private bool Witness_GetVerificationScript(ExecutionEngine engine)
+        {
+            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                Witness witness = _interface.GetInterface<Witness>();
+                if (witness == null) return false;
+                engine.CurrentContext.EvaluationStack.Push(witness.VerificationScript);
+                return true;
+            }
+            return false;
+        }
+
 
         private bool Attribute_GetUsage(ExecutionEngine engine)
         {
@@ -448,6 +491,15 @@ namespace Neo.SmartContract
                 return true;
             }
             return false;
+        }
+
+        private bool Account_IsStandard(ExecutionEngine engine)
+        {
+            UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
+            ContractState contract = Snapshot.Contracts.TryGet(hash);
+            bool isStandard = contract is null || contract.Script.IsStandardContract();
+            engine.CurrentContext.EvaluationStack.Push(isStandard);
+            return true;
         }
 
         private bool Asset_Create(ExecutionEngine engine)
