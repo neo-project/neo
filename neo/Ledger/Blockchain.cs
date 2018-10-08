@@ -346,7 +346,6 @@ namespace Neo.Ledger
 
         private RelayResultReason OnNewTransaction(Transaction transaction)
         {
-            const int MemoryPoolSize = 50000;
             if (transaction.Type == TransactionType.MinerTransaction)
                 return RelayResultReason.Invalid;
             if (ContainsTransaction(transaction.Hash))
@@ -355,17 +354,9 @@ namespace Neo.Ledger
                 return RelayResultReason.Invalid;
             if (!Plugin.CheckPolicy(transaction))
                 return RelayResultReason.Unknown;
-            mem_pool.TryAdd(transaction.Hash, transaction);
-            if (mem_pool.Count > MemoryPoolSize)
-            {
-                mem_pool.RemoveOldFree(DateTime.UtcNow.AddSeconds(-SecondsPerBlock * 20));
-                if (mem_pool.Count > MemoryPoolSize)
-                {
-                    mem_pool.RemoveLowestFee(mem_pool.Count - MemoryPoolSize);
-                }
-            }
-            if (!mem_pool.ContainsKey(transaction.Hash))
+            if (!mem_pool.TryAdd(transaction.Hash, transaction))
                 return RelayResultReason.OutOfMemory;
+
             system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
             return RelayResultReason.Succeed;
         }

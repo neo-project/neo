@@ -22,6 +22,7 @@ namespace Neo.Ledger
             }
         }
 
+        private const int MemoryPoolSize = 50000;
         private readonly ConcurrentDictionary<UInt256, PoolItem> mem_pool = new ConcurrentDictionary<UInt256, PoolItem>();
 
         public int Count => mem_pool.Count;
@@ -78,7 +79,18 @@ namespace Neo.Ledger
 
         public bool TryAdd(UInt256 hash, Transaction tx)
         {
-            return mem_pool.TryAdd(hash, new PoolItem(tx));
+            mem_pool.TryAdd(hash, new PoolItem(tx));
+
+            if (mem_pool.Count > MemoryPoolSize)
+            {
+                RemoveOldFree(DateTime.UtcNow.AddSeconds(-Blockchain.SecondsPerBlock * 20));
+                if (mem_pool.Count > MemoryPoolSize)
+                {
+                    RemoveLowestFee(mem_pool.Count - MemoryPoolSize);
+                }
+            }
+
+            return mem_pool.ContainsKey(hash);
         }
 
         public bool TryRemove(UInt256 hash, out Transaction tx)
