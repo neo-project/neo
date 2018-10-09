@@ -70,7 +70,8 @@ namespace Neo.Ledger
 
         public void RemoveOldFree(DateTime time)
         {
-            UInt256[] hashes = mem_pool.Where(p => p.Value.Timestamp < time && p.Value.Transaction.NetworkFee == Fixed8.Zero)
+            UInt256[] hashes = mem_pool
+                .Where(p => p.Value.Timestamp < time && p.Value.Transaction.NetworkFee == Fixed8.Zero)
                 .Select(p => p.Key)
                 .ToArray();
             foreach (UInt256 hash in hashes)
