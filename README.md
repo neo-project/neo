@@ -41,6 +41,24 @@ PM> Install-Package Neo
 
 For more information about how to build DAPPs for NEO, please read the [documentation](http://docs.neo.org/en-us/sc/introduction.html)|[文档](http://docs.neo.org/zh-cn/sc/introduction.html).
 
+Daily builds
+--------
+
+If you want to use the latest daily build then you need to add a NuGet.Config to your app with the following content:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+    <packageSources>
+        <clear />
+        <add key="MyGet-neo" value="https://www.myget.org/F/neo/api/v3/index.json" />
+        <add key="NuGet.org" value="https://api.nuget.org/v3/index.json" />
+    </packageSources>
+</configuration>
+```
+
+*NOTE: This NuGet.Config should be with your application unless you want nightly packages to potentially start being restored for other apps on the machine.*
+
 How to Contribute
 --------
 
