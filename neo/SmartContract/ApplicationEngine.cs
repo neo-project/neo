@@ -607,7 +607,7 @@ namespace Neo.SmartContract
         public static ApplicationEngine Run(byte[] script, Snapshot snapshot,
             IScriptContainer container = null, Block persistingBlock = null, bool testMode = false, Fixed8 extraGAS = default(Fixed8))
         {
-            snapshot.PersistingBlock = persistingBlock ?? new Block
+            snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? new Block
             {
                 Version = 0,
                 PrevHash = snapshot.CurrentBlockHash,
