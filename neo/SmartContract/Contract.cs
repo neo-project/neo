@@ -10,6 +10,14 @@ namespace Neo.SmartContract
     {
         public byte[] Script;
         public ContractParameterType[] ParameterList;
+        
+        public bool IsStandard
+        {
+            get
+            {
+                return this.Script.IsStandardContract();
+            }
+        }
 
         private string _address;
         public string Address
