@@ -33,6 +33,7 @@ namespace Neo.SmartContract
         {
             this.Trigger = trigger;
             this.Snapshot = snapshot;
+            Register("System.Runtime.Platform", Runtime_Platform);
             Register("System.Runtime.GetTrigger", Runtime_GetTrigger);
             Register("System.Runtime.CheckWitness", Runtime_CheckWitness);
             Register("System.Runtime.Notify", Runtime_Notify);
@@ -82,6 +83,12 @@ namespace Neo.SmartContract
             foreach (IDisposable disposable in Disposables)
                 disposable.Dispose();
             Disposables.Clear();
+        }
+
+        protected bool Runtime_Platform(ExecutionEngine engine)
+        {
+            engine.CurrentContext.EvaluationStack.Push(Encoding.ASCII.GetBytes("NEO"));
+            return true;
         }
 
         protected bool Runtime_GetTrigger(ExecutionEngine engine)
