@@ -757,7 +757,8 @@ namespace Neo.SmartContract
                             Key = pair.Key.Key
                         }, new StorageItem
                         {
-                            Value = pair.Value.Value
+                            Value = pair.Value.Value,
+                            IsConstant = false
                         });
                     }
                 }
