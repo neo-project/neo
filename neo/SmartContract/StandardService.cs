@@ -61,6 +61,7 @@ namespace Neo.SmartContract
             Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext);
             Register("System.Storage.Get", Storage_Get);
             Register("System.Storage.Put", Storage_Put);
+            Register("System.Storage.PutEx", Storage_PutEx);
             Register("System.Storage.Delete", Storage_Delete);
             Register("System.StorageContext.AsReadOnly", StorageContext_AsReadOnly);
         }
@@ -595,26 +596,44 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected bool Storage_Put(ExecutionEngine engine)
+        private bool PutEx(StorageContext context, byte[] key, byte[] value, StorageFlags flags)
         {
             if (Trigger != TriggerType.Application && Trigger != TriggerType.ApplicationR)
                 return false;
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            if (key.Length > 1024) return false;
+            if (context.IsReadOnly) return false;
+            if (!CheckStorageContext(context)) return false;
+            StorageKey skey = new StorageKey
             {
-                StorageContext context = _interface.GetInterface<StorageContext>();
-                if (context.IsReadOnly) return false;
-                if (!CheckStorageContext(context)) return false;
-                byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-                if (key.Length > 1024) return false;
-                byte[] value = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-                Snapshot.Storages.GetAndChange(new StorageKey
-                {
-                    ScriptHash = context.ScriptHash,
-                    Key = key
-                }, () => new StorageItem()).Value = value;
-                return true;
-            }
-            return false;
+                ScriptHash = context.ScriptHash,
+                Key = key
+            };
+            StorageItem item = Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
+            if (item.IsConstant) return false;
+            item.Value = value;
+            item.IsConstant = flags.HasFlag(StorageFlags.Constant);
+            return true;
+        }
+
+        protected bool Storage_Put(ExecutionEngine engine)
+        {
+            if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface))
+                return false;
+            StorageContext context = _interface.GetInterface<StorageContext>();
+            byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            byte[] value = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            return PutEx(context, key, value, StorageFlags.None);
+        }
+
+        protected bool Storage_PutEx(ExecutionEngine engine)
+        {
+            if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface))
+                return false;
+            StorageContext context = _interface.GetInterface<StorageContext>();
+            byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            byte[] value = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            StorageFlags flags = (StorageFlags)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
+            return PutEx(context, key, value, flags);
         }
 
         protected bool Storage_Delete(ExecutionEngine engine)
@@ -626,12 +645,13 @@ namespace Neo.SmartContract
                 StorageContext context = _interface.GetInterface<StorageContext>();
                 if (context.IsReadOnly) return false;
                 if (!CheckStorageContext(context)) return false;
-                byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-                Snapshot.Storages.Delete(new StorageKey
+                StorageKey key = new StorageKey
                 {
                     ScriptHash = context.ScriptHash,
-                    Key = key
-                });
+                    Key = engine.CurrentContext.EvaluationStack.Pop().GetByteArray()
+                };
+                if (Snapshot.Storages.TryGet(key)?.IsConstant == true) return false;
+                Snapshot.Storages.Delete(key);
                 return true;
             }
             return false;
