@@ -56,9 +56,10 @@ namespace Neo
             });
         }
 
-        public void StartRpc(IPAddress bindAddress, int port, Wallet wallet = null, string sslCert = null, string password = null, string[] trustedAuthorities = null)
+        public void StartRpc(IPAddress bindAddress, int port, Wallet wallet = null, string sslCert = null, string password = null, 
+            string[] trustedAuthorities = null, Fixed8 maxGasInvoke = default(Fixed8))
         {
-            rpcServer = new RpcServer(this, wallet);
+            rpcServer = new RpcServer(this, wallet, maxGasInvoke);
             rpcServer.Start(bindAddress, port, sslCert, password, trustedAuthorities);
         }
     }
