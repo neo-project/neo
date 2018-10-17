@@ -40,7 +40,7 @@ namespace Neo.Network.RPC
         {
             this.system = system;
             this.wallet = wallet;
-            this.maxGasInvoke = new Fixed8(maxGasInvoke);
+            this.maxGasInvoke = maxGasInvoke;
         }
 
         private static JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
