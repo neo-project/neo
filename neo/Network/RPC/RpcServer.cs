@@ -36,7 +36,7 @@ namespace Neo.Network.RPC
         private IWebHost host;
         private Fixed8 maxGasInvoke;
 
-        public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default)
+        public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8))
         {
             this.system = system;
             this.wallet = wallet;
