@@ -6,14 +6,16 @@ namespace Neo.Ledger
     public class StorageItem : StateBase, ICloneable<StorageItem>
     {
         public byte[] Value;
+        public bool IsConstant;
 
-        public override int Size => base.Size + Value.GetVarSize();
+        public override int Size => base.Size + Value.GetVarSize() + sizeof(bool);
 
         StorageItem ICloneable<StorageItem>.Clone()
         {
             return new StorageItem
             {
-                Value = Value
+                Value = Value,
+                IsConstant = IsConstant
             };
         }
 
@@ -21,17 +23,20 @@ namespace Neo.Ledger
         {
             base.Deserialize(reader);
             Value = reader.ReadVarBytes();
+            IsConstant = reader.ReadBoolean();
         }
 
         void ICloneable<StorageItem>.FromReplica(StorageItem replica)
         {
             Value = replica.Value;
+            IsConstant = replica.IsConstant;
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
             writer.WriteVarBytes(Value);
+            writer.Write(IsConstant);
         }
     }
 }
