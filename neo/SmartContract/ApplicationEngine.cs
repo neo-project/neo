@@ -578,6 +578,7 @@ namespace Neo.SmartContract
                 case "AntShares.Storage.Get":
                     return 100;
                 case "System.Storage.Put":
+                case "System.Storage.PutEx":
                 case "Neo.Storage.Put":
                 case "AntShares.Storage.Put":
                     return ((CurrentContext.EvaluationStack.Peek(1).GetByteArray().Length + CurrentContext.EvaluationStack.Peek(2).GetByteArray().Length - 1) / 1024 + 1) * 1000;
