@@ -758,7 +758,8 @@ namespace Neo.SmartContract
                         }, new StorageItem
                         {
                             Value = pair.Value.Value,
-                            IsConstant = false
+                            IsConstant = false,
+                            Height = Snapshot.Height
                         });
                     }
                 }
