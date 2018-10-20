@@ -23,7 +23,8 @@ namespace Neo.Ledger
         {
             base.Deserialize(reader);
             Value = reader.ReadVarBytes();
-            IsConstant = reader.ReadBoolean();
+            int hasConst = reader.PeekChar();
+            IsConstant = (hasConst == -1) ? false : hasConst==1;
         }
 
         void ICloneable<StorageItem>.FromReplica(StorageItem replica)
