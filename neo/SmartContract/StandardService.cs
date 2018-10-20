@@ -612,7 +612,7 @@ namespace Neo.SmartContract
             if (item.IsConstant) return false;
             item.Value = value;
             item.IsConstant = flags.HasFlag(StorageFlags.Constant);
-            item.Height = Snapshot.Height;
+            item.Height = Snapshot.Height + 1;
             return true;
         }
 

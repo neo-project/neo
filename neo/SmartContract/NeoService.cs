@@ -759,7 +759,7 @@ namespace Neo.SmartContract
                         {
                             Value = pair.Value.Value,
                             IsConstant = false,
-                            Height = Snapshot.Height
+                            Height = Snapshot.Height + 1
                         });
                     }
                 }
