@@ -65,7 +65,7 @@ namespace Neo.Network.P2P
             foreach (UInt256 hash in hashes)
                 session.Tasks[hash] = DateTime.UtcNow;
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, hashes.ToArray()))
-                Sender.Tell(Message.Create("getdata", group));
+                session.RemoteNode.Tell(Message.Create("getdata", group));
         }
 
         protected override void OnReceive(object message)
