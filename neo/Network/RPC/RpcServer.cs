@@ -32,7 +32,7 @@ namespace Neo.Network.RPC
     public sealed class RpcServer : IDisposable
     {
         private readonly NeoSystem system;
-        private readonly Wallet wallet;
+        private Wallet wallet;
         private IWebHost host;
         private Fixed8 maxGasInvoke;
 
@@ -129,6 +129,11 @@ namespace Neo.Network.RPC
                 default:
                     throw new RpcException(-500, "Unkown error.");
             }
+        }
+
+        public void OpenWallet(Wallet wallet)
+        {
+            this.wallet = wallet;
         }
 
         private JObject Process(string method, JArray _params)
