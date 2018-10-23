@@ -82,8 +82,30 @@ namespace Neo.Consensus
 
         private void CheckSignatures()
         {
+            if (!context.State.HasFlag(ConsensusState.CommitSent) &&
+                context.Signatures.Count(p => p != null) >= context.M &&
+                context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
+            {
+                // Send my commit
+
+                context.State |= ConsensusState.CommitSent;
+                SignAndRelay(context.MakeCommitAgreement());
+
+                Log($"Commit sent: height={context.BlockIndex} hash={context.CommitHash} state={context.State}");
+            }
+        }
+
+        private void OnCommitAgreement(ConsensusPayload payload, CommitAgreement message)
+        {
+            Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} hash={message.BlockHash.ToString()} view={message.ViewNumber} index={payload.ValidatorIndex}");
+
+            if (context.State.HasFlag(ConsensusState.BlockSent) ||
+                !context.TryToCommit(payload, message)) return;
+
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
+                context.State |= ConsensusState.BlockSent;
+
                 Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
                 Block block = context.MakeHeader();
                 ContractParametersContext sc = new ContractParametersContext(block);
@@ -96,8 +118,8 @@ namespace Neo.Consensus
                 sc.Verifiable.Witnesses = sc.GetWitnesses();
                 block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
                 Log($"relay block: {block.Hash}");
+
                 system.LocalNode.Tell(new LocalNode.Relay { Inventory = block });
-                context.State |= ConsensusState.BlockSent;
             }
         }
 
@@ -187,9 +209,10 @@ namespace Neo.Consensus
 
         private void OnConsensusPayload(ConsensusPayload payload)
         {
-            if (payload.ValidatorIndex == context.MyIndex) return;
-            if (payload.Version != ConsensusContext.Version)
-                return;
+            if (payload.ValidatorIndex == context.MyIndex ||
+                payload.Version != ConsensusContext.Version ||
+                payload.ValidatorIndex >= context.Validators.Length) return;
+
             if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
             {
                 if (context.Snapshot.Height + 1 < payload.BlockIndex)
@@ -198,7 +221,7 @@ namespace Neo.Consensus
                 }
                 return;
             }
-            if (payload.ValidatorIndex >= context.Validators.Length) return;
+
             ConsensusMessage message;
             try
             {
@@ -208,8 +231,10 @@ namespace Neo.Consensus
             {
                 return;
             }
+
             if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView)
                 return;
+
             switch (message.Type)
             {
                 case ConsensusMessageType.ChangeView:
@@ -220,6 +245,9 @@ namespace Neo.Consensus
                     break;
                 case ConsensusMessageType.PrepareResponse:
                     OnPrepareResponseReceived(payload, (PrepareResponse)message);
+                    break;
+                case ConsensusMessageType.CommitAgreement:
+                    OnCommitAgreement(payload, (CommitAgreement)message);
                     break;
             }
         }
@@ -370,6 +398,8 @@ namespace Neo.Consensus
 
         private void SignAndRelay(ConsensusPayload payload)
         {
+            if (payload == null) return;
+
             ContractParametersContext sc;
             try
             {
@@ -380,6 +410,7 @@ namespace Neo.Consensus
             {
                 return;
             }
+
             sc.Verifiable.Witnesses = sc.GetWitnesses();
             system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
         }

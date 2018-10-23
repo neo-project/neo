@@ -31,20 +31,42 @@ namespace Neo.Consensus
         public byte[] ExpectedView;
         public KeyPair KeyPair;
 
+        private UInt256[] Commits;
+        private Block _header = null;
+        public UInt256 CommitHash => _header?.Hash;
+
         public int M => Validators.Length - (Validators.Length - 1) / 3;
+
+        public bool TryToCommit(ConsensusPayload payload, CommitAgreement message)
+        {
+            // Already received
+            if (Commits[payload.ValidatorIndex] != null) return false;
+            
+            // Store received block hash
+            Commits[payload.ValidatorIndex] = message.BlockHash;
+            
+            // Check count
+            return _header != null && Commits.Where(u => u != null && u == _header.Hash).Count() >= M;
+        }
 
         public void ChangeView(byte view_number)
         {
             State &= ConsensusState.SignatureSent;
             ViewNumber = view_number;
             PrimaryIndex = GetPrimaryIndex(view_number);
+
             if (State == ConsensusState.Initial)
             {
                 TransactionHashes = null;
                 Signatures = new byte[Validators.Length][];
+                Commits = new UInt256[Validators.Length];
             }
+
             if (MyIndex >= 0)
+            {
                 ExpectedView[MyIndex] = view_number;
+            }
+
             _header = null;
         }
 
@@ -67,10 +89,10 @@ namespace Neo.Consensus
             });
         }
 
-        private Block _header = null;
         public Block MakeHeader()
         {
             if (TransactionHashes == null) return null;
+
             if (_header == null)
             {
                 _header = new Block
@@ -84,8 +106,21 @@ namespace Neo.Consensus
                     NextConsensus = NextConsensus,
                     Transactions = new Transaction[0]
                 };
+
+                Commits[MyIndex] = _header.Hash;
             }
+
             return _header;
+        }
+
+        public ConsensusPayload MakeCommitAgreement()
+        {
+            if (_header == null) return null;
+
+            return MakePayload(new CommitAgreement()
+            {
+                BlockHash = _header.Hash
+            });
         }
 
         private ConsensusPayload MakePayload(ConsensusMessage message)
@@ -137,6 +172,8 @@ namespace Neo.Consensus
             Signatures = new byte[Validators.Length][];
             ExpectedView = new byte[Validators.Length];
             KeyPair = null;
+            Commits = new UInt256[Validators.Length];
+
             for (int i = 0; i < Validators.Length; i++)
             {
                 WalletAccount account = wallet.GetAccount(Validators[i]);
