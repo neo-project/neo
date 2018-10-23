@@ -9,6 +9,7 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Security.Cryptography;
 
 namespace Neo.SmartContract
 {
@@ -503,38 +504,49 @@ namespace Neo.SmartContract
             byte length = CurrentContext.Script[CurrentContext.InstructionPointer + 1];
             if (CurrentContext.InstructionPointer > CurrentContext.Script.Length - length - 2)
                 return 1;
-            string api_name = Encoding.ASCII.GetString(CurrentContext.Script, CurrentContext.InstructionPointer + 2, length);
-            switch (api_name)
+            uint code = 0;
+            if (length == 4)
+                code = BitConverter.ToUInt32(CurrentContext.InstructionPointer, 2);
+            else
             {
-                case "System.Runtime.CheckWitness":
-                case "Neo.Runtime.CheckWitness":
-                case "AntShares.Runtime.CheckWitness":
+                string api_name = Encoding.ASCII.GetString(CurrentContext.Script, CurrentContext.InstructionPointer + 2, length);
+                using (SHA256 sha = SHA256.Create())
+                {
+                    code = BitConverter.ToUInt32(sha.ComputeHash(Encoding.ASCII.GetBytes(api_name)), 0);
+                }
+            }
+            
+            switch (code)
+            {
+                case 2364286968: //"System.Runtime.CheckWitness":
+                case 2498158575: //"Neo.Runtime.CheckWitness":
+                case 1657590198: //"AntShares.Runtime.CheckWitness":
                     return 200;
-                case "System.Blockchain.GetHeader":
-                case "Neo.Blockchain.GetHeader":
+                case 4133176436: //"System.Blockchain.GetHeader":
+                case 1751280033: //"Neo.Blockchain.GetHeader":
                 case "AntShares.Blockchain.GetHeader":
                     return 100;
-                case "System.Blockchain.GetBlock":
-                case "Neo.Blockchain.GetBlock":
+                case 764561283: //"System.Blockchain.GetBlock":
+                case 1946586975: //"Neo.Blockchain.GetBlock":
                 case "AntShares.Blockchain.GetBlock":
                     return 200;
-                case "System.Blockchain.GetTransaction":
-                case "Neo.Blockchain.GetTransaction":
+                case 1217222118: //"System.Blockchain.GetTransaction":
+                case 739758029: //"Neo.Blockchain.GetTransaction":
                 case "AntShares.Blockchain.GetTransaction":
                     return 100;
-                case "System.Blockchain.GetTransactionHeight":
-                case "Neo.Blockchain.GetTransactionHeight":
+                case 2978493002: //"System.Blockchain.GetTransactionHeight":
+                case 253502021: //"Neo.Blockchain.GetTransactionHeight":
                     return 100;
-                case "Neo.Blockchain.GetAccount":
+                case 2131219224: //"Neo.Blockchain.GetAccount":
                 case "AntShares.Blockchain.GetAccount":
                     return 100;
-                case "Neo.Blockchain.GetValidators":
+                case 462947051: //"Neo.Blockchain.GetValidators":
                 case "AntShares.Blockchain.GetValidators":
                     return 200;
-                case "Neo.Blockchain.GetAsset":
+                case 3773874689: //"Neo.Blockchain.GetAsset":
                 case "AntShares.Blockchain.GetAsset":
                     return 100;
-                case "System.Blockchain.GetContract":
+                case 1095484841: //"System.Blockchain.GetContract":
                 case "Neo.Blockchain.GetContract":
                 case "AntShares.Blockchain.GetContract":
                     return 100;
