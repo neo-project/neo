@@ -3,7 +3,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
-using System.BitConverter;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +10,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Security.Cryptography;
+using static System.BitConverter;
 
 namespace Neo.SmartContract
 {
