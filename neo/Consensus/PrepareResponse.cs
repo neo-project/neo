@@ -9,7 +9,7 @@ namespace Neo.Consensus
         public byte[] ResponseSignature; // TODO: send multiple signatures for possible speedup?
         public PrepareRequest PrepareRequestPayload() {
           byte[] seri = PreparePayload.Data;
-          PrepareRequest p;
+          PrepareRequest p = new PrepareRequest();
           using (MemoryStream ms = new MemoryStream(seri, 0, seri.Length, false))
           {
               using (BinaryReader reader = new BinaryReader(ms))
