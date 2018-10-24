@@ -81,7 +81,6 @@ namespace Neo.Consensus
                     // If signature was sent, we send again
 
                     SignAndRelay(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
-                    CheckSignatures();
                 }
 
                 return;
@@ -421,7 +420,6 @@ namespace Neo.Consensus
                     // If signature was sent, we send again
 
                     SignAndRelay(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
-                    CheckSignatures();
                 }
 
                 return;
