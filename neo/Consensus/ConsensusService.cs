@@ -331,10 +331,8 @@ namespace Neo.Consensus
             {
                 if (message.PreparePayload.ValidatorIndex != context.PrimaryIndex) return;
                 if (!Crypto.Default.VerifySignature(message.PreparePayload.GetHashData(), message.PrepareRequestMessage().PrepReqSignature, context.Validators[message.PreparePayload.ValidatorIndex].EncodePoint(false))) return;
+                Log($"{nameof(OnPrepareRequestReceived)}: indirectly from index={payload.ValidatorIndex}");
                 OnPrepareRequestReceived(message.PreparePayload, message.PrepareRequestMessage());
-
-                //context.PreparePayload = message.PreparePayload;
-                Log($"{nameof(OnPrepareResponseReceived)}: indirectly from index={payload.ValidatorIndex}");
             }
 
             Log($"{nameof(OnPrepareResponseReceived)}: height={message.PreparePayload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
@@ -385,14 +383,12 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.RequestSent;
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
-                    Log($"Time to Fill Context");
                     FillContext();
                     context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
                     //context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair); // do not
                     //context.MessageSignatures[context.MyIndex] = context.MakePrepareRequest().Sign(context.KeyPair);
-                    Log($"Going to makeprepare request");
+                    context.SignedPayloads[context.MyIndex] = new byte[64];
                     context.PreparePayload = context.MakePrepareRequest();
-                    Log($"ok");
                     context.SignedPayloads[context.MyIndex] = context.PreparePayload.Sign(context.KeyPair);
                 }
 

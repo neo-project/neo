@@ -62,6 +62,7 @@ namespace Neo.Consensus
             if (State == ConsensusState.Initial)
             {
                 PreparePayload = null;
+                TransactionHashes = null;
                 SignedPayloads = new byte[Validators.Length][];
                 FinalSignatures = new byte[Validators.Length][];
             }
