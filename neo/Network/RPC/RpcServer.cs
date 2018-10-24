@@ -331,6 +331,17 @@ namespace Neo.Network.RPC
                         }) ?? new StorageItem();
                         return item.Value?.ToHexString();
                     }
+                case "getstorageheight":
+                    {
+                        UInt160 script_hash = UInt160.Parse(_params[0].AsString());
+                        byte[] key = _params[1].AsString().HexToBytes();
+                        StorageItem item = Blockchain.Singleton.Store.GetStorages().TryGet(new StorageKey
+                        {
+                            ScriptHash = script_hash,
+                            Key = key
+                        }) ?? new StorageItem();
+                        return item.Height;
+                    }          
                 case "gettxout":
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
