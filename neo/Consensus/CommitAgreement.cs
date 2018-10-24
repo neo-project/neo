@@ -8,7 +8,10 @@ namespace Neo.Consensus
         /// <summary>
         /// Block hash of the signature
         /// </summary>
-        public UInt256 BlockHash;
+        //public UInt256 BlockHash;
+        public Block FinalBlock;
+        public byte[] FinalSignature;
+        // TODO: send partials?
 
         /// <summary>
         /// Constructors

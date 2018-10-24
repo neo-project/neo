@@ -27,27 +27,31 @@ namespace Neo.Consensus
         public UInt160 NextConsensus;
         public UInt256[] TransactionHashes;
         public Dictionary<UInt256, Transaction> Transactions;
-        public byte[][] Signatures;
         public byte[] ExpectedView;
         public KeyPair KeyPair;
 
-        private UInt256[] Commits;
+        public ConsensusPayload PreparePayload;
+        public byte[][] SignedPayloads;
+        public byte[][] FinalSignatures;
+
         private Block _header = null;
         public UInt256 CommitHash => _header?.Hash;
 
         public int M => Validators.Length - (Validators.Length - 1) / 3;
 
+        /*
         public bool TryToCommit(ConsensusPayload payload, CommitAgreement message)
         {
             // Already received
             if (Commits[payload.ValidatorIndex] != null) return false;
-            
+
             // Store received block hash
             Commits[payload.ValidatorIndex] = message.BlockHash;
-            
+
             // Check count
             return _header != null && Commits.Where(u => u != null && u == _header.Hash).Count() >= M;
         }
+        */
 
         public void ChangeView(byte view_number)
         {
@@ -113,13 +117,13 @@ namespace Neo.Consensus
             return _header;
         }
 
-        public ConsensusPayload MakeCommitAgreement()
+        public ConsensusPayload MakeCommitAgreement(Block FinalBlock, byte[] MyFinalSignature)
         {
-            if (_header == null) return null;
-
+            //if (_header == null) return null;
             return MakePayload(new CommitAgreement()
             {
-                BlockHash = _header.Hash
+                FinalBlock = FinalBlock,
+                FinalSignature = MyFinalSignature;
             });
         }
 
@@ -144,16 +148,17 @@ namespace Neo.Consensus
                 Nonce = Nonce,
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
-                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                Signature = Signatures[MyIndex]
+                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]];
+                PrepReqSignature = SignedPayloads[context.MyIndex];
             });
         }
 
-        public ConsensusPayload MakePrepareResponse(byte[] signature)
+        public ConsensusPayload MakePrepareResponse(byte[] MySignature)
         {
             return MakePayload(new PrepareResponse
             {
-                Signature = signature
+                PreparePayload = PreparePayload,
+                ResponseSignature = MySignature;
             });
         }
 
