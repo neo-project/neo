@@ -327,13 +327,13 @@ namespace Neo.Consensus
             //if (context.Signatures[payload.ValidatorIndex] != null) return;
             if (context.PreparePayload == null)
             {
-                if (((ConsensusPayload)message.PreparePayload).ValidatorIndex != context.PrimaryIndex) return;
-                if (!Crypto.Default.VerifySignature(((ConsensusPayload)message.PreparePayload).GetHashData(), message.PreparePayload.PrepReqSignature, context.Validators[message.PreparePayload.ValidatorIndex].EncodePoint(false))) return;
+                if (message.PreparePayload.ValidatorIndex != context.PrimaryIndex) return;
+                if (!Crypto.Default.VerifySignature(message.PreparePayload.GetHashData(), message.PreparePayload.PrepReqSignature, context.Validators[message.PreparePayload.ValidatorIndex].EncodePoint(false))) return;
                 context.PreparePayload = message.PreparePayload;
-                Log($"{nameof(OnPrepareReceivedReceived)}: indirectly from index={payload.ValidatorIndex}");
+                Log($"{nameof(OnPrepareResponseReceived)}: indirectly from index={payload.ValidatorIndex}");
             }
 
-            Log($"{nameof(OnPrepareResponseReceived)}: height={message.PreparePayload.BlockIndex} view={message.PreparePayload.ViewNumber} index={payload.ValidatorIndex}");
+            Log($"{nameof(OnPrepareResponseReceived)}: height={message.PreparePayload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
             //Block header = context.MakeHeader();
             //if (header == null || !Crypto.Default.VerifySignature(header.GetHashData(), message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
