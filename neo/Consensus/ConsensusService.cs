@@ -76,17 +76,11 @@ namespace Neo.Consensus
         private void CheckExpectedView(byte view_number)
         {
             if (context.ViewNumber == view_number) return;
-            if (context.State.HasFlag(ConsensusState.CommitSent))
-            {
-                if (context.State.HasFlag(ConsensusState.SignatureSent))
-                {
-                    // If signature was sent, we send again
-
-                    SignAndRelay(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
-                }
-
-                return;
-            }
+            //if (context.State.HasFlag(ConsensusState.CommitSent))
+            //{
+            //    SignAndRelay(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
+            //    return;
+            //}
 
             if (context.ExpectedView.Count(p => p == view_number) >= context.M)
             {
@@ -433,20 +427,6 @@ namespace Neo.Consensus
 
         private void RequestChangeView()
         {
-            if (context.State.HasFlag(ConsensusState.CommitSent))
-            {
-                // Lock view change on timer
-
-                if (context.State.HasFlag(ConsensusState.SignatureSent))
-                {
-                    // If signature was sent, we send again
-
-                    SignAndRelay(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
-                }
-
-                return;
-            }
-
             context.State |= ConsensusState.ViewChanging;
             context.ExpectedView[context.MyIndex]++;
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
