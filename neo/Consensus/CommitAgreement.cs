@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Neo.IO;
+using Neo.Ledger;
 
 namespace Neo.Consensus
 {

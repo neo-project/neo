@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using Neo.Network.P2P.Payloads;
 
 namespace Neo.Consensus
 {

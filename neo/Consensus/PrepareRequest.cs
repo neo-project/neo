@@ -43,14 +43,5 @@ namespace Neo.Consensus
             writer.Write(PrepReqSignature);
         }
 
-        public override void Serialize(BinaryWriter writer)
-        {
-            base.Serialize(writer);
-            writer.Write(Nonce);
-            writer.Write(NextConsensus);
-            writer.Write(TransactionHashes);
-            writer.Write(MinerTransaction);
-            writer.Write(PrepReqSignature);
-        }
     }
 }
