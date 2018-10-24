@@ -61,7 +61,7 @@ namespace Neo.SmartContract
 
         public uint InteropMethodHash(string method)
         {
-            return ExecutionEngine.Service.InteropHash(method);
+            return ((InteropService)base.Service).InteropHash(method);
         }
 
         public ApplicationEngine(TriggerType trigger, IScriptContainer container, Snapshot snapshot, Fixed8 gas, bool testMode = false)
