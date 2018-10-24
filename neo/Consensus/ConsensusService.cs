@@ -222,7 +222,7 @@ namespace Neo.Consensus
 
         private void OnConsensusPayload(ConsensusPayload payload)
         {
-            if (context.State.HasFlag(ConsensusState.BlockSent)) return;
+            //if (context.State.HasFlag(ConsensusState.BlockSent)) return;
 
             if (payload.ValidatorIndex == context.MyIndex ||
                 payload.Version != ConsensusContext.Version ||
@@ -385,11 +385,14 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.RequestSent;
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
+                    Log($"Time to Fill Context");
                     FillContext();
                     context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
                     //context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair); // do not
                     //context.MessageSignatures[context.MyIndex] = context.MakePrepareRequest().Sign(context.KeyPair);
+                    Log($"Going to makeprepare request");
                     context.PreparePayload = context.MakePrepareRequest();
+                    Log($"ok");
                     context.SignedPayloads[context.MyIndex] = context.PreparePayload.Sign(context.KeyPair);
                 }
 
