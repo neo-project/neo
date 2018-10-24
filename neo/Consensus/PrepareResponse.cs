@@ -28,14 +28,17 @@ namespace Neo.Consensus
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            PreparePayload = reader.ReadSerializable<ConsensusPayload>();
+            //PreparePayload = reader.ReadSerializable<ConsensusPayload>();
+            PreparePayload = new ConsensusPayload();
+            PreparePayload.Deserialize(reader);
             ResponseSignature = reader.ReadBytes(16);
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(PreparePayload);
+            PreparePayload.Serialize(writer);
+            //writer.Write(PreparePayload);
             writer.Write(ResponseSignature);
         }
     }
