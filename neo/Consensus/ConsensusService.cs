@@ -327,8 +327,8 @@ namespace Neo.Consensus
             //if (context.Signatures[payload.ValidatorIndex] != null) return;
             if (context.PreparePayload == null)
             {
-                if (message.PreparePayload.ValidatorIndex != context.PrimaryIndex) return;
-                if (!Crypto.Default.VerifySignature(message.PreparePayload.GetHashData(), message.PreparePayload.PrepReqSignature, context.Validators[message.PreparePayload.ValidatorIndex].EncodePoint(false))) return;
+                if (((ConsensusPayload)message.PreparePayload).ValidatorIndex != context.PrimaryIndex) return;
+                if (!Crypto.Default.VerifySignature(((ConsensusPayload)message.PreparePayload).GetHashData(), message.PreparePayload.PrepReqSignature, context.Validators[message.PreparePayload.ValidatorIndex].EncodePoint(false))) return;
                 context.PreparePayload = message.PreparePayload;
                 Log($"{nameof(OnPrepareReceivedReceived)}: indirectly from index={payload.ValidatorIndex}");
             }
