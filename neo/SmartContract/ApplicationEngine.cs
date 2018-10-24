@@ -516,91 +516,62 @@ namespace Neo.SmartContract
                 }
             }
             
-            switch (code)
+            if ((code == Service.InteropHash("System.Runtime.CheckWitness")) || (code == Service.InteropHash("Neo.Runtime.CheckWitness")) || (code == Service.InteropHash("AntShares.Runtime.CheckWitness")))
+                return 200;
+            else if ((code == Service.InteropHash("System.Blockchain.GetHeader")) || (code == Service.InteropHash("Neo.Blockchain.GetHeader")) || (code == Service.InteropHash("AntShares.Blockchain.GetHeader")))
+                return 100;
+            else if ((code == Service.InteropHash("System.Blockchain.GetBlock")) || (code == Service.InteropHash("Neo.Blockchain.GetBlock")) || (code == Service.InteropHash("AntShares.Blockchain.GetBlock")))
+                return 200;
+            else if ((code == Service.InteropHash("System.Blockchain.GetTransaction")) || (code == Service.InteropHash("Neo.Blockchain.GetTransaction")) || (code == Service.InteropHash("AntShares.Blockchain.GetTransaction")))
+                return 100;
+            else if ((code == Service.InteropHash("System.Blockchain.GetTransactionHeight")) || (code == Service.InteropHash("Neo.Blockchain.GetTransactionHeight")))
+                return 100;
+            else if ((code == Service.InteropHash("Neo.Blockchain.GetAccount")) || (code == Service.InteropHash("AntShares.Blockchain.GetAccount")))
+                return 100;
+            else if ((code == Service.InteropHash("Neo.Blockchain.GetValidators")) || (code == Service.InteropHash("AntShares.Blockchain.GetValidators")))
+                return 200;
+            else if ((code == Service.InteropHash("Neo.Blockchain.GetAsset")) || (code == Service.InteropHash("AntShares.Blockchain.GetAsset")))
+                return 100;
+            else if ((code == Service.InteropHash("System.Blockchain.GetContract")) || (code == Service.InteropHash("Neo.Blockchain.GetContract")) || (code == Service.InteropHash("AntShares.Blockchain.GetContract")))
+                return 100;
+            else if ((code == Service.InteropHash("Neo.Transaction.GetReferences")) || (code == Service.InteropHash("AntShares.Transaction.GetReferences")))
+                return 200;
+            else if ((code == Service.InteropHash("Neo.Transaction.GetUnspentCoins")))
+                return 200;
+            else if ((code == Service.InteropHash("Neo.Transaction.GetWitnesses")))
+                return 200;
+            else if ((code == Service.InteropHash("Neo.Witness.GetInvocationScript")) || (code == Service.InteropHash("Neo.Witness.GetVerificationScript")))
+                return 100;
+            else if ((code == Service.InteropHash("Neo.Account.IsStandard")))
+                return 100;
+            else if ((code == Service.InteropHash("Neo.Asset.Create")) || (code == Service.InteropHash("AntShares.Asset.Create")))
+                return 5000L * 100000000L / ratio;
+            else if ((code == Service.InteropHash("Neo.Asset.Renew")) || (code == Service.InteropHash("AntShares.Asset.Renew")))
+                return (byte)CurrentContext.EvaluationStack.Peek(1).GetBigInteger() * 5000L * 100000000L / ratio;
+            else if ((code == Service.InteropHash("Neo.Contract.Create")) || (code == Service.InteropHash("Neo.Contract.Migrate")) || (code == Service.InteropHash("AntShares.Contract.Create"))  || (code == Service.InteropHash("AntShares.Contract.Migrate")))
             {
-                case 2364286968: //"System.Runtime.CheckWitness":
-                case 2498158575: //"Neo.Runtime.CheckWitness":
-                case 1657590198: //"AntShares.Runtime.CheckWitness":
-                    return 200;
-                case 4133176436: //"System.Blockchain.GetHeader":
-                case 1751280033: //"Neo.Blockchain.GetHeader":
-                case "AntShares.Blockchain.GetHeader":
-                    return 100;
-                case 764561283: //"System.Blockchain.GetBlock":
-                case 1946586975: //"Neo.Blockchain.GetBlock":
-                case "AntShares.Blockchain.GetBlock":
-                    return 200;
-                case 1217222118: //"System.Blockchain.GetTransaction":
-                case 739758029: //"Neo.Blockchain.GetTransaction":
-                case "AntShares.Blockchain.GetTransaction":
-                    return 100;
-                case 2978493002: //"System.Blockchain.GetTransactionHeight":
-                case 253502021: //"Neo.Blockchain.GetTransactionHeight":
-                    return 100;
-                case 2131219224: //"Neo.Blockchain.GetAccount":
-                case "AntShares.Blockchain.GetAccount":
-                    return 100;
-                case 462947051: //"Neo.Blockchain.GetValidators":
-                case "AntShares.Blockchain.GetValidators":
-                    return 200;
-                case 3773874689: //"Neo.Blockchain.GetAsset":
-                case "AntShares.Blockchain.GetAsset":
-                    return 100;
-                case 1095484841: //"System.Blockchain.GetContract":
-                case "Neo.Blockchain.GetContract":
-                case "AntShares.Blockchain.GetContract":
-                    return 100;
-                case "Neo.Transaction.GetReferences":
-                case "AntShares.Transaction.GetReferences":
-                    return 200;
-                case "Neo.Transaction.GetUnspentCoins":
-                    return 200;
-                case "Neo.Transaction.GetWitnesses":
-                    return 200;
-                case "Neo.Witness.GetInvocationScript":
-                case "Neo.Witness.GetVerificationScript":
-                    return 100;
-                case "Neo.Account.IsStandard":
-                    return 100;
-                case "Neo.Asset.Create":
-                case "AntShares.Asset.Create":
-                    return 5000L * 100000000L / ratio;
-                case "Neo.Asset.Renew":
-                case "AntShares.Asset.Renew":
-                    return (byte)CurrentContext.EvaluationStack.Peek(1).GetBigInteger() * 5000L * 100000000L / ratio;
-                case "Neo.Contract.Create":
-                case "Neo.Contract.Migrate":
-                case "AntShares.Contract.Create":
-                case "AntShares.Contract.Migrate":
-                    long fee = 100L;
+                long fee = 100L;
 
-                    ContractPropertyState contract_properties = (ContractPropertyState)(byte)CurrentContext.EvaluationStack.Peek(3).GetBigInteger();
+                ContractPropertyState contract_properties = (ContractPropertyState)(byte)CurrentContext.EvaluationStack.Peek(3).GetBigInteger();
 
-                    if (contract_properties.HasFlag(ContractPropertyState.HasStorage))
-                    {
-                        fee += 400L;
-                    }
-                    if (contract_properties.HasFlag(ContractPropertyState.HasDynamicInvoke))
-                    {
-                        fee += 500L;
-                    }
-                    return fee * 100000000L / ratio;
-                case "System.Storage.Get":
-                case "Neo.Storage.Get":
-                case "AntShares.Storage.Get":
-                    return 100;
-                case "System.Storage.Put":
-                case "System.Storage.PutEx":
-                case "Neo.Storage.Put":
-                case "AntShares.Storage.Put":
-                    return ((CurrentContext.EvaluationStack.Peek(1).GetByteArray().Length + CurrentContext.EvaluationStack.Peek(2).GetByteArray().Length - 1) / 1024 + 1) * 1000;
-                case "System.Storage.Delete":
-                case "Neo.Storage.Delete":
-                case "AntShares.Storage.Delete":
-                    return 100;
-                default:
-                    return 1;
+                if (contract_properties.HasFlag(ContractPropertyState.HasStorage))
+                {
+                    fee += 400L;
+                }
+                if (contract_properties.HasFlag(ContractPropertyState.HasDynamicInvoke))
+                {
+                    fee += 500L;
+                }
+                return fee * 100000000L / ratio;
             }
+            else if ((code == Service.InteropHash("System.Storage.Get")) || (code == Service.InteropHash("Neo.Storage.Get")) || (code == Service.InteropHash("AntShares.Storage.Get")))
+                return 100;
+            else if ((code == Service.InteropHash("System.Storage.Put")) || (code == Service.InteropHash("System.Storage.PutEx")) || (code == Service.InteropHash("Neo.Storage.Get")) || (code == Service.InteropHash("AntShares.Storage.Put")))
+                return ((CurrentContext.EvaluationStack.Peek(1).GetByteArray().Length + CurrentContext.EvaluationStack.Peek(2).GetByteArray().Length - 1) / 1024 + 1) * 1000;
+            else if ((code == Service.InteropHash("System.Storage.Delete")) || (code == Service.InteropHash("Neo.Storage.Delete")) || (code == Service.InteropHash("AntShares.Storage.Delete")))
+                return 100;
+            else 
+                return 1;
         }
 
         private bool PostStepInto(OpCode nextOpcode)
