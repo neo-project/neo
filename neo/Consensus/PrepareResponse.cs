@@ -30,14 +30,16 @@ namespace Neo.Consensus
             base.Deserialize(reader);
             //PreparePayload = reader.ReadSerializable<ConsensusPayload>();
             PreparePayload = new ConsensusPayload();
-            PreparePayload.Deserialize(reader);
+            is = PreparePayload;
+            is.Deserialize(reader);
             ResponseSignature = reader.ReadBytes(16);
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            PreparePayload.Serialize(writer);
+            ISerializable is = PreparePayload;
+            is.Serialize(writer);
             //writer.Write(PreparePayload);
             writer.Write(ResponseSignature);
         }
