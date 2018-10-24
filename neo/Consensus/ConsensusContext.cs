@@ -34,24 +34,7 @@ namespace Neo.Consensus
         public byte[][] SignedPayloads;
         public byte[][] FinalSignatures;
 
-        private Block _header = null;
-        public UInt256 CommitHash => _header?.Hash;
-
         public int M => Validators.Length - (Validators.Length - 1) / 3;
-
-        /*
-        public bool TryToCommit(ConsensusPayload payload, CommitAgreement message)
-        {
-            // Already received
-            if (Commits[payload.ValidatorIndex] != null) return false;
-
-            // Store received block hash
-            Commits[payload.ValidatorIndex] = message.BlockHash;
-
-            // Check count
-            return _header != null && Commits.Where(u => u != null && u == _header.Hash).Count() >= M;
-        }
-        */
 
         public void ChangeView(byte view_number)
         {
@@ -94,6 +77,7 @@ namespace Neo.Consensus
             });
         }
 
+        private Block _header = null;
         public Block MakeHeader()
         {
             if (TransactionHashes == null) return null;

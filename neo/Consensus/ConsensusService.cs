@@ -50,8 +50,7 @@ namespace Neo.Consensus
                 {
                     Log($"send prepare response");
                     context.State |= ConsensusState.SignatureSent;
-                    //context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
-
+                    context.SignedPayloads[context.MyIndex] = context.PreparePayload.Sign(context.KeyPair);
                     SignAndRelay(context.MakePrepareResponse(context.SignedPayloads[context.MyIndex]));
                     CheckPayloadSignatures();
                 }
@@ -211,10 +210,13 @@ namespace Neo.Consensus
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
+            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
+
             if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
                 return;
 
-            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
+            Log($"Verification of newView ok");
+
 
             context.ExpectedView[payload.ValidatorIndex] = message.NewViewNumber;
             CheckExpectedView(message.NewViewNumber);
@@ -276,13 +278,11 @@ namespace Neo.Consensus
 
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
         {
-            if (context.State.HasFlag(ConsensusState.RequestReceived))
-                return;
-
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
 
-            if (!context.State.HasFlag(ConsensusState.Backup))
+            if (!context.State.HasFlag(ConsensusState.Backup) || context.State.HasFlag(ConsensusState.RequestReceived))
                 return;
+
 
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
 
@@ -298,13 +298,11 @@ namespace Neo.Consensus
             context.NextConsensus = message.NextConsensus;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
-            //if (!Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
-
+     
             context.PreparePayload = payload;
-            context.SignedPayloads[context.MyIndex] = payload.Sign(context.KeyPair);
-
-            //context.Signatures = new byte[context.Validators.Length][];
-            //context.Signatures[payload.ValidatorIndex] = message.Signature;
+            context.SignedPayloads = new byte[context.Validators.Length][];
+            //TODO remove signature from context.PreparePayload and initialize with 64 bytyes and check message.PrepReqSignature from Speaker
+            context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
             Dictionary<UInt256, Transaction> mempool = Blockchain.Singleton.GetMemoryPool().ToDictionary(p => p.Hash);
             foreach (UInt256 hash in context.TransactionHashes.Skip(1))
             {
@@ -325,21 +323,24 @@ namespace Neo.Consensus
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
+            Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             //if (context.Signatures[payload.ValidatorIndex] != null) return;
-            if (context.PreparePayload == null)
+            if (context.SignedPayloads[payload.ValidatorIndex] != null) return;
+            /*
+            if (context.PreparePayload == null || context.SignedPayloads[payload.ValidatorIndex] == null )
             {
                 if (message.PreparePayload.ValidatorIndex != context.PrimaryIndex) return;
                 if (!Crypto.Default.VerifySignature(message.PreparePayload.GetHashData(), message.PrepareRequestMessage().PrepReqSignature, context.Validators[message.PreparePayload.ValidatorIndex].EncodePoint(false))) return;
                 Log($"{nameof(OnPrepareRequestReceived)}: indirectly from index={payload.ValidatorIndex}");
                 OnPrepareRequestReceived(message.PreparePayload, message.PrepareRequestMessage());
-            }
+            }*/
 
-            Log($"{nameof(OnPrepareResponseReceived)}: height={message.PreparePayload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
             //Block header = context.MakeHeader();
             //if (header == null || !Crypto.Default.VerifySignature(header.GetHashData(), message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
-            if (!Crypto.Default.VerifySignature(payload.GetHashData(), message.ResponseSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
+            if (!Crypto.Default.VerifySignature(message.PreparePayload.GetHashData(), message.ResponseSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
 
             context.SignedPayloads[payload.ValidatorIndex] = message.ResponseSignature;
             CheckPayloadSignatures();
@@ -385,8 +386,6 @@ namespace Neo.Consensus
                 {
                     FillContext();
                     context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
-                    //context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair); // do not
-                    //context.MessageSignatures[context.MyIndex] = context.MakePrepareRequest().Sign(context.KeyPair);
                     context.SignedPayloads[context.MyIndex] = new byte[64];
                     context.PreparePayload = context.MakePrepareRequest();
                     context.SignedPayloads[context.MyIndex] = context.PreparePayload.Sign(context.KeyPair);
@@ -440,7 +439,12 @@ namespace Neo.Consensus
 
         private void SignAndRelay(ConsensusPayload payload)
         {
-            if (payload == null) return;
+            Log($"Sign and relay {payload.ToString()}");
+            if (payload == null) 
+            {
+                Log($"Sign and relay payload null");
+                return;   
+            }
 
             ContractParametersContext sc;
             try
