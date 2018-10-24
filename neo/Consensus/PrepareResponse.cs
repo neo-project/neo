@@ -5,7 +5,7 @@ namespace Neo.Consensus
 {
     internal class PrepareResponse : ConsensusMessage
     {
-        ConsensusPayload PreparePayload;
+        public ConsensusPayload PreparePayload;
         public byte[] ResponseSignature; // TODO: send multiple signatures for possible speedup?
 
         public PrepareResponse()
