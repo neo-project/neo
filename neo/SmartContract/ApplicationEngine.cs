@@ -10,7 +10,6 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Security.Cryptography;
-using static System.BitConverter;
 
 namespace Neo.SmartContract
 {
@@ -512,13 +511,13 @@ namespace Neo.SmartContract
                 return 1;
             uint code = 0;
             if (length == 4)
-                code = BitConverter.ToUInt32(CurrentContext.InstructionPointer, 2);
+                code = System.BitConverter.ToUInt32(CurrentContext.InstructionPointer, 2);
             else
             {
                 string api_name = Encoding.ASCII.GetString(CurrentContext.Script, CurrentContext.InstructionPointer + 2, length);
                 using (SHA256 sha = SHA256.Create())
                 {
-                    code = BitConverter.ToUInt32(sha.ComputeHash(Encoding.ASCII.GetBytes(api_name)), 0);
+                    code = System.BitConverter.ToUInt32(sha.ComputeHash(Encoding.ASCII.GetBytes(api_name)), 0);
                 }
             }
 
