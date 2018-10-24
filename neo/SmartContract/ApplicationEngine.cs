@@ -511,13 +511,20 @@ namespace Neo.SmartContract
                 return 1;
             uint code = 0;
             if (length == 4)
-                code = System.BitConverter.ToUInt32(CurrentContext.InstructionPointer, 2);
+            {
+                byte[] bytes = {0, 0, 0, 0};
+                bytes[0] = CurrentContext.Script[CurrentContext.InstructionPointer + 2];
+                bytes[1] = CurrentContext.Script[CurrentContext.InstructionPointer + 3];
+                bytes[2] = CurrentContext.Script[CurrentContext.InstructionPointer + 4];
+                bytes[3] = CurrentContext.Script[CurrentContext.InstructionPointer + 5];
+                code = System.BitConverter.ToUInt32(bytes, 0);
+            }
             else
             {
                 string api_name = Encoding.ASCII.GetString(CurrentContext.Script, CurrentContext.InstructionPointer + 2, length);
                 using (SHA256 sha = SHA256.Create())
                 {
-                    code = System.BitConverter.ToUInt32(sha.ComputeHash(Encoding.ASCII.GetBytes(api_name)), 0);
+                    code = System.BitConverter.ToUInt32(sha.ComputeHash(Encoding.ASCII.GetBytes(api_name)).Take(4).ToArray(), 0);
                 }
             }
 
