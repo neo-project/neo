@@ -111,7 +111,7 @@ namespace Neo.Consensus
             if (!Crypto.Default.VerifySignature(message.FinalBlock.GetHashData(), message.FinalSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
             context.FinalSignatures[payload.ValidatorIndex] = message.FinalSignature;
 
-            Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} hash={message.FinalBlock.Hash().ToString()} view={message.ViewNumber} index={payload.ValidatorIndex}");
+            Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} hash={message.FinalBlock.Hash.ToString()} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
             if (context.FinalSignatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
@@ -328,7 +328,7 @@ namespace Neo.Consensus
             if (context.PreparePayload == null)
             {
                 if (message.PreparePayload.ValidatorIndex != context.PrimaryIndex) return;
-                if (!Crypto.Default.VerifySignature(message.PreparePayload.GetHashData(), message.PreparePayload.PrepReqSignature, context.Validators[message.PreparePayload.ValidatorIndex].EncodePoint(false))) return;
+                if (!Crypto.Default.VerifySignature(message.PreparePayload.GetHashData(), ((PrepareRequest)message.PreparePayload).PrepReqSignature, context.Validators[message.PreparePayload.ValidatorIndex].EncodePoint(false))) return;
                 context.PreparePayload = message.PreparePayload;
                 Log($"{nameof(OnPrepareResponseReceived)}: indirectly from index={payload.ValidatorIndex}");
             }
