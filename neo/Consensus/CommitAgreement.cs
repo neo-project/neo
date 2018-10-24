@@ -22,13 +22,15 @@ namespace Neo.Consensus
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            BlockHash = reader.ReadSerializable<UInt256>();
+            FinalBlock = reader.ReadSerializable<Block>();
+            FinalSignature = reader.ReadSerializable<FinalSignature>();
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(BlockHash);
+            writer.Write(FinalBlock);
+            writer.Write(FinalSignature);
         }
     }
 }
