@@ -11,6 +11,6 @@ namespace Neo.Consensus
         [ReflectionCache(typeof(PrepareResponse))]
         PrepareResponse = 0x21,
         [ReflectionCache(typeof(CommitAgreement))]
-        CommitAgreement = 0x022,
+        CommitAgreement = 0x22,
     }
 }
