@@ -123,7 +123,7 @@ namespace Neo.Consensus
             return MakePayload(new CommitAgreement()
             {
                 FinalBlock = FinalBlock,
-                FinalSignature = MyFinalSignature;
+                FinalSignature = MyFinalSignature
             });
         }
 
@@ -148,8 +148,8 @@ namespace Neo.Consensus
                 Nonce = Nonce,
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
-                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]];
-                PrepReqSignature = SignedPayloads[context.MyIndex];
+                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
+                PrepReqSignature = SignedPayloads[context.MyIndex]
             });
         }
 
@@ -158,7 +158,7 @@ namespace Neo.Consensus
             return MakePayload(new PrepareResponse
             {
                 PreparePayload = PreparePayload,
-                ResponseSignature = MySignature;
+                ResponseSignature = MySignature
             });
         }
 
