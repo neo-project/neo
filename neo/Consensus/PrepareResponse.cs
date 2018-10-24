@@ -10,9 +10,9 @@ namespace Neo.Consensus
         public PrepareRequest PrepareRequestPayload() {
           byte[] seri = PreparePayload.Data;
           PrepareRequest p;
-          using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
+          using (MemoryStream ms = new MemoryStream(seri, 0, seri.Length, false))
           {
-              using (BinaryReader reader = new BinaryReader(seri))
+              using (BinaryReader reader = new BinaryReader(ms))
               {
                   p.Deserialize(reader);
               }
