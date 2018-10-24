@@ -74,7 +74,18 @@ namespace Neo.Consensus
         private void CheckExpectedView(byte view_number)
         {
             if (context.ViewNumber == view_number) return;
-            if (context.State.HasFlag(ConsensusState.CommitSent)) return;
+            if (context.State.HasFlag(ConsensusState.CommitSent))
+            {
+                if (context.State.HasFlag(ConsensusState.SignatureSent))
+                {
+                    // If signature was sent, we send again
+
+                    SignAndRelay(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
+                    CheckSignatures();
+                }
+
+                return;
+            }
 
             if (context.ExpectedView.Count(p => p == view_number) >= context.M)
             {
