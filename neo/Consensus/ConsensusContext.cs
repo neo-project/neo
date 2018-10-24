@@ -110,8 +110,6 @@ namespace Neo.Consensus
                     NextConsensus = NextConsensus,
                     Transactions = new Transaction[0]
                 };
-
-                Commits[MyIndex] = _header.Hash;
             }
 
             return _header;
@@ -149,7 +147,7 @@ namespace Neo.Consensus
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                PrepReqSignature = SignedPayloads[context.MyIndex]
+                PrepReqSignature = SignedPayloads[MyIndex]
             });
         }
 
@@ -174,10 +172,11 @@ namespace Neo.Consensus
             MyIndex = -1;
             PrimaryIndex = BlockIndex % (uint)Validators.Length;
             TransactionHashes = null;
-            Signatures = new byte[Validators.Length][];
+            PreparePayload = null;
+            SignedPayloads = new byte[Validators.Length][];
+            FinalSignatures = new byte[Validators.Length][];
             ExpectedView = new byte[Validators.Length];
             KeyPair = null;
-            Commits = new UInt256[Validators.Length];
 
             for (int i = 0; i < Validators.Length; i++)
             {
