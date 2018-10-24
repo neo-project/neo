@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.IO;
 
 namespace Neo.Consensus
 {
@@ -30,16 +31,16 @@ namespace Neo.Consensus
             base.Deserialize(reader);
             //PreparePayload = reader.ReadSerializable<ConsensusPayload>();
             PreparePayload = new ConsensusPayload();
-            is = PreparePayload;
-            is.Deserialize(reader);
+            iss = PreparePayload;
+            iss.Deserialize(reader);
             ResponseSignature = reader.ReadBytes(16);
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            ISerializable is = PreparePayload;
-            is.Serialize(writer);
+            ISerializable iss = PreparePayload;
+            iss.Serialize(writer);
             //writer.Write(PreparePayload);
             writer.Write(ResponseSignature);
         }
