@@ -390,6 +390,21 @@ namespace Neo.Consensus
 
         private void RequestChangeView()
         {
+            if (context.State.HasFlag(ConsensusState.CommitSent))
+            {
+                // Lock view change on timer
+
+                if (context.State.HasFlag(ConsensusState.SignatureSent))
+                {
+                    // If signature was sent, we send again
+
+                    SignAndRelay(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
+                    CheckSignatures();
+                }
+
+                return;
+            }
+
             context.State |= ConsensusState.ViewChanging;
             context.ExpectedView[context.MyIndex]++;
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
