@@ -59,6 +59,11 @@ namespace Neo.SmartContract
         public Fixed8 GasConsumed => new Fixed8(gas_consumed);
         public new NeoService Service => (NeoService)base.Service;
 
+        public uint InteropMethodHash(string method)
+        {
+            return ExecutionEngine.Service.InteropHash(method);
+        }
+
         public ApplicationEngine(TriggerType trigger, IScriptContainer container, Snapshot snapshot, Fixed8 gas, bool testMode = false)
             : base(container, Cryptography.Crypto.Default, snapshot, new NeoService(trigger, snapshot))
         {
@@ -156,7 +161,7 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// Check if the BigInteger is allowed for numeric operations
-        /// </summary> 
+        /// </summary>
         private bool CheckBigIntegers(OpCode nextInstruction)
         {
             switch (nextInstruction)
@@ -515,40 +520,40 @@ namespace Neo.SmartContract
                     code = BitConverter.ToUInt32(sha.ComputeHash(Encoding.ASCII.GetBytes(api_name)), 0);
                 }
             }
-            
-            if ((code == Service.InteropHash("System.Runtime.CheckWitness")) || (code == Service.InteropHash("Neo.Runtime.CheckWitness")) || (code == Service.InteropHash("AntShares.Runtime.CheckWitness")))
+
+            if ((code == InteropMethodHash("System.Runtime.CheckWitness")) || (code == InteropMethodHash("Neo.Runtime.CheckWitness")) || (code == InteropMethodHash("AntShares.Runtime.CheckWitness")))
                 return 200;
-            else if ((code == Service.InteropHash("System.Blockchain.GetHeader")) || (code == Service.InteropHash("Neo.Blockchain.GetHeader")) || (code == Service.InteropHash("AntShares.Blockchain.GetHeader")))
+            else if ((code == InteropMethodHash("System.Blockchain.GetHeader")) || (code == InteropMethodHash("Neo.Blockchain.GetHeader")) || (code == InteropMethodHash("AntShares.Blockchain.GetHeader")))
                 return 100;
-            else if ((code == Service.InteropHash("System.Blockchain.GetBlock")) || (code == Service.InteropHash("Neo.Blockchain.GetBlock")) || (code == Service.InteropHash("AntShares.Blockchain.GetBlock")))
+            else if ((code == InteropMethodHash("System.Blockchain.GetBlock")) || (code == InteropMethodHash("Neo.Blockchain.GetBlock")) || (code == InteropMethodHash("AntShares.Blockchain.GetBlock")))
                 return 200;
-            else if ((code == Service.InteropHash("System.Blockchain.GetTransaction")) || (code == Service.InteropHash("Neo.Blockchain.GetTransaction")) || (code == Service.InteropHash("AntShares.Blockchain.GetTransaction")))
+            else if ((code == InteropMethodHash("System.Blockchain.GetTransaction")) || (code == InteropMethodHash("Neo.Blockchain.GetTransaction")) || (code == InteropMethodHash("AntShares.Blockchain.GetTransaction")))
                 return 100;
-            else if ((code == Service.InteropHash("System.Blockchain.GetTransactionHeight")) || (code == Service.InteropHash("Neo.Blockchain.GetTransactionHeight")))
+            else if ((code == InteropMethodHash("System.Blockchain.GetTransactionHeight")) || (code == InteropMethodHash("Neo.Blockchain.GetTransactionHeight")))
                 return 100;
-            else if ((code == Service.InteropHash("Neo.Blockchain.GetAccount")) || (code == Service.InteropHash("AntShares.Blockchain.GetAccount")))
+            else if ((code == InteropMethodHash("Neo.Blockchain.GetAccount")) || (code == InteropMethodHash("AntShares.Blockchain.GetAccount")))
                 return 100;
-            else if ((code == Service.InteropHash("Neo.Blockchain.GetValidators")) || (code == Service.InteropHash("AntShares.Blockchain.GetValidators")))
+            else if ((code == InteropMethodHash("Neo.Blockchain.GetValidators")) || (code == InteropMethodHash("AntShares.Blockchain.GetValidators")))
                 return 200;
-            else if ((code == Service.InteropHash("Neo.Blockchain.GetAsset")) || (code == Service.InteropHash("AntShares.Blockchain.GetAsset")))
+            else if ((code == InteropMethodHash("Neo.Blockchain.GetAsset")) || (code == InteropMethodHash("AntShares.Blockchain.GetAsset")))
                 return 100;
-            else if ((code == Service.InteropHash("System.Blockchain.GetContract")) || (code == Service.InteropHash("Neo.Blockchain.GetContract")) || (code == Service.InteropHash("AntShares.Blockchain.GetContract")))
+            else if ((code == InteropMethodHash("System.Blockchain.GetContract")) || (code == InteropMethodHash("Neo.Blockchain.GetContract")) || (code == InteropMethodHash("AntShares.Blockchain.GetContract")))
                 return 100;
-            else if ((code == Service.InteropHash("Neo.Transaction.GetReferences")) || (code == Service.InteropHash("AntShares.Transaction.GetReferences")))
+            else if ((code == InteropMethodHash("Neo.Transaction.GetReferences")) || (code == InteropMethodHash("AntShares.Transaction.GetReferences")))
                 return 200;
-            else if ((code == Service.InteropHash("Neo.Transaction.GetUnspentCoins")))
+            else if ((code == InteropMethodHash("Neo.Transaction.GetUnspentCoins")))
                 return 200;
-            else if ((code == Service.InteropHash("Neo.Transaction.GetWitnesses")))
+            else if ((code == InteropMethodHash("Neo.Transaction.GetWitnesses")))
                 return 200;
-            else if ((code == Service.InteropHash("Neo.Witness.GetInvocationScript")) || (code == Service.InteropHash("Neo.Witness.GetVerificationScript")))
+            else if ((code == InteropMethodHash("Neo.Witness.GetInvocationScript")) || (code == InteropMethodHash("Neo.Witness.GetVerificationScript")))
                 return 100;
-            else if ((code == Service.InteropHash("Neo.Account.IsStandard")))
+            else if ((code == InteropMethodHash("Neo.Account.IsStandard")))
                 return 100;
-            else if ((code == Service.InteropHash("Neo.Asset.Create")) || (code == Service.InteropHash("AntShares.Asset.Create")))
+            else if ((code == InteropMethodHash("Neo.Asset.Create")) || (code == InteropMethodHash("AntShares.Asset.Create")))
                 return 5000L * 100000000L / ratio;
-            else if ((code == Service.InteropHash("Neo.Asset.Renew")) || (code == Service.InteropHash("AntShares.Asset.Renew")))
+            else if ((code == InteropMethodHash("Neo.Asset.Renew")) || (code == InteropMethodHash("AntShares.Asset.Renew")))
                 return (byte)CurrentContext.EvaluationStack.Peek(1).GetBigInteger() * 5000L * 100000000L / ratio;
-            else if ((code == Service.InteropHash("Neo.Contract.Create")) || (code == Service.InteropHash("Neo.Contract.Migrate")) || (code == Service.InteropHash("AntShares.Contract.Create"))  || (code == Service.InteropHash("AntShares.Contract.Migrate")))
+            else if ((code == InteropMethodHash("Neo.Contract.Create")) || (code == InteropMethodHash("Neo.Contract.Migrate")) || (code == InteropMethodHash("AntShares.Contract.Create"))  || (code == InteropMethodHash("AntShares.Contract.Migrate")))
             {
                 long fee = 100L;
 
@@ -564,13 +569,13 @@ namespace Neo.SmartContract
                 }
                 return fee * 100000000L / ratio;
             }
-            else if ((code == Service.InteropHash("System.Storage.Get")) || (code == Service.InteropHash("Neo.Storage.Get")) || (code == Service.InteropHash("AntShares.Storage.Get")))
+            else if ((code == InteropMethodHash("System.Storage.Get")) || (code == InteropMethodHash("Neo.Storage.Get")) || (code == InteropMethodHash("AntShares.Storage.Get")))
                 return 100;
-            else if ((code == Service.InteropHash("System.Storage.Put")) || (code == Service.InteropHash("System.Storage.PutEx")) || (code == Service.InteropHash("Neo.Storage.Get")) || (code == Service.InteropHash("AntShares.Storage.Put")))
+            else if ((code == InteropMethodHash("System.Storage.Put")) || (code == InteropMethodHash("System.Storage.PutEx")) || (code == InteropMethodHash("Neo.Storage.Get")) || (code == InteropMethodHash("AntShares.Storage.Put")))
                 return ((CurrentContext.EvaluationStack.Peek(1).GetByteArray().Length + CurrentContext.EvaluationStack.Peek(2).GetByteArray().Length - 1) / 1024 + 1) * 1000;
-            else if ((code == Service.InteropHash("System.Storage.Delete")) || (code == Service.InteropHash("Neo.Storage.Delete")) || (code == Service.InteropHash("AntShares.Storage.Delete")))
+            else if ((code == InteropMethodHash("System.Storage.Delete")) || (code == InteropMethodHash("Neo.Storage.Delete")) || (code == InteropMethodHash("AntShares.Storage.Delete")))
                 return 100;
-            else 
+            else
                 return 1;
         }
 
@@ -618,7 +623,7 @@ namespace Neo.SmartContract
             engine.Execute();
             return engine;
         }
-        
+
         public static ApplicationEngine Run(byte[] script, IScriptContainer container = null, Block persistingBlock = null, bool testMode = false, Fixed8 extraGAS = default(Fixed8))
         {
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
