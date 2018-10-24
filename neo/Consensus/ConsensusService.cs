@@ -222,6 +222,8 @@ namespace Neo.Consensus
 
         private void OnConsensusPayload(ConsensusPayload payload)
         {
+            if (context.State.HasFlag(ConsensusState.BlockSent)) return;
+
             if (payload.ValidatorIndex == context.MyIndex ||
                 payload.Version != ConsensusContext.Version ||
                 payload.ValidatorIndex >= context.Validators.Length) return;
@@ -328,8 +330,10 @@ namespace Neo.Consensus
             if (context.PreparePayload == null)
             {
                 if (message.PreparePayload.ValidatorIndex != context.PrimaryIndex) return;
-                if (!Crypto.Default.VerifySignature(message.PreparePayload.GetHashData(), message.PrepareRequestPayload().PrepReqSignature, context.Validators[message.PreparePayload.ValidatorIndex].EncodePoint(false))) return;
-                context.PreparePayload = message.PreparePayload;
+                if (!Crypto.Default.VerifySignature(message.PreparePayload.GetHashData(), message.PrepareRequestMessage().PrepReqSignature, context.Validators[message.PreparePayload.ValidatorIndex].EncodePoint(false))) return;
+                OnPrepareRequestReceived(message.PreparePayload, message.PrepareRequestMessage());
+
+                //context.PreparePayload = message.PreparePayload;
                 Log($"{nameof(OnPrepareResponseReceived)}: indirectly from index={payload.ValidatorIndex}");
             }
 
