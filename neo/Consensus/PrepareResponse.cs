@@ -33,7 +33,7 @@ namespace Neo.Consensus
             PreparePayload = new ConsensusPayload();
             ISerializable iss = PreparePayload;
             iss.Deserialize(reader);
-            ResponseSignature = reader.ReadBytes(16);
+            ResponseSignature = reader.ReadBytes(64);
         }
 
         public override void Serialize(BinaryWriter writer)
