@@ -386,7 +386,7 @@ namespace Neo.Consensus
                     //context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair); // do not
                     //context.MessageSignatures[context.MyIndex] = context.MakePrepareRequest().Sign(context.KeyPair);
                     context.PreparePayload = context.MakePrepareRequest();
-                    SignedPayloads[context.MyIndex] = PreparePayload.Sign(context.KeyPair);
+                    context.SignedPayloads[context.MyIndex] = context.PreparePayload.Sign(context.KeyPair);
                 }
 
                 SignAndRelay(context.PreparePayload);
