@@ -16,25 +16,15 @@ namespace Neo.Consensus
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Nonce = reader.ReadUInt64();
-            NextConsensus = reader.ReadSerializable<UInt160>();
-            TransactionHashes = reader.ReadSerializableArray<UInt256>();
-            if (TransactionHashes.Distinct().Count() != TransactionHashes.Length)
-                throw new FormatException();
-            MinerTransaction = reader.ReadSerializable<MinerTransaction>();
-            if (MinerTransaction.Hash != TransactionHashes[0])
-                throw new FormatException();
-            //PrepReqSignature = reader.ReadBytes(64);
+            PreparePayload = reader.ReadSerializable<ConsensusPayload>();
+            ResponseSignature = reader.ReadBytes(16);
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(Nonce);
-            writer.Write(NextConsensus);
-            writer.Write(TransactionHashes);
-            writer.Write(MinerTransaction);
-            //writer.Write(PrepReqSignature);
+            writer.Write(PreparePayload);
+            writer.Write(ResponseSignature);
         }
     }
 }

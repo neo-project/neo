@@ -23,7 +23,7 @@ namespace Neo.Consensus
         {
             base.Deserialize(reader);
             FinalBlock = reader.ReadSerializable<Block>();
-            FinalSignature = reader.ReadSerializable<FinalSignature>();
+            FinalSignature = reader.ReadBytes(16);
         }
 
         public override void Serialize(BinaryWriter writer)
