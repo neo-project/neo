@@ -31,7 +31,7 @@ namespace Neo.Consensus
             base.Deserialize(reader);
             //PreparePayload = reader.ReadSerializable<ConsensusPayload>();
             PreparePayload = new ConsensusPayload();
-            iss = PreparePayload;
+            ISerializable iss = PreparePayload;
             iss.Deserialize(reader);
             ResponseSignature = reader.ReadBytes(16);
         }
