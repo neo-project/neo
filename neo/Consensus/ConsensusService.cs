@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+
 namespace Neo.Consensus
 {
     public sealed class ConsensusService : UntypedActor
