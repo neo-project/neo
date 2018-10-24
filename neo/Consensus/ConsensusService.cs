@@ -95,7 +95,8 @@ namespace Neo.Consensus
             {
                 context.State |= ConsensusState.CommitSent;
                 Block block = context.MakeHeader();
-                SignAndRelay(context.MakeCommitAgreement(block, block.Sign(context.KeyPair)));
+                context.FinalSignatures[context.MyIndex] = block.Sign(context.KeyPair);
+                SignAndRelay(context.MakeCommitAgreement(block, context.FinalSignatures[context.MyIndex]));
 
                 Log($"Commit sent: height={context.BlockIndex} hash={block.Hash} state={context.State}");
             }
