@@ -31,6 +31,20 @@ namespace Neo.Consensus
         public KeyPair KeyPair;
 
         public ConsensusPayload PreparePayload;
+        public PrepareRequest PrepareRequestMessage()
+        {
+            ConsensusMessage message;
+            try
+            {
+                message = ConsensusMessage.DeserializeFrom(PreparePayload.Data);
+            }
+            catch
+            {
+                return new PrepareRequest();
+            }
+            return (PrepareRequest)message;
+        }
+
         public byte[][] SignedPayloads;
         public byte[][] FinalSignatures;
 
@@ -132,7 +146,7 @@ namespace Neo.Consensus
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                PrepReqSignature = SignedPayloads[MyIndex]
+                PrepReqSignature = new byte[64]
             });
         }
 

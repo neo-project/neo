@@ -387,11 +387,13 @@ namespace Neo.Consensus
                 {
                     FillContext();
                     context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
-                    context.SignedPayloads[context.MyIndex] = new byte[64];
                     context.PreparePayload = context.MakePrepareRequest();
                     context.SignedPayloads[context.MyIndex] = context.PreparePayload.Sign(context.KeyPair);
+                    PrepareRequest tempPrePrepareWithSignature = context.PrepareRequestMessage();
+                    ConsensusMessage tempMessage = (ConsensusMessage)tempPrePrepareWithSignature;
+                    tempPrePrepareWithSignature.PrepReqSignature = context.SignedPayloads[context.MyIndex];
+                    context.PreparePayload.Data = tempMessage.ToArray();
                 }
-
                 SignAndRelay(context.PreparePayload);
                 if (context.TransactionHashes.Length > 1)
                 {
