@@ -3,6 +3,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
