@@ -383,9 +383,13 @@ namespace Neo.Ledger
 
             foreach (var tx in block.Transactions)
             {
-                if (!mem_pool_free.TryRemove(tx.Hash, out _))
+                if (tx.NetworkFee.value > 0)
                 {
                     mem_pool_nonfree.TryRemove(tx.Hash, out _);
+                }
+                else
+                {
+                    mem_pool_free.TryRemove(tx.Hash, out _);
                 }
             }
 
