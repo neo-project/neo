@@ -13,18 +13,18 @@ namespace Neo
 {
     public class NeoSystem : IDisposable
     {
-        public readonly ActorSystem ActorSystem = ActorSystem.Create(nameof(NeoSystem),
+        public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem),
             $"akka {{ log-dead-letters = off }}" +
             $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
             $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
             $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}" +
             $"protocol-handler-mailbox {{ mailbox-type: \"{typeof(ProtocolHandlerMailbox).AssemblyQualifiedName}\" }}" +
             $"consensus-service-mailbox {{ mailbox-type: \"{typeof(ConsensusServiceMailbox).AssemblyQualifiedName}\" }}");
-        public readonly IActorRef Blockchain;
-        public readonly IActorRef LocalNode;
-        internal readonly IActorRef TaskManager;
-        internal IActorRef Consensus;
-        private RpcServer rpcServer;
+        public IActorRef Blockchain { get; }
+        public IActorRef LocalNode { get; }
+        internal IActorRef TaskManager { get; }
+        public IActorRef Consensus { get; private set; }
+        public RpcServer RpcServer { get; private set; }
 
         public NeoSystem(Store store)
         {
@@ -36,7 +36,7 @@ namespace Neo
 
         public void Dispose()
         {
-            rpcServer?.Dispose();
+            RpcServer?.Dispose();
             ActorSystem.Stop(LocalNode);
             ActorSystem.Dispose();
         }
@@ -56,10 +56,11 @@ namespace Neo
             });
         }
 
-        public void StartRpc(IPAddress bindAddress, int port, Wallet wallet = null, string sslCert = null, string password = null, string[] trustedAuthorities = null)
+        public void StartRpc(IPAddress bindAddress, int port, Wallet wallet = null, string sslCert = null, string password = null,
+            string[] trustedAuthorities = null, Fixed8 maxGasInvoke = default(Fixed8))
         {
-            rpcServer = new RpcServer(this, wallet);
-            rpcServer.Start(bindAddress, port, sslCert, password, trustedAuthorities);
+            RpcServer = new RpcServer(this, wallet, maxGasInvoke);
+            RpcServer.Start(bindAddress, port, sslCert, password, trustedAuthorities);
         }
     }
 }

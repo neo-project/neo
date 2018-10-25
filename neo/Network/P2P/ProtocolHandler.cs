@@ -92,7 +92,7 @@ namespace Neo.Network.P2P
                     OnMemPoolMessageReceived();
                     break;
                 case "tx":
-                    if (msg.Payload.Length <= 1024 * 1024)
+                    if (msg.Payload.Length <= Transaction.MaxTransactionSize)
                         OnInventoryReceived(Transaction.DeserializeFrom(msg.Payload));
                     break;
                 case "verack":

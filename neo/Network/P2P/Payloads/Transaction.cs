@@ -16,6 +16,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public abstract class Transaction : IEquatable<Transaction>, IInventory
     {
+        public const int MaxTransactionSize = 102400;
         /// <summary>
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
@@ -251,6 +252,7 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
         {
+            if (Size > MaxTransactionSize) return false;
             for (int i = 1; i < Inputs.Length; i++)
                 for (int j = 0; j < i; j++)
                     if (Inputs[i].PrevHash == Inputs[j].PrevHash && Inputs[i].PrevIndex == Inputs[j].PrevIndex)

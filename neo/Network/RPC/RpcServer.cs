@@ -32,13 +32,15 @@ namespace Neo.Network.RPC
     public sealed class RpcServer : IDisposable
     {
         private readonly NeoSystem system;
-        private readonly Wallet wallet;
+        private Wallet wallet;
         private IWebHost host;
+        private Fixed8 maxGasInvoke;
 
-        public RpcServer(NeoSystem system, Wallet wallet = null)
+        public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8))
         {
             this.system = system;
             this.wallet = wallet;
+            this.maxGasInvoke = maxGasInvoke;
         }
 
         private static JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
@@ -71,7 +73,7 @@ namespace Neo.Network.RPC
 
         private JObject GetInvokeResult(byte[] script)
         {
-            ApplicationEngine engine = ApplicationEngine.Run(script);
+            ApplicationEngine engine = ApplicationEngine.Run(script, null, null, false, maxGasInvoke);
             JObject json = new JObject();
             json["script"] = script.ToHexString();
             json["state"] = engine.State;
@@ -127,6 +129,11 @@ namespace Neo.Network.RPC
                 default:
                     throw new RpcException(-500, "Unkown error.");
             }
+        }
+
+        public void OpenWallet(Wallet wallet)
+        {
+            this.wallet = wallet;
         }
 
         private JObject Process(string method, JArray _params)
