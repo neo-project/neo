@@ -17,14 +17,14 @@ namespace Neo.Consensus
         /// <summary>
         /// Constructors
         /// </summary>
-        public CommitAgreement() : base(ConsensusMessageType.CommitAgreement) { 
+        public CommitAgreement() : base(ConsensusMessageType.CommitAgreement) {
             FinalBlock = null;
         }
 
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            FinalBlock = reader.ReadSerializable<Block>();
+            FinalBlock.Deserialize(reader);
             FinalSignature = reader.ReadBytes(64);
         }
 
