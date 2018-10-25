@@ -74,6 +74,9 @@ namespace Neo.Consensus
 
         private void CheckExpectedView(byte view_number)
         {
+            Log($"CheckExpectedView: view_number={view_number} context.ViewNumber={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
+
+
             if (context.ViewNumber == view_number) return;
             //if (context.State.HasFlag(ConsensusState.CommitSent))
             //{
@@ -457,11 +460,13 @@ namespace Neo.Consensus
             }
             catch (InvalidOperationException)
             {
+                Log($"Invalid OperationException inside SignAndRelay");
                 return;
             }
 
             sc.Verifiable.Witnesses = sc.GetWitnesses();
             system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
+            Log($"Bye bye signAndRelay");
         }
     }
 

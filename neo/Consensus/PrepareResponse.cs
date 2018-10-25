@@ -29,7 +29,6 @@ namespace Neo.Consensus
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            //PreparePayload = reader.ReadSerializable<ConsensusPayload>();
             PreparePayload = new ConsensusPayload();
             ISerializable iss = PreparePayload;
             iss.Deserialize(reader);
