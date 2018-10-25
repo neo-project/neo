@@ -27,8 +27,12 @@ namespace Neo.Consensus
         public UInt160 NextConsensus;
         public UInt256[] TransactionHashes;
         public Dictionary<UInt256, Transaction> Transactions;
+        public byte[][] SignedPayloads;
+        public byte[][] FinalSignatures;
         public byte[] ExpectedView;
         public KeyPair KeyPair;
+
+        public int M => Validators.Length - (Validators.Length - 1) / 3;
 
         public ConsensusPayload PreparePayload;
         public PrepareRequest PrepareRequestMessage()
@@ -45,10 +49,6 @@ namespace Neo.Consensus
             return (PrepareRequest)message;
         }
 
-        public byte[][] SignedPayloads;
-        public byte[][] FinalSignatures;
-
-        public int M => Validators.Length - (Validators.Length - 1) / 3;
 
         public void ChangeView(byte view_number)
         {

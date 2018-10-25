@@ -228,11 +228,14 @@ namespace Neo.Consensus
 
         private void OnConsensusPayload(ConsensusPayload payload)
         {
+            Log($"OnConsensusPayload :)");
             //if (context.State.HasFlag(ConsensusState.BlockSent)) return;
 
             if (payload.ValidatorIndex == context.MyIndex ||
                 payload.Version != ConsensusContext.Version ||
                 payload.ValidatorIndex >= context.Validators.Length) return;
+
+            Log($"OnConsensusPayload II :)");
 
             if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
             {
@@ -242,6 +245,8 @@ namespace Neo.Consensus
                 }
                 return;
             }
+
+            Log($"OnConsensusPayload III :)");
 
             ConsensusMessage message;
             try
@@ -253,8 +258,12 @@ namespace Neo.Consensus
                 return;
             }
 
+            Log($"OnConsensusPayload IV :)");
+
             if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView)
                 return;
+
+            Log($"OnConsensusPayload V :)");
 
             switch (message.Type)
             {
@@ -271,6 +280,7 @@ namespace Neo.Consensus
                     OnCommitAgreement(payload, (CommitAgreement)message);
                     break;
             }
+            Log($"OMG! WE DID IT :)");
         }
 
         private void OnPersistCompleted(Block block)
@@ -352,6 +362,8 @@ namespace Neo.Consensus
 
         protected override void OnReceive(object message)
         {
+            Log($"On Receive.....");
+
             switch (message)
             {
                 case Start _:

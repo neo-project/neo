@@ -313,6 +313,7 @@ namespace Neo.Ledger
 
         private RelayResultReason OnNewConsensus(ConsensusPayload payload)
         {
+	    Log($"OnNewConsensus at Blockchain.cs :)");
             if (!payload.Verify(currentSnapshot)) return RelayResultReason.Invalid;
             system.Consensus?.Tell(payload);
             RelayCache.Add(payload);
