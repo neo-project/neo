@@ -118,7 +118,8 @@ namespace Neo.Ledger
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, Block> block_cache_unverified = new Dictionary<uint, Block>();
-        private readonly MemPool mem_pool = new MemPool();
+        private readonly MemPool mem_pool_free = new MemPool(20_000);
+        private readonly MemPool mem_pool_nonfree = new MemPool(50_000);
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private readonly HashSet<IActorRef> subscribers = new HashSet<IActorRef>();
         private Snapshot currentSnapshot;
@@ -187,7 +188,9 @@ namespace Neo.Ledger
 
         public bool ContainsTransaction(UInt256 hash)
         {
-            if (mem_pool.ContainsKey(hash)) return true;
+            if (mem_pool_free.ContainsKey(hash)) return true;
+            if (mem_pool_nonfree.ContainsKey(hash)) return true;
+
             return Store.ContainsTransaction(hash);
         }
 
@@ -217,7 +220,7 @@ namespace Neo.Ledger
 
         public IEnumerable<Transaction> GetMemoryPool()
         {
-            return mem_pool;
+            return mem_pool_nonfree.Concat(mem_pool_free);
         }
 
         public Snapshot GetSnapshot()
@@ -227,8 +230,12 @@ namespace Neo.Ledger
 
         public Transaction GetTransaction(UInt256 hash)
         {
-            if (mem_pool.TryGetValue(hash, out Transaction transaction))
+            if (mem_pool_free.TryGetValue(hash, out var transaction))
                 return transaction;
+
+            if (mem_pool_nonfree.TryGetValue(hash, out transaction))
+                return transaction;
+
             return Store.GetTransaction(hash);
         }
 
@@ -350,12 +357,21 @@ namespace Neo.Ledger
                 return RelayResultReason.Invalid;
             if (ContainsTransaction(transaction.Hash))
                 return RelayResultReason.AlreadyExists;
-            if (!transaction.Verify(currentSnapshot, mem_pool))
+            if (!transaction.Verify(currentSnapshot, GetMemoryPool()))
                 return RelayResultReason.Invalid;
             if (!Plugin.CheckPolicy(transaction))
                 return RelayResultReason.Unknown;
-            if (!mem_pool.TryAdd(transaction.Hash, transaction))
-                return RelayResultReason.OutOfMemory;
+
+            if (transaction.NetworkFee.value > 0)
+            {
+                if (!mem_pool_nonfree.TryAdd(transaction.Hash, transaction))
+                    return RelayResultReason.OutOfMemory;
+            }
+            else
+            {
+                if (!mem_pool_free.TryAdd(transaction.Hash, transaction))
+                    return RelayResultReason.OutOfMemory;
+            }
 
             system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
             return RelayResultReason.Succeed;
@@ -364,14 +380,24 @@ namespace Neo.Ledger
         private void OnPersistCompleted(Block block)
         {
             block_cache.Remove(block.Hash);
-            foreach (Transaction tx in block.Transactions)
-                mem_pool.TryRemove(tx.Hash, out _);
-            foreach (Transaction tx in mem_pool
+
+            foreach (var tx in block.Transactions)
+            {
+                if (!mem_pool_free.TryRemove(tx.Hash, out _))
+                {
+                    mem_pool_nonfree.TryRemove(tx.Hash, out _);
+                }
+            }
+
+            foreach (Transaction tx in GetMemoryPool()
                 .OrderByDescending(p => p.NetworkFee / p.Size)
                 .ThenByDescending(p => p.NetworkFee)
                 .ThenByDescending(p => new BigInteger(p.Hash.ToArray())))
                 Self.Tell(tx, ActorRefs.NoSender);
-            mem_pool.Clear();
+
+            mem_pool_nonfree.Clear();
+            mem_pool_free.Clear();
+
             PersistCompleted completed = new PersistCompleted { Block = block };
             system.Consensus?.Tell(completed);
             Distribute(completed);
