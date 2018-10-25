@@ -84,10 +84,14 @@ namespace Neo.Consensus
             //    return;
             //}
 
+            Log($"CheckExpectedView II");
+
             if (context.ExpectedView.Count(p => p == view_number) >= context.M)
             {
                 InitializeConsensus(view_number);
             }
+            Log($"Bye Check Expected View");
+
         }
 
         private void CheckPayloadSignatures()
