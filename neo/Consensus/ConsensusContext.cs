@@ -119,7 +119,7 @@ namespace Neo.Consensus
             //if (_header == null) return null;
             return MakePayload(new CommitAgreement()
             {
-                FinalBlock = FinalBlock,
+                //FinalBlock = FinalBlock,
                 FinalSignature = MyFinalSignature
             });
         }

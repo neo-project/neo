@@ -90,21 +90,28 @@ namespace Neo.Consensus
             {
                 InitializeConsensus(view_number);
             }
-            Log($"Bye Check Expected View");
+            Log($"CheckExpectedView III - Bye Check Expected View");
 
         }
 
         private void CheckPayloadSignatures()
         {
+            Log($"CheckPayloadSignatures....SignedPayloads:{context.SignedPayloads.Count(p => p != null)}");
+
             if (!context.State.HasFlag(ConsensusState.CommitSent) &&
                 context.SignedPayloads.Count(p => p != null) >= context.M &&
                 context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 context.State |= ConsensusState.CommitSent;
+                Log($"Creating Block Header");
                 Block block = context.MakeHeader();
+                if (block == null) return;
+                Log($"Creating Block Header Completed!");
+                Log($"Block is {block}");
                 context.FinalSignatures[context.MyIndex] = block.Sign(context.KeyPair);
+                Log($"Block was signed {context.FinalSignatures[context.MyIndex]}");
                 SignAndRelay(context.MakeCommitAgreement(block, context.FinalSignatures[context.MyIndex]));
-
+                Log($"Block was MakeCommitAgreement");
                 Log($"Commit sent: height={context.BlockIndex} hash={block.Hash} state={context.State}");
             }
         }
@@ -115,10 +122,10 @@ namespace Neo.Consensus
             //    !context.TryToCommit(payload, message)) return;
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
 
-            if (!Crypto.Default.VerifySignature(message.FinalBlock.GetHashData(), message.FinalSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
+            if (!Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), message.FinalSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
             context.FinalSignatures[payload.ValidatorIndex] = message.FinalSignature;
 
-            Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} hash={message.FinalBlock.Hash.ToString()} view={message.ViewNumber} index={payload.ValidatorIndex}");
+            Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} hash={context.MakeHeader().Hash.ToString()} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
             if (context.FinalSignatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
@@ -126,6 +133,8 @@ namespace Neo.Consensus
 
                 Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
                 Block block = context.MakeHeader();
+                if (block == null) return;
+
                 ContractParametersContext sc = new ContractParametersContext(block);
                 for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
                     if (context.FinalSignatures[i] != null)
@@ -232,12 +241,17 @@ namespace Neo.Consensus
 
         private void OnConsensusPayload(ConsensusPayload payload)
         {
-            Log($"OnConsensusPayload :)");
+            Log($"OnConsensusPayload 1:) payload:{payload}");
+            Log($"OnConsensusPayload 2:) {payload.ValidatorIndex} / {context.MyIndex}");
+            Log($"OnConsensusPayload 3:) {payload.Version} / {ConsensusContext.Version}");
+            Log($"OnConsensusPayload 4:) -{context.Validators}-");
+            Log($"OnConsensusPayload 5 {payload.ValidatorIndex} / {context.Validators.Length}");
+
+
             //if (context.State.HasFlag(ConsensusState.BlockSent)) return;
 
             if (payload.ValidatorIndex == context.MyIndex ||
-                payload.Version != ConsensusContext.Version ||
-                payload.ValidatorIndex >= context.Validators.Length) return;
+                payload.Version != ConsensusContext.Version) return;
 
             Log($"OnConsensusPayload II :)");
 
@@ -249,6 +263,8 @@ namespace Neo.Consensus
                 }
                 return;
             }
+
+            if (payload.ValidatorIndex >= context.Validators.Length) return;
 
             Log($"OnConsensusPayload III :)");
 
@@ -344,16 +360,16 @@ namespace Neo.Consensus
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
-            //if (context.Signatures[payload.ValidatorIndex] != null) return;
-            if (context.SignedPayloads[payload.ValidatorIndex] != null) return;
-            /*
-            if (context.PreparePayload == null || context.SignedPayloads[payload.ValidatorIndex] == null )
+
+            if (context.PreparePayload == null)
             {
                 if (message.PreparePayload.ValidatorIndex != context.PrimaryIndex) return;
                 if (!Crypto.Default.VerifySignature(message.PreparePayload.GetHashData(), message.PrepareRequestMessage().PrepReqSignature, context.Validators[message.PreparePayload.ValidatorIndex].EncodePoint(false))) return;
                 Log($"{nameof(OnPrepareRequestReceived)}: indirectly from index={payload.ValidatorIndex}");
                 OnPrepareRequestReceived(message.PreparePayload, message.PrepareRequestMessage());
-            }*/
+            }
+
+            if (context.SignedPayloads[payload.ValidatorIndex] != null) return;
 
 
             //Block header = context.MakeHeader();

@@ -9,8 +9,8 @@ namespace Neo.Consensus
         /// <summary>
         /// Block hash of the signature
         /// </summary>
-        //public UInt256 BlockHash;
-        public Block FinalBlock;
+
+        //public Block FinalBlock;
         public byte[] FinalSignature;
         // TODO: send partials?
 
@@ -18,20 +18,20 @@ namespace Neo.Consensus
         /// Constructors
         /// </summary>
         public CommitAgreement() : base(ConsensusMessageType.CommitAgreement) {
-            FinalBlock = null;
+            //FinalBlock = null;
         }
 
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            FinalBlock.Deserialize(reader);
+            //FinalBlock.Deserialize(reader);
             FinalSignature = reader.ReadBytes(64);
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            FinalBlock.Serialize(writer);
+            //FinalBlock.Serialize(writer);
             writer.Write(FinalSignature);
         }
     }
