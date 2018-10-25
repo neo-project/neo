@@ -17,7 +17,9 @@ namespace Neo.Consensus
         /// <summary>
         /// Constructors
         /// </summary>
-        public CommitAgreement() : base(ConsensusMessageType.CommitAgreement) { }
+        public CommitAgreement() : base(ConsensusMessageType.CommitAgreement) { 
+            FinalBlock = null;
+        }
 
         public override void Deserialize(BinaryReader reader)
         {
@@ -29,7 +31,7 @@ namespace Neo.Consensus
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(FinalBlock);
+            FinalBlock.Serialize(writer);
             writer.Write(FinalSignature);
         }
     }

@@ -366,8 +366,6 @@ namespace Neo.Consensus
 
         protected override void OnReceive(object message)
         {
-            Log($"On Receive.....");
-
             switch (message)
             {
                 case Start _:
