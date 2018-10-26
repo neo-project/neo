@@ -28,7 +28,6 @@ Coverage
 	* Header.cs
 	* Helper.cs
 	* InvocationTransaction.cs
-	* IssueTransaction.cs
 	* MinerTransaction.cs
 	* SpentCoin.cs
 	* SpentCoinState.cs

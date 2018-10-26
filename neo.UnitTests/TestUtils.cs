@@ -1,9 +1,7 @@
-﻿using System;
-using Neo.Core;
-using Neo.Cryptography.ECC;
+﻿using Neo.Cryptography.ECC;
+using Neo.Network.P2P.Payloads;
 using Neo.VM;
-using Neo.Wallets;
-using Neo.SmartContract;
+using System;
 
 namespace Neo.UnitTests
 {
@@ -30,7 +28,7 @@ namespace Neo.UnitTests
                 Attributes = new TransactionAttribute[0],
                 Inputs = new CoinReference[0],
                 Outputs = new TransactionOutput[0],
-                Scripts = new Witness[0]
+                Witnesses = new Witness[0]
             };
         }
 
@@ -42,48 +40,7 @@ namespace Neo.UnitTests
                 Attributes = new TransactionAttribute[0],
                 Inputs = new CoinReference[0],
                 Outputs = new TransactionOutput[0],
-                Scripts = new Witness[0]
-            };
-        }
-
-        public static IssueTransaction GetIssueTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
-        {
-            TestUtils.SetupTestBlockchain(assetId);
-
-            CoinReference[] inputsVal;
-            if (inputVal)
-            {
-                inputsVal = new[]
-                {
-                    TestUtils.GetCoinReference(null)
-                };
-            }
-            else
-            {
-                inputsVal = new CoinReference[0];
-            }
-
-            return new IssueTransaction
-            {
-                Attributes = new TransactionAttribute[0],
-                Inputs = inputsVal,
-                Outputs = new[]
-                {
-                    new TransactionOutput
-                    {
-                        AssetId = assetId,
-                        Value = Fixed8.FromDecimal(outputVal),
-                        ScriptHash = Contract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
-                    }
-                },
-                Scripts = new[]
-                {
-                    new Witness
-                    {
-                        InvocationScript = new byte[0],
-                        VerificationScript = new[] { (byte)OpCode.PUSHT }
-                    }
-                }
+                Witnesses = new Witness[0]
             };
         }
 
@@ -95,12 +52,6 @@ namespace Neo.UnitTests
                 PrevHash = prevHash,
                 PrevIndex = 0
             };
-        }
-
-        public static void SetupTestBlockchain(UInt256 assetId)
-        {
-            Blockchain testBlockchain = new TestBlockchain(assetId);
-            Blockchain.RegisterBlockchain(testBlockchain);
         }
 
         public static void SetupHeaderWithValues(Header header, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal)
@@ -142,7 +93,7 @@ namespace Neo.UnitTests
                 InvocationScript = new byte[0],
                 VerificationScript = new[] { (byte)OpCode.PUSHT }
             };
-            bb.Script = scriptVal;
+            bb.Witness = scriptVal;
         }
     }    
 }

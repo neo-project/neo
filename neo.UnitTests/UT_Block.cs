@@ -1,7 +1,8 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Core;
 using Neo.IO.Json;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
 using System.IO;
@@ -54,7 +55,7 @@ namespace Neo.UnitTests
             uut.Header.Timestamp.Should().Be(timestampVal);
             uut.Header.Index.Should().Be(indexVal);
             uut.Header.ConsensusData.Should().Be(consensusDataVal);
-            uut.Header.Script.Should().Be(scriptVal);
+            uut.Header.Witness.Should().Be(scriptVal);
         }
 
         [TestMethod]
@@ -75,7 +76,6 @@ namespace Neo.UnitTests
 
         private IssueTransaction getIssueTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
         {
-            TestUtils.SetupTestBlockchain(assetId);
 
             CoinReference[] inputsVal;
             if (inputVal)
@@ -104,7 +104,7 @@ namespace Neo.UnitTests
                         ScriptHash = Contract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
                     }
                 },
-                Scripts = new[]
+                Witnesses = new[]
                 {
                     new Witness
                     {
@@ -117,7 +117,6 @@ namespace Neo.UnitTests
 
         private ContractTransaction getContractTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
         {
-            TestUtils.SetupTestBlockchain(assetId);
 
             CoinReference[] inputsVal;
             if (inputVal)
@@ -145,7 +144,7 @@ namespace Neo.UnitTests
                         ScriptHash = Contract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
                     }
                 },
-                Scripts = new[]
+                Witnesses = new[]
                 {
                     new Witness
                     {
@@ -276,63 +275,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void CalculateNetFee_In()
-        {
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRootVal;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
-
-            uut.Transactions = new Transaction[1] {
-                getContractTransaction(true, 0, Blockchain.UtilityToken.Hash)
-            };
-
-            Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.FromDecimal(50));
-        }
-
-        [TestMethod]
-        public void CalculateNetFee_In_And_Out()
-        {
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRootVal;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
-
-            uut.Transactions = new Transaction[1] {
-                getContractTransaction(true, 100, Blockchain.UtilityToken.Hash)
-            };
-
-            Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.FromDecimal(-50));
-        }
-
-        [TestMethod]
-        public void CalculateNetFee_SystemFee()
-        {
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRootVal;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
-
-            uut.Transactions = new Transaction[1] {
-                TestUtils.GetIssueTransaction(true, 0, new UInt256(TestUtils.GetByteArray(32, 0x42)))
-            };
-
-            Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.FromDecimal(-500));
-        }
-
-        [TestMethod]
         public void Serialize()
         {
             UInt256 val256 = UInt256.Zero;
@@ -398,9 +340,9 @@ namespace Neo.UnitTests
             uut.Index.Should().Be(indexVal);
             uut.ConsensusData.Should().Be(consensusDataVal);
             uut.NextConsensus.Should().Be(val160);
-            uut.Script.InvocationScript.Length.Should().Be(0);
-            uut.Script.Size.Should().Be(scriptVal.Size);
-            uut.Script.VerificationScript[0].Should().Be(scriptVal.VerificationScript[0]);
+            uut.Witness.InvocationScript.Length.Should().Be(0);
+            uut.Witness.Size.Should().Be(scriptVal.Size);
+            uut.Witness.VerificationScript[0].Should().Be(scriptVal.VerificationScript[0]);
             if (testTransactions)
             {
                 uut.Transactions.Length.Should().Be(1);
@@ -454,71 +396,6 @@ namespace Neo.UnitTests
             TestUtils.SetupBlockWithValues(uut, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
 
             uut.Equals(newBlock).Should().BeTrue();
-        }
-
-        [TestMethod]
-        public void Trim()
-        {
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRoot;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
-
-            byte[] data = uut.Trim();
-            byte[] requiredData = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 1, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251 };
-
-            data.Length.Should().Be(141);
-            for (int i = 0; i < 141; i++)
-            {
-                data[i].Should().Be(requiredData[i]);
-            }
-        }
-
-        [TestMethod]
-        public void FromTrimmedData()
-        {
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRoot;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(new Block(), val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
-
-            byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 1, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251 };
-
-            uut = Block.FromTrimmedData(data, 0, x => TestUtils.GetMinerTransaction());
-
-            assertStandardBlockTestVals(val256, merkRoot, val160, timestampVal, indexVal, consensusDataVal, scriptVal, transactionsVal);
-            uut.Transactions[0].Should().Be(TestUtils.GetMinerTransaction());
-        }
-
-        [TestMethod]
-        public void FromTrimmedData_MultipleTx()
-        {
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRoot;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(new Block(), val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 3);
-
-            byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 3, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251 };
-
-            uut = Block.FromTrimmedData(data, 0, x => TestUtils.GetMinerTransaction());
-
-            assertStandardBlockTestVals(val256, merkRoot, val160, timestampVal, indexVal, consensusDataVal, scriptVal, transactionsVal, testTransactions: false);
-            uut.Transactions.Length.Should().Be(3);
-            uut.Transactions[0].Should().Be(TestUtils.GetMinerTransaction());
-            uut.Transactions[1].Should().Be(TestUtils.GetMinerTransaction());
-            uut.Transactions[2].Should().Be(TestUtils.GetMinerTransaction());
         }
 
         [TestMethod]
@@ -582,59 +459,6 @@ namespace Neo.UnitTests
             txObj[0]["net_fee"].AsString().Should().Be("0");
             ((JArray)txObj[0]["scripts"]).Count.Should().Be(0);
             txObj[0]["nonce"].AsNumber().Should().Be(2083236893);
-        }
-
-        [TestMethod]
-        public void Verify_CompletelyFalse()
-        {
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRoot;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
-
-            TestUtils.SetupTestBlockchain(UInt256.Zero);
-
-            uut.Verify(false).Should().BeTrue();
-        }
-
-        [TestMethod]
-        public void Verify_CompletelyFalse_MinerTransaction_After_First()
-        {
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRoot;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 3);
-
-            TestUtils.SetupTestBlockchain(UInt256.Zero);
-
-            uut.Verify(false).Should().BeFalse();
-        }
-
-        [TestMethod]
-        public void Verify_CompletelyTrue_NextConsensus_Fail()
-        {
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRoot;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 1);
-            // passing NextConsensus below 
-            // uut.NextConsensus = new UInt160(new byte[] { 23, 52, 98, 203, 0, 206, 138, 37, 140, 16, 251, 231, 61, 120, 218, 200, 182, 125, 120, 73 });
-
-            TestUtils.SetupTestBlockchain(UInt256.Zero);
-
-            uut.Verify(true).Should().BeFalse();
         }
     }
 }

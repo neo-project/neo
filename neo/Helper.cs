@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -214,6 +215,20 @@ namespace Neo
             {
                 return *((ulong*)pbyte);
             }
+        }
+
+        internal static IPAddress Unmap(this IPAddress address)
+        {
+            if (address.IsIPv4MappedToIPv6)
+                address = address.MapToIPv4();
+            return address;
+        }
+
+        internal static IPEndPoint Unmap(this IPEndPoint endPoint)
+        {
+            if (!endPoint.Address.IsIPv4MappedToIPv6)
+                return endPoint;
+            return new IPEndPoint(endPoint.Address.Unmap(), endPoint.Port);
         }
 
         internal static long WeightedAverage<T>(this IEnumerable<T> source, Func<T, long> valueSelector, Func<T, long> weightSelector)

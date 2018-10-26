@@ -13,9 +13,7 @@ namespace Neo.IO.Json
 
         public JString(string value)
         {
-            if (value == null)
-                throw new ArgumentNullException();
-            this.Value = value;
+            this.Value = value ?? throw new ArgumentNullException();
         }
 
         public override bool AsBoolean()
@@ -76,7 +74,7 @@ namespace Neo.IO.Json
             return false;
         }
 
-        internal new static JString Parse(TextReader reader)
+        internal static JString Parse(TextReader reader)
         {
             SkipSpace(reader);
             char[] buffer = new char[4];

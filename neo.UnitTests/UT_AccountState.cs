@@ -1,8 +1,8 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Core;
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.Ledger;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;

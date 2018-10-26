@@ -1,21 +1,24 @@
-﻿using Neo.Core;
-using Neo.Cryptography;
+﻿using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.Network.Payloads;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.Wallets;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.Consensus
 {
-    internal class ConsensusContext
+    internal class ConsensusContext : IDisposable
     {
         public const uint Version = 0;
         public ConsensusState State;
         public UInt256 PrevHash;
         public uint BlockIndex;
         public byte ViewNumber;
+        public Snapshot Snapshot;
         public ECPoint[] Validators;
         public int MyIndex;
         public uint PrimaryIndex;
@@ -32,10 +35,9 @@ namespace Neo.Consensus
 
         public void ChangeView(byte view_number)
         {
-            int p = ((int)BlockIndex - view_number) % Validators.Length;
             State &= ConsensusState.SignatureSent;
             ViewNumber = view_number;
-            PrimaryIndex = p >= 0 ? (uint)p : (uint)(p + Validators.Length);
+            PrimaryIndex = GetPrimaryIndex(view_number);
             if (State == ConsensusState.Initial)
             {
                 TransactionHashes = null;
@@ -44,6 +46,17 @@ namespace Neo.Consensus
             if (MyIndex >= 0)
                 ExpectedView[MyIndex] = view_number;
             _header = null;
+        }
+
+        public void Dispose()
+        {
+            Snapshot?.Dispose();
+        }
+
+        public uint GetPrimaryIndex(byte view_number)
+        {
+            int p = ((int)BlockIndex - view_number) % Validators.Length;
+            return p >= 0 ? (uint)p : (uint)(p + Validators.Length);
         }
 
         public ConsensusPayload MakeChangeView()
@@ -111,11 +124,13 @@ namespace Neo.Consensus
 
         public void Reset(Wallet wallet)
         {
+            Snapshot?.Dispose();
+            Snapshot = Blockchain.Singleton.GetSnapshot();
             State = ConsensusState.Initial;
-            PrevHash = Blockchain.Default.CurrentBlockHash;
-            BlockIndex = Blockchain.Default.Height + 1;
+            PrevHash = Snapshot.CurrentBlockHash;
+            BlockIndex = Snapshot.Height + 1;
             ViewNumber = 0;
-            Validators = Blockchain.Default.GetValidators();
+            Validators = Snapshot.GetValidators();
             MyIndex = -1;
             PrimaryIndex = BlockIndex % (uint)Validators.Length;
             TransactionHashes = null;

@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Network.P2P.Payloads;
 using System.IO;
 using System.Text;
-using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Core;
 
 namespace Neo.UnitTests
 {
@@ -68,9 +66,9 @@ namespace Neo.UnitTests
             uut.Index.Should().Be(indexVal);
             uut.ConsensusData.Should().Be(consensusDataVal);
             uut.NextConsensus.Should().Be(val160);
-            uut.Script.InvocationScript.Length.Should().Be(0);
-            uut.Script.Size.Should().Be(scriptVal.Size);
-            uut.Script.VerificationScript[0].Should().Be(scriptVal.VerificationScript[0]);            
+            uut.Witness.InvocationScript.Length.Should().Be(0);
+            uut.Witness.Size.Should().Be(scriptVal.Size);
+            uut.Witness.VerificationScript[0].Should().Be(scriptVal.VerificationScript[0]);            
         }
 
         [TestMethod]
@@ -106,24 +104,6 @@ namespace Neo.UnitTests
         public void Equals_SameObject()
         {
             uut.Equals((object)uut).Should().BeTrue();
-        }
-
-        [TestMethod]
-        public void FromTrimmedData()
-        {
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRoot;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            TestUtils.SetupHeaderWithValues(new Header(), val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
-
-            byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 0 };
-
-            uut = Header.FromTrimmedData(data, 0);
-
-            assertStandardHeaderTestVals(val256, merkRoot, val160, timestampVal, indexVal, consensusDataVal, scriptVal);
         }
 
         [TestMethod]

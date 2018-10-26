@@ -233,7 +233,7 @@ namespace Neo
 
         public static Fixed8 operator *(Fixed8 x, long y)
         {
-            x.value *= y;
+            x.value = checked(x.value * y);
             return x;
         }
 

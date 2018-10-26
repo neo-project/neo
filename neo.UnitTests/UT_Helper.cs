@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Text;
+﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using FluentAssertions;
-using Neo.Core;
+using Neo.Network.P2P;
+using Neo.SmartContract;
 using Neo.Wallets;
 
 namespace Neo.UnitTests
