@@ -118,7 +118,7 @@ namespace Neo.Ledger
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, Block> block_cache_unverified = new Dictionary<uint, Block>();
-        private readonly MemPool mem_pool = new MemPool(50_000, 20_000, 1);
+        private readonly MemPool mem_pool = new MemPool(50_000, 1);
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private readonly HashSet<IActorRef> subscribers = new HashSet<IActorRef>();
         private Snapshot currentSnapshot;
