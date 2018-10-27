@@ -82,7 +82,7 @@ namespace Neo.Ledger
         static void RemoveOldFree(ConcurrentDictionary<UInt256, PoolItem> pool, DateTime time)
         {
             UInt256[] hashes = pool
-                .Where(p => p.Value.Timestamp < time && p.Value.Transaction.NetworkFee == Fixed8.Zero)
+                .Where(p => p.Value.Timestamp < time)
                 .Select(p => p.Key)
                 .ToArray();
 
