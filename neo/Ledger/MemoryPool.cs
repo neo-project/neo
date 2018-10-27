@@ -25,15 +25,14 @@ namespace Neo.Ledger
         private readonly ConcurrentDictionary<UInt256, PoolItem> _mem_pool_fee = new ConcurrentDictionary<UInt256, PoolItem>();
         private readonly ConcurrentDictionary<UInt256, PoolItem> _mem_pool_free = new ConcurrentDictionary<UInt256, PoolItem>();
 
+        public int Capacity { get; }
         public int Count => _mem_pool_fee.Count + _mem_pool_free.Count;
+        public Fixed8 Threshold { get; }
 
-        public int MemoryPoolSize { get; }
-        public readonly Fixed8 Threshold;
-
-        public MemoryPool(int maxSize, long threshold)
+        public MemoryPool(int capacity, Fixed8 threshold = default)
         {
-            MemoryPoolSize = maxSize;
-            Threshold = new Fixed8(threshold);
+            Capacity = capacity;
+            Threshold = threshold;
         }
 
         public void Clear()
@@ -54,7 +53,7 @@ namespace Neo.Ledger
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        private bool IsFree(Transaction tx) => tx.NetworkFee < Threshold;
+        private bool IsFree(Transaction tx) => tx.NetworkFee <= Threshold;
 
         static void RemoveLowestFee(ConcurrentDictionary<UInt256, PoolItem> pool, int count)
         {
@@ -108,16 +107,16 @@ namespace Neo.Ledger
 
             pool.TryAdd(hash, new PoolItem(tx));
 
-            if (Count > MemoryPoolSize)
+            if (Count > Capacity)
             {
                 RemoveOldFree(_mem_pool_free, DateTime.UtcNow.AddSeconds(-Blockchain.SecondsPerBlock * 20));
 
-                var exceed = Count - MemoryPoolSize;
+                var exceed = Count - Capacity;
 
                 if (exceed > 0)
                 {
                     RemoveLowestFee(_mem_pool_free, exceed);
-                    exceed = Count - MemoryPoolSize;
+                    exceed = Count - Capacity;
 
                     if (exceed > 0)
                     {
