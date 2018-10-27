@@ -54,12 +54,11 @@ namespace Neo.Ledger
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        bool IsFree(Transaction tx) => tx.NetworkFee < Threshold;
+        private bool IsFree(Transaction tx) => tx.NetworkFee < Threshold;
 
         static void RemoveLowestFee(ConcurrentDictionary<UInt256, PoolItem> pool, int count)
         {
             if (count <= 0) return;
-
             if (count >= pool.Count)
             {
                 pool.Clear();

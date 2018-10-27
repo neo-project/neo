@@ -188,7 +188,6 @@ namespace Neo.Ledger
         public bool ContainsTransaction(UInt256 hash)
         {
             if (mem_pool.ContainsKey(hash)) return true;
-
             return Store.ContainsTransaction(hash);
         }
 
@@ -228,9 +227,8 @@ namespace Neo.Ledger
 
         public Transaction GetTransaction(UInt256 hash)
         {
-            if (mem_pool.TryGetValue(hash, out var transaction))
+            if (mem_pool.TryGetValue(hash, out Transaction transaction))
                 return transaction;
-
             return Store.GetTransaction(hash);
         }
 
@@ -367,20 +365,15 @@ namespace Neo.Ledger
         private void OnPersistCompleted(Block block)
         {
             block_cache.Remove(block.Hash);
-
-            foreach (var tx in block.Transactions)
-            {
+            foreach (Transaction tx in block.Transactions)
                 mem_pool.TryRemove(tx.Hash, out _);
-            }
 
             foreach (Transaction tx in GetMemoryPool()
                 .OrderByDescending(p => p.NetworkFee / p.Size)
                 .ThenByDescending(p => p.NetworkFee)
                 .ThenByDescending(p => new BigInteger(p.Hash.ToArray())))
                 Self.Tell(tx, ActorRefs.NoSender);
-
             mem_pool.Clear();
-
             PersistCompleted completed = new PersistCompleted { Block = block };
             system.Consensus?.Tell(completed);
             Distribute(completed);
