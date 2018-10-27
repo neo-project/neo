@@ -380,7 +380,7 @@ namespace Neo.Ledger
             block_cache.Remove(block.Hash);
             foreach (Transaction tx in block.Transactions)
                 mem_pool.TryRemove(tx.Hash, out _);
-            
+
             foreach (Transaction tx in mem_pool.Values
                 .OrderByDescending(p => p.NetworkFee / p.Size)
                 .ThenByDescending(p => p.NetworkFee)
@@ -594,6 +594,8 @@ namespace Neo.Ledger
                     snapshot.HeaderHashIndex.GetAndChange().Hash = block.Hash;
                     snapshot.HeaderHashIndex.GetAndChange().Index = block.Index;
                 }
+                foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
+                    plugin.OnPersist(snapshot);
                 snapshot.Commit();
             }
             UpdateCurrentSnapshot();
