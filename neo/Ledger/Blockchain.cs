@@ -120,6 +120,7 @@ namespace Neo.Ledger
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, Block> block_cache_unverified = new Dictionary<uint, Block>();
         private readonly ConcurrentDictionary<UInt256, Transaction> mem_pool = new ConcurrentDictionary<UInt256, Transaction>();
+        private readonly ConcurrentDictionary<UInt256, Transaction> mem_pool_unverified = new ConcurrentDictionary<UInt256, Transaction>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private readonly HashSet<IActorRef> subscribers = new HashSet<IActorRef>();
         private Snapshot currentSnapshot;
@@ -231,6 +232,12 @@ namespace Neo.Ledger
             if (mem_pool.TryGetValue(hash, out Transaction transaction))
                 return transaction;
             return Store.GetTransaction(hash);
+        }
+
+        internal Transaction GetUnverifiedTransaction(UInt256 hash)
+        {
+            mem_pool_unverified.TryGetValue(hash, out Transaction transaction);
+            return transaction;
         }
 
         private void OnImport(IEnumerable<Block> blocks)
@@ -380,12 +387,15 @@ namespace Neo.Ledger
             block_cache.Remove(block.Hash);
             foreach (Transaction tx in block.Transactions)
                 mem_pool.TryRemove(tx.Hash, out _);
-
+            mem_pool_unverified.Clear();
             foreach (Transaction tx in mem_pool.Values
                 .OrderByDescending(p => p.NetworkFee / p.Size)
                 .ThenByDescending(p => p.NetworkFee)
                 .ThenByDescending(p => new BigInteger(p.Hash.ToArray())))
+            {
+                mem_pool_unverified.TryAdd(tx.Hash, tx);
                 Self.Tell(tx, ActorRefs.NoSender);
+            }
             mem_pool.Clear();
             PersistCompleted completed = new PersistCompleted { Block = block };
             system.Consensus?.Tell(completed);
