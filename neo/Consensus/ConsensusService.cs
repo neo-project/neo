@@ -241,19 +241,19 @@ namespace Neo.Consensus
 
         private void OnConsensusPayload(ConsensusPayload payload)
         {
+
             Log($"OnConsensusPayload 1:) payload:{payload}");
             Log($"OnConsensusPayload 2:) {payload.ValidatorIndex} / {context.MyIndex}");
             Log($"OnConsensusPayload 3:) {payload.Version} / {ConsensusContext.Version}");
             Log($"OnConsensusPayload 4:) -{context.Validators}-");
             Log($"OnConsensusPayload 5 {payload.ValidatorIndex} / {context.Validators.Length}");
-
-
-            //if (context.State.HasFlag(ConsensusState.BlockSent)) return;
-
-            if (payload.ValidatorIndex == context.MyIndex ||
-                payload.Version != ConsensusContext.Version) return;
-
             Log($"OnConsensusPayload II :)");
+
+
+            if (context.State.HasFlag(ConsensusState.BlockSent)) return;
+            if (payload.ValidatorIndex == context.MyIndex) return;
+            if (payload.Version != ConsensusContext.Version)
+                return;
 
             if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
             {
@@ -336,14 +336,33 @@ namespace Neo.Consensus
             context.PreparePayload = payload;
             context.SignedPayloads = new byte[context.Validators.Length][];
             //TODO remove signature from context.PreparePayload and initialize with 64 bytyes and check message.PrepReqSignature from Speaker
+            //Otherwise, next check will fail
+            //if (!Crypto.Default.VerifySignature(context.PreparePayload, message.PrepReqSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
+            for (int i = 0; i < context.SignedPayloads.Length; i++)
+                if (context.SignedPayloads[i] != null)
+                    if (!Crypto.Default.VerifySignature(context.PreparePayload, context.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
+                        context.SignedPayloads[i] = null;
             context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
+
             Dictionary<UInt256, Transaction> mempool = Blockchain.Singleton.GetMemoryPool().ToDictionary(p => p.Hash);
+            List<Transaction> unverified = new List<Transaction>();
             foreach (UInt256 hash in context.TransactionHashes.Skip(1))
             {
                 if (mempool.TryGetValue(hash, out Transaction tx))
+                {
                     if (!AddTransaction(tx, false))
                         return;
+                }
+                else
+                {
+                    tx = Blockchain.Singleton.GetUnverifiedTransaction(hash);
+                    if (tx != null)
+                        unverified.Add(tx);
+                }
             }
+            foreach (Transaction tx in unverified)
+                if (!AddTransaction(tx, true))
+                    return;
             if (!AddTransaction(message.MinerTransaction, true)) return;
             if (context.Transactions.Count < context.TransactionHashes.Length)
             {
@@ -358,7 +377,6 @@ namespace Neo.Consensus
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
-
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
 
             if (context.PreparePayload == null)
@@ -410,6 +428,7 @@ namespace Neo.Consensus
 
         private void OnTimer(Timer timer)
         {
+            if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (timer.Height != context.BlockIndex || timer.ViewNumber != context.ViewNumber) return;
             Log($"timeout: height={timer.Height} view={timer.ViewNumber} state={context.State}");
             if (context.State.HasFlag(ConsensusState.Primary) && !context.State.HasFlag(ConsensusState.RequestSent))
@@ -444,7 +463,7 @@ namespace Neo.Consensus
         private void OnTransaction(Transaction transaction)
         {
             if (transaction.Type == TransactionType.MinerTransaction) return;
-            if (!context.State.HasFlag(ConsensusState.Backup) || !context.State.HasFlag(ConsensusState.RequestReceived) || context.State.HasFlag(ConsensusState.SignatureSent) || context.State.HasFlag(ConsensusState.ViewChanging))
+            if (!context.State.HasFlag(ConsensusState.Backup) || !context.State.HasFlag(ConsensusState.RequestReceived) || context.State.HasFlag(ConsensusState.SignatureSent) || context.State.HasFlag(ConsensusState.ViewChanging) || context.State.HasFlag(ConsensusState.BlockSent))
                 return;
             if (context.Transactions.ContainsKey(transaction.Hash)) return;
             if (!context.TransactionHashes.Contains(transaction.Hash)) return;
