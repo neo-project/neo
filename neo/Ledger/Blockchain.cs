@@ -376,7 +376,7 @@ namespace Neo.Ledger
             foreach (Transaction tx in block.Transactions)
                 mem_pool.TryRemove(tx.Hash, out _);
             mem_pool_unverified.Clear();
-            foreach (Transaction tx in mem_pool.Values
+            foreach (Transaction tx in mem_pool
                 .OrderByDescending(p => p.NetworkFee / p.Size)
                 .ThenByDescending(p => p.NetworkFee)
                 .ThenByDescending(p => new BigInteger(p.Hash.ToArray())))
