@@ -79,7 +79,7 @@ namespace Neo.Ledger
             }
         }
 
-        static void RemoveOldFree(ConcurrentDictionary<UInt256, PoolItem> pool, DateTime time)
+        static void RemoveOldest(ConcurrentDictionary<UInt256, PoolItem> pool, DateTime time)
         {
             UInt256[] hashes = pool
                 .Where(p => p.Value.Timestamp < time)
@@ -109,7 +109,7 @@ namespace Neo.Ledger
 
             if (Count > Capacity)
             {
-                RemoveOldFree(_mem_pool_free, DateTime.UtcNow.AddSeconds(-Blockchain.SecondsPerBlock * 20));
+                RemoveOldest(_mem_pool_free, DateTime.UtcNow.AddSeconds(-Blockchain.SecondsPerBlock * 20));
 
                 var exceed = Count - Capacity;
 
@@ -125,7 +125,7 @@ namespace Neo.Ledger
                 }
             }
 
-            return _mem_pool_free.ContainsKey(hash);
+            return pool.ContainsKey(hash);
         }
 
         public bool TryRemove(UInt256 hash, out Transaction tx)
