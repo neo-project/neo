@@ -340,7 +340,7 @@ namespace Neo.Consensus
             //if (!Crypto.Default.VerifySignature(context.PreparePayload, message.PrepReqSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
             for (int i = 0; i < context.SignedPayloads.Length; i++)
                 if (context.SignedPayloads[i] != null)
-                    if (!Crypto.Default.VerifySignature(context.PreparePayload, context.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
+                if (!Crypto.Default.VerifySignature(context.PreparePayload.GetHashData(), context.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
                         context.SignedPayloads[i] = null;
             context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
 
