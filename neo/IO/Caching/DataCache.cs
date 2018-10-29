@@ -8,7 +8,7 @@ namespace Neo.IO.Caching
         where TKey : IEquatable<TKey>, ISerializable
         where TValue : class, ICloneable<TValue>, ISerializable, new()
     {
-        protected internal class Trackable
+        public class Trackable
         {
             public TKey Key;
             public TValue Item;
@@ -133,7 +133,7 @@ namespace Neo.IO.Caching
 
         protected abstract IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix);
 
-        protected internal IEnumerable<Trackable> GetChangeSet()
+        public IEnumerable<Trackable> GetChangeSet()
         {
             lock (dictionary)
             {
