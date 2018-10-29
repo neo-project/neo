@@ -140,7 +140,7 @@ namespace Neo.Consensus
             };
         }
 
-        public ConsensusPayload MakePrepareRequest()
+        public ConsensusPayload MakePrepareRequest(byte[] MyPrepReqSignature)
         {
             return MakePayload(new PrepareRequest
             {
@@ -148,16 +148,16 @@ namespace Neo.Consensus
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                PrepReqSignature = SignedPayloads[MyIndex]
+                PrepReqSignature = MyPrepReqSignature
             });
         }
 
-        public ConsensusPayload MakePrepareResponse(byte[] MySignature)
+        public ConsensusPayload MakePrepareResponse(byte[] MyResponseSignature)
         {
             return MakePayload(new PrepareResponse
             {
                 PreparePayload = PreparePayload,
-                ResponseSignature = MySignature
+                ResponseSignature = MyResponseSignature
             });
         }
 

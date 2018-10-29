@@ -97,9 +97,9 @@ namespace Neo.Consensus
                 context.SignedPayloads.Count(p => p != null) >= context.M &&
                 context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                context.State |= ConsensusState.CommitSent;
                 Block block = context.MakeHeader();
                 if (block == null) return;
+                context.State |= ConsensusState.CommitSent;
                 context.FinalSignatures[context.MyIndex] = block.Sign(context.KeyPair);
                 SignAndRelay(context.MakeCommitAgreement(block, context.FinalSignatures[context.MyIndex]));
                 Log($"Commit sent: height={context.BlockIndex} hash={block.Hash} state={context.State}");
@@ -110,10 +110,14 @@ namespace Neo.Consensus
         {
             if (context.FinalSignatures[payload.ValidatorIndex] != null) return;
 
-            if (!Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), message.FinalSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
-            context.FinalSignatures[payload.ValidatorIndex] = message.FinalSignature;
-
             Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} hash={context.MakeHeader().Hash.ToString()} view={message.ViewNumber} index={payload.ValidatorIndex}");
+
+            if (!Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), message.FinalSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false))){
+                Log($"{nameof(OnCommitAgreement)}: SIGNATURE verification with problem");
+                return;  
+            } 
+
+            context.FinalSignatures[payload.ValidatorIndex] = message.FinalSignature;
 
             if (context.FinalSignatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
@@ -131,7 +135,7 @@ namespace Neo.Consensus
                     }
                 sc.Verifiable.Witnesses = sc.GetWitnesses();
                 block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
-                Log($"relay block: {block.Hash}");
+                Log($"relay block: height={context.BlockIndex} hash={block.Hash}");
 
                 system.LocalNode.Tell(new LocalNode.Relay { Inventory = block });
             }
@@ -300,23 +304,22 @@ namespace Neo.Consensus
             context.NextConsensus = message.NextConsensus;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
-     
             context.PreparePayload = payload;
 
-            //TODO remove signature from context.PreparePayload and initialize with 64 bytyes and check message.PrepReqSignature from Speaker
-            //Otherwise, next check will fail
-            //PrepareRequest tempPrePrepareWithoutSignature = message;
-            //tempPrePrepareWithoutSignature.PrepReqSignature = new byte[64];
-            //Array.Clear(tempPrePrepareWithoutSignature.PrepReqSignature, 0, tempPrePrepareWithoutSignature.PrepReqSignature.Length);
-            //payload.Data = ((ConsensusMessage)tempPrePrepareWithoutSignature).ToArray();
-            //if (!Crypto.Default.VerifySignature(payload.GetHashData(), message.PrepReqSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
+            //Since message is connected to tempPrePrepareWithoutSignature, we need to assigned it to an independent object
             context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
-            //Return payload with the original message with complete signatures
-            //payload.Data = message.ToArray();
-
+            message.PrepReqSignature = new byte[64];
+            payload.Data = message.ToArray();
+            if (!Crypto.Default.VerifySignature(payload.GetHashData(), context.SignedPayloads[payload.ValidatorIndex], context.Validators[payload.ValidatorIndex].EncodePoint(false)))
+            {
+                context.SignedPayloads[payload.ValidatorIndex] = null;
+                return;
+            }
+            message.PrepReqSignature = context.SignedPayloads[payload.ValidatorIndex];
+            payload.Data = message.ToArray();
 
             for (int i = 0; i < context.SignedPayloads.Length; i++)
-                if (context.SignedPayloads[i] != null)
+                if (context.SignedPayloads[i] != null && i != payload.ValidatorIndex)
                     if (!Crypto.Default.VerifySignature(context.PreparePayload.GetHashData(), context.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
                     {
                         Log($"Index {i} paylod:{payload.ValidatorIndex} lenght:{context.SignedPayloads.Length} is being set to null");
@@ -423,15 +426,11 @@ namespace Neo.Consensus
                     FillContext();
                     context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
                     context.SignedPayloads[context.MyIndex] = new byte[64];
-                    context.PreparePayload = context.MakePrepareRequest();
+                    context.PreparePayload = context.MakePrepareRequest(context.SignedPayloads[context.MyIndex]);
                     context.SignedPayloads[context.MyIndex] = context.PreparePayload.Sign(context.KeyPair);
-
-                    //PreparePayload contains signature equal to byte[64] without the next lines being implemented
                     PrepareRequest tempPrePrepareWithSignature = context.PrepareRequestMessage();
-                    ConsensusMessage tempMessage = (ConsensusMessage)tempPrePrepareWithSignature;
                     tempPrePrepareWithSignature.PrepReqSignature = context.SignedPayloads[context.MyIndex];
-                    if (!Crypto.Default.VerifySignature(context.PreparePayload.GetHashData(),context.SignedPayloads[context.MyIndex], context.Validators[context.MyIndex].EncodePoint(false))) return;
-                    //context.PreparePayload.Data = tempPrePrepareWithSignature.ToArray();
+                    context.PreparePayload.Data = tempPrePrepareWithSignature.ToArray();
                 }
 
                 if (context.PreparePayload == null)
