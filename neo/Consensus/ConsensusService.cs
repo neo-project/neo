@@ -293,7 +293,7 @@ namespace Neo.Consensus
             byte[] hashData = context.MakeHeader()?.GetHashData();
             if (hashData == null)
             {
-                context.Signatures[payload.ValidatorIndex] = message.Signature;
+                context.Signatures[payload.ValidatorIndex] = null;
             }
             else if (Crypto.Default.VerifySignature(hashData, message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
             {
