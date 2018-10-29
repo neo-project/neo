@@ -308,6 +308,7 @@ namespace Neo.Consensus
 
             //Since message is connected to tempPrePrepareWithoutSignature, we need to assigned it to an independent object
             context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
+            // The Speaker Signed the Payload without any signature (this was the trick/magic part)
             message.PrepReqSignature = new byte[64];
             payload.Data = message.ToArray();
             if (!Crypto.Default.VerifySignature(payload.GetHashData(), context.SignedPayloads[payload.ValidatorIndex], context.Validators[payload.ValidatorIndex].EncodePoint(false)))
@@ -316,7 +317,8 @@ namespace Neo.Consensus
                 return;
             }
             message.PrepReqSignature = context.SignedPayloads[payload.ValidatorIndex];
-            payload.Data = message.ToArray();
+            // this could be removed, because payload is not anymore used... However, let keep things clean for now
+            payload.Data = message.ToArray(); 
 
             for (int i = 0; i < context.SignedPayloads.Length; i++)
                 if (context.SignedPayloads[i] != null && i != payload.ValidatorIndex)
@@ -362,24 +364,25 @@ namespace Neo.Consensus
             if (context.State.HasFlag(ConsensusState.CommitSent) && context.State.HasFlag(ConsensusState.SignatureSent)) return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
-            /*
+
             //====================================================================
-            //The following is like an additional feature
-            //Prepare request was not received
+            //The following is like an additional feature 
+            // In the original code we were saving the signature and later verifying.
+            // Here we can check the PreparePayload if it did not arrive, because all PrepareREsponse Payloads carries that
             if (context.PreparePayload == null)
             {
+                // We need to check if the Node send the orrect PreparePayload from the expected PrimaryIndex
                 if (message.PreparePayload.ValidatorIndex != context.PrimaryIndex) return;
                 if (!Crypto.Default.VerifySignature(message.PreparePayload.GetHashData(), message.PrepareRequestMessage().PrepReqSignature, context.Validators[message.PreparePayload.ValidatorIndex].EncodePoint(false))) return;
                 Log($"{nameof(OnPrepareRequestReceived)}: indirectly from index={payload.ValidatorIndex}");
                 OnPrepareRequestReceived(message.PreparePayload, message.PrepareRequestMessage());
             }
-            */
             //====================================================================
 
-            //This payload already submitted a valid signature
+            //This payload.ValidatorIndex already submitted a not null signature
             if (context.SignedPayloads[payload.ValidatorIndex] != null) return;
-
-            if (!Crypto.Default.VerifySignature(message.PreparePayload.GetHashData(), message.ResponseSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
+            //Time to check received Signature against our local context.PreparePayload
+            if (!Crypto.Default.VerifySignature(context.PreparePayload.GetHashData(), message.ResponseSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
             context.SignedPayloads[payload.ValidatorIndex] = message.ResponseSignature;
             CheckPayloadSignatures();
         }
