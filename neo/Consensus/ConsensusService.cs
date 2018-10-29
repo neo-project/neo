@@ -290,16 +290,10 @@ namespace Neo.Consensus
         {
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             if (context.Signatures[payload.ValidatorIndex] != null) return;
+            context.Signatures[payload.ValidatorIndex] = message.Signature;
             byte[] hashData = context.MakeHeader()?.GetHashData();
-            if (hashData == null)
-            {
-                context.Signatures[payload.ValidatorIndex] = message.Signature;
-            }
-            else if (Crypto.Default.VerifySignature(hashData, message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
-            {
-                context.Signatures[payload.ValidatorIndex] = message.Signature;
+            if (hashData != null && Crypto.Default.VerifySignature(hashData, message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
                 CheckSignatures();
-            }
         }
 
         protected override void OnReceive(object message)
