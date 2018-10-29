@@ -291,11 +291,7 @@ namespace Neo.Consensus
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             if (context.Signatures[payload.ValidatorIndex] != null) return;
             byte[] hashData = context.MakeHeader()?.GetHashData();
-            if (hashData == null)
-            {
-                context.Signatures[payload.ValidatorIndex] = null;
-            }
-            else if (Crypto.Default.VerifySignature(hashData, message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
+            if (hashData != null && Crypto.Default.VerifySignature(hashData, message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
             {
                 context.Signatures[payload.ValidatorIndex] = message.Signature;
                 CheckSignatures();
