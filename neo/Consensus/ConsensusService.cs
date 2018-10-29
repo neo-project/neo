@@ -306,9 +306,10 @@ namespace Neo.Consensus
             context.Transactions = new Dictionary<UInt256, Transaction>();
             context.PreparePayload = payload;
 
-            //Since message is connected to tempPrePrepareWithoutSignature, we need to assigned it to an independent object
             context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
             // The Speaker Signed the Payload without any signature (this was the trick/magic part)
+            // But the payload was modified with the signature after that. 
+            // Thus, we need to remove the signature from the Payload to correctly verify Speaker identity agreements with this block
             message.PrepReqSignature = new byte[64];
             payload.Data = message.ToArray();
             if (!Crypto.Default.VerifySignature(payload.GetHashData(), context.SignedPayloads[payload.ValidatorIndex], context.Validators[payload.ValidatorIndex].EncodePoint(false)))
@@ -316,9 +317,12 @@ namespace Neo.Consensus
                 context.SignedPayloads[payload.ValidatorIndex] = null;
                 return;
             }
+            //--------------------------------------------------------------------------------
+            // These next 2 lines could be removed, because payload is not anymore used
+            // it was already saved before changed in the context.PreparePayload... However, let keep things clean for now
             message.PrepReqSignature = context.SignedPayloads[payload.ValidatorIndex];
-            // this could be removed, because payload is not anymore used... However, let keep things clean for now
             payload.Data = message.ToArray(); 
+            //--------------------------------------------------------------------------------
 
             for (int i = 0; i < context.SignedPayloads.Length; i++)
                 if (context.SignedPayloads[i] != null && i != payload.ValidatorIndex)
