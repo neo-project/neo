@@ -109,10 +109,10 @@ namespace Neo.Consensus
 
         private void OnCommitAgreement(ConsensusPayload payload, CommitAgreement message)
         {
+            Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} hash={message.BlockHash.ToString()} view={message.ViewNumber} index={payload.ValidatorIndex}");
+
             if (context.State.HasFlag(ConsensusState.BlockSent) ||
                 !context.TryToCommit(payload, message)) return;
-
-            Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} hash={message.BlockHash.ToString()} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
