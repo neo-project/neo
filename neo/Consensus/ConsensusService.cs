@@ -76,13 +76,6 @@ namespace Neo.Consensus
             if (context.ViewNumber == view_number) return;
             if (context.State.HasFlag(ConsensusState.CommitSent))
             {
-                if (context.State.HasFlag(ConsensusState.SignatureSent))
-                {
-                    // If signature was sent, we send again
-
-                    SignAndRelay(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
-                }
-
                 return;
             }
 
@@ -439,14 +432,6 @@ namespace Neo.Consensus
             if (context.State.HasFlag(ConsensusState.CommitSent))
             {
                 // Lock view change on timer
-
-                if (context.State.HasFlag(ConsensusState.SignatureSent))
-                {
-                    // If signature was sent, we send again
-
-                    SignAndRelay(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
-                }
-
                 return;
             }
 
