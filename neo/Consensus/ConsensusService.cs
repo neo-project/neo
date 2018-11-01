@@ -20,6 +20,7 @@ namespace Neo.Consensus
     public sealed class ConsensusService : UntypedActor
     {
         public class Start { }
+        public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
         private readonly ConsensusContext context = new ConsensusContext();
@@ -222,7 +223,6 @@ namespace Neo.Consensus
 
             if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
                 return;
-
             context.ExpectedView[payload.ValidatorIndex] = message.NewViewNumber;
             CheckExpectedView(message.NewViewNumber);
         }
@@ -284,13 +284,10 @@ namespace Neo.Consensus
 
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
         {
-            Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
-
-            if (!context.State.HasFlag(ConsensusState.Backup) || context.State.HasFlag(ConsensusState.RequestReceived))
-                return;
-
-
+            if (context.State.HasFlag(ConsensusState.RequestReceived)) return;
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
+            Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
+            if (!context.State.HasFlag(ConsensusState.Backup)) return;
 
             if (payload.Timestamp <= context.Snapshot.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
             {
@@ -397,6 +394,9 @@ namespace Neo.Consensus
             {
                 case Start _:
                     OnStart();
+                    break;
+                case SetViewNumber setView:
+                    InitializeConsensus(setView.ViewNumber);
                     break;
                 case Timer timer:
                     OnTimer(timer);
@@ -529,6 +529,7 @@ namespace Neo.Consensus
             switch (message)
             {
                 case ConsensusPayload _:
+                case ConsensusService.SetViewNumber _:
                 case ConsensusService.Timer _:
                 case Blockchain.PersistCompleted _:
                     return true;

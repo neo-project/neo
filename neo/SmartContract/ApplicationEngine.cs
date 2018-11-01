@@ -545,7 +545,6 @@ namespace Neo.SmartContract
                     return 200;
                 case "Neo.Transaction.GetWitnesses":
                     return 200;
-                case "Neo.Witness.GetInvocationScript":
                 case "Neo.Witness.GetVerificationScript":
                     return 100;
                 case "Neo.Account.IsStandard":
