@@ -154,8 +154,8 @@ namespace Neo.Consensus
             if (context.MyIndex < 0) return;
             if (view_number > 0)
                 Log($"changeview: view={view_number} primary={context.Validators[context.GetPrimaryIndex((byte)(view_number - 1u))]}", LogLevel.Warning);
-            Log($"initialize: height={context.BlockIndex} view={view_number} index={context.MyIndex} role={(context.MyIndex == context.PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup)}");
-            if (context.MyIndex == context.PrimaryIndex)
+            Log($"initialize: height={context.BlockIndex} view={view_number} index={context.MyIndex} role={(context.MyIndex == context.GetPrimaryIndex(view_number) ? ConsensusState.Primary : ConsensusState.Backup)}");
+            if (context.MyIndex == context.GetPrimaryIndex(view_number))
             {
                 context.State |= ConsensusState.Primary;
                 TimeSpan span = DateTime.UtcNow - block_received_time;
@@ -237,7 +237,7 @@ namespace Neo.Consensus
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (!context.State.HasFlag(ConsensusState.Backup) || context.State.HasFlag(ConsensusState.RequestReceived))
                 return;
-            if (payload.ValidatorIndex != context.PrimaryIndex) return;
+            if (payload.ValidatorIndex != context.GetPrimaryIndex(context.ViewNumber)) return;
             if (payload.Timestamp <= context.Snapshot.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
             {
                 Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);

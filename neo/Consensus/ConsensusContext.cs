@@ -21,7 +21,6 @@ namespace Neo.Consensus
         public Snapshot Snapshot;
         public ECPoint[] Validators;
         public int MyIndex;
-        public uint PrimaryIndex;
         public uint Timestamp;
         public ulong Nonce;
         public UInt160 NextConsensus;
@@ -37,7 +36,6 @@ namespace Neo.Consensus
         {
             State &= ConsensusState.SignatureSent;
             ViewNumber = view_number;
-            PrimaryIndex = GetPrimaryIndex(view_number);
             if (State == ConsensusState.Initial)
             {
                 TransactionHashes = null;
@@ -129,13 +127,12 @@ namespace Neo.Consensus
             State = ConsensusState.Initial;
             PrevHash = Snapshot.CurrentBlockHash;
             BlockIndex = Snapshot.Height + 1;
-            ViewNumber = 0;
             Validators = Snapshot.GetValidators();
-            MyIndex = -1;
-            PrimaryIndex = BlockIndex % (uint)Validators.Length;
+            ViewNumber = 0;
             TransactionHashes = null;
             Signatures = new byte[Validators.Length][];
             ExpectedView = new byte[Validators.Length];
+            MyIndex = -1;
             KeyPair = null;
             for (int i = 0; i < Validators.Length; i++)
             {
