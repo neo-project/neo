@@ -40,12 +40,10 @@ namespace Neo.Consensus
             ConsensusMessage message;
             try
             {
-                Console.WriteLine($"CONVERTING MESSAGE DESERIALIZE");
                 message = ConsensusMessage.DeserializeFrom(PreparePayload.Data);
             }
             catch
             {
-                Console.WriteLine($"EXCEPTION WHEN CONVERTING MESSAGE DESERIALIZE");
                 return new PrepareRequest();
             }
             return (PrepareRequest)message;
@@ -116,13 +114,11 @@ namespace Neo.Consensus
             return _header;
         }
 
-        public ConsensusPayload MakeCommitAgreement(Block FinalBlock, byte[] MyFinalSignature)
+        public ConsensusPayload MakeCommitAgreement(byte[] finalSignature)
         {
-            //if (_header == null) return null;
             return MakePayload(new CommitAgreement()
             {
-                //FinalBlock = FinalBlock,
-                FinalSignature = MyFinalSignature
+                FinalSignature = finalSignature
             });
         }
 
@@ -140,7 +136,7 @@ namespace Neo.Consensus
             };
         }
 
-        public ConsensusPayload MakePrepareRequest(byte[] MyPrepReqSignature)
+        public ConsensusPayload MakePrepareRequest(byte[] prepReqSignature)
         {
             return MakePayload(new PrepareRequest
             {
@@ -148,7 +144,7 @@ namespace Neo.Consensus
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                PrepReqSignature = MyPrepReqSignature
+                PrepReqSignature = prepReqSignature
             });
         }
 
