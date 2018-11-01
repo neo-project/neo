@@ -43,7 +43,6 @@ namespace Neo.Consensus
             }
             if (MyIndex >= 0)
                 ExpectedView[MyIndex] = view_number;
-            _header = null; // ???
         }
 
         public uint GetPrimaryIndex(byte view_number)
