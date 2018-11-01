@@ -19,6 +19,18 @@ namespace Neo.Consensus
         {
         }
 
+        public static PrepareRequest Make(Block _header, UInt256[] TransactionHashes, MinerTransaction MinerTx, byte[] MySignature)
+        {
+            return new PrepareRequest
+            {
+                Nonce = _header.ConsensusData,
+                NextConsensus = _header.NextConsensus,
+                TransactionHashes = TransactionHashes,
+                MinerTransaction = MinerTx,//(MinerTransaction)Transactions[TransactionHashes[0]],
+                Signature = MySignature//Signatures[MyIndex]
+            };
+        }
+
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);

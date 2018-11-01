@@ -345,7 +345,7 @@ namespace Neo.Consensus
                     context._header.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context._header.PrevHash).Timestamp + 1);
                     context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
                 }
-                SignAndRelay(context.MakePrepareRequest());
+                SignAndRelay(context.MakePayload(PrepareRequest.Make(context._header, context.TransactionHashes, (MinerTransaction)context.Transactions[context.TransactionHashes[0]], context.Signatures[context.MyIndex])));
                 if (context.TransactionHashes.Length > 1)
                 {
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))

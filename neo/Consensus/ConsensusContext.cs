@@ -70,7 +70,7 @@ namespace Neo.Consensus
             return _header;
         }
 
-        private ConsensusPayload MakePayload(ConsensusMessage message)
+        public ConsensusPayload MakePayload(ConsensusMessage message)
         {
             message.ViewNumber = ViewNumber;
             return new ConsensusPayload
@@ -82,18 +82,6 @@ namespace Neo.Consensus
                 Timestamp = _header.Timestamp,
                 Data = message.ToArray()
             };
-        }
-
-        public ConsensusPayload MakePrepareRequest()
-        {
-            return MakePayload(new PrepareRequest
-            {
-                Nonce = _header.ConsensusData,
-                NextConsensus = _header.NextConsensus,
-                TransactionHashes = TransactionHashes,
-                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                Signature = Signatures[MyIndex]
-            });
         }
 
         public ConsensusPayload MakePrepareResponse(byte[] signature)
