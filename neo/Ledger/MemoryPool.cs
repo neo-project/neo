@@ -27,12 +27,10 @@ namespace Neo.Ledger
 
         public int Capacity { get; }
         public int Count => _mem_pool_fee.Count + _mem_pool_free.Count;
-        public Fixed8 Threshold { get; }
 
-        public MemoryPool(int capacity, Fixed8 threshold = default)
+        public MemoryPool(int capacity)
         {
             Capacity = capacity;
-            Threshold = threshold;
         }
 
         public void Clear()
@@ -52,8 +50,6 @@ namespace Neo.Ledger
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        private bool IsFree(Transaction tx) => tx.NetworkFee <= Threshold;
 
         static void RemoveLowestFee(ConcurrentDictionary<UInt256, PoolItem> pool, int count)
         {
@@ -96,7 +92,7 @@ namespace Neo.Ledger
         {
             ConcurrentDictionary<UInt256, PoolItem> pool;
 
-            if (IsFree(tx))
+            if (tx.IsLowPriority)
             {
                 pool = _mem_pool_free;
             }
