@@ -46,6 +46,11 @@ namespace Neo.Consensus
                 ExpectedView[MyIndex] = view_number;
         }
 
+        public void Dispose()
+        {
+            Snapshot?.Dispose();
+        }
+
         public uint GetPrimaryIndex(byte view_number)
         {
             int p = ((int)BlockIndex - view_number) % Validators.Length;
@@ -165,11 +170,6 @@ namespace Neo.Consensus
                     break;
                 }
             }
-        }
-
-        public void Dispose()
-        {
-            Snapshot?.Dispose();
         }
     }
 }
