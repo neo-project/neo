@@ -179,7 +179,6 @@ namespace Neo.Consensus
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
-            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
             if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
                 return;
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
@@ -292,7 +291,6 @@ namespace Neo.Consensus
         {
             if (context.Signatures[payload.ValidatorIndex] != null) return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
-            if (context.Signatures[payload.ValidatorIndex] != null) return;
             byte[] hashData = context.MakeHeader()?.GetHashData();
             if (hashData == null)
             {
