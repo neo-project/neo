@@ -12,6 +12,14 @@ namespace Neo.Consensus
         {
         }
 
+        public static ChangeView Make(byte MyExpectedView)
+        {
+            return new ChangeView
+            {
+                NewViewNumber = MyExpectedView//ExpectedView[MyIndex]
+            };
+        }
+
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);

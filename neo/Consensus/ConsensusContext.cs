@@ -51,14 +51,6 @@ namespace Neo.Consensus
             return p >= 0 ? (uint)p : (uint)(p + Validators.Length);
         }
 
-        public ConsensusPayload MakeChangeView()
-        {
-            return MakePayload(new ChangeView
-            {
-                NewViewNumber = ExpectedView[MyIndex]
-            });
-        }
-
         public Block _header = null;
         public Block MakeHeader()
         {
