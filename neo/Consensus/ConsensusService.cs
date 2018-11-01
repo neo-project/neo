@@ -20,7 +20,7 @@ namespace Neo.Consensus
     public sealed class ConsensusService : UntypedActor
     {
         public class Start { }
-        public class SetViewNumber { public byte ViewNumber; }
+        public class SetViewNumber { public byte ViewNumber; public ConsensusPayload PrepareRequestPayload; public byte[][] SignedPayloads; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
         private readonly ConsensusContext context = new ConsensusContext();
@@ -302,7 +302,6 @@ namespace Neo.Consensus
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
             context.PreparePayload = payload;
-
             context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
             // The Speaker Signed the Payload without any signature (this was the trick/magic part)
             // But the payload was modified with the signature after that. 
@@ -396,7 +395,7 @@ namespace Neo.Consensus
                     OnStart();
                     break;
                 case SetViewNumber setView:
-                    InitializeConsensus(setView.ViewNumber);
+                    SetViewNumberWithSomeConditions(setView);
                     break;
                 case Timer timer:
                     OnTimer(timer);
@@ -412,6 +411,33 @@ namespace Neo.Consensus
                     break;
             }
         }
+
+        private void SetViewNumberWithSomeConditions(SetViewNumber setView)
+        {
+            Log($"SetViewNumberWithSomeConditions: height={context.BlockIndex} view={context.ViewNumber} setView.ViewNumber={setView.ViewNumber} numberOfPartialSignatures={setView.SignedPayloads.Count(p => p != null)}");
+
+            //Time for checking if speaker really signed this payload
+            //TODO 
+            //Time for checking all Backups
+            uint nValidSignatures = 0;
+            for (int i = 0; i < setView.SignedPayloads.Length; i++)
+                if (setView.SignedPayloads[i] != null && i != setView.PrepareRequestPayload.ValidatorIndex)
+                    if (!Crypto.Default.VerifySignature(setView.PrepareRequestPayload.GetHashData(), setView.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
+                    {
+                        Log($"Regerating {i} paylod:{setView.PrepareRequestPayload.ValidatorIndex} lenght:{setView.SignedPayloads.Length} is being set to null");
+                        setView.SignedPayloads[i] = null;
+                    }{
+                        nValidSignatures++;
+                    }
+            if (nValidSignatures >= context.M)
+            {
+                Log($"Sorry. I lost some part of the history. I give up...");
+                InitializeConsensus(setView.ViewNumber);
+                context.SignedPayloads = setView.SignedPayloads;
+                OnConsensusPayload(setView.PrepareRequestPayload);
+            }
+        }
+
 
         private void OnStart()
         {
