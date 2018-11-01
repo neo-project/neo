@@ -19,6 +19,7 @@ namespace Neo.Consensus
     public sealed class ConsensusService : UntypedActor
     {
         public class Start { }
+        public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
         private readonly ConsensusContext context = new ConsensusContext();
@@ -309,6 +310,9 @@ namespace Neo.Consensus
                 case Start _:
                     OnStart();
                     break;
+                case SetViewNumber setView:
+                    InitializeConsensus(setView.ViewNumber);
+                    break;
                 case Timer timer:
                     OnTimer(timer);
                     break;
@@ -420,6 +424,7 @@ namespace Neo.Consensus
             switch (message)
             {
                 case ConsensusPayload _:
+                case ConsensusService.SetViewNumber _:
                 case ConsensusService.Timer _:
                 case Blockchain.PersistCompleted _:
                     return true;
