@@ -32,7 +32,7 @@ namespace Neo
             this.SeedList = section.GetSection("SeedList").GetChildren().Select(p => p.Value).ToArray();
             this.SystemFee = section.GetSection("SystemFee").GetChildren().ToDictionary(p => (TransactionType)Enum.Parse(typeof(TransactionType), p.Key, true), p => Fixed8.Parse(p.Value));
             this.SecondsPerBlock = GetValueOrDefault(section.GetSection("SecondsPerBlock"), 15u, p => uint.Parse(p));
-            this.LowPriorityThreshold = GetValueOrDefault(section.GetSection("LowPriorityThreshold"), new Fixed8(99999), p => new Fixed8(long.Parse(p)));
+            this.LowPriorityThreshold = GetValueOrDefault(section.GetSection("LowPriorityThreshold"), Fixed8.FromDecimal(0.001m), p => Fixed8.Parse(p));
         }
 
         public T GetValueOrDefault<T>(IConfigurationSection section, T defaultValue, Func<string, T> selector)
