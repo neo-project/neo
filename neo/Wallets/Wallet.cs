@@ -100,15 +100,19 @@ namespace Neo.Wallets
             if (asset_id is UInt160 asset_id_160)
             {
                 byte[] script;
+                UInt160[] accounts = GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
-                    foreach (UInt160 account in GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash))
+                    sb.EmitPush(0);
+                    foreach (UInt160 account in accounts)
+                    {
                         sb.EmitAppCall(asset_id_160, "balanceOf", account);
-                    sb.Emit(OpCode.DEPTH, OpCode.PACK);
+                        sb.Emit(OpCode.ADD);
+                    }
                     sb.EmitAppCall(asset_id_160, "decimals");
                     script = sb.ToArray();
                 }
-                ApplicationEngine engine = ApplicationEngine.Run(script);
+                ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: Fixed8.FromDecimal(0.2m) * accounts.Length);
                 if (engine.State.HasFlag(VMState.FAULT))
                     return new BigDecimal(0, 0);
                 byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
@@ -305,12 +309,15 @@ namespace Neo.Wallets
                         byte[] script;
                         using (ScriptBuilder sb2 = new ScriptBuilder())
                         {
+                            sb2.EmitPush(0);
                             foreach (UInt160 account in accounts)
+                            {
                                 sb2.EmitAppCall(output.AssetId, "balanceOf", account);
-                            sb2.Emit(OpCode.DEPTH, OpCode.PACK);
+                                sb2.Emit(OpCode.ADD);
+                            }
                             script = sb2.ToArray();
                         }
-                        ApplicationEngine engine = ApplicationEngine.Run(script);
+                        ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: Fixed8.FromDecimal(0.2m) * accounts.Length);
                         if (engine.State.HasFlag(VMState.FAULT)) return null;
                         var balances = ((IEnumerable<StackItem>)(VMArray)engine.ResultStack.Pop()).Reverse().Zip(accounts, (i, a) => new
                         {

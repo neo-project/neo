@@ -19,6 +19,7 @@ namespace Neo.Consensus
     public sealed class ConsensusService : UntypedActor
     {
         public class Start { }
+        public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
         private readonly ConsensusContext context = new ConsensusContext();
@@ -101,6 +102,50 @@ namespace Neo.Consensus
             }
         }
 
+        private void FillContext()
+        {
+            IEnumerable<Transaction> mem_pool = Blockchain.Singleton.GetMemoryPool();
+            foreach (IPolicyPlugin plugin in Plugin.Policies)
+                mem_pool = plugin.FilterForBlock(mem_pool);
+            List<Transaction> transactions = mem_pool.ToList();
+            Fixed8 amount_netfee = Block.CalculateNetFee(transactions);
+            TransactionOutput[] outputs = amount_netfee == Fixed8.Zero ? new TransactionOutput[0] : new[] { new TransactionOutput
+            {
+                AssetId = Blockchain.UtilityToken.Hash,
+                Value = amount_netfee,
+                ScriptHash = wallet.GetChangeAddress()
+            } };
+            while (true)
+            {
+                ulong nonce = GetNonce();
+                MinerTransaction tx = new MinerTransaction
+                {
+                    Nonce = (uint)(nonce % (uint.MaxValue + 1ul)),
+                    Attributes = new TransactionAttribute[0],
+                    Inputs = new CoinReference[0],
+                    Outputs = outputs,
+                    Witnesses = new Witness[0]
+                };
+                if (!context.Snapshot.ContainsTransaction(tx.Hash))
+                {
+                    context.Nonce = nonce;
+                    transactions.Insert(0, tx);
+                    break;
+                }
+            }
+            context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
+            context.Transactions = transactions.ToDictionary(p => p.Hash);
+            context.NextConsensus = Blockchain.GetConsensusAddress(context.Snapshot.GetValidators(transactions).ToArray());
+        }
+
+        private static ulong GetNonce()
+        {
+            byte[] nonce = new byte[sizeof(ulong)];
+            Random rand = new Random();
+            rand.NextBytes(nonce);
+            return nonce.ToUInt64(0);
+        }
+
         private void InitializeConsensus(byte view_number)
         {
             if (view_number == 0)
@@ -137,6 +182,7 @@ namespace Neo.Consensus
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
             if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
                 return;
+            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
             context.ExpectedView[payload.ValidatorIndex] = message.NewViewNumber;
             CheckExpectedView(message.NewViewNumber);
         }
@@ -190,11 +236,11 @@ namespace Neo.Consensus
 
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
         {
+            if (context.State.HasFlag(ConsensusState.RequestReceived)) return;
+            if (payload.ValidatorIndex != context.PrimaryIndex) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
-            if (!context.State.HasFlag(ConsensusState.Backup) || context.State.HasFlag(ConsensusState.RequestReceived))
-                return;
-            if (payload.ValidatorIndex != context.GetPrimaryIndex(context.ViewNumber)) return;
-            if (payload.Timestamp <= context.Snapshot.GetHeader(context._header.PrevHash).Timestamp || payload.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
+            if (!context.State.HasFlag(ConsensusState.Backup)) return;
+            if (payload.Timestamp <= context.Snapshot.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
             {
                 Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
                 return;
@@ -244,6 +290,7 @@ namespace Neo.Consensus
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
+            if (context.Signatures[payload.ValidatorIndex] != null) return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             if (context.Signatures[payload.ValidatorIndex] != null) return;
             byte[] hashData = context.MakeHeader()?.GetHashData();
@@ -264,6 +311,9 @@ namespace Neo.Consensus
             {
                 case Start _:
                     OnStart();
+                    break;
+                case SetViewNumber setView:
+                    InitializeConsensus(setView.ViewNumber);
                     break;
                 case Timer timer:
                     OnTimer(timer);
@@ -376,6 +426,7 @@ namespace Neo.Consensus
             switch (message)
             {
                 case ConsensusPayload _:
+                case ConsensusService.SetViewNumber _:
                 case ConsensusService.Timer _:
                 case Blockchain.PersistCompleted _:
                     return true;
