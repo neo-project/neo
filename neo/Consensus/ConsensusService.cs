@@ -128,14 +128,14 @@ namespace Neo.Consensus
                 };
                 if (!context.Snapshot.ContainsTransaction(tx.Hash))
                 {
-                    context.Nonce = nonce;
+                    context._header.ConsensusData = nonce;
                     transactions.Insert(0, tx);
                     break;
                 }
             }
             context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             context.Transactions = transactions.ToDictionary(p => p.Hash);
-            context.NextConsensus = Blockchain.GetConsensusAddress(context.Snapshot.GetValidators(transactions).ToArray());
+            context._header.NextConsensus = Blockchain.GetConsensusAddress(context.Snapshot.GetValidators(transactions).ToArray());
         }
 
         private static ulong GetNonce()
@@ -236,10 +236,10 @@ namespace Neo.Consensus
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
         {
             if (context.State.HasFlag(ConsensusState.RequestReceived)) return;
-            if (payload.ValidatorIndex != context.PrimaryIndex) return;
+            if (payload.ValidatorIndex != context.GetPrimaryIndex(context.ViewNumber)) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (!context.State.HasFlag(ConsensusState.Backup)) return;
-            if (payload.Timestamp <= context.Snapshot.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
+            if (payload.Timestamp <= context.Snapshot.GetHeader(context._header.PrevHash).Timestamp || payload.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
             {
                 Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
                 return;
