@@ -239,7 +239,7 @@ namespace Neo.Consensus
             if (payload.ValidatorIndex != context.GetPrimaryIndex(context.ViewNumber)) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (!context.State.HasFlag(ConsensusState.Backup)) return;
-            if (payload.Timestamp <= context.Snapshot.GetHeader(context._header.PrevHash).Timestamp || payload.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
+            if (payload.Timestamp <= context.GetTimestamp() || payload.Timestamp > context.GetMaxTimestamp())
             {
                 Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
                 return;
@@ -346,7 +346,7 @@ namespace Neo.Consensus
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
                     context.Fill(wallet);
-                    context._header.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context._header.PrevHash).Timestamp + 1);
+                    context._header.Timestamp = context.GetLimitedTimestamp();
                     context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
                 }
                 SignAndRelay(context.MakePayload(PrepareRequest.Make(context._header, context.TransactionHashes, (MinerTransaction)context.Transactions[context.TransactionHashes[0]], context.Signatures[context.MyIndex])));

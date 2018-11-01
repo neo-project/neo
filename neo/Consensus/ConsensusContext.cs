@@ -77,12 +77,27 @@ namespace Neo.Consensus
             };
         }
 
-        private static ulong GetNonce()
+        public ulong GetNonce()
         {
             byte[] nonce = new byte[sizeof(ulong)];
             Random rand = new Random();
             rand.NextBytes(nonce);
             return nonce.ToUInt64(0);
+        }
+
+        public uint GetLimitedTimestamp()
+        {
+            return Math.Max(DateTime.UtcNow.ToTimestamp(), Snapshot.GetHeader(_header.PrevHash).Timestamp + 1);
+        }
+
+        public uint GetTimestamp()
+        {
+            return Snapshot.GetHeader(_header.PrevHash).Timestamp;
+        }
+
+        public uint GetMaxTimestamp()
+        {
+            return DateTime.UtcNow.AddMinutes(10).ToTimestamp();
         }
 
         public void Fill(Wallet wallet)
