@@ -148,12 +148,12 @@ namespace Neo.Consensus
             });
         }
 
-        public ConsensusPayload MakePrepareResponse(byte[] MyResponseSignature)
+        public ConsensusPayload MakePrepareResponse(byte[] responseSignature)
         {
             return MakePayload(new PrepareResponse
             {
                 PreparePayload = PreparePayload,
-                ResponseSignature = MyResponseSignature
+                ResponseSignature = responseSignature
             });
         }
 
