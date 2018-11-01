@@ -45,7 +45,7 @@ namespace Neo.Consensus
             context.Transactions[tx.Hash] = tx;
             if (context.TransactionHashes.Length == context.Transactions.Count)
             {
-                if (Blockchain.GetConsensusAddress(context.Snapshot.GetValidators(context.Transactions.Values).ToArray()).Equals(context.NextConsensus))
+                if (Blockchain.GetConsensusAddress(context.Snapshot.GetValidators(context.Transactions.Values).ToArray()).Equals(context._header.NextConsensus))
                 {
                     Log($"send prepare response");
                     context.State |= ConsensusState.SignatureSent;
@@ -127,14 +127,14 @@ namespace Neo.Consensus
                 };
                 if (!context.Snapshot.ContainsTransaction(tx.Hash))
                 {
-                    context.Nonce = nonce;
+                    context._header.ConsensusData = nonce;
                     transactions.Insert(0, tx);
                     break;
                 }
             }
             context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             context.Transactions = transactions.ToDictionary(p => p.Hash);
-            context.NextConsensus = Blockchain.GetConsensusAddress(context.Snapshot.GetValidators(transactions).ToArray());
+            context._header.NextConsensus = Blockchain.GetConsensusAddress(context.Snapshot.GetValidators(transactions).ToArray());
         }
 
         private static ulong GetNonce()
@@ -191,7 +191,7 @@ namespace Neo.Consensus
             if (payload.ValidatorIndex == context.MyIndex) return;
             if (payload.Version != ConsensusContext.Version)
                 return;
-            if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
+            if (payload.PrevHash != context._header.PrevHash || payload.BlockIndex != context.BlockIndex)
             {
                 if (context.Snapshot.Height + 1 < payload.BlockIndex)
                 {
@@ -238,15 +238,15 @@ namespace Neo.Consensus
             if (!context.State.HasFlag(ConsensusState.Backup) || context.State.HasFlag(ConsensusState.RequestReceived))
                 return;
             if (payload.ValidatorIndex != context.GetPrimaryIndex(context.ViewNumber)) return;
-            if (payload.Timestamp <= context.Snapshot.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
+            if (payload.Timestamp <= context.Snapshot.GetHeader(context._header.PrevHash).Timestamp || payload.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
             {
                 Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
                 return;
             }
             context.State |= ConsensusState.RequestReceived;
-            context.Timestamp = payload.Timestamp;
-            context.Nonce = message.Nonce;
-            context.NextConsensus = message.NextConsensus;
+            context._header.Timestamp = payload.Timestamp;
+            context._header.ConsensusData = message.Nonce;
+            context._header.NextConsensus = message.NextConsensus;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
             byte[] hashData = context.MakeHeader().GetHashData();
@@ -342,7 +342,7 @@ namespace Neo.Consensus
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
                     FillContext();
-                    context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
+                    context._header.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context._header.PrevHash).Timestamp + 1);
                     context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
                 }
                 SignAndRelay(context.MakePrepareRequest());

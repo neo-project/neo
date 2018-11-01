@@ -15,19 +15,19 @@ namespace Neo.Consensus
     {
         public const uint Version = 0;
         public ConsensusState State;
-        public UInt256 PrevHash;
+        //public UInt256 PrevHash;
         public uint BlockIndex;
         public byte ViewNumber;
         public Snapshot Snapshot;
         public ECPoint[] Validators;
-        public int MyIndex;
-        public uint Timestamp;
-        public ulong Nonce;
-        public UInt160 NextConsensus;
+        //public uint Timestamp;
+        //public ulong Nonce;
+        //public UInt160 NextConsensus;
         public UInt256[] TransactionHashes;
         public Dictionary<UInt256, Transaction> Transactions;
         public byte[][] Signatures;
         public byte[] ExpectedView;
+        public int MyIndex;
         public KeyPair KeyPair;
 
         public int M => Validators.Length - (Validators.Length - 1) / 3;
@@ -43,12 +43,7 @@ namespace Neo.Consensus
             }
             if (MyIndex >= 0)
                 ExpectedView[MyIndex] = view_number;
-            _header = null;
-        }
-
-        public void Dispose()
-        {
-            Snapshot?.Dispose();
+            _header = null; // ???
         }
 
         public uint GetPrimaryIndex(byte view_number)
@@ -65,24 +60,14 @@ namespace Neo.Consensus
             });
         }
 
-        private Block _header = null;
+        public Block _header = null;
         public Block MakeHeader()
         {
             if (TransactionHashes == null) return null;
-            if (_header == null)
-            {
-                _header = new Block
-                {
-                    Version = Version,
-                    PrevHash = PrevHash,
-                    MerkleRoot = MerkleTree.ComputeRoot(TransactionHashes),
-                    Timestamp = Timestamp,
-                    Index = BlockIndex,
-                    ConsensusData = Nonce,
-                    NextConsensus = NextConsensus,
-                    Transactions = new Transaction[0]
-                };
-            }
+            if (_header == null) return null;
+            _header.Index = BlockIndex;
+            _header.MerkleRoot = MerkleTree.ComputeRoot(TransactionHashes);
+            _header.Transactions = new Transaction[0];
             return _header;
         }
 
@@ -91,11 +76,11 @@ namespace Neo.Consensus
             message.ViewNumber = ViewNumber;
             return new ConsensusPayload
             {
-                Version = Version,
-                PrevHash = PrevHash,
+                Version = _header.Version,
+                PrevHash = _header.PrevHash,
                 BlockIndex = BlockIndex,
                 ValidatorIndex = (ushort)MyIndex,
-                Timestamp = Timestamp,
+                Timestamp = _header.Timestamp,
                 Data = message.ToArray()
             };
         }
@@ -104,8 +89,8 @@ namespace Neo.Consensus
         {
             return MakePayload(new PrepareRequest
             {
-                Nonce = Nonce,
-                NextConsensus = NextConsensus,
+                Nonce = _header.ConsensusData,
+                NextConsensus = _header.NextConsensus,
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
                 Signature = Signatures[MyIndex]
@@ -124,12 +109,16 @@ namespace Neo.Consensus
         {
             Snapshot?.Dispose();
             Snapshot = Blockchain.Singleton.GetSnapshot();
-            State = ConsensusState.Initial;
-            PrevHash = Snapshot.CurrentBlockHash;
-            BlockIndex = Snapshot.Height + 1;
             Validators = Snapshot.GetValidators();
+            State = ConsensusState.Initial;
+            BlockIndex = Snapshot.Height + 1;
             ViewNumber = 0;
             TransactionHashes = null;
+            _header = new Block
+                          {
+                              Version = Version,
+                              PrevHash = Snapshot.CurrentBlockHash
+                          };
             Signatures = new byte[Validators.Length][];
             ExpectedView = new byte[Validators.Length];
             MyIndex = -1;
@@ -144,7 +133,11 @@ namespace Neo.Consensus
                     break;
                 }
             }
-            _header = null;
+        }
+
+        public void Dispose()
+        {
+            Snapshot?.Dispose();
         }
     }
 }
