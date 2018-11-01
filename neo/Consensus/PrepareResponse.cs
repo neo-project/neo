@@ -11,6 +11,14 @@ namespace Neo.Consensus
         {
         }
 
+        public static PrepareResponse Make(byte[] signature)
+        {
+            return new PrepareResponse
+            {
+                Signature = signature
+            };
+        }
+
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);

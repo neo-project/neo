@@ -50,7 +50,7 @@ namespace Neo.Consensus
                     Log($"send prepare response");
                     context.State |= ConsensusState.SignatureSent;
                     context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
-                    SignAndRelay(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
+                    SignAndRelay(context.MakePayload(PrepareResponse.Make(context.Signatures[context.MyIndex])));
                     CheckSignatures();
                 }
                 else

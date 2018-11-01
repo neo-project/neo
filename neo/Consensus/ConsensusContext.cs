@@ -84,13 +84,6 @@ namespace Neo.Consensus
             };
         }
 
-        public ConsensusPayload MakePrepareResponse(byte[] signature)
-        {
-            return MakePayload(new PrepareResponse
-            {
-                Signature = signature
-            });
-        }
 
         public void Reset(Wallet wallet)
         {
