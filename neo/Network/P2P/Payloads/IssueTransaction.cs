@@ -27,7 +27,7 @@ namespace Neo.Network.P2P.Payloads
 
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
-            if (Version > 1) throw new FormatException();
+            if (Version > 2) throw new FormatException();
         }
 
         public override UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)

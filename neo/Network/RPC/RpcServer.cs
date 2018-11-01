@@ -90,7 +90,7 @@ namespace Neo.Network.RPC
             {
                 InvocationTransaction tx = new InvocationTransaction
                 {
-                    Version = 1,
+                    Version = 2,
                     Script = json["script"].AsString().HexToBytes(),
                     Gas = Fixed8.Parse(json["gas_consumed"].AsString())
                 };

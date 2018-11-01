@@ -34,7 +34,8 @@ namespace Neo.Consensus
 
         private bool AddTransaction(Transaction tx, bool verify)
         {
-            if (context.Snapshot.ContainsTransaction(tx.Hash) ||
+            if (tx.Version < 2 || // Don't accept TX without PoW spam protection
+                context.Snapshot.ContainsTransaction(tx.Hash) ||
                 (verify && !tx.Verify(context.Snapshot, context.Transactions.Values)) ||
                 !Plugin.CheckPolicy(tx))
             {
@@ -114,35 +115,21 @@ namespace Neo.Consensus
                 Value = amount_netfee,
                 ScriptHash = wallet.GetChangeAddress()
             } };
-            while (true)
+
+            MinerTransaction tx = new MinerTransaction
             {
-                ulong nonce = GetNonce();
-                MinerTransaction tx = new MinerTransaction
-                {
-                    Nonce = (uint)(nonce % (uint.MaxValue + 1ul)),
-                    Attributes = new TransactionAttribute[0],
-                    Inputs = new CoinReference[0],
-                    Outputs = outputs,
-                    Witnesses = new Witness[0]
-                };
-                if (!context.Snapshot.ContainsTransaction(tx.Hash))
-                {
-                    context.Nonce = nonce;
-                    transactions.Insert(0, tx);
-                    break;
-                }
-            }
+                Attributes = new TransactionAttribute[0],
+                Inputs = new CoinReference[0],
+                Outputs = outputs,
+                Witnesses = new Witness[0]
+            };
+
+            tx.ComputeNonce(ntx => !context.Snapshot.ContainsTransaction(ntx.Hash));
+            transactions.Insert(0, tx);
+
             context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             context.Transactions = transactions.ToDictionary(p => p.Hash);
             context.NextConsensus = Blockchain.GetConsensusAddress(context.Snapshot.GetValidators(transactions).ToArray());
-        }
-
-        private static ulong GetNonce()
-        {
-            byte[] nonce = new byte[sizeof(ulong)];
-            Random rand = new Random();
-            rand.NextBytes(nonce);
-            return nonce.ToUInt64(0);
         }
 
         private void InitializeConsensus(byte view_number)

@@ -23,7 +23,7 @@ namespace Neo.Network.P2P.Payloads
 
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
-            if (Version > 1) throw new FormatException();
+            if (Version > 2) throw new FormatException();
             Script = reader.ReadVarBytes(65536);
             if (Script.Length == 0) throw new FormatException();
             if (Version >= 1)

@@ -34,6 +34,9 @@ namespace Neo.Network.P2P.Payloads
         public TransactionOutput[] Outputs;
         public Witness[] Witnesses { get; set; }
 
+        public uint CreationHeight;
+        public uint Nonce;
+
         private UInt256 _hash = null;
         public UInt256 Hash
         {
@@ -97,6 +100,8 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual Fixed8 SystemFee => Settings.Default.SystemFee.TryGetValue(Type, out Fixed8 fee) ? fee : Fixed8.Zero;
 
+        public uint Difficult => (uint)BitConverter.ToInt32(Hash.ToArray().Take(4).Reverse().ToArray(), 0);
+
         protected Transaction(TransactionType type)
         {
             this.Type = type;
@@ -107,6 +112,20 @@ namespace Neo.Network.P2P.Payloads
             ((IVerifiable)this).DeserializeUnsigned(reader);
             Witnesses = reader.ReadSerializableArray<Witness>();
             OnDeserialized();
+        }
+
+        public void ComputeNonce(uint difficult) => ComputeNonce(tx => tx.Difficult <= difficult);
+
+        public void ComputeNonce(Func<Transaction, bool> condition)
+        {
+            var rand = new Random(Environment.TickCount);
+
+            do
+            {
+                _hash = null;
+                Nonce = (uint)rand.Next();
+            }
+            while (!condition(this));
         }
 
         protected virtual void DeserializeExclusiveData(BinaryReader reader)
@@ -148,6 +167,12 @@ namespace Neo.Network.P2P.Payloads
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
             Inputs = reader.ReadSerializableArray<CoinReference>();
             Outputs = reader.ReadSerializableArray<TransactionOutput>(ushort.MaxValue + 1);
+
+            if (Version >= 2)
+            {
+                CreationHeight = reader.ReadUInt32();
+                Nonce = reader.ReadUInt32();
+            }
         }
 
         public bool Equals(Transaction other)
@@ -229,6 +254,12 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(Attributes);
             writer.Write(Inputs);
             writer.Write(Outputs);
+
+            if (Version >= 2)
+            {
+                writer.Write(CreationHeight);
+                writer.Write(Nonce);
+            }
         }
 
         public virtual JObject ToJson()

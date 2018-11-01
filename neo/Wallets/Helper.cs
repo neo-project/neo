@@ -10,6 +10,13 @@ namespace Neo.Wallets
     {
         public static byte[] Sign(this IVerifiable verifiable, KeyPair key)
         {
+            if (verifiable is Transaction tx)
+            {
+                // Compute a small PoW spam protection => hash should start with 0x0000
+
+                tx.ComputeNonce(Settings.Default.TransactionDifficult);
+            }
+
             return Crypto.Default.Sign(verifiable.GetHashData(), key.PrivateKey, key.PublicKey.EncodePoint(false).Skip(1).ToArray());
         }
 

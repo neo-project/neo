@@ -350,7 +350,7 @@ namespace Neo.Wallets
                     sb.Emit(OpCode.RET, nonce);
                     tx = new InvocationTransaction
                     {
-                        Version = 1,
+                        Version = 2,
                         Script = sb.ToArray()
                     };
                 }

@@ -15,6 +15,7 @@ namespace Neo
         public IReadOnlyDictionary<TransactionType, Fixed8> SystemFee { get; private set; }
         public Fixed8 LowPriorityThreshold { get; private set; }
         public uint SecondsPerBlock { get; private set; }
+        public uint TransactionDifficult { get; private set; }
 
         public static Settings Default { get; private set; }
 
@@ -32,6 +33,7 @@ namespace Neo
             this.SeedList = section.GetSection("SeedList").GetChildren().Select(p => p.Value).ToArray();
             this.SystemFee = section.GetSection("SystemFee").GetChildren().ToDictionary(p => (TransactionType)Enum.Parse(typeof(TransactionType), p.Key, true), p => Fixed8.Parse(p.Value));
             this.SecondsPerBlock = GetValueOrDefault(section.GetSection("SecondsPerBlock"), 15u, p => uint.Parse(p));
+            this.TransactionDifficult = GetValueOrDefault(section.GetSection("TransactionDifficult"), (uint)ushort.MaxValue, p => uint.Parse(p));
             this.LowPriorityThreshold = GetValueOrDefault(section.GetSection("LowPriorityThreshold"), Fixed8.FromDecimal(0.001m), p => Fixed8.Parse(p));
         }
 

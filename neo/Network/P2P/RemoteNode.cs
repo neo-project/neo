@@ -142,6 +142,16 @@ namespace Neo.Network.P2P
             if (Version?.Relay != true) return;
             if (inventory.InventoryType == InventoryType.TX)
             {
+                if (inventory is Transaction tx && tx.Version >= 2)
+                {
+                    // Check PoW spam protection for drop TX
+
+                    if (tx.Difficult > Settings.Default.TransactionDifficult)
+                    {
+                        return;
+                    }
+                }
+
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                     return;
             }
