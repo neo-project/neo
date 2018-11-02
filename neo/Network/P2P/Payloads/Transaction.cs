@@ -260,8 +260,11 @@ namespace Neo.Network.P2P.Payloads
         public virtual bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
         {
             if (Size > MaxTransactionSize) return false;
-            Header prev_header = snapshot.GetHeader(BlockHash);
-            if (prev_header == null) return false;
+            if(Version >= 2)
+            {
+                Header prev_header = snapshot.GetHeader(BlockHash);
+                if (prev_header == null) return false;
+            }
             for (int i = 1; i < Inputs.Length; i++)
                 for (int j = 0; j < i; j++)
                     if (Inputs[i].PrevHash == Inputs[j].PrevHash && Inputs[i].PrevIndex == Inputs[j].PrevIndex)
