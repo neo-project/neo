@@ -23,6 +23,9 @@ namespace Neo.Network.P2P.Payloads
 
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
+            // 0: old default
+            // >= 1: includes Gas
+            // >= 2: includes BlockHeight
             if (Version > 2) throw new FormatException();
             Script = reader.ReadVarBytes(65536);
             if (Script.Length == 0) throw new FormatException();

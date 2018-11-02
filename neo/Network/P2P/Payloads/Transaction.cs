@@ -29,7 +29,7 @@ namespace Neo.Network.P2P.Payloads
 
         public readonly TransactionType Type;
         public byte Version;
-        public UInt256 BlockHash;  // only available in version 1
+        public UInt256 BlockHash;  // only available in version 2
         public TransactionAttribute[] Attributes;
         public CoinReference[] Inputs;
         public TransactionOutput[] Outputs;
