@@ -30,6 +30,7 @@ namespace Neo.Network.P2P.Payloads
         public readonly TransactionType Type;
         public byte Version;
         public TransactionAttribute[] Attributes;
+        public CoinReference[] ValidatedReferences;
         public CoinReference[] Inputs;
         public TransactionOutput[] Outputs;
         public Witness[] Witnesses { get; set; }
@@ -146,6 +147,8 @@ namespace Neo.Network.P2P.Payloads
             Version = reader.ReadByte();
             DeserializeExclusiveData(reader);
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
+            if(Version >= 2)
+                ValidatedReferences = reader.ReadSerializableArray<CoinReference>();
             Inputs = reader.ReadSerializableArray<CoinReference>();
             Outputs = reader.ReadSerializableArray<TransactionOutput>(ushort.MaxValue + 1);
         }
@@ -227,6 +230,8 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(Version);
             SerializeExclusiveData(writer);
             writer.Write(Attributes);
+            if(Version >= 2)
+                writer.Write(ValidatedReferences);
             writer.Write(Inputs);
             writer.Write(Outputs);
         }
