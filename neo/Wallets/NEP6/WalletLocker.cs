@@ -16,4 +16,19 @@ namespace Neo.Wallets.NEP6
             wallet.Lock();
         }
     }
+
+    internal class SimpleWalletLocker : IDisposable
+    {
+        private NEP6SimpleWallet wallet;
+
+        public SimpleWalletLocker(NEP6SimpleWallet wallet)
+        {
+            this.wallet = wallet;
+        }
+
+        public void Dispose()
+        {
+            wallet.Lock();
+        }
+    }
 }

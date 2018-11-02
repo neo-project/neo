@@ -12,12 +12,12 @@ using UserWallet = Neo.Wallets.SQLite.UserWallet;
 
 namespace Neo.Wallets.NEP6
 {
-    public class NEP6Wallet : Wallet
+    public class NEP6SimpleWallet : Wallet
     {
         public override event EventHandler<WalletTransactionEventArgs> WalletTransaction;
 
-        private readonly WalletIndexer indexer;
-        private readonly string path;
+        //private readonly WalletIndexer indexer;
+        //private readonly string path;
         private string password;
         private string name;
         private Version version;
@@ -28,35 +28,16 @@ namespace Neo.Wallets.NEP6
 
         public override string Name => name;
         public override Version Version => version;
-        public override uint WalletHeight => indexer.IndexHeight;
+        public override uint WalletHeight => 0;
 
-        public NEP6Wallet(WalletIndexer indexer, string path, string name = null)
+        public NEP6SimpleWallet(string nep6string)
         {
-            this.indexer = indexer;
-            this.path = path;
-            if (File.Exists(path))
-            {
-                JObject wallet;
-                using (StreamReader reader = new StreamReader(path))
-                {
-                    wallet = JObject.Parse(reader);
-                }
-                this.name = wallet["name"]?.AsString();
-                this.version = Version.Parse(wallet["version"].AsString());
-                this.Scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
-                this.accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p, this)).ToDictionary(p => p.ScriptHash);
-                this.extra = wallet["extra"];
-                indexer.RegisterAccounts(accounts.Keys);
-            }
-            else
-            {
-                this.name = name;
-                this.version = Version.Parse("1.0");
-                this.Scrypt = ScryptParameters.Default;
-                this.accounts = new Dictionary<UInt160, NEP6Account>();
-                this.extra = JObject.Null;
-            }
-            indexer.WalletTransaction += WalletIndexer_WalletTransaction;
+            JObject wallet = JObject.Parse(nep6string);
+            this.name = wallet["name"]?.AsString();
+            this.version = Version.Parse(wallet["version"].AsString());
+            this.Scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
+            this.accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p, this)).ToDictionary(p => p.ScriptHash);
+            this.extra = wallet["extra"];
         }
 
         private void AddAccount(NEP6Account account, bool is_import)
@@ -86,7 +67,7 @@ namespace Neo.Wallets.NEP6
                 }
                 else
                 {
-                    indexer.RegisterAccounts(new[] { account.ScriptHash }, is_import ? 0 : Blockchain.Singleton.Height);
+                    //indexer.RegisterAccounts(new[] { account.ScriptHash }, is_import ? 0 : Blockchain.Singleton.Height);
                 }
                 accounts[account.ScriptHash] = account;
             }
@@ -163,6 +144,11 @@ namespace Neo.Wallets.NEP6
             return account;
         }
 
+        public KeyPair DecryptKey(string nep2key)
+        {
+            return new KeyPair(GetPrivateKeyFromNEP2(nep2key, password, Scrypt.N, Scrypt.R, Scrypt.P));
+        }
+
         public override bool DeleteAccount(UInt160 scriptHash)
         {
             bool removed;
@@ -172,14 +158,14 @@ namespace Neo.Wallets.NEP6
             }
             if (removed)
             {
-                indexer.UnregisterAccounts(new[] { scriptHash });
+                //indexer.UnregisterAccounts(new[] { scriptHash });
             }
             return removed;
         }
 
         public override void Dispose()
         {
-            indexer.WalletTransaction -= WalletIndexer_WalletTransaction;
+            //indexer.WalletTransaction -= WalletIndexer_WalletTransaction;
         }
 
         public override Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount, UInt160[] from)
@@ -205,10 +191,15 @@ namespace Neo.Wallets.NEP6
             }
         }
 
+        // perhaps not needed!
         public override IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts)
         {
             if (unconfirmed.Count == 0)
-                return indexer.GetCoins(accounts);
+            {
+                IEnumerable<Coin> ecoin = null;
+                return ecoin;
+                //return indexer.GetCoins(accounts);
+            }
             else
                 return GetCoinsInternal();
             IEnumerable<Coin> GetCoinsInternal()
@@ -230,6 +221,7 @@ namespace Neo.Wallets.NEP6
                         State = CoinState.Unconfirmed
                     })).SelectMany(p => p).ToArray();
                 }
+                /*
                 foreach (Coin coin in indexer.GetCoins(accounts))
                 {
                     if (inputs.Contains(coin.Reference))
@@ -249,6 +241,7 @@ namespace Neo.Wallets.NEP6
                     }
                     yield return coin;
                 }
+                */
                 HashSet<UInt160> accounts_set = new HashSet<UInt160>(accounts);
                 foreach (Coin coin in coins_unconfirmed)
                 {
@@ -260,8 +253,8 @@ namespace Neo.Wallets.NEP6
 
         public override IEnumerable<UInt256> GetTransactions()
         {
-            foreach (UInt256 hash in indexer.GetTransactions(accounts.Keys))
-                yield return hash;
+            //foreach (UInt256 hash in indexer.GetTransactions(accounts.Keys))
+            //    yield return hash;
             lock (unconfirmed)
             {
                 foreach (UInt256 hash in unconfirmed.Keys)
@@ -350,23 +343,13 @@ namespace Neo.Wallets.NEP6
             }
         }
 
-        public void Save()
-        {
-            JObject wallet = new JObject();
-            wallet["name"] = name;
-            wallet["version"] = version.ToString();
-            wallet["scrypt"] = Scrypt.ToJson();
-            wallet["accounts"] = new JArray(accounts.Values.Select(p => p.ToJson()));
-            wallet["extra"] = extra;
-            File.WriteAllText(path, wallet.ToString());
-        }
-
         public IDisposable Unlock(string password)
         {
-            if (!VerifyPassword(password))
+            if (!VerifyPassword(password)) {
                 throw new CryptographicException();
+            }
             this.password = password;
-            return new WalletLocker(this);
+            return new SimpleWalletLocker(this);
         }
 
         public override bool VerifyPassword(string password)

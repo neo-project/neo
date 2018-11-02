@@ -5,7 +5,7 @@ namespace Neo.Wallets.NEP6
 {
     internal class NEP6Account : WalletAccount
     {
-        private readonly NEP6Wallet wallet;
+        private readonly Wallet wallet;
         private readonly string nep2key;
         private KeyPair key;
         public JObject Extra;
@@ -13,20 +13,25 @@ namespace Neo.Wallets.NEP6
         public bool Decrypted => nep2key == null || key != null;
         public override bool HasKey => nep2key != null;
 
-        public NEP6Account(NEP6Wallet wallet, UInt160 scriptHash, string nep2key = null)
+        private readonly ScryptParameters Scrypt;
+        public string password;
+
+        public NEP6Account(Wallet wallet, UInt160 scriptHash, string nep2key = null)
             : base(scriptHash)
         {
             this.wallet = wallet;
             this.nep2key = nep2key;
         }
 
-        public NEP6Account(NEP6Wallet wallet, UInt160 scriptHash, KeyPair key, string password)
-            : this(wallet, scriptHash, key.Export(password, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P))
+        public NEP6Account(Wallet wallet, UInt160 scriptHash, KeyPair key, string password, ScryptParameters Scrypt)
+            : this(wallet, scriptHash, key.Export(password, Scrypt.N, Scrypt.R, Scrypt.P))
         {
             this.key = key;
+            this.Scrypt = Scrypt;
+            this.password = password;
         }
 
-        public static NEP6Account FromJson(JObject json, NEP6Wallet wallet)
+        public static NEP6Account FromJson(JObject json, Wallet wallet)
         {
             return new NEP6Account(wallet, json["address"].AsString().ToScriptHash(), json["key"]?.AsString())
             {
@@ -38,22 +43,27 @@ namespace Neo.Wallets.NEP6
             };
         }
 
+        public KeyPair DecryptKey(string nep2key)
+        {
+            return new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password, Scrypt.N, Scrypt.R, Scrypt.P));
+        }
+
         public override KeyPair GetKey()
         {
             if (nep2key == null) return null;
             if (key == null)
             {
-                key = wallet.DecryptKey(nep2key);
+                key = DecryptKey(nep2key);
             }
             return key;
         }
 
-        public KeyPair GetKey(string password)
+        public KeyPair GetKey(string password, ScryptParameters Scrypt)
         {
             if (nep2key == null) return null;
             if (key == null)
             {
-                key = new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P));
+                key = new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password, Scrypt.N, Scrypt.R, Scrypt.P));
             }
             return key;
         }
@@ -75,7 +85,7 @@ namespace Neo.Wallets.NEP6
         {
             try
             {
-                Wallet.GetPrivateKeyFromNEP2(nep2key, password, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P);
+                Wallet.GetPrivateKeyFromNEP2(nep2key, password, Scrypt.N, Scrypt.R, Scrypt.P);
                 return true;
             }
             catch (FormatException)
