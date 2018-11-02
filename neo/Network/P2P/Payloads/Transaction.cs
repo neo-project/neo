@@ -30,7 +30,7 @@ namespace Neo.Network.P2P.Payloads
         public readonly TransactionType Type;
         public byte Version;
         public TransactionAttribute[] Attributes;
-        public CoinReference[] ValidatedReferences;
+        public CoinReference[] ValidatedInputs;
         public CoinReference[] Inputs;
         public TransactionOutput[] Outputs;
         public Witness[] Witnesses { get; set; }
@@ -64,6 +64,33 @@ namespace Neo.Network.P2P.Payloads
                     _network_fee = input - output - SystemFee;
                 }
                 return _network_fee;
+            }
+        }
+
+        private IReadOnlyDictionary<CoinReference, TransactionOutput> _vreferences;
+        public IReadOnlyDictionary<CoinReference, TransactionOutput> ValidatedReferences
+        {
+            get
+            {
+                if (_vreferences == null)
+                {
+                    Dictionary<CoinReference, TransactionOutput> dictionary = new Dictionary<CoinReference, TransactionOutput>();
+                    foreach (var group in ValidatedInputs.GroupBy(p => p.PrevHash))
+                    {
+                        Transaction tx = Blockchain.Singleton.Store.GetTransaction(group.Key);
+                        if (tx == null) return null;
+                        foreach (var reference in group.Select(p => new
+                        {
+                            Input = p,
+                            Output = tx.Outputs[p.PrevIndex]
+                        }))
+                        {
+                            dictionary.Add(reference.Input, reference.Output);
+                        }
+                    }
+                    _vreferences = dictionary;
+                }
+                return _vreferences;
             }
         }
 
@@ -148,7 +175,7 @@ namespace Neo.Network.P2P.Payloads
             DeserializeExclusiveData(reader);
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
             if(Version >= 2)
-                ValidatedReferences = reader.ReadSerializableArray<CoinReference>();
+                ValidatedInputs = reader.ReadSerializableArray<CoinReference>();
             Inputs = reader.ReadSerializableArray<CoinReference>();
             Outputs = reader.ReadSerializableArray<TransactionOutput>(ushort.MaxValue + 1);
         }
@@ -179,6 +206,7 @@ namespace Neo.Network.P2P.Payloads
         {
             if (References == null) throw new InvalidOperationException();
             HashSet<UInt160> hashes = new HashSet<UInt160>(Inputs.Select(p => References[p].ScriptHash));
+            hashes.UnionWith(new HashSet<UInt160>(ValidatedInputs.Select(p => ValidatedReferences[p].ScriptHash)));
             hashes.UnionWith(Attributes.Where(p => p.Usage == TransactionAttributeUsage.Script).Select(p => new UInt160(p.Data)));
             foreach (var group in Outputs.GroupBy(p => p.AssetId))
             {
@@ -231,7 +259,7 @@ namespace Neo.Network.P2P.Payloads
             SerializeExclusiveData(writer);
             writer.Write(Attributes);
             if(Version >= 2)
-                writer.Write(ValidatedReferences);
+                writer.Write(ValidatedInputs);
             writer.Write(Inputs);
             writer.Write(Outputs);
         }
