@@ -145,7 +145,7 @@ namespace Neo.Network.P2P.Payloads
         private void DeserializeUnsignedWithoutType(BinaryReader reader)
         {
             Version = reader.ReadByte();
-            if(Version >= 1)
+            if(Version >= 2)
                 BlockHash = reader.ReadSerializable<UInt256>();
             DeserializeExclusiveData(reader);
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
@@ -228,7 +228,7 @@ namespace Neo.Network.P2P.Payloads
         {
             writer.Write((byte)Type);
             writer.Write(Version);
-            if(Version >= 1)
+            if(Version >= 2)
                 writer.Write(BlockHash);
             SerializeExclusiveData(writer);
             writer.Write(Attributes);
