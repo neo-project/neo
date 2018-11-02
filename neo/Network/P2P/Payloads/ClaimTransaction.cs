@@ -24,7 +24,11 @@ namespace Neo.Network.P2P.Payloads
 
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
-            if (Version != 0) throw new FormatException();
+            // 0: old default
+            // 1: invalid
+            // 2: includes BlockHeight
+            if (Version > 2) throw new FormatException();
+            if (Version == 1) throw new FormatException();
             Claims = reader.ReadSerializableArray<CoinReference>();
             if (Claims.Length == 0) throw new FormatException();
         }

@@ -29,6 +29,7 @@ namespace Neo.Network.P2P.Payloads
 
         public readonly TransactionType Type;
         public byte Version;
+        public UInt256 BlockHash;  // only available in version 1
         public TransactionAttribute[] Attributes;
         public CoinReference[] Inputs;
         public TransactionOutput[] Outputs;
@@ -144,6 +145,8 @@ namespace Neo.Network.P2P.Payloads
         private void DeserializeUnsignedWithoutType(BinaryReader reader)
         {
             Version = reader.ReadByte();
+            if(Version >= 1)
+                BlockHash = reader.ReadSerializable<UInt256>();
             DeserializeExclusiveData(reader);
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
             Inputs = reader.ReadSerializableArray<CoinReference>();
@@ -225,6 +228,8 @@ namespace Neo.Network.P2P.Payloads
         {
             writer.Write((byte)Type);
             writer.Write(Version);
+            if(Version >= 1)
+                writer.Write(BlockHash);
             SerializeExclusiveData(writer);
             writer.Write(Attributes);
             writer.Write(Inputs);
@@ -255,6 +260,8 @@ namespace Neo.Network.P2P.Payloads
         public virtual bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
         {
             if (Size > MaxTransactionSize) return false;
+            Header prev_header = snapshot.GetHeader(BlockHash);
+            if (prev_header == null) return false;
             for (int i = 1; i < Inputs.Length; i++)
                 for (int j = 0; j < i; j++)
                     if (Inputs[i].PrevHash == Inputs[j].PrevHash && Inputs[i].PrevIndex == Inputs[j].PrevIndex)
