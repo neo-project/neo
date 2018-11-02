@@ -75,7 +75,9 @@ namespace Neo.Consensus
         private void CheckExpectedView(byte view_number)
         {
             if (context.ViewNumber == view_number) return;
-            if (context.ExpectedView.Count(p => p == view_number) >= context.M)
+            view_number = context.ViewNumber;
+            view_number++;
+            if (context.ExpectedView.Count(p => p >= view_number) >= context.M)
             {
                 InitializeConsensus(view_number);
             }
