@@ -16,51 +16,53 @@ namespace Neo.Network
 
         public static bool Discover()
         {
-            Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            s.ReceiveTimeout = (int)TimeOut.TotalMilliseconds;
-            s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
-            string req = "M-SEARCH * HTTP/1.1\r\n" +
-            "HOST: 239.255.255.250:1900\r\n" +
-            "ST:upnp:rootdevice\r\n" +
-            "MAN:\"ssdp:discover\"\r\n" +
-            "MX:3\r\n\r\n";
-            byte[] data = Encoding.ASCII.GetBytes(req);
-            IPEndPoint ipe = new IPEndPoint(IPAddress.Broadcast, 1900);
-
-            DateTime start = DateTime.Now;
-
-            s.SendTo(data, ipe);
-            s.SendTo(data, ipe);
-            s.SendTo(data, ipe);
-
-            byte[] buffer = new byte[0x1000];
-            
-            do
+            using (Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
             {
-                int length;
-                try
-                {
-                    length = s.Receive(buffer);
+                s.ReceiveTimeout = (int)TimeOut.TotalMilliseconds;
+                s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
+                string req = "M-SEARCH * HTTP/1.1\r\n" +
+                "HOST: 239.255.255.250:1900\r\n" +
+                "ST:upnp:rootdevice\r\n" +
+                "MAN:\"ssdp:discover\"\r\n" +
+                "MX:3\r\n\r\n";
+                byte[] data = Encoding.ASCII.GetBytes(req);
+                IPEndPoint ipe = new IPEndPoint(IPAddress.Broadcast, 1900);
 
-                    string resp = Encoding.ASCII.GetString(buffer, 0, length).ToLower();
-                    if (resp.Contains("upnp:rootdevice"))
+                DateTime start = DateTime.Now;
+
+                s.SendTo(data, ipe);
+                s.SendTo(data, ipe);
+                s.SendTo(data, ipe);
+
+                byte[] buffer = new byte[0x1000];
+
+                do
+                {
+                    int length;
+                    try
                     {
-                        resp = resp.Substring(resp.ToLower().IndexOf("location:") + 9);
-                        resp = resp.Substring(0, resp.IndexOf("\r")).Trim();
-                        if (!string.IsNullOrEmpty(_serviceUrl = GetServiceUrl(resp)))
+                        length = s.Receive(buffer);
+
+                        string resp = Encoding.ASCII.GetString(buffer, 0, length).ToLower();
+                        if (resp.Contains("upnp:rootdevice"))
                         {
-                            return true;
+                            resp = resp.Substring(resp.ToLower().IndexOf("location:") + 9);
+                            resp = resp.Substring(0, resp.IndexOf("\r")).Trim();
+                            if (!string.IsNullOrEmpty(_serviceUrl = GetServiceUrl(resp)))
+                            {
+                                return true;
+                            }
                         }
                     }
+                    catch
+                    {
+                        continue;
+                    }
                 }
-                catch
-                {
-                    continue;
-                }
-            }
-            while (DateTime.Now - start < TimeOut);
+                while (DateTime.Now - start < TimeOut);
 
-            return false;
+                return false;
+            }
         }
 
         private static string GetServiceUrl(string resp)
@@ -69,8 +71,10 @@ namespace Neo.Network
             {
                 XmlDocument desc = new XmlDocument();
                 HttpWebRequest request = WebRequest.CreateHttp(resp);
-                WebResponse response = request.GetResponse();
-                desc.Load(response.GetResponseStream());
+                using (WebResponse response = request.GetResponse())
+                {
+                    desc.Load(response.GetResponseStream());
+                }
                 XmlNamespaceManager nsMgr = new XmlNamespaceManager(desc.NameTable);
                 nsMgr.AddNamespace("tns", "urn:schemas-upnp-org:device-1-0");
                 XmlNode typen = desc.SelectSingleNode("//tns:device/tns:deviceType/text()", nsMgr);
@@ -141,13 +145,17 @@ namespace Neo.Network
             byte[] b = Encoding.UTF8.GetBytes(req);
             r.Headers["SOAPACTION"] = "\"urn:schemas-upnp-org:service:WANIPConnection:1#" + function + "\"";
             r.ContentType = "text/xml; charset=\"utf-8\"";
-            Stream reqs = r.GetRequestStream();
-            reqs.Write(b, 0, b.Length);
-            XmlDocument resp = new XmlDocument();
-            WebResponse wres = r.GetResponse();
-            Stream ress = wres.GetResponseStream();
-            resp.Load(ress);
-            return resp;
+            using (Stream reqs = r.GetRequestStream())
+            {
+                reqs.Write(b, 0, b.Length);
+                XmlDocument resp = new XmlDocument();
+                WebResponse wres = r.GetResponse();
+                using (Stream ress = wres.GetResponseStream())
+                {
+                    resp.Load(ress);
+                    return resp;
+                }
+            }
         }
     }
 }
