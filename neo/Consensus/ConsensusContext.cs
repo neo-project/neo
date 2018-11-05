@@ -34,21 +34,10 @@ namespace Neo.Consensus
 
         public int M => Validators.Length - (Validators.Length - 1) / 3;
 
+        /// <summary>
+        /// Local PrepareRequest original Payload 
+        /// </summary>
         public ConsensusPayload PreparePayload;
-        public PrepareRequest PrepareRequestMessage()
-        {
-            ConsensusMessage message;
-            try
-            {
-                message = ConsensusMessage.DeserializeFrom(PreparePayload.Data);
-            }
-            catch
-            {
-                return new PrepareRequest();
-            }
-            return (PrepareRequest)message;
-        }
-
 
         public void ChangeView(byte view_number)
         {

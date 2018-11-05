@@ -8,19 +8,6 @@ namespace Neo.Consensus
     {
         public ConsensusPayload PreparePayload;
         public byte[] ResponseSignature;
-        public PrepareRequest PrepareRequestMessage()
-        {
-            ConsensusMessage message;
-            try
-            {
-                message = DeserializeFrom(PreparePayload.Data);
-            }
-            catch
-            {
-                return new PrepareRequest();
-            }
-            return (PrepareRequest)message;
-        }
 
         public PrepareResponse() : base(ConsensusMessageType.PrepareResponse) { }
 

@@ -335,9 +335,9 @@ namespace Neo.Consensus
             {
                 // We need to check if the Node send the orrect PreparePayload from the expected PrimaryIndex
                 if (message.PreparePayload.ValidatorIndex != context.PrimaryIndex) return;
-                if (!Crypto.Default.VerifySignature(message.PreparePayload.GetHashData(), message.PrepareRequestMessage().PrepReqSignature, context.Validators[message.PreparePayload.ValidatorIndex].EncodePoint(false))) return;
+                if (!Crypto.Default.VerifySignature(message.PreparePayload.GetHashData(), GetPrepareRequestMessage(message.PreparePayload).PrepReqSignature, context.Validators[message.PreparePayload.ValidatorIndex].EncodePoint(false))) return;
                 Log($"{nameof(OnPrepareRequestReceived)}: indirectly from index={payload.ValidatorIndex}");
-                OnPrepareRequestReceived(message.PreparePayload, message.PrepareRequestMessage());
+                OnPrepareRequestReceived(message.PreparePayload, GetPrepareRequestMessage(message.PreparePayload));
             }
             /// <summary>
             /// This payload.ValidatorIndex already submitted a not null signature
@@ -406,6 +406,23 @@ namespace Neo.Consensus
             }
         }
 
+        /// <summary>
+        /// Serialize PreparePayload Data into the desired PrepareRequest message
+        /// </summary>
+        private PrepareRequest GetPrepareRequestMessage(ConsensusPayload PreparePayloadToGet)
+        {
+            ConsensusMessage message;
+            try
+            {
+                message = ConsensusMessage.DeserializeFrom(PreparePayloadToGet.Data);
+            }
+            catch
+            {
+                return new PrepareRequest();
+            }
+            return (PrepareRequest)message;
+        }
+
         private void OnRenegeration(ConsensusPayload payload, Renegeration message)
         {
             Log($"{nameof(OnRenegeration)}: height={payload.BlockIndex} hash={context.MakeHeader().Hash.ToString()} view={message.ViewNumber} numberOfPartialSignatures={message.SignedPayloads.Count(p => p != null)} index={payload.ValidatorIndex}");
@@ -414,7 +431,26 @@ namespace Neo.Consensus
             /// <summary>
             /// Time for checking if speaker really signed this payload
             /// </summary>
+
+            /*
             // TODO - Remove signature from payload and check Primary
+            public byte[] PrimaryPrepReqSignature = message.SignedPayloads[context.PrimaryIndex];
+            message.PrepReqSignature = new byte[64];
+            payload.Data = message.ToArray();
+            if (!Crypto.Default.VerifySignature(payload.GetHashData(), context.SignedPayloads[payload.ValidatorIndex], context.Validators[payload.ValidatorIndex].EncodePoint(false)))
+            {
+                context.SignedPayloads[payload.ValidatorIndex] = null;
+                return;
+            }
+            /// <summary>
+            /// These next 2 lines could be removed, because payload is not anymore used
+            /// it was already saved before changed in the context.PreparePayload... However, let keep things clean for now
+            /// </summary>
+            message.PrepReqSignature = context.SignedPayloads[payload.ValidatorIndex];
+            payload.Data = message.ToArray(); 
+
+            */
+
 
             /// <summary>
             /// Time for checking all Backups
@@ -492,7 +528,7 @@ namespace Neo.Consensus
                     context.SignedPayloads[context.MyIndex] = new byte[64];
                     context.PreparePayload = context.MakePrepareRequest(context.SignedPayloads[context.MyIndex]);
                     context.SignedPayloads[context.MyIndex] = context.PreparePayload.Sign(context.KeyPair);
-                    PrepareRequest tempPrePrepareWithSignature = context.PrepareRequestMessage();
+                    PrepareRequest tempPrePrepareWithSignature = GetPrepareRequestMessage(context.PreparePayload);
                     tempPrePrepareWithSignature.PrepReqSignature = context.SignedPayloads[context.MyIndex];
                     context.PreparePayload.Data = tempPrePrepareWithSignature.ToArray();
                 }
