@@ -77,12 +77,6 @@ namespace Neo.Consensus
         {
             Log($"CheckExpectedView: view_number={view_number} context.ViewNumber={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
 
-            if (context.State.HasFlag(ConsensusState.CommitSent))
-            {
-                SignAndRelay(context.MakeRenegeration());
-                return;
-            }
-
             if (context.ViewNumber == view_number) return;
 
             if (context.ExpectedView.Count(p => p == view_number) >= context.M)
@@ -91,7 +85,15 @@ namespace Neo.Consensus
             }
         }
 
-
+        private void SendRenegeration()
+        {
+            if (context.State.HasFlag(ConsensusState.CommitSent))
+            {
+                Log($"Sending Regeneration payload...");
+                SignAndRelay(context.MakeRenegeration());
+                return;
+            }
+        }
 
         private void FillContext()
         {
@@ -171,6 +173,8 @@ namespace Neo.Consensus
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
+
+            SendRenegeration();
 
             if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
                 return;
@@ -547,12 +551,6 @@ namespace Neo.Consensus
 
         private void SignAndRelay(ConsensusPayload payload)
         {
-            if (payload == null) 
-            {
-                Log($"Sign and relay payload null");
-                return;   
-            }
-
             ContractParametersContext sc;
             try
             {
@@ -561,7 +559,6 @@ namespace Neo.Consensus
             }
             catch (InvalidOperationException)
             {
-                Log($"Invalid OperationException inside SignAndRelay");
                 return;
             }
 
