@@ -20,7 +20,7 @@ namespace Neo.Consensus
     public sealed class ConsensusService : UntypedActor
     {
         public class Start { }
-        public class SetViewNumber { public byte ViewNumber; public ConsensusPayload PrepareRequestPayload; public byte[][] SignedPayloads; }
+        public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
         private readonly ConsensusContext context = new ConsensusContext();
@@ -77,12 +77,13 @@ namespace Neo.Consensus
         {
             Log($"CheckExpectedView: view_number={view_number} context.ViewNumber={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
 
+            if (context.State.HasFlag(ConsensusState.CommitSent))
+            {
+                SignAndRelay(context.MakeRenegeration());
+                return;
+            }
+
             if (context.ViewNumber == view_number) return;
-            //if (context.State.HasFlag(ConsensusState.CommitSent))
-            //{
-            //    SignAndRelay(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
-            //    return;
-            //}
 
             if (context.ExpectedView.Count(p => p == view_number) >= context.M)
             {
@@ -90,57 +91,7 @@ namespace Neo.Consensus
             }
         }
 
-        private void CheckPayloadSignatures()
-        {
-            Log($"CheckPayloadSignatures....SignedPayloads:{context.SignedPayloads.Count(p => p != null)}");
 
-            if (!context.State.HasFlag(ConsensusState.CommitSent) &&
-                context.SignedPayloads.Count(p => p != null) >= context.M &&
-                context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
-            {
-                Block block = context.MakeHeader();
-                if (block == null) return;
-                context.State |= ConsensusState.CommitSent;
-                context.FinalSignatures[context.MyIndex] = block.Sign(context.KeyPair);
-                SignAndRelay(context.MakeCommitAgreement(context.FinalSignatures[context.MyIndex]));
-                Log($"Commit sent: height={context.BlockIndex} hash={block.Hash} state={context.State}");
-            }
-        }
-
-        private void OnCommitAgreement(ConsensusPayload payload, CommitAgreement message)
-        {
-            if (context.FinalSignatures[payload.ValidatorIndex] != null) return;
-
-            Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} hash={context.MakeHeader().Hash.ToString()} view={message.ViewNumber} index={payload.ValidatorIndex}");
-
-            if (!Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), message.FinalSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false))){
-                Log($"{nameof(OnCommitAgreement)}: SIGNATURE verification with problem");
-                return;  
-            } 
-
-            context.FinalSignatures[payload.ValidatorIndex] = message.FinalSignature;
-
-            if (context.FinalSignatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
-            {
-                Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
-                Block block = context.MakeHeader();
-                if (block == null) return;
-                context.State |= ConsensusState.BlockSent;
-
-                ContractParametersContext sc = new ContractParametersContext(block);
-                for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
-                    if (context.FinalSignatures[i] != null)
-                    {
-                        sc.AddSignature(contract, context.Validators[i], context.FinalSignatures[i]);
-                        j++;
-                    }
-                sc.Verifiable.Witnesses = sc.GetWitnesses();
-                block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
-                Log($"relay block: height={context.BlockIndex} hash={block.Hash}");
-
-                system.LocalNode.Tell(new LocalNode.Relay { Inventory = block });
-            }
-        }
 
         private void FillContext()
         {
@@ -272,6 +223,9 @@ namespace Neo.Consensus
                 case ConsensusMessageType.CommitAgreement:
                     OnCommitAgreement(payload, (CommitAgreement)message);
                     break;
+                case ConsensusMessageType.Renegeration:
+                    OnRenegeration(payload, (Renegeration)message);
+                    break;
             }
         }
 
@@ -387,6 +341,86 @@ namespace Neo.Consensus
             CheckPayloadSignatures();
         }
 
+        private void CheckPayloadSignatures()
+        {
+            Log($"CheckPayloadSignatures....SignedPayloads:{context.SignedPayloads.Count(p => p != null)}");
+
+            if (!context.State.HasFlag(ConsensusState.CommitSent) &&
+                context.SignedPayloads.Count(p => p != null) >= context.M &&
+                context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
+            {
+                Block block = context.MakeHeader();
+                if (block == null) return;
+                context.State |= ConsensusState.CommitSent;
+                context.FinalSignatures[context.MyIndex] = block.Sign(context.KeyPair);
+                SignAndRelay(context.MakeCommitAgreement(context.FinalSignatures[context.MyIndex]));
+                Log($"Commit sent: height={context.BlockIndex} hash={block.Hash} state={context.State}");
+            }
+        }
+
+        private void OnCommitAgreement(ConsensusPayload payload, CommitAgreement message)
+        {
+            if (context.FinalSignatures[payload.ValidatorIndex] != null) return;
+
+            Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} hash={context.MakeHeader().Hash.ToString()} view={message.ViewNumber} index={payload.ValidatorIndex}");
+
+            if (!Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), message.FinalSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
+            {
+                Log($"{nameof(OnCommitAgreement)}: SIGNATURE verification with problem");
+                return;
+            }
+
+            context.FinalSignatures[payload.ValidatorIndex] = message.FinalSignature;
+
+            if (context.FinalSignatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
+            {
+                Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
+                Block block = context.MakeHeader();
+                if (block == null) return;
+                context.State |= ConsensusState.BlockSent;
+
+                ContractParametersContext sc = new ContractParametersContext(block);
+                for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
+                    if (context.FinalSignatures[i] != null)
+                    {
+                        sc.AddSignature(contract, context.Validators[i], context.FinalSignatures[i]);
+                        j++;
+                    }
+                sc.Verifiable.Witnesses = sc.GetWitnesses();
+                block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
+                Log($"relay block: height={context.BlockIndex} hash={block.Hash}");
+
+                system.LocalNode.Tell(new LocalNode.Relay { Inventory = block });
+            }
+        }
+
+        private void OnRenegeration(ConsensusPayload payload, Renegeration message)
+        {
+            Log($"{nameof(OnRenegeration)}: height={payload.BlockIndex} hash={context.MakeHeader().Hash.ToString()} view={message.ViewNumber} numberOfPartialSignatures={message.SignedPayloads.Count(p => p != null)} index={payload.ValidatorIndex}");
+
+            //Time for checking if speaker really signed this payload
+            //TODO 
+            //Time for checking all Backups
+            uint nValidSignatures = 0;
+            for (int i = 0; i < message.SignedPayloads.Length; i++)
+                if (message.SignedPayloads[i] != null && i != message.PrepareRequestPayload.ValidatorIndex)
+                    if (!Crypto.Default.VerifySignature(message.PrepareRequestPayload.GetHashData(), message.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
+                    {
+                        Log($"Regerating {i} paylod:{message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} is being set to null");
+                        message.SignedPayloads[i] = null;
+                    }
+            {
+                nValidSignatures++;
+            }
+            if (nValidSignatures >= context.M)
+            {
+                Log($"Sorry. I lost some part of the history. I give up...");
+                InitializeConsensus(message.ViewNumber);
+                context.SignedPayloads = message.SignedPayloads;
+                OnConsensusPayload(message.PrepareRequestPayload);
+            }
+        }
+
         protected override void OnReceive(object message)
         {
             switch (message)
@@ -395,7 +429,7 @@ namespace Neo.Consensus
                     OnStart();
                     break;
                 case SetViewNumber setView:
-                    SetViewNumberWithSomeConditions(setView);
+                    InitializeConsensus(setView.ViewNumber);
                     break;
                 case Timer timer:
                     OnTimer(timer);
@@ -412,31 +446,7 @@ namespace Neo.Consensus
             }
         }
 
-        private void SetViewNumberWithSomeConditions(SetViewNumber setView)
-        {
-            Log($"SetViewNumberWithSomeConditions: height={context.BlockIndex} view={context.ViewNumber} setView.ViewNumber={setView.ViewNumber} numberOfPartialSignatures={setView.SignedPayloads.Count(p => p != null)}");
 
-            //Time for checking if speaker really signed this payload
-            //TODO 
-            //Time for checking all Backups
-            uint nValidSignatures = 0;
-            for (int i = 0; i < setView.SignedPayloads.Length; i++)
-                if (setView.SignedPayloads[i] != null && i != setView.PrepareRequestPayload.ValidatorIndex)
-                    if (!Crypto.Default.VerifySignature(setView.PrepareRequestPayload.GetHashData(), setView.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
-                    {
-                        Log($"Regerating {i} paylod:{setView.PrepareRequestPayload.ValidatorIndex} lenght:{setView.SignedPayloads.Length} is being set to null");
-                        setView.SignedPayloads[i] = null;
-                    }{
-                        nValidSignatures++;
-                    }
-            if (nValidSignatures >= context.M)
-            {
-                Log($"Sorry. I lost some part of the history. I give up...");
-                InitializeConsensus(setView.ViewNumber);
-                context.SignedPayloads = setView.SignedPayloads;
-                OnConsensusPayload(setView.PrepareRequestPayload);
-            }
-        }
 
 
         private void OnStart()

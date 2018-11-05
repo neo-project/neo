@@ -114,14 +114,6 @@ namespace Neo.Consensus
             return _header;
         }
 
-        public ConsensusPayload MakeCommitAgreement(byte[] finalSignature)
-        {
-            return MakePayload(new CommitAgreement()
-            {
-                FinalSignature = finalSignature
-            });
-        }
-
         private ConsensusPayload MakePayload(ConsensusMessage message)
         {
             message.ViewNumber = ViewNumber;
@@ -154,6 +146,23 @@ namespace Neo.Consensus
             {
                 PreparePayload = PreparePayload,
                 ResponseSignature = responseSignature
+            });
+        }
+
+        public ConsensusPayload MakeCommitAgreement(byte[] finalSignature)
+        {
+            return MakePayload(new CommitAgreement()
+            {
+                FinalSignature = finalSignature
+            });
+        }
+
+        public ConsensusPayload MakeRenegeration()
+        {
+            return MakePayload(new Renegeration()
+            {
+                PrepareRequestPayload = PreparePayload,
+                SignedPayloads = SignedPayloads
             });
         }
 
