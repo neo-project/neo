@@ -34,6 +34,23 @@ namespace Neo.Consensus
             this.wallet = wallet;
         }
 
+        /// <summary>
+        /// Serialize PreparePayload Data into the desired PrepareRequest message
+        /// </summary>
+        private PrepareRequest GetPrepareRequestMessage(ConsensusPayload PreparePayloadToGet)
+        {
+            ConsensusMessage message;
+            try
+            {
+                message = ConsensusMessage.DeserializeFrom(PreparePayloadToGet.Data);
+            }
+            catch
+            {
+                return new PrepareRequest();
+            }
+            return (PrepareRequest)message;
+        }
+
         private bool AddTransaction(Transaction tx, bool verify)
         {
             if (context.Snapshot.ContainsTransaction(tx.Hash) ||
@@ -85,16 +102,6 @@ namespace Neo.Consensus
             }
         }
 
-        private void SendRenegeration()
-        {
-            if (context.State.HasFlag(ConsensusState.CommitSent))
-            {
-                Log($"Sending Regeneration payload...");
-                SignAndRelay(context.MakeRenegeration());
-                return;
-            }
-        }
-
         private void FillContext()
         {
             IEnumerable<Transaction> mem_pool = Blockchain.Singleton.GetMemoryPool();
@@ -139,6 +146,12 @@ namespace Neo.Consensus
             return nonce.ToUInt64(0);
         }
 
+        private void OnStart()
+        {
+            Log("OnStart");
+            InitializeConsensus(0);
+        }
+
         private void InitializeConsensus(byte view_number)
         {
             if (view_number == 0)
@@ -170,11 +183,23 @@ namespace Neo.Consensus
             Plugin.Log(nameof(ConsensusService), level, message);
         }
 
+        private bool SendRenegeration()
+        {
+            if (context.State.HasFlag(ConsensusState.CommitSent))
+            {
+                Log($"Sending Regeneration payload...");
+                SignAndRelay(context.MakeRenegeration());
+                return true;
+            }
+
+            return false;
+        }
+
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
 
-            SendRenegeration();
+            if(SendRenegeration()) return;
 
             if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
                 return;
@@ -406,23 +431,6 @@ namespace Neo.Consensus
             }
         }
 
-        /// <summary>
-        /// Serialize PreparePayload Data into the desired PrepareRequest message
-        /// </summary>
-        private PrepareRequest GetPrepareRequestMessage(ConsensusPayload PreparePayloadToGet)
-        {
-            ConsensusMessage message;
-            try
-            {
-                message = ConsensusMessage.DeserializeFrom(PreparePayloadToGet.Data);
-            }
-            catch
-            {
-                return new PrepareRequest();
-            }
-            return (PrepareRequest)message;
-        }
-
         private void OnRenegeration(ConsensusPayload payload, Renegeration message)
         {
             Log($"{nameof(OnRenegeration)}: height={payload.BlockIndex} hash={context.MakeHeader().Hash.ToString()} view={message.ViewNumber} numberOfPartialSignatures={message.SignedPayloads.Count(p => p != null)} index={payload.ValidatorIndex}");
@@ -503,15 +511,6 @@ namespace Neo.Consensus
             }
         }
 
-
-
-
-        private void OnStart()
-        {
-            Log("OnStart");
-            InitializeConsensus(0);
-        }
-
         private void OnTimer(Timer timer)
         {
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
@@ -577,6 +576,11 @@ namespace Neo.Consensus
 
         private void RequestChangeView()
         {
+            /// <summary>
+            /// TODO maybe remove since it will never reach this point if CommitAgreement was already sent
+            /// </summary>
+            if (SendRenegeration()) return;
+
             context.State |= ConsensusState.ViewChanging;
             context.ExpectedView[context.MyIndex]++;
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
