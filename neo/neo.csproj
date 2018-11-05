@@ -44,8 +44,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net47'">
-    <PackageReference Include="Replicon.Cryptography.SCrypt">
-      <Version>1.1.6.13</Version>
+    <PackageReference Include="Replicon.Cryptography.SCrypt" Version="1.1.6.13">
     </PackageReference>
   </ItemGroup>
 

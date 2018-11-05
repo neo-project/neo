@@ -257,9 +257,13 @@ namespace Neo.Consensus
             context.Transactions = new Dictionary<UInt256, Transaction>();
             context.PreparePayload = payload;
             context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
-            // The Speaker Signed the Payload without any signature (this was the trick/magic part)
-            // But the payload was modified with the signature after that. 
-            // Thus, we need to remove the signature from the Payload to correctly verify Speaker identity agreements with this block
+
+            /// <summary>
+            /// Partial signatures of, at least, M nodes
+            /// The Speaker Signed the Payload without any signature (this was the trick/magic part)
+            /// But the payload was modified with the signature after that. 
+            /// Thus, we need to remove the signature from the Payload to correctly verify Speaker identity agreements with this block
+            /// </summary>
             message.PrepReqSignature = new byte[64];
             payload.Data = message.ToArray();
             if (!Crypto.Default.VerifySignature(payload.GetHashData(), context.SignedPayloads[payload.ValidatorIndex], context.Validators[payload.ValidatorIndex].EncodePoint(false)))
@@ -267,12 +271,12 @@ namespace Neo.Consensus
                 context.SignedPayloads[payload.ValidatorIndex] = null;
                 return;
             }
-            //--------------------------------------------------------------------------------
-            // These next 2 lines could be removed, because payload is not anymore used
-            // it was already saved before changed in the context.PreparePayload... However, let keep things clean for now
+            /// <summary>
+            /// These next 2 lines could be removed, because payload is not anymore used
+            /// it was already saved before changed in the context.PreparePayload... However, let keep things clean for now
+            /// </summary>
             message.PrepReqSignature = context.SignedPayloads[payload.ValidatorIndex];
             payload.Data = message.ToArray(); 
-            //--------------------------------------------------------------------------------
 
             for (int i = 0; i < context.SignedPayloads.Length; i++)
                 if (context.SignedPayloads[i] != null && i != payload.ValidatorIndex)
@@ -318,11 +322,11 @@ namespace Neo.Consensus
             if (context.State.HasFlag(ConsensusState.CommitSent) && context.State.HasFlag(ConsensusState.SignatureSent)) return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
-
-            //====================================================================
-            //The following is like an additional feature 
-            // In the original code we were saving the signature and later verifying.
-            // Here we can check the PreparePayload if it did not arrive, because all PrepareREsponse Payloads carries that
+            /// <summary>
+            /// ***** The following is like an additional feature ******
+            /// ORIGINAL CODE: In the original code we were storing the signature and later verifying.
+            /// FEATURED ONE: Here we can check the PreparePayload if it did not arrive, because all PrepareREsponse Payloads carries that
+            /// </summary>
             if (context.PreparePayload == null)
             {
                 // We need to check if the Node send the orrect PreparePayload from the expected PrimaryIndex
@@ -331,11 +335,15 @@ namespace Neo.Consensus
                 Log($"{nameof(OnPrepareRequestReceived)}: indirectly from index={payload.ValidatorIndex}");
                 OnPrepareRequestReceived(message.PreparePayload, message.PrepareRequestMessage());
             }
-            //====================================================================
-
-            //This payload.ValidatorIndex already submitted a not null signature
+            /// <summary>
+            /// This payload.ValidatorIndex already submitted a not null signature
+            /// </summary>
             if (context.SignedPayloads[payload.ValidatorIndex] != null) return;
-            //Time to check received Signature against our local context.PreparePayload
+
+
+            /// <summary>
+            /// Time to check received Signature against our local context.PreparePayload
+            /// </summary>
             if (!Crypto.Default.VerifySignature(context.PreparePayload.GetHashData(), message.ResponseSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
             context.SignedPayloads[payload.ValidatorIndex] = message.ResponseSignature;
             CheckPayloadSignatures();
@@ -398,9 +406,15 @@ namespace Neo.Consensus
         {
             Log($"{nameof(OnRenegeration)}: height={payload.BlockIndex} hash={context.MakeHeader().Hash.ToString()} view={message.ViewNumber} numberOfPartialSignatures={message.SignedPayloads.Count(p => p != null)} index={payload.ValidatorIndex}");
 
-            //Time for checking if speaker really signed this payload
-            //TODO 
-            //Time for checking all Backups
+            //
+            /// <summary>
+            /// Time for checking if speaker really signed this payload
+            /// </summary>
+            // TODO - Remove signature from payload and check Primary
+
+            /// <summary>
+            /// Time for checking all Backups
+            /// </summary>
             uint nValidSignatures = 0;
             for (int i = 0; i < message.SignedPayloads.Length; i++)
                 if (message.SignedPayloads[i] != null && i != message.PrepareRequestPayload.ValidatorIndex)
@@ -412,6 +426,9 @@ namespace Neo.Consensus
             {
                 nValidSignatures++;
             }
+            /// <summary>
+            /// In order to start Regeneration, at least M signatures should had been verified and true
+            /// </summary>
             if (nValidSignatures >= context.M)
             {
                 Log($"Sorry. I lost some part of the history. I give up...");

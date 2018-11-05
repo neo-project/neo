@@ -7,9 +7,12 @@ namespace Neo.Consensus
     internal class Renegeration : ConsensusMessage
     {
         /// <summary>
-        /// Block signature
+        /// Original PrepareRequest in which, at least, M nodes signed
         /// </summary>
         public ConsensusPayload PrepareRequestPayload; 
+        /// <summary>
+        /// Partial signatures of, at least, M nodes
+        /// </summary>
         public byte[][] SignedPayloads;
 
         /// <summary>
@@ -35,7 +38,6 @@ namespace Neo.Consensus
             ((ISerializable)PrepareRequestPayload).Serialize(writer);
             writer.Write(PrepareRequestPayload);
             writer.Write(SignedPayloads.Length);
-
             for (int sp = 0; sp < SignedPayloads.Length;sp++)
                 writer.Write(SignedPayloads[sp]);
         }
