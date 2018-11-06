@@ -546,7 +546,8 @@ namespace Neo.Consensus
             }
             else if ((context.State.HasFlag(ConsensusState.Primary) && context.State.HasFlag(ConsensusState.RequestSent)) || context.State.HasFlag(ConsensusState.Backup))
             {
-                RequestChangeView();
+                if (!context.State.HasFlag(ConsensusState.CommitSent))
+                    RequestChangeView();
             }
         }
 
@@ -574,14 +575,15 @@ namespace Neo.Consensus
 
         private void RequestChangeView()
         {
+            Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
+
             /// <summary>
-            /// TODO maybe remove since it will never reach this point if CommitAgreement was already sent
+            /// TODO This already happen in a Normal operation in which a node entering commit phase and timeout at the same time
             /// </summary>
             if (CheckRenegeration()) return;
 
             context.State |= ConsensusState.ViewChanging;
             context.ExpectedView[context.MyIndex]++;
-            Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)));
             SignAndRelay(context.MakeChangeView());
             CheckExpectedView(context.ExpectedView[context.MyIndex]);
