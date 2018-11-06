@@ -235,7 +235,7 @@ namespace Neo.Consensus
                 return;
             }
 
-            if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView)
+            if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView && message.Type != ConsensusMessageType.Renegeration)
                 return;
 
             switch (message.Type)
@@ -471,9 +471,9 @@ namespace Neo.Consensus
                         Log($"Regerating {i} paylod:{message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} is being set to null");
                         message.SignedPayloads[i] = null;
                     }
-            {
-                nValidSignatures++;
-            }
+                    else{
+                        nValidSignatures++;
+                    }
             /// <summary>
             /// In order to start Regeneration, at least M signatures should had been verified and true
             /// </summary>
