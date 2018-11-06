@@ -344,10 +344,8 @@ namespace Neo.Consensus
             message.PrepReqSignature = new byte[64];
             payload.Data = message.ToArray();
             if (!Crypto.Default.VerifySignature(payload.GetHashData(), context.SignedPayloads[payload.ValidatorIndex], context.Validators[payload.ValidatorIndex].EncodePoint(false)))
-            {
-                context.SignedPayloads[payload.ValidatorIndex] = null;
                 return true;
-            }
+
             /// <summary>
             /// These next 2 lines could be removed, because payload is not anymore used
             /// it was already saved before changed in the context.PreparePayload... However, let keep things clean for now
@@ -454,7 +452,7 @@ namespace Neo.Consensus
             /// </summary>
             if (CheckPrimaryPayloadSignature(message.PrepareRequestPayload, GetPrepareRequestMessage(message.PrepareRequestPayload)))
             {
-                Log($"Regerating {i} payload: {message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} with a wrong Primary Payload");
+                Log($"Regerating primary payload: {message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} with a wrong Primary Payload");
                 context.SignedPayloads[payload.ValidatorIndex] = null;
                 return;
             }
