@@ -336,9 +336,9 @@ namespace Neo.Consensus
         private bool CheckPrimaryPayloadSignature(ConsensusPayload payload, PrepareRequest message)
         {
             /// <summary>
-            /// Partial signatures of, at least, M nodes
-            /// The Speaker Signed the Payload without any signature (this was the trick/magic part)
-            /// But the payload was modified with the signature after that. 
+            /// The Speaker Signed the Payload without any signature (this was the trick/magic part), PrepReqSignature was empty
+            /// But the payload was latter modified with his signature, 
+            /// We mean, the PrepareRequest message was filled with the PrepReqSignature of the Empty Payload and then serialized again into this Payload.
             /// Thus, we need to remove the signature from the Payload to correctly verify Speaker identity agreements with this block
             /// </summary>
             message.PrepReqSignature = new byte[64];
