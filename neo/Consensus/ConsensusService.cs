@@ -183,7 +183,7 @@ namespace Neo.Consensus
             Plugin.Log(nameof(ConsensusService), level, message);
         }
 
-        private bool SendRenegeration()
+        private bool CheckRenegeration()
         {
             if (context.State.HasFlag(ConsensusState.CommitSent))
             {
@@ -199,7 +199,7 @@ namespace Neo.Consensus
         {
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
 
-            if(SendRenegeration()) return;
+            if(CheckRenegeration()) return;
 
             if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
                 return;
@@ -287,25 +287,12 @@ namespace Neo.Consensus
             context.PreparePayload = payload;
             context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
 
-            /// <summary>
-            /// Partial signatures of, at least, M nodes
-            /// The Speaker Signed the Payload without any signature (this was the trick/magic part)
-            /// But the payload was modified with the signature after that. 
-            /// Thus, we need to remove the signature from the Payload to correctly verify Speaker identity agreements with this block
-            /// </summary>
-            message.PrepReqSignature = new byte[64];
-            payload.Data = message.ToArray();
-            if (!Crypto.Default.VerifySignature(payload.GetHashData(), context.SignedPayloads[payload.ValidatorIndex], context.Validators[payload.ValidatorIndex].EncodePoint(false)))
+
+            if (CheckPrimaryPayloadSignature(payload, message))
             {
                 context.SignedPayloads[payload.ValidatorIndex] = null;
                 return;
             }
-            /// <summary>
-            /// These next 2 lines could be removed, because payload is not anymore used
-            /// it was already saved before changed in the context.PreparePayload... However, let keep things clean for now
-            /// </summary>
-            message.PrepReqSignature = context.SignedPayloads[payload.ValidatorIndex];
-            payload.Data = message.ToArray(); 
 
             for (int i = 0; i < context.SignedPayloads.Length; i++)
                 if (context.SignedPayloads[i] != null && i != payload.ValidatorIndex)
@@ -345,6 +332,31 @@ namespace Neo.Consensus
                 });
             }
         }
+
+        private bool CheckPrimaryPayloadSignature(ConsensusPayload payload, PrepareRequest message)
+        {
+            /// <summary>
+            /// Partial signatures of, at least, M nodes
+            /// The Speaker Signed the Payload without any signature (this was the trick/magic part)
+            /// But the payload was modified with the signature after that. 
+            /// Thus, we need to remove the signature from the Payload to correctly verify Speaker identity agreements with this block
+            /// </summary>
+            message.PrepReqSignature = new byte[64];
+            payload.Data = message.ToArray();
+            if (!Crypto.Default.VerifySignature(payload.GetHashData(), context.SignedPayloads[payload.ValidatorIndex], context.Validators[payload.ValidatorIndex].EncodePoint(false)))
+            {
+                context.SignedPayloads[payload.ValidatorIndex] = null;
+                return true;
+            }
+            /// <summary>
+            /// These next 2 lines could be removed, because payload is not anymore used
+            /// it was already saved before changed in the context.PreparePayload... However, let keep things clean for now
+            /// </summary>
+            message.PrepReqSignature = context.SignedPayloads[payload.ValidatorIndex];
+            payload.Data = message.ToArray();
+            return false;
+        }
+
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
@@ -395,6 +407,7 @@ namespace Neo.Consensus
             }
         }
 
+
         private void OnCommitAgreement(ConsensusPayload payload, CommitAgreement message)
         {
             if (context.FinalSignatures[payload.ValidatorIndex] != null) return;
@@ -434,41 +447,28 @@ namespace Neo.Consensus
         private void OnRenegeration(ConsensusPayload payload, Renegeration message)
         {
             Log($"{nameof(OnRenegeration)}: height={payload.BlockIndex} hash={context.MakeHeader().Hash.ToString()} view={message.ViewNumber} numberOfPartialSignatures={message.SignedPayloads.Count(p => p != null)} index={payload.ValidatorIndex}");
-
+            uint nValidSignatures = 0;
             //
             /// <summary>
             /// Time for checking if speaker really signed this payload
             /// </summary>
-
-            /*
-            // TODO - Remove signature from payload and check Primary
-            public byte[] PrimaryPrepReqSignature = message.SignedPayloads[context.PrimaryIndex];
-            message.PrepReqSignature = new byte[64];
-            payload.Data = message.ToArray();
-            if (!Crypto.Default.VerifySignature(payload.GetHashData(), context.SignedPayloads[payload.ValidatorIndex], context.Validators[payload.ValidatorIndex].EncodePoint(false)))
+            if (CheckPrimaryPayloadSignature(message.PrepareRequestPayload, GetPrepareRequestMessage(message.PrepareRequestPayload)))
             {
+                Log($"Regerating {i} payload: {message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} with a wrong Primary Payload");
                 context.SignedPayloads[payload.ValidatorIndex] = null;
                 return;
             }
-            /// <summary>
-            /// These next 2 lines could be removed, because payload is not anymore used
-            /// it was already saved before changed in the context.PreparePayload... However, let keep things clean for now
-            /// </summary>
-            message.PrepReqSignature = context.SignedPayloads[payload.ValidatorIndex];
-            payload.Data = message.ToArray(); 
 
-            */
-
+            nValidSignatures++;
 
             /// <summary>
             /// Time for checking all Backups
             /// </summary>
-            uint nValidSignatures = 0;
             for (int i = 0; i < message.SignedPayloads.Length; i++)
                 if (message.SignedPayloads[i] != null && i != message.PrepareRequestPayload.ValidatorIndex)
                     if (!Crypto.Default.VerifySignature(message.PrepareRequestPayload.GetHashData(), message.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
                     {
-                        Log($"Regerating {i} paylod:{message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} is being set to null");
+                        Log($"Regerating {i} payload:{message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} is being set to null");
                         message.SignedPayloads[i] = null;
                     }
                     else{
@@ -579,7 +579,7 @@ namespace Neo.Consensus
             /// <summary>
             /// TODO maybe remove since it will never reach this point if CommitAgreement was already sent
             /// </summary>
-            if (SendRenegeration()) return;
+            if (CheckRenegeration()) return;
 
             context.State |= ConsensusState.ViewChanging;
             context.ExpectedView[context.MyIndex]++;
