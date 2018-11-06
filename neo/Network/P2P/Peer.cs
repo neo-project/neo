@@ -36,10 +36,12 @@ namespace Neo.Network.P2P
         private readonly Dictionary<IPAddress, int> ConnectedAddresses = new Dictionary<IPAddress, int>();
         protected readonly ConcurrentDictionary<IActorRef, IPEndPoint> ConnectedPeers = new ConcurrentDictionary<IActorRef, IPEndPoint>();
         protected ImmutableHashSet<IPEndPoint> UnconnectedPeers = ImmutableHashSet<IPEndPoint>.Empty;
+        protected ImmutableHashSet<IPEndPoint> ConnectingPeers = ImmutableHashSet<IPEndPoint>.Empty;
 
         public int ListenerPort { get; private set; }
         protected abstract int ConnectedMax { get; }
         protected abstract int UnconnectedMax { get; }
+        protected virtual int ConnectingMax => ConnectedMax - ConnectedPeers.Count;
 
         static Peer()
         {
@@ -62,7 +64,12 @@ namespace Neo.Network.P2P
             if (ConnectedAddresses.TryGetValue(endPoint.Address, out int count) && count >= MaxConnectionsPerAddress)
                 return;
             if (ConnectedPeers.Values.Contains(endPoint)) return;
-            tcp_manager.Tell(new Tcp.Connect(endPoint));
+            ImmutableInterlocked.Update(ref ConnectingPeers, p =>
+            {
+                if (p.Count >= ConnectingMax || p.Contains(endPoint)) return p;
+                tcp_manager.Tell(new Tcp.Connect(endPoint));
+                return p.Add(endPoint);
+            });
         }
 
         private static bool IsIntranetAddress(IPAddress address)
@@ -100,7 +107,8 @@ namespace Neo.Network.P2P
                 case Tcp.Bound _:
                     tcp_listener = Sender;
                     break;
-                case Tcp.CommandFailed _:
+                case Tcp.CommandFailed commandFailed:
+                    OnTcpCommandFailed(commandFailed.Cmd);
                     break;
                 case Terminated terminated:
                     OnTerminated(terminated.ActorRef);
@@ -139,6 +147,7 @@ namespace Neo.Network.P2P
 
         private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
+            ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
@@ -151,6 +160,16 @@ namespace Neo.Network.P2P
                 Context.Watch(connection);
                 Sender.Tell(new Tcp.Register(connection));
                 ConnectedPeers.TryAdd(connection, remote);
+            }
+        }
+
+        private void OnTcpCommandFailed(Tcp.Command cmd)
+        {
+            switch (cmd)
+            {
+                case Tcp.Connect connect:
+                    ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(((IPEndPoint)connect.RemoteAddress).Unmap()));
+                    break;
             }
         }
 
