@@ -31,7 +31,11 @@ namespace Neo.Consensus
             SignedPayloads = new byte[nValidators][];
 
             for (int sp = 0; sp < nValidators; sp++)
+            {
                 SignedPayloads[sp] = reader.ReadBytes(64);
+                if (SignedPayloads[sp] == new byte[64])
+                    SignedPayloads[sp] = null;
+            }
         }
 
         public override void Serialize(BinaryWriter writer)
