@@ -503,8 +503,19 @@ namespace Neo.SmartContract
             byte length = CurrentContext.Script[CurrentContext.InstructionPointer + 1];
             if (CurrentContext.InstructionPointer > CurrentContext.Script.Length - length - 2)
                 return 1;
-            string api_name = Encoding.ASCII.GetString(CurrentContext.Script, CurrentContext.InstructionPointer + 2, length);
-            uint api_hash = api_name.ToInteropMethodHash();
+            uint api_hash = 0;
+            if (length == 4)
+            {
+                byte[] bytes = new byte[4];
+                bytes[0] = CurrentContext.Script[CurrentContext.InstructionPointer + 2];
+                bytes[1] = CurrentContext.Script[CurrentContext.InstructionPointer + 3];
+                bytes[2] = CurrentContext.Script[CurrentContext.InstructionPointer + 4];
+                bytes[3] = CurrentContext.Script[CurrentContext.InstructionPointer + 5];
+                api_hash = System.BitConverter.ToUInt32(bytes, 0);
+            }
+            else
+                api_hash = Encoding.ASCII.GetString(CurrentContext.Script, CurrentContext.InstructionPointer + 2, length).ToInteropMethodHash();
+
             if (api_hash == "System.Runtime.CheckWitness".ToInteropMethodHash() ||
                 api_hash == "Neo.Runtime.CheckWitness".ToInteropMethodHash() ||
                 api_hash == "AntShares.Runtime.CheckWitness.ToInteropMethodHash()".ToInteropMethodHash())
