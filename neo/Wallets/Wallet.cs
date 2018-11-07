@@ -3,6 +3,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
+using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,6 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
-using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.Wallets
 {
@@ -100,23 +100,34 @@ namespace Neo.Wallets
             if (asset_id is UInt160 asset_id_160)
             {
                 byte[] script;
-                UInt160[] accounts = GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
                 using (ScriptBuilder sb = new ScriptBuilder())
                 {
-                    sb.EmitPush(0);
-                    foreach (UInt160 account in accounts)
-                    {
-                        sb.EmitAppCall(asset_id_160, "balanceOf", account);
-                        sb.Emit(OpCode.ADD);
-                    }
                     sb.EmitAppCall(asset_id_160, "decimals");
                     script = sb.ToArray();
                 }
-                ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: Fixed8.FromDecimal(0.2m) * accounts.Length);
+                ApplicationEngine engine = ApplicationEngine.Run(script);
                 if (engine.State.HasFlag(VMState.FAULT))
                     return new BigDecimal(0, 0);
                 byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
-                BigInteger amount = ((VMArray)engine.ResultStack.Pop()).Aggregate(BigInteger.Zero, (x, y) => x + y.GetBigInteger());
+
+                BigInteger amount = BigInteger.Zero;
+                using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                {
+                    ContractState asset = snapshot.Contracts.TryGet(asset_id_160);
+                    foreach (UInt160 account in GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash))
+                    {
+                        StorageKey key = new StorageKey
+                        {
+                            ScriptHash = asset.ScriptHash,
+                            Key = account.ToArray()
+                        };
+                        StorageItem item = snapshot.Storages.TryGet(key);
+                        if (item != null)
+                        {
+                            amount += new BigInteger(item.Value);
+                        }
+                    }
+                }
                 return new BigDecimal(amount, decimals);
             }
             else
@@ -306,25 +317,37 @@ namespace Neo.Wallets
                 {
                     foreach (var output in cOutputs)
                     {
-                        byte[] script;
-                        using (ScriptBuilder sb2 = new ScriptBuilder())
+                        BigInteger sum = BigInteger.Zero;
+                        List<BigInteger> values = new List<BigInteger>();
+
+                        using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                         {
-                            sb2.EmitPush(0);
-                            foreach (UInt160 account in accounts)
+                            ContractState asset = snapshot.Contracts.TryGet(output.AssetId);
+                            foreach (UInt160 account in GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash))
                             {
-                                sb2.EmitAppCall(output.AssetId, "balanceOf", account);
-                                sb2.Emit(OpCode.ADD);
+                                StorageKey key = new StorageKey
+                                {
+                                    ScriptHash = asset.ScriptHash,
+                                    Key = account.ToArray()
+                                };
+                                StorageItem item = snapshot.Storages.TryGet(key);
+                                BigInteger value = new BigInteger(item.Value);
+                                if (item != null)
+                                {
+                                    sum += value;
+                                    values.Add(value);
+                                }
+                                else
+                                {
+                                    values.Add(BigInteger.Zero);
+                                }
                             }
-                            script = sb2.ToArray();
                         }
-                        ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: Fixed8.FromDecimal(0.2m) * accounts.Length);
-                        if (engine.State.HasFlag(VMState.FAULT)) return null;
-                        var balances = ((IEnumerable<StackItem>)(VMArray)engine.ResultStack.Pop()).Reverse().Zip(accounts, (i, a) => new
+                        var balances = values.Zip(accounts, (i, a) => new
                         {
                             Account = a,
-                            Value = i.GetBigInteger()
+                            Value = i
                         }).ToArray();
-                        BigInteger sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
                         if (sum < output.Value) return null;
                         if (sum != output.Value)
                         {
