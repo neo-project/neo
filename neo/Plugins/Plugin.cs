@@ -12,6 +12,7 @@ namespace Neo.Plugins
         private static readonly List<ILogPlugin> Loggers = new List<ILogPlugin>();
         internal static readonly List<IPolicyPlugin> Policies = new List<IPolicyPlugin>();
         internal static readonly List<IRpcPlugin> RpcPlugins = new List<IRpcPlugin>();
+        internal static readonly List<IPersistencePlugin> PersistencePlugins = new List<IPersistencePlugin>();
 
         protected static NeoSystem System { get; private set; }
         public virtual string Name => GetType().Name;
@@ -25,6 +26,7 @@ namespace Neo.Plugins
             if (this is ILogPlugin logger) Loggers.Add(logger);
             if (this is IPolicyPlugin policy) Policies.Add(policy);
             if (this is IRpcPlugin rpc) RpcPlugins.Add(rpc);
+            if (this is IPersistencePlugin persistence) PersistencePlugins.Add(persistence);
         }
 
         public static bool CheckPolicy(Transaction tx)
