@@ -334,6 +334,17 @@ namespace Neo.Consensus
             }
         }
 
+        public void PrintByteArray(byte[] bytes)
+        {
+            var sb = new StringBuilder("new byte[] { ");
+            foreach (var b in bytes)
+            {
+                sb.Append(b + ", ");
+            }
+            sb.Append("}");
+            Log($"{sb.ToString()}");
+        }
+
         private bool CheckPrimaryPayloadSignature(ConsensusPayload payload)
         {
             // TODO Maybe include some verification here
@@ -346,7 +357,12 @@ namespace Neo.Consensus
             /// Thus, we need to remove the signature from the Payload to correctly verify Speaker identity agreements with this block
             /// </summary>
             byte[] tempSignature = message.PrepReqSignature;
+
             message.PrepReqSignature = new byte[64];
+            Log($"CheckPrimaryPayloadSignature...");
+            PrintByteArray(tempSignature);
+            PrintByteArray(message.PrepReqSignature);
+
             payload.Data = message.ToArray();
             if (!Crypto.Default.VerifySignature(payload.GetHashData(), tempSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
                 return true;
@@ -599,7 +615,6 @@ namespace Neo.Consensus
 
         private void SignAndRelay(ConsensusPayload payload)
         {
-            Log($"Signing...");
             ContractParametersContext sc;
             try
             {
@@ -610,11 +625,9 @@ namespace Neo.Consensus
             {
                 return;
             }
-            Log($"signed.");
+
             sc.Verifiable.Witnesses = sc.GetWitnesses();
-            Log($"Tell....");
             system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
-            Log($"Done.");
         }
     }
 
