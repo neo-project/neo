@@ -29,6 +29,7 @@ namespace Neo.Consensus
             ((ISerializable)PrepareRequestPayload).Deserialize(reader);
 
             int nValidators = reader.ReadInt32();
+            SignedPayloads = new byte[nValidators][];
 
             for (int sp = 0; sp < nValidators; sp++)
                 SignedPayloads[sp] = reader.ReadBytes(64);
@@ -42,8 +43,17 @@ namespace Neo.Consensus
 
             writer.Write(SignedPayloads.Length);
 
-            for (int sp = 0; sp < SignedPayloads.Length;sp++)
-                writer.Write(SignedPayloads[sp]);
+            for (int sp = 0; sp < SignedPayloads.Length; sp++)
+            {
+                if (SignedPayloads[sp] != null)
+                {
+                    writer.Write(SignedPayloads[sp]);
+                }
+                else
+                {
+                    writer.Write(new byte[64]);
+                }
+            }
         }
     }
 }
