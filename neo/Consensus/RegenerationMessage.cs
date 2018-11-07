@@ -20,6 +20,7 @@ namespace Neo.Consensus
         /// </summary>
         public Renegeration() : base(ConsensusMessageType.Renegeration) { }
 
+        //TODO Double-check both Deserialize and Serialize
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);

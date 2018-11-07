@@ -189,6 +189,7 @@ namespace Neo.Consensus
             {
                 Log($"Sending Regeneration payload...");
                 SignAndRelay(context.MakeRenegeration());
+                Log($"Regeneration sent: height={context.BlockIndex} state={context.State}");
                 return true;
             }
 
@@ -235,7 +236,7 @@ namespace Neo.Consensus
                 return;
             }
 
-            if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView && message.Type != ConsensusMessageType.Renegeration)
+            if (message.ViewNumber != context.ViewNumber && (message.Type != ConsensusMessageType.ChangeView || message.Type != ConsensusMessageType.Renegeration))
                 return;
 
             switch (message.Type)
@@ -288,7 +289,7 @@ namespace Neo.Consensus
             context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
 
 
-            if (CheckPrimaryPayloadSignature(payload, message))
+            if (CheckPrimaryPayloadSignature(payload))
             {
                 context.SignedPayloads[payload.ValidatorIndex] = null;
                 return;
@@ -333,24 +334,28 @@ namespace Neo.Consensus
             }
         }
 
-        private bool CheckPrimaryPayloadSignature(ConsensusPayload payload, PrepareRequest message)
+        private bool CheckPrimaryPayloadSignature(ConsensusPayload payload)
         {
+            // TODO Maybe include some verification here
+            PrepareRequest message = GetPrepareRequestMessage(payload);
+
             /// <summary>
             /// The Speaker Signed the Payload without any signature (this was the trick/magic part), PrepReqSignature was empty
             /// But the payload was latter modified with his signature, 
             /// We mean, the PrepareRequest message was filled with the PrepReqSignature of the Empty Payload and then serialized again into this Payload.
             /// Thus, we need to remove the signature from the Payload to correctly verify Speaker identity agreements with this block
             /// </summary>
+            byte[] tempSignature = message.PrepReqSignature;
             message.PrepReqSignature = new byte[64];
             payload.Data = message.ToArray();
-            if (!Crypto.Default.VerifySignature(payload.GetHashData(), context.SignedPayloads[payload.ValidatorIndex], context.Validators[payload.ValidatorIndex].EncodePoint(false)))
+            if (!Crypto.Default.VerifySignature(payload.GetHashData(), tempSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
                 return true;
 
             /// <summary>
             /// These next 2 lines could be removed, because payload is not anymore used
             /// it was already saved before changed in the context.PreparePayload... However, let keep things clean for now
             /// </summary>
-            message.PrepReqSignature = context.SignedPayloads[payload.ValidatorIndex];
+            message.PrepReqSignature = tempSignature;
             payload.Data = message.ToArray();
             return false;
         }
@@ -444,19 +449,18 @@ namespace Neo.Consensus
 
         private void OnRenegeration(ConsensusPayload payload, Renegeration message)
         {
-            Log($"{nameof(OnRenegeration)}: height={payload.BlockIndex} hash={context.MakeHeader().Hash.ToString()} view={message.ViewNumber} numberOfPartialSignatures={message.SignedPayloads.Count(p => p != null)} index={payload.ValidatorIndex}");
+            Log($"{nameof(OnRenegeration)}: height={payload.BlockIndex} view={message.ViewNumber} numberOfPartialSignatures={message.SignedPayloads.Count(p => p != null)} index={payload.ValidatorIndex}");
+
             uint nValidSignatures = 0;
-            //
             /// <summary>
             /// Time for checking if speaker really signed this payload
             /// </summary>
-            if (CheckPrimaryPayloadSignature(message.PrepareRequestPayload, GetPrepareRequestMessage(message.PrepareRequestPayload)))
+            if (CheckPrimaryPayloadSignature(message.PrepareRequestPayload))
             {
                 Log($"Regerating primary payload: {message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} with a wrong Primary Payload");
                 context.SignedPayloads[payload.ValidatorIndex] = null;
                 return;
             }
-
             nValidSignatures++;
 
             /// <summary>
@@ -546,7 +550,8 @@ namespace Neo.Consensus
             }
             else if ((context.State.HasFlag(ConsensusState.Primary) && context.State.HasFlag(ConsensusState.RequestSent)) || context.State.HasFlag(ConsensusState.Backup))
             {
-                if (!context.State.HasFlag(ConsensusState.CommitSent))
+                // COMMENT FOR MINNOR TESTS -- GOOD MANNER TO CALL REGENERATION NATURALLY
+                //if (!context.State.HasFlag(ConsensusState.CommitSent))
                     RequestChangeView();
             }
         }
@@ -579,6 +584,9 @@ namespace Neo.Consensus
 
             /// <summary>
             /// TODO This already happen in a Normal operation in which a node entering commit phase and timeout at the same time
+            /// We updated the flag on RequestChangeView, blocking it for when commit already sent.
+            /// It should never Send Renegeration from here anymore
+            /// TODO Remove this check.
             /// </summary>
             if (CheckRenegeration()) return;
 
@@ -591,6 +599,7 @@ namespace Neo.Consensus
 
         private void SignAndRelay(ConsensusPayload payload)
         {
+            Log($"Signing...");
             ContractParametersContext sc;
             try
             {
@@ -601,9 +610,11 @@ namespace Neo.Consensus
             {
                 return;
             }
-
+            Log($"signed.");
             sc.Verifiable.Witnesses = sc.GetWitnesses();
+            Log($"Tell....");
             system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
+            Log($"Done.");
         }
     }
 
