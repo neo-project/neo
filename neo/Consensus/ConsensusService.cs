@@ -289,7 +289,7 @@ namespace Neo.Consensus
             context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
 
 
-            if (CheckPrimaryPayloadSignature(payload))
+            if (!CheckPrimaryPayloadSignature(payload))
             {
                 context.SignedPayloads[payload.ValidatorIndex] = null;
                 return;
@@ -361,7 +361,7 @@ namespace Neo.Consensus
 
             payload.Data = message.ToArray();
             if (!Crypto.Default.VerifySignature(payload.GetHashData(), tempSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
-                return true;
+                return false;
 
             /// <summary>
             /// These next 2 lines could be removed, because payload is not anymore used
@@ -369,7 +369,7 @@ namespace Neo.Consensus
             /// </summary>
             message.PrepReqSignature = tempSignature;
             payload.Data = message.ToArray();
-            return false;
+            return true;
         }
 
 
@@ -469,7 +469,7 @@ namespace Neo.Consensus
             /// <summary>
             /// Time for checking if speaker really signed this payload
             /// </summary>
-            if (CheckPrimaryPayloadSignature(message.PrepareRequestPayload))
+            if (!CheckPrimaryPayloadSignature(message.PrepareRequestPayload))
             {
                 Log($"Regerating primary payload: {message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} with a wrong Primary Payload");
                 context.SignedPayloads[payload.ValidatorIndex] = null;
