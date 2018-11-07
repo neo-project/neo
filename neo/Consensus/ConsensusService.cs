@@ -220,6 +220,7 @@ namespace Neo.Consensus
                 if (context.Snapshot.Height + 1 < payload.BlockIndex)
                 {
                     Log($"chain sync: expected={payload.BlockIndex} current: {context.Snapshot.Height} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
+                    // TODO Thinking about a delay here in order to ask for blocks and then initialize from view 1;
                 }
                 return;
             }
@@ -390,9 +391,9 @@ namespace Neo.Consensus
             /// </summary>
             if (context.PreparePayload == null)
             {
-                // We need to check if the Node send the orrect PreparePayload from the expected PrimaryIndex
+                // We need to check if the Node send the correct PreparePayload from the expected PrimaryIndex
                 if (message.PreparePayload.ValidatorIndex != context.PrimaryIndex) return;
-                if (!Crypto.Default.VerifySignature(message.PreparePayload.GetHashData(), GetPrepareRequestMessage(message.PreparePayload).PrepReqSignature, context.Validators[message.PreparePayload.ValidatorIndex].EncodePoint(false))) return;
+                if (!CheckPrimaryPayloadSignature(message.PreparePayload)) return;
                 Log($"{nameof(OnPrepareRequestReceived)}: indirectly from index={payload.ValidatorIndex}");
                 OnPrepareRequestReceived(message.PreparePayload, GetPrepareRequestMessage(message.PreparePayload));
             }
@@ -539,6 +540,7 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.RequestSent;
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
+                    Log($"ONTIMER: Going to fill context...");
                     FillContext();
                     context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
                     context.SignedPayloads[context.MyIndex] = new byte[64];
@@ -549,18 +551,21 @@ namespace Neo.Consensus
                     context.PreparePayload.Data = tempPrePrepareWithSignature.ToArray();
                 }
 
+                Log($"ONTIMER: After fill context context.");
                 if (context.PreparePayload == null)
                 {
-                    Log($"Error! PreparePayload is null");
+                    Log($"ONTIMER:  Error! PreparePayload is null");
                     return;
                 }
 
                 SignAndRelay(context.PreparePayload);
+                Log($"ONTIMER: signed");
                 if (context.TransactionHashes.Length > 1)
                 {
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
                         system.LocalNode.Tell(Message.Create("inv", payload));
                 }
+                Log($"ONTIMER: changetimer");
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer.ViewNumber + 1)));
             }
             else if ((context.State.HasFlag(ConsensusState.Primary) && context.State.HasFlag(ConsensusState.RequestSent)) || context.State.HasFlag(ConsensusState.Backup))
