@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using Neo.Network.P2P.Payloads;
 using Neo.IO;
 
@@ -33,7 +34,7 @@ namespace Neo.Consensus
             for (int sp = 0; sp < nValidators; sp++)
             {
                 SignedPayloads[sp] = reader.ReadBytes(64);
-                if (SignedPayloads[sp] == new byte[64])
+                if (SignedPayloads[sp].All(b => b == 0))
                     SignedPayloads[sp] = null;
             }
         }
