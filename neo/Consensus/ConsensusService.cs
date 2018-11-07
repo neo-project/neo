@@ -599,9 +599,7 @@ namespace Neo.Consensus
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
 
             /// <summary>
-            /// TODO This already happen in a Normal operation in which a node entering commit phase and timeout at the same time
-            /// We updated the flag on RequestChangeView, blocking it for when commit already sent.
-            /// It should never Send Renegeration from here anymore
+            /// It should never Send Renegeration from here anymore after flag of CommitSent placed OnTimer
             /// TODO Remove this check.
             /// </summary>
             if (CheckRenegeration()) return;
