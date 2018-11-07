@@ -357,11 +357,7 @@ namespace Neo.Consensus
             /// Thus, we need to remove the signature from the Payload to correctly verify Speaker identity agreements with this block
             /// </summary>
             byte[] tempSignature = message.PrepReqSignature;
-
             message.PrepReqSignature = new byte[64];
-            Log($"CheckPrimaryPayloadSignature...");
-            PrintByteArray(tempSignature);
-            PrintByteArray(message.PrepReqSignature);
 
             payload.Data = message.ToArray();
             if (!Crypto.Default.VerifySignature(payload.GetHashData(), tempSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
