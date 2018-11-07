@@ -461,6 +461,8 @@ namespace Neo.Consensus
 
         private void OnRenegeration(ConsensusPayload payload, Renegeration message)
         {
+            if (context.State.HasFlag(ConsensusState.CommitSent)) return;
+
             Log($"{nameof(OnRenegeration)}: height={payload.BlockIndex} view={message.ViewNumber} numberOfPartialSignatures={message.SignedPayloads.Count(p => p != null)} index={payload.ValidatorIndex}");
 
             uint nValidSignatures = 0;
@@ -483,6 +485,7 @@ namespace Neo.Consensus
                     if (!Crypto.Default.VerifySignature(message.PrepareRequestPayload.GetHashData(), message.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
                     {
                         Log($"Regerating {i} payload:{message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} is being set to null");
+                        PrintByteArray(message.SignedPayloads[i]);
                         message.SignedPayloads[i] = null;
                     }
                     else{
