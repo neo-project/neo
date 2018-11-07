@@ -376,6 +376,11 @@ namespace Neo.Consensus
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
             if (context.State.HasFlag(ConsensusState.CommitSent) && context.State.HasFlag(ConsensusState.SignatureSent)) return;
+            /// <summary>
+            /// This payload.ValidatorIndex already submitted a not null signature
+            /// </summary>
+            if (context.SignedPayloads[payload.ValidatorIndex] != null) return;
+
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
             /// <summary>
@@ -391,11 +396,6 @@ namespace Neo.Consensus
                 Log($"{nameof(OnPrepareRequestReceived)}: indirectly from index={payload.ValidatorIndex}");
                 OnPrepareRequestReceived(message.PreparePayload, GetPrepareRequestMessage(message.PreparePayload));
             }
-            /// <summary>
-            /// This payload.ValidatorIndex already submitted a not null signature
-            /// </summary>
-            if (context.SignedPayloads[payload.ValidatorIndex] != null) return;
-
 
             /// <summary>
             /// Time to check received Signature against our local context.PreparePayload
@@ -565,8 +565,7 @@ namespace Neo.Consensus
             }
             else if ((context.State.HasFlag(ConsensusState.Primary) && context.State.HasFlag(ConsensusState.RequestSent)) || context.State.HasFlag(ConsensusState.Backup))
             {
-                // COMMENT FOR MINNOR TESTS -- GOOD MANNER TO CALL REGENERATION NATURALLY
-                //if (!context.State.HasFlag(ConsensusState.CommitSent))
+                if (!context.State.HasFlag(ConsensusState.CommitSent))
                     RequestChangeView();
             }
         }
