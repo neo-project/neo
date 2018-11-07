@@ -183,13 +183,13 @@ namespace Neo.Consensus
             Plugin.Log(nameof(ConsensusService), level, message);
         }
 
-        private bool CheckRenegeration()
+        private bool CheckRegeneration()
         {
             if (context.State.HasFlag(ConsensusState.CommitSent))
             {
                 Log($"Sending Regeneration payload...");
-                SignAndRelay(context.MakeRenegeration());
-                Log($"Regeneration sent: height={context.BlockIndex} state={context.State}");
+                SignAndRelay(context.MakeRegeneration());
+                Log($"Regeneration sent: height={context.BlockIndex} view={context.ViewNumber} state={context.State}");
                 return true;
             }
 
@@ -200,7 +200,7 @@ namespace Neo.Consensus
         {
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
 
-            if(CheckRenegeration()) return;
+            if(CheckRegeneration()) return;
 
             if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
                 return;
@@ -236,7 +236,7 @@ namespace Neo.Consensus
                 return;
             }
 
-            if (message.ViewNumber != context.ViewNumber && (message.Type != ConsensusMessageType.ChangeView || message.Type != ConsensusMessageType.Renegeration))
+            if (message.ViewNumber != context.ViewNumber && (message.Type != ConsensusMessageType.ChangeView || message.Type != ConsensusMessageType.Regeneration))
                 return;
 
             switch (message.Type)
@@ -253,8 +253,8 @@ namespace Neo.Consensus
                 case ConsensusMessageType.CommitAgreement:
                     OnCommitAgreement(payload, (CommitAgreement)message);
                     break;
-                case ConsensusMessageType.Renegeration:
-                    OnRenegeration(payload, (Renegeration)message);
+                case ConsensusMessageType.Regeneration:
+                    OnRegeneration(payload, (Regeneration)message);
                     break;
             }
         }
@@ -358,8 +358,8 @@ namespace Neo.Consensus
             /// </summary>
             byte[] tempSignature = message.PrepReqSignature;
             message.PrepReqSignature = new byte[64];
-
             payload.Data = message.ToArray();
+
             if (!Crypto.Default.VerifySignature(payload.GetHashData(), tempSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
                 return false;
 
@@ -459,11 +459,11 @@ namespace Neo.Consensus
             }
         }
 
-        private void OnRenegeration(ConsensusPayload payload, Renegeration message)
+        private void OnRegeneration(ConsensusPayload payload, Regeneration message)
         {
             if (context.State.HasFlag(ConsensusState.CommitSent)) return;
 
-            Log($"{nameof(OnRenegeration)}: height={payload.BlockIndex} view={message.ViewNumber} numberOfPartialSignatures={message.SignedPayloads.Count(p => p != null)} index={payload.ValidatorIndex}");
+            Log($"{nameof(OnRegeneration)}: height={payload.BlockIndex} view={message.ViewNumber} numberOfPartialSignatures={message.SignedPayloads.Count(p => p != null)} index={payload.ValidatorIndex}");
 
             uint nValidSignatures = 0;
             /// <summary>
@@ -597,10 +597,10 @@ namespace Neo.Consensus
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
 
             /// <summary>
-            /// It should never Send Renegeration from here anymore after flag of CommitSent placed OnTimer
+            /// It should never Send Regeneration from here anymore after flag of CommitSent placed OnTimer
             /// TODO Remove this check.
             /// </summary>
-            if (CheckRenegeration()) return;
+            if (CheckRegeneration()) return;
 
             context.State |= ConsensusState.ViewChanging;
             context.ExpectedView[context.MyIndex]++;

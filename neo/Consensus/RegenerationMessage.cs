@@ -4,7 +4,7 @@ using Neo.IO;
 
 namespace Neo.Consensus
 {
-    internal class Renegeration : ConsensusMessage
+    internal class Regeneration : ConsensusMessage
     {
         /// <summary>
         /// Original PrepareRequest in which, at least, M nodes signed
@@ -18,7 +18,7 @@ namespace Neo.Consensus
         /// <summary>
         /// Constructors
         /// </summary>
-        public Renegeration() : base(ConsensusMessageType.Renegeration) { }
+        public Regeneration() : base(ConsensusMessageType.Regeneration) { }
 
         public override void Deserialize(BinaryReader reader)
         {

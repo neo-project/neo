@@ -12,7 +12,7 @@ namespace Neo.Consensus
         PrepareResponse = 0x21,
         [ReflectionCache(typeof(CommitAgreement))]
         CommitAgreement = 0x22,
-        [ReflectionCache(typeof(Renegeration))]
-        Renegeration = 0x23,
+        [ReflectionCache(typeof(Regeneration))]
+        Regeneration = 0x23,
     }
 }

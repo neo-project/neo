@@ -146,9 +146,9 @@ namespace Neo.Consensus
             });
         }
 
-        public ConsensusPayload MakeRenegeration()
+        public ConsensusPayload MakeRegeneration()
         {
-            return MakePayload(new Renegeration()
+            return MakePayload(new Regeneration()
             {
                 PrepareRequestPayload = PreparePayload,
                 SignedPayloads = SignedPayloads
