@@ -518,7 +518,7 @@ namespace Neo.SmartContract
 
             if (api_hash == "System.Runtime.CheckWitness".ToInteropMethodHash() ||
                 api_hash == "Neo.Runtime.CheckWitness".ToInteropMethodHash() ||
-                api_hash == "AntShares.Runtime.CheckWitness.ToInteropMethodHash()".ToInteropMethodHash())
+                api_hash == "AntShares.Runtime.CheckWitness".ToInteropMethodHash())
                     return 200;
             else if (api_hash == "System.Blockchain.GetHeader".ToInteropMethodHash() ||
                 api_hash == "Neo.Blockchain.GetHeader".ToInteropMethodHash() ||
