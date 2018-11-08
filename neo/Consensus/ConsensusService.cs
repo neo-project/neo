@@ -181,7 +181,7 @@ namespace Neo.Consensus
         {
             if (context.State.HasFlag(ConsensusState.CommitSent))
             {
-                Log($"Sending Regeneration payload...");
+                Log($"CheckRegeneration: CommitSent flag. Sending Regeneration payload...");
                 SignAndRelay(context.MakeRegeneration());
                 Log($"Regeneration sent: height={context.BlockIndex} view={context.ViewNumber} state={context.State}");
                 return true;
@@ -204,12 +204,14 @@ namespace Neo.Consensus
 
         private void OnConsensusPayload(ConsensusPayload payload)
         {
-            Log($"OnConsensusPayload I: I am inside");
+            Log($"OnConsensusPayload I: Welcome!");
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
+            Log($"OnConsensusPayload II.1: Basic checks");
             if (payload.ValidatorIndex == context.MyIndex) return;
+            Log($"OnConsensusPayload II.2: Basic checks");
             if (payload.Version != ConsensusContext.Version)
                 return;
-            Log($"OnConsensusPayload II: Basic checks");
+            Log($"OnConsensusPayload II.3: Basic checks");
             Log($"payload.PrevHash={payload.PrevHash} context.PrevHash={context.PrevHash}");
             if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
             {
@@ -281,7 +283,7 @@ namespace Neo.Consensus
 
             if (payload.Timestamp <= context.Snapshot.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
             {
-                Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
+                Log($"{nameof(OnPrepareRequestReceived)}: Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
                 return;
             }
 
@@ -380,7 +382,7 @@ namespace Neo.Consensus
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
-            if (context.State.HasFlag(ConsensusState.CommitSent) && context.State.HasFlag(ConsensusState.SignatureSent)) return;
+            if (context.State.HasFlag(ConsensusState.CommitSent)) return;
             /// <summary>
             /// This payload.ValidatorIndex already submitted a not null signature
             /// </summary>
@@ -458,8 +460,7 @@ namespace Neo.Consensus
                     }
                 sc.Verifiable.Witnesses = sc.GetWitnesses();
                 block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
-                Log($"relay block: height={context.BlockIndex} hash={block.Hash}");
-
+                Log($"{nameof(OnCommitAgreement)}: relay block: height={context.BlockIndex} hash={block.Hash}");
                 system.LocalNode.Tell(new LocalNode.Relay { Inventory = block });
             }
         }
@@ -550,25 +551,24 @@ namespace Neo.Consensus
             {
                 Log($"send prepare request: height={timer.Height} view={timer.ViewNumber}");
                 context.State |= ConsensusState.RequestSent;
-                bool SendingNewPrepareRequestPayload = false;
+
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
                     Log($"ONTIMER: Going to fill context...");
                     FillContext();
                     context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
-                    context.SignedPayloads[context.MyIndex] = new byte[64];
-                    context.PreparePayload = context.MakePrepareRequest(context.SignedPayloads[context.MyIndex]);
-                    context.SignedPayloads[context.MyIndex] = context.PreparePayload.Sign(context.KeyPair);
-                    PrepareRequest tempPrePrepareWithSignature = GetPrepareRequestMessage(context.PreparePayload);
-                    tempPrePrepareWithSignature.PrepReqSignature = context.SignedPayloads[context.MyIndex];
-                    context.PreparePayload.Data = tempPrePrepareWithSignature.ToArray();
-                    Log($"ONTIMER: Inside context");
-                    PrintByteArray(context.PreparePayload.Data);
-                    SendingNewPrepareRequestPayload = true;
                 }
-
                 Log($"ONTIMER: After fill context context.");
-                PrintByteArray(context.PreparePayload.Data);
+
+                context.SignedPayloads[context.MyIndex] = new byte[64];
+                context.PreparePayload = context.MakePrepareRequest(context.SignedPayloads[context.MyIndex]);
+                context.SignedPayloads[context.MyIndex] = context.PreparePayload.Sign(context.KeyPair);
+                PrepareRequest tempPrePrepareWithSignature = GetPrepareRequestMessage(context.PreparePayload);
+                tempPrePrepareWithSignature.PrepReqSignature = context.SignedPayloads[context.MyIndex];
+                context.PreparePayload.Data = tempPrePrepareWithSignature.ToArray();
+
+                Log($"ONTIMER: checking data from preparepayload context");
+                PrintByteArray(context.PreparePayload.Data);      
 
                 if (context.PreparePayload == null)
                 {
@@ -576,7 +576,7 @@ namespace Neo.Consensus
                     return;
                 }
                 Log($"ONTIMER: going to SignandRelay");
-                SignAndRelay(context.PreparePayload, SendingNewPrepareRequestPayload);
+                SignAndRelay(context.PreparePayload);
                 Log($"ONTIMER: signed");
                 if (context.TransactionHashes.Length > 1)
                 {
@@ -596,7 +596,7 @@ namespace Neo.Consensus
         private void OnTransaction(Transaction transaction)
         {
             if (transaction.Type == TransactionType.MinerTransaction) return;
-            if (!context.State.HasFlag(ConsensusState.Backup) || !context.State.HasFlag(ConsensusState.RequestReceived) || context.State.HasFlag(ConsensusState.SignatureSent) || context.State.HasFlag(ConsensusState.ViewChanging) || context.State.HasFlag(ConsensusState.BlockSent))
+            if (!context.State.HasFlag(ConsensusState.Backup) || !context.State.HasFlag(ConsensusState.RequestReceived) || context.State.HasFlag(ConsensusState.ViewChanging) || context.State.HasFlag(ConsensusState.BlockSent))
                 return;
             if (context.Transactions.ContainsKey(transaction.Hash)) return;
             if (!context.TransactionHashes.Contains(transaction.Hash)) return;
@@ -632,26 +632,23 @@ namespace Neo.Consensus
             CheckExpectedView(context.ExpectedView[context.MyIndex]);
         }
 
-        private void SignAndRelay(ConsensusPayload payload, bool sign = true)
+        private void SignAndRelay(ConsensusPayload payload)
         {
-            if (sign)
+            Log($"SignAndRelay: Sign...");
+            ContractParametersContext sc;
+            try
             {
-                Log($"SignAndRelay: Signing...");
-                ContractParametersContext sc;
-                try
-                {
-                    sc = new ContractParametersContext(payload);
-                    wallet.Sign(sc);
-                }
-                catch (InvalidOperationException)
-                {
-                    return;
-                }
-
-                sc.Verifiable.Witnesses = sc.GetWitnesses();
+                sc = new ContractParametersContext(payload);
+                wallet.Sign(sc);
+            }
+            catch (InvalidOperationException)
+            {
+                return;
             }
 
-            Log($"SignAndRelay: Relaying...");
+            Log($"SignAndRelay: getting witnesses");
+            sc.Verifiable.Witnesses = sc.GetWitnesses();
+            Log($"SignAndRelay: Relay...");
             system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
         }
     }
