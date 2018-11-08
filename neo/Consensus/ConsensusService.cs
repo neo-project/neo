@@ -210,10 +210,12 @@ namespace Neo.Consensus
 
         private void OnConsensusPayload(ConsensusPayload payload)
         {
+            Log($"OnConsensusPayload I: I am inside");
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (payload.ValidatorIndex == context.MyIndex) return;
             if (payload.Version != ConsensusContext.Version)
                 return;
+            Log($"OnConsensusPayload II: Basic checks");
 
             if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
             {
@@ -225,7 +227,11 @@ namespace Neo.Consensus
                 return;
             }
 
+            Log($"OnConsensusPayload III: Basic checks");
+
             if (payload.ValidatorIndex >= context.Validators.Length) return;
+
+            Log($"OnConsensusPayload IV: Basic checks");
 
             ConsensusMessage message;
             try
@@ -237,8 +243,12 @@ namespace Neo.Consensus
                 return;
             }
 
+            Log($"OnConsensusPayload V: Basic checks");
+
             if (message.ViewNumber != context.ViewNumber && (message.Type != ConsensusMessageType.ChangeView || message.Type != ConsensusMessageType.Regeneration))
                 return;
+
+            Log($"OnConsensusPayload VI: Basic checks. Going to specific Payload message!");
 
             switch (message.Type)
             {
@@ -258,6 +268,7 @@ namespace Neo.Consensus
                     OnRegeneration(payload, (Regeneration)message);
                     break;
             }
+            Log($"OnConsensusPayload VII: bye bye");
         }
 
         private void OnPersistCompleted(Block block)
@@ -386,12 +397,12 @@ namespace Neo.Consensus
 
             /// <summary>
             /// ***** The following is like an additional feature ******
-            /// ORIGINAL CODE: In the original code we were storing the signature and later verifying.
+            /// ORIGINAL CODE: In the original code we were just storing the signature and later verifying when the Payload really arrives.
             /// FEATURED ONE: Here we can check the PreparePayload if it did not arrive, because all PrepareREsponse Payloads carries that
             /// </summary>
             if (context.PreparePayload == null)
             {
-                // We need to check if the Node send the correct PreparePayload from the expected PrimaryIndex
+                Log($"{nameof(OnPrepareRequestReceived)}: Response before PrepRequest, trying to speed up p2p route...");
                 if (message.PreparePayload.ValidatorIndex != context.PrimaryIndex) return;
                 if (!CheckPrimaryPayloadSignature(message.PreparePayload)) return;
                 Log($"{nameof(OnPrepareRequestReceived)}: indirectly from index={payload.ValidatorIndex}");
@@ -472,7 +483,7 @@ namespace Neo.Consensus
             /// </summary>
             if (!CheckPrimaryPayloadSignature(message.PrepareRequestPayload))
             {
-                Log($"Regerating primary payload: {message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} with a wrong Primary Payload");
+                Log($"{nameof(OnRegeneration)}: Regerating primary payload: {message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} with a wrong Primary Payload");
                 context.SignedPayloads[payload.ValidatorIndex] = null;
                 return;
             }
@@ -485,7 +496,7 @@ namespace Neo.Consensus
                 if (message.SignedPayloads[i] != null && i != message.PrepareRequestPayload.ValidatorIndex)
                     if (!Crypto.Default.VerifySignature(message.PrepareRequestPayload.GetHashData(), message.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
                     {
-                        Log($"Regerating {i} payload:{message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} is being set to null");
+                        Log($"{nameof(OnRegeneration)}: Regerating {i} payload:{message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} is being set to null");
                         PrintByteArray(message.SignedPayloads[i]);
                         message.SignedPayloads[i] = null;
                     }
@@ -497,11 +508,13 @@ namespace Neo.Consensus
             /// </summary>
             if (nValidSignatures >= context.M)
             {
-                Log($"Sorry. I lost some part of the history. I give up...");
+                Log($"{nameof(OnRegeneration)}: Sorry. I lost some part of the history. I give up...");
                 InitializeConsensus(message.ViewNumber);
                 context.SignedPayloads = message.SignedPayloads;
                 OnConsensusPayload(message.PrepareRequestPayload);
+                Log($"{nameof(OnRegeneration)}: OnConsensusPayload. message.PrepareRequestPayload has been sent.");
             }
+            Log($"{nameof(OnRegeneration)}: Bye bye. I fell good now, connected and on top.");
         }
 
         protected override void OnReceive(object message)
@@ -549,15 +562,19 @@ namespace Neo.Consensus
                     PrepareRequest tempPrePrepareWithSignature = GetPrepareRequestMessage(context.PreparePayload);
                     tempPrePrepareWithSignature.PrepReqSignature = context.SignedPayloads[context.MyIndex];
                     context.PreparePayload.Data = tempPrePrepareWithSignature.ToArray();
+                    Log($"ONTIMER: Inside context");
+                    PrintByteArray(context.PreparePayload.Data);
                 }
 
                 Log($"ONTIMER: After fill context context.");
+                PrintByteArray(context.PreparePayload.Data);
+
                 if (context.PreparePayload == null)
                 {
                     Log($"ONTIMER:  Error! PreparePayload is null");
                     return;
                 }
-
+                Log($"ONTIMER: going to SignandRelay");
                 SignAndRelay(context.PreparePayload);
                 Log($"ONTIMER: signed");
                 if (context.TransactionHashes.Length > 1)
@@ -616,9 +633,17 @@ namespace Neo.Consensus
 
         private void SignAndRelay(ConsensusPayload payload)
         {
+            Log($"SignAndRelay: Sign...");
             ContractParametersContext sc;
             try
             {
+                Log($"SignAndRelay: Sign II...");
+                if (payload.Witness != null)
+                {
+                    Log($"SignAndRelay:This payload.Witness has something....");
+                    //payload.Witness = null;
+                }
+
                 sc = new ContractParametersContext(payload);
                 wallet.Sign(sc);
             }
@@ -627,7 +652,11 @@ namespace Neo.Consensus
                 return;
             }
 
+            Log($"SignAndRelay: getting witnesses ");
             sc.Verifiable.Witnesses = sc.GetWitnesses();
+            Log($"SignAndRelay: witness ok...");
+
+            Log($"SignAndRelay: Relay...");
             system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
         }
     }
