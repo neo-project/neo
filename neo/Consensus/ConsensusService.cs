@@ -210,7 +210,7 @@ namespace Neo.Consensus
             if (payload.Version != ConsensusContext.Version)
                 return;
             Log($"OnConsensusPayload II: Basic checks");
-
+            Log($"payload.PrevHash={payload.PrevHash} context.PrevHash={context.PrevHash}");
             if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
             {
                 if (context.Snapshot.Height + 1 < payload.BlockIndex)
@@ -294,7 +294,6 @@ namespace Neo.Consensus
             context.PreparePayload = payload;
             context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
 
-
             if (!CheckPrimaryPayloadSignature(payload))
             {
                 context.SignedPayloads[payload.ValidatorIndex] = null;
@@ -305,7 +304,7 @@ namespace Neo.Consensus
                 if (context.SignedPayloads[i] != null && i != payload.ValidatorIndex)
                     if (!Crypto.Default.VerifySignature(context.PreparePayload.GetHashData(), context.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
                     {
-                        Log($"Index {i} paylod:{payload.ValidatorIndex} lenght:{context.SignedPayloads.Length} is being set to null");
+                        Log($"{nameof(OnPrepareRequestReceived)}:Index {i} paylod:{payload.ValidatorIndex} lenght:{context.SignedPayloads.Length} is being set to null");
                         context.SignedPayloads[i] = null;
                     }
 
@@ -551,6 +550,7 @@ namespace Neo.Consensus
             {
                 Log($"send prepare request: height={timer.Height} view={timer.ViewNumber}");
                 context.State |= ConsensusState.RequestSent;
+                bool SendingNewPrepareRequestPayload = false;
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
                     Log($"ONTIMER: Going to fill context...");
@@ -564,6 +564,7 @@ namespace Neo.Consensus
                     context.PreparePayload.Data = tempPrePrepareWithSignature.ToArray();
                     Log($"ONTIMER: Inside context");
                     PrintByteArray(context.PreparePayload.Data);
+                    SendingNewPrepareRequestPayload = true;
                 }
 
                 Log($"ONTIMER: After fill context context.");
@@ -575,7 +576,7 @@ namespace Neo.Consensus
                     return;
                 }
                 Log($"ONTIMER: going to SignandRelay");
-                SignAndRelay(context.PreparePayload);
+                SignAndRelay(context.PreparePayload, SendingNewPrepareRequestPayload);
                 Log($"ONTIMER: signed");
                 if (context.TransactionHashes.Length > 1)
                 {
@@ -631,32 +632,26 @@ namespace Neo.Consensus
             CheckExpectedView(context.ExpectedView[context.MyIndex]);
         }
 
-        private void SignAndRelay(ConsensusPayload payload)
+        private void SignAndRelay(ConsensusPayload payload, bool sign = true)
         {
-            Log($"SignAndRelay: Sign...");
-            ContractParametersContext sc;
-            try
+            if (sign)
             {
-                Log($"SignAndRelay: Sign II...");
-                if (payload.Witness != null)
+                Log($"SignAndRelay: Signing...");
+                ContractParametersContext sc;
+                try
                 {
-                    Log($"SignAndRelay:This payload.Witness has something....");
-                    //payload.Witness = null;
+                    sc = new ContractParametersContext(payload);
+                    wallet.Sign(sc);
+                }
+                catch (InvalidOperationException)
+                {
+                    return;
                 }
 
-                sc = new ContractParametersContext(payload);
-                wallet.Sign(sc);
-            }
-            catch (InvalidOperationException)
-            {
-                return;
+                sc.Verifiable.Witnesses = sc.GetWitnesses();
             }
 
-            Log($"SignAndRelay: getting witnesses ");
-            sc.Verifiable.Witnesses = sc.GetWitnesses();
-            Log($"SignAndRelay: witness ok...");
-
-            Log($"SignAndRelay: Relay...");
+            Log($"SignAndRelay: Relaying...");
             system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
         }
     }
