@@ -317,7 +317,6 @@ namespace Neo.Wallets
                 {
                     foreach (var output in cOutputs)
                     {
-                        BigInteger sum = BigInteger.Zero;
                         List<BigInteger> values = new List<BigInteger>();
 
                         using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
@@ -331,16 +330,7 @@ namespace Neo.Wallets
                                     Key = account.ToArray()
                                 };
                                 StorageItem item = snapshot.Storages.TryGet(key);
-                                if (item != null)
-                                {
-                                    BigInteger value = new BigInteger(item.Value);
-                                    sum += value;
-                                    values.Add(value);
-                                }
-                                else
-                                {
-                                    values.Add(BigInteger.Zero);
-                                }
+                                values.Add(item == null ? BigInteger.Zero : new BigInteger(item.Value));
                             }
                         }
                         var balances = values.Zip(accounts, (i, a) => new
@@ -348,6 +338,8 @@ namespace Neo.Wallets
                             Account = a,
                             Value = i
                         }).ToArray();
+                        BigInteger sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
+
                         if (sum < output.Value) return null;
                         if (sum != output.Value)
                         {
