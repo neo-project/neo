@@ -274,12 +274,12 @@ namespace Neo.Consensus
             InitializeConsensus(0);
         }
 
-        private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
+        private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message, bool renegerationCall = false)
         {
             if (context.State.HasFlag(ConsensusState.RequestReceived)) return;
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
-            if (!context.State.HasFlag(ConsensusState.Backup)) return;
+            if (!context.State.HasFlag(ConsensusState.Backup) && !renegerationCall) return;
 
             if (payload.Timestamp <= context.Snapshot.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
             {
@@ -502,10 +502,14 @@ namespace Neo.Consensus
             /// </summary>
             if (nValidSignatures >= context.M)
             {
-                Log($"{nameof(OnRegeneration)}: Sorry. I lost some part of the history. I give up...");
+                Log($"{nameof(OnRegeneration)}: Sorry. I lost some part of the history. I give up... Thanks index={payload.ValidatorIndex}");
                 InitializeConsensus(message.ViewNumber);
                 context.SignedPayloads = message.SignedPayloads;
-                OnConsensusPayload(message.PrepareRequestPayload);
+                /// <summary>
+                /// TODO - Maybe come back to OnConsensus intead of jumping to OnPrepareRequestReceived
+                /// We may have lost some checks doing this
+                /// </summary>
+                OnPrepareRequestReceived(message.PrepareRequestPayload, GetPrepareRequestMessage(message.PrepareRequestPayload), true);
                 Log($"{nameof(OnRegeneration)}: OnConsensusPayload. message.PrepareRequestPayload has been sent.");
             }
             Log($"{nameof(OnRegeneration)}: Bye bye. I fell good now, connected and on top.");
