@@ -317,7 +317,7 @@ namespace Neo.Wallets
                 {
                     foreach (var output in cOutputs)
                     {
-                        List<BigInteger> values = new List<BigInteger>();
+                        var balances = new List<(UInt160 Account, BigInteger Value)>();
 
                         using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                         {
@@ -330,32 +330,27 @@ namespace Neo.Wallets
                                     Key = account.ToArray()
                                 };
                                 StorageItem item = snapshot.Storages.TryGet(key);
-                                values.Add(item == null ? BigInteger.Zero : new BigInteger(item.Value));
+                                balances.Add((account, item == null ? BigInteger.Zero : new BigInteger(item.Value)));
                             }
                         }
-                        var balances = values.Zip(accounts, (i, a) => new
-                        {
-                            Account = a,
-                            Value = i
-                        }).ToArray();
                         BigInteger sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
 
                         if (sum < output.Value) return null;
                         if (sum != output.Value)
                         {
-                            balances = balances.OrderByDescending(p => p.Value).ToArray();
+                            balances = balances.OrderByDescending(p => p.Value).ToList();
                             BigInteger amount = output.Value;
                             int i = 0;
                             while (balances[i].Value <= amount)
                                 amount -= balances[i++].Value;
                             if (amount == BigInteger.Zero)
-                                balances = balances.Take(i).ToArray();
+                                balances = balances.Take(i).ToList();
                             else
-                                balances = balances.Take(i).Concat(new[] { balances.Last(p => p.Value >= amount) }).ToArray();
+                                balances = balances.Take(i).Concat(new[] { balances.Last(p => p.Value >= amount) }).ToList();
                             sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
                         }
                         sAttributes.UnionWith(balances.Select(p => p.Account));
-                        for (int i = 0; i < balances.Length; i++)
+                        for (int i = 0; i < balances.Count; i++)
                         {
                             BigInteger value = balances[i].Value;
                             if (i == 0)
