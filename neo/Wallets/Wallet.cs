@@ -331,9 +331,9 @@ namespace Neo.Wallets
                                     Key = account.ToArray()
                                 };
                                 StorageItem item = snapshot.Storages.TryGet(key);
-                                BigInteger value = new BigInteger(item.Value);
                                 if (item != null)
                                 {
+                                    BigInteger value = new BigInteger(item.Value);
                                     sum += value;
                                     values.Add(value);
                                 }
