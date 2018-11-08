@@ -146,12 +146,6 @@ namespace Neo.Consensus
             return nonce.ToUInt64(0);
         }
 
-        private void OnStart()
-        {
-            Log("OnStart");
-            InitializeConsensus(0);
-        }
-
         private void InitializeConsensus(byte view_number)
         {
             if (view_number == 0)
@@ -315,7 +309,7 @@ namespace Neo.Consensus
                         context.SignedPayloads[i] = null;
                     }
 
-  
+
             Dictionary<UInt256, Transaction> mempool = Blockchain.Singleton.GetMemoryPool().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
             foreach (UInt256 hash in context.TransactionHashes.Skip(1))
@@ -364,7 +358,7 @@ namespace Neo.Consensus
 
             /// <summary>
             /// The Speaker Signed the Payload without any signature (this was the trick/magic part), PrepReqSignature was empty
-            /// But the payload was latter modified with his signature, 
+            /// But the payload was latter modified with his signature,
             /// We mean, the PrepareRequest message was filled with the PrepReqSignature of the Empty Payload and then serialized again into this Payload.
             /// Thus, we need to remove the signature from the Payload to correctly verify Speaker identity agreements with this block
             /// </summary>
@@ -540,6 +534,12 @@ namespace Neo.Consensus
                     OnPersistCompleted(completed.Block);
                     break;
             }
+        }
+
+        private void OnStart()
+        {
+            Log("OnStart");
+            InitializeConsensus(0);
         }
 
         private void OnTimer(Timer timer)
