@@ -204,15 +204,15 @@ namespace Neo.Consensus
 
         private void OnConsensusPayload(ConsensusPayload payload)
         {
-            Log($"OnConsensusPayload I: Welcome!");
+            //Log($"OnConsensusPayload I: Welcome!");
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
-            Log($"OnConsensusPayload II.1: Basic checks");
+            //Log($"OnConsensusPayload II.1: Basic checks");
             if (payload.ValidatorIndex == context.MyIndex) return;
-            Log($"OnConsensusPayload II.2: Basic checks");
+            //Log($"OnConsensusPayload II.2: Basic checks");
             if (payload.Version != ConsensusContext.Version)
                 return;
-            Log($"OnConsensusPayload II.3: Basic checks");
-            Log($"payload.PrevHash={payload.PrevHash} context.PrevHash={context.PrevHash}");
+            //Log($"OnConsensusPayload II.3: Basic checks");
+            //Log($"payload.PrevHash={payload.PrevHash} context.PrevHash={context.PrevHash}");
             if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
             {
                 if (context.Snapshot.Height + 1 < payload.BlockIndex)
@@ -223,11 +223,11 @@ namespace Neo.Consensus
                 return;
             }
 
-            Log($"OnConsensusPayload III: Basic checks");
+            //Log($"OnConsensusPayload III: Basic checks");
 
             if (payload.ValidatorIndex >= context.Validators.Length) return;
 
-            Log($"OnConsensusPayload IV: Basic checks");
+            // Log($"OnConsensusPayload IV: Basic checks");
 
             ConsensusMessage message;
             try
@@ -239,12 +239,12 @@ namespace Neo.Consensus
                 return;
             }
 
-            Log($"OnConsensusPayload V: Basic checks");
+            //Log($"OnConsensusPayload V: Basic checks");
 
             if (message.ViewNumber != context.ViewNumber && (message.Type != ConsensusMessageType.ChangeView || message.Type != ConsensusMessageType.Regeneration))
                 return;
 
-            Log($"OnConsensusPayload VI: Basic checks. Going to specific Payload message!");
+            //Log($"OnConsensusPayload VI: Basic checks. Going to specific Payload message!");
 
             switch (message.Type)
             {
@@ -264,7 +264,7 @@ namespace Neo.Consensus
                     OnRegeneration(payload, (Regeneration)message);
                     break;
             }
-            Log($"OnConsensusPayload VII: bye bye");
+            //Log($"OnConsensusPayload VII: bye bye");
         }
 
         private void OnPersistCompleted(Block block)
@@ -558,11 +558,11 @@ namespace Neo.Consensus
 
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
-                    Log($"ONTIMER: Going to fill context...");
+                    //Log($"ONTIMER: Going to fill context...");
                     FillContext();
                     context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
                 }
-                Log($"ONTIMER: After fill context context.");
+                //Log($"ONTIMER: After fill context context.");
 
                 context.SignedPayloads[context.MyIndex] = new byte[64];
                 context.PreparePayload = context.MakePrepareRequest(context.SignedPayloads[context.MyIndex]);
@@ -571,23 +571,23 @@ namespace Neo.Consensus
                 tempPrePrepareWithSignature.PrepReqSignature = context.SignedPayloads[context.MyIndex];
                 context.PreparePayload.Data = tempPrePrepareWithSignature.ToArray();
 
-                Log($"ONTIMER: checking data from preparepayload context");
-                PrintByteArray(context.PreparePayload.Data);      
+                //Log($"ONTIMER: checking data from preparepayload context");
+                //PrintByteArray(context.PreparePayload.Data);      
 
                 if (context.PreparePayload == null)
                 {
                     Log($"ONTIMER:  Error! PreparePayload is null");
                     return;
                 }
-                Log($"ONTIMER: going to SignandRelay");
+                //Log($"ONTIMER: going to SignandRelay");
                 SignAndRelay(context.PreparePayload);
-                Log($"ONTIMER: signed");
+                //Log($"ONTIMER: signed");
                 if (context.TransactionHashes.Length > 1)
                 {
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
                         system.LocalNode.Tell(Message.Create("inv", payload));
                 }
-                Log($"ONTIMER: changetimer");
+                //Log($"ONTIMER: changetimer");
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer.ViewNumber + 1)));
             }
             else if ((context.State.HasFlag(ConsensusState.Primary) && context.State.HasFlag(ConsensusState.RequestSent)) || context.State.HasFlag(ConsensusState.Backup))
@@ -638,7 +638,7 @@ namespace Neo.Consensus
 
         private void SignAndRelay(ConsensusPayload payload)
         {
-            Log($"SignAndRelay: Sign...");
+            //Log($"SignAndRelay: Sign...");
             ContractParametersContext sc;
             try
             {
@@ -650,9 +650,9 @@ namespace Neo.Consensus
                 return;
             }
 
-            Log($"SignAndRelay: getting witnesses");
+            //Log($"SignAndRelay: getting witnesses");
             sc.Verifiable.Witnesses = sc.GetWitnesses();
-            Log($"SignAndRelay: Relay...");
+            //Log($"SignAndRelay: Relay...");
             system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
         }
     }
