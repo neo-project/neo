@@ -22,15 +22,14 @@ namespace Neo.Consensus
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
-        private readonly ConsensusContext context = new ConsensusContext();
+        private readonly ConsensusContext context;
         private readonly NeoSystem system;
-        private readonly Wallet wallet;
         private DateTime block_received_time;
 
         public ConsensusService(NeoSystem system, Wallet wallet)
         {
             this.system = system;
-            this.wallet = wallet;
+            this.context = new ConsensusContext(wallet);
         }
 
         private bool AddTransaction(Transaction tx, bool verify)
@@ -51,7 +50,7 @@ namespace Neo.Consensus
                     Log($"send prepare response");
                     context.State |= ConsensusState.SignatureSent;
                     context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
-                    SignAndRelay(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
+                    system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.Signatures[context.MyIndex]) });
                     CheckSignatures();
                 }
                 else
@@ -105,7 +104,7 @@ namespace Neo.Consensus
         private void InitializeConsensus(byte view_number)
         {
             if (view_number == 0)
-                context.Reset(wallet);
+                context.Reset();
             else
                 context.ChangeView(view_number);
             if (context.MyIndex < 0) return;
@@ -301,11 +300,11 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.RequestSent;
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
-                    context.Fill(wallet);
+                    context.Fill();
                     context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
                     context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
                 }
-                SignAndRelay(context.MakePrepareRequest());
+                system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest()});
                 if (context.TransactionHashes.Length > 1)
                 {
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
@@ -347,24 +346,8 @@ namespace Neo.Consensus
             context.ExpectedView[context.MyIndex]++;
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)));
-            SignAndRelay(context.MakeChangeView());
+            system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
             CheckExpectedView(context.ExpectedView[context.MyIndex]);
-        }
-
-        private void SignAndRelay(ConsensusPayload payload)
-        {
-            ContractParametersContext sc;
-            try
-            {
-                sc = new ContractParametersContext(payload);
-                wallet.Sign(sc);
-            }
-            catch (InvalidOperationException)
-            {
-                return;
-            }
-            sc.Verifiable.Witnesses = sc.GetWitnesses();
-            system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
         }
     }
 

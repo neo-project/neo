@@ -31,8 +31,14 @@ namespace Neo.Consensus
         public byte[][] Signatures;
         public byte[] ExpectedView;
         public KeyPair KeyPair;
+        private readonly Wallet wallet;
 
         public int M => Validators.Length - (Validators.Length - 1) / 3;
+
+        public ConsensusContext(Wallet wallet)
+        {
+            this.wallet = wallet;
+        }
 
         public void ChangeView(byte view_number)
         {
@@ -62,7 +68,7 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeChangeView()
         {
-            return MakePayload(new ChangeView
+            return MakeSignedPayload(new ChangeView
             {
                 NewViewNumber = ExpectedView[MyIndex]
             });
@@ -89,10 +95,10 @@ namespace Neo.Consensus
             return _header;
         }
 
-        private ConsensusPayload MakePayload(ConsensusMessage message)
+        private ConsensusPayload MakeSignedPayload(ConsensusMessage message)
         {
             message.ViewNumber = ViewNumber;
-            return new ConsensusPayload
+            ConsensusPayload payload = new ConsensusPayload
             {
                 Version = Version,
                 PrevHash = PrevHash,
@@ -101,11 +107,28 @@ namespace Neo.Consensus
                 Timestamp = Timestamp,
                 Data = message.ToArray()
             };
+            SignPayload(payload);
+            return payload;
+        }
+
+        private void SignPayload(ConsensusPayload payload)
+        {
+            ContractParametersContext sc;
+            try
+            {
+                sc = new ContractParametersContext(payload);
+                wallet.Sign(sc);
+            }
+            catch (InvalidOperationException)
+            {
+                return;
+            }
+            sc.Verifiable.Witnesses = sc.GetWitnesses();
         }
 
         public ConsensusPayload MakePrepareRequest()
         {
-            return MakePayload(new PrepareRequest
+            return MakeSignedPayload(new PrepareRequest
             {
                 Nonce = Nonce,
                 NextConsensus = NextConsensus,
@@ -117,7 +140,7 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakePrepareResponse(byte[] signature)
         {
-            return MakePayload(new PrepareResponse
+            return MakeSignedPayload(new PrepareResponse
             {
                 Signature = signature
             });
