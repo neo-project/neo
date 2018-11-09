@@ -277,16 +277,27 @@ namespace Neo.Ledger
             if (block.Index == Height + 1)
             {
                 Block block_persist = block;
+                List<Block> blocksToPersistList = new List<Block>();
+
                 while (true)
                 {
-                    block_cache_unverified.Remove(block_persist.Index);
-                    Persist(block_persist);
-                    if (block_persist == block)
-                        if (block.Index + 100 >= header_index.Count)
-                            system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
+                    blocksToPersistList.Add(block_persist);
                     if (block_persist.Index + 1 >= header_index.Count) break;
                     UInt256 hash = header_index[(int)block_persist.Index + 1];
                     if (!block_cache.TryGetValue(hash, out block_persist)) break;
+                }
+
+                int blocksPersisted = 0;
+                foreach (Block blockToPersist in blocksToPersistList)
+                {
+                    block_cache_unverified.Remove(blockToPersist.Index);
+                    Persist(blockToPersist);
+                    
+                    if (blocksPersisted++ < blocksToPersistList.Count - 2) continue;
+                    // Relay most recent 2 blocks persisted
+
+                    if (blockToPersist.Index + 100 >= header_index.Count)
+                        system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 }
                 SaveHeaderHashList();
                 if (block_cache_unverified.TryGetValue(Height + 1, out block_persist))
