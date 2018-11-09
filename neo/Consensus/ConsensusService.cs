@@ -197,7 +197,7 @@ namespace Neo.Consensus
 
             //Log($"OnConsensusPayload V: Basic checks");
 
-            if (message.ViewNumber != context.ViewNumber && (message.Type != ConsensusMessageType.ChangeView || message.Type != ConsensusMessageType.Regeneration))
+            if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView && message.Type != ConsensusMessageType.Regeneration)
                 return;
 
             //Log($"OnConsensusPayload VI: Basic checks. Going to specific Payload message!");
