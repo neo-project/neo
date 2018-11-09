@@ -146,7 +146,7 @@ namespace Neo.Consensus
             });
         }
 
-        public void Reset(Wallet wallet)
+        public void Reset()
         {
             Snapshot?.Dispose();
             Snapshot = Blockchain.Singleton.GetSnapshot();
@@ -174,7 +174,7 @@ namespace Neo.Consensus
             _header = null;
         }
 
-        public void Fill(Wallet wallet)
+        public void Fill()
         {
             IEnumerable<Transaction> mem_pool = Blockchain.Singleton.GetMemoryPool();
             foreach (IPolicyPlugin plugin in Plugin.Policies)
