@@ -163,6 +163,7 @@ namespace Neo.Network.P2P
                     break;
                 hash = Blockchain.Singleton.GetBlockHash(index);
                 if (hash == null) break;
+                if (hash == payload.HashStop) break;
                 hashes.Add(hash);
             }
             if (hashes.Count == 0) return;
