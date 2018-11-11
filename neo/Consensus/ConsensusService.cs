@@ -102,50 +102,6 @@ namespace Neo.Consensus
             }
         }
 
-        private void FillContext()
-        {
-            IEnumerable<Transaction> mem_pool = Blockchain.Singleton.GetMemoryPool();
-            foreach (IPolicyPlugin plugin in Plugin.Policies)
-                mem_pool = plugin.FilterForBlock(mem_pool);
-            List<Transaction> transactions = mem_pool.ToList();
-            Fixed8 amount_netfee = Block.CalculateNetFee(transactions);
-            TransactionOutput[] outputs = amount_netfee == Fixed8.Zero ? new TransactionOutput[0] : new[] { new TransactionOutput
-            {
-                AssetId = Blockchain.UtilityToken.Hash,
-                Value = amount_netfee,
-                ScriptHash = wallet.GetChangeAddress()
-            } };
-            while (true)
-            {
-                ulong nonce = GetNonce();
-                MinerTransaction tx = new MinerTransaction
-                {
-                    Nonce = (uint)(nonce % (uint.MaxValue + 1ul)),
-                    Attributes = new TransactionAttribute[0],
-                    Inputs = new CoinReference[0],
-                    Outputs = outputs,
-                    Witnesses = new Witness[0]
-                };
-                if (!context.Snapshot.ContainsTransaction(tx.Hash))
-                {
-                    context.Nonce = nonce;
-                    transactions.Insert(0, tx);
-                    break;
-                }
-            }
-            context.TransactionHashes = transactions.Select(p => p.Hash).ToArray();
-            context.Transactions = transactions.ToDictionary(p => p.Hash);
-            context.NextConsensus = Blockchain.GetConsensusAddress(context.Snapshot.GetValidators(transactions).ToArray());
-        }
-
-        private static ulong GetNonce()
-        {
-            byte[] nonce = new byte[sizeof(ulong)];
-            Random rand = new Random();
-            rand.NextBytes(nonce);
-            return nonce.ToUInt64(0);
-        }
-
         private void InitializeConsensus(byte view_number)
         {
             if (view_number == 0)
@@ -345,7 +301,7 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.RequestSent;
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
-                    FillContext();
+                    context.Fill(wallet);
                     context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
                     context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
                 }
