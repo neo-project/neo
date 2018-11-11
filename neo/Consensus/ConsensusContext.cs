@@ -194,5 +194,17 @@ namespace Neo.Consensus
             rand.NextBytes(nonce);
             return nonce.ToUInt64(0);
         }
+
+        public bool VerifyRequest()
+        {
+            if (!State.HasFlag(ConsensusState.RequestReceived))
+                return false;
+            if (!Blockchain.GetConsensusAddress(Snapshot.GetValidators(Transactions.Values).ToArray()).Equals(NextConsensus))
+                return false;
+            Transaction tx_gen = Transactions.Values.FirstOrDefault(p => p.Type == TransactionType.MinerTransaction);
+            Fixed8 amount_netfee = Block.CalculateNetFee(Transactions.Values);
+            if (tx_gen?.Outputs.Sum(p => p.Value) != amount_netfee) return false;
+            return true;
+        }
     }
 }
