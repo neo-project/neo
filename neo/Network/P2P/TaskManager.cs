@@ -182,19 +182,44 @@ namespace Neo.Network.P2P
                 session.Tasks[UInt256.Zero] = DateTime.UtcNow;
                 session.RemoteNode.Tell(Message.Create("getheaders", GetBlocksPayload.Create(Blockchain.Singleton.CurrentHeaderHash)));
             }
-            else if (Blockchain.Singleton.Height < session.Version.StartHeight)
+            else if (Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
             {
-                UInt256 hash = Blockchain.Singleton.CurrentBlockHash;
-                for (uint i = Blockchain.Singleton.Height + 1; i <= Blockchain.Singleton.HeaderHeight; i++)
+                // here we ask for all blocks that we have the header and are not yet persisted
+                // removed session verification. It will ask blocks to all sessions...
+                // If you ask for someone that is lagged no worries about spamming, he is already lagged...
+            
+                uint iStart = Blockchain.Singleton.Height + 1;
+
+                //Send all missing hashes in blocks of request between missing blocks
+                while (iStart <= Blockchain.Singleton.HeaderHeight)
                 {
-                    hash = Blockchain.Singleton.GetBlockHash(i);
-                    if (!globalTasks.Contains(hash))
+                    UInt256 hashToStart = Blockchain.Singleton.GetBlockHash(iStart);
+                    while(globalTasks.Contains(hashToStart) && iStart + 1 <= Blockchain.Singleton.HeaderHeight)
                     {
-                        hash = Blockchain.Singleton.GetBlockHash(i - 1);
-                        break;
+                        iStart++;
+                        hashToStart = Blockchain.Singleton.GetBlockHash(iStart);
                     }
+                    if(iStart == Blockchain.Singleton.HeaderHeight)
+                    {
+                        session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hashToStart)));
+                        return;
+                    }
+
+                    uint iFinish = iStart + 1;
+                    if (iFinish > Blockchain.Singleton.HeaderHeight)
+                        return;
+
+                    UInt256 hashToFinish = Blockchain.Singleton.GetBlockHash(iFinish);
+
+                    while (!globalTasks.Contains(hashToFinish) && iFinish + 1 <= Blockchain.Singleton.HeaderHeight)
+                    {
+                        iFinish++;
+                        hashToFinish = Blockchain.Singleton.GetBlockHash(iFinish);
+                    }
+                    
+                    iStart = iFinish + 1;
+                    session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hashToStart, hashToFinish)));
                 }
-                session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hash)));
             }
         }
     }
