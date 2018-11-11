@@ -206,11 +206,7 @@ namespace Neo.Network.P2P
                     }
 
                     uint iFinish = iStart + 1;
-                    if (iFinish > Blockchain.Singleton.HeaderHeight)
-                        return;
-
                     UInt256 hashToFinish = Blockchain.Singleton.GetBlockHash(iFinish);
-
                     while (!globalTasks.Contains(hashToFinish) && iFinish + 1 <= Blockchain.Singleton.HeaderHeight)
                     {
                         iFinish++;
