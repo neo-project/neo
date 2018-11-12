@@ -73,7 +73,7 @@ namespace Neo.Network.RPC
 
         private JObject GetInvokeResult(byte[] script)
         {
-            ApplicationEngine engine = ApplicationEngine.Run(script, null, null, false, maxGasInvoke);
+            ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: maxGasInvoke);
             JObject json = new JObject();
             json["script"] = script.ToHexString();
             json["state"] = engine.State;
