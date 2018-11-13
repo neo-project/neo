@@ -8,7 +8,6 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
-using Neo.SmartContract;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -49,7 +48,7 @@ namespace Neo.Consensus
                 {
                     Log($"send prepare response");
                     context.State |= ConsensusState.SignatureSent;
-                    context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
+                    context.Signatures[context.MyIndex] = context.MakeHeaderSignature();
                     system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.Signatures[context.MyIndex]) });
                     CheckSignatures();
                 }
@@ -84,16 +83,7 @@ namespace Neo.Consensus
         {
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
-                Block block = context.MakeHeader();
-                ContractParametersContext sc = new ContractParametersContext(block);
-                for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
-                    if (context.Signatures[i] != null)
-                    {
-                        sc.AddSignature(contract, context.Validators[i], context.Signatures[i]);
-                        j++;
-                    }
-                sc.Verifiable.Witnesses = sc.GetWitnesses();
+                Block block = context.MakeSignedHeader();
                 block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
                 Log($"relay block: {block.Hash}");
                 system.LocalNode.Tell(new LocalNode.Relay { Inventory = block });
@@ -302,7 +292,7 @@ namespace Neo.Consensus
                 {
                     context.Fill();
                     context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
-                    context.Signatures[context.MyIndex] = context.MakeHeader().Sign(context.KeyPair);
+                    context.Signatures[context.MyIndex] = context.MakeHeaderSignature();
                 }
                 system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
                 if (context.TransactionHashes.Length > 1)

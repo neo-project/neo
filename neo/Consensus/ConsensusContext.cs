@@ -31,7 +31,7 @@ namespace Neo.Consensus
         public Dictionary<UInt256, Transaction> Transactions;
         public byte[][] Signatures;
         public byte[] ExpectedView;
-        public KeyPair KeyPair;
+        private KeyPair KeyPair;
         private readonly Wallet wallet;
 
         public int M => Validators.Length - (Validators.Length - 1) / 3;
@@ -94,6 +94,33 @@ namespace Neo.Consensus
                 };
             }
             return _header;
+        }
+
+        public Block MakeSignedHeader()
+        {
+            Block header = MakeHeader();
+            if (header != null)
+            {
+                Contract contract = Contract.CreateMultiSigContract(M, Validators);
+                ContractParametersContext sc = new ContractParametersContext(header);
+                for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
+                    if (Signatures[i] != null)
+                    {
+                        sc.AddSignature(contract, Validators[i], Signatures[i]);
+                        j++;
+                    }
+                sc.Verifiable.Witnesses = sc.GetWitnesses();
+            }
+            return header;
+        }
+
+        public byte[] MakeHeaderSignature()
+        {
+            Block header = MakeHeader();
+            if (header == null)
+                return new byte[0];
+            else
+                return header.Sign(KeyPair);
         }
 
         private ConsensusPayload MakeSignedPayload(ConsensusMessage message)
