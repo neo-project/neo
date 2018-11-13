@@ -46,7 +46,7 @@ namespace Neo.Consensus
             context.Transactions[tx.Hash] = tx;
             if (context.TransactionHashes.Length == context.Transactions.Count)
             {
-                if (Blockchain.GetConsensusAddress(context.Snapshot.GetValidators(context.Transactions.Values).ToArray()).Equals(context.NextConsensus))
+                if (context.VerifyRequest())
                 {
                     Log($"send prepare response");
                     context.State |= ConsensusState.SignatureSent;
