@@ -6,6 +6,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Wallets;
 using Neo.Plugins;
+using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 using System.Linq;
