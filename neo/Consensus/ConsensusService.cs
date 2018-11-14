@@ -290,7 +290,6 @@ namespace Neo.Consensus
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
                     context.Fill();
-                    context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
                     context.SignHeader();
                 }
                 system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
