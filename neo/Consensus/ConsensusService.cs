@@ -48,7 +48,7 @@ namespace Neo.Consensus
                 {
                     Log($"send prepare response");
                     context.State |= ConsensusState.SignatureSent;
-                    context.Signatures[context.MyIndex] = context.MakeHeaderSignature();
+                    context.SignHeader();
                     system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.Signatures[context.MyIndex]) });
                     CheckSignatures();
                 }
@@ -291,7 +291,7 @@ namespace Neo.Consensus
                 {
                     context.Fill();
                     context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
-                    context.Signatures[context.MyIndex] = context.MakeHeaderSignature();
+                    context.SignHeader();
                 }
                 system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
                 if (context.TransactionHashes.Length > 1)

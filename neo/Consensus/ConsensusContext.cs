@@ -113,15 +113,6 @@ namespace Neo.Consensus
             return _header;
         }
 
-        public byte[] MakeHeaderSignature()
-        {
-            Block header = MakeHeader();
-            if (header == null)
-                return new byte[0];
-            else
-                return header.Sign(KeyPair);
-        }
-
         private ConsensusPayload MakeSignedPayload(ConsensusMessage message)
         {
             message.ViewNumber = ViewNumber;
@@ -136,6 +127,11 @@ namespace Neo.Consensus
             };
             SignPayload(payload);
             return payload;
+        }
+
+        public void SignHeader()
+        {
+            Signatures[MyIndex] = MakeHeader()?.Sign(KeyPair);
         }
 
         private void SignPayload(ConsensusPayload payload)
