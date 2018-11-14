@@ -83,8 +83,7 @@ namespace Neo.Consensus
         {
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                Block block = context.MakeSignedHeader();
-                block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
+                Block block = context.CreateBlock();
                 Log($"relay block: {block.Hash}");
                 system.LocalNode.Tell(new LocalNode.Relay { Inventory = block });
                 context.State |= ConsensusState.BlockSent;

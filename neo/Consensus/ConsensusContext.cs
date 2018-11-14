@@ -4,9 +4,9 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Wallets;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,6 +56,23 @@ namespace Neo.Consensus
             _header = null;
         }
 
+        public Block CreateBlock()
+        {
+            Block block = MakeHeader();
+            if (block == null) return null;
+            Contract contract = Contract.CreateMultiSigContract(M, Validators);
+            ContractParametersContext sc = new ContractParametersContext(block);
+            for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
+                if (Signatures[i] != null)
+                {
+                    sc.AddSignature(contract, Validators[i], Signatures[i]);
+                    j++;
+                }
+            sc.Verifiable.Witnesses = sc.GetWitnesses();
+            block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
+            return block;
+        }
+
         public void Dispose()
         {
             Snapshot?.Dispose();
@@ -94,24 +111,6 @@ namespace Neo.Consensus
                 };
             }
             return _header;
-        }
-
-        public Block MakeSignedHeader()
-        {
-            Block header = MakeHeader();
-            if (header != null)
-            {
-                Contract contract = Contract.CreateMultiSigContract(M, Validators);
-                ContractParametersContext sc = new ContractParametersContext(header);
-                for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
-                    if (Signatures[i] != null)
-                    {
-                        sc.AddSignature(contract, Validators[i], Signatures[i]);
-                        j++;
-                    }
-                sc.Verifiable.Witnesses = sc.GetWitnesses();
-            }
-            return header;
         }
 
         public byte[] MakeHeaderSignature()
