@@ -855,13 +855,20 @@ namespace Neo.SmartContract
 
         private bool Iterator_Create(ExecutionEngine engine)
         {
-            if (engine.CurrentContext.EvaluationStack.Pop() is Map map)
+            IIterator iterator;
+            switch (engine.CurrentContext.EvaluationStack.Pop())
             {
-                IIterator iterator = new MapWrapper(map);
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(iterator));
-                return true;
+                case VMArray array:
+                    iterator = new ArrayWrapper(array);
+                    break;
+                case Map map:
+                    iterator = new MapWrapper(map);
+                    break;
+                default:
+                    return false;
             }
-            return false;
+            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(iterator));
+            return true;
         }
 
         private bool Iterator_Key(ExecutionEngine engine)
