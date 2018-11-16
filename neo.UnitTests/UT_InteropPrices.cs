@@ -166,5 +166,41 @@ namespace Neo.UnitTests
             uut.GetPrice("AntShares.Storage.Delete".ToInteropMethodHash()).Should().Be(100);
             #endregion
         }
+
+        [TestMethod]
+        public void StandardServiceFixedPrices()
+        {
+            uut.GetPrice("System.Runtime.Platform".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Runtime.GetTrigger".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Runtime.CheckWitness".ToInteropMethodHash()).Should().Be(200);
+            uut.GetPrice("System.Runtime.Notify".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Runtime.Log".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Runtime.GetTime".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Runtime.Serialize".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Runtime.Deserialize".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Blockchain.GetHeight".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Blockchain.GetHeader".ToInteropMethodHash()).Should().Be(100);
+            uut.GetPrice("System.Blockchain.GetBlock".ToInteropMethodHash()).Should().Be(200);
+            uut.GetPrice("System.Blockchain.GetTransaction".ToInteropMethodHash()).Should().Be(200);
+            uut.GetPrice("System.Blockchain.GetTransactionHeight".ToInteropMethodHash()).Should().Be(100);
+            uut.GetPrice("System.Blockchain.GetContract".ToInteropMethodHash()).Should().Be(100);
+            uut.GetPrice("System.Header.GetIndex".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Header.GetHash".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Header.GetPrevHash".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Header.GetTimestamp".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Block.GetTransactionCount".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Block.GetTransactions".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Block.GetTransaction".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Transaction.GetHash".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Contract.Destroy".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Contract.GetStorageContext".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Storage.GetContext".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Storage.GetReadOnlyContext".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("System.Storage.Get".ToInteropMethodHash()).Should().Be(100);
+            //uut.GetPrice("System.Storage.Put".ToInteropMethodHash()).Should().Be(1); Storage_Put);
+            //uut.GetPrice("System.Storage.PutEx".ToInteropMethodHash()).Should().Be(1); Storage_PutEx);
+            uut.GetPrice("System.Storage.Delete".ToInteropMethodHash()).Should().Be(100);
+            uut.GetPrice("System.StorageContext.AsReadOnly".ToInteropMethodHash()).Should().Be(1);
+        }
     }
 }
