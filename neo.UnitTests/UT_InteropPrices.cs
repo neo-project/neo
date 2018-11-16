@@ -5,6 +5,7 @@ using Neo.SmartContract;
 using Neo.VM;
 using System.IO;
 using System.Text;
+using System;
 
 namespace Neo.UnitTests
 {
@@ -201,6 +202,42 @@ namespace Neo.UnitTests
             //uut.GetPrice("System.Storage.PutEx".ToInteropMethodHash()).Should().Be(1); Storage_PutEx);
             uut.GetPrice("System.Storage.Delete".ToInteropMethodHash()).Should().Be(100);
             uut.GetPrice("System.StorageContext.AsReadOnly".ToInteropMethodHash()).Should().Be(1);
+        }
+
+        [TestMethod]
+        public void ApplicationEngineFixedPrices()
+        {
+            // System.Runtime.CheckWitness: f827ec8c (price is 200)
+            byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[]{0x68, 0x04, 0xf8, 0x27, 0xec, 0x8c};
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            {
+                ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
+                ae.GetPriceForSysCall().Should().Be(200);
+            }
+
+            // "System.Runtime.CheckWitness" (27 bytes -> 0x1b) - (price is 200)
+            byte[] SyscallSystemRuntimeCheckWitnessString = new byte[]{0x68, 0x1b, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x2e, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x2e, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x57, 0x69, 0x74, 0x6e, 0x65, 0x73, 0x73};
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            {
+                ae.LoadScript(SyscallSystemRuntimeCheckWitnessString);
+                ae.GetPriceForSysCall().Should().Be(200);
+            }
+
+            // System.Storage.GetContext: 9bf667ce (price is 1)
+            byte[] SyscallSystemStorageGetContextHash = new byte[]{0x68, 0x04, 0x9b, 0xf6, 0x67, 0xce};
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            {
+                ae.LoadScript(SyscallSystemStorageGetContextHash);
+                ae.GetPriceForSysCall().Should().Be(1);
+            }
+
+            // System.Storage.Get: 925de831 (price is 100)
+            byte[] SyscallSystemStorageGetHash = new byte[]{0x68, 0x04, 0x92, 0x5d, 0xe8, 0x31};
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            {
+                ae.LoadScript(SyscallSystemStorageGetHash);
+                ae.GetPriceForSysCall().Should().Be(100);
+            }
         }
     }
 }
