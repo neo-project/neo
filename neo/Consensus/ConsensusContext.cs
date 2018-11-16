@@ -19,7 +19,8 @@ namespace Neo.Consensus
         public UInt256 PrevHash;
         public uint BlockIndex;
         public byte ViewNumber;
-        public Snapshot Snapshot;
+        private Snapshot Snapshot;
+        public uint SnapshotHeight => Snapshot.Height;
         public ECPoint[] Validators;
         public int MyIndex;
         public uint PrimaryIndex;
@@ -47,6 +48,13 @@ namespace Neo.Consensus
             if (MyIndex >= 0)
                 ExpectedView[MyIndex] = view_number;
             _header = null;
+        }
+
+        public bool MustReject(Transaction tx, bool verify)
+        {
+          return Snapshot.ContainsTransaction(tx.Hash) ||
+              (verify && !tx.Verify(Snapshot, Transactions.Values)) ||
+              !Plugin.CheckPolicy(tx);
         }
 
         public void Dispose()
