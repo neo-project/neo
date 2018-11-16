@@ -7,6 +7,7 @@ using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.Wallets;
+using Neo.Plugins;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,14 +30,20 @@ namespace Neo.Consensus
         public UInt160 NextConsensus;
         public UInt256[] TransactionHashes;
         public Dictionary<UInt256, Transaction> Transactions;
-        public byte[][] Signatures;
+        public byte[][] SignedPayloads;
+        public byte[][] FinalSignatures;
         public byte[] ExpectedView;
         private KeyPair KeyPair;
         private readonly Wallet wallet;
 
         public int M => Validators.Length - (Validators.Length - 1) / 3;
 
-        public ConsensusContext(Wallet wallet)
+        /// <summary>
+        /// Local PrepareRequest original Payload 
+        /// </summary>
+        public ConsensusPayload PreparePayload;
+        
+	public ConsensusContext(Wallet wallet)
         {
             this.wallet = wallet;
         }
@@ -46,13 +53,20 @@ namespace Neo.Consensus
             State &= ConsensusState.SignatureSent;
             ViewNumber = view_number;
             PrimaryIndex = GetPrimaryIndex(view_number);
+
             if (State == ConsensusState.Initial)
             {
+                PreparePayload = null;
                 TransactionHashes = null;
-                Signatures = new byte[Validators.Length][];
+                SignedPayloads = new byte[Validators.Length][];
+                FinalSignatures = new byte[Validators.Length][];
             }
+
             if (MyIndex >= 0)
+            {
                 ExpectedView[MyIndex] = view_number;
+            }
+
             _header = null;
         }
 
@@ -96,6 +110,7 @@ namespace Neo.Consensus
         public Block MakeHeader()
         {
             if (TransactionHashes == null) return null;
+
             if (_header == null)
             {
                 _header = new Block
@@ -110,6 +125,7 @@ namespace Neo.Consensus
                     Transactions = new Transaction[0]
                 };
             }
+
             return _header;
         }
 
@@ -129,27 +145,7 @@ namespace Neo.Consensus
             return payload;
         }
 
-        public void SignHeader()
-        {
-            Signatures[MyIndex] = MakeHeader()?.Sign(KeyPair);
-        }
-
-        private void SignPayload(ConsensusPayload payload)
-        {
-            ContractParametersContext sc;
-            try
-            {
-                sc = new ContractParametersContext(payload);
-                wallet.Sign(sc);
-            }
-            catch (InvalidOperationException)
-            {
-                return;
-            }
-            sc.Verifiable.Witnesses = sc.GetWitnesses();
-        }
-
-        public ConsensusPayload MakePrepareRequest()
+        public ConsensusPayload MakePrepareRequest(byte[] prepReqSignature)
         {
             return MakeSignedPayload(new PrepareRequest
             {
@@ -157,17 +153,38 @@ namespace Neo.Consensus
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                Signature = Signatures[MyIndex]
+                PrepReqSignature = prepReqSignature
             });
         }
 
-        public ConsensusPayload MakePrepareResponse(byte[] signature)
+        public ConsensusPayload MakePrepareResponse(byte[] responseSignature)
         {
             return MakeSignedPayload(new PrepareResponse
             {
-                Signature = signature
+                PreparePayload = PreparePayload,
+                ResponseSignature = responseSignature
             });
         }
+
+        public ConsensusPayload MakeCommitAgreement(byte[] finalSignature)
+        {
+            return MakePayload(new CommitAgreement()
+            {
+                FinalSignature = finalSignature
+            });
+        }
+
+        public ConsensusPayload MakeRegeneration()
+        {
+            return MakePayload(new Regeneration()
+            {
+                PrepareRequestPayload = PreparePayload,
+                SignedPayloads = SignedPayloads
+            });
+        }
+
+
+
 
         public void Reset()
         {
@@ -181,9 +198,12 @@ namespace Neo.Consensus
             MyIndex = -1;
             PrimaryIndex = BlockIndex % (uint)Validators.Length;
             TransactionHashes = null;
-            Signatures = new byte[Validators.Length][];
+            PreparePayload = null;
+            SignedPayloads = new byte[Validators.Length][];
+            FinalSignatures = new byte[Validators.Length][];
             ExpectedView = new byte[Validators.Length];
             KeyPair = null;
+
             for (int i = 0; i < Validators.Length; i++)
             {
                 WalletAccount account = wallet.GetAccount(Validators[i]);
@@ -234,6 +254,25 @@ namespace Neo.Consensus
             Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), Snapshot.GetHeader(PrevHash).Timestamp + 1);
         }
 
+        public void SignHeader()
+        {
+            Signatures[MyIndex] = MakeHeader()?.Sign(KeyPair);
+        }
+
+        private void SignPayload(ConsensusPayload payload)
+        {
+            ContractParametersContext sc;
+            try
+            {
+                sc = new ContractParametersContext(payload);
+                wallet.Sign(sc);
+            }
+            catch (InvalidOperationException)
+            {
+                return;
+            }
+            sc.Verifiable.Witnesses = sc.GetWitnesses();
+        }
         private static ulong GetNonce()
         {
             byte[] nonce = new byte[sizeof(ulong)];

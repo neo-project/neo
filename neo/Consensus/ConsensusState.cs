@@ -13,5 +13,6 @@ namespace Neo.Consensus
         SignatureSent = 0x10,
         BlockSent = 0x20,
         ViewChanging = 0x40,
+        CommitSent = 0x80,
     }
 }

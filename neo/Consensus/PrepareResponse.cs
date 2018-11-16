@@ -1,26 +1,31 @@
 ﻿using System.IO;
+using Neo.Network.P2P.Payloads;
+using Neo.IO;
 
 namespace Neo.Consensus
 {
     internal class PrepareResponse : ConsensusMessage
     {
-        public byte[] Signature;
+        public ConsensusPayload PreparePayload;
+        public byte[] ResponseSignature;
 
-        public PrepareResponse()
-            : base(ConsensusMessageType.PrepareResponse)
-        {
-        }
+        public PrepareResponse() : base(ConsensusMessageType.PrepareResponse) { }
 
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Signature = reader.ReadBytes(64);
+
+            PreparePayload = new ConsensusPayload();
+            ((ISerializable)PreparePayload).Deserialize(reader);
+            ResponseSignature = reader.ReadBytes(64);
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(Signature);
+
+            ((ISerializable)PreparePayload).Serialize(writer);
+            writer.Write(ResponseSignature);
         }
     }
 }
