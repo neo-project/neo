@@ -506,57 +506,15 @@ namespace Neo.SmartContract
             uint api_hash = length == 4
                 ? System.BitConverter.ToUInt32(CurrentContext.Script, CurrentContext.InstructionPointer + 2)
                 : Encoding.ASCII.GetString(CurrentContext.Script, CurrentContext.InstructionPointer + 2, length).ToInteropMethodHash();
-
-            if (api_hash == "System.Runtime.CheckWitness".ToInteropMethodHash() ||
-                api_hash == "Neo.Runtime.CheckWitness".ToInteropMethodHash() ||
-                api_hash == "AntShares.Runtime.CheckWitness".ToInteropMethodHash())
-                return 200;
-            else if (api_hash == "System.Blockchain.GetHeader".ToInteropMethodHash() ||
-                api_hash == "Neo.Blockchain.GetHeader".ToInteropMethodHash() ||
-                api_hash == "AntShares.Blockchain.GetHeader".ToInteropMethodHash())
-                return 100;
-            else if (api_hash == "System.Blockchain.GetBlock".ToInteropMethodHash() ||
-                api_hash == "Neo.Blockchain.GetBlock".ToInteropMethodHash() ||
-                api_hash == "AntShares.Blockchain.GetBlock".ToInteropMethodHash())
-                return 200;
-            else if (api_hash == "System.Blockchain.GetTransaction".ToInteropMethodHash() ||
-                api_hash == "Neo.Blockchain.GetTransaction".ToInteropMethodHash() ||
-                api_hash == "AntShares.Blockchain.GetTransaction".ToInteropMethodHash())
-                return 100;
-            else if (api_hash == "System.Blockchain.GetTransactionHeight".ToInteropMethodHash() ||
-                api_hash == "Neo.Blockchain.GetTransactionHeight".ToInteropMethodHash())
-                return 100;
-            else if (api_hash == "Neo.Blockchain.GetAccount".ToInteropMethodHash() ||
-                api_hash == "AntShares.Blockchain.GetAccount".ToInteropMethodHash())
-                return 100;
-            else if (api_hash == "Neo.Blockchain.GetValidators".ToInteropMethodHash() ||
-                api_hash == "AntShares.Blockchain.GetValidators".ToInteropMethodHash())
-                return 200;
-            else if (api_hash == "Neo.Blockchain.GetAsset".ToInteropMethodHash() ||
-                api_hash == "AntShares.Blockchain.GetAsset".ToInteropMethodHash())
-                return 100;
-            else if (api_hash == "System.Blockchain.GetContract".ToInteropMethodHash() ||
-                api_hash == "Neo.Blockchain.GetContract".ToInteropMethodHash() ||
-                api_hash == "AntShares.Blockchain.GetContract".ToInteropMethodHash())
-                return 100;
-            else if (api_hash == "Neo.Transaction.GetReferences".ToInteropMethodHash() ||
-                api_hash == "AntShares.Transaction.GetReferences".ToInteropMethodHash())
-                return 200;
-            else if (api_hash == "Neo.Transaction.GetUnspentCoins".ToInteropMethodHash())
-                return 200;
-            else if (api_hash == "Neo.Transaction.GetWitnesses".ToInteropMethodHash())
-                return 200;
-            else if (api_hash == "Neo.Witness.GetVerificationScript".ToInteropMethodHash())
-                return 100;
-            else if (api_hash == "Neo.Account.IsStandard".ToInteropMethodHash())
-                return 100;
-            else if (api_hash == "Neo.Asset.Create".ToInteropMethodHash() ||
-                api_hash == "AntShares.Asset.Create".ToInteropMethodHash())
+            long price = Service.GetPrice(api_hash);
+            if (price > 0) return price;
+            if (api_hash == "Neo.Asset.Create".ToInteropMethodHash() ||
+               api_hash == "AntShares.Asset.Create".ToInteropMethodHash())
                 return 5000L * 100000000L / ratio;
-            else if (api_hash == "Neo.Asset.Renew".ToInteropMethodHash() ||
+            if (api_hash == "Neo.Asset.Renew".ToInteropMethodHash() ||
                 api_hash == "AntShares.Asset.Renew".ToInteropMethodHash())
                 return (byte)CurrentContext.EvaluationStack.Peek(1).GetBigInteger() * 5000L * 100000000L / ratio;
-            else if (api_hash == "Neo.Contract.Create".ToInteropMethodHash() ||
+            if (api_hash == "Neo.Contract.Create".ToInteropMethodHash() ||
                 api_hash == "Neo.Contract.Migrate".ToInteropMethodHash() ||
                 api_hash == "AntShares.Contract.Create".ToInteropMethodHash() ||
                 api_hash == "AntShares.Contract.Migrate".ToInteropMethodHash())
@@ -575,21 +533,12 @@ namespace Neo.SmartContract
                 }
                 return fee * 100000000L / ratio;
             }
-            else if (api_hash == "System.Storage.Get".ToInteropMethodHash() ||
-                api_hash == "Neo.Storage.Get".ToInteropMethodHash() ||
-                api_hash == "AntShares.Storage.Get".ToInteropMethodHash())
-                return 100;
-            else if (api_hash == "System.Storage.Put".ToInteropMethodHash() ||
+            if (api_hash == "System.Storage.Put".ToInteropMethodHash() ||
                 api_hash == "System.Storage.PutEx".ToInteropMethodHash() ||
                 api_hash == "Neo.Storage.Put".ToInteropMethodHash() ||
                 api_hash == "AntShares.Storage.Put".ToInteropMethodHash())
                 return ((CurrentContext.EvaluationStack.Peek(1).GetByteArray().Length + CurrentContext.EvaluationStack.Peek(2).GetByteArray().Length - 1) / 1024 + 1) * 1000;
-            else if (api_hash == "System.Storage.Delete".ToInteropMethodHash() ||
-                api_hash == "Neo.Storage.Delete".ToInteropMethodHash() ||
-                api_hash == "AntShares.Storage.Delete".ToInteropMethodHash())
-                return 100;
-            else
-                return 1;
+            return 1;
         }
 
         private bool PostStepInto(OpCode nextOpcode)
