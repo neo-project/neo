@@ -7,7 +7,6 @@ using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.Wallets;
-using Neo.Plugins;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,10 +38,10 @@ namespace Neo.Consensus
         public int M => Validators.Length - (Validators.Length - 1) / 3;
 
         /// <summary>
-        /// Local PrepareRequest original Payload 
+        /// Local PrepareRequest original Payload
         /// </summary>
         public ConsensusPayload PreparePayload;
-        
+
 	public ConsensusContext(Wallet wallet)
         {
             this.wallet = wallet;
@@ -129,7 +128,7 @@ namespace Neo.Consensus
             return _header;
         }
 
-        private ConsensusPayload MakeSignedPayload(ConsensusMessage message)
+        public ConsensusPayload MakeSignedPayload(ConsensusMessage message)
         {
             message.ViewNumber = ViewNumber;
             ConsensusPayload payload = new ConsensusPayload
@@ -168,7 +167,7 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeCommitAgreement(byte[] finalSignature)
         {
-            return MakePayload(new CommitAgreement()
+            return MakeSignedPayload(new CommitAgreement()
             {
                 FinalSignature = finalSignature
             });
@@ -176,7 +175,7 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeRegeneration()
         {
-            return MakePayload(new Regeneration()
+            return MakeSignedPayload(new Regeneration()
             {
                 PrepareRequestPayload = PreparePayload,
                 SignedPayloads = SignedPayloads
