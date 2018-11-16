@@ -103,6 +103,7 @@ namespace Neo.Consensus
             }
         }
 
+/*
         private void CheckSignatures()
         {
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
@@ -113,6 +114,7 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.BlockSent;
             }
         }
+*/
 
         private void InitializeConsensus(byte view_number)
         {
