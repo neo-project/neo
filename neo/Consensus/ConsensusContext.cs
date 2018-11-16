@@ -33,6 +33,7 @@ namespace Neo.Consensus
         public byte[] ExpectedView;
         private KeyPair KeyPair;
         private readonly Wallet wallet;
+        private DateTime block_received_time;
 
         public int M => Validators.Length - (Validators.Length - 1) / 3;
 
@@ -231,7 +232,7 @@ namespace Neo.Consensus
             TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             Transactions = transactions.ToDictionary(p => p.Hash);
             NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators(transactions).ToArray());
-            Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), Snapshot.GetHeader(PrevHash).Timestamp + 1);
+            Timestamp = GetCurrentTimestamp();
         }
 
         private static ulong GetNonce()
@@ -252,6 +253,26 @@ namespace Neo.Consensus
             Fixed8 amount_netfee = Block.CalculateNetFee(Transactions.Values);
             if (tx_gen?.Outputs.Sum(p => p.Value) != amount_netfee) return false;
             return true;
+        }
+
+        public uint GetSnapshotTimestamp()
+        {
+            return Snapshot.GetHeader(PrevHash).Timestamp;
+        }
+
+        public uint GetLimitTimestamp()
+        {
+            return DateTime.UtcNow.AddMinutes(10).ToTimestamp();
+        }
+
+        public uint GetCurrentTimestamp()
+        {
+            return Math.Max(DateTime.UtcNow.ToTimestamp(), Snapshot.GetHeader(PrevHash).Timestamp + 1);
+        }
+
+        public DateTime GetUtcNow()
+        {
+            return DateTime.UtcNow;
         }
     }
 }
