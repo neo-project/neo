@@ -67,7 +67,7 @@ namespace Neo.Consensus
                 if (context.VerifyRequest())
                 {
                     Log($"send prepare response");
-                    context.SignedPayloads[context.MyIndex] = context.PreparePayload.Sign(context.KeyPair);
+                    context.SignedPayloads[context.MyIndex] = context.SignPreparePayload();
                     context.State |= ConsensusState.SignatureSent;
                     //SignAndRelay(context.MakePrepareResponse(context.SignedPayloads[context.MyIndex]));
                     system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.SignedPayloads[context.MyIndex]) });
@@ -393,7 +393,7 @@ namespace Neo.Consensus
                 Block block = context.MakeHeader();
                 if (block == null) return;
                 context.State |= ConsensusState.CommitSent;
-                context.FinalSignatures[context.MyIndex] = block.Sign(context.KeyPair);
+                context.FinalSignatures[context.MyIndex] = context.SignBlock(block);
                 //SignAndRelay(context.MakeCommitAgreement(context.FinalSignatures[context.MyIndex]));
                 system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeCommitAgreement(context.FinalSignatures[context.MyIndex]) });
                 Log($"Commit sent: height={context.BlockIndex} hash={block.Hash} state={context.State}");
@@ -530,14 +530,14 @@ namespace Neo.Consensus
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
                     //Log($"ONTIMER: Going to fill context...");
-                    context.Fill(wallet);
+                    context.Fill();
                     context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
                 }
                 //Log($"ONTIMER: After fill context context.");
 
                 context.SignedPayloads[context.MyIndex] = new byte[64];
                 context.PreparePayload = context.MakePrepareRequest(context.SignedPayloads[context.MyIndex]);
-                context.SignedPayloads[context.MyIndex] = context.PreparePayload.Sign(context.KeyPair);
+                context.SignedPayloads[context.MyIndex] = context.SignPreparePayload();
                 PrepareRequest tempPrePrepareWithSignature = GetPrepareRequestMessage(context.PreparePayload);
                 tempPrePrepareWithSignature.PrepReqSignature = context.SignedPayloads[context.MyIndex];
                 context.PreparePayload.Data = tempPrePrepareWithSignature.ToArray();
@@ -552,7 +552,8 @@ namespace Neo.Consensus
                 }
                 //Log($"ONTIMER: going to SignandRelay");
                 //SignAndRelay(context.PreparePayload);
-                system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = MakeSignedPayload(context.PreparePayload) });
+                context.SignPayload(context.PreparePayload);
+                system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.PreparePayload });
                 //Log($"ONTIMER: signed");
                 if (context.TransactionHashes.Length > 1)
                 {

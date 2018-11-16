@@ -42,7 +42,7 @@ namespace Neo.Consensus
         /// </summary>
         public ConsensusPayload PreparePayload;
 
-	public ConsensusContext(Wallet wallet)
+	      public ConsensusContext(Wallet wallet)
         {
             this.wallet = wallet;
         }
@@ -258,7 +258,17 @@ namespace Neo.Consensus
             Signatures[MyIndex] = MakeHeader()?.Sign(KeyPair);
         }
 
-        private void SignPayload(ConsensusPayload payload)
+        public byte[] SignBlock(Block block)
+        {
+            return block.Sign(KeyPair);
+        }
+
+        public byte[] SignPreparePayload()
+        {
+            return PreparePayload.Sign(KeyPair);
+        }
+
+        public void SignPayload(ConsensusPayload payload)
         {
             ContractParametersContext sc;
             try
