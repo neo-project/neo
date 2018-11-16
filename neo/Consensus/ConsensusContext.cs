@@ -1,3 +1,5 @@
+﻿using Akka.Actor;
+using Akka.Configuration;
 ﻿using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
@@ -33,7 +35,7 @@ namespace Neo.Consensus
         public byte[] ExpectedView;
         private KeyPair KeyPair;
         private readonly Wallet wallet;
-        private DateTime block_received_time;
+        public DateTime block_received_time;
 
         public int M => Validators.Length - (Validators.Length - 1) / 3;
 
@@ -273,6 +275,15 @@ namespace Neo.Consensus
         public DateTime GetUtcNow()
         {
             return DateTime.UtcNow;
+        }
+
+        public void ChangeTimer(TimeSpan delay, ITellScheduler scheduler, ICanTell receiver, IActorRef sender)
+        {
+            scheduler.ScheduleTellOnce(delay, receiver, new ConsensusTimer
+            {
+                Height = BlockIndex,
+                ViewNumber = ViewNumber
+            }, sender);
         }
     }
 }

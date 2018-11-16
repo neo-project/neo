@@ -19,7 +19,6 @@ namespace Neo.Consensus
     {
         public class Start { }
         public class SetViewNumber { public byte ViewNumber; }
-        internal class Timer { public uint Height; public byte ViewNumber; }
 
         private readonly ConsensusContext context;
         private readonly NeoSystem system;
@@ -60,15 +59,6 @@ namespace Neo.Consensus
             return true;
         }
 
-        private void ChangeTimer(TimeSpan delay)
-        {
-            Context.System.Scheduler.ScheduleTellOnce(delay, Self, new Timer
-            {
-                Height = context.BlockIndex,
-                ViewNumber = context.ViewNumber
-            }, ActorRefs.NoSender);
-        }
-
         private void CheckExpectedView(byte view_number)
         {
             if (context.ViewNumber == view_number) return;
@@ -104,14 +94,14 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.Primary;
                 TimeSpan span = context.GetUtcNow() - context.block_received_time;
                 if (span >= Blockchain.TimePerBlock)
-                    ChangeTimer(TimeSpan.Zero);
+                    context.ChangeTimer(TimeSpan.Zero, Context.System.Scheduler, Self, ActorRefs.NoSender);
                 else
-                    ChangeTimer(Blockchain.TimePerBlock - span);
+                    context.ChangeTimer(Blockchain.TimePerBlock - span, Context.System.Scheduler, Self, ActorRefs.NoSender);
             }
             else
             {
                 context.State = ConsensusState.Backup;
-                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (view_number + 1)));
+                context.ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (view_number + 1)), Context.System.Scheduler, Self, ActorRefs.NoSender);
             }
         }
 
@@ -256,7 +246,7 @@ namespace Neo.Consensus
                 case SetViewNumber setView:
                     InitializeConsensus(setView.ViewNumber);
                     break;
-                case Timer timer:
+                case ConsensusTimer timer:
                     OnTimer(timer);
                     break;
                 case ConsensusPayload payload:
@@ -277,7 +267,7 @@ namespace Neo.Consensus
             InitializeConsensus(0);
         }
 
-        private void OnTimer(Timer timer)
+        private void OnTimer(ConsensusTimer timer)
         {
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (timer.Height != context.BlockIndex || timer.ViewNumber != context.ViewNumber) return;
@@ -297,7 +287,7 @@ namespace Neo.Consensus
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
                         system.LocalNode.Tell(Message.Create("inv", payload));
                 }
-                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer.ViewNumber + 1)));
+                context.ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer.ViewNumber + 1)), Context.System.Scheduler, Self, ActorRefs.NoSender);
             }
             else if ((context.State.HasFlag(ConsensusState.Primary) && context.State.HasFlag(ConsensusState.RequestSent)) || context.State.HasFlag(ConsensusState.Backup))
             {
@@ -332,7 +322,7 @@ namespace Neo.Consensus
             context.State |= ConsensusState.ViewChanging;
             context.ExpectedView[context.MyIndex]++;
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
-            ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)));
+            context.ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)), Context.System.Scheduler, Self, ActorRefs.NoSender);
             system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
             CheckExpectedView(context.ExpectedView[context.MyIndex]);
         }
@@ -351,7 +341,7 @@ namespace Neo.Consensus
             {
                 case ConsensusPayload _:
                 case ConsensusService.SetViewNumber _:
-                case ConsensusService.Timer _:
+                case ConsensusTimer _:
                 case Blockchain.PersistCompleted _:
                     return true;
                 default:
