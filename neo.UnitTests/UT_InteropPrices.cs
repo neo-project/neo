@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.VM;
-using System.IO;
 using System.Text;
 using System.Numerics;
 using System;
