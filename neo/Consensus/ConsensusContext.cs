@@ -4,8 +4,9 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Wallets;
 using Neo.Plugins;
+using Neo.SmartContract;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,9 +31,15 @@ namespace Neo.Consensus
         public Dictionary<UInt256, Transaction> Transactions;
         public byte[][] Signatures;
         public byte[] ExpectedView;
-        public KeyPair KeyPair;
+        private KeyPair KeyPair;
+        private readonly Wallet wallet;
 
         public int M => Validators.Length - (Validators.Length - 1) / 3;
+
+        public ConsensusContext(Wallet wallet)
+        {
+            this.wallet = wallet;
+        }
 
         public void ChangeView(byte view_number)
         {
@@ -49,6 +56,23 @@ namespace Neo.Consensus
             _header = null;
         }
 
+        public Block CreateBlock()
+        {
+            Block block = MakeHeader();
+            if (block == null) return null;
+            Contract contract = Contract.CreateMultiSigContract(M, Validators);
+            ContractParametersContext sc = new ContractParametersContext(block);
+            for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
+                if (Signatures[i] != null)
+                {
+                    sc.AddSignature(contract, Validators[i], Signatures[i]);
+                    j++;
+                }
+            sc.Verifiable.Witnesses = sc.GetWitnesses();
+            block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
+            return block;
+        }
+
         public void Dispose()
         {
             Snapshot?.Dispose();
@@ -62,7 +86,7 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeChangeView()
         {
-            return MakePayload(new ChangeView
+            return MakeSignedPayload(new ChangeView
             {
                 NewViewNumber = ExpectedView[MyIndex]
             });
@@ -89,10 +113,10 @@ namespace Neo.Consensus
             return _header;
         }
 
-        private ConsensusPayload MakePayload(ConsensusMessage message)
+        private ConsensusPayload MakeSignedPayload(ConsensusMessage message)
         {
             message.ViewNumber = ViewNumber;
-            return new ConsensusPayload
+            ConsensusPayload payload = new ConsensusPayload
             {
                 Version = Version,
                 PrevHash = PrevHash,
@@ -101,11 +125,33 @@ namespace Neo.Consensus
                 Timestamp = Timestamp,
                 Data = message.ToArray()
             };
+            SignPayload(payload);
+            return payload;
+        }
+
+        public void SignHeader()
+        {
+            Signatures[MyIndex] = MakeHeader()?.Sign(KeyPair);
+        }
+
+        private void SignPayload(ConsensusPayload payload)
+        {
+            ContractParametersContext sc;
+            try
+            {
+                sc = new ContractParametersContext(payload);
+                wallet.Sign(sc);
+            }
+            catch (InvalidOperationException)
+            {
+                return;
+            }
+            sc.Verifiable.Witnesses = sc.GetWitnesses();
         }
 
         public ConsensusPayload MakePrepareRequest()
         {
-            return MakePayload(new PrepareRequest
+            return MakeSignedPayload(new PrepareRequest
             {
                 Nonce = Nonce,
                 NextConsensus = NextConsensus,
@@ -117,13 +163,13 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakePrepareResponse(byte[] signature)
         {
-            return MakePayload(new PrepareResponse
+            return MakeSignedPayload(new PrepareResponse
             {
                 Signature = signature
             });
         }
 
-        public void Reset(Wallet wallet)
+        public void Reset()
         {
             Snapshot?.Dispose();
             Snapshot = Blockchain.Singleton.GetSnapshot();
@@ -151,7 +197,7 @@ namespace Neo.Consensus
             _header = null;
         }
 
-        public void Fill(Wallet wallet)
+        public void Fill()
         {
             IEnumerable<Transaction> mem_pool = Blockchain.Singleton.GetMemoryPool();
             foreach (IPolicyPlugin plugin in Plugin.Policies)
@@ -185,6 +231,7 @@ namespace Neo.Consensus
             TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             Transactions = transactions.ToDictionary(p => p.Hash);
             NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators(transactions).ToArray());
+            Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), Snapshot.GetHeader(PrevHash).Timestamp + 1);
         }
 
         private static ulong GetNonce()
