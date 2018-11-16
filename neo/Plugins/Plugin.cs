@@ -8,7 +8,7 @@ namespace Neo.Plugins
 {
     public abstract class Plugin
     {
-        private static readonly List<Plugin> Plugins = new List<Plugin>();
+        public static readonly List<Plugin> Plugins = new List<Plugin>();
         private static readonly List<ILogPlugin> Loggers = new List<ILogPlugin>();
         internal static readonly List<IPolicyPlugin> Policies = new List<IPolicyPlugin>();
         internal static readonly List<IRpcPlugin> RpcPlugins = new List<IRpcPlugin>();
