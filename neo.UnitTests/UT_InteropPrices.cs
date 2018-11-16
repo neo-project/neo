@@ -5,6 +5,7 @@ using Neo.SmartContract;
 using Neo.VM;
 using System.IO;
 using System.Text;
+using System.Numerics;
 using System;
 
 namespace Neo.UnitTests
@@ -71,8 +72,6 @@ namespace Neo.UnitTests
             uut.GetPrice("Neo.Account.GetVotes".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Account.GetBalance".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Account.IsStandard".ToInteropMethodHash()).Should().Be(100);
-            //uut.GetPrice("Neo.Asset.Create".ToInteropMethodHash()).Should().Be(100); Asset_Create);
-            //uut.GetPrice("Neo.Asset.Renew".ToInteropMethodHash()).Should().Be(100); Asset_Renew);
             uut.GetPrice("Neo.Asset.GetAssetId".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Asset.GetAssetType".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Asset.GetAmount".ToInteropMethodHash()).Should().Be(1);
@@ -81,8 +80,6 @@ namespace Neo.UnitTests
             uut.GetPrice("Neo.Asset.GetOwner".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Asset.GetAdmin".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Asset.GetIssuer".ToInteropMethodHash()).Should().Be(1);
-            //uut.GetPrice("Neo.Contract.Create".ToInteropMethodHash()).Should().Be(100); Contract_Create);
-            //uut.GetPrice("Neo.Contract.Migrate".ToInteropMethodHash()).Should().Be(100); Contract_Migrate);
             uut.GetPrice("Neo.Contract.Destroy".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Contract.GetScript".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Contract.IsPayable".ToInteropMethodHash()).Should().Be(1);
@@ -90,7 +87,6 @@ namespace Neo.UnitTests
             uut.GetPrice("Neo.Storage.GetContext".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Storage.GetReadOnlyContext".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Storage.Get".ToInteropMethodHash()).Should().Be(100);
-            //uut.GetPrice("Neo.Storage.Put".ToInteropMethodHash()).Should().Be(100); Storage_Put);
             uut.GetPrice("Neo.Storage.Delete".ToInteropMethodHash()).Should().Be(100);
             uut.GetPrice("Neo.Storage.Find".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.StorageContext.AsReadOnly".ToInteropMethodHash()).Should().Be(1);
@@ -146,8 +142,6 @@ namespace Neo.UnitTests
             uut.GetPrice("AntShares.Account.GetScriptHash".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("AntShares.Account.GetVotes".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("AntShares.Account.GetBalance".ToInteropMethodHash()).Should().Be(1);
-            //uut.GetPrice("AntShares.Asset.Create".ToInteropMethodHash()).Should().Be(100); Asset_Create);
-            //uut.GetPrice("AntShares.Asset.Renew".ToInteropMethodHash()).Should().Be(100); Asset_Renew);
             uut.GetPrice("AntShares.Asset.GetAssetId".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("AntShares.Asset.GetAssetType".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("AntShares.Asset.GetAmount".ToInteropMethodHash()).Should().Be(1);
@@ -156,14 +150,11 @@ namespace Neo.UnitTests
             uut.GetPrice("AntShares.Asset.GetOwner".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("AntShares.Asset.GetAdmin".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("AntShares.Asset.GetIssuer".ToInteropMethodHash()).Should().Be(1);
-            //uut.GetPrice("AntShares.Contract.Create".ToInteropMethodHash()).Should().Be(100); Contract_Create);
-            //uut.GetPrice("AntShares.Contract.Migrate".ToInteropMethodHash()).Should().Be(100); Contract_Migrate);
             uut.GetPrice("AntShares.Contract.Destroy".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("AntShares.Contract.GetScript".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("AntShares.Contract.GetStorageContext".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("AntShares.Storage.GetContext".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("AntShares.Storage.Get".ToInteropMethodHash()).Should().Be(100);
-            //uut.GetPrice("AntShares.Storage.Put".ToInteropMethodHash()).Should().Be(100); Storage_Put);
             uut.GetPrice("AntShares.Storage.Delete".ToInteropMethodHash()).Should().Be(100);
             #endregion
         }
@@ -198,8 +189,6 @@ namespace Neo.UnitTests
             uut.GetPrice("System.Storage.GetContext".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("System.Storage.GetReadOnlyContext".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("System.Storage.Get".ToInteropMethodHash()).Should().Be(100);
-            //uut.GetPrice("System.Storage.Put".ToInteropMethodHash()).Should().Be(1); Storage_Put);
-            //uut.GetPrice("System.Storage.PutEx".ToInteropMethodHash()).Should().Be(1); Storage_PutEx);
             uut.GetPrice("System.Storage.Delete".ToInteropMethodHash()).Should().Be(100);
             uut.GetPrice("System.StorageContext.AsReadOnly".ToInteropMethodHash()).Should().Be(1);
         }
@@ -237,6 +226,110 @@ namespace Neo.UnitTests
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
                 ae.GetPriceForSysCall().Should().Be(100);
+            }
+        }
+
+        [TestMethod]
+        public void ApplicationEngineVariablePrices()
+        {
+            // Neo.Asset.Create: 83c5c61f
+            byte[] SyscallAssetCreateHash = new byte[]{0x68, 0x04, 0x83, 0xc5, 0xc6, 0x1f};
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            {
+                ae.LoadScript(SyscallAssetCreateHash);
+                ae.GetPriceForSysCall().Should().Be(5000L * 100000000L / 100000); // assuming private ae.ratio = 100000
+            }
+
+            // Neo.Asset.Renew: 78849071 (requires push 09 push 09 before)
+            byte[] SyscallAssetRenewHash = new byte[]{0x59, 0x59, 0x68, 0x04, 0x78, 0x84, 0x90, 0x71};
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            {
+                ae.LoadScript(SyscallAssetRenewHash);
+                ae.StepInto(); // push 9
+                ae.StepInto(); // push 9
+                ae.GetPriceForSysCall().Should().Be(9L * 5000L * 100000000L / 100000); // assuming private ae.ratio = 100000
+            }
+
+            // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
+            byte[] SyscallContractCreateHash00 = new byte[]{(byte)ContractPropertyState.NoProperty, 0x00, 0x00, 0x00, 0x68, 0x04, 0xf6, 0x6c, 0xa5, 0x6e};
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            {
+                ae.LoadScript(SyscallContractCreateHash00);
+                ae.StepInto(); // push 0 - ContractPropertyState.NoProperty
+                ae.StepInto(); // push 0
+                ae.StepInto(); // push 0
+                ae.StepInto(); // push 0
+                ae.GetPriceForSysCall().Should().Be(100L * 100000000L / 100000); // assuming private ae.ratio = 100000
+            }
+
+            // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
+            byte[] SyscallContractCreateHash01 = new byte[]{0x51, 0x00, 0x00, 0x00, 0x68, 0x04, 0xf6, 0x6c, 0xa5, 0x6e};
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            {
+                ae.LoadScript(SyscallContractCreateHash01);
+                ae.StepInto(); // push 01 - ContractPropertyState.HasStorage
+                ae.StepInto(); // push 0
+                ae.StepInto(); // push 0
+                ae.StepInto(); // push 0
+                ae.GetPriceForSysCall().Should().Be(500L * 100000000L / 100000); // assuming private ae.ratio = 100000
+            }
+
+            // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
+            byte[] SyscallContractCreateHash02 = new byte[]{0x52, 0x00, 0x00, 0x00, 0x68, 0x04, 0xf6, 0x6c, 0xa5, 0x6e};
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            {
+                ae.LoadScript(SyscallContractCreateHash02);
+                ae.StepInto(); // push 02 - ContractPropertyState.HasDynamicInvoke
+                ae.StepInto(); // push 0
+                ae.StepInto(); // push 0
+                ae.StepInto(); // push 0
+                ae.GetPriceForSysCall().Should().Be(600L * 100000000L / 100000); // assuming private ae.ratio = 100000
+            }
+
+            // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
+            byte[] SyscallContractCreateHash03 = new byte[]{0x53, 0x00, 0x00, 0x00, 0x68, 0x04, 0xf6, 0x6c, 0xa5, 0x6e};
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            {
+                ae.LoadScript(SyscallContractCreateHash03);
+                ae.StepInto(); // push 03 - HasStorage and HasDynamicInvoke
+                ae.StepInto(); // push 0
+                ae.StepInto(); // push 0
+                ae.StepInto(); // push 0
+                ae.GetPriceForSysCall().Should().Be(1000L * 100000000L / 100000); // assuming private ae.ratio = 100000
+            }
+
+            // Neo.Contract.Migrate: 471b6290 (requires push properties on fourth position)
+            byte[] SyscallContractMigrateHash00 = new byte[]{(byte)ContractPropertyState.NoProperty, 0x00, 0x00, 0x00, 0x68, 0x04, 0x47, 0x1b, 0x62, 0x90};
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            {
+                ae.LoadScript(SyscallContractMigrateHash00);
+                ae.StepInto(); // push 0 - ContractPropertyState.NoProperty
+                ae.StepInto(); // push 0
+                ae.StepInto(); // push 0
+                ae.StepInto(); // push 0
+                ae.GetPriceForSysCall().Should().Be(100L * 100000000L / 100000); // assuming private ae.ratio = 100000
+            }
+
+            // System.Storage.Put: e63f1884 (requires push key and value)
+            byte[] SyscallStoragePutHash = new byte[]{0x53, 0x53, 0x00, 0x68, 0x04, 0xe6, 0x3f, 0x18, 0x84};
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            {
+                ae.LoadScript(SyscallStoragePutHash);
+                ae.StepInto(); // push 03 (length 1)
+                ae.StepInto(); // push 03 (length 1)
+                ae.StepInto(); // push 00
+                ae.GetPriceForSysCall().Should().Be(1000); //((1+1-1) / 1024 + 1) * 1000);
+            }
+
+            // System.Storage.PutEx: 73e19b3a (requires push key and value)
+            byte[] SyscallStoragePutExHash = new byte[]{0x53, 0x53, 0x00, 0x68, 0x04, 0x73, 0xe1, 0x9b, 0x3a};
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            {
+                ae.LoadScript(SyscallStoragePutExHash);
+                ae.StepInto(); // push 03 (length 1)
+                ae.StepInto(); // push 03 (length 1)
+                ae.StepInto(); // push 00
+                ae.GetPriceForSysCall().Should().Be(1000); //((1+1-1) / 1024 + 1) * 1000);
             }
         }
     }
