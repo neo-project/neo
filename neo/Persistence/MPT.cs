@@ -15,7 +15,7 @@ namespace Neo.Persistence
     {
         private static MPTKey GetMPTRootKey(Snapshot snapshot, UInt160 contract)
         {
-            UInt256 rootHash = snapshot[contract].MPTHashRoot;
+            UInt256 rootHash = snapshot.Contracts[contract].MPTHashRoot;
             return new MPTKey  {
                             ScriptHash = contract,
                             HashKey = rootHash
