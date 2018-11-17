@@ -738,15 +738,18 @@ namespace Neo.SmartContract
                 {
                     foreach (var pair in Snapshot.Storages.Find(engine.CurrentContext.ScriptHash).ToArray())
                     {
-                        Snapshot.Storages.Add(new StorageKey
+                        StorageKey sk = new StorageKey
                         {
                             ScriptHash = hash,
                             Key = pair.Key.Key
-                        }, new StorageItem
+                        };
+                        StorageItem si = new StorageItem
                         {
                             Value = pair.Value.Value,
                             IsConstant = false
-                        });
+                        };
+                        Snapshot.Storages.Add(sk, si);
+                        MPT.AddToStorage(Snapshot, hash, sk, si);
                     }
                 }
             }

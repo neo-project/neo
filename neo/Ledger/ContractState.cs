@@ -23,6 +23,8 @@ namespace Neo.Ledger
         public bool HasDynamicInvoke => ContractProperties.HasFlag(ContractPropertyState.HasDynamicInvoke);
         public bool Payable => ContractProperties.HasFlag(ContractPropertyState.Payable);
 
+        public UInt256 MPTHashRoot; // Modified Merkle Patricia root
+
         private UInt160 _scriptHash;
         public UInt160 ScriptHash
         {
@@ -36,7 +38,7 @@ namespace Neo.Ledger
             }
         }
 
-        public override int Size => base.Size + Script.GetVarSize() + ParameterList.GetVarSize() + sizeof(ContractParameterType) + sizeof(bool) + Name.GetVarSize() + CodeVersion.GetVarSize() + Author.GetVarSize() + Email.GetVarSize() + Description.GetVarSize();
+        public override int Size => base.Size + Script.GetVarSize() + ParameterList.GetVarSize() + sizeof(ContractParameterType) + sizeof(bool) + Name.GetVarSize() + CodeVersion.GetVarSize() + Author.GetVarSize() + Email.GetVarSize() + Description.GetVarSize() + MPTHashRoot.Size();
 
         ContractState ICloneable<ContractState>.Clone()
         {
@@ -50,7 +52,8 @@ namespace Neo.Ledger
                 CodeVersion = CodeVersion,
                 Author = Author,
                 Email = Email,
-                Description = Description
+                Description = Description,
+                MPTHashRoot = MPTHashRoot
             };
         }
 
@@ -66,6 +69,7 @@ namespace Neo.Ledger
             Author = reader.ReadVarString();
             Email = reader.ReadVarString();
             Description = reader.ReadVarString();
+            MPTHashRoot = reader.ReadSerializable<UInt256>();
         }
 
         void ICloneable<ContractState>.FromReplica(ContractState replica)
@@ -79,6 +83,7 @@ namespace Neo.Ledger
             Author = replica.Author;
             Email = replica.Email;
             Description = replica.Description;
+            MPTHashRoot = replica.MPTHashRoot;
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -93,6 +98,7 @@ namespace Neo.Ledger
             writer.WriteVarString(Author);
             writer.WriteVarString(Email);
             writer.WriteVarString(Description);
+            writer.Write(MPTHashRoot);
         }
 
         public override JObject ToJson()
@@ -110,6 +116,7 @@ namespace Neo.Ledger
             json["properties"] = new JObject();
             json["properties"]["storage"] = HasStorage;
             json["properties"]["dynamic_invoke"] = HasDynamicInvoke;
+            json["mpt_hash"] = MPTHashRoot.ToString();
             return json;
         }
     }
