@@ -52,7 +52,6 @@ namespace Neo.Consensus
                     Log($"send prepare response");
                     context.SignedPayloads[context.MyIndex] = context.SignPreparePayload();
                     context.State |= ConsensusState.SignatureSent;
-                    //SignAndRelay(context.MakePrepareResponse(context.SignedPayloads[context.MyIndex]));
                     system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.SignedPayloads[context.MyIndex]) });
                     CheckPayloadSignatures();
                 }
@@ -86,18 +85,30 @@ namespace Neo.Consensus
             }
         }
 
-        /*
-        private void CheckSignatures()
+
+        private void CheckFinalSignatures()
         {
-            if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
+            if (context.FinalSignatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                Block block = context.CreateBlock();
-                Log($"relay block: {block.Hash}");
-                system.LocalNode.Tell(new LocalNode.Relay { Inventory = block });
+                Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
+                Block block = context.MakeHeader();
+                if (block == null) return;
                 context.State |= ConsensusState.BlockSent;
+
+                ContractParametersContext sc = new ContractParametersContext(block);
+                for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
+                    if (context.FinalSignatures[i] != null)
+                    {
+                        sc.AddSignature(contract, context.Validators[i], context.FinalSignatures[i]);
+                        j++;
+                    }
+                sc.Verifiable.Witnesses = sc.GetWitnesses();
+                block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
+                Log($"{nameof(OnCommitAgreement)}: relay block: height={context.BlockIndex} hash={block.Hash}");
+                system.LocalNode.Tell(new LocalNode.Relay { Inventory = block });
             }
         }
-        */
+  
 
         private void InitializeConsensus(byte view_number)
         {
@@ -382,6 +393,7 @@ namespace Neo.Consensus
                 //SignAndRelay(context.MakeCommitAgreement(context.FinalSignatures[context.MyIndex]));
                 system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeCommitAgreement(context.FinalSignatures[context.MyIndex]) });
                 Log($"Commit sent: height={context.BlockIndex} hash={block.Hash} state={context.State}");
+                CheckFinalSignatures();
             }
         }
 
@@ -399,26 +411,7 @@ namespace Neo.Consensus
             }
 
             context.FinalSignatures[payload.ValidatorIndex] = message.FinalSignature;
-
-            if (context.FinalSignatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
-            {
-                Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
-                Block block = context.MakeHeader();
-                if (block == null) return;
-                context.State |= ConsensusState.BlockSent;
-
-                ContractParametersContext sc = new ContractParametersContext(block);
-                for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
-                    if (context.FinalSignatures[i] != null)
-                    {
-                        sc.AddSignature(contract, context.Validators[i], context.FinalSignatures[i]);
-                        j++;
-                    }
-                sc.Verifiable.Witnesses = sc.GetWitnesses();
-                block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
-                Log($"{nameof(OnCommitAgreement)}: relay block: height={context.BlockIndex} hash={block.Hash}");
-                system.LocalNode.Tell(new LocalNode.Relay { Inventory = block });
-            }
+            CheckFinalSignatures();
         }
 
         private void OnRegeneration(ConsensusPayload payload, Regeneration message)
