@@ -103,7 +103,7 @@ namespace Neo.Consensus
             }
         }
 
-/*
+        /*
         private void CheckSignatures()
         {
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
@@ -114,7 +114,7 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.BlockSent;
             }
         }
-*/
+        */
 
         private void InitializeConsensus(byte view_number)
         {
@@ -199,7 +199,7 @@ namespace Neo.Consensus
 
             if (payload.ValidatorIndex >= context.Validators.Length) return;
 
-            // Log($"OnConsensusPayload IV: Basic checks");
+            //Log($"OnConsensusPayload IV: Basic checks");
 
             ConsensusMessage message;
             try
@@ -246,12 +246,12 @@ namespace Neo.Consensus
             InitializeConsensus(0);
         }
 
-        private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message, bool renegerationCall = false)
+        private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message, bool regenerationCall = false)
         {
             if (context.State.HasFlag(ConsensusState.RequestReceived)) return;
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
-            if (!context.State.HasFlag(ConsensusState.Backup) && !renegerationCall) return;
+            if (!context.State.HasFlag(ConsensusState.Backup) && !regenerationCall) return;
 
             if (payload.Timestamp <= context.Snapshot.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
             {
@@ -278,7 +278,7 @@ namespace Neo.Consensus
                 if (context.SignedPayloads[i] != null && i != payload.ValidatorIndex)
                     if (!Crypto.Default.VerifySignature(context.PreparePayload.GetHashData(), context.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
                     {
-                        Log($"{nameof(OnPrepareRequestReceived)}:Index {i} paylod:{payload.ValidatorIndex} lenght:{context.SignedPayloads.Length} is being set to null");
+                        Log($"{nameof(OnPrepareRequestReceived)}:Index {i} payload:{payload.ValidatorIndex} length:{context.SignedPayloads.Length} is being set to null");
                         context.SignedPayloads[i] = null;
                     }
 
@@ -386,7 +386,7 @@ namespace Neo.Consensus
 
         private void CheckPayloadSignatures()
         {
-            Log($"CheckPayloadSignatures....SignedPayloads:{context.SignedPayloads.Count(p => p != null)}");
+            Log($"CheckPayloadSignatures... SignedPayloads:{context.SignedPayloads.Count(p => p != null)}");
 
             if (!context.State.HasFlag(ConsensusState.CommitSent) &&
                 context.SignedPayloads.Count(p => p != null) >= context.M &&
@@ -450,7 +450,7 @@ namespace Neo.Consensus
             /// </summary>
             if (!CheckPrimaryPayloadSignature(message.PrepareRequestPayload))
             {
-                Log($"{nameof(OnRegeneration)}: Regerating primary payload: {message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} with a wrong Primary Payload");
+                Log($"{nameof(OnRegeneration)}: Regenerating primary payload: {message.PrepareRequestPayload.ValidatorIndex} length:{message.SignedPayloads.Length} with a wrong Primary Payload");
                 context.SignedPayloads[payload.ValidatorIndex] = null;
                 return;
             }
@@ -463,7 +463,7 @@ namespace Neo.Consensus
                 if (message.SignedPayloads[i] != null && i != message.PrepareRequestPayload.ValidatorIndex)
                     if (!Crypto.Default.VerifySignature(message.PrepareRequestPayload.GetHashData(), message.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
                     {
-                        Log($"{nameof(OnRegeneration)}: Regerating {i} payload:{message.PrepareRequestPayload.ValidatorIndex} lenght:{message.SignedPayloads.Length} is being set to null");
+                        Log($"{nameof(OnRegeneration)}: Regenerating {i} payload:{message.PrepareRequestPayload.ValidatorIndex} length:{message.SignedPayloads.Length} is being set to null");
                         PrintByteArray(message.SignedPayloads[i]);
                         message.SignedPayloads[i] = null;
                     }
@@ -485,7 +485,7 @@ namespace Neo.Consensus
                 OnPrepareRequestReceived(message.PrepareRequestPayload, GetPrepareRequestMessage(message.PrepareRequestPayload), true);
                 Log($"{nameof(OnRegeneration)}: OnConsensusPayload. message.PrepareRequestPayload has been sent.");
             }
-            Log($"{nameof(OnRegeneration)}: Bye bye. I fell good now, connected and on top.");
+            Log($"{nameof(OnRegeneration)}: Bye bye. I feel good now, connected and on top.");
         }
 
         protected override void OnReceive(object message)
@@ -599,7 +599,7 @@ namespace Neo.Consensus
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
 
             /// <summary>
-            /// It should never Send Regeneration from here anymore after flag of CommitSent placed OnTimer
+            /// It should never send Regeneration from here anymore after flag of CommitSent placed OnTimer
             /// TODO Remove this check.
             /// </summary>
             if (CheckRegeneration()) return;
