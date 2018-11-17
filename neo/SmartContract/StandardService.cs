@@ -653,7 +653,7 @@ namespace Neo.SmartContract
                 };
                 if (Snapshot.Storages.TryGet(key)?.IsConstant == true) return false;
                 Snapshot.Storages.Delete(key);
-                MPT.DeleteOnStorage(Snapshot, context.ScriptHash, skey);
+                MPT.DeleteFromStorage(Snapshot, context.ScriptHash, key);
                 return true;
             }
             return false;
