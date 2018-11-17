@@ -34,23 +34,6 @@ namespace Neo.Consensus
             this.context = new ConsensusContext(wallet);
         }
 
-        /// <summary>
-        /// Serialize PreparePayload Data into the desired PrepareRequest message
-        /// </summary>
-        private PrepareRequest GetPrepareRequestMessage(ConsensusPayload PreparePayloadToGet)
-        {
-            ConsensusMessage message;
-            try
-            {
-                message = ConsensusMessage.DeserializeFrom(PreparePayloadToGet.Data);
-            }
-            catch
-            {
-                return new PrepareRequest();
-            }
-            return (PrepareRequest)message;
-        }
-
         private bool AddTransaction(Transaction tx, bool verify)
         {
             if (context.Snapshot.ContainsTransaction(tx.Hash) ||
@@ -327,7 +310,7 @@ namespace Neo.Consensus
         private bool CheckPrimaryPayloadSignature(ConsensusPayload payload)
         {
             // TODO Maybe include some verification here
-            PrepareRequest message = GetPrepareRequestMessage(payload);
+            PrepareRequest message = context.GetPrepareRequestMessage(payload);
 
             /// <summary>
             /// The Speaker Signed the Payload without any signature (this was the trick/magic part), PrepReqSignature was empty
@@ -373,7 +356,7 @@ namespace Neo.Consensus
                 if (message.PreparePayload.ValidatorIndex != context.PrimaryIndex) return;
                 if (!CheckPrimaryPayloadSignature(message.PreparePayload)) return;
                 Log($"{nameof(OnPrepareRequestReceived)}: indirectly from index={payload.ValidatorIndex}");
-                OnPrepareRequestReceived(message.PreparePayload, GetPrepareRequestMessage(message.PreparePayload));
+                OnPrepareRequestReceived(message.PreparePayload, context.GetPrepareRequestMessage(message.PreparePayload));
             }
 
             /// <summary>
@@ -482,7 +465,7 @@ namespace Neo.Consensus
                 /// TODO - Maybe come back to OnConsensus intead of jumping to OnPrepareRequestReceived
                 /// We may have lost some checks doing this
                 /// </summary>
-                OnPrepareRequestReceived(message.PrepareRequestPayload, GetPrepareRequestMessage(message.PrepareRequestPayload), true);
+                OnPrepareRequestReceived(message.PrepareRequestPayload, context.GetPrepareRequestMessage(message.PrepareRequestPayload), true);
                 Log($"{nameof(OnRegeneration)}: OnConsensusPayload. message.PrepareRequestPayload has been sent.");
             }
             Log($"{nameof(OnRegeneration)}: Bye bye. I feel good now, connected and on top.");
@@ -540,7 +523,7 @@ namespace Neo.Consensus
                 context.SignedPayloads[context.MyIndex] = new byte[64];
                 context.PreparePayload = context.MakePrepareRequest(context.SignedPayloads[context.MyIndex]);
                 context.SignedPayloads[context.MyIndex] = context.SignPreparePayload();
-                PrepareRequest tempPrePrepareWithSignature = GetPrepareRequestMessage(context.PreparePayload);
+                PrepareRequest tempPrePrepareWithSignature = context.GetPrepareRequestMessage(context.PreparePayload);
                 tempPrePrepareWithSignature.PrepReqSignature = context.SignedPayloads[context.MyIndex];
                 context.PreparePayload.Data = tempPrePrepareWithSignature.ToArray();
 

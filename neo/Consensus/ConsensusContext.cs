@@ -42,6 +42,23 @@ namespace Neo.Consensus
         /// </summary>
         public ConsensusPayload PreparePayload;
 
+        /// <summary>
+        /// Serialize PreparePayload Data into the desired PrepareRequest message
+        /// </summary>
+        public PrepareRequest GetPrepareRequestMessage(ConsensusPayload PreparePayloadToGet)
+        {
+            ConsensusMessage message;
+            try
+            {
+                message = ConsensusMessage.DeserializeFrom(PreparePayloadToGet.Data);
+            }
+            catch
+            {
+                return new PrepareRequest();
+            }
+            return (PrepareRequest)message;
+        }
+
         public ConsensusContext(Wallet wallet)
         {
             this.wallet = wallet;
