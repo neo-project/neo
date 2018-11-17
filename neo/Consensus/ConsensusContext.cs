@@ -42,7 +42,7 @@ namespace Neo.Consensus
         /// </summary>
         public ConsensusPayload PreparePayload;
 
-	      public ConsensusContext(Wallet wallet)
+        public ConsensusContext(Wallet wallet)
         {
             this.wallet = wallet;
         }
@@ -69,7 +69,7 @@ namespace Neo.Consensus
             _header = null;
         }
 
-/*
+        /*
         public Block CreateBlock()
         {
             Block block = MakeHeader();
@@ -86,7 +86,8 @@ namespace Neo.Consensus
             block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
             return block;
         }
-*/
+        */
+
         public void Dispose()
         {
             Snapshot?.Dispose();
@@ -183,9 +184,6 @@ namespace Neo.Consensus
             });
         }
 
-
-
-
         public void Reset()
         {
             Snapshot?.Dispose();
@@ -254,12 +252,13 @@ namespace Neo.Consensus
             Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), Snapshot.GetHeader(PrevHash).Timestamp + 1);
         }
 
-/*
+        /*
         public void SignHeader()
         {
             Signatures[MyIndex] = MakeHeader()?.Sign(KeyPair);
         }
-*/
+        */
+
         public byte[] SignBlock(Block block)
         {
             return block.Sign(KeyPair);
@@ -284,6 +283,7 @@ namespace Neo.Consensus
             }
             sc.Verifiable.Witnesses = sc.GetWitnesses();
         }
+
         private static ulong GetNonce()
         {
             byte[] nonce = new byte[sizeof(ulong)];
