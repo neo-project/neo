@@ -12,6 +12,7 @@
         public const byte ST_Asset = 0x4c;
         public const byte ST_Contract = 0x50;
         public const byte ST_Storage = 0x70;
+        public const byte ST_MPTStorage = 0x71; // Modified Merkle Patricia
 
         public const byte IX_HeaderHashList = 0x80;
         public const byte IX_ValidatorsCount = 0x90;

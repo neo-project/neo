@@ -612,6 +612,7 @@ namespace Neo.SmartContract
             if (item.IsConstant) return false;
             item.Value = value;
             item.IsConstant = flags.HasFlag(StorageFlags.Constant);
+            MPT.AddToStorage(Snapshot, context.ScriptHash, skey, item);
             return true;
         }
 
@@ -652,6 +653,7 @@ namespace Neo.SmartContract
                 };
                 if (Snapshot.Storages.TryGet(key)?.IsConstant == true) return false;
                 Snapshot.Storages.Delete(key);
+                MPT.DeleteOnStorage(Snapshot, context.ScriptHash, skey);
                 return true;
             }
             return false;

@@ -70,6 +70,11 @@ namespace Neo.Persistence.LevelDB
             return new DbCache<StorageKey, StorageItem>(db, null, null, Prefixes.ST_Storage);
         }
 
+        public override DataCache<MPTKey, MPTItem> GetMPTStorages()
+        {
+            return new DbCache<MPTKey, MPTItem>(db, null, null, Prefixes.ST_MPTStorage);
+        }
+
         public override DataCache<UInt256, TransactionState> GetTransactions()
         {
             return new DbCache<UInt256, TransactionState>(db, null, null, Prefixes.DATA_Transaction);
