@@ -59,6 +59,17 @@ namespace Neo.Consensus
             return (PrepareRequest)message;
         }
 
+        /// <summary>
+        /// Update the Speaker signature inside the context PreparePayload
+        /// </summary>
+        public void UpdateSpeakerSignatureAtPreparePayload()
+        {
+            SignedPayloads[MyIndex] = SignPreparePayload();
+            PrepareRequest tempPrePrepareWithSignature = GetPrepareRequestMessage(PreparePayload);
+            tempPrePrepareWithSignature.PrepReqSignature = SignedPayloads[MyIndex];
+            PreparePayload.Data = tempPrePrepareWithSignature.ToArray();
+        }
+
         public ConsensusContext(Wallet wallet)
         {
             this.wallet = wallet;
