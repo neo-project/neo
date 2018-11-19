@@ -94,14 +94,14 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.Primary;
                 TimeSpan span = context.GetUtcNow() - context.block_received_time;
                 if (span >= Blockchain.TimePerBlock)
-                    context.ChangeTimer(TimeSpan.Zero, Context.System.Scheduler, Self, ActorRefs.NoSender);
+                    ChangeTimer(TimeSpan.Zero);
                 else
-                    context.ChangeTimer(Blockchain.TimePerBlock - span, Context.System.Scheduler, Self, ActorRefs.NoSender);
+                    ChangeTimer(Blockchain.TimePerBlock - span);
             }
             else
             {
                 context.State = ConsensusState.Backup;
-                context.ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (view_number + 1)), Context.System.Scheduler, Self, ActorRefs.NoSender);
+                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (view_number + 1)));
             }
         }
 
@@ -287,7 +287,7 @@ namespace Neo.Consensus
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
                         system.LocalNode.Tell(Message.Create("inv", payload));
                 }
-                context.ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer.ViewNumber + 1)), Context.System.Scheduler, Self, ActorRefs.NoSender);
+                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer.ViewNumber + 1)));
             }
             else if ((context.State.HasFlag(ConsensusState.Primary) && context.State.HasFlag(ConsensusState.RequestSent)) || context.State.HasFlag(ConsensusState.Backup))
             {
@@ -322,9 +322,14 @@ namespace Neo.Consensus
             context.State |= ConsensusState.ViewChanging;
             context.ExpectedView[context.MyIndex]++;
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
-            context.ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)), Context.System.Scheduler, Self, ActorRefs.NoSender);
+            ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)));
             system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
             CheckExpectedView(context.ExpectedView[context.MyIndex]);
+        }
+
+        public void ChangeTimer(TimeSpan delay)
+        {
+            context.ChangeTimer(delay, Context.System.Scheduler, Self, ActorRefs.NoSender);
         }
     }
 
