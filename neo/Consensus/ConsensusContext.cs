@@ -264,12 +264,12 @@ namespace Neo.Consensus
 
         public uint GetLimitTimestamp()
         {
-            return DateTime.UtcNow.AddMinutes(10).ToTimestamp();
+            return GetUtcNow().AddMinutes(10).ToTimestamp();
         }
 
         public uint GetCurrentTimestamp()
         {
-            return Math.Max(DateTime.UtcNow.ToTimestamp(), Snapshot.GetHeader(PrevHash).Timestamp + 1);
+            return Math.Max(GetUtcNow().ToTimestamp(), GetSnapshotTimestamp() + 1);
         }
 
         public DateTime GetUtcNow()
