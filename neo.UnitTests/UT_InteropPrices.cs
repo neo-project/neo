@@ -5,6 +5,7 @@ using Neo.SmartContract;
 using Neo.VM;
 using System.Text;
 using System.Numerics;
+using System.Reflection;
 using System;
 
 namespace Neo.UnitTests
@@ -18,6 +19,14 @@ namespace Neo.UnitTests
         public void TestSetup()
         {
             uut = new NeoService(TriggerType.Application, null);
+        }
+
+        [TestMethod]
+        public void NeoServiceFixedPriceWithReflection()
+        {
+            // testing reflection with public methods too
+            MethodInfo GetPrice = typeof(NeoService).GetMethod("GetPrice", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new Type[] { typeof(uint) }, null);
+            GetPrice.Invoke(uut, new object[]{"Neo.Runtime.CheckWitness".ToInteropMethodHash()}).Should().Be(200L);
         }
 
         [TestMethod]
@@ -195,12 +204,15 @@ namespace Neo.UnitTests
         [TestMethod]
         public void ApplicationEngineFixedPrices()
         {
+            // ApplicationEngine.GetPriceForSysCall is protected, so we will access through reflection
+            MethodInfo GetPriceForSysCall = typeof(ApplicationEngine).GetMethod("GetPriceForSysCall", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new Type[]{}, null);
+
             // System.Runtime.CheckWitness: f827ec8c (price is 200)
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[]{0x68, 0x04, 0xf8, 0x27, 0xec, 0x8c};
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
-                ae.GetPriceForSysCall().Should().Be(200);
+                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(200L);
             }
 
             // "System.Runtime.CheckWitness" (27 bytes -> 0x1b) - (price is 200)
@@ -208,7 +220,7 @@ namespace Neo.UnitTests
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessString);
-                ae.GetPriceForSysCall().Should().Be(200);
+                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(200L);
             }
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
@@ -216,7 +228,7 @@ namespace Neo.UnitTests
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
             {
                 ae.LoadScript(SyscallSystemStorageGetContextHash);
-                ae.GetPriceForSysCall().Should().Be(1);
+                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(1L);
             }
 
             // System.Storage.Get: 925de831 (price is 100)
@@ -224,19 +236,22 @@ namespace Neo.UnitTests
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
-                ae.GetPriceForSysCall().Should().Be(100);
+                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(100L);
             }
         }
 
         [TestMethod]
         public void ApplicationEngineVariablePrices()
         {
+            // ApplicationEngine.GetPriceForSysCall is protected, so we will access through reflection
+            MethodInfo GetPriceForSysCall = typeof(ApplicationEngine).GetMethod("GetPriceForSysCall", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new Type[]{}, null);
+
             // Neo.Asset.Create: 83c5c61f
             byte[] SyscallAssetCreateHash = new byte[]{0x68, 0x04, 0x83, 0xc5, 0xc6, 0x1f};
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
             {
                 ae.LoadScript(SyscallAssetCreateHash);
-                ae.GetPriceForSysCall().Should().Be(5000L * 100000000L / 100000); // assuming private ae.ratio = 100000
+                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(5000L * 100000000L / 100000); // assuming private ae.ratio = 100000
             }
 
             // Neo.Asset.Renew: 78849071 (requires push 09 push 09 before)
@@ -246,7 +261,7 @@ namespace Neo.UnitTests
                 ae.LoadScript(SyscallAssetRenewHash);
                 ae.StepInto(); // push 9
                 ae.StepInto(); // push 9
-                ae.GetPriceForSysCall().Should().Be(9L * 5000L * 100000000L / 100000); // assuming private ae.ratio = 100000
+                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(9L * 5000L * 100000000L / 100000); // assuming private ae.ratio = 100000
             }
 
             // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
@@ -258,7 +273,7 @@ namespace Neo.UnitTests
                 ae.StepInto(); // push 0
                 ae.StepInto(); // push 0
                 ae.StepInto(); // push 0
-                ae.GetPriceForSysCall().Should().Be(100L * 100000000L / 100000); // assuming private ae.ratio = 100000
+                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(100L * 100000000L / 100000); // assuming private ae.ratio = 100000
             }
 
             // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
@@ -270,7 +285,7 @@ namespace Neo.UnitTests
                 ae.StepInto(); // push 0
                 ae.StepInto(); // push 0
                 ae.StepInto(); // push 0
-                ae.GetPriceForSysCall().Should().Be(500L * 100000000L / 100000); // assuming private ae.ratio = 100000
+                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(500L * 100000000L / 100000); // assuming private ae.ratio = 100000
             }
 
             // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
@@ -282,7 +297,7 @@ namespace Neo.UnitTests
                 ae.StepInto(); // push 0
                 ae.StepInto(); // push 0
                 ae.StepInto(); // push 0
-                ae.GetPriceForSysCall().Should().Be(600L * 100000000L / 100000); // assuming private ae.ratio = 100000
+                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(600L * 100000000L / 100000); // assuming private ae.ratio = 100000
             }
 
             // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
@@ -294,7 +309,7 @@ namespace Neo.UnitTests
                 ae.StepInto(); // push 0
                 ae.StepInto(); // push 0
                 ae.StepInto(); // push 0
-                ae.GetPriceForSysCall().Should().Be(1000L * 100000000L / 100000); // assuming private ae.ratio = 100000
+                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(1000L * 100000000L / 100000); // assuming private ae.ratio = 100000
             }
 
             // Neo.Contract.Migrate: 471b6290 (requires push properties on fourth position)
@@ -306,7 +321,7 @@ namespace Neo.UnitTests
                 ae.StepInto(); // push 0
                 ae.StepInto(); // push 0
                 ae.StepInto(); // push 0
-                ae.GetPriceForSysCall().Should().Be(100L * 100000000L / 100000); // assuming private ae.ratio = 100000
+                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(100L * 100000000L / 100000); // assuming private ae.ratio = 100000
             }
 
             // System.Storage.Put: e63f1884 (requires push key and value)
@@ -317,7 +332,7 @@ namespace Neo.UnitTests
                 ae.StepInto(); // push 03 (length 1)
                 ae.StepInto(); // push 03 (length 1)
                 ae.StepInto(); // push 00
-                ae.GetPriceForSysCall().Should().Be(1000); //((1+1-1) / 1024 + 1) * 1000);
+                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(1000L); //((1+1-1) / 1024 + 1) * 1000);
             }
 
             // System.Storage.PutEx: 73e19b3a (requires push key and value)
@@ -328,7 +343,7 @@ namespace Neo.UnitTests
                 ae.StepInto(); // push 03 (length 1)
                 ae.StepInto(); // push 03 (length 1)
                 ae.StepInto(); // push 00
-                ae.GetPriceForSysCall().Should().Be(1000); //((1+1-1) / 1024 + 1) * 1000);
+                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(1000L); //((1+1-1) / 1024 + 1) * 1000);
             }
         }
     }
