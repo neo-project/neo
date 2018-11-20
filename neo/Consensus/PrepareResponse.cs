@@ -9,7 +9,7 @@ namespace Neo.Consensus
         public ConsensusPayload PreparePayload;
         public byte[] ResponseSignature;
 
-        public override int Size => base.Size + Signature.Length;
+        public override int Size => base.Size + PreparePayload.Size + ResponseSignature.Length;
 
         public PrepareResponse()
             : base(ConsensusMessageType.PrepareResponse)

@@ -9,6 +9,8 @@ namespace Neo.Consensus
         /// </summary>
         public byte[] FinalSignature;
 
+        public override int Size => base.Size + FinalSignature.Length;
+
         /// <summary>
         /// Constructors
         /// </summary>

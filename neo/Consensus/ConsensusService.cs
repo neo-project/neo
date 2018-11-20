@@ -88,6 +88,8 @@ namespace Neo.Consensus
 
         private void CheckFinalSignatures()
         {
+            Log($"CheckFinalSignatures... FinalSignatures:{context.FinalSignatures.Count(p => p != null)}");
+
             if (context.FinalSignatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);

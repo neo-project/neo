@@ -14,7 +14,7 @@ namespace Neo.Consensus
         public MinerTransaction MinerTransaction;
         public byte[] PrepReqSignature;
 
-        public override int Size => base.Size + sizeof(ulong) + NextConsensus.Size + TransactionHashes.GetVarSize() + MinerTransaction.Size + Signature.Length;
+        public override int Size => base.Size + sizeof(ulong) + NextConsensus.Size + TransactionHashes.GetVarSize() + MinerTransaction.Size + PrepReqSignature.Length;
 
         public PrepareRequest()
             : base(ConsensusMessageType.PrepareRequest)
