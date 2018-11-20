@@ -13,8 +13,9 @@ namespace Neo.Consensus
         public UInt256[] TransactionHashes;
         public MinerTransaction MinerTransaction;
         public byte[] PrepReqSignature;
+        public byte[] FinalSignature;
 
-        public override int Size => base.Size + sizeof(ulong) + NextConsensus.Size + TransactionHashes.GetVarSize() + MinerTransaction.Size + PrepReqSignature.Length;
+        public override int Size => base.Size + sizeof(ulong) + NextConsensus.Size + TransactionHashes.GetVarSize() + MinerTransaction.Size + PrepReqSignature.Length + FinalSignature.Length;
 
         public PrepareRequest()
             : base(ConsensusMessageType.PrepareRequest)
@@ -33,6 +34,7 @@ namespace Neo.Consensus
             if (MinerTransaction.Hash != TransactionHashes[0])
                 throw new FormatException();
             PrepReqSignature = reader.ReadBytes(64);
+            FinalSignature = reader.ReadBytes(64);
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -43,6 +45,7 @@ namespace Neo.Consensus
             writer.Write(TransactionHashes);
             writer.Write(MinerTransaction);
             writer.Write(PrepReqSignature);
+            writer.Write(FinalSignature);
         }
 
     }

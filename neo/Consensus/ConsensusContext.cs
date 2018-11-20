@@ -174,7 +174,7 @@ namespace Neo.Consensus
             return payload;
         }
 
-        public ConsensusPayload MakePrepareRequest(byte[] prepReqSignature)
+        public ConsensusPayload MakePrepareRequest(byte[] prepReqSignature, byte[] finalSignature)
         {
             return MakeSignedPayload(new PrepareRequest
             {
@@ -182,7 +182,8 @@ namespace Neo.Consensus
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                PrepReqSignature = prepReqSignature
+                PrepReqSignature = prepReqSignature,
+                FinalSignature = finalSignature
             });
         }
 

@@ -101,6 +101,16 @@ namespace Neo.Consensus
                 for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
                     if (context.FinalSignatures[i] != null)
                     {
+                        //Checking Speaker Final Signature that was given along with PrepareRequest Payload
+                        if(context.PrimaryIndex == i && !Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), context.FinalSignatures[i], context.Validators[i].EncodePoint(false)))
+                        {
+                            Log($"CheckFinalSignatures...It looks like that Primary tried to cheat providing wrong final signature! His header signature will not be considered");
+                            if ((context.FinalSignatures.Count(p => p != null) - 1) >= context.M)
+                                continue;
+                            else
+                                break;
+                        }
+                            
                         sc.AddSignature(contract, context.Validators[i], context.FinalSignatures[i]);
                         j++;
                     }
@@ -148,7 +158,6 @@ namespace Neo.Consensus
             if (context.State.HasFlag(ConsensusState.CommitSent))
             {
                 Log($"CheckRegeneration: CommitSent flag. Sending Regeneration payload...");
-                //SignAndRelay(context.MakeRegeneration());
                 system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRegeneration() });
                 Log($"Regeneration sent: height={context.BlockIndex} view={context.ViewNumber} state={context.State}");
                 return true;
@@ -263,6 +272,11 @@ namespace Neo.Consensus
             context.Transactions = new Dictionary<UInt256, Transaction>();
             context.PreparePayload = payload;
             context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
+            /// <summary>
+            /// This final signature from speaker does not require verification because the message comes from him
+            /// TODO: However, we should check this before Relaying block - If it is wrong do not include
+            /// </summary>
+            context.FinalSignatures[payload.ValidatorIndex] = message.FinalSignature;
 
             if (!CheckPrimaryPayloadSignature(payload))
             {
@@ -388,11 +402,13 @@ namespace Neo.Consensus
                 context.SignedPayloads.Count(p => p != null) >= context.M &&
                 context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
+                // Do not sign for Primary because it will generate a signature different than the one provide in the PrepareRequest to the Backups
                 Block block = context.MakeHeader();
                 if (block == null) return;
+                if ((uint)context.MyIndex != context.PrimaryIndex)
+                    context.FinalSignatures[context.MyIndex] = context.SignBlock(block);
                 context.State |= ConsensusState.CommitSent;
-                context.FinalSignatures[context.MyIndex] = context.SignBlock(block);
-                //SignAndRelay(context.MakeCommitAgreement(context.FinalSignatures[context.MyIndex]));
+
                 system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeCommitAgreement(context.FinalSignatures[context.MyIndex]) });
                 Log($"Commit sent: height={context.BlockIndex} hash={block.Hash} state={context.State}");
                 CheckFinalSignatures();
@@ -411,7 +427,6 @@ namespace Neo.Consensus
                 Log($"{nameof(OnCommitAgreement)}: SIGNATURE verification with problem");
                 return;
             }
-
             context.FinalSignatures[payload.ValidatorIndex] = message.FinalSignature;
             CheckFinalSignatures();
         }
@@ -512,8 +527,10 @@ namespace Neo.Consensus
                     context.Fill();
                     context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
                 }
-
-                context.PreparePayload = context.MakePrepareRequest(new byte[64]);
+                Block block = context.MakeHeader();
+                if (block == null) return;
+                context.FinalSignatures[context.MyIndex] = context.SignBlock(block);
+                context.PreparePayload = context.MakePrepareRequest(new byte[64], context.FinalSignatures[context.MyIndex]);
                 context.UpdateSpeakerSignatureAtPreparePayload();
 
                 if (context.PreparePayload == null)
