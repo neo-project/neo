@@ -496,7 +496,7 @@ namespace Neo.SmartContract
             }
         }
 
-        public virtual long GetPriceForSysCall()
+        protected virtual long GetPriceForSysCall()
         {
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length - 3)
                 return 1;
