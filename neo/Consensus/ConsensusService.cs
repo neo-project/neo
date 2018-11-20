@@ -60,6 +60,15 @@ namespace Neo.Consensus
             return true;
         }
 
+        public void ChangeTimer(TimeSpan delay)
+        {
+            Context.System.Scheduler.ScheduleTellOnce(delay, Self, new Timer
+            {
+                Height = context.BlockIndex,
+                ViewNumber = context.ViewNumber
+            }, ActorRefs.NoSender);
+        }
+
         private void CheckExpectedView(byte view_number)
         {
             if (context.ViewNumber == view_number) return;
@@ -327,15 +336,6 @@ namespace Neo.Consensus
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)));
             system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
             CheckExpectedView(context.ExpectedView[context.MyIndex]);
-        }
-
-        public void ChangeTimer(TimeSpan delay)
-        {
-            Context.System.Scheduler.ScheduleTellOnce(delay, Self, new Timer
-            {
-                Height = context.BlockIndex,
-                ViewNumber = context.ViewNumber
-            }, ActorRefs.NoSender);
         }
 
         public uint GetSnapshotTimestamp()
