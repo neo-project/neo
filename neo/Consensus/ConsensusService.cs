@@ -288,8 +288,7 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.RequestSent;
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
-                    context.Fill();
-                    context.Timestamp = GetCurrentTimestamp();
+                    context.Fill(GetCurrentTimestamp());
                     context.SignHeader();
                 }
                 system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
