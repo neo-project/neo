@@ -9,7 +9,12 @@ namespace Neo.Consensus
         public ConsensusPayload PreparePayload;
         public byte[] ResponseSignature;
 
-        public PrepareResponse() : base(ConsensusMessageType.PrepareResponse) { }
+        public override int Size => base.Size + Signature.Length;
+
+        public PrepareResponse()
+            : base(ConsensusMessageType.PrepareResponse)
+        {
+        }
 
         public override void Deserialize(BinaryReader reader)
         {
