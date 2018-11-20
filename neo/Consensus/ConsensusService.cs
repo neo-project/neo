@@ -19,6 +19,7 @@ namespace Neo.Consensus
     {
         public class Start { }
         public class SetViewNumber { public byte ViewNumber; }
+        internal class Timer { public uint Height; public byte ViewNumber; }
 
         private readonly ConsensusContext context;
         private readonly NeoSystem system;
@@ -92,7 +93,7 @@ namespace Neo.Consensus
             if (context.MyIndex == context.PrimaryIndex)
             {
                 context.State |= ConsensusState.Primary;
-                TimeSpan span = context.GetUtcNow() - context.block_received_time;
+                TimeSpan span = GetUtcNow() - context.block_received_time;
                 if (span >= Blockchain.TimePerBlock)
                     ChangeTimer(TimeSpan.Zero);
                 else
@@ -162,7 +163,7 @@ namespace Neo.Consensus
         private void OnPersistCompleted(Block block)
         {
             Log($"persist block: {block.Hash}");
-            context.block_received_time = context.GetUtcNow();
+            context.block_received_time = GetUtcNow();
             InitializeConsensus(0);
         }
 
@@ -172,7 +173,7 @@ namespace Neo.Consensus
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (!context.State.HasFlag(ConsensusState.Backup)) return;
-            if (payload.Timestamp <= context.GetSnapshotTimestamp() || payload.Timestamp > context.GetLimitTimestamp())
+            if (payload.Timestamp <= GetSnapshotTimestamp() || payload.Timestamp > GetLimitTimestamp())
             {
                 Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
                 return;
@@ -246,7 +247,7 @@ namespace Neo.Consensus
                 case SetViewNumber setView:
                     InitializeConsensus(setView.ViewNumber);
                     break;
-                case ConsensusTimer timer:
+                case Timer timer:
                     OnTimer(timer);
                     break;
                 case ConsensusPayload payload:
@@ -267,7 +268,7 @@ namespace Neo.Consensus
             InitializeConsensus(0);
         }
 
-        private void OnTimer(ConsensusTimer timer)
+        private void OnTimer(Timer timer)
         {
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (timer.Height != context.BlockIndex || timer.ViewNumber != context.ViewNumber) return;
@@ -279,6 +280,7 @@ namespace Neo.Consensus
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
                     context.Fill();
+                    context.Timestamp = GetCurrentTimestamp();
                     context.SignHeader();
                 }
                 system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
@@ -329,7 +331,31 @@ namespace Neo.Consensus
 
         public void ChangeTimer(TimeSpan delay)
         {
-            context.ChangeTimer(delay, Context.System.Scheduler, Self, ActorRefs.NoSender);
+            Context.System.Scheduler.ScheduleTellOnce(delay, Self, new Timer
+            {
+                Height = context.BlockIndex,
+                ViewNumber = context.ViewNumber
+            }, ActorRefs.NoSender);
+        }
+
+        public uint GetSnapshotTimestamp()
+        {
+            return context.Snapshot.GetHeader(context.PrevHash).Timestamp;
+        }
+
+        public uint GetLimitTimestamp()
+        {
+            return GetUtcNow().AddMinutes(10).ToTimestamp();
+        }
+
+        public uint GetCurrentTimestamp()
+        {
+            return Math.Max(GetUtcNow().ToTimestamp(), GetSnapshotTimestamp() + 1);
+        }
+
+        public DateTime GetUtcNow()
+        {
+            return DateTime.UtcNow;
         }
     }
 
@@ -346,7 +372,7 @@ namespace Neo.Consensus
             {
                 case ConsensusPayload _:
                 case ConsensusService.SetViewNumber _:
-                case ConsensusTimer _:
+                case ConsensusService.Timer _:
                 case Blockchain.PersistCompleted _:
                     return true;
                 default:

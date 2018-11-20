@@ -234,7 +234,6 @@ namespace Neo.Consensus
             TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             Transactions = transactions.ToDictionary(p => p.Hash);
             NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators(transactions).ToArray());
-            Timestamp = GetCurrentTimestamp();
         }
 
         private static ulong GetNonce()
@@ -255,35 +254,6 @@ namespace Neo.Consensus
             Fixed8 amount_netfee = Block.CalculateNetFee(Transactions.Values);
             if (tx_gen?.Outputs.Sum(p => p.Value) != amount_netfee) return false;
             return true;
-        }
-
-        public uint GetSnapshotTimestamp()
-        {
-            return Snapshot.GetHeader(PrevHash).Timestamp;
-        }
-
-        public uint GetLimitTimestamp()
-        {
-            return GetUtcNow().AddMinutes(10).ToTimestamp();
-        }
-
-        public uint GetCurrentTimestamp()
-        {
-            return Math.Max(GetUtcNow().ToTimestamp(), GetSnapshotTimestamp() + 1);
-        }
-
-        public DateTime GetUtcNow()
-        {
-            return DateTime.UtcNow;
-        }
-
-        public void ChangeTimer(TimeSpan delay, ITellScheduler scheduler, ICanTell receiver, IActorRef sender)
-        {
-            scheduler.ScheduleTellOnce(delay, receiver, new ConsensusTimer
-            {
-                Height = BlockIndex,
-                ViewNumber = ViewNumber
-            }, sender);
         }
     }
 }
