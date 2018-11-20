@@ -60,7 +60,7 @@ namespace Neo.Consensus
             return true;
         }
 
-        public void ChangeTimer(TimeSpan delay)
+        private void ChangeTimer(TimeSpan delay)
         {
             Context.System.Scheduler.ScheduleTellOnce(delay, Self, new Timer
             {
