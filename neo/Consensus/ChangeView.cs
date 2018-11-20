@@ -7,6 +7,8 @@ namespace Neo.Consensus
     {
         public byte NewViewNumber;
 
+        public override int Size => base.Size + sizeof(byte);
+
         public ChangeView()
             : base(ConsensusMessageType.ChangeView)
         {
