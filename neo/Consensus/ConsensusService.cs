@@ -179,7 +179,7 @@ namespace Neo.Consensus
             CheckExpectedView(message.NewViewNumber);
         }
 
-        private void OnConsensusPayload(ConsensusPayload payload)
+        private void OnConsensusPayload(ConsensusPayload payload, bool regenerationCall = false)
         {
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (payload.ValidatorIndex == context.MyIndex) return;
@@ -220,7 +220,7 @@ namespace Neo.Consensus
                     OnChangeViewReceived(payload, (ChangeView)message);
                     break;
                 case ConsensusMessageType.PrepareRequest:
-                    OnPrepareRequestReceived(payload, (PrepareRequest)message);
+                    OnPrepareRequestReceived(payload, (PrepareRequest)message, regenerationCall);
                     break;
                 case ConsensusMessageType.PrepareResponse:
                     OnPrepareResponseReceived(payload, (PrepareResponse)message);
@@ -448,7 +448,7 @@ namespace Neo.Consensus
                 Log($"{nameof(OnRegeneration)}: Sorry. I lost some part of the history. I give up... Thanks index={payload.ValidatorIndex}");
                 InitializeConsensus(message.ViewNumber);
                 context.SignedPayloads = message.SignedPayloads;
-                OnPrepareRequestReceived(message.PrepareRequestPayload, context.GetPrepareRequestMessage(message.PrepareRequestPayload), true);
+                OnConsensusPayload(message.PrepareRequestPayload, true);
                 Log($"{nameof(OnRegeneration)}: OnConsensusPayload. message.PrepareRequestPayload has been sent.");
             }
             Log($"{nameof(OnRegeneration)}: Bye bye. I feel good now, connected and on top.");
