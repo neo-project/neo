@@ -274,7 +274,6 @@ namespace Neo.Consensus
             context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
             /// <summary>
             /// This final signature from speaker does not require verification because the message comes from him
-            /// TODO: However, we should check this before Relaying block - If it is wrong do not include
             /// </summary>
             context.FinalSignatures[payload.ValidatorIndex] = message.FinalSignature;
 
@@ -402,7 +401,11 @@ namespace Neo.Consensus
                 context.SignedPayloads.Count(p => p != null) >= context.M &&
                 context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                // Do not sign for Primary because it will generate a signature different than the one provide in the PrepareRequest to the Backups
+                /// <summary>
+                /// Do not sign for Primary because it will generate a signature different than the one provide in the PrepareRequest to the Backups
+                /// In principle, we could also skip the LocalNode.Tell of Primary (because they will discard it).
+                /// However, it is a way of notifying the nodes that the primary is commited and will be surely be a metric in the future
+                /// </summary>
                 Block block = context.MakeHeader();
                 if (block == null) return;
                 if ((uint)context.MyIndex != context.PrimaryIndex)
