@@ -66,6 +66,7 @@ namespace Neo.Consensus
         {
             SignedPayloads[MyIndex] = SignPreparePayload();
             PrepareRequest tempPrePrepareWithSignature = GetPrepareRequestMessage(PreparePayload);
+
             tempPrePrepareWithSignature.PrepReqSignature = SignedPayloads[MyIndex];
             PreparePayload.Data = tempPrePrepareWithSignature.ToArray();
         }

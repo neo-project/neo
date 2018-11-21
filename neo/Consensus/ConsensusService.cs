@@ -409,7 +409,6 @@ namespace Neo.Consensus
                     if (!Crypto.Default.VerifySignature(message.PrepareRequestPayload.GetHashData(), message.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
                     {
                         Log($"{nameof(OnRegeneration)}: Regenerating {i} payload:{message.PrepareRequestPayload.ValidatorIndex} length:{message.SignedPayloads.Length} is being set to null");
-                        PrintByteArray(message.SignedPayloads[i]);
                         message.SignedPayloads[i] = null;
                     }
                     else{
