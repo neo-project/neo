@@ -16,7 +16,7 @@ namespace Neo.Consensus
         /// </summary>
         public byte[][] SignedPayloads;
 
-        public override int Size => base.Size + PrepareRequestPayload.Size + SignedPayloads.Sum(u => u.Length);
+        public override int Size => base.Size + PrepareRequestPayload.Size + sizeof(int) + SignedPayloads.Sum(u => u.Length);
 
         /// <summary>
         /// Constructors
