@@ -102,13 +102,13 @@ namespace Neo.Consensus
                     if (context.FinalSignatures[i] != null)
                     {
                         //Checking Speaker Final Signature that was given along with PrepareRequest Payload
-                        if(context.PrimaryIndex == i && !Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), context.FinalSignatures[i], context.Validators[i].EncodePoint(false)))
+                        if(context.PrimaryIndex == i && !Crypto.Default.VerifySignature(block.GetHashData(), context.FinalSignatures[i], context.Validators[i].EncodePoint(false)))
                         {
                             Log($"CheckFinalSignatures...It looks like that Primary tried to cheat providing wrong final signature! His header signature will not be considered");
                             if ((context.FinalSignatures.Count(p => p != null) - 1) >= context.M)
                                 continue;
                             else
-                                break;
+                                return;
                         }
                             
                         sc.AddSignature(contract, context.Validators[i], context.FinalSignatures[i]);
@@ -157,7 +157,6 @@ namespace Neo.Consensus
         {
             if (context.State.HasFlag(ConsensusState.CommitSent))
             {
-                Log($"CheckRegeneration: CommitSent flag. Sending Regeneration payload...");
                 system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRegeneration() });
                 Log($"Regeneration sent: height={context.BlockIndex} view={context.ViewNumber} state={context.State}");
                 return true;
@@ -202,14 +201,11 @@ namespace Neo.Consensus
             {
                 return;
             }
-
             if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView && message.Type != ConsensusMessageType.Regeneration)
                 return;
 
             switch (message.Type)
             {
-                
-
                 case ConsensusMessageType.ChangeView:
                     OnChangeViewReceived(payload, (ChangeView)message);
                     break;
@@ -395,10 +391,12 @@ namespace Neo.Consensus
         private void OnCommitAgreement(ConsensusPayload payload, CommitAgreement message)
         {
             if (context.FinalSignatures[payload.ValidatorIndex] != null) return;
+            Block block = context.MakeHeader();
+            if (block == null) return;
 
-            Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} hash={context.MakeHeader().Hash.ToString()} view={message.ViewNumber} index={payload.ValidatorIndex}");
+            Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} hash={block.Hash.ToString()} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
-            if (!Crypto.Default.VerifySignature(context.MakeHeader().GetHashData(), message.FinalSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
+            if (!Crypto.Default.VerifySignature(block.GetHashData(), message.FinalSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
             {
                 Log($"{nameof(OnCommitAgreement)}: SIGNATURE verification with problem");
                 return;
