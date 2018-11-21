@@ -66,7 +66,6 @@ namespace Neo.Consensus
         {
             SignedPayloads[MyIndex] = SignPreparePayload();
             PrepareRequest tempPrePrepareWithSignature = GetPrepareRequestMessage(PreparePayload);
-
             tempPrePrepareWithSignature.PrepReqSignature = SignedPayloads[MyIndex];
             PreparePayload.Data = tempPrePrepareWithSignature.ToArray();
         }
@@ -121,7 +120,6 @@ namespace Neo.Consensus
         public Block MakeHeader()
         {
             if (TransactionHashes == null) return null;
-
             if (_header == null)
             {
                 _header = new Block
@@ -140,7 +138,7 @@ namespace Neo.Consensus
             return _header;
         }
 
-        public ConsensusPayload MakeSignedPayload(ConsensusMessage message)
+        private ConsensusPayload MakeSignedPayload(ConsensusMessage message)
         {
             message.ViewNumber = ViewNumber;
             ConsensusPayload payload = new ConsensusPayload

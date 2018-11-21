@@ -13,7 +13,6 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Neo.Consensus
 {
@@ -25,7 +24,6 @@ namespace Neo.Consensus
 
         private readonly ConsensusContext context;
         private readonly NeoSystem system;
-
         private DateTime block_received_time;
 
         public ConsensusService(NeoSystem system, Wallet wallet)
@@ -88,15 +86,11 @@ namespace Neo.Consensus
 
         private void CheckFinalSignatures()
         {
-            Log($"CheckFinalSignatures... FinalSignatures:{context.FinalSignatures.Count(p => p != null)}");
-
             if (context.FinalSignatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
                 Block block = context.MakeHeader();
                 if (block == null) return;
-                context.State |= ConsensusState.BlockSent;
-
+                Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
                 ContractParametersContext sc = new ContractParametersContext(block);
                 for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
                     if (context.FinalSignatures[i] != null)
@@ -116,6 +110,7 @@ namespace Neo.Consensus
                     }
                 sc.Verifiable.Witnesses = sc.GetWitnesses();
                 block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
+                context.State |= ConsensusState.BlockSent;
                 Log($"{nameof(OnCommitAgreement)}: relay block: height={context.BlockIndex} hash={block.Hash}");
                 system.LocalNode.Tell(new LocalNode.Relay { Inventory = block });
             }
@@ -168,12 +163,8 @@ namespace Neo.Consensus
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
-
-            if(CheckRegeneration()) return;
-
-            if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
-                return;
-            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
+            if (CheckRegeneration()) return;
+            if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex]) return;
             context.ExpectedView[payload.ValidatorIndex] = message.NewViewNumber;
             CheckExpectedView(message.NewViewNumber);
         }
@@ -345,8 +336,6 @@ namespace Neo.Consensus
 
         private void CheckPayloadSignatures()
         {
-            Log($"CheckPayloadSignatures... SignedPayloads:{context.SignedPayloads.Count(p => p != null)}");
-
             if (!context.State.HasFlag(ConsensusState.CommitSent) &&
                 context.SignedPayloads.Count(p => p != null) >= context.M &&
                 context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
