@@ -182,7 +182,7 @@ namespace Neo.Consensus
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (!context.State.HasFlag(ConsensusState.Backup)) return;
-            if (payload.Timestamp <= GetSnapshotTimestamp() || payload.Timestamp > GetLimitTimestamp())
+            if (payload.Timestamp <= context.Snapshot.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > GetUtcNow().AddMinutes(10).ToTimestamp())
             {
                 Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
                 return;
@@ -337,19 +337,9 @@ namespace Neo.Consensus
             CheckExpectedView(context.ExpectedView[context.MyIndex]);
         }
 
-        public uint GetSnapshotTimestamp()
-        {
-            return context.Snapshot.GetHeader(context.PrevHash).Timestamp;
-        }
-
-        public uint GetLimitTimestamp()
-        {
-            return GetUtcNow().AddMinutes(10).ToTimestamp();
-        }
-
         public uint GetCurrentTimestamp()
         {
-            return Math.Max(GetUtcNow().ToTimestamp(), GetSnapshotTimestamp() + 1);
+            return Math.Max(GetUtcNow().ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
         }
 
         public DateTime GetUtcNow()
