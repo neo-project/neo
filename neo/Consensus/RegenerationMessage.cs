@@ -8,7 +8,7 @@ namespace Neo.Consensus
     internal class Regeneration : ConsensusMessage
     {
         /// <summary>
-        /// Original PrepareRequest in which, at least, M nodes signed
+        /// Speaker PrepareRequest in which, at least, M nodes signed
         /// </summary>
         public ConsensusPayload PrepareRequestPayload; 
         /// <summary>

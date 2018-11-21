@@ -5,7 +5,7 @@ namespace Neo.Consensus
     internal class CommitAgreement : ConsensusMessage
     {
         /// <summary>
-        /// Block signature
+        /// Final block signature
         /// </summary>
         public byte[] FinalSignature;
 

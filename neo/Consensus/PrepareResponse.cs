@@ -6,7 +6,13 @@ namespace Neo.Consensus
 {
     internal class PrepareResponse : ConsensusMessage
     {
+        /// <summary>
+        /// Speaker PrepareRequest Payload
+        /// </summary>
         public ConsensusPayload PreparePayload;
+        /// <summary>
+        /// Prepare Request, PreparePayload, payload signature
+        /// </summary>
         public byte[] ResponseSignature;
 
         public override int Size => base.Size + PreparePayload.Size + ResponseSignature.Length;

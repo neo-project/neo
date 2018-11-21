@@ -12,7 +12,13 @@ namespace Neo.Consensus
         public UInt160 NextConsensus;
         public UInt256[] TransactionHashes;
         public MinerTransaction MinerTransaction;
+        /// <summary>
+        /// Prepare Request payload signature
+        /// </summary>
         public byte[] PrepReqSignature;
+        /// <summary>
+        /// Final block signature
+        /// </summary>
         public byte[] FinalSignature;
 
         public override int Size => base.Size + sizeof(ulong) + NextConsensus.Size + TransactionHashes.GetVarSize() + MinerTransaction.Size + PrepReqSignature.Length + FinalSignature.Length;

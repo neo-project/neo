@@ -97,25 +97,6 @@ namespace Neo.Consensus
             _header = null;
         }
 
-        /*
-        public Block CreateBlock()
-        {
-            Block block = MakeHeader();
-            if (block == null) return null;
-            Contract contract = Contract.CreateMultiSigContract(M, Validators);
-            ContractParametersContext sc = new ContractParametersContext(block);
-            for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
-                if (Signatures[i] != null)
-                {
-                    sc.AddSignature(contract, Validators[i], Signatures[i]);
-                    j++;
-                }
-            sc.Verifiable.Witnesses = sc.GetWitnesses();
-            block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
-            return block;
-        }
-        */
-
         public void Dispose()
         {
             Snapshot?.Dispose();
@@ -280,13 +261,6 @@ namespace Neo.Consensus
             NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators(transactions).ToArray());
             Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), Snapshot.GetHeader(PrevHash).Timestamp + 1);
         }
-
-        /*
-        public void SignHeader()
-        {
-            Signatures[MyIndex] = MakeHeader()?.Sign(KeyPair);
-        }
-        */
 
         public byte[] SignBlock(Block block)
         {

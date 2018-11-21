@@ -299,21 +299,10 @@ namespace Neo.Consensus
             }
         }
 
-        public void PrintByteArray(byte[] bytes)
-        {
-            var sb = new StringBuilder("new byte[] { ");
-            foreach (var b in bytes)
-            {
-                sb.Append(b + ", ");
-            }
-            sb.Append("}");
-            Log($"{sb.ToString()}");
-        }
-
         private bool CheckPrimaryPayloadSignature(ConsensusPayload payload)
         {
-            /// TODO Maybe include some verification here
             PrepareRequest message = context.GetPrepareRequestMessage(payload);
+            /// TODO Maybe include some verification here
 
             /// The Speaker Signed the Payload without any signature (this was the trick/magic part), PrepReqSignature was empty
             /// But the payload was latter modified with his signature,
@@ -326,8 +315,6 @@ namespace Neo.Consensus
             if (!Crypto.Default.VerifySignature(payload.GetHashData(), tempSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
                 return false;
 
-            /// maybe these next 2 lines could be removed, because payload is not anymore used
-            /// it was already saved before changed in the context.PreparePayload... However, let keep things clean for now
             message.PrepReqSignature = tempSignature;
             payload.Data = message.ToArray();
             return true;
@@ -337,21 +324,15 @@ namespace Neo.Consensus
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
             if (context.State.HasFlag(ConsensusState.CommitSent)) return;
-
-            /// This payload.ValidatorIndex already submitted a not null signature
             if (context.SignedPayloads[payload.ValidatorIndex] != null) return;
 
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
-            /// ***** The following is like an additional feature ******
-            /// ORIGINAL CODE: In the original code we were just storing the signature and later verifying when the Payload really arrives.
-            /// FEATURED ONE: Here we can check the PreparePayload if it did not arrive, because all PrepareREsponse Payloads carries that
             if (context.PreparePayload == null)
             {
-                Log($"{nameof(OnPrepareRequestReceived)}: Response before PrepRequest, trying to speed up p2p route...");
+                Log($"{nameof(OnPrepareRequestReceived)}: indirectly from index={payload.ValidatorIndex}, try to speed up p2p route.");
                 if (message.PreparePayload.ValidatorIndex != context.PrimaryIndex) return;
                 if (!CheckPrimaryPayloadSignature(message.PreparePayload)) return;
-                Log($"{nameof(OnPrepareRequestReceived)}: indirectly from index={payload.ValidatorIndex}");
                 OnConsensusPayload(message.PreparePayload);
             }
 
@@ -397,10 +378,8 @@ namespace Neo.Consensus
             Log($"{nameof(OnCommitAgreement)}: height={payload.BlockIndex} hash={block.Hash.ToString()} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
             if (!Crypto.Default.VerifySignature(block.GetHashData(), message.FinalSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
-            {
-                Log($"{nameof(OnCommitAgreement)}: SIGNATURE verification with problem");
                 return;
-            }
+
             context.FinalSignatures[payload.ValidatorIndex] = message.FinalSignature;
             CheckFinalSignatures();
         }
@@ -409,13 +388,10 @@ namespace Neo.Consensus
         {
             if (context.State.HasFlag(ConsensusState.CommitSent)) return;
 
-            if (message.PrepareRequestPayload.BlockIndex != context.BlockIndex)
-            {
-                Log($"You look different. I do not want to be recovered like this, heights: {message.PrepareRequestPayload.BlockIndex}/{context.BlockIndex}");
-                return;
-            }
-                   
             Log($"{nameof(OnRegeneration)}: height={payload.BlockIndex} view={message.ViewNumber} numberOfPartialSignatures={message.SignedPayloads.Count(p => p != null)} index={payload.ValidatorIndex}");
+
+            if (message.PrepareRequestPayload.BlockIndex != context.BlockIndex)
+                return;
 
             uint nValidSignatures = 0;
             /// Time for checking if speaker really signed this payload
@@ -443,13 +419,11 @@ namespace Neo.Consensus
             /// In order to start Regeneration, at least M signatures should had been verified and true
             if (nValidSignatures >= context.M)
             {
-                Log($"{nameof(OnRegeneration)}: Sorry. I lost some part of the history. I give up... Thanks index={payload.ValidatorIndex}");
                 InitializeConsensus(message.ViewNumber);
                 context.SignedPayloads = message.SignedPayloads;
                 OnConsensusPayload(message.PrepareRequestPayload, true);
-                Log($"{nameof(OnRegeneration)}: OnConsensusPayload. message.PrepareRequestPayload has been sent.");
+                Log($"{nameof(OnRegeneration)}: OnConsensusPayload. message.PrepareRequestPayload has been sent. Thanks index={payload.ValidatorIndex}");
             }
-            Log($"{nameof(OnRegeneration)}: Bye bye. I feel good now, connected and on top.");
         }
 
         protected override void OnReceive(object message)
@@ -504,11 +478,7 @@ namespace Neo.Consensus
                 context.PreparePayload = context.MakePrepareRequest(new byte[64], context.FinalSignatures[context.MyIndex]);
                 context.UpdateSpeakerSignatureAtPreparePayload();
 
-                if (context.PreparePayload == null)
-                {
-                    Log($"ONTIMER:  Error! PreparePayload is null");
-                    return;
-                }
+                if (context.PreparePayload == null) return;
 
                 context.SignPayload(context.PreparePayload);
                 system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.PreparePayload });
@@ -559,7 +529,6 @@ namespace Neo.Consensus
 
             context.State |= ConsensusState.ViewChanging;
             context.ExpectedView[context.MyIndex]++;
-            Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)));
             //SignAndRelay(context.MakeChangeView());
             system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
