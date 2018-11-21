@@ -182,24 +182,16 @@ namespace Neo.Consensus
         private void OnConsensusPayload(ConsensusPayload payload, bool regenerationCall = false)
         {
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
-            if (payload.ValidatorIndex == context.MyIndex) return;
-
+            if (payload.ValidatorIndex == context.MyIndex && !regenerationCall ) return;
             if (payload.Version != ConsensusContext.Version)
                 return;
-
             if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
             {
                 if (context.Snapshot.Height + 1 < payload.BlockIndex)
-                {
                     Log($"chain sync: expected={payload.BlockIndex} current: {context.Snapshot.Height} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
-                    // TODO Thinking about a delay here in order to ask for blocks and then initialize from view 1;
-                }
                 return;
             }
-
-
             if (payload.ValidatorIndex >= context.Validators.Length) return;
-
 
             ConsensusMessage message;
             try
@@ -216,6 +208,8 @@ namespace Neo.Consensus
 
             switch (message.Type)
             {
+                
+
                 case ConsensusMessageType.ChangeView:
                     OnChangeViewReceived(payload, (ChangeView)message);
                     break;
@@ -417,6 +411,12 @@ namespace Neo.Consensus
         {
             if (context.State.HasFlag(ConsensusState.CommitSent)) return;
 
+            if (message.PrepareRequestPayload.BlockIndex != context.BlockIndex)
+            {
+                Log($"You look different. I do not want to be recovered like this, heights: {message.PrepareRequestPayload.BlockIndex}/{context.BlockIndex}");
+                return;
+            }
+                   
             Log($"{nameof(OnRegeneration)}: height={payload.BlockIndex} view={message.ViewNumber} numberOfPartialSignatures={message.SignedPayloads.Count(p => p != null)} index={payload.ValidatorIndex}");
 
             uint nValidSignatures = 0;
