@@ -362,7 +362,7 @@ namespace Neo.Consensus
                 if (message.PreparePayload.ValidatorIndex != context.PrimaryIndex) return;
                 if (!CheckPrimaryPayloadSignature(message.PreparePayload)) return;
                 Log($"{nameof(OnPrepareRequestReceived)}: indirectly from index={payload.ValidatorIndex}");
-                OnPrepareRequestReceived(message.PreparePayload, context.GetPrepareRequestMessage(message.PreparePayload));
+                OnConsensusPayload(message.PreparePayload);
             }
 
             /// Time to check received Signature against our local context.PreparePayload
