@@ -45,12 +45,12 @@ namespace Neo.Consensus
         /// <summary>
         /// Serialize PreparePayload Data into the desired PrepareRequest message
         /// </summary>
-        public PrepareRequest GetPrepareRequestMessage(ConsensusPayload PreparePayloadToGet)
+        public PrepareRequest GetPrepareRequestMessage(ConsensusPayload preparePayloadToGet)
         {
             ConsensusMessage message;
             try
             {
-                message = ConsensusMessage.DeserializeFrom(PreparePayloadToGet.Data);
+                message = ConsensusMessage.DeserializeFrom(preparePayloadToGet.Data);
             }
             catch
             {
