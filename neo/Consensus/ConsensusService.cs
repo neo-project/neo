@@ -181,15 +181,12 @@ namespace Neo.Consensus
 
         private void OnConsensusPayload(ConsensusPayload payload)
         {
-            //Log($"OnConsensusPayload I: Welcome!");
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
-            //Log($"OnConsensusPayload II.1: Basic checks");
             if (payload.ValidatorIndex == context.MyIndex) return;
-            //Log($"OnConsensusPayload II.2: Basic checks");
+
             if (payload.Version != ConsensusContext.Version)
                 return;
-            //Log($"OnConsensusPayload II.3: Basic checks");
-            //Log($"payload.PrevHash={payload.PrevHash} context.PrevHash={context.PrevHash}");
+
             if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
             {
                 if (context.Snapshot.Height + 1 < payload.BlockIndex)
@@ -200,11 +197,9 @@ namespace Neo.Consensus
                 return;
             }
 
-            //Log($"OnConsensusPayload III: Basic checks");
 
             if (payload.ValidatorIndex >= context.Validators.Length) return;
 
-            //Log($"OnConsensusPayload IV: Basic checks");
 
             ConsensusMessage message;
             try
@@ -216,12 +211,8 @@ namespace Neo.Consensus
                 return;
             }
 
-            //Log($"OnConsensusPayload V: Basic checks");
-
             if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView && message.Type != ConsensusMessageType.Regeneration)
                 return;
-
-            //Log($"OnConsensusPayload VI: Basic checks. Going to specific Payload message!");
 
             switch (message.Type)
             {
@@ -241,7 +232,6 @@ namespace Neo.Consensus
                     OnRegeneration(payload, (Regeneration)message);
                     break;
             }
-            //Log($"OnConsensusPayload VII: bye bye");
         }
 
         private void OnPersistCompleted(Block block)
@@ -272,9 +262,6 @@ namespace Neo.Consensus
             context.Transactions = new Dictionary<UInt256, Transaction>();
             context.PreparePayload = payload;
             context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
-            /// <summary>
-            /// This final signature from speaker does not require verification because the message comes from him
-            /// </summary>
             context.FinalSignatures[payload.ValidatorIndex] = message.FinalSignature;
 
             if (!CheckPrimaryPayloadSignature(payload))
@@ -335,15 +322,13 @@ namespace Neo.Consensus
 
         private bool CheckPrimaryPayloadSignature(ConsensusPayload payload)
         {
-            // TODO Maybe include some verification here
+            /// TODO Maybe include some verification here
             PrepareRequest message = context.GetPrepareRequestMessage(payload);
 
-            /// <summary>
             /// The Speaker Signed the Payload without any signature (this was the trick/magic part), PrepReqSignature was empty
             /// But the payload was latter modified with his signature,
             /// We mean, the PrepareRequest message was filled with the PrepReqSignature of the Empty Payload and then serialized again into this Payload.
             /// Thus, we need to remove the signature from the Payload to correctly verify Speaker identity agreements with this block
-            /// </summary>
             byte[] tempSignature = message.PrepReqSignature;
             message.PrepReqSignature = new byte[64];
             payload.Data = message.ToArray();
@@ -351,10 +336,8 @@ namespace Neo.Consensus
             if (!Crypto.Default.VerifySignature(payload.GetHashData(), tempSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
                 return false;
 
-            /// <summary>
-            /// These next 2 lines could be removed, because payload is not anymore used
+            /// maybe these next 2 lines could be removed, because payload is not anymore used
             /// it was already saved before changed in the context.PreparePayload... However, let keep things clean for now
-            /// </summary>
             message.PrepReqSignature = tempSignature;
             payload.Data = message.ToArray();
             return true;
@@ -364,18 +347,15 @@ namespace Neo.Consensus
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
             if (context.State.HasFlag(ConsensusState.CommitSent)) return;
-            /// <summary>
+
             /// This payload.ValidatorIndex already submitted a not null signature
-            /// </summary>
             if (context.SignedPayloads[payload.ValidatorIndex] != null) return;
 
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
-            /// <summary>
             /// ***** The following is like an additional feature ******
             /// ORIGINAL CODE: In the original code we were just storing the signature and later verifying when the Payload really arrives.
             /// FEATURED ONE: Here we can check the PreparePayload if it did not arrive, because all PrepareREsponse Payloads carries that
-            /// </summary>
             if (context.PreparePayload == null)
             {
                 Log($"{nameof(OnPrepareRequestReceived)}: Response before PrepRequest, trying to speed up p2p route...");
@@ -385,10 +365,9 @@ namespace Neo.Consensus
                 OnPrepareRequestReceived(message.PreparePayload, context.GetPrepareRequestMessage(message.PreparePayload));
             }
 
-            /// <summary>
             /// Time to check received Signature against our local context.PreparePayload
-            /// </summary>
             if (!Crypto.Default.VerifySignature(context.PreparePayload.GetHashData(), message.ResponseSignature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
+
             context.SignedPayloads[payload.ValidatorIndex] = message.ResponseSignature;
             CheckPayloadSignatures();
         }
@@ -401,15 +380,15 @@ namespace Neo.Consensus
                 context.SignedPayloads.Count(p => p != null) >= context.M &&
                 context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                /// <summary>
+                Block block = context.MakeHeader();
+                if (block == null) return;
+
                 /// Do not sign for Primary because it will generate a signature different than the one provide in the PrepareRequest to the Backups
                 /// In principle, we could also skip the LocalNode.Tell of Primary (because they will discard it).
                 /// However, it is a way of notifying the nodes that the primary is commited and will be surely be a metric in the future
-                /// </summary>
-                Block block = context.MakeHeader();
-                if (block == null) return;
                 if ((uint)context.MyIndex != context.PrimaryIndex)
                     context.FinalSignatures[context.MyIndex] = context.SignBlock(block);
+                
                 context.State |= ConsensusState.CommitSent;
 
                 system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeCommitAgreement(context.FinalSignatures[context.MyIndex]) });
@@ -441,9 +420,7 @@ namespace Neo.Consensus
             Log($"{nameof(OnRegeneration)}: height={payload.BlockIndex} view={message.ViewNumber} numberOfPartialSignatures={message.SignedPayloads.Count(p => p != null)} index={payload.ValidatorIndex}");
 
             uint nValidSignatures = 0;
-            /// <summary>
             /// Time for checking if speaker really signed this payload
-            /// </summary>
             if (!CheckPrimaryPayloadSignature(message.PrepareRequestPayload))
             {
                 Log($"{nameof(OnRegeneration)}: Regenerating primary payload: {message.PrepareRequestPayload.ValidatorIndex} length:{message.SignedPayloads.Length} with a wrong Primary Payload");
@@ -452,9 +429,7 @@ namespace Neo.Consensus
             }
             nValidSignatures++;
 
-            /// <summary>
             /// Time for checking all Backups
-            /// </summary>
             for (int i = 0; i < message.SignedPayloads.Length; i++)
                 if (message.SignedPayloads[i] != null && i != message.PrepareRequestPayload.ValidatorIndex)
                     if (!Crypto.Default.VerifySignature(message.PrepareRequestPayload.GetHashData(), message.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
@@ -466,18 +441,13 @@ namespace Neo.Consensus
                     else{
                         nValidSignatures++;
                     }
-            /// <summary>
+
             /// In order to start Regeneration, at least M signatures should had been verified and true
-            /// </summary>
             if (nValidSignatures >= context.M)
             {
                 Log($"{nameof(OnRegeneration)}: Sorry. I lost some part of the history. I give up... Thanks index={payload.ValidatorIndex}");
                 InitializeConsensus(message.ViewNumber);
                 context.SignedPayloads = message.SignedPayloads;
-                /// <summary>
-                /// TODO - Maybe come back to OnConsensus intead of jumping to OnPrepareRequestReceived
-                /// We may have lost some checks doing this
-                /// </summary>
                 OnPrepareRequestReceived(message.PrepareRequestPayload, context.GetPrepareRequestMessage(message.PrepareRequestPayload), true);
                 Log($"{nameof(OnRegeneration)}: OnConsensusPayload. message.PrepareRequestPayload has been sent.");
             }
@@ -586,10 +556,7 @@ namespace Neo.Consensus
         {
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
 
-            /// <summary>
-            /// It should never send Regeneration from here anymore after flag of CommitSent placed OnTimer
-            /// TODO Remove this check.
-            /// </summary>
+            /// [PROBABLY OBSOLET] It should never send Regeneration from here anymore after flag of CommitSent placed OnTimer
             if (CheckRegeneration()) return;
 
             context.State |= ConsensusState.ViewChanging;
