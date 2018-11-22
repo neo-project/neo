@@ -47,16 +47,14 @@ namespace Neo.Consensus
         /// </summary>
         public PrepareRequest GetPrepareRequestMessage(ConsensusPayload preparePayloadToGet)
         {
-            ConsensusMessage message;
             try
             {
-                message = ConsensusMessage.DeserializeFrom(preparePayloadToGet.Data);
+                return (PrepareRequest)ConsensusMessage.DeserializeFrom(preparePayloadToGet.Data);
             }
             catch
             {
-                return new PrepareRequest();
+                return null;
             }
-            return (PrepareRequest)message;
         }
 
         /// <summary>
@@ -64,8 +62,11 @@ namespace Neo.Consensus
         /// </summary>
         public void UpdateSpeakerSignatureAtPreparePayload()
         {
-            SignedPayloads[MyIndex] = SignPreparePayload();
             PrepareRequest tempPrePrepareWithSignature = GetPrepareRequestMessage(PreparePayload);
+
+            if (tempPrePrepareWithSignature == null) return;
+
+            SignedPayloads[MyIndex] = SignPreparePayload();
             tempPrePrepareWithSignature.PrepReqSignature = SignedPayloads[MyIndex];
             PreparePayload.Data = tempPrePrepareWithSignature.ToArray();
         }
