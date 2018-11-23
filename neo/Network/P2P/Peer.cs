@@ -50,7 +50,7 @@ namespace Neo.Network.P2P
             get
             {
                 var allowedConnecting = MinDesiredConnections * 4;
-                allowedConnecting = allowedConnecting != -1 && allowedConnecting > MaxConnections 
+                allowedConnecting = MaxConnections != -1 && allowedConnecting > MaxConnections 
                     ? MaxConnections : allowedConnecting; 
                 return allowedConnecting - ConnectedPeers.Count;
             }
