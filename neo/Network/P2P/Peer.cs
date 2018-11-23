@@ -26,7 +26,7 @@ namespace Neo.Network.P2P
 
         private const int MaxConnectionsPerAddress = 3;
         public const int DefaultMinDesiredConnections = 10;
-        public const int DefaultMaxConnections = DefaultMinDesiredConnections * 2;
+        public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
 
         private static readonly IActorRef tcp_manager = Context.System.Tcp();
         private IActorRef tcp_listener;
@@ -45,7 +45,16 @@ namespace Neo.Network.P2P
         public int MinDesiredConnections { get; private set; } = DefaultMinDesiredConnections;
         public int MaxConnections { get; private set; } = DefaultMaxConnections;
         protected int UnconnectedMax { get; } = 1000;
-        protected virtual int ConnectingMax => MaxConnections - ConnectedPeers.Count;
+        protected virtual int ConnectingMax
+        {
+            get
+            {
+                var allowedConnecting = MinDesiredConnections * 4;
+                allowedConnecting = allowedConnecting != -1 && allowedConnecting > MaxConnections 
+                    ? MaxConnections : allowedConnecting; 
+                return allowedConnecting - ConnectedPeers.Count;
+            }
+        }
 
         static Peer()
         {
@@ -156,7 +165,7 @@ namespace Neo.Network.P2P
         private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
-            if (ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
+            if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
             {
                 Sender.Tell(Tcp.Abort.Instance);
                 return;
