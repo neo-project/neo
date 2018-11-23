@@ -26,6 +26,7 @@ namespace Neo.SmartContract
         protected readonly List<IDisposable> Disposables = new List<IDisposable>();
         protected readonly Dictionary<UInt160, UInt160> ContractsCreated = new Dictionary<UInt160, UInt160>();
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
+        private readonly Dictionary<uint, long> prices = new Dictionary<uint, long>();
 
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
 
@@ -33,37 +34,37 @@ namespace Neo.SmartContract
         {
             this.Trigger = trigger;
             this.Snapshot = snapshot;
-            Register("System.Runtime.Platform", Runtime_Platform);
-            Register("System.Runtime.GetTrigger", Runtime_GetTrigger);
-            Register("System.Runtime.CheckWitness", Runtime_CheckWitness);
-            Register("System.Runtime.Notify", Runtime_Notify);
-            Register("System.Runtime.Log", Runtime_Log);
-            Register("System.Runtime.GetTime", Runtime_GetTime);
-            Register("System.Runtime.Serialize", Runtime_Serialize);
-            Register("System.Runtime.Deserialize", Runtime_Deserialize);
-            Register("System.Blockchain.GetHeight", Blockchain_GetHeight);
-            Register("System.Blockchain.GetHeader", Blockchain_GetHeader);
-            Register("System.Blockchain.GetBlock", Blockchain_GetBlock);
-            Register("System.Blockchain.GetTransaction", Blockchain_GetTransaction);
-            Register("System.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight);
-            Register("System.Blockchain.GetContract", Blockchain_GetContract);
-            Register("System.Header.GetIndex", Header_GetIndex);
-            Register("System.Header.GetHash", Header_GetHash);
-            Register("System.Header.GetPrevHash", Header_GetPrevHash);
-            Register("System.Header.GetTimestamp", Header_GetTimestamp);
-            Register("System.Block.GetTransactionCount", Block_GetTransactionCount);
-            Register("System.Block.GetTransactions", Block_GetTransactions);
-            Register("System.Block.GetTransaction", Block_GetTransaction);
-            Register("System.Transaction.GetHash", Transaction_GetHash);
-            Register("System.Contract.Destroy", Contract_Destroy);
-            Register("System.Contract.GetStorageContext", Contract_GetStorageContext);
-            Register("System.Storage.GetContext", Storage_GetContext);
-            Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext);
-            Register("System.Storage.Get", Storage_Get);
+            Register("System.Runtime.Platform", Runtime_Platform, 1);
+            Register("System.Runtime.GetTrigger", Runtime_GetTrigger, 1);
+            Register("System.Runtime.CheckWitness", Runtime_CheckWitness, 200);
+            Register("System.Runtime.Notify", Runtime_Notify, 1);
+            Register("System.Runtime.Log", Runtime_Log, 1);
+            Register("System.Runtime.GetTime", Runtime_GetTime, 1);
+            Register("System.Runtime.Serialize", Runtime_Serialize, 1);
+            Register("System.Runtime.Deserialize", Runtime_Deserialize, 1);
+            Register("System.Blockchain.GetHeight", Blockchain_GetHeight, 1);
+            Register("System.Blockchain.GetHeader", Blockchain_GetHeader, 100);
+            Register("System.Blockchain.GetBlock", Blockchain_GetBlock, 200);
+            Register("System.Blockchain.GetTransaction", Blockchain_GetTransaction, 200);
+            Register("System.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight, 100);
+            Register("System.Blockchain.GetContract", Blockchain_GetContract, 100);
+            Register("System.Header.GetIndex", Header_GetIndex, 1);
+            Register("System.Header.GetHash", Header_GetHash, 1);
+            Register("System.Header.GetPrevHash", Header_GetPrevHash, 1);
+            Register("System.Header.GetTimestamp", Header_GetTimestamp, 1);
+            Register("System.Block.GetTransactionCount", Block_GetTransactionCount, 1);
+            Register("System.Block.GetTransactions", Block_GetTransactions, 1);
+            Register("System.Block.GetTransaction", Block_GetTransaction, 1);
+            Register("System.Transaction.GetHash", Transaction_GetHash, 1);
+            Register("System.Contract.Destroy", Contract_Destroy, 1);
+            Register("System.Contract.GetStorageContext", Contract_GetStorageContext, 1);
+            Register("System.Storage.GetContext", Storage_GetContext, 1);
+            Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 1);
+            Register("System.Storage.Get", Storage_Get, 100);
             Register("System.Storage.Put", Storage_Put);
             Register("System.Storage.PutEx", Storage_PutEx);
-            Register("System.Storage.Delete", Storage_Delete);
-            Register("System.StorageContext.AsReadOnly", StorageContext_AsReadOnly);
+            Register("System.Storage.Delete", Storage_Delete, 100);
+            Register("System.StorageContext.AsReadOnly", StorageContext_AsReadOnly, 1);
         }
 
         internal bool CheckStorageContext(StorageContext context)
@@ -84,6 +85,18 @@ namespace Neo.SmartContract
             foreach (IDisposable disposable in Disposables)
                 disposable.Dispose();
             Disposables.Clear();
+        }
+
+        public long GetPrice(uint hash)
+        {
+            prices.TryGetValue(hash, out long price);
+            return price;
+        }
+
+        protected void Register(string method, Func<ExecutionEngine, bool> handler, long price)
+        {
+            Register(method, handler);
+            prices.Add(method.ToInteropMethodHash(), price);
         }
 
         protected bool Runtime_Platform(ExecutionEngine engine)
