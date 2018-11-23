@@ -117,23 +117,25 @@ namespace Neo.UnitTests
       [TestMethod]
       public void ConsensusService_Respond_After_OnStart()
       {
-          //IActorRef actor = Sys.ActorOf<ConsensusService>();//ActorOfAsTestActorRef<ConsensusService>();
-          TestActorRef<ConsensusService> actor = ActorOfAsTestActorRef<ConsensusService>();
-          //ConsensusService cs = actor.UnderlyingActor;//UnderlyingActor;
-
+          // NeoSystem dependencies
           TestActorRef<TestReceiveActor> actorLocalNode = ActorOfAsTestActorRef<TestReceiveActor>();
           TestActorRef<TestReceiveActor> actorTaskManager = ActorOfAsTestActorRef<TestReceiveActor>();
-
           var mockConsensusContext = new Mock<IConsensusContext>();
 
+          //TestActorRef<ConsensusService> actor2 = ActorOfAsTestActorRef<ConsensusService>();
+          TestActorRef<ConsensusService> actor = ActorOfAsTestActorRef<ConsensusService>(Akka.Actor.Props.Create(() => new ConsensusService(actorLocalNode, actorTaskManager, mockConsensusContext.Object)));
+
+          //TestActorRef<ConsensusService> actorRef = //TestActorRef<ConsensusService>(Akka.Actor.Props.Create(() => new ConsensusService(actorLocalNode, actorTaskManager, mockConsensusContext.Object)));
+
+          /*
           Console.WriteLine("vai testar setup!");
           actor.Tell(new ConsensusService.Setup {
             _localNode = actorLocalNode,
             _taskManager = actorTaskManager,
             _context = mockConsensusContext.Object
             });
-
           Thread.Sleep(500);
+          */
 
           actor.Tell(new ConsensusService.Start());
 
@@ -141,10 +143,10 @@ namespace Neo.UnitTests
           Console.WriteLine("comecou consensus!");
           //  actor.Tell(new ConsensusService.Stop());
           Thread.Sleep(500);
-          actor.Tell(new ConsensusService.Stop());
-          Thread.Sleep(500);
+          //actor.Tell(new ConsensusService.Stop());
+          //Thread.Sleep(500);
           Sys.Stop(actor);
-          Console.WriteLine("Fora do stop!");
+          //Console.WriteLine("Fora do stop!");
 
           //var answer = ExpectMsg<MessageReceived>();
           //Assert.AreEqual(2, answer.Counter);

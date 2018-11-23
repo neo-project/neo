@@ -19,8 +19,8 @@ namespace Neo.Consensus
     {
         public bool shouldStop;
         public class Start { }
-        public class Stop { }
-        public class Setup { public IActorRef _localNode; public IActorRef _taskManager; public IConsensusContext _context; }
+        //public class Stop { }
+        //public class Setup { public IActorRef _localNode; public IActorRef _taskManager; public IConsensusContext _context; }
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
@@ -36,6 +36,15 @@ namespace Neo.Consensus
             this.localNode = _LocalNode;
             this.taskManager = _TaskManager;
             this.context = new ConsensusContext(wallet);
+            this.shouldStop = false;
+        }
+
+        public ConsensusService(IActorRef _LocalNode, IActorRef _TaskManager, IConsensusContext context)
+        {
+            //this.system = system;
+            this.localNode = _LocalNode;
+            this.taskManager = _TaskManager;
+            this.context = context;
             this.shouldStop = false;
         }
 
@@ -271,12 +280,12 @@ namespace Neo.Consensus
                 case Start _:
                     OnStart();
                     break;
-                case Setup setup:
-                    OnSetup(setup._localNode, setup._taskManager, setup._context);
-                    break;
-                case Stop _:
-                    OnStop();
-                    break;
+                //case Setup setup:
+                //    OnSetup(setup._localNode, setup._taskManager, setup._context);
+                //    break;
+                //case Stop _:
+                //    OnStop();
+                //    break;
                 case SetViewNumber setView:
                     InitializeConsensus(setView.ViewNumber);
                     break;
@@ -302,7 +311,7 @@ namespace Neo.Consensus
             shouldStop = false;
             InitializeConsensus(0);
         }
-
+/*
         private void OnSetup(IActorRef _localNode, IActorRef _taskManager, IConsensusContext _context)
         {
             this.localNode = _localNode;
@@ -320,7 +329,7 @@ namespace Neo.Consensus
             Log("Calling OnStop");
             //InitializeConsensus(0);
         }
-
+*/
         private void OnTimer(Timer timer)
         {
             if(shouldStop == true)
