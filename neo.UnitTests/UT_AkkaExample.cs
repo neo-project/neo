@@ -72,7 +72,7 @@ namespace Neo.UnitTests
           var actor = ActorOfAsTestActorRef<BlueActor>();
           actor.Tell("test");
           var answer = ExpectMsg<MessageReceived>();
-          Assert.AreEqual(2, answer.Counter);
+          Assert.AreEqual(1, answer.Counter);
       }
   }
 }

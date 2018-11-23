@@ -15,9 +15,11 @@ using System.Linq;
 
 namespace Neo.Consensus
 {
-    public sealed class ConsensusService : UntypedActor
+    public sealed class ConsensusService : UntypedActor //, IDisposable
     {
+        public bool shouldStop;
         public class Start { }
+        public class Stop { }
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
@@ -29,6 +31,14 @@ namespace Neo.Consensus
         {
             this.system = system;
             this.context = new ConsensusContext(wallet);
+            this.shouldStop = false;
+        }
+
+        public ConsensusService()
+        {
+            this.system = null;
+            this.context = new ConsensusContext(null);
+            this.shouldStop = false;
         }
 
         private bool AddTransaction(Transaction tx, bool verify)
@@ -254,6 +264,9 @@ namespace Neo.Consensus
                 case Start _:
                     OnStart();
                     break;
+                case Stop _:
+                    OnStop();
+                    break;
                 case SetViewNumber setView:
                     InitializeConsensus(setView.ViewNumber);
                     break;
@@ -274,12 +287,24 @@ namespace Neo.Consensus
 
         private void OnStart()
         {
+            Console.WriteLine("Testando OnStart!!");
             Log("OnStart");
-            InitializeConsensus(0);
+            shouldStop = false;
+            //InitializeConsensus(0);
+        }
+
+        private void OnStop()
+        {
+            shouldStop = true;
+            Console.WriteLine("Testando OnStop!!");
+            Log("Calling OnStop");
+            //InitializeConsensus(0);
         }
 
         private void OnTimer(Timer timer)
         {
+            if(shouldStop == true)
+                return;
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (timer.Height != context.BlockIndex || timer.ViewNumber != context.ViewNumber) return;
             Log($"timeout: height={timer.Height} view={timer.ViewNumber} state={context.State}");
@@ -315,6 +340,10 @@ namespace Neo.Consensus
             if (!context.TransactionHashes.Contains(transaction.Hash)) return;
             AddTransaction(transaction, true);
         }
+
+        //public void Dispose()
+        //{
+        //}
 
         protected override void PostStop()
         {
