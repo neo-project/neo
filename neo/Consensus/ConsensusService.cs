@@ -130,7 +130,7 @@ namespace Neo.Consensus
                 Console.WriteLine($"Is primary! {context.State}");
                 context.State |= ConsensusState.Primary;
                 Console.WriteLine($"After setup Is primary! {context.State}");
-                TimeSpan span = DateTime.UtcNow - block_received_time;
+                TimeSpan span = context.GetUtcNow() - block_received_time;
                 Console.WriteLine($"span {span} block_received_time {block_received_time}");
                 if (span >= Blockchain.TimePerBlock)
                     ChangeTimer(TimeSpan.Zero);
@@ -201,7 +201,7 @@ namespace Neo.Consensus
         private void OnPersistCompleted(Block block)
         {
             Log($"persist block: {block.Hash}");
-            block_received_time = DateTime.UtcNow;
+            block_received_time = context.GetUtcNow();
             InitializeConsensus(0);
         }
 
@@ -211,7 +211,7 @@ namespace Neo.Consensus
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (!context.State.HasFlag(ConsensusState.Backup)) return;
-            if (payload.Timestamp <= context.SnapshotHeader.Timestamp || payload.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
+            if (payload.Timestamp <= context.SnapshotHeader.Timestamp || payload.Timestamp > context.GetUtcNow().AddMinutes(10).ToTimestamp())
             {
                 Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
                 return;

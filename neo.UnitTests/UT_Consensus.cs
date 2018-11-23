@@ -12,7 +12,8 @@ using Neo.Consensus;
 using Neo.Cryptography.ECC;
 using Moq;
 
-namespace Neo.Consensus
+//Neo.Consensus
+namespace Neo.UnitTests
 {
 
   /*
@@ -132,13 +133,28 @@ namespace Neo.Consensus
           mockConsensusContext.Setup(mr => mr.PrimaryIndex).Returns(2);
           mockConsensusContext.Setup(mr => mr.GetPrimaryIndex(It.IsAny<byte>())).Returns(2);
           mockConsensusContext.Setup(mr => mr.State).Returns(ConsensusState.Initial);
+          mockConsensusContext.Setup(mr => mr.GetUtcNow()).Returns(new DateTime(1968, 06, 01, 0, 0, 4, DateTimeKind.Utc));
 
+
+          UInt256 val256 = UInt256.Zero;
+          UInt256 merkRootVal;
+          UInt160 val160;
+          uint timestampVal, indexVal;
+          ulong consensusDataVal;
+          Witness scriptVal;
+          Header header = new Header();
+          TestUtils.SetupHeaderWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
+          header.Size.Should().Be(109);
+          timestampVal.Should().Be(4244941696); //1968-06-01 00:00:00
+
+          Console.WriteLine($"header {header} hash {header.Hash} timstamp {timestampVal} now {mockConsensusContext.Object.GetUtcNow().ToTimestamp()}");
 
           ECPoint[] points = new ECPoint[4];
           //Validators
 
           // check basic ConsensusContext
           mockConsensusContext.Object.MyIndex.Should().Be(2);
+          mockConsensusContext.Object.GetUtcNow().ToTimestamp().Should().Be(4244941700); //1968-06-01 00:00:04
 
 
           //mockConsensusContext.Setup(m => m.CreateProduct(It.IsAny<Product>())).Returns(true);

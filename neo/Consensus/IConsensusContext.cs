@@ -62,5 +62,7 @@ namespace Neo.Consensus
         void Fill();
 
         bool VerifyRequest();
+
+        DateTime GetUtcNow();
     }
 }
