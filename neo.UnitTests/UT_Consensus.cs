@@ -9,6 +9,7 @@ using Akka.Actor;
 using System;
 using System.Threading;
 using Neo.Consensus;
+using Neo.Cryptography.ECC;
 using Moq;
 
 namespace Neo.Consensus
@@ -120,10 +121,26 @@ namespace Neo.Consensus
           // NeoSystem dependencies
           TestActorRef<TestReceiveActor> actorLocalNode = ActorOfAsTestActorRef<TestReceiveActor>();
           TestActorRef<TestReceiveActor> actorTaskManager = ActorOfAsTestActorRef<TestReceiveActor>();
-          //var mockConsensusContext = new Mock<IConsensusContext>();
-          var mockConsensusContext = new Mock<ConsensusContext>();
+          var mockConsensusContext = new Mock<IConsensusContext>();
+          //var mockConsensusContext = new Mock<ConsensusContext>();
 
           // context.Reset(): do nothing
+          //mockConsensusContext.Setup(mr => mr.Update(It.IsAny<int>(), It.IsAny<string>()))
+          mockConsensusContext.Setup(mr => mr.Reset()).Verifiable(); // void
+          mockConsensusContext.Setup(mr => mr.MyIndex).Returns(2); // MyIndex == 2
+          mockConsensusContext.Setup(mr => mr.BlockIndex).Returns(2);
+          mockConsensusContext.Setup(mr => mr.PrimaryIndex).Returns(2);
+          mockConsensusContext.Setup(mr => mr.GetPrimaryIndex(It.IsAny<byte>())).Returns(2);
+          mockConsensusContext.Setup(mr => mr.State).Returns(ConsensusState.Initial);
+
+
+          ECPoint[] points = new ECPoint[4];
+          //Validators
+
+          // check basic ConsensusContext
+          mockConsensusContext.Object.MyIndex.Should().Be(2);
+
+
           //mockConsensusContext.Setup(m => m.CreateProduct(It.IsAny<Product>())).Returns(true);
 
 

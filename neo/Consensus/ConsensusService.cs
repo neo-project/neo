@@ -117,8 +117,7 @@ namespace Neo.Consensus
             if (view_number == 0)
             {
                 Console.WriteLine($"Will reset {context}");
-                //context.Reset();
-                return;
+                context.Reset();
             }
             else
                 context.ChangeView(view_number);
@@ -128,8 +127,11 @@ namespace Neo.Consensus
             Log($"initialize: height={context.BlockIndex} view={view_number} index={context.MyIndex} role={(context.MyIndex == context.PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup)}");
             if (context.MyIndex == context.PrimaryIndex)
             {
+                Console.WriteLine($"Is primary! {context.State}");
                 context.State |= ConsensusState.Primary;
+                Console.WriteLine($"After setup Is primary! {context.State}");
                 TimeSpan span = DateTime.UtcNow - block_received_time;
+                Console.WriteLine($"span {span} block_received_time {block_received_time}");
                 if (span >= Blockchain.TimePerBlock)
                     ChangeTimer(TimeSpan.Zero);
                 else
