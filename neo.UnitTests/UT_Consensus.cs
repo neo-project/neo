@@ -128,11 +128,11 @@ namespace Neo.UnitTests
           // context.Reset(): do nothing
           //mockConsensusContext.Setup(mr => mr.Update(It.IsAny<int>(), It.IsAny<string>()))
           mockConsensusContext.Setup(mr => mr.Reset()).Verifiable(); // void
-          mockConsensusContext.Setup(mr => mr.MyIndex).Returns(2); // MyIndex == 2
-          mockConsensusContext.Setup(mr => mr.BlockIndex).Returns(2);
-          mockConsensusContext.Setup(mr => mr.PrimaryIndex).Returns(2);
+          mockConsensusContext.SetupGet(mr => mr.MyIndex).Returns(2); // MyIndex == 2
+          mockConsensusContext.SetupGet(mr => mr.BlockIndex).Returns(2);
+          mockConsensusContext.SetupGet(mr => mr.PrimaryIndex).Returns(2);
           mockConsensusContext.Setup(mr => mr.GetPrimaryIndex(It.IsAny<byte>())).Returns(2);
-          mockConsensusContext.Setup(mr => mr.State).Returns(ConsensusState.Initial);
+          mockConsensusContext.SetupGet(mr => mr.State).Returns(ConsensusState.Initial);
           mockConsensusContext.Setup(mr => mr.GetUtcNow()).Returns(new DateTime(1968, 06, 01, 0, 0, 4, DateTimeKind.Utc));
 
 
