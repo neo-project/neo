@@ -13,7 +13,7 @@ using System.Linq;
 
 namespace Neo.Consensus
 {
-    internal class ConsensusContext : IConsensusContext
+    public class ConsensusContext : IConsensusContext
     {
         public const uint Version = 0;
         private ConsensusState _State;
@@ -109,6 +109,11 @@ namespace Neo.Consensus
         public ConsensusContext(Wallet wallet)
         {
             this.wallet = wallet;
+        }
+
+        public ConsensusContext()
+        {
+            this.wallet = null;
         }
 
         public uint SnapshotHeight => Snapshot.Height;

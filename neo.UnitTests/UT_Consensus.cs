@@ -11,7 +11,7 @@ using System.Threading;
 using Neo.Consensus;
 using Moq;
 
-namespace Neo.UnitTests
+namespace Neo.Consensus
 {
 
   /*
@@ -120,7 +120,12 @@ namespace Neo.UnitTests
           // NeoSystem dependencies
           TestActorRef<TestReceiveActor> actorLocalNode = ActorOfAsTestActorRef<TestReceiveActor>();
           TestActorRef<TestReceiveActor> actorTaskManager = ActorOfAsTestActorRef<TestReceiveActor>();
-          var mockConsensusContext = new Mock<IConsensusContext>();
+          //var mockConsensusContext = new Mock<IConsensusContext>();
+          var mockConsensusContext = new Mock<ConsensusContext>();
+
+          // context.Reset(): do nothing
+          //mockConsensusContext.Setup(m => m.CreateProduct(It.IsAny<Product>())).Returns(true);
+
 
           //TestActorRef<ConsensusService> actor2 = ActorOfAsTestActorRef<ConsensusService>();
           TestActorRef<ConsensusService> actor = ActorOfAsTestActorRef<ConsensusService>(Akka.Actor.Props.Create(() => new ConsensusService(actorLocalNode, actorTaskManager, mockConsensusContext.Object)));
