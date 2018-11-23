@@ -131,7 +131,7 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.Primary;
                 Console.WriteLine($"After setup Is primary! {context.State}");
                 TimeSpan span = context.GetUtcNow() - block_received_time;
-                Console.WriteLine($"span {span} block_received_time {block_received_time}");
+                Console.WriteLine($"span {span} block_received_time {block_received_time} timeperblock {Blockchain.TimePerBlock}");
                 if (span >= Blockchain.TimePerBlock)
                     ChangeTimer(TimeSpan.Zero);
                 else
@@ -142,6 +142,7 @@ namespace Neo.Consensus
                 context.State = ConsensusState.Backup;
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (view_number + 1)));
             }
+            Console.WriteLine("Finished InitializeConsensus! :)");
         }
 
         private void Log(string message, LogLevel level = LogLevel.Info)
