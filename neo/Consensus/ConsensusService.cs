@@ -309,9 +309,8 @@ namespace Neo.Consensus
             this.taskManager = _taskManager;
             this.context = _context;
             Console.WriteLine("Testando OnSetup!!");
-            Log("OnStart");
-            shouldStop = false;
-            InitializeConsensus(0);
+            //shouldStop = false;
+            //InitializeConsensus(0);
         }
 
         private void OnStop()

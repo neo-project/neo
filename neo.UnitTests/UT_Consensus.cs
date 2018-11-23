@@ -9,7 +9,7 @@ using Akka.Actor;
 using System;
 using System.Threading;
 using Neo.Consensus;
-
+using Moq;
 
 namespace Neo.UnitTests
 {
@@ -60,6 +60,51 @@ namespace Neo.UnitTests
   }
   */
 
+  public class TestMessageReceived
+  {
+      public int Counter { get; private set; }
+
+      public TestMessageReceived(int counter)
+      {
+          Counter = counter;
+      }
+  }
+
+  public class TestReceiveActor : ReceiveActor
+  {
+      private const string ActorName = "TestReceiveActor";
+      private int _counter = 0;
+
+      protected override void PreStart()
+      {
+          base.PreStart();
+          Become(HandleString);
+      }
+
+      private void HandleString()
+      {
+          Receive<string>(s =>
+          {
+              //PrintMessage(s);
+              _counter++;
+              Sender.Tell(new TestMessageReceived(_counter));
+          });
+      }
+
+      private void PrintMessage(string message)
+      {
+          Console.WriteLine("TestMessageReceived PrintMessage");
+          /*
+          Console.ForegroundColor = MessageColor;
+          Console.WriteLine(
+              "{0} on thread #{1}: {2}",
+              ActorName,
+              Thread.CurrentThread.ManagedThreadId,
+              message);
+          */
+      }
+  }
+
   [TestClass]
   public class ConsensusTests : TestKit
   {
@@ -75,7 +120,21 @@ namespace Neo.UnitTests
           //IActorRef actor = Sys.ActorOf<ConsensusService>();//ActorOfAsTestActorRef<ConsensusService>();
           TestActorRef<ConsensusService> actor = ActorOfAsTestActorRef<ConsensusService>();
           //ConsensusService cs = actor.UnderlyingActor;//UnderlyingActor;
-              //actor.Tell("test");
+
+          TestActorRef<TestReceiveActor> actorLocalNode = ActorOfAsTestActorRef<TestReceiveActor>();
+          TestActorRef<TestReceiveActor> actorTaskManager = ActorOfAsTestActorRef<TestReceiveActor>();
+
+          var mockConsensusContext = new Mock<IConsensusContext>();
+
+          Console.WriteLine("vai testar setup!");
+          actor.Tell(new ConsensusService.Setup {
+            _localNode = actorLocalNode,
+            _taskManager = actorTaskManager,
+            _context = mockConsensusContext.Object
+            });
+
+          Thread.Sleep(500);
+
           actor.Tell(new ConsensusService.Start());
 
           //ActorSystem.ActorOf(ConsensusService.Props(this, wallet));
