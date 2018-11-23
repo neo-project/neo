@@ -2,9 +2,26 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
+using Akka.TestKit;
+using Akka.TestKit.Xunit2;
+using Akka;
+using Akka.Actor;
+using System;
+using System.Threading;
+
 
 namespace Neo.UnitTests
 {
+
+  public class MessageReceived
+  {
+      public int Counter { get; private set; }
+
+      public MessageReceived(int counter)
+      {
+          Counter = counter;
+      }
+  }
 
   public class BlueActor : ReceiveActor
   {
@@ -55,7 +72,7 @@ namespace Neo.UnitTests
           var actor = ActorOfAsTestActorRef<BlueActor>();
           actor.Tell("test");
           var answer = ExpectMsg<MessageReceived>();
-          Assert.AreEqual(1, answer.Counter);
+          Assert.AreEqual(2, answer.Counter);
       }
   }
 }

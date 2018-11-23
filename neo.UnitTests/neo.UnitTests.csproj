@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <AssemblyName>Neo.UnitTests</AssemblyName>    
+    <AssemblyName>Neo.UnitTests</AssemblyName>
     <RootNamespace>Neo.UnitTests</RootNamespace>
   </PropertyGroup>
 
@@ -12,6 +12,9 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.2.0" />
     <PackageReference Include="MSTest.TestFramework" Version="1.2.0" />
+    <PackageReference Include="Moq" Version="4.7.63" />
+    <PackageReference Include="Akka.TestKit" Version="1.3.10" />
+    <PackageReference Include="Akka.TestKit.Xunit2" Version="1.3.10" />
   </ItemGroup>
 
   <ItemGroup>
