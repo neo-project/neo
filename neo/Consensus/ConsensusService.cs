@@ -20,11 +20,11 @@ namespace Neo.Consensus
         public bool shouldStop;
         public class Start { }
         public class Stop { }
-        public class Setup { public IActorRef _localNode; public IActorRef _taskManager; public ConsensusContext _context; }
+        public class Setup { public IActorRef _localNode; public IActorRef _taskManager; public IConsensusContext _context; }
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
-        private ConsensusContext context;
+        private IConsensusContext context;
         //private readonly NeoSystem system;
         private IActorRef localNode;
         private IActorRef taskManager;
@@ -48,9 +48,7 @@ namespace Neo.Consensus
 
         private bool AddTransaction(Transaction tx, bool verify)
         {
-            if (context.Snapshot.ContainsTransaction(tx.Hash) ||
-                (verify && !tx.Verify(context.Snapshot, context.Transactions.Values)) ||
-                !Plugin.CheckPolicy(tx))
+            if (context.RejectTx(tx, verify))
             {
                 Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
                 RequestChangeView();
@@ -157,9 +155,9 @@ namespace Neo.Consensus
                 return;
             if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
             {
-                if (context.Snapshot.Height + 1 < payload.BlockIndex)
+                if (context.SnapshotHeight + 1 < payload.BlockIndex)
                 {
-                    Log($"chain sync: expected={payload.BlockIndex} current: {context.Snapshot.Height} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
+                    Log($"chain sync: expected={payload.BlockIndex} current: {context.SnapshotHeight} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
                 }
                 return;
             }
@@ -202,7 +200,7 @@ namespace Neo.Consensus
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (!context.State.HasFlag(ConsensusState.Backup)) return;
-            if (payload.Timestamp <= context.Snapshot.GetHeader(context.PrevHash).Timestamp || payload.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
+            if (payload.Timestamp <= context.SnapshotHeader.Timestamp || payload.Timestamp > DateTime.UtcNow.AddMinutes(10).ToTimestamp())
             {
                 Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
                 return;
@@ -305,7 +303,7 @@ namespace Neo.Consensus
             InitializeConsensus(0);
         }
 
-        private void OnSetup(IActorRef _localNode, IActorRef _taskManager, ConsensusContext _context)
+        private void OnSetup(IActorRef _localNode, IActorRef _taskManager, IConsensusContext _context)
         {
             this.localNode = _localNode;
             this.taskManager = _taskManager;
