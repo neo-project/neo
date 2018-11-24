@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Neo.IO;
@@ -447,6 +448,33 @@ namespace Neo.Ledger
             foreach (var entry in replica._db)
             {
                 _db[entry.Key.ToArray()] = entry.Value.Clone();
+            }
+        }
+        
+        /// <inheritdoc />
+        public override void Deserialize(BinaryReader reader)
+        {
+            base.Deserialize(reader);
+            _db.Clear();
+            var size = reader.ReadVarInt();
+            for (var i = 0ul; i < size; i++)
+            {
+                var key = reader.ReadVarBytes();
+                var value = MerklePatriciaNode.ExtensionNode();
+                value.Deserialize(reader);
+                _db[key] = value;
+            }
+        }
+
+        /// <inheritdoc />
+        public override void Serialize(BinaryWriter writer)
+        {
+            base.Serialize(writer);
+            writer.WriteVarInt(_db.Count);
+            foreach (var it in _db)
+            {
+                writer.WriteVarBytes(it.Key);
+                writer.Write(it.Value);
             }
         }
     }
