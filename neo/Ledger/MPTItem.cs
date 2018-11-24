@@ -6,22 +6,29 @@ namespace Neo.Ledger
     // Modified Merkle Patricia
     public class MPTItem : StateBase, ICloneable<MPTItem>
     {
-        public byte NodeType;  // 00: branch  01: leaf
-        public string path;
-        public string value;
-        public UInt256[] hashes;
+        public enum MPTNodeType : byte
+        {
+            Branch,
+            Leaf
+        }
+
+        public MPTNodeType NodeType;
+        public string Path;
+        public string Value;
+        public UInt256[] Hashes;
         public UInt256 KeyHash;
 
-        public override int Size => base.Size + 1 + path.Length + value.Length + hashes.Length + (KeyHash==null?0:KeyHash.Size);
+        public override int Size => base.Size + 1 + Path.Length + Value.Length + Hashes.Length +
+                                    (KeyHash == null ? 0 : KeyHash.Size);
 
         MPTItem ICloneable<MPTItem>.Clone()
         {
             return new MPTItem
             {
                 NodeType = NodeType,
-                path = path,
-                value = value,
-                hashes = hashes,
+                Path = Path,
+                Value = Value,
+                Hashes = Hashes,
                 KeyHash = KeyHash
             };
         }
@@ -29,61 +36,64 @@ namespace Neo.Ledger
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            NodeType = reader.ReadByte();
-            if(NodeType == 0x00) // 00: branch
+            NodeType = (MPTNodeType) reader.ReadByte();
+            if (NodeType == 0x00) // 00: branch
             {
-                hashes = new UInt256[16];
-                for(var i=0; i<16; i++)
+                Hashes = new UInt256[16];
+                for (var i = 0; i < 16; i++)
                 {
                     byte[] bytes = reader.ReadVarBytes();
-                    if(bytes.Length == 0)
-                        hashes[i] = null;
+                    if (bytes.Length == 0)
+                        Hashes[i] = null;
                     else
-                        hashes[i] = new UInt256(bytes);
+                        Hashes[i] = new UInt256(bytes);
                 }
+
                 KeyHash = null;
-                path = "";
+                Path = "";
             }
             else // 01: leaf
             {
-                hashes = new UInt256[0];
-                path = reader.ReadVarString();
+                Hashes = new UInt256[0];
+                Path = reader.ReadVarString();
                 // hash of the original key (to avoid ambiguities
                 KeyHash = reader.ReadSerializable<UInt256>();
             }
-            value = reader.ReadVarString();
+
+            Value = reader.ReadVarString();
         }
 
         void ICloneable<MPTItem>.FromReplica(MPTItem replica)
         {
             NodeType = replica.NodeType;
-            path     = replica.path;
-            value    = replica.value;
-            hashes   = replica.hashes;
-            KeyHash  = replica.KeyHash;
+            Path = replica.Path;
+            Value = replica.Value;
+            Hashes = replica.Hashes;
+            KeyHash = replica.KeyHash;
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(NodeType);
-            if(NodeType == 0x00) // 00: branch
+            writer.Write((byte) NodeType);
+            if (NodeType == 0x00) // 00: branch
             {
-                for(var i=0; i<16; i++)
+                for (var i = 0; i < 16; i++)
                 {
-                    if(hashes[i] == null)
+                    if (Hashes[i] == null)
                         writer.Write(0x00);
                     else
-                        writer.Write(hashes[i]);
+                        writer.Write(Hashes[i]);
                 }
             }
             else // 01: leaf
             {
-                writer.WriteVarString(path);
+                writer.WriteVarString(Path);
                 // hash of the original key (to avoid ambiguities
                 writer.Write(KeyHash);
             }
-            writer.WriteVarString(value);
+
+            writer.WriteVarString(Value);
         }
     }
 }
