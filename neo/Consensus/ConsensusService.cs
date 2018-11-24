@@ -15,9 +15,8 @@ using System.Linq;
 
 namespace Neo.Consensus
 {
-    public sealed class ConsensusService : UntypedActor //, IDisposable
+    public sealed class ConsensusService : UntypedActor
     {
-        public bool shouldStop;
         public class Start { }
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
@@ -33,7 +32,6 @@ namespace Neo.Consensus
             this.context = new ConsensusContext(wallet);
             this.localNode = _LocalNode;
             this.taskManager = _TaskManager;
-            this.shouldStop = false;
         }
 
         public ConsensusService(IActorRef _LocalNode, IActorRef _TaskManager, IConsensusContext context)
@@ -42,7 +40,6 @@ namespace Neo.Consensus
             this.localNode = _LocalNode;
             this.taskManager = _TaskManager;
             this.context = context;
-            this.shouldStop = false;
         }
 
         private bool AddTransaction(Transaction tx, bool verify)
@@ -294,17 +291,12 @@ namespace Neo.Consensus
 
         private void OnStart()
         {
-            Console.WriteLine("Testando OnStart!!");
             Log("OnStart");
-            shouldStop = false;
             InitializeConsensus(0);
         }
 
         private void OnTimer(Timer timer)
         {
-            Console.WriteLine($"Finally, OnTimer expired! timer.Height {timer.Height} timer.ViewNumber {timer.ViewNumber}");
-            if(shouldStop == true)
-                return;
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (timer.Height != context.BlockIndex || timer.ViewNumber != context.ViewNumber) return;
             Log($"timeout: height={timer.Height} view={timer.ViewNumber} state={context.State}");
@@ -318,7 +310,6 @@ namespace Neo.Consensus
                     context.SignHeader();
                 }
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
-                Console.WriteLine($"Will verify if length of TransactionHashes > 1 : {context.TransactionHashes.Length}");
                 if (context.TransactionHashes.Length > 1)
                 {
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
@@ -341,10 +332,6 @@ namespace Neo.Consensus
             if (!context.TransactionHashes.Contains(transaction.Hash)) return;
             AddTransaction(transaction, true);
         }
-
-        //public void Dispose()
-        //{
-        //}
 
         protected override void PostStop()
         {
