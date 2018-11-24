@@ -1,7 +1,9 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.Network.P2P;
 using Akka.TestKit;
 using Akka.TestKit.Xunit2;
 using Akka;
@@ -126,21 +128,18 @@ namespace Neo.UnitTests
           //var mockConsensusContext = new Mock<ConsensusContext>();
 
           // context.Reset(): do nothing
-          //mockConsensusContext.Setup(mr => mr.Update(It.IsAny<int>(), It.IsAny<string>()))
-          mockConsensusContext.Setup(mr => mr.Reset()).Verifiable(); // void
+          //mockConsensusContext.Setup(mr => mr.Reset()).Verifiable(); // void
           mockConsensusContext.SetupGet(mr => mr.MyIndex).Returns(2); // MyIndex == 2
           mockConsensusContext.SetupGet(mr => mr.BlockIndex).Returns(2);
           mockConsensusContext.SetupGet(mr => mr.PrimaryIndex).Returns(2);
           mockConsensusContext.SetupGet(mr => mr.ViewNumber).Returns(0);
+          mockConsensusContext.SetupProperty(mr => mr.Nonce);
+          mockConsensusContext.SetupProperty(mr => mr.NextConsensus);
+          mockConsensusContext.Object.NextConsensus = UInt160.Zero;
           mockConsensusContext.Setup(mr => mr.GetPrimaryIndex(It.IsAny<byte>())).Returns(2);
           mockConsensusContext.SetupProperty(mr => mr.State);  // allows get and set to update mock state on Initialize method
           mockConsensusContext.Object.State = ConsensusState.Initial;
-          //mockConsensusContext.SetupGet(mr => mr.State).Returns(ConsensusState.Initial);   // Reset()
-          //mockConsensusContext.SetupSet(mr => mr.State = It.IsAny<ConsensusState>())
-          //                         .Callback((ConsensusState newState) =>
-          //                                      mockConsensusContext.SetupGet(mr2 => mr2.State).Returns(newState));
           mockConsensusContext.SetupProperty(mr => mr.block_received_time);
-          //mockConsensusContext.SetupGet(mr => mr.block_received_time).Returns(new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc)); // Last block persist
           mockConsensusContext.Object.block_received_time = new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc);
 
 
@@ -159,7 +158,57 @@ namespace Neo.UnitTests
 
           Console.WriteLine($"header {header} hash {header.Hash} timstamp {timestampVal} now {mockConsensusContext.Object.GetUtcNow().ToTimestamp()}");
 
-          ECPoint[] points = new ECPoint[4];
+          MinerTransaction minerTx = new MinerTransaction();
+          minerTx.Attributes = new TransactionAttribute[0];
+          minerTx.Inputs = new CoinReference[0];
+          minerTx.Outputs = new TransactionOutput[0];
+          minerTx.Witnesses = new Witness[0];
+          minerTx.Nonce = 42;
+
+          PrepareRequest prep = new PrepareRequest
+          {
+              Nonce = mockConsensusContext.Object.Nonce,
+              NextConsensus = mockConsensusContext.Object.NextConsensus,
+              TransactionHashes = new UInt256[0],
+              MinerTransaction = minerTx, //(MinerTransaction)Transactions[TransactionHashes[0]],
+              Signature = new byte[64]//Signatures[MyIndex]
+          };
+
+          ConsensusMessage mprep = prep;
+          byte[] prepData = mprep.ToArray();
+
+          ConsensusPayload prepPayload = new ConsensusPayload
+          {
+              Version = 0,
+              PrevHash = mockConsensusContext.Object.PrevHash,
+              BlockIndex = mockConsensusContext.Object.BlockIndex,
+              ValidatorIndex = (ushort)mockConsensusContext.Object.MyIndex,
+              Timestamp = mockConsensusContext.Object.Timestamp,
+              Data = prepData
+          };
+
+          mockConsensusContext.Setup(mr => mr.MakePrepareRequest()).Returns(prepPayload);
+
+
+
+          /*
+
+          public ConsensusPayload MakePrepareRequest()
+          {
+              return MakeSignedPayload(new PrepareRequest
+              {
+                  Nonce = Nonce,
+                  NextConsensus = NextConsensus,
+                  TransactionHashes = TransactionHashes,
+                  MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
+                  Signature = Signatures[MyIndex]
+              });
+          }
+
+          */
+
+
+          //ECPoint[] points = new ECPoint[4];
           //Validators
 
           // check basic ConsensusContext
@@ -194,6 +243,9 @@ namespace Neo.UnitTests
           //  actor.Tell(new ConsensusService.Stop());
           Thread.Sleep(900);
           Console.WriteLine("OnTimer should expire!");
+
+          //Neo.Network.P2P.LocalNode.SendDirectly
+          var prepMsg = ExpectMsg<LocalNode.SendDirectly>();
 
           Thread.Sleep(1000);
           //actor.Tell(new ConsensusService.Stop());
