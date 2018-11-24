@@ -107,7 +107,7 @@ namespace Neo.Ledger
         /// <inheritdoc />
         public override string ToString()
         {
-            var resp = new StringBuilder("[");
+            var resp = new StringBuilder(IsBranch ? "{" : "[");
             var virgula = false;
             for (var i = 0; i < _hashes.Length; i++)
             {
@@ -118,7 +118,7 @@ namespace Neo.Ledger
                 virgula = true;
             }
 
-            return resp.Append("]").ToString();
+            return resp.Append(IsBranch ? "}" : "]").ToString();
         }
 
         /// <summary>

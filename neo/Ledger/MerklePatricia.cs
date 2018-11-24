@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -10,7 +11,7 @@ namespace Neo.Ledger
     /// Modified Merkel Patricia Tree.
     /// Note: It is not a thread safe implementation.
     /// </summary>
-    public class MerklePatricia : StateBase, ICloneable<MerklePatricia>
+    public class MerklePatricia : StateBase, ICloneable<MerklePatricia>, IEquatable<MerklePatricia>
     {
         private byte[] _rootHash;
         private readonly Dictionary<byte[], MerklePatriciaNode> _db = new Dictionary<byte[], MerklePatriciaNode>();
@@ -90,6 +91,7 @@ namespace Neo.Ledger
                                 node.Value);
                             node = innerNode;
                             innerNode = _db[node.Next];
+                            _db.Remove(node.Next);
                             node.Next = Set(innerNode, path.Skip(pos + 1).ToArray(), key, value);
                             break;
                         }
@@ -285,7 +287,7 @@ namespace Neo.Ledger
             var node = _db[nodeHash];
             if (node.IsLeaf)
             {
-                if (node.Path == path)
+                if (node.Path.SequenceEqual(path))
                 {
                     _db.Remove(nodeHash);
                     return null;
@@ -301,6 +303,13 @@ namespace Neo.Ledger
                     path.Take(node.Path.Length).ToArray().SequenceEqual(node.Path))
                 {
                     node.Next = Remove(node.Next, path.Skip(node.Path.Length).ToArray());
+                    var nodeNext = _db[node.Next];
+                    if (nodeNext.IsLeaf || nodeNext.IsExtension)
+                    {
+                        _db.Remove(node.Next);
+                        nodeNext.Path = node.Path.Concat(nodeNext.Path).ToArray();
+                        node = nodeNext;
+                    }
                 }
                 else
                 {
@@ -319,7 +328,6 @@ namespace Neo.Ledger
                 if (node[path[0]] != null)
                 {
                     node[path[0]] = Remove(node[path[0]], path.Skip(1).ToArray());
-
                     var contar = 0;
                     var indexInnerNode = 0;
                     for (var i = 0; i < node.Length - 2; i++)
@@ -349,7 +357,7 @@ namespace Neo.Ledger
                             {
                                 _db.Remove(innerNodeHash);
                                 node = MerklePatriciaNode.LeafNode();
-                                node.Path = innerNode.Path.Skip(1).ToArray();
+                                node.Path = new[] {(byte) indexInnerNode}.Concat(innerNode.Path).ToArray();
                                 node.Key = innerNode.Key;
                                 node.Value = innerNode.Value;
                             }
@@ -362,6 +370,7 @@ namespace Neo.Ledger
                 }
             }
 
+            _db.Remove(nodeHash);
             nodeHash = node.Hash();
             _db[nodeHash] = node;
             return nodeHash;
@@ -450,7 +459,7 @@ namespace Neo.Ledger
                 _db[entry.Key.ToArray()] = entry.Value.Clone();
             }
         }
-        
+
         /// <inheritdoc />
         public override void Deserialize(BinaryReader reader)
         {
@@ -466,6 +475,8 @@ namespace Neo.Ledger
             }
         }
 
+        public int Count() => _db.Count(x => x.Value.IsLeaf || (x.Value.IsBranch && x.Value.Value != null));
+
         /// <inheritdoc />
         public override void Serialize(BinaryWriter writer)
         {
@@ -477,5 +488,55 @@ namespace Neo.Ledger
                 writer.Write(it.Value);
             }
         }
+
+        /// <inheritdoc />
+        public bool Equals(MerklePatricia other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            if (!_rootHash.SequenceEqual(other._rootHash) || _db.Count != other._db.Count)
+            {
+                return false;
+            }
+
+            System.Console.WriteLine("db");
+            foreach (var it in _db)
+            {
+                System.Console.WriteLine($"{it.Key.ByteToHexString(false, false)}");
+            }
+            System.Console.WriteLine("other.db");
+            foreach (var it in other._db)
+            {
+                System.Console.WriteLine($"{it.Key.ByteToHexString(false, false)}");
+            }
+            foreach (var it in _db)
+            {
+                var thisV = _db[it.Key];
+                var otherV = other._db[it.Key];
+                if (otherV == null && thisV == null)
+                {
+                    continue;
+                }
+
+                if ((otherV == null && thisV != null) || (otherV != null && thisV == null)
+                                                      || !otherV.Equals(it.Value.Value))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            return obj.GetType() == GetType() && Equals((MerklePatricia) obj);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode() => _rootHash != null ? _rootHash.GetHashCode() : 0;
     }
 }

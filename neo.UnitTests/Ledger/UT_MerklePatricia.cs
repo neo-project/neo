@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FluentAssertions;
@@ -33,7 +34,7 @@ namespace Neo.UnitTests.Ledger
             mp[new byte[] {0x0, 0x0, 0x1}] = new byte[] {0x0, 0x0, 0x2};
             Assert.IsTrue(new byte[] {0x0, 0x0, 0x2}.SequenceEqual(mp[new byte[] {0x0, 0x0, 0x1}]));
         }
-        
+
         [TestMethod]
         public void ColideKeys()
         {
@@ -61,6 +62,29 @@ namespace Neo.UnitTests.Ledger
             mp["orfã"] = "menina";
             Assert.AreEqual("menina", mp["orfã"]);
         }
-        
+
+        [TestMethod]
+        public void StepByStep()
+        {
+            var mp = new MerklePatricia();
+            Assert.AreEqual(0, mp.Count());
+            var a0001 = new byte[] {0x0, 0x01};
+            mp[a0001] = a0001;
+            Assert.AreEqual(1, mp.Count());
+            Assert.AreEqual(a0001, mp[a0001]);
+
+            var a0101 = new byte[] {0x01, 0x01};
+            mp[a0101] = a0101;
+            Assert.AreEqual(2, mp.Count());
+            Assert.AreEqual(a0001, mp[a0001]);
+            Assert.AreEqual(a0101, mp[a0101]);
+
+            Assert.IsTrue(mp.Remove(a0101));
+            Assert.IsFalse(mp.ContainsKey(a0101));
+            Assert.AreEqual(a0001, mp[a0001]);
+
+            // TODO FIXME Change the dictionary of byte[] to UIntBase cause byte[] has a problem on the hashcode
+            Assert.AreEqual(new MerklePatricia {[a0001] = a0001}, mp);
+        }
     }
 }
