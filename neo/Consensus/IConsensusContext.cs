@@ -35,14 +35,6 @@ namespace Neo.Consensus
 
         int M {get;}
 
-        void LocalNodeSendDirectly(ConsensusPayload _Inventory);
-
-        void LocalNodeRelay(Block _Inventory);
-
-        void LocalNodeTellMessage(Message message);
-
-        void RestartTasks(UInt256[] hashes);
-
         uint SnapshotHeight {get;}
 
         Header SnapshotHeader {get;}

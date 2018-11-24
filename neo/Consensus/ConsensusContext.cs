@@ -17,34 +17,6 @@ namespace Neo.Consensus
 {
     internal class ConsensusContext : IConsensusContext
     {
-        private IActorRef localNode;
-        private IActorRef taskManager;
-
-        public void LocalNodeSendDirectly(ConsensusPayload _Inventory)
-        {
-            Console.WriteLine($"Will send directly to localNode {localNode}");
-            localNode.Tell(new LocalNode.SendDirectly { Inventory = _Inventory });
-        }
-
-        public void LocalNodeRelay(Block _Inventory)
-        {
-            localNode.Tell(new LocalNode.Relay { Inventory = _Inventory });
-        }
-
-        public void LocalNodeTellMessage(Message message)
-        {
-            localNode.Tell(message);
-        }
-
-        public void RestartTasks(UInt256[] hashes)
-        {
-            taskManager.Tell(new TaskManager.RestartTasks
-            {
-                Payload = InvPayload.Create(InventoryType.TX, hashes)
-            });
-        }
-
-
         public const uint Version = 0;
         private DateTime _block_received_time;
         public DateTime block_received_time
@@ -143,11 +115,9 @@ namespace Neo.Consensus
 
         public int M => Validators.Length - (Validators.Length - 1) / 3;
 
-        public ConsensusContext(IActorRef localNode, IActorRef taskManager, Wallet wallet)
+        public ConsensusContext(Wallet wallet)
         {
             this.wallet = wallet;
-            this.localNode = localNode;
-            this.taskManager = taskManager;
         }
 
         public uint SnapshotHeight => Snapshot.Height;

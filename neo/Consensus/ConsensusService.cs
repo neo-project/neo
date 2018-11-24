@@ -19,36 +19,32 @@ namespace Neo.Consensus
     {
         public bool shouldStop;
         public class Start { }
-        public class Hello { }
-        //public class Stop { }
-        //public class Setup { public IActorRef _localNode; public IActorRef _taskManager; public IConsensusContext _context; }
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
         private IConsensusContext context;
         //private readonly NeoSystem system;
+        private IActorRef localNode;
+        private IActorRef taskManager;
 
         public ConsensusService(IActorRef _LocalNode, IActorRef _TaskManager, Wallet wallet)
         {
             //this.system = system;
-            this.context = new ConsensusContext(_LocalNode, _TaskManager, wallet);
+            this.context = new ConsensusContext(wallet);
+            this.localNode = _LocalNode;
+            this.taskManager = _TaskManager;
             this.shouldStop = false;
         }
 
-        public ConsensusService(IConsensusContext context)
+        public ConsensusService(IActorRef _LocalNode, IActorRef _TaskManager, IConsensusContext context)
         {
             //this.system = system;
+            this.localNode = _LocalNode;
+            this.taskManager = _TaskManager;
             this.context = context;
             this.shouldStop = false;
         }
-/*
-        public ConsensusService()
-        {
-            //this.system = null;
-            this.context = new ConsensusContext(null);
-            this.shouldStop = false;
-        }
-*/
+
         private bool AddTransaction(Transaction tx, bool verify)
         {
             if (context.RejectTx(tx, verify))
@@ -65,8 +61,7 @@ namespace Neo.Consensus
                     Log($"send prepare response");
                     context.State |= ConsensusState.SignatureSent;
                     context.SignHeader();
-                    context.LocalNodeSendDirectly(context.MakePrepareResponse(context.Signatures[context.MyIndex]));
-                    //localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.Signatures[context.MyIndex]) });
+                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.Signatures[context.MyIndex]) });
                     CheckSignatures();
                 }
                 else
@@ -103,8 +98,7 @@ namespace Neo.Consensus
             {
                 Block block = context.CreateBlock();
                 Log($"relay block: {block.Hash}");
-                context.LocalNodeRelay(block);
-                //localNode.Tell(new LocalNode.Relay { Inventory = block });
+                localNode.Tell(new LocalNode.Relay { Inventory = block });
                 context.State |= ConsensusState.BlockSent;
             }
         }
@@ -250,11 +244,10 @@ namespace Neo.Consensus
             if (context.Transactions.Count < context.TransactionHashes.Length)
             {
                 UInt256[] hashes = context.TransactionHashes.Where(i => !context.Transactions.ContainsKey(i)).ToArray();
-                context.RestartTasks(hashes);
-                //taskManager.Tell(new TaskManager.RestartTasks
-                //{
-                //    Payload = InvPayload.Create(InventoryType.TX, hashes)
-                //});
+                taskManager.Tell(new TaskManager.RestartTasks
+                {
+                    Payload = InvPayload.Create(InventoryType.TX, hashes)
+                });
             }
         }
 
@@ -281,12 +274,6 @@ namespace Neo.Consensus
                 case Start _:
                     OnStart();
                     break;
-                //case Setup setup:
-                //    OnSetup(setup._localNode, setup._taskManager, setup._context);
-                //    break;
-                //case Stop _:
-                //    OnStop();
-                //    break;
                 case SetViewNumber setView:
                     InitializeConsensus(setView.ViewNumber);
                     break;
@@ -312,25 +299,7 @@ namespace Neo.Consensus
             shouldStop = false;
             InitializeConsensus(0);
         }
-/*
-        private void OnSetup(IActorRef _localNode, IActorRef _taskManager, IConsensusContext _context)
-        {
-            this.localNode = _localNode;
-            this.taskManager = _taskManager;
-            this.context = _context;
-            Console.WriteLine("Testando OnSetup!!");
-            //shouldStop = false;
-            //InitializeConsensus(0);
-        }
 
-        private void OnStop()
-        {
-            shouldStop = true;
-            Console.WriteLine("Testando OnStop!!");
-            Log("Calling OnStop");
-            //InitializeConsensus(0);
-        }
-*/
         private void OnTimer(Timer timer)
         {
             Console.WriteLine($"Finally, OnTimer expired! timer.Height {timer.Height} timer.ViewNumber {timer.ViewNumber}");
@@ -348,14 +317,12 @@ namespace Neo.Consensus
                     context.Fill();
                     context.SignHeader();
                 }
-                //Console.WriteLine($"Will send to localNode {localNode}");
-                context.LocalNodeSendDirectly(context.MakePrepareRequest());
-                //localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
                 Console.WriteLine($"Will verify if length of TransactionHashes > 1 : {context.TransactionHashes.Length}");
                 if (context.TransactionHashes.Length > 1)
                 {
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
-                        context.LocalNodeTellMessage(Message.Create("inv", payload));//localNode.Tell(Message.Create("inv", payload));
+                        localNode.Tell(Message.Create("inv", payload));
                 }
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer.ViewNumber + 1)));
             }
@@ -385,12 +352,7 @@ namespace Neo.Consensus
             context.Dispose();
             base.PostStop();
         }
-/*
-        public static Props Props(NeoSystem system, Wallet wallet)
-        {
-            return Akka.Actor.Props.Create(() => new ConsensusService(system, wallet)).WithMailbox("consensus-service-mailbox");
-        }
-*/
+
         public static Props Props(IActorRef localNode, IActorRef taskManager, Wallet wallet)
         {
             return Akka.Actor.Props.Create(() => new ConsensusService(localNode, taskManager, wallet)).WithMailbox("consensus-service-mailbox");
@@ -402,8 +364,7 @@ namespace Neo.Consensus
             context.ExpectedView[context.MyIndex]++;
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)));
-            context.LocalNodeSendDirectly(context.MakeChangeView());
-            //localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
+            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
             CheckExpectedView(context.ExpectedView[context.MyIndex]);
         }
     }
