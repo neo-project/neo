@@ -105,9 +105,10 @@ namespace Neo.UnitTests
       public TestReceiveActor() {
           Receive<LocalNode.SendDirectly>(greet =>
           {
+              Console.WriteLine($"Received one message: {greet}");
               // when message arrives, we publish it on the event stream
               // and send response back to sender
-              Context.System.EventStream.Publish(greet + " sends greetings");
+              //Context.System.EventStream.Publish(greet + " sends greetings");
               //Sender.Tell(new GreetBack(Self.Path.Name));
           });
       }
@@ -258,8 +259,11 @@ namespace Neo.UnitTests
 
 
           mockConsensusContext.Setup(mr => mr.LocalNodeSendDirectly(It.IsAny<ConsensusPayload>()))
-                                .Callback((ConsensusPayload _Inventory) =>
-                                      actorLocalNode.Tell(new LocalNode.SendDirectly { Inventory = _Inventory }, TestActor));
+                                .Callback((ConsensusPayload _Inventory) => { Console.WriteLine("Sending!!");
+                                      //Sender.Tell(new LocalNode.SendDirectly { Inventory = _Inventory }, TestActor));
+                                      actorLocalNode.Tell(new LocalNode.SendDirectly { Inventory = _Inventory }, TestActor);
+                                                                           }
+                                         );
           //actorLocalNode, actorTaskManager, public void LocalNodeSendDirectly(ConsensusPayload _Inventory)
 
           //mockConsensusContext.Setup(m => m.CreateProduct(It.IsAny<Product>())).Returns(true);
@@ -290,11 +294,14 @@ namespace Neo.UnitTests
           Console.WriteLine("OnTimer should expire!");
 
           //Neo.Network.P2P.LocalNode.SendDirectly
-          var prepMsg = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-          Console.WriteLine($"MESSAGE 1: {prepMsg}");
+
+          //var prepMsg = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+          //Console.WriteLine($"MESSAGE 1: {prepMsg}");
+
+
           //var answer = ExpectMsg<LocalNode.SendDirectly>();
 
-          Thread.Sleep(1000);
+          Thread.Sleep(4000);
           //actor.Tell(new ConsensusService.Stop());
           //Thread.Sleep(500);
           Sys.Stop(actor);

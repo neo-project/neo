@@ -40,12 +40,13 @@ namespace Neo.UnitTests
       {
           Receive<string>(s =>
           {
-              PrintMessage(s);
+              //PrintMessage(s);
               _counter++;
               Sender.Tell(new MessageReceived(_counter));
           });
       }
 
+/*
       private void PrintMessage(string message)
       {
           Console.ForegroundColor = MessageColor;
@@ -55,6 +56,7 @@ namespace Neo.UnitTests
               Thread.CurrentThread.ManagedThreadId,
               message);
       }
+*/
   }
 
   [TestClass]
