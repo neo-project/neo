@@ -16,6 +16,13 @@ namespace Neo.Consensus
     internal class ConsensusContext : IConsensusContext
     {
         public const uint Version = 0;
+        private DateTime _block_received_time;
+        public DateTime block_received_time
+        {
+            get => _block_received_time;
+            set => _block_received_time = value;
+        }
+
         private ConsensusState _State;
         public ConsensusState State
         {

@@ -16,13 +16,14 @@ namespace Neo.Consensus
     public interface IConsensusContext : IDisposable
     {
         //public const uint Version = 0;
+        DateTime block_received_time {get; set;}
         ConsensusState State {get; set;}
         UInt256 PrevHash {get;}
         uint BlockIndex {get;}
         byte ViewNumber {get;}
         ECPoint[] Validators {get;}
         int MyIndex {get;}
-        uint PrimaryIndex {get; set;}
+        uint PrimaryIndex {get;}
         uint Timestamp {get; set;}
         ulong Nonce {get; set;}
         UInt160 NextConsensus {get; set;}

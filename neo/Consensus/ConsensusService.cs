@@ -28,7 +28,6 @@ namespace Neo.Consensus
         //private readonly NeoSystem system;
         private IActorRef localNode;
         private IActorRef taskManager;
-        private DateTime block_received_time;
 
         public ConsensusService(IActorRef _LocalNode, IActorRef _TaskManager, Wallet wallet)
         {
@@ -130,8 +129,8 @@ namespace Neo.Consensus
                 Console.WriteLine($"Is primary! {context.State}");
                 context.State |= ConsensusState.Primary;
                 Console.WriteLine($"After setup Is primary! {context.State}");
-                TimeSpan span = context.GetUtcNow() - block_received_time;
-                Console.WriteLine($"span {span} block_received_time {block_received_time} timeperblock {Blockchain.TimePerBlock}");
+                TimeSpan span = context.GetUtcNow() - context.block_received_time;
+                Console.WriteLine($"span {span} block_received_time {context.block_received_time} timeperblock {Blockchain.TimePerBlock}");
                 if (span >= Blockchain.TimePerBlock)
                     ChangeTimer(TimeSpan.Zero);
                 else
@@ -202,7 +201,7 @@ namespace Neo.Consensus
         private void OnPersistCompleted(Block block)
         {
             Log($"persist block: {block.Hash}");
-            block_received_time = context.GetUtcNow();
+            context.block_received_time = context.GetUtcNow();
             InitializeConsensus(0);
         }
 
@@ -335,6 +334,7 @@ namespace Neo.Consensus
 */
         private void OnTimer(Timer timer)
         {
+            Console.WriteLine($"Finally, OnTimer expired! timer.Height {timer.Height} timer.ViewNumber {timer.ViewNumber}");
             if(shouldStop == true)
                 return;
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;

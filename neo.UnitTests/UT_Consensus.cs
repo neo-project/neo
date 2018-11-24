@@ -131,13 +131,20 @@ namespace Neo.UnitTests
           mockConsensusContext.SetupGet(mr => mr.MyIndex).Returns(2); // MyIndex == 2
           mockConsensusContext.SetupGet(mr => mr.BlockIndex).Returns(2);
           mockConsensusContext.SetupGet(mr => mr.PrimaryIndex).Returns(2);
+          mockConsensusContext.SetupGet(mr => mr.ViewNumber).Returns(0);
           mockConsensusContext.Setup(mr => mr.GetPrimaryIndex(It.IsAny<byte>())).Returns(2);
-          mockConsensusContext.SetupGet(mr => mr.State).Returns(ConsensusState.Initial);   // Reset()
           mockConsensusContext.SetupProperty(mr => mr.State);  // allows get and set to update mock state on Initialize method
+          mockConsensusContext.Object.State = ConsensusState.Initial;
+          //mockConsensusContext.SetupGet(mr => mr.State).Returns(ConsensusState.Initial);   // Reset()
           //mockConsensusContext.SetupSet(mr => mr.State = It.IsAny<ConsensusState>())
           //                         .Callback((ConsensusState newState) =>
           //                                      mockConsensusContext.SetupGet(mr2 => mr2.State).Returns(newState));
-          mockConsensusContext.Setup(mr => mr.GetUtcNow()).Returns(new DateTime(1968, 06, 01, 0, 0, 4, DateTimeKind.Utc));
+          mockConsensusContext.SetupProperty(mr => mr.block_received_time);
+          //mockConsensusContext.SetupGet(mr => mr.block_received_time).Returns(new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc)); // Last block persist
+          mockConsensusContext.Object.block_received_time = new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc);
+
+
+          mockConsensusContext.Setup(mr => mr.GetUtcNow()).Returns(new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc));
 
           UInt256 val256 = UInt256.Zero;
           UInt256 merkRootVal;
@@ -157,7 +164,9 @@ namespace Neo.UnitTests
 
           // check basic ConsensusContext
           mockConsensusContext.Object.MyIndex.Should().Be(2);
-          mockConsensusContext.Object.GetUtcNow().ToTimestamp().Should().Be(4244941700); //1968-06-01 00:00:04
+          //mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941698); //1968-06-01 00:00:02
+          mockConsensusContext.Object.GetUtcNow().ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
+
 
 
           //mockConsensusContext.Setup(m => m.CreateProduct(It.IsAny<Product>())).Returns(true);
@@ -183,7 +192,10 @@ namespace Neo.UnitTests
           //ActorSystem.ActorOf(ConsensusService.Props(this, wallet));
           Console.WriteLine("comecou consensus!");
           //  actor.Tell(new ConsensusService.Stop());
-          Thread.Sleep(500);
+          Thread.Sleep(900);
+          Console.WriteLine("OnTimer should expire!");
+
+          Thread.Sleep(1000);
           //actor.Tell(new ConsensusService.Stop());
           //Thread.Sleep(500);
           Sys.Stop(actor);
