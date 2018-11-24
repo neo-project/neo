@@ -17,11 +17,11 @@ namespace Neo.Consensus
     {
         //public const uint Version = 0;
         ConsensusState State {get; set;}
-        UInt256 PrevHash {get; set;}
-        uint BlockIndex {get; set;}
-        byte ViewNumber {get; set;}
+        UInt256 PrevHash {get;}
+        uint BlockIndex {get;}
+        byte ViewNumber {get;}
         ECPoint[] Validators {get;}
-        int MyIndex {get; set;}
+        int MyIndex {get;}
         uint PrimaryIndex {get; set;}
         uint Timestamp {get; set;}
         ulong Nonce {get; set;}
