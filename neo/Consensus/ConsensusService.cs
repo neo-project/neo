@@ -522,7 +522,6 @@ namespace Neo.Consensus
             context.State |= ConsensusState.ViewChanging;
             context.ExpectedView[context.MyIndex]++;
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)));
-            //SignAndRelay(context.MakeChangeView());
             system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
             CheckExpectedView(context.ExpectedView[context.MyIndex]);
         }
