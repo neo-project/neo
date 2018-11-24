@@ -247,22 +247,6 @@ namespace Neo.UnitTests
 
 
 
-          /*
-
-          public ConsensusPayload MakePrepareRequest()
-          {
-              return MakeSignedPayload(new PrepareRequest
-              {
-                  Nonce = Nonce,
-                  NextConsensus = NextConsensus,
-                  TransactionHashes = TransactionHashes,
-                  MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                  Signature = Signatures[MyIndex]
-              });
-          }
-
-          */
-
 
           //ECPoint[] points = new ECPoint[4];
           //Validators
@@ -273,12 +257,16 @@ namespace Neo.UnitTests
           mockConsensusContext.Object.GetUtcNow().ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
 
 
+          mockConsensusContext.Setup(mr => mr.LocalNodeSendDirectly(It.IsAny<ConsensusPayload>()))
+                                .Callback((ConsensusPayload _Inventory) =>
+                                      actorLocalNode.Tell(new LocalNode.SendDirectly { Inventory = _Inventory }, TestActor));
+          //actorLocalNode, actorTaskManager, public void LocalNodeSendDirectly(ConsensusPayload _Inventory)
 
           //mockConsensusContext.Setup(m => m.CreateProduct(It.IsAny<Product>())).Returns(true);
 
 
           //TestActorRef<ConsensusService> actor2 = ActorOfAsTestActorRef<ConsensusService>();
-          TestActorRef<ConsensusService> actor = ActorOfAsTestActorRef<ConsensusService>(Akka.Actor.Props.Create(() => new ConsensusService(actorLocalNode, actorTaskManager, mockConsensusContext.Object)));
+          TestActorRef<ConsensusService> actor = ActorOfAsTestActorRef<ConsensusService>(Akka.Actor.Props.Create(() => new ConsensusService(mockConsensusContext.Object)));
 
           //TestActorRef<ConsensusService> actorRef = //TestActorRef<ConsensusService>(Akka.Actor.Props.Create(() => new ConsensusService(actorLocalNode, actorTaskManager, mockConsensusContext.Object)));
 

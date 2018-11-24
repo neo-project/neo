@@ -10,6 +10,7 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Neo.Network.P2P;
 
 namespace Neo.Consensus
 {
@@ -33,6 +34,14 @@ namespace Neo.Consensus
         byte[] ExpectedView {get; set;}
 
         int M {get;}
+
+        void LocalNodeSendDirectly(ConsensusPayload _Inventory);
+
+        void LocalNodeRelay(Block _Inventory);
+
+        void LocalNodeTellMessage(Message message);
+
+        void RestartTasks(UInt256[] hashes);
 
         uint SnapshotHeight {get;}
 
