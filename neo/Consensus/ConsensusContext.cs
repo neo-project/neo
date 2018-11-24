@@ -280,7 +280,7 @@ namespace Neo.Consensus
                 sc = new ContractParametersContext(payload);
                 wallet.Sign(sc);
             }
-            catch (InvalidOperationException)
+            catch
             {
                 return;
             }
