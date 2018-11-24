@@ -17,90 +17,8 @@ using Moq;
 //Neo.Consensus
 namespace Neo.UnitTests
 {
-
-  /*
-  public class MessageReceived2
-  {
-      public int Counter { get; private set; }
-
-      public MessageReceived2(int counter)
-      {
-          Counter = counter;
-      }
-  }
-
-  public class BlueActor2 : ReceiveActor
-  {
-      private const string ActorName = "BlueActor2";
-      private const ConsoleColor MessageColor = ConsoleColor.Blue;
-
-      private int _counter = 0;
-
-      protected override void PreStart()
-      {
-          base.PreStart();
-          Become(HandleString);
-      }
-
-      private void HandleString()
-      {
-          Receive<string>(s =>
-          {
-              PrintMessage(s);
-              _counter++;
-              Sender.Tell(new MessageReceived2(_counter));
-          });
-      }
-
-      private void PrintMessage(string message)
-      {
-          Console.ForegroundColor = MessageColor;
-          Console.WriteLine(
-              "{0} on thread #{1}: {2}",
-              ActorName,
-              Thread.CurrentThread.ManagedThreadId,
-              message);
-      }
-  }
-  */
-
   public class TestReceiveActor : ReceiveActor
   {
-    /*
-      private const string ActorName = "TestReceiveActor";
-      private int _counter = 0;
-
-      protected override void PreStart()
-      {
-          base.PreStart();
-          Become(HandleOther);
-      }
-
-      private void Handle(LocalNode.RelayDirectly message)
-      {
-          Console.WriteLine("HANDLING!!!!!! ");
-      }
-
-      private void HandleOther()
-      {
-
-          Console.WriteLine("HandleOther!");
-
-          Receive<LocalNode.RelayDirectly>(s =>
-          {
-              //PrintMessage(s);
-              _counter++;
-              Console.WriteLine($"MESSAGE RECEIVED!! =========================== {s}");
-              //Sender.Tell(new TestMessageReceived(_counter));
-          });
-      }
-
-      private void PrintMessage(string message)
-      {
-          Console.WriteLine("TestMessageReceived PrintMessage");
-
-      }
-      */
 
       public TestReceiveActor() {
           Receive<LocalNode.SendDirectly>(greet =>
@@ -108,57 +26,14 @@ namespace Neo.UnitTests
               Console.WriteLine($"Received one message: {greet}");
               // when message arrives, we publish it on the event stream
               // and send response back to sender
-              //Context.System.EventStream.Publish(greet + " sends greetings");
+              Context.System.EventStream.Publish("Prepare Request has arrived!");
               //Sender.Tell(new GreetBack(Self.Path.Name));
           });
       }
   }
 
 
-  public class TestReceiveActor2 : ReceiveActor
-  {
-      private const string ActorName = "TestReceiveActor2";
-      private int _counter = 0;
 
-      protected override void PreStart()
-      {
-          base.PreStart();
-          Become(HandleString);
-      }
-
-      private void HandleString()
-      {
-          /*
-          Receive<string>(s =>
-          {
-              //PrintMessage(s);
-              _counter++;
-              Sender.Tell(new TestMessageReceived(_counter));
-          });
-          */
-
-          Receive<LocalNode.RelayDirectly>(s =>
-          {
-              //PrintMessage(s);
-              _counter++;
-              Console.WriteLine("MESSAGE RECEIVED!! ===========================");
-              //Sender.Tell(new TestMessageReceived(_counter));
-          });
-      }
-
-      private void PrintMessage(string message)
-      {
-          Console.WriteLine("TestMessageReceived PrintMessage");
-          /*
-          Console.ForegroundColor = MessageColor;
-          Console.WriteLine(
-              "{0} on thread #{1}: {2}",
-              ActorName,
-              Thread.CurrentThread.ManagedThreadId,
-              message);
-          */
-      }
-  }
 
   [TestClass]
   public class ConsensusTests : TestKit
@@ -172,14 +47,17 @@ namespace Neo.UnitTests
       [TestMethod]
       public void ConsensusService_Respond_After_OnStart()
       {
-          var subscriber = CreateTestProbe();
+          TestProbe subscriber = CreateTestProbe();
+          //TestActorRef<TestReceiveActor> receiverActor = ActorOfAsTestActorRef<TestReceiveActor>(); // (subscriber)
+
           //Sys.EventStream.Subscribe(subscriber.Ref, typeof (LocalNode.SendDirectly));
 
           // NeoSystem dependencies
-          TestActorRef<TestReceiveActor> actorLocalNode = ActorOfAsTestActorRef<TestReceiveActor>(subscriber);
-          TestActorRef<TestReceiveActor2> actorTaskManager = ActorOfAsTestActorRef<TestReceiveActor2>(subscriber);
+          //TestActorRef<TestReceiveActor> actorLocalNode = ActorOfAsTestActorRef<TestReceiveActor>(subscriber);
+          //TestActorRef<TestReceiveActor2> actorTaskManager = ActorOfAsTestActorRef<TestReceiveActor2>(subscriber);
+          //subscriber.Subscribe(receiverActor);
 
-          Console.WriteLine($"Actors: localnode {actorLocalNode} taskManager {actorTaskManager}");
+          //Console.WriteLine($"Actors: localnode {actorLocalNode} taskManager {actorTaskManager}");
 
           var mockConsensusContext = new Mock<IConsensusContext>();
           //var mockConsensusContext = new Mock<ConsensusContext>();
@@ -260,9 +138,10 @@ namespace Neo.UnitTests
 
           mockConsensusContext.Setup(mr => mr.LocalNodeSendDirectly(It.IsAny<ConsensusPayload>()))
                                 .Callback((ConsensusPayload _Inventory) => { Console.WriteLine("Sending!!");
-                                      //Sender.Tell(new LocalNode.SendDirectly { Inventory = _Inventory }, TestActor));
-                                      actorLocalNode.Tell(new LocalNode.SendDirectly { Inventory = _Inventory }, TestActor);
-                                                                           }
+                                      //actorLocalNode.Tell(new LocalNode.SendDirectly { Inventory = _Inventory }, TestActor); }
+                                      //receiverActor.Tell(new LocalNode.SendDirectly { Inventory = _Inventory });
+                                      subscriber.Tell(new LocalNode.SendDirectly { Inventory = _Inventory });
+                                                                          }
                                          );
           //actorLocalNode, actorTaskManager, public void LocalNodeSendDirectly(ConsensusPayload _Inventory)
 
@@ -285,7 +164,7 @@ namespace Neo.UnitTests
           */
 
 
-          actor.Tell(new ConsensusService.Start(), TestActor);
+          actor.Tell(new ConsensusService.Start());//, TestActor);
 
           //ActorSystem.ActorOf(ConsensusService.Props(this, wallet));
           Console.WriteLine("comecou consensus!");
@@ -295,13 +174,23 @@ namespace Neo.UnitTests
 
           //Neo.Network.P2P.LocalNode.SendDirectly
 
-          //var prepMsg = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-          //Console.WriteLine($"MESSAGE 1: {prepMsg}");
+          Console.WriteLine("Waiting for subscriber message!");
+
+          //subscriber.ExpectMsg<string>("Prepare Request has arrived!");
+          //ExpectMsg<string>("Prepare Request has arrived!");
+
+          var answer = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+          Console.WriteLine($"MESSAGE 1: {answer}");
+          var answer2 = subscriber.ExpectMsg<LocalNode.SendDirectly>(); // expects to fail!
+
+          //var msg = ExpectMsg<string>();
+          //var msg = Sys.ExpectMsg<string>();
+          //Console.WriteLine($"MESSAGE 1: {msg}");
 
 
           //var answer = ExpectMsg<LocalNode.SendDirectly>();
 
-          Thread.Sleep(4000);
+          //Thread.Sleep(4000);
           //actor.Tell(new ConsensusService.Stop());
           //Thread.Sleep(500);
           Sys.Stop(actor);
@@ -309,7 +198,7 @@ namespace Neo.UnitTests
 
           //var answer = ExpectMsg<MessageReceived>();
           //Assert.AreEqual(2, answer.Counter);
-          Assert.AreEqual(2, 1);
+          Assert.AreEqual(1, 1);
       }
   }
 }
