@@ -2,7 +2,7 @@
 
 namespace Neo.Consensus
 {
-    public enum ConsensusMessageType : byte
+    internal enum ConsensusMessageType : byte
     {
         [ReflectionCache(typeof(ChangeView))]
         ChangeView = 0x00,

@@ -14,7 +14,6 @@ using Neo.Consensus;
 using Neo.Cryptography.ECC;
 using Moq;
 
-//Neo.Consensus
 namespace Neo.UnitTests
 {
 

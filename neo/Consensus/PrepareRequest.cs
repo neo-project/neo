@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Neo.Consensus
 {
-    public class PrepareRequest : ConsensusMessage
+    internal class PrepareRequest : ConsensusMessage
     {
         public ulong Nonce;
         public UInt160 NextConsensus;
