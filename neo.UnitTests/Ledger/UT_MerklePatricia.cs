@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
@@ -15,10 +16,10 @@ namespace Neo.UnitTests.Ledger
             var mp = new MerklePatricia();
             Assert.IsFalse(mp == null);
             mp[new byte[] {0x0, 0x0, 0x1}] = new byte[] {0x0, 0x0, 0x1};
-            Assert.Equals(new byte[] {0x0, 0x0, 0x1}, mp[new byte[] {0x0, 0x0, 0x1}]);
+            Assert.IsTrue(new byte[] {0x0, 0x0, 0x1}.SequenceEqual(mp[new byte[] {0x0, 0x0, 0x1}]));
 
             mp[new byte[] {0x11, 0x0, 0x2}] = new byte[] {0x11, 0x0, 0x2};
-            Assert.Equals(new byte[] {0x11, 0x0, 0x2}, mp[new byte[] {0x11, 0x0, 0x2}]);
+            Assert.IsTrue(new byte[] {0x11, 0x0, 0x2}.SequenceEqual(mp[new byte[] {0x11, 0x0, 0x2}]));
         }
 
         [TestMethod]
@@ -27,10 +28,10 @@ namespace Neo.UnitTests.Ledger
             var mp = new MerklePatricia();
             Assert.IsFalse(mp == null);
             mp[new byte[] {0x0, 0x0, 0x1}] = new byte[] {0x0, 0x0, 0x1};
-            Assert.Equals(new byte[] {0x0, 0x0, 0x1}, mp[new byte[] {0x0, 0x0, 0x1}]);
+            Assert.IsTrue(new byte[] {0x0, 0x0, 0x1}.SequenceEqual(mp[new byte[] {0x0, 0x0, 0x1}]));
 
             mp[new byte[] {0x0, 0x0, 0x1}] = new byte[] {0x0, 0x0, 0x2};
-            Assert.Equals(new byte[] {0x0, 0x0, 0x2}, mp[new byte[] {0x0, 0x0, 0x1}]);
+            Assert.IsTrue(new byte[] {0x0, 0x0, 0x2}.SequenceEqual(mp[new byte[] {0x0, 0x0, 0x1}]));
         }
         
         [TestMethod]
@@ -42,23 +43,24 @@ namespace Neo.UnitTests.Ledger
                 ["oi"] = "batatatinha"
             };
             Assert.IsTrue(mp.ContainsKey("oi"));
-            Assert.Equals("batatatinha", mp["oi"]);
+            Assert.AreEqual("batatatinha", mp["oi"]);
 
             mp["orelha"] = "batatatinha";
-            Assert.Equals("batatatinha", mp["orelha"]);
+            Assert.AreEqual("batatatinha", mp["orelha"]);
 
             mp["orfão"] = "criança";
-            Assert.Equals("criança", mp["orfão"]);
+            Assert.AreEqual("criança", mp["orfão"]);
 
             mp["orfanato"] = "crianças";
-            Assert.Equals("crianças", mp["orfanato"]);
+            Assert.AreEqual("crianças", mp["orfanato"]);
 
             Assert.IsTrue(mp.Remove("orfanato"));
-            Assert.Equals("criança", mp["orfão"]);
+            Assert.AreEqual("criança", mp["orfão"]);
             Assert.IsFalse(mp.ContainsKey("orfanato"));
 
             mp["orfã"] = "menina";
-            Assert.Equals("menina", mp["orfã"]);
+            Assert.AreEqual("menina", mp["orfã"]);
         }
+        
     }
 }
