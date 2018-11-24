@@ -64,19 +64,59 @@ namespace Neo.UnitTests
   }
   */
 
-  public class TestMessageReceived
+  public class TestReceiveActor : ReceiveActor
   {
-      public int Counter { get; private set; }
+    /*
+      private const string ActorName = "TestReceiveActor";
+      private int _counter = 0;
 
-      public TestMessageReceived(int counter)
+      protected override void PreStart()
       {
-          Counter = counter;
+          base.PreStart();
+          Become(HandleOther);
+      }
+
+      private void Handle(LocalNode.RelayDirectly message)
+      {
+          Console.WriteLine("HANDLING!!!!!! ");
+      }
+
+      private void HandleOther()
+      {
+
+          Console.WriteLine("HandleOther!");
+
+          Receive<LocalNode.RelayDirectly>(s =>
+          {
+              //PrintMessage(s);
+              _counter++;
+              Console.WriteLine($"MESSAGE RECEIVED!! =========================== {s}");
+              //Sender.Tell(new TestMessageReceived(_counter));
+          });
+      }
+
+      private void PrintMessage(string message)
+      {
+          Console.WriteLine("TestMessageReceived PrintMessage");
+
+      }
+      */
+
+      public TestReceiveActor() {
+          Receive<LocalNode.SendDirectly>(greet =>
+          {
+              // when message arrives, we publish it on the event stream
+              // and send response back to sender
+              Context.System.EventStream.Publish(greet + " sends greetings");
+              //Sender.Tell(new GreetBack(Self.Path.Name));
+          });
       }
   }
 
-  public class TestReceiveActor : ReceiveActor
+
+  public class TestReceiveActor2 : ReceiveActor
   {
-      private const string ActorName = "TestReceiveActor";
+      private const string ActorName = "TestReceiveActor2";
       private int _counter = 0;
 
       protected override void PreStart()
@@ -87,11 +127,21 @@ namespace Neo.UnitTests
 
       private void HandleString()
       {
+          /*
           Receive<string>(s =>
           {
               //PrintMessage(s);
               _counter++;
               Sender.Tell(new TestMessageReceived(_counter));
+          });
+          */
+
+          Receive<LocalNode.RelayDirectly>(s =>
+          {
+              //PrintMessage(s);
+              _counter++;
+              Console.WriteLine("MESSAGE RECEIVED!! ===========================");
+              //Sender.Tell(new TestMessageReceived(_counter));
           });
       }
 
@@ -121,9 +171,15 @@ namespace Neo.UnitTests
       [TestMethod]
       public void ConsensusService_Respond_After_OnStart()
       {
+          var subscriber = CreateTestProbe();
+          //Sys.EventStream.Subscribe(subscriber.Ref, typeof (LocalNode.SendDirectly));
+
           // NeoSystem dependencies
-          TestActorRef<TestReceiveActor> actorLocalNode = ActorOfAsTestActorRef<TestReceiveActor>();
-          TestActorRef<TestReceiveActor> actorTaskManager = ActorOfAsTestActorRef<TestReceiveActor>();
+          TestActorRef<TestReceiveActor> actorLocalNode = ActorOfAsTestActorRef<TestReceiveActor>(subscriber);
+          TestActorRef<TestReceiveActor2> actorTaskManager = ActorOfAsTestActorRef<TestReceiveActor2>(subscriber);
+
+          Console.WriteLine($"Actors: localnode {actorLocalNode} taskManager {actorTaskManager}");
+
           var mockConsensusContext = new Mock<IConsensusContext>();
           //var mockConsensusContext = new Mock<ConsensusContext>();
 
@@ -236,16 +292,19 @@ namespace Neo.UnitTests
           Thread.Sleep(500);
           */
 
-          actor.Tell(new ConsensusService.Start());
+
+          actor.Tell(new ConsensusService.Start(), TestActor);
 
           //ActorSystem.ActorOf(ConsensusService.Props(this, wallet));
           Console.WriteLine("comecou consensus!");
           //  actor.Tell(new ConsensusService.Stop());
-          Thread.Sleep(900);
+          //Thread.Sleep(900);
           Console.WriteLine("OnTimer should expire!");
 
           //Neo.Network.P2P.LocalNode.SendDirectly
-          var prepMsg = ExpectMsg<LocalNode.SendDirectly>();
+          var prepMsg = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+          Console.WriteLine($"MESSAGE 1: {prepMsg}");
+          //var answer = ExpectMsg<LocalNode.SendDirectly>();
 
           Thread.Sleep(1000);
           //actor.Tell(new ConsensusService.Stop());

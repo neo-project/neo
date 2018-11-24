@@ -19,6 +19,7 @@ namespace Neo.Consensus
     {
         public bool shouldStop;
         public class Start { }
+        public class Hello { }
         //public class Stop { }
         //public class Setup { public IActorRef _localNode; public IActorRef _taskManager; public IConsensusContext _context; }
         public class SetViewNumber { public byte ViewNumber; }
@@ -84,6 +85,7 @@ namespace Neo.Consensus
 
         private void ChangeTimer(TimeSpan delay)
         {
+            Console.WriteLine($"Changing timer to: {delay}");
             Context.System.Scheduler.ScheduleTellOnce(delay, Self, new Timer
             {
                 Height = context.BlockIndex,
@@ -349,7 +351,10 @@ namespace Neo.Consensus
                     context.Fill();
                     context.SignHeader();
                 }
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
+                Console.WriteLine($"Will send to localNode {localNode}");
+                localNode.Tell(new Hello());
+                //localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
+                Console.WriteLine($"Will verify if length of TransactionHashes > 1 : {context.TransactionHashes.Length}");
                 if (context.TransactionHashes.Length > 1)
                 {
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
