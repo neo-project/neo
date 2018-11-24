@@ -11,6 +11,7 @@ using Akka.Actor;
 using System;
 using System.Threading;
 using Neo.Consensus;
+using Neo.Plugins;
 using Neo.Cryptography.ECC;
 using Moq;
 
@@ -49,6 +50,14 @@ namespace Neo.UnitTests
 
           mockConsensusContext.Object.block_received_time = new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc);
           mockConsensusContext.Setup(mr => mr.GetUtcNow()).Returns(new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc));
+
+          //public void Log(string message, LogLevel level)
+
+          mockConsensusContext.Setup(mr => mr.Log(It.IsAny<string>(), It.IsAny<LogLevel>()))
+                       .Callback((string message, LogLevel level) => {
+                                       Console.WriteLine($"CONSENSUS LOG: {message}");
+                                                                 }
+                                );
 
 
           // Creating proposed block

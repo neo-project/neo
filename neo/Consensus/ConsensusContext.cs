@@ -346,5 +346,10 @@ namespace Neo.Consensus
         {
             return DateTime.UtcNow;
         }
+
+        public void Log(string message, LogLevel level = LogLevel.Info)
+        {
+            Plugin.Log(nameof(ConsensusService), level, message);
+        }
     }
 }
