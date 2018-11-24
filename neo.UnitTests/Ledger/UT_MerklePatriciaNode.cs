@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using System.Text;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -11,14 +12,145 @@ namespace Neo.UnitTests.Ledger
     public class UT_MerklePatriciaNode
     {
         [TestMethod]
-        public void Serialize_Leaf()
+        public void CloneLeaf()
         {
-            MerklePatriciaNode mptItem = MerklePatriciaNode.BranchNode();
+            var mptItem = MerklePatriciaNode.LeafNode();
             mptItem.Path = Encoding.UTF8.GetBytes("2");
+            mptItem.Key = Encoding.UTF8.GetBytes("oi").Sha256();
             mptItem.Value = Encoding.UTF8.GetBytes("abc");
-//            mptItem.Key = new UInt256(System.Text.Encoding.UTF8.GetBytes("oi").Sha256());
-            mptItem.Key = System.Text.Encoding.UTF8.GetBytes("oi").Sha256();
 
+            var cloned = mptItem.Clone();
+            Assert.IsTrue(cloned.IsLeaf);
+            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
+
+            mptItem.Path = Encoding.UTF8.GetBytes("23f");
+            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            mptItem.Value = Encoding.UTF8.GetBytes("abc1");
+            Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
+        }
+
+        [TestMethod]
+        public void CloneExtension()
+        {
+            var mptItem = MerklePatriciaNode.ExtensionNode();
+            mptItem.Path = Encoding.UTF8.GetBytes("2");
+            mptItem.Next = Encoding.UTF8.GetBytes("oi").Sha256();
+
+            var cloned = mptItem.Clone();
+            Assert.IsTrue(cloned.IsExtension);
+            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Next));
+
+            mptItem.Path = Encoding.UTF8.GetBytes("23");
+            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            mptItem.Next = Encoding.UTF8.GetBytes("oi4").Sha256();
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Next));
+        }
+
+        [TestMethod]
+        public void CloneBranch()
+        {
+            var mptItem = MerklePatriciaNode.BranchNode();
+            mptItem.Key = Encoding.UTF8.GetBytes("oi").Sha256();
+            mptItem.Value = Encoding.UTF8.GetBytes("abc");
+            mptItem[0] = Encoding.UTF8.GetBytes("turma").Sha256();
+            mptItem[7] = Encoding.UTF8.GetBytes("turma7").Sha256();
+            mptItem[10] = Encoding.UTF8.GetBytes("turma10").Sha256();
+
+            var cloned = mptItem.Clone();
+            Assert.IsTrue(cloned.IsBranch);
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("turma").Sha256().SequenceEqual(cloned[0]));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("turma7").Sha256().SequenceEqual(cloned[7]));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("turma10").Sha256().SequenceEqual(cloned[10]));
+
+            mptItem.Key = Encoding.UTF8.GetBytes("oi11").Sha256();
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
+            mptItem.Value = Encoding.UTF8.GetBytes("abc45");
+            Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
+            mptItem[0] = Encoding.UTF8.GetBytes("turma0").Sha256();
+            Assert.IsTrue(Encoding.UTF8.GetBytes("turma").Sha256().SequenceEqual(cloned[0]));
+        }
+
+        [TestMethod]
+        public void FromReplicaLeaf()
+        {
+            var mptItem = MerklePatriciaNode.LeafNode();
+            mptItem.Path = Encoding.UTF8.GetBytes("2");
+            mptItem.Key = Encoding.UTF8.GetBytes("oi").Sha256();
+            mptItem.Value = Encoding.UTF8.GetBytes("abc");
+
+            var cloned = MerklePatriciaNode.BranchNode();
+            cloned.FromReplica(mptItem);
+            Assert.IsTrue(cloned.IsLeaf);
+            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
+
+            mptItem.Path = Encoding.UTF8.GetBytes("23f");
+            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            mptItem.Value = Encoding.UTF8.GetBytes("abc1");
+            Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
+        }
+
+        [TestMethod]
+        public void FromReplicaExtension()
+        {
+            var mptItem = MerklePatriciaNode.ExtensionNode();
+            mptItem.Path = Encoding.UTF8.GetBytes("2");
+            mptItem.Next = Encoding.UTF8.GetBytes("oi").Sha256();
+
+            var cloned = MerklePatriciaNode.BranchNode();
+            cloned.FromReplica(mptItem);
+            Assert.IsTrue(cloned.IsExtension);
+            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Next));
+
+            mptItem.Path = Encoding.UTF8.GetBytes("23");
+            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            mptItem.Next = Encoding.UTF8.GetBytes("oi4").Sha256();
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Next));
+        }
+
+        [TestMethod]
+        public void FromReplicaBranch()
+        {
+            var mptItem = MerklePatriciaNode.BranchNode();
+            mptItem.Key = Encoding.UTF8.GetBytes("oi").Sha256();
+            mptItem.Value = Encoding.UTF8.GetBytes("abc");
+            mptItem[0] = Encoding.UTF8.GetBytes("turma").Sha256();
+            mptItem[7] = Encoding.UTF8.GetBytes("turma7").Sha256();
+            mptItem[10] = Encoding.UTF8.GetBytes("turma10").Sha256();
+
+            var cloned = MerklePatriciaNode.LeafNode();
+            cloned.FromReplica(mptItem);
+            Assert.IsTrue(cloned.IsBranch);
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("turma").Sha256().SequenceEqual(cloned[0]));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("turma7").Sha256().SequenceEqual(cloned[7]));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("turma10").Sha256().SequenceEqual(cloned[10]));
+
+            mptItem.Key = Encoding.UTF8.GetBytes("oi11").Sha256();
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
+            mptItem.Value = Encoding.UTF8.GetBytes("abc45");
+            Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
+            mptItem[0] = Encoding.UTF8.GetBytes("turma0").Sha256();
+            Assert.IsTrue(Encoding.UTF8.GetBytes("turma").Sha256().SequenceEqual(cloned[0]));
+        }
+
+        [TestMethod]
+        public void SerializeLeaf()
+        {
+            var mptItem = MerklePatriciaNode.LeafNode();
+            mptItem.Path = Encoding.UTF8.GetBytes("2");
+            mptItem.Key = Encoding.UTF8.GetBytes("oi").Sha256();
+            mptItem.Value = Encoding.UTF8.GetBytes("abc");
+
+            var cloned = MerklePatriciaNode.BranchNode();
             using (var ms = new MemoryStream())
             {
                 using (var bw = new BinaryWriter(ms))
@@ -27,16 +159,87 @@ namespace Neo.UnitTests.Ledger
                     using (var br = new BinaryReader(bw.BaseStream))
                     {
                         br.BaseStream.Position = 0;
-                        var mptResposta = new MPTItem();
-                        mptResposta.Deserialize(br);
-
-//                        mptResposta.NodeType.Should().Be(mptItem.NodeType);
-//                        mptResposta.Path.Should().Be(mptItem.Path);
-//                        mptResposta.Value.Should().Be(mptItem.Value);
-//                        mptResposta.KeyHash.Should().Be(mptItem.KeyHash);
+                        cloned.Deserialize(br);
                     }
                 }
             }
+            Assert.IsTrue(cloned.IsLeaf);
+            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
+
+            mptItem.Path = Encoding.UTF8.GetBytes("23f");
+            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            mptItem.Value = Encoding.UTF8.GetBytes("abc1");
+            Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
+        }
+        
+        [TestMethod]
+        public void SerializeExtension()
+        {
+            var mptItem = MerklePatriciaNode.ExtensionNode();
+            mptItem.Path = Encoding.UTF8.GetBytes("2");
+            mptItem.Next = Encoding.UTF8.GetBytes("oi").Sha256();
+
+            var cloned = MerklePatriciaNode.BranchNode();
+            using (var ms = new MemoryStream())
+            {
+                using (var bw = new BinaryWriter(ms))
+                {
+                    mptItem.Serialize(bw);
+                    using (var br = new BinaryReader(bw.BaseStream))
+                    {
+                        br.BaseStream.Position = 0;
+                        cloned.Deserialize(br);
+                    }
+                }
+            }
+            Assert.IsTrue(cloned.IsExtension);
+            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Next));
+
+            mptItem.Path = Encoding.UTF8.GetBytes("23");
+            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            mptItem.Next = Encoding.UTF8.GetBytes("oi4").Sha256();
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Next));
+        }
+        
+        [TestMethod]
+        public void SerializeBranch()
+        {
+            var mptItem = MerklePatriciaNode.BranchNode();
+            mptItem.Key = Encoding.UTF8.GetBytes("oi").Sha256();
+            mptItem.Value = Encoding.UTF8.GetBytes("abc");
+            mptItem[0] = Encoding.UTF8.GetBytes("turma").Sha256();
+            mptItem[7] = Encoding.UTF8.GetBytes("turma7").Sha256();
+            mptItem[10] = Encoding.UTF8.GetBytes("turma10").Sha256();
+
+            var cloned = MerklePatriciaNode.LeafNode();
+            using (var ms = new MemoryStream())
+            {
+                using (var bw = new BinaryWriter(ms))
+                {
+                    mptItem.Serialize(bw);
+                    using (var br = new BinaryReader(bw.BaseStream))
+                    {
+                        br.BaseStream.Position = 0;
+                        cloned.Deserialize(br);
+                    }
+                }
+            }
+            Assert.IsTrue(cloned.IsBranch);
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("turma").Sha256().SequenceEqual(cloned[0]));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("turma7").Sha256().SequenceEqual(cloned[7]));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("turma10").Sha256().SequenceEqual(cloned[10]));
+
+            mptItem.Key = Encoding.UTF8.GetBytes("oi11").Sha256();
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
+            mptItem.Value = Encoding.UTF8.GetBytes("abc45");
+            Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
+            mptItem[0] = Encoding.UTF8.GetBytes("turma0").Sha256();
+            Assert.IsTrue(Encoding.UTF8.GetBytes("turma").Sha256().SequenceEqual(cloned[0]));
         }
     }
 }

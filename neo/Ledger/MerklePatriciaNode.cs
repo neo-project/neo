@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Neo.IO;
@@ -10,7 +11,7 @@ namespace Neo.Ledger
     /// Modified Merkel Patricia Node.
     /// Note: It is not a thread safe implementation.
     /// </summary>
-    public class MerklePatriciaNode : StateBase, ICloneable<MerklePatriciaNode>
+    public class MerklePatriciaNode : StateBase, ICloneable<MerklePatriciaNode>, IEquatable<MerklePatriciaNode>
     {
         private const int BranchSize = 18;
         private const int ExtensionSize = 2;
@@ -53,7 +54,7 @@ namespace Neo.Ledger
             get => _hashes[0];
             set => _hashes[0] = value;
         }
-        
+
         /// <summary>
         /// Get and set the key of the node.
         /// Used for leaf and branch nodes.
@@ -149,7 +150,7 @@ namespace Neo.Ledger
             var resp = new MerklePatriciaNode(Length);
             for (var i = 0; i < Length; i++)
             {
-                resp._hashes[i] = _hashes[i].ToArray();
+                resp._hashes[i] = _hashes[i] != null ? _hashes[i].ToArray() : null;
             }
 
             return resp;
@@ -161,7 +162,48 @@ namespace Neo.Ledger
             _hashes = new byte[replica.Length][];
             for (var i = 0; i < Length; i++)
             {
-                _hashes[i] = replica._hashes[i].ToArray();
+                _hashes[i] = replica._hashes[i] != null ? replica._hashes[i].ToArray() : null;
+            }
+        }
+
+        /// <inheritdoc />
+        public bool Equals(MerklePatriciaNode other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            return ReferenceEquals(this, other) || _hashes.SequenceEqual(other._hashes);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            return obj.GetType() == GetType() && Equals((MerklePatriciaNode) obj);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode() => _hashes != null ? _hashes.GetHashCode() : 0;
+
+        /// <inheritdoc />
+        public override void Deserialize(BinaryReader reader)
+        {
+            base.Deserialize(reader);
+            _hashes = new byte[reader.ReadByte()][];
+            for (var i = 0; i < _hashes.Length; i++)
+            {
+                _hashes[i] = reader.ReadVarBytes();
+                _hashes[i] = _hashes[i].Length == 0 ? null : _hashes[i];
+            }
+        }
+
+        /// <inheritdoc />
+        public override void Serialize(BinaryWriter writer)
+        {
+            base.Serialize(writer);
+            writer.Write((byte) _hashes.Length);
+            foreach (var hash in _hashes)
+            {
+                writer.WriteVarBytes(hash ?? new byte[0]);
             }
         }
     }
