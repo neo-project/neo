@@ -42,8 +42,6 @@ namespace Neo.Consensus
             this.wallet = wallet;
         }
 
-        public uint SnapshotHeight => Snapshot.Height;
-
         public Header SnapshotHeader => Snapshot.GetHeader(PrevHash);
 
         public bool RejectTx(Transaction tx, bool verify)

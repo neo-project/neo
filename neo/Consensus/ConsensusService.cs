@@ -144,9 +144,9 @@ namespace Neo.Consensus
                 return;
             if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
             {
-                if (context.SnapshotHeight + 1 < payload.BlockIndex)
+                if (context.BlockIndex < payload.BlockIndex)
                 {
-                    context.Log($"chain sync: expected={payload.BlockIndex} current: {context.SnapshotHeight} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
+                    context.Log($"chain sync: expected={payload.BlockIndex - 1} current={context.BlockIndex - 1} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
                 }
                 return;
             }
