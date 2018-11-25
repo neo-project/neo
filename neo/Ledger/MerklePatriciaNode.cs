@@ -199,7 +199,17 @@ namespace Neo.Ledger
         }
 
         /// <inheritdoc />
-        public override int GetHashCode() => _hashes.SelectMany(hash => hash).Aggregate(0, (current, b) => current + b);
+        public override int GetHashCode()
+        {
+            var resp = _hashes.Length;
+            for (var i = 0; i < _hashes.Length; i++)
+            {
+                if (_hashes[i] == null) continue;
+                resp += _hashes[i].Sum(b => i * _hashes.Length + b);
+            }
+
+            return resp;
+        }
 
         /// <inheritdoc />
         public override void Deserialize(BinaryReader reader)

@@ -26,10 +26,25 @@ namespace Neo.Ledger
         {
             get
             {
+                if (key == null)
+                {
+                    throw new ArgumentNullException("The key parameter can not be null");
+                }
                 var resp = this[Encoding.UTF8.GetBytes(key)];
                 return resp == null ? null : Encoding.UTF8.GetString(resp);
             }
-            set => this[Encoding.UTF8.GetBytes(key)] = value != null ? Encoding.UTF8.GetBytes(value) : null;
+            set
+            {
+                if (key == null)
+                {
+                    throw new ArgumentNullException("The key parameter can not be null");
+                }
+                if (value == null)
+                {
+                    throw new ArgumentNullException("The value parameter can not be null");
+                }
+                this[Encoding.UTF8.GetBytes(key)] = Encoding.UTF8.GetBytes(value);
+            }
         }
 
         /// <summary>
@@ -38,9 +53,24 @@ namespace Neo.Ledger
         /// <param name="key">The key that indicates the reference.</param>
         public byte[] this[byte[] key]
         {
-            get => _rootHash == null ? null : Get(_db[_rootHash], ConvertToNibble(key));
+            get
+            {
+                if (key == null)
+                {
+                    throw new ArgumentNullException("The key parameter can not be null");
+                }
+                return _rootHash == null ? null : Get(_db[_rootHash], ConvertToNibble(key));
+            }
             set
             {
+                if (key == null)
+                {
+                    throw new ArgumentNullException("The key parameter can not be null");
+                }
+                if (value == null)
+                {
+                    throw new ArgumentNullException("The value parameter can not be null");
+                }
                 var node = _rootHash == null ? null : _db[_rootHash];
                 if (_rootHash != null)
                 {
@@ -335,45 +365,41 @@ namespace Neo.Ledger
                     node.Key = null;
                     node.Value = null;
                 }
-
-                if (node[path[0]] != null)
+                else if (node[path[0]] != null)
                 {
-                    var antes = node[path[0]];
                     node[path[0]] = Remove(node[path[0]], path.Skip(1).ToArray());
-                    if (!antes.SequenceEqual(node[path[0]]))
-                    {
-                        var contar = 0;
-                        var indexInnerNode = 0;
-                        for (var i = 0; i < node.Length - 2; i++)
-                        {
-                            if (node[i] == null) continue;
-                            contar++;
-                            indexInnerNode = i;
-                        }
+                }
 
-                        if (contar == 0)
+                var contar = 0;
+                var indexInnerNode = 0;
+                for (var i = 0; i < node.Length - 2; i++)
+                {
+                    if (node[i] == null) continue;
+                    contar++;
+                    indexInnerNode = i;
+                }
+
+                if (contar == 0)
+                {
+                    var newNode = MerklePatriciaNode.LeafNode();
+                    newNode.Path = new byte[0];
+                    newNode.Key = node.Key;
+                    newNode.Value = node.Value;
+                    node = newNode;
+                }
+                else if (contar == 1)
+                {
+                    if (node[node.Length - 1] == null)
+                    {
+                        var innerNodeHash = node[indexInnerNode];
+                        var innerNode = _db[innerNodeHash];
+                        if (innerNode.IsLeaf)
                         {
-                            var newNode = MerklePatriciaNode.LeafNode();
-                            newNode.Path = new byte[0];
-                            newNode.Key = node.Key;
-                            newNode.Value = node.Value;
-                            node = newNode;
-                        }
-                        else if (contar == 1)
-                        {
-                            if (node[node.Length - 1] == null)
-                            {
-                                var innerNodeHash = node[indexInnerNode];
-                                var innerNode = _db[innerNodeHash];
-                                if (innerNode.IsLeaf)
-                                {
-                                    _db.Remove(innerNodeHash);
-                                    node = MerklePatriciaNode.LeafNode();
-                                    node.Path = new[] {(byte) indexInnerNode}.Concat(innerNode.Path).ToArray();
-                                    node.Key = innerNode.Key;
-                                    node.Value = innerNode.Value;
-                                }
-                            }
+                            _db.Remove(innerNodeHash);
+                            node = MerklePatriciaNode.LeafNode();
+                            node.Path = new[] {(byte) indexInnerNode}.Concat(innerNode.Path).ToArray();
+                            node.Key = innerNode.Key;
+                            node.Value = innerNode.Value;
                         }
                     }
                 }
@@ -389,9 +415,9 @@ namespace Neo.Ledger
         /// Checks if the hashes correspond to their nodes.
         /// </summary>
         /// <returns>In the case the validation is Ok.</returns>
-        public bool Validade() => _rootHash == null || Validade(_rootHash, _db[_rootHash]);
+        public bool Validate() => _rootHash == null || Validate(_rootHash, _db[_rootHash]);
 
-        private bool Validade(byte[] nodeHash, MerklePatriciaNode node)
+        private bool Validate(byte[] nodeHash, MerklePatriciaNode node)
         {
             while (true)
             {
@@ -415,7 +441,7 @@ namespace Neo.Ledger
                 for (var i = 0; i < node.Length - 2; i++)
                 {
                     var subNodeHash = node[i];
-                    if (subNodeHash != null && !Validade(subNodeHash, _db[subNodeHash]))
+                    if (subNodeHash != null && !Validate(subNodeHash, _db[subNodeHash]))
                     {
                         return false;
                     }
@@ -483,6 +509,7 @@ namespace Neo.Ledger
         {
             base.Deserialize(reader);
             _db.Clear();
+            _rootHash = reader.ReadVarBytes();
             var size = reader.ReadVarInt();
             for (var i = 0ul; i < size; i++)
             {
@@ -499,6 +526,7 @@ namespace Neo.Ledger
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
+            writer.WriteVarBytes(_rootHash);
             writer.WriteVarInt(_db.Count);
             foreach (var it in _db)
             {

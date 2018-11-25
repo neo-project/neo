@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -260,6 +261,73 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
             mptItem[0] = Encoding.UTF8.GetBytes("turma0").Sha256();
             Assert.IsTrue(Encoding.UTF8.GetBytes("turma").Sha256().SequenceEqual(cloned[0]));
+        }
+
+        [TestMethod]
+        public void EqualsBranch()
+        {
+            var mpNode = MerklePatriciaNode.BranchNode();
+            Assert.AreNotEqual(mpNode, null);
+            Assert.AreEqual(mpNode, mpNode);
+            Assert.AreNotEqual(mpNode, MerklePatriciaNode.ExtensionNode());
+        }
+
+        [TestMethod]
+        public void EqualsLeaf()
+        {
+            var mpNode = MerklePatriciaNode.LeafNode();
+            Assert.AreNotEqual(mpNode, null);
+            Assert.AreEqual(mpNode, mpNode);
+            Assert.AreNotEqual(mpNode, MerklePatriciaNode.ExtensionNode());
+        }
+
+        [TestMethod]
+        public void EqualsExtension()
+        {
+            var mpNode = MerklePatriciaNode.ExtensionNode();
+            Assert.AreNotEqual(mpNode, null);
+            Assert.AreEqual(mpNode, mpNode);
+            Assert.AreNotEqual(mpNode, MerklePatriciaNode.LeafNode());
+        }
+
+        [TestMethod]
+        public void ToStringBranch()
+        {
+            var mpNode = MerklePatriciaNode.BranchNode();
+            Assert.AreEqual("{}", $"{mpNode}");
+        }
+
+        [TestMethod]
+        public void UsingOnSet()
+        {
+            var setObj = new HashSet<MerklePatriciaNode> {MerklePatriciaNode.BranchNode()};
+            Assert.AreEqual(1, setObj.Count);
+            setObj.Add(MerklePatriciaNode.ExtensionNode());
+            Assert.AreEqual(2, setObj.Count);
+            setObj.Add(MerklePatriciaNode.LeafNode());
+            Assert.AreEqual(3, setObj.Count);
+            setObj.Add(MerklePatriciaNode.ExtensionNode());
+            Assert.AreEqual(3, setObj.Count);
+
+            var node = MerklePatriciaNode.LeafNode();
+            node.Key = new byte[] {0, 1};
+            node.Value = new byte[] {0, 1};
+            setObj.Add(node);
+            Assert.AreEqual(4, setObj.Count);
+        }
+
+        [TestMethod]
+        public void ToStringExtension()
+        {
+            var mpNode = MerklePatriciaNode.ExtensionNode();
+            Assert.AreEqual("[null,null]", $"{mpNode}");
+        }
+
+        [TestMethod]
+        public void ToStringLeaf()
+        {
+            var mpNode = MerklePatriciaNode.LeafNode();
+            Assert.AreEqual("[null,null,null]", $"{mpNode}");
         }
     }
 }
