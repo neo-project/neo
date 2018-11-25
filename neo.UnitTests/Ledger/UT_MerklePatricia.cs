@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -9,6 +11,70 @@ namespace Neo.UnitTests.Ledger
     [TestClass]
     public class UT_MerklePatricia
     {
+        [TestMethod]
+        public void Serialize()
+        {
+            var mp = new MerklePatricia {["oi"] = "bola"};
+
+            var cloned = new MerklePatricia();
+            using (var ms = new MemoryStream())
+            {
+                using (var bw = new BinaryWriter(ms))
+                {
+                    mp.Serialize(bw);
+                    using (var br = new BinaryReader(bw.BaseStream))
+                    {
+                        br.BaseStream.Position = 0;
+                        cloned.Deserialize(br);
+                    }
+                }
+            }
+
+            Assert.IsTrue(mp.Validate());
+            Assert.IsTrue(cloned.Validate());
+            Assert.AreEqual("bola", cloned["oi"]);
+            Assert.AreEqual(mp, cloned);
+
+            mp["cachorro"] = "cachorro";
+            Assert.AreNotEqual(mp, cloned);
+        }
+
+        [TestMethod]
+        public void SerializeFakingData()
+        {
+            var mp = new MerklePatricia {["oi"] = "bola"};
+
+            var cloned = new MerklePatricia();
+            using (var ms = new MemoryStream())
+            {
+                using (var bw = new BinaryWriter(ms))
+                {
+                    mp.Serialize(bw);
+                    var data = ms.ToArray();
+                    data[data.Length - 2] += 1;
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        using (var binWriter = new BinaryWriter(memoryStream))
+                        {
+                            binWriter.Write(data);
+                            using (var br = new BinaryReader(binWriter.BaseStream))
+                            {
+                                br.BaseStream.Position = 0;
+                                cloned.Deserialize(br);
+                            }
+                        }
+                    }
+                }
+            }
+
+            Assert.IsTrue(mp.Validate());
+            Assert.IsFalse(cloned.Validate());
+            Assert.AreNotEqual(mp, cloned);
+            
+            Assert.AreEqual("bola", mp["oi"]);
+            Assert.AreNotEqual("bola", cloned["oi"]);
+        }
+
         [TestMethod]
         public void DistinctRoot()
         {
@@ -43,28 +109,28 @@ namespace Neo.UnitTests.Ledger
             };
             Assert.IsTrue(mp.ContainsKey("oi"));
             Assert.AreEqual("batatatinha", mp["oi"]);
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
 
             mp["orelha"] = "batatatinha";
             Assert.AreEqual("batatatinha", mp["orelha"]);
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
 
             mp["orfão"] = "criança";
             Assert.AreEqual("criança", mp["orfão"]);
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
 
             mp["orfanato"] = "crianças";
             Assert.AreEqual("crianças", mp["orfanato"]);
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
 
             Assert.IsTrue(mp.Remove("orfanato"));
             Assert.AreEqual("criança", mp["orfão"]);
             Assert.IsFalse(mp.ContainsKey("orfanato"));
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
 
             mp["orfã"] = "menina";
             Assert.AreEqual("menina", mp["orfã"]);
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
         }
 
         [TestMethod]
@@ -99,7 +165,7 @@ namespace Neo.UnitTests.Ledger
                 ["boi2"] = "oi2",
                 ["coi1"] = "oi3"
             };
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
             Assert.IsTrue(mp.ContainsValue("oi"));
             Assert.IsTrue(mp.ContainsValue("oi2"));
             Assert.IsTrue(mp.ContainsValue("oi3"));
@@ -107,7 +173,7 @@ namespace Neo.UnitTests.Ledger
             Assert.IsFalse(mp.ContainsValue("aoi"));
             Assert.IsFalse(mp.ContainsValue("boi2"));
             Assert.IsFalse(mp.ContainsValue("coi3"));
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
         }
 
         [TestMethod]
@@ -115,15 +181,15 @@ namespace Neo.UnitTests.Ledger
         {
             var mp = new MerklePatricia();
             Assert.AreEqual(0, mp.Count());
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
 
             mp["oi"] = "oi";
             Assert.AreEqual(1, mp.Count());
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
 
             mp["oi"] = "oi";
             Assert.AreEqual(1, mp.Count());
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
 
             mp["oi"] = "oi1";
             Assert.AreEqual(1, mp.Count());
@@ -134,7 +200,7 @@ namespace Neo.UnitTests.Ledger
 
             mp["bala"] = "bala2";
             Assert.AreEqual(4, mp.Count());
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
         }
 
         [TestMethod]
@@ -158,14 +224,14 @@ namespace Neo.UnitTests.Ledger
                 merklePatricia[keyValue.Key] = keyValue.Value;
             }
 
-            Assert.IsTrue(merklePatricia.Validade());
+            Assert.IsTrue(merklePatricia.Validate());
 
             foreach (var keyValue in exemplo)
             {
                 Assert.AreEqual(keyValue.Value, merklePatricia[keyValue.Key]);
             }
 
-            Assert.IsTrue(merklePatricia.Validade());
+            Assert.IsTrue(merklePatricia.Validate());
         }
 
         [TestMethod]
@@ -179,7 +245,7 @@ namespace Neo.UnitTests.Ledger
                 System.Console.WriteLine(
                     $"Linha: '{it}:{Encoding.UTF8.GetBytes(it).ByteToHexString(false, false)}':\n{mp}");
                 Assert.AreEqual(it, mp[it]);
-                Assert.IsTrue(mp.Validade());
+                Assert.IsTrue(mp.Validate());
             }
         }
 
@@ -187,13 +253,13 @@ namespace Neo.UnitTests.Ledger
         public void One()
         {
             var merklePatricia = new MerklePatricia();
-            Assert.IsTrue(merklePatricia.Validade());
+            Assert.IsTrue(merklePatricia.Validate());
 //            Assert.AreEqual(0, merklePatricia.Height());
 
             void InserirTestar(string x, string y)
             {
                 merklePatricia[x] = y;
-                Assert.IsTrue(merklePatricia.Validade());
+                Assert.IsTrue(merklePatricia.Validate());
                 Assert.IsTrue(merklePatricia.ContainsKey(x));
                 Assert.IsFalse(merklePatricia.ContainsKey(x + "123"));
                 Assert.AreEqual(y, merklePatricia[x]);
@@ -202,24 +268,24 @@ namespace Neo.UnitTests.Ledger
 
             InserirTestar("01a2", "valor1");
 //            Assert.AreEqual(1, merklePatricia.Height());
-            Assert.IsTrue(merklePatricia.Validade());
+            Assert.IsTrue(merklePatricia.Validate());
 
             InserirTestar("11a2", "valor2");
-            Assert.IsTrue(merklePatricia.Validade());
+            Assert.IsTrue(merklePatricia.Validate());
 
             InserirTestar("0212", "valor3");
 //            Assert.Equal(3, merklePatricia.Height());
-            Assert.IsTrue(merklePatricia.Validade());
+            Assert.IsTrue(merklePatricia.Validate());
 
             merklePatricia["0"] = "valor4";
-            Assert.IsTrue(merklePatricia.Validade());
+            Assert.IsTrue(merklePatricia.Validate());
         }
 
         [TestMethod]
         public void Remove()
         {
             var mp = new MerklePatricia();
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
 
             void RemoverTestar(string x, string y)
             {
@@ -234,30 +300,30 @@ namespace Neo.UnitTests.Ledger
             }
 
             RemoverTestar("oi", "bala");
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
             mp.Remove("oi");
             Assert.IsFalse(mp.ContainsKey("oi"));
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
 
             mp["123"] = "abc";
             mp["a123"] = "1abc";
             Assert.AreEqual(2, mp.Count());
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
 
             Assert.IsFalse(mp.Remove("b123"));
             Assert.AreEqual(2, mp.Count());
             Assert.IsTrue(mp.Remove("a123"));
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
             Assert.AreEqual(1, mp.Count());
             Assert.IsFalse(mp.ContainsKey("a123"));
             Assert.IsTrue(mp.ContainsKey("123"));
             Assert.IsTrue(mp.ContainsKey("123"));
-            Assert.IsTrue(mp.Validade());
+            Assert.IsTrue(mp.Validate());
 
             var mp2 = new MerklePatricia {["123"] = "abc"};
             Assert.AreEqual(mp2, mp);
-            Assert.IsTrue(mp.Validade());
-            Assert.IsTrue(mp2.Validade());
+            Assert.IsTrue(mp.Validate());
+            Assert.IsTrue(mp2.Validate());
         }
 
         [TestMethod]
@@ -270,7 +336,7 @@ namespace Neo.UnitTests.Ledger
                 ["oi2"] = "b2ola",
                 ["oi1"] = "bola1"
             };
-            Assert.IsTrue(mpA.Validade());
+            Assert.IsTrue(mpA.Validate());
 
             var mpB = new MerklePatricia
             {
@@ -279,38 +345,47 @@ namespace Neo.UnitTests.Ledger
                 ["oi2"] = "b2ola",
                 ["oi1"] = "bola1"
             };
-            Assert.IsTrue(mpB.Validade());
+            Assert.IsTrue(mpB.Validate());
             Assert.AreEqual(mpA, mpB);
 
             mpA["oi"] = "escola";
             Assert.AreNotEqual(mpA, mpB);
-            Assert.IsTrue(mpA.Validade());
+            Assert.IsTrue(mpA.Validate());
 
             mpB["oi"] = "escola";
             Assert.AreEqual(mpA, mpB);
-            Assert.IsTrue(mpB.Validade());
+            Assert.IsTrue(mpB.Validate());
 
             mpA["oi123"] = "escola";
             mpA["oi12"] = "escola1";
             mpA["bola"] = "escola2";
             mpA["dog"] = "escola2";
-            Assert.IsTrue(mpA.Validade());
+            Assert.IsTrue(mpA.Validate());
 
             mpB["bola"] = "escola2";
             mpB["dog"] = "escola2";
             mpB["oi12"] = "escola1";
             mpB["oi123"] = "escola";
             Assert.AreEqual(mpA, mpB);
-            Assert.IsTrue(mpB.Validade());
+            Assert.IsTrue(mpB.Validate());
 
             mpA.Remove("oi");
             mpA.Remove("oi");
             Assert.AreNotEqual(mpA, mpB);
-            Assert.IsTrue(mpA.Validade());
+            Assert.IsTrue(mpA.Validate());
 
             mpB.Remove("oi");
             Assert.AreEqual(mpA, mpB);
-            Assert.IsTrue(mpB.Validade());
+            Assert.IsTrue(mpB.Validate());
+
+            Assert.IsNull(mpA["Meg"]);
+
+            Assert.ThrowsException<ArgumentNullException>(() => mpA[(string) null]);
+            Assert.ThrowsException<ArgumentNullException>(() => mpA[(string) null] = null);
+            Assert.ThrowsException<ArgumentNullException>(() => mpA[(byte[]) null]);
+            Assert.ThrowsException<ArgumentNullException>(() => mpA[(byte[]) null] = null);
+            Assert.ThrowsException<ArgumentNullException>(() => mpA[new byte[] {0, 1}] = null);
+            Assert.ThrowsException<ArgumentNullException>(() => mpA["Meg"] = null);
         }
     }
 }
