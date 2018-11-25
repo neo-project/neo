@@ -113,7 +113,7 @@ namespace Neo.Ledger
             {
                 if (IsBranch && _hashes[i] == null) continue;
                 resp.Append(virgula ? "," : "")
-                    .Append(IsBranch ? $"{i:x}:" : "")
+                    .Append(IsBranch ? $"\"{i:x}\":" : "")
                     .Append(_hashes[i] != null ? $"\"{_hashes[i].ByteToHexString(false, false)}\"" : "null");
                 virgula = true;
             }
@@ -169,8 +169,25 @@ namespace Neo.Ledger
         /// <inheritdoc />
         public bool Equals(MerklePatriciaNode other)
         {
-            if (ReferenceEquals(null, other)) return false;
-            return ReferenceEquals(this, other) || _hashes.SequenceEqual(other._hashes);
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (_hashes.Length != other.Length)
+            {
+                return false;
+            }
+
+            return !_hashes.Where((t, i) =>
+                (t != null || other._hashes[i] != null) &&
+                ((t == null && other._hashes[i] != null) || (t != null && other._hashes[i] == null) ||
+                 !t.SequenceEqual(other._hashes[i]))).Any();
         }
 
         /// <inheritdoc />
@@ -182,7 +199,7 @@ namespace Neo.Ledger
         }
 
         /// <inheritdoc />
-        public override int GetHashCode() => _hashes != null ? _hashes.GetHashCode() : 0;
+        public override int GetHashCode() => _hashes.SelectMany(hash => hash).Aggregate(0, (current, b) => current + b);
 
         /// <inheritdoc />
         public override void Deserialize(BinaryReader reader)

@@ -14,7 +14,9 @@ namespace Neo.Ledger
     public class MerklePatricia : StateBase, ICloneable<MerklePatricia>, IEquatable<MerklePatricia>
     {
         private byte[] _rootHash;
-        private readonly Dictionary<byte[], MerklePatriciaNode> _db = new Dictionary<byte[], MerklePatriciaNode>();
+
+        private readonly Dictionary<byte[], MerklePatriciaNode> _db = new
+            Dictionary<byte[], MerklePatriciaNode>(new ByteArrayComparer());
 
         /// <summary>
         /// Get and set the key and valeu pairs of the tree.
@@ -77,7 +79,16 @@ namespace Neo.Ledger
                     node.Key = key;
                     node.Value = value;
                 }
-                else if (path[0] == node.Path[0])
+                else if (node.Path.Length == 0 || path[0] != node.Path[0])
+                {
+                    var innerHash = Set(MerklePatriciaNode.BranchNode(), node.Path, node.Key, node.Value);
+                    node = _db[innerHash];
+                    _db.Remove(innerHash);
+                    innerHash = Set(node, path, key, value);
+                    node = _db[innerHash];
+                    _db.Remove(innerHash);
+                }
+                else
                 {
                     for (var pos = 0;; pos++)
                     {
@@ -97,15 +108,6 @@ namespace Neo.Ledger
                         }
                     }
                 }
-                else
-                {
-                    var innerHash = Set(MerklePatriciaNode.BranchNode(), node.Path, node.Key, node.Value);
-                    node = _db[innerHash];
-                    _db.Remove(innerHash);
-                    innerHash = Set(node, path, key, value);
-                    node = _db[innerHash];
-                    _db.Remove(innerHash);
-                }
             }
             else if (node.IsExtension)
             {
@@ -116,7 +118,16 @@ namespace Neo.Ledger
                     _db.Remove(innerHash);
                     node.Next = Set(innerNode, new byte[0], key, value);
                 }
-                else if (path[0] == node.Path[0])
+                else if (node.Path.Length == 0 || path[0] != node.Path[0])
+                {
+                    var newHash = Set(MerklePatriciaNode.BranchNode(), path, key, value);
+                    var newNode = _db[newHash];
+                    _db.Remove(newHash);
+                    newNode[node.Path[1]] = node.Next;
+                    node.Path = node.Path.Skip(1).ToArray();
+                    node = newNode;
+                }
+                else
                 {
                     for (var pos = 0;; pos++)
                     {
@@ -141,25 +152,24 @@ namespace Neo.Ledger
 
                         if (path[pos + 1] != node.Path[pos + 1])
                         {
-                            var newHash = Set(MerklePatriciaNode.BranchNode(), path.Skip(pos + 1).ToArray(), key,
-                                value);
-                            var newNode = _db[newHash];
-                            _db.Remove(newHash);
-                            newNode[node.Path[pos + 1]] = node.Next;
-                            node.Path = node.Path.Skip(pos + 1).ToArray();
-                            node = newNode;
+                            var oldExtension = node;
+                            node = MerklePatriciaNode.ExtensionNode();
+                            node.Path = oldExtension.Path.Take(pos + 1).ToArray();
+                            node.Next = Set(MerklePatriciaNode.BranchNode(), path.Skip(pos + 1).ToArray(), key, value);
+
+                            var nodeNext = _db[node.Next];
+                            _db.Remove(node.Next);
+                            var oldExtensionPath = oldExtension.Path;
+                            oldExtension.Path = oldExtension.Path.Skip(pos + 2).ToArray();
+                            nodeNext[oldExtensionPath[pos + 1]] = oldExtension.Hash();
+                            _db[nodeNext[oldExtensionPath[pos + 1]]] = oldExtension;
+
+                            node.Next = nodeNext.Hash();
+                            _db[node.Next] = nodeNext;
+
                             break;
                         }
                     }
-                }
-                else
-                {
-                    var newHash = Set(MerklePatriciaNode.BranchNode(), path, key, value);
-                    var newNode = _db[newHash];
-                    _db.Remove(newHash);
-                    newNode[node.Path[1]] = node.Next;
-                    node.Path = node.Path.Skip(1).ToArray();
-                    node = newNode;
                 }
             }
             else
@@ -243,7 +253,8 @@ namespace Neo.Ledger
         /// </summary>
         /// <param name="value">Value to look for.</param>
         /// <returns>true if the value is present.</returns>
-        public bool ContainsValue(byte[] value) => _db.Any(x => x.Value.Value.SequenceEqual(value));
+        public bool ContainsValue(byte[] value) =>
+            _db.Any(x => x.Value.Value != null && x.Value.Value.SequenceEqual(value));
 
         public bool ContainsValue(string value) => ContainsValue(Encoding.UTF8.GetBytes(value));
 
@@ -267,7 +278,7 @@ namespace Neo.Ledger
             }
 
             var removido = Remove(_rootHash, ConvertToNibble(key));
-            var resp = removido != _rootHash;
+            var resp = removido == null || !_rootHash.SequenceEqual(removido);
             if (resp)
             {
                 _db.Remove(_rootHash);
@@ -327,46 +338,44 @@ namespace Neo.Ledger
 
                 if (node[path[0]] != null)
                 {
+                    var antes = node[path[0]];
                     node[path[0]] = Remove(node[path[0]], path.Skip(1).ToArray());
-                    var contar = 0;
-                    var indexInnerNode = 0;
-                    for (var i = 0; i < node.Length - 2; i++)
+                    if (!antes.SequenceEqual(node[path[0]]))
                     {
-                        if (node[i] != null)
+                        var contar = 0;
+                        var indexInnerNode = 0;
+                        for (var i = 0; i < node.Length - 2; i++)
                         {
+                            if (node[i] == null) continue;
                             contar++;
                             indexInnerNode = i;
                         }
-                    }
 
-                    if (contar == 0)
-                    {
-                        var newNode = MerklePatriciaNode.LeafNode();
-                        newNode.Path = new byte[0];
-                        newNode.Key = node.Key;
-                        newNode.Value = node.Value;
-                        node = newNode;
-                    }
-                    else if (contar == 1)
-                    {
-                        if (node[node.Length - 1] == null)
+                        if (contar == 0)
                         {
-                            var innerNodeHash = node[indexInnerNode];
-                            var innerNode = _db[innerNodeHash];
-                            if (innerNode.IsLeaf)
+                            var newNode = MerklePatriciaNode.LeafNode();
+                            newNode.Path = new byte[0];
+                            newNode.Key = node.Key;
+                            newNode.Value = node.Value;
+                            node = newNode;
+                        }
+                        else if (contar == 1)
+                        {
+                            if (node[node.Length - 1] == null)
                             {
-                                _db.Remove(innerNodeHash);
-                                node = MerklePatriciaNode.LeafNode();
-                                node.Path = new[] {(byte) indexInnerNode}.Concat(innerNode.Path).ToArray();
-                                node.Key = innerNode.Key;
-                                node.Value = innerNode.Value;
+                                var innerNodeHash = node[indexInnerNode];
+                                var innerNode = _db[innerNodeHash];
+                                if (innerNode.IsLeaf)
+                                {
+                                    _db.Remove(innerNodeHash);
+                                    node = MerklePatriciaNode.LeafNode();
+                                    node.Path = new[] {(byte) indexInnerNode}.Concat(innerNode.Path).ToArray();
+                                    node.Key = innerNode.Key;
+                                    node.Value = innerNode.Value;
+                                }
                             }
                         }
                     }
-                }
-                else
-                {
-                    return nodeHash;
                 }
             }
 
@@ -384,31 +393,36 @@ namespace Neo.Ledger
 
         private bool Validade(byte[] nodeHash, MerklePatriciaNode node)
         {
-            if (nodeHash != node.Hash())
+            while (true)
             {
-                return false;
-            }
-
-            if (node.IsExtension)
-            {
-                return Validade(node.Next, _db[node.Next]);
-            }
-
-            if (node.IsLeaf)
-            {
-                return true;
-            }
-
-            for (var i = 0; i < node.Length - 2; i++)
-            {
-                var subNodeHash = node[i];
-                if (subNodeHash != null && !Validade(subNodeHash, _db[subNodeHash]))
+                if (!nodeHash.SequenceEqual(node.Hash()))
                 {
                     return false;
                 }
-            }
 
-            return true;
+                if (node.IsExtension)
+                {
+                    nodeHash = node.Next;
+                    node = _db[node.Next];
+                    continue;
+                }
+
+                if (node.IsLeaf)
+                {
+                    return true;
+                }
+
+                for (var i = 0; i < node.Length - 2; i++)
+                {
+                    var subNodeHash = node[i];
+                    if (subNodeHash != null && !Validade(subNodeHash, _db[subNodeHash]))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
         }
 
         /// <inheritdoc />
@@ -431,7 +445,11 @@ namespace Neo.Ledger
             for (var i = 0; i < node.Length; i++)
             {
                 if (node[i] == null) continue;
-                resp.Append(virgula ? "," : "").Append($"\"{i:x}\":{ToString(_db[node[i]])}");
+                resp.Append(virgula ? "," : "")
+                    .Append(i < node.Length - 2
+                        ? $"\"{i:x}\":{ToString(_db[node[i]])}"
+                        : $"\"{i:x}\":\"{node[i].ByteToHexString(false, false)}\"");
+
                 virgula = true;
             }
 
@@ -499,27 +517,10 @@ namespace Neo.Ledger
                 return false;
             }
 
-            System.Console.WriteLine("db");
             foreach (var it in _db)
             {
-                System.Console.WriteLine($"{it.Key.ByteToHexString(false, false)}");
-            }
-            System.Console.WriteLine("other.db");
-            foreach (var it in other._db)
-            {
-                System.Console.WriteLine($"{it.Key.ByteToHexString(false, false)}");
-            }
-            foreach (var it in _db)
-            {
-                var thisV = _db[it.Key];
                 var otherV = other._db[it.Key];
-                if (otherV == null && thisV == null)
-                {
-                    continue;
-                }
-
-                if ((otherV == null && thisV != null) || (otherV != null && thisV == null)
-                                                      || !otherV.Equals(it.Value.Value))
+                if (!otherV.Equals(it.Value))
                 {
                     return false;
                 }
