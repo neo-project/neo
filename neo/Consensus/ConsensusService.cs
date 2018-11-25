@@ -21,22 +21,19 @@ namespace Neo.Consensus
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
-        private IConsensusContext context;
-        //private readonly NeoSystem system;
-        private IActorRef localNode;
-        private IActorRef taskManager;
+        private readonly IConsensusContext context;
+        private readonly IActorRef localNode;
+        private readonly IActorRef taskManager;
 
         public ConsensusService(IActorRef _LocalNode, IActorRef _TaskManager, Wallet wallet)
         {
-            //this.system = system;
-            this.context = new ConsensusContext(wallet);
             this.localNode = _LocalNode;
             this.taskManager = _TaskManager;
+            this.context = new ConsensusContext(wallet);
         }
 
         public ConsensusService(IActorRef _LocalNode, IActorRef _TaskManager, IConsensusContext context)
         {
-            //this.system = system;
             this.localNode = _LocalNode;
             this.taskManager = _TaskManager;
             this.context = context;
