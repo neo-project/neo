@@ -1,7 +1,6 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Ledger;
@@ -25,6 +24,8 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
             Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
 
+            Assert.AreEqual(mptItem, cloned);
+
             mptItem.Path = Encoding.UTF8.GetBytes("23f");
             Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
             mptItem.Value = Encoding.UTF8.GetBytes("abc1");
@@ -42,6 +43,8 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(cloned.IsExtension);
             Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
             Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Next));
+
+            Assert.AreEqual(mptItem, cloned);
 
             mptItem.Path = Encoding.UTF8.GetBytes("23");
             Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
@@ -67,6 +70,8 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(Encoding.UTF8.GetBytes("turma7").Sha256().SequenceEqual(cloned[7]));
             Assert.IsTrue(Encoding.UTF8.GetBytes("turma10").Sha256().SequenceEqual(cloned[10]));
 
+            Assert.AreEqual(mptItem, cloned);
+
             mptItem.Key = Encoding.UTF8.GetBytes("oi11").Sha256();
             Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
             mptItem.Value = Encoding.UTF8.GetBytes("abc45");
@@ -90,6 +95,8 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
             Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
 
+            Assert.AreEqual(mptItem, cloned);
+
             mptItem.Path = Encoding.UTF8.GetBytes("23f");
             Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
             mptItem.Value = Encoding.UTF8.GetBytes("abc1");
@@ -108,6 +115,8 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(cloned.IsExtension);
             Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
             Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Next));
+
+            Assert.AreEqual(mptItem, cloned);
 
             mptItem.Path = Encoding.UTF8.GetBytes("23");
             Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
@@ -133,6 +142,8 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(Encoding.UTF8.GetBytes("turma").Sha256().SequenceEqual(cloned[0]));
             Assert.IsTrue(Encoding.UTF8.GetBytes("turma7").Sha256().SequenceEqual(cloned[7]));
             Assert.IsTrue(Encoding.UTF8.GetBytes("turma10").Sha256().SequenceEqual(cloned[10]));
+
+            Assert.AreEqual(mptItem, cloned);
 
             mptItem.Key = Encoding.UTF8.GetBytes("oi11").Sha256();
             Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
@@ -163,17 +174,20 @@ namespace Neo.UnitTests.Ledger
                     }
                 }
             }
+
             Assert.IsTrue(cloned.IsLeaf);
             Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
             Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
             Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
+
+            Assert.AreEqual(mptItem, cloned);
 
             mptItem.Path = Encoding.UTF8.GetBytes("23f");
             Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
             mptItem.Value = Encoding.UTF8.GetBytes("abc1");
             Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
         }
-        
+
         [TestMethod]
         public void SerializeExtension()
         {
@@ -194,16 +208,19 @@ namespace Neo.UnitTests.Ledger
                     }
                 }
             }
+
             Assert.IsTrue(cloned.IsExtension);
             Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
             Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Next));
+
+            Assert.AreEqual(mptItem, cloned);
 
             mptItem.Path = Encoding.UTF8.GetBytes("23");
             Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
             mptItem.Next = Encoding.UTF8.GetBytes("oi4").Sha256();
             Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Next));
         }
-        
+
         [TestMethod]
         public void SerializeBranch()
         {
@@ -227,12 +244,15 @@ namespace Neo.UnitTests.Ledger
                     }
                 }
             }
+
             Assert.IsTrue(cloned.IsBranch);
             Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
             Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
             Assert.IsTrue(Encoding.UTF8.GetBytes("turma").Sha256().SequenceEqual(cloned[0]));
             Assert.IsTrue(Encoding.UTF8.GetBytes("turma7").Sha256().SequenceEqual(cloned[7]));
             Assert.IsTrue(Encoding.UTF8.GetBytes("turma10").Sha256().SequenceEqual(cloned[10]));
+
+            Assert.AreEqual(mptItem, cloned);
 
             mptItem.Key = Encoding.UTF8.GetBytes("oi11").Sha256();
             Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
