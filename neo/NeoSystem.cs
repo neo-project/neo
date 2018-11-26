@@ -47,12 +47,15 @@ namespace Neo
             Consensus.Tell(new ConsensusService.Start());
         }
 
-        public void StartNode(int port = 0, int ws_port = 0)
+        public void StartNode(int port = 0, int wsPort = 0, int minDesiredConnections = Peer.DefaultMinDesiredConnections,
+            int maxConnections = Peer.DefaultMaxConnections)
         {
             LocalNode.Tell(new Peer.Start
             {
                 Port = port,
-                WsPort = ws_port
+                WsPort = wsPort,
+                MinDesiredConnections = minDesiredConnections,
+                MaxConnections = maxConnections
             });
         }
 
