@@ -35,7 +35,7 @@ namespace Neo.Consensus
 
         int M {get;}
 
-        Header SnapshotHeader {get;}
+        Header PrevHeader {get;}
 
         bool RejectTx(Transaction tx, bool verify);
 

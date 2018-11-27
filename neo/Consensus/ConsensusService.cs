@@ -186,7 +186,7 @@ namespace Neo.Consensus
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
             context.Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (!context.State.HasFlag(ConsensusState.Backup)) return;
-            if (payload.Timestamp <= context.SnapshotHeader.Timestamp || payload.Timestamp > context.GetUtcNow().AddMinutes(10).ToTimestamp())
+            if (payload.Timestamp <= context.PrevHeader.Timestamp || payload.Timestamp > context.GetUtcNow().AddMinutes(10).ToTimestamp())
             {
                 context.Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
                 return;

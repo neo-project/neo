@@ -42,7 +42,7 @@ namespace Neo.Consensus
             this.wallet = wallet;
         }
 
-        public Header SnapshotHeader => Snapshot.GetHeader(PrevHash);
+        public Header PrevHeader => Snapshot.GetHeader(PrevHash);
 
         public bool RejectTx(Transaction tx, bool verify)
         {
@@ -241,7 +241,7 @@ namespace Neo.Consensus
             TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             Transactions = transactions.ToDictionary(p => p.Hash);
             NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators(transactions).ToArray());
-            Timestamp = Math.Max(GetUtcNow().ToTimestamp(), Snapshot.GetHeader(PrevHash).Timestamp + 1);
+            Timestamp = Math.Max(GetUtcNow().ToTimestamp(), PrevHeader.Timestamp + 1);
         }
 
         private static ulong GetNonce()
