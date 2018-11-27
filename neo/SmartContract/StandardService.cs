@@ -16,7 +16,7 @@ using VMBoolean = Neo.VM.Types.Boolean;
 
 namespace Neo.SmartContract
 {
-    public class StandardService : InteropService, IDisposable
+    public class StandardService : IDisposable, IInteropService
     {
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
@@ -26,6 +26,7 @@ namespace Neo.SmartContract
         protected readonly List<IDisposable> Disposables = new List<IDisposable>();
         protected readonly Dictionary<UInt160, UInt160> ContractsCreated = new Dictionary<UInt160, UInt160>();
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
+        private readonly Dictionary<uint, Func<ExecutionEngine, bool>> methods = new Dictionary<uint, Func<ExecutionEngine, bool>>();
         private readonly Dictionary<uint, long> prices = new Dictionary<uint, long>();
 
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
@@ -34,6 +35,10 @@ namespace Neo.SmartContract
         {
             this.Trigger = trigger;
             this.Snapshot = snapshot;
+            Register("System.ExecutionEngine.GetScriptContainer", ExecutionEngine_GetScriptContainer, 1);
+            Register("System.ExecutionEngine.GetExecutingScriptHash", ExecutionEngine_GetExecutingScriptHash, 1);
+            Register("System.ExecutionEngine.GetCallingScriptHash", ExecutionEngine_GetCallingScriptHash, 1);
+            Register("System.ExecutionEngine.GetEntryScriptHash", ExecutionEngine_GetEntryScriptHash, 1);
             Register("System.Runtime.Platform", Runtime_Platform, 1);
             Register("System.Runtime.GetTrigger", Runtime_GetTrigger, 1);
             Register("System.Runtime.CheckWitness", Runtime_CheckWitness, 200);
@@ -93,10 +98,48 @@ namespace Neo.SmartContract
             return price;
         }
 
+        bool IInteropService.Invoke(byte[] method, ExecutionEngine engine)
+        {
+            uint hash = method.Length == 4
+                ? BitConverter.ToUInt32(method, 0)
+                : Encoding.ASCII.GetString(method).ToInteropMethodHash();
+            if (!methods.TryGetValue(hash, out Func<ExecutionEngine, bool> func)) return false;
+            return func(engine);
+        }
+
+        protected void Register(string method, Func<ExecutionEngine, bool> handler)
+        {
+            methods.Add(method.ToInteropMethodHash(), handler);
+        }
+
         protected void Register(string method, Func<ExecutionEngine, bool> handler, long price)
         {
             Register(method, handler);
             prices.Add(method.ToInteropMethodHash(), price);
+        }
+
+        protected bool ExecutionEngine_GetScriptContainer(ExecutionEngine engine)
+        {
+            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(engine.ScriptContainer));
+            return true;
+        }
+
+        protected bool ExecutionEngine_GetExecutingScriptHash(ExecutionEngine engine)
+        {
+            engine.CurrentContext.EvaluationStack.Push(engine.CurrentContext.ScriptHash);
+            return true;
+        }
+
+        protected bool ExecutionEngine_GetCallingScriptHash(ExecutionEngine engine)
+        {
+            engine.CurrentContext.EvaluationStack.Push(engine.CallingContext.ScriptHash);
+            return true;
+        }
+
+        protected bool ExecutionEngine_GetEntryScriptHash(ExecutionEngine engine)
+        {
+            engine.CurrentContext.EvaluationStack.Push(engine.EntryContext.ScriptHash);
+            return true;
         }
 
         protected bool Runtime_Platform(ExecutionEngine engine)
