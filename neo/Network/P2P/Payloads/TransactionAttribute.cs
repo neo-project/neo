@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class TransactionAttribute : IInteropInterface, ISerializable
+    public class TransactionAttribute : ISerializable
     {
         public TransactionAttributeUsage Usage;
         public byte[] Data;
