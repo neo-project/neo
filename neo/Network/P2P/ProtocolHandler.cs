@@ -56,150 +56,88 @@ namespace Neo.Network.P2P
                 case "addr":
                     {
                         var payload = msg.Payload.AsSerializable<AddrPayload>();
-
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
-                        {
-                            return;
-                        }
-
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnAddrMessageReceived(payload);
                         break;
                     }
                 case "block":
                     {
                         var payload = msg.Payload.AsSerializable<Block>();
-
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
-                        {
-                            return;
-                        }
-
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnInventoryReceived(payload);
                         break;
                     }
                 case "consensus":
                     {
                         var payload = msg.Payload.AsSerializable<ConsensusPayload>();
-
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
-                        {
-                            return;
-                        }
-
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnInventoryReceived(payload);
                         break;
                     }
                 case "filteradd":
                     {
                         var payload = msg.Payload.AsSerializable<FilterAddPayload>();
-
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
-                        {
-                            return;
-                        }
-
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnFilterAddMessageReceived(payload);
                         break;
                     }
                 case "filterclear":
                     {
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, null))
-                        {
-                            return;
-                        }
-
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, null)) return;
                         OnFilterClearMessageReceived();
                         break;
                     }
                 case "filterload":
                     {
                         var payload = msg.Payload.AsSerializable<FilterLoadPayload>();
-
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
-                        {
-                            return;
-                        }
-
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnFilterLoadMessageReceived(payload);
                         break;
                     }
                 case "getaddr":
                     {
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, null))
-                        {
-                            return;
-                        }
-
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, null)) return;
                         OnGetAddrMessageReceived();
                         break;
                     }
                 case "getblocks":
                     {
                         var payload = msg.Payload.AsSerializable<GetBlocksPayload>();
-
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
-                        {
-                            return;
-                        }
-
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnGetBlocksMessageReceived(payload);
                         break;
                     }
                 case "getdata":
                     {
                         var payload = msg.Payload.AsSerializable<InvPayload>();
-
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
-                        {
-                            return;
-                        }
-
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnGetDataMessageReceived(payload);
                         break;
                     }
                 case "getheaders":
                     {
                         var payload = msg.Payload.AsSerializable<GetBlocksPayload>();
-
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
-                        {
-                            return;
-                        }
-
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnGetHeadersMessageReceived(payload);
                         break;
                     }
                 case "headers":
                     {
                         var payload = msg.Payload.AsSerializable<HeadersPayload>();
-
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
-                        {
-                            return;
-                        }
-
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnHeadersMessageReceived(payload);
                         break;
                     }
                 case "inv":
                     {
                         var payload = msg.Payload.AsSerializable<InvPayload>();
-
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
-                        {
-                            return;
-                        }
-
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnInvMessageReceived(payload);
                         break;
                     }
                 case "mempool":
                     {
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, null))
-                        {
-                            return;
-                        }
-
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, null)) return;
                         OnMemPoolMessageReceived();
                         break;
                     }
@@ -208,12 +146,7 @@ namespace Neo.Network.P2P
                         if (msg.Payload.Length <= Transaction.MaxTransactionSize)
                         {
                             var payload = Transaction.DeserializeFrom(msg.Payload);
-
-                            if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
-                            {
-                                return;
-                            }
-
+                            if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                             OnInventoryReceived(payload);
                         }
                         break;
