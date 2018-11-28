@@ -156,17 +156,39 @@ namespace Neo.Consensus
             }
             if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView)
                 return;
+
             switch (message.Type)
             {
                 case ConsensusMessageType.ChangeView:
-                    OnChangeViewReceived(payload, (ChangeView)message);
-                    break;
+                    {
+                        if (!Plugin.ReceivedMessageAllowed("consensus-changeview", message))
+                        {
+                            return;
+                        }
+
+                        OnChangeViewReceived(payload, (ChangeView)message);
+                        break;
+                    }
                 case ConsensusMessageType.PrepareRequest:
-                    OnPrepareRequestReceived(payload, (PrepareRequest)message);
-                    break;
+                    {
+                        if (!Plugin.ReceivedMessageAllowed("consensus-preparerequest", message))
+                        {
+                            return;
+                        }
+
+                        OnPrepareRequestReceived(payload, (PrepareRequest)message);
+                        break;
+                    }
                 case ConsensusMessageType.PrepareResponse:
-                    OnPrepareResponseReceived(payload, (PrepareResponse)message);
-                    break;
+                    {
+                        if (!Plugin.ReceivedMessageAllowed("consensus-prepareresponse", message))
+                        {
+                            return;
+                        }
+
+                        OnPrepareResponseReceived(payload, (PrepareResponse)message);
+                        break;
+                    }
             }
         }
 
