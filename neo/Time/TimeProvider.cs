@@ -12,39 +12,30 @@ namespace Neo.Time
         public static TimeProvider Current
         {
            get { return TimeProvider.current; }
-           set
+           internal set
            {
-               if (value == null)
+               if (value != null)
                {
-                   throw new ArgumentNullException("value");
+                   TimeProvider.current = value;
                }
-               TimeProvider.current = value;
            }
        }
 
        public abstract DateTime UtcNow { get; }
 
-       public static void ResetToDefault()
+       internal static void ResetToDefault()
        {
            TimeProvider.current = DefaultTimeProvider.Instance;
        }
     }
 
 
-    public class DefaultTimeProvider : TimeProvider
+    internal class DefaultTimeProvider : TimeProvider
     {
-        private static DefaultTimeProvider current = new DefaultTimeProvider();
+        private static readonly DefaultTimeProvider current = new DefaultTimeProvider();
         public static DefaultTimeProvider Instance
         {
              get { return DefaultTimeProvider.current; }
-             set
-             {
-                 if (value == null)
-                 {
-                     throw new ArgumentNullException("value");
-                 }
-                 DefaultTimeProvider.current = value;
-             }
         }
 
         public override DateTime UtcNow
