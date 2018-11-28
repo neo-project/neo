@@ -110,147 +110,189 @@ namespace Neo.Ledger
             }
             else if (node.IsLeaf)
             {
-                if (path.Length == 0 || path.SequenceEqual(node.Path))
-                {
-                    node.Key = key;
-                    node.Value = value;
-                }
-                else if (node.Path.Length == 0 || path[0] != node.Path[0])
-                {
-                    var innerHash = Set(MerklePatriciaNode.BranchNode(), node.Path, node.Key, node.Value);
-                    node = _db[innerHash];
-                    _db.Remove(innerHash);
-                    innerHash = Set(node, path, key, value);
-                    node = _db[innerHash];
-                    _db.Remove(innerHash);
-                }
-                else
-                {
-                    for (var pos = 0;; pos++)
-                    {
-                        if (pos + 1 == path.Length || pos + 1 == node.Path.Length ||
-                            path[pos + 1] != node.Path[pos + 1])
-                        {
-                            var innerNode = MerklePatriciaNode.ExtensionNode();
-                            innerNode.Path = path.Take(pos + 1).ToArray();
-                            innerNode.Next = Set(MerklePatriciaNode.BranchNode(), node.Path.Skip(pos + 1).ToArray(),
-                                node.Key,
-                                node.Value);
-                            node = innerNode;
-                            innerNode = _db[node.Next];
-                            _db.Remove(node.Next);
-                            node.Next = Set(innerNode, path.Skip(pos + 1).ToArray(), key, value);
-                            break;
-                        }
-                    }
-                }
+                return SetLeaf(node, path, key, value);
             }
             else if (node.IsExtension)
             {
-                if (path.Length == 0 || path.SequenceEqual(node.Path))
-                {
-                    var innerHash = node.Next;
-                    var innerNode = _db[innerHash];
-                    _db.Remove(innerHash);
-                    node.Next = Set(innerNode, new byte[0], key, value);
-                }
-                else if (node.Path.Length == 0 || path[0] != node.Path[0])
-                {
-                    var oldExtension = node;
-                    _db.Remove(node.Hash());
-                    node = MerklePatriciaNode.BranchNode();
-                    if (oldExtension.Path.Length == 1)
-                    {
-                        node[oldExtension.Path[0]] = oldExtension.Next;
-                    }
-                    else
-                    {
-                        var position = oldExtension.Path[0];
-                        oldExtension.Path = oldExtension.Path.Skip(1).ToArray();
-                        node[position] = oldExtension.Hash();
-                        _db[node[position]] = oldExtension;
-                    }
-
-                    Set(node, path, key, value);
-                }
-                else
-                {
-                    for (var pos = 0;; pos++)
-                    {
-                        if (pos + 1 == node.Path.Length)
-                        {
-                            var innerHash = node.Next;
-                            _db.Remove(node.Hash());
-                            node.Next = Set(_db[innerHash], path.Skip(pos + 1).ToArray(), key, value);
-                            _db.Remove(innerHash);
-                            break;
-                        }
-
-                        if (pos + 1 == path.Length)
-                        {
-                            var oldExtension = node;
-                            _db.Remove(node.Hash());
-                            node = MerklePatriciaNode.ExtensionNode();
-                            node.Path = oldExtension.Path.Take(pos + 1).ToArray();
-
-                            var branchNode = MerklePatriciaNode.BranchNode();
-                            oldExtension.Path = oldExtension.Path.Skip(pos + 1).ToArray();
-                            if (oldExtension.Path.Length == 1)
-                            {
-                                branchNode[oldExtension.Path[0]] = oldExtension.Next;
-                            }
-                            else
-                            {
-                                var postion = oldExtension.Path[0];
-                                oldExtension.Path = oldExtension.Path.Skip(1).ToArray();
-                                branchNode[postion] = oldExtension.Hash();
-                                _db[branchNode[postion]] = oldExtension;
-                            }
-
-                            node.Next = Set(branchNode, new byte[0], key, value);
-                            break;
-                        }
-
-                        if (path[pos + 1] != node.Path[pos + 1])
-                        {
-                            var oldExtension = node;
-                            node = MerklePatriciaNode.ExtensionNode();
-                            node.Path = oldExtension.Path.Take(pos + 1).ToArray();
-                            node.Next = Set(MerklePatriciaNode.BranchNode(), path.Skip(pos + 1).ToArray(), key, value);
-
-                            var nodeNext = _db[node.Next];
-                            _db.Remove(node.Next);
-                            var oldExtensionPath = oldExtension.Path;
-                            oldExtension.Path = oldExtension.Path.Skip(pos + 2).ToArray();
-                            nodeNext[oldExtensionPath[pos + 1]] = oldExtension.Hash();
-                            _db[nodeNext[oldExtensionPath[pos + 1]]] = oldExtension;
-
-                            node.Next = nodeNext.Hash();
-                            _db[node.Next] = nodeNext;
-
-                            break;
-                        }
-                    }
-                }
+                return SetExtension(node, path, key, value);
             }
             else
             {
-                if (path.Length == 0)
+                return SetBranch(node, path, key, value);
+            }
+
+            var hashNode = node.Hash();
+            _db[hashNode] = node;
+            return hashNode;
+        }
+
+        private byte[] SetLeaf(MerklePatriciaNode node, byte[] path, byte[] key, byte[] value)
+        {
+            if (path.Length == 0 || path.SequenceEqual(node.Path))
+            {
+                node.Key = key;
+                node.Value = value;
+            }
+            else if (node.Path.Length == 0 || path[0] != node.Path[0])
+            {
+                var innerHash = SetBranch(MerklePatriciaNode.BranchNode(), node.Path, node.Key, node.Value);
+                node = _db[innerHash];
+                _db.Remove(innerHash);
+                innerHash = Set(node, path, key, value);
+                node = _db[innerHash];
+                _db.Remove(innerHash);
+            }
+            else
+            {
+                for (var pos = 0;; pos++)
                 {
-                    node.Key = key;
-                    node.Value = value;
+                    if (pos + 1 == path.Length || pos + 1 == node.Path.Length ||
+                        path[pos + 1] != node.Path[pos + 1])
+                    {
+                        var innerNode = MerklePatriciaNode.ExtensionNode();
+                        innerNode.Path = path.Take(pos + 1).ToArray();
+                        innerNode.Next = SetBranch(MerklePatriciaNode.BranchNode(), node.Path.Skip(pos + 1).ToArray(),
+                            node.Key,
+                            node.Value);
+                        node = innerNode;
+                        innerNode = _db[node.Next];
+                        _db.Remove(node.Next);
+                        node.Next = Set(innerNode, path.Skip(pos + 1).ToArray(), key, value);
+                        break;
+                    }
+                }
+            }
+
+            var hashNode = node.Hash();
+            _db[hashNode] = node;
+            return hashNode;
+        }
+
+        private byte[] SetExtension(MerklePatriciaNode node, byte[] path, byte[] key, byte[] value)
+        {
+            var processOld = new Action<MerklePatriciaNode, MerklePatriciaNode>((n, o) =>
+            {
+                if (o.Path.Length == 1)
+                {
+                    node[o.Path[0]] = o.Next;
                 }
                 else
                 {
-                    var innerHash = node[path[0]];
-                    var innerNode = innerHash != null ? _db[innerHash] : null;
-                    if (innerHash != null)
+                    var position = o.Path[0];
+                    o.Path = o.Path.Skip(1).ToArray();
+                    n[position] = o.Hash();
+                    _db[n[position]] = o;
+                }
+            });
+
+            if (path.Length == 0)
+            {
+                var oldExtension = node;
+                _db.Remove(node.Hash());
+                node = MerklePatriciaNode.BranchNode();
+                processOld(node, oldExtension);
+
+                SetBranch(node, path, key, value);
+            }
+            else if (path.SequenceEqual(node.Path))
+            {
+                var innerHash = node.Next;
+                var innerNode = _db[innerHash];
+                _db.Remove(innerHash);
+                node.Next = Set(innerNode, new byte[0], key, value);
+            }
+            else if (node.Path.Length == 0 || path[0] != node.Path[0])
+            {
+                var oldExtension = node;
+                _db.Remove(node.Hash());
+                node = MerklePatriciaNode.BranchNode();
+                processOld(node, oldExtension);
+
+                SetBranch(node, path, key, value);
+            }
+            else
+            {
+                for (var pos = 0;; pos++)
+                {
+                    if (pos + 1 == node.Path.Length)
                     {
+                        var innerHash = node.Next;
+                        _db.Remove(node.Hash());
+                        node.Next = Set(_db[innerHash], path.Skip(pos + 1).ToArray(), key, value);
                         _db.Remove(innerHash);
+                        break;
                     }
 
-                    node[path[0]] = Set(innerNode, path.Skip(1).ToArray(), key, value);
+                    if (pos + 1 == path.Length)
+                    {
+                        var oldExtension = node;
+                        _db.Remove(node.Hash());
+                        node = MerklePatriciaNode.ExtensionNode();
+                        node.Path = oldExtension.Path.Take(pos + 1).ToArray();
+
+                        var branchNode = MerklePatriciaNode.BranchNode();
+                        oldExtension.Path = oldExtension.Path.Skip(pos + 1).ToArray();
+                        if (oldExtension.Path.Length == 1)
+                        {
+                            branchNode[oldExtension.Path[0]] = oldExtension.Next;
+                        }
+                        else
+                        {
+                            var postion = oldExtension.Path[0];
+                            oldExtension.Path = oldExtension.Path.Skip(1).ToArray();
+                            branchNode[postion] = oldExtension.Hash();
+                            _db[branchNode[postion]] = oldExtension;
+                        }
+
+                        node.Next = SetBranch(branchNode, new byte[0], key, value);
+                        break;
+                    }
+
+                    if (path[pos + 1] != node.Path[pos + 1])
+                    {
+                        var oldExtension = node;
+                        node = MerklePatriciaNode.ExtensionNode();
+                        node.Path = oldExtension.Path.Take(pos + 1).ToArray();
+                        node.Next = SetBranch(MerklePatriciaNode.BranchNode(), path.Skip(pos + 1).ToArray(), key,
+                            value);
+
+                        var nodeNext = _db[node.Next];
+                        _db.Remove(node.Next);
+                        var oldExtensionPath = oldExtension.Path;
+                        oldExtension.Path = oldExtension.Path.Skip(pos + 2).ToArray();
+                        nodeNext[oldExtensionPath[pos + 1]] = oldExtension.Hash();
+                        _db[nodeNext[oldExtensionPath[pos + 1]]] = oldExtension;
+
+                        node.Next = nodeNext.Hash();
+                        _db[node.Next] = nodeNext;
+
+                        break;
+                    }
                 }
+            }
+
+            var hashNode = node.Hash();
+            _db[hashNode] = node;
+            return hashNode;
+        }
+
+        private byte[] SetBranch(MerklePatriciaNode node, byte[] path, byte[] key, byte[] value)
+        {
+            if (path.Length == 0)
+            {
+                node.Key = key;
+                node.Value = value;
+            }
+            else
+            {
+                var innerHash = node[path[0]];
+                var innerNode = innerHash != null ? _db[innerHash] : null;
+                if (innerHash != null)
+                {
+                    _db.Remove(innerHash);
+                }
+
+                node[path[0]] = Set(innerNode, path.Skip(1).ToArray(), key, value);
             }
 
             var hashNode = node.Hash();
@@ -260,43 +302,59 @@ namespace Neo.Ledger
 
         private byte[] Get(MerklePatriciaNode node, byte[] path)
         {
-            if (node == null)
+            while (true)
             {
-                return null;
-            }
+                if (node == null)
+                {
+                    return null;
+                }
 
-            if (node.IsLeaf)
-            {
-                if (path.Length == 0)
+                if (node.IsLeaf)
+                {
+                    if (path.Length == 0)
+                    {
+                        return node.Value;
+                    }
+
+                    return node.Path.SequenceEqual(path) ? node.Value : null;
+                }
+
+                if (path.Length == 0 && !node.IsExtension)
                 {
                     return node.Value;
                 }
 
-                return node.Path.SequenceEqual(path) ? node.Value : null;
-            }
-
-            if (path.Length == 0 && !node.IsExtension)
-            {
-                return node.Value;
-            }
-
-            if (node.IsExtension)
-            {
-                if (path.SequenceEqual(node.Path))
+                if (node.IsExtension)
                 {
-                    return Get(_db[node.Next], new byte[0]);
+                    if (path.SequenceEqual(node.Path))
+                    {
+                        node = _db[node.Next];
+                        path = new byte[0];
+                        continue;
+                    }
+
+                    if (node.Path.Length < path.Length &&
+                        path.Take(node.Path.Length).ToArray().SequenceEqual(node.Path))
+                    {
+                        var node1 = node;
+                        node = _db[node.Next];
+                        path = path.Skip(node1.Path.Length).ToArray();
+                        continue;
+                    }
+
+                    return null;
                 }
 
-                if (node.Path.Length < path.Length && path.Take(node.Path.Length).ToArray().SequenceEqual(node.Path))
+                // Branch node
+                if (node[path[0]] != null)
                 {
-                    return Get(_db[node.Next], path.Skip(node.Path.Length).ToArray());
+                    node = _db[node[path[0]]];
+                    path = path.Skip(1).ToArray();
+                    continue;
                 }
 
                 return null;
             }
-
-            // Branch node
-            return node[path[0]] != null ? Get(_db[node[path[0]]], path.Skip(1).ToArray()) : null;
         }
 
         /// <summary>
@@ -359,79 +417,105 @@ namespace Neo.Ledger
             var node = _db[nodeHash];
             if (node.IsLeaf)
             {
-                if (node.Path.SequenceEqual(path))
-                {
-                    _db.Remove(nodeHash);
-                    return null;
-                }
-
-                _db[nodeHash] = node;
-                return nodeHash;
+                return RemoveLeaf(nodeHash, path, node);
             }
 
             if (node.IsExtension)
             {
-                if (path.Length >= node.Path.Length &&
-                    path.Take(node.Path.Length).ToArray().SequenceEqual(node.Path))
+                return RemoveExtension(nodeHash, path, node);
+            }
+
+            if (node.IsBranch)
+            {
+                return RemoveBranch(nodeHash, path, node);
+            }
+
+            _db.Remove(nodeHash);
+            nodeHash = node.Hash();
+            _db[nodeHash] = node;
+            return nodeHash;
+        }
+
+        private byte[] RemoveLeaf(byte[] nodeHash, byte[] path, MerklePatriciaNode node)
+        {
+            if (node.Path.SequenceEqual(path))
+            {
+                _db.Remove(nodeHash);
+                return null;
+            }
+
+            _db[nodeHash] = node;
+            return nodeHash;
+        }
+
+        private byte[] RemoveExtension(byte[] nodeHash, byte[] path, MerklePatriciaNode node)
+        {
+            if (path.Length >= node.Path.Length &&
+                path.Take(node.Path.Length).ToArray().SequenceEqual(node.Path))
+            {
+                node.Next = Remove(node.Next, path.Skip(node.Path.Length).ToArray());
+                var nodeNext = _db[node.Next];
+                if (nodeNext.IsLeaf || nodeNext.IsExtension)
                 {
-                    node.Next = Remove(node.Next, path.Skip(node.Path.Length).ToArray());
-                    var nodeNext = _db[node.Next];
-                    if (nodeNext.IsLeaf || nodeNext.IsExtension)
-                    {
-                        _db.Remove(node.Next);
-                        nodeNext.Path = node.Path.Concat(nodeNext.Path).ToArray();
-                        node = nodeNext;
-                    }
-                }
-                else
-                {
-                    _db[nodeHash] = node;
-                    return nodeHash;
+                    _db.Remove(node.Next);
+                    nodeNext.Path = node.Path.Concat(nodeNext.Path).ToArray();
+                    node = nodeNext;
                 }
             }
-            else if (node.IsBranch)
+            else
             {
-                if (path.Length == 0)
-                {
-                    node.Key = null;
-                    node.Value = null;
-                }
-                else if (node[path[0]] != null)
-                {
-                    node[path[0]] = Remove(node[path[0]], path.Skip(1).ToArray());
-                }
+                _db[nodeHash] = node;
+                return nodeHash;
+            }
 
-                var contar = 0;
-                var indexInnerNode = 0;
-                for (var i = 0; i < node.Length - 2; i++)
-                {
-                    if (node[i] == null) continue;
-                    contar++;
-                    indexInnerNode = i;
-                }
+            _db.Remove(nodeHash);
+            nodeHash = node.Hash();
+            _db[nodeHash] = node;
+            return nodeHash;
+        }
 
-                if (contar == 0)
+        private byte[] RemoveBranch(byte[] nodeHash, byte[] path, MerklePatriciaNode node)
+        {
+            if (path.Length == 0)
+            {
+                node.Key = null;
+                node.Value = null;
+            }
+            else if (node[path[0]] != null)
+            {
+                node[path[0]] = Remove(node[path[0]], path.Skip(1).ToArray());
+            }
+
+            var contar = 0;
+            var indexInnerNode = 0;
+            for (var i = 0; i < node.Length - 2; i++)
+            {
+                if (node[i] == null) continue;
+                contar++;
+                indexInnerNode = i;
+            }
+
+            if (contar == 0)
+            {
+                var newNode = MerklePatriciaNode.LeafNode();
+                newNode.Path = new byte[0];
+                newNode.Key = node.Key;
+                newNode.Value = node.Value;
+                node = newNode;
+            }
+            else if (contar == 1)
+            {
+                if (node[node.Length - 1] == null)
                 {
-                    var newNode = MerklePatriciaNode.LeafNode();
-                    newNode.Path = new byte[0];
-                    newNode.Key = node.Key;
-                    newNode.Value = node.Value;
-                    node = newNode;
-                }
-                else if (contar == 1)
-                {
-                    if (node[node.Length - 1] == null)
+                    var innerNodeHash = node[indexInnerNode];
+                    var innerNode = _db[innerNodeHash];
+                    if (innerNode.IsLeaf)
                     {
-                        var innerNodeHash = node[indexInnerNode];
-                        var innerNode = _db[innerNodeHash];
-                        if (innerNode.IsLeaf)
-                        {
-                            _db.Remove(innerNodeHash);
-                            node = MerklePatriciaNode.LeafNode();
-                            node.Path = new[] {(byte) indexInnerNode}.Concat(innerNode.Path).ToArray();
-                            node.Key = innerNode.Key;
-                            node.Value = innerNode.Value;
-                        }
+                        _db.Remove(innerNodeHash);
+                        node = MerklePatriciaNode.LeafNode();
+                        node.Path = new[] {(byte) indexInnerNode}.Concat(innerNode.Path).ToArray();
+                        node.Key = innerNode.Key;
+                        node.Value = innerNode.Value;
                     }
                 }
             }
