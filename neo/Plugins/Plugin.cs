@@ -20,7 +20,7 @@ namespace Neo.Plugins
         protected static NeoSystem System { get; private set; }
         public virtual string Name => GetType().Name;
         public virtual Version Version => GetType().Assembly.GetName().Version;
-        public virtual string ConfigFile => Path.GetFullPath(Path.Combine("Plugins", GetType().Assembly.GetName().Name, "config.json"));
+        public string ConfigFile => Path.GetFullPath(Path.Combine("Plugins", GetType().Assembly.GetName().Name, "config.json"));
 
         protected virtual bool OnMessage(object message) => false;
 
