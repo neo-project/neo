@@ -63,8 +63,6 @@ namespace Neo.Consensus
 
         bool VerifyRequest();
 
-        DateTime GetUtcNow();
-
         void Log(string message, LogLevel level = LogLevel.Info);
     }
 }

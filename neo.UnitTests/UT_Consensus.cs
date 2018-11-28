@@ -49,7 +49,11 @@ namespace Neo.UnitTests
           mockConsensusContext.SetupProperty(mr => mr.block_received_time);
 
           mockConsensusContext.Object.block_received_time = new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc);
-          mockConsensusContext.Setup(mr => mr.GetUtcNow()).Returns(new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc));
+          //mockConsensusContext.Setup(mr => mr.GetUtcNow()).Returns(new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc));
+
+          var timeMock = new Mock<ConsensusTimeProvider>();
+          timeMock.SetupGet(tp => tp.UtcNow).Returns(new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc));
+          ConsensusTimeProvider.Current = timeMock.Object;
 
           //public void Log(string message, LogLevel level)
 
@@ -71,13 +75,13 @@ namespace Neo.UnitTests
           TestUtils.SetupHeaderWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
           header.Size.Should().Be(109);
 
-          Console.WriteLine($"header {header} hash {header.Hash} timstamp {timestampVal} now {mockConsensusContext.Object.GetUtcNow().ToTimestamp()}");
+          Console.WriteLine($"header {header} hash {header.Hash} timstamp {timestampVal} now {ConsensusTimeProvider.Current.UtcNow.ToTimestamp()}");
 
           timestampVal.Should().Be(4244941696); //1968-06-01 00:00:00
           // check basic ConsensusContext
           mockConsensusContext.Object.MyIndex.Should().Be(2);
           mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
-          mockConsensusContext.Object.GetUtcNow().ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
+          ConsensusTimeProvider.Current.UtcNow.ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
 
           MinerTransaction minerTx = new MinerTransaction();
           minerTx.Attributes = new TransactionAttribute[0];
@@ -133,6 +137,7 @@ namespace Neo.UnitTests
 
           //Thread.Sleep(4000);
           Sys.Stop(actorConsensus);
+          ConsensusTimeProvider.ResetToDefault();
 
           Assert.AreEqual(1, 1);
       }
