@@ -6,6 +6,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.Time;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -241,7 +242,7 @@ namespace Neo.Consensus
             TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             Transactions = transactions.ToDictionary(p => p.Hash);
             NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators(transactions).ToArray());
-            Timestamp = Math.Max(ConsensusTimeProvider.Current.UtcNow.ToTimestamp(), PrevHeader.Timestamp + 1);
+            Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), PrevHeader.Timestamp + 1);
         }
 
         private static ulong GetNonce()

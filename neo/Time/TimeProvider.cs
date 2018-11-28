@@ -1,35 +1,24 @@
-﻿using Akka.Actor;
-using Akka.Configuration;
-using Neo.Cryptography;
-using Neo.IO;
-using Neo.IO.Actors;
-using Neo.Ledger;
-using Neo.Network.P2P;
-using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
-using Neo.Plugins;
-using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Neo.Consensus
+namespace Neo.Time
 {
-    public abstract class ConsensusTimeProvider
+    public abstract class TimeProvider
     {
-        private static ConsensusTimeProvider current =
+        private static TimeProvider current =
             DefaultTimeProvider.Instance;
 
-        public static ConsensusTimeProvider Current
+        public static TimeProvider Current
         {
-           get { return ConsensusTimeProvider.current; }
+           get { return TimeProvider.current; }
            set
            {
                if (value == null)
                {
                    throw new ArgumentNullException("value");
                }
-               ConsensusTimeProvider.current = value;
+               TimeProvider.current = value;
            }
        }
 
@@ -37,12 +26,12 @@ namespace Neo.Consensus
 
        public static void ResetToDefault()
        {
-           ConsensusTimeProvider.current = DefaultTimeProvider.Instance;
+           TimeProvider.current = DefaultTimeProvider.Instance;
        }
     }
 
 
-    internal class DefaultTimeProvider : ConsensusTimeProvider
+    public class DefaultTimeProvider : TimeProvider
     {
         private static DefaultTimeProvider current = new DefaultTimeProvider();
         public static DefaultTimeProvider Instance

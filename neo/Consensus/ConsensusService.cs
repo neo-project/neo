@@ -8,6 +8,7 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
+using Neo.Time;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -111,7 +112,7 @@ namespace Neo.Consensus
             if (context.MyIndex == context.PrimaryIndex)
             {
                 context.State |= ConsensusState.Primary;
-                TimeSpan span = ConsensusTimeProvider.Current.UtcNow - context.block_received_time;
+                TimeSpan span = TimeProvider.Current.UtcNow - context.block_received_time;
                 if (span >= Blockchain.TimePerBlock)
                     ChangeTimer(TimeSpan.Zero);
                 else
@@ -176,7 +177,7 @@ namespace Neo.Consensus
         private void OnPersistCompleted(Block block)
         {
             context.Log($"persist block: {block.Hash}");
-            context.block_received_time = ConsensusTimeProvider.Current.UtcNow;
+            context.block_received_time = TimeProvider.Current.UtcNow;
             InitializeConsensus(0);
         }
 
@@ -186,7 +187,7 @@ namespace Neo.Consensus
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
             context.Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (!context.State.HasFlag(ConsensusState.Backup)) return;
-            if (payload.Timestamp <= context.PrevHeader.Timestamp || payload.Timestamp > ConsensusTimeProvider.Current.UtcNow.AddMinutes(10).ToTimestamp())
+            if (payload.Timestamp <= context.PrevHeader.Timestamp || payload.Timestamp > TimeProvider.Current.UtcNow.AddMinutes(10).ToTimestamp())
             {
                 context.Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
                 return;
