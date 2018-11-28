@@ -176,7 +176,7 @@ namespace Neo.Network.P2P
                 foreach (var task in session.Tasks.ToArray())
                     if (DateTime.UtcNow - task.Value > TaskTimeout)
                     {
-                        if (session.Tasks.Remove(task.Key))
+                        if (session.Tasks.Remove(task.Key) && task.Key != UInt256.Zero)
                             DecrementGlobalTask(task.Key);
                     }
             foreach (TaskSession session in sessions.Values)
