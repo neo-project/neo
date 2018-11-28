@@ -184,17 +184,26 @@ namespace Neo.Network.P2P
             }
             else if (Blockchain.Singleton.Height < session.Version.StartHeight)
             {
-                UInt256 hash = Blockchain.Singleton.CurrentBlockHash;
-                for (uint i = Blockchain.Singleton.Height + 1; i <= Blockchain.Singleton.HeaderHeight; i++)
+                uint iStart = Blockchain.Singleton.Height + 1;
+                UInt256 hashToStart = Blockchain.Singleton.GetBlockHash(iStart);
+                while(globalTasks.Contains(hashToStart) && iStart + 1 <= Blockchain.Singleton.HeaderHeight)
                 {
-                    hash = Blockchain.Singleton.GetBlockHash(i);
-                    if (!globalTasks.Contains(hash))
-                    {
-                        hash = Blockchain.Singleton.GetBlockHash(i - 1);
-                        break;
-                    }
+                    iStart++;
+                    hashToStart = Blockchain.Singleton.GetBlockHash(iStart);
                 }
-                session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hash)));
+                if(iStart == Blockchain.Singleton.HeaderHeight)
+                {
+                    session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hashToStart)));
+                    return;
+                 }
+                 uint iFinish = iStart + 1;
+                 UInt256 hashToFinish = Blockchain.Singleton.GetBlockHash(iFinish);
+                 while (!globalTasks.Contains(hashToFinish) && iFinish + 1 <= Blockchain.Singleton.HeaderHeight)
+                 {
+                    iFinish++;
+                    hashToFinish = Blockchain.Singleton.GetBlockHash(iFinish);
+                 }
+                session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hashToStart, hashToFinish)));
             }
         }
     }
