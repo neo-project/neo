@@ -1,12 +1,11 @@
 ﻿using Neo.IO;
 using Neo.IO.Json;
-using Neo.VM;
 using System;
 using System.IO;
 
 namespace Neo.Ledger
 {
-    public abstract class StateBase : IInteropInterface, ISerializable
+    public abstract class StateBase : ISerializable
     {
         public const byte StateVersion = 0;
 

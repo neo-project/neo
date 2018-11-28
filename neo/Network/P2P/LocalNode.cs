@@ -20,8 +20,6 @@ namespace Neo.Network.P2P
         internal class SendDirectly { public IInventory Inventory; }
 
         public const uint ProtocolVersion = 0;
-        protected override int ConnectedMax => 10;
-        protected override int UnconnectedMax => 1000;
 
         private readonly NeoSystem system;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new ConcurrentDictionary<IActorRef, RemoteNode>();

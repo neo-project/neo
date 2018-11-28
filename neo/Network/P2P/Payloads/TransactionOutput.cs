@@ -1,13 +1,12 @@
 ﻿using Neo.IO;
 using Neo.IO.Json;
-using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class TransactionOutput : IInteropInterface, ISerializable
+    public class TransactionOutput : ISerializable
     {
         public UInt256 AssetId;
         public Fixed8 Value;

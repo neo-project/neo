@@ -1,12 +1,12 @@
 ﻿using Neo.IO;
-using Neo.VM;
 using Neo.IO.Json;
 using Neo.SmartContract;
+using Neo.VM;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class Witness : ISerializable, IInteropInterface
+    public class Witness : ISerializable
     {
         public byte[] InvocationScript;
         public byte[] VerificationScript;
