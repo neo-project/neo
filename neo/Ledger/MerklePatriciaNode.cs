@@ -219,7 +219,7 @@ namespace Neo.Ledger
             for (var i = 0; i < _hashes.Length; i++)
             {
                 _hashes[i] = reader.ReadVarBytes();
-                _hashes[i] = _hashes[i].Length == 0 ? null : _hashes[i];
+                _hashes[i] = IsBranch && _hashes[i].Length == 0 ? null : _hashes[i];
             }
         }
 
