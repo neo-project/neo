@@ -11,11 +11,8 @@ namespace Neo.UnitTests.Ledger
     [TestClass]
     public class UT_MerklePatricia
     {
-        [TestMethod]
-        public void Serialize()
+        private void CheckCopy(MerklePatricia mp)
         {
-            var mp = new MerklePatricia {["oi"] = "bola"};
-
             var cloned = new MerklePatricia();
             using (var ms = new MemoryStream())
             {
@@ -32,47 +29,20 @@ namespace Neo.UnitTests.Ledger
 
             Assert.IsTrue(mp.Validate());
             Assert.IsTrue(cloned.Validate());
-            Assert.AreEqual("bola", cloned["oi"]);
             Assert.AreEqual(mp, cloned);
 
-            mp["cachorro"] = "cachorro";
-            Assert.AreNotEqual(mp, cloned);
-        }
-
-        [TestMethod]
-        public void SerializeFakingData()
-        {
-            var mp = new MerklePatricia {["oi"] = "bola"};
-
-            var cloned = new MerklePatricia();
-            using (var ms = new MemoryStream())
-            {
-                using (var bw = new BinaryWriter(ms))
-                {
-                    mp.Serialize(bw);
-                    var data = ms.ToArray();
-                    data[data.Length - 2] += 1;
-                    using (var memoryStream = new MemoryStream())
-                    {
-                        using (var binWriter = new BinaryWriter(memoryStream))
-                        {
-                            binWriter.Write(data);
-                            using (var br = new BinaryReader(binWriter.BaseStream))
-                            {
-                                br.BaseStream.Position = 0;
-                                cloned.Deserialize(br);
-                            }
-                        }
-                    }
-                }
-            }
-
+            cloned = mp.Clone();
             Assert.IsTrue(mp.Validate());
-            Assert.IsFalse(cloned.Validate());
-            Assert.AreNotEqual(mp, cloned);
-            
-            Assert.AreEqual("bola", mp["oi"]);
-            Assert.AreNotEqual("bola", cloned["oi"]);
+            Assert.IsTrue(cloned.Validate());
+            Assert.AreEqual(mp, cloned);
+
+            cloned = new MerklePatricia();
+            cloned.FromReplica(mp);
+            Assert.IsTrue(mp.Validate());
+            Assert.IsTrue(cloned.Validate());
+            Assert.AreEqual(mp, cloned);
+            /* 
+            */
         }
 
         [TestMethod]
@@ -85,6 +55,9 @@ namespace Neo.UnitTests.Ledger
 
             mp[new byte[] {0x11, 0x0, 0x2}] = new byte[] {0x11, 0x0, 0x2};
             Assert.IsTrue(new byte[] {0x11, 0x0, 0x2}.SequenceEqual(mp[new byte[] {0x11, 0x0, 0x2}]));
+            Assert.IsNull(mp[new byte[] {0x20, 0x0, 0x2}]);
+
+            CheckCopy(mp);
         }
 
         [TestMethod]
@@ -97,10 +70,40 @@ namespace Neo.UnitTests.Ledger
 
             mp[new byte[] {0x0, 0x0, 0x1}] = new byte[] {0x0, 0x0, 0x2};
             Assert.IsTrue(new byte[] {0x0, 0x0, 0x2}.SequenceEqual(mp[new byte[] {0x0, 0x0, 0x1}]));
+
+            CheckCopy(mp);
         }
 
         [TestMethod]
-        public void ColideKeys()
+        public void EndsOnExtension()
+        {
+            var mp = new MerklePatricia {["bola"] = "bola", ["bolo"] = "bolo"};
+            Assert.AreEqual("bola", mp["bola"]);
+            Assert.AreEqual("bolo", mp["bolo"]);
+            Assert.AreEqual(2, mp.Count());
+            mp["bol"] = "bol";
+            Assert.AreEqual("bol", mp["bol"]);
+            mp["aol"] = "aol";
+            Assert.AreEqual("aol", mp["aol"]);
+            mp["zol"] = "zol";
+            Assert.AreEqual("zol", mp["zol"]);
+            mp["bala"] = "bala";
+            Assert.AreEqual("bala", mp["bala"]);
+            mp["bo"] = "bo";
+            Assert.AreEqual("bo", mp["bo"]);
+            Assert.AreEqual(7, mp.Count());
+
+            Assert.AreEqual("aol", mp["aol"]);
+            Assert.AreEqual("zol", mp["zol"]);
+            Assert.AreEqual("bol", mp["bol"]);
+            Assert.AreEqual("bola", mp["bola"]);
+            Assert.AreEqual("bolo", mp["bolo"]);
+
+            CheckCopy(mp);
+        }
+
+        [TestMethod]
+        public void ColidKeys()
         {
             var mp = new MerklePatricia
             {
@@ -131,6 +134,8 @@ namespace Neo.UnitTests.Ledger
             mp["orfã"] = "menina";
             Assert.AreEqual("menina", mp["orfã"]);
             Assert.IsTrue(mp.Validate());
+
+            CheckCopy(mp);
         }
 
         [TestMethod]
@@ -154,6 +159,8 @@ namespace Neo.UnitTests.Ledger
             Assert.AreEqual(a0001, mp[a0001]);
 
             Assert.AreEqual(new MerklePatricia {[a0001] = a0001}, mp);
+
+            CheckCopy(mp);
         }
 
         [TestMethod]
@@ -174,6 +181,8 @@ namespace Neo.UnitTests.Ledger
             Assert.IsFalse(mp.ContainsValue("boi2"));
             Assert.IsFalse(mp.ContainsValue("coi3"));
             Assert.IsTrue(mp.Validate());
+
+            CheckCopy(mp);
         }
 
         [TestMethod]
@@ -201,6 +210,8 @@ namespace Neo.UnitTests.Ledger
             mp["bala"] = "bala2";
             Assert.AreEqual(4, mp.Count());
             Assert.IsTrue(mp.Validate());
+
+            CheckCopy(mp);
         }
 
         [TestMethod]
@@ -232,6 +243,8 @@ namespace Neo.UnitTests.Ledger
             }
 
             Assert.IsTrue(merklePatricia.Validate());
+
+            CheckCopy(merklePatricia);
         }
 
         [TestMethod]
@@ -247,6 +260,8 @@ namespace Neo.UnitTests.Ledger
                 Assert.AreEqual(it, mp[it]);
                 Assert.IsTrue(mp.Validate());
             }
+
+            CheckCopy(mp);
         }
 
         [TestMethod]
@@ -279,6 +294,8 @@ namespace Neo.UnitTests.Ledger
 
             merklePatricia["0"] = "valor4";
             Assert.IsTrue(merklePatricia.Validate());
+
+            CheckCopy(merklePatricia);
         }
 
         [TestMethod]
@@ -324,6 +341,9 @@ namespace Neo.UnitTests.Ledger
             Assert.AreEqual(mp2, mp);
             Assert.IsTrue(mp.Validate());
             Assert.IsTrue(mp2.Validate());
+
+            CheckCopy(mp);
+            CheckCopy(mp2);
         }
 
         [TestMethod]
@@ -386,6 +406,42 @@ namespace Neo.UnitTests.Ledger
             Assert.ThrowsException<ArgumentNullException>(() => mpA[(byte[]) null] = null);
             Assert.ThrowsException<ArgumentNullException>(() => mpA[new byte[] {0, 1}] = null);
             Assert.ThrowsException<ArgumentNullException>(() => mpA["Meg"] = null);
+
+            CheckCopy(mpA);
+            CheckCopy(mpB);
+        }
+
+        [TestMethod]
+        public void ToString()
+        {
+            var mp = new MerklePatricia();
+            Assert.AreEqual("{}", mp.ToString());
+            mp["a"] = "a";
+            var converted = Encoding.UTF8.GetBytes("a").ByteToHexString();
+            Assert.AreEqual($"[\"{converted}\",\"{converted}\",\"{converted}\"]", mp.ToString());
+
+            CheckCopy(mp);
+        }
+
+        [TestMethod]
+        public void Equals()
+        {
+            var mpNode = new MerklePatricia();
+            Assert.AreNotEqual(mpNode, null);
+            Assert.IsFalse(mpNode == null);
+            Assert.IsFalse(mpNode.Equals(null));
+
+            Assert.AreEqual(mpNode, mpNode);
+            Assert.IsTrue(mpNode == mpNode);
+            Assert.IsTrue(mpNode.Equals(mpNode));
+
+            var mpA = new MerklePatricia {["a"] = "a"};
+            Assert.AreNotEqual(mpNode, mpA);
+            Assert.IsFalse(mpNode == mpA);
+            Assert.IsFalse(mpNode.Equals(mpA));
+
+            CheckCopy(mpNode);
+            CheckCopy(mpA);
         }
     }
 }

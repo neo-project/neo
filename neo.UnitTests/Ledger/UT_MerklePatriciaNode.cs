@@ -188,6 +188,41 @@ namespace Neo.UnitTests.Ledger
             mptItem.Value = Encoding.UTF8.GetBytes("abc1");
             Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
         }
+        
+        [TestMethod]
+        public void SerializeLeafEmptyPath()
+        {
+            var mptItem = MerklePatriciaNode.LeafNode();
+            mptItem.Path = new byte[0];
+            mptItem.Key = Encoding.UTF8.GetBytes("oi").Sha256();
+            mptItem.Value = Encoding.UTF8.GetBytes("abc");
+
+            var cloned = MerklePatriciaNode.BranchNode();
+            using (var ms = new MemoryStream())
+            {
+                using (var bw = new BinaryWriter(ms))
+                {
+                    mptItem.Serialize(bw);
+                    using (var br = new BinaryReader(bw.BaseStream))
+                    {
+                        br.BaseStream.Position = 0;
+                        cloned.Deserialize(br);
+                    }
+                }
+            }
+
+            Assert.IsTrue(cloned.IsLeaf);
+            Assert.IsTrue(new byte[0].SequenceEqual(cloned.Path));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
+            Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
+
+            Assert.AreEqual(mptItem, cloned);
+
+            mptItem.Path = Encoding.UTF8.GetBytes("23f");
+            Assert.IsTrue(new byte[0].SequenceEqual(cloned.Path));
+            mptItem.Value = Encoding.UTF8.GetBytes("abc1");
+            Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
+        }
 
         [TestMethod]
         public void SerializeExtension()

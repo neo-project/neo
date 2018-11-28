@@ -30,6 +30,7 @@ namespace Neo.Ledger
                 {
                     throw new ArgumentNullException("The key parameter can not be null");
                 }
+
                 var resp = this[Encoding.UTF8.GetBytes(key)];
                 return resp == null ? null : Encoding.UTF8.GetString(resp);
             }
@@ -39,10 +40,12 @@ namespace Neo.Ledger
                 {
                     throw new ArgumentNullException("The key parameter can not be null");
                 }
+
                 if (value == null)
                 {
                     throw new ArgumentNullException("The value parameter can not be null");
                 }
+
                 this[Encoding.UTF8.GetBytes(key)] = Encoding.UTF8.GetBytes(value);
             }
         }
@@ -59,6 +62,7 @@ namespace Neo.Ledger
                 {
                     throw new ArgumentNullException("The key parameter can not be null");
                 }
+
                 return _rootHash == null ? null : Get(_db[_rootHash], ConvertToNibble(key));
             }
             set
@@ -67,10 +71,12 @@ namespace Neo.Ledger
                 {
                     throw new ArgumentNullException("The key parameter can not be null");
                 }
+
                 if (value == null)
                 {
                     throw new ArgumentNullException("The value parameter can not be null");
                 }
+
                 var node = _rootHash == null ? null : _db[_rootHash];
                 if (_rootHash != null)
                 {
@@ -150,12 +156,22 @@ namespace Neo.Ledger
                 }
                 else if (node.Path.Length == 0 || path[0] != node.Path[0])
                 {
-                    var newHash = Set(MerklePatriciaNode.BranchNode(), path, key, value);
-                    var newNode = _db[newHash];
-                    _db.Remove(newHash);
-                    newNode[node.Path[1]] = node.Next;
-                    node.Path = node.Path.Skip(1).ToArray();
-                    node = newNode;
+                    var oldExtension = node;
+                    _db.Remove(node.Hash());
+                    node = MerklePatriciaNode.BranchNode();
+                    if (oldExtension.Path.Length == 1)
+                    {
+                        node[oldExtension.Path[0]] = oldExtension.Next;
+                    }
+                    else
+                    {
+                        var position = oldExtension.Path[0];
+                        oldExtension.Path = oldExtension.Path.Skip(1).ToArray();
+                        node[position] = oldExtension.Hash();
+                        _db[node[position]] = oldExtension;
+                    }
+
+                    Set(node, path, key, value);
                 }
                 else
                 {
@@ -164,6 +180,7 @@ namespace Neo.Ledger
                         if (pos + 1 == node.Path.Length)
                         {
                             var innerHash = node.Next;
+                            _db.Remove(node.Hash());
                             node.Next = Set(_db[innerHash], path.Skip(pos + 1).ToArray(), key, value);
                             _db.Remove(innerHash);
                             break;
@@ -171,12 +188,26 @@ namespace Neo.Ledger
 
                         if (pos + 1 == path.Length)
                         {
-                            var newHash = Set(MerklePatriciaNode.BranchNode(), new byte[0], key, value);
-                            var newNode = _db[newHash];
-                            _db.Remove(newHash);
-                            newNode[node.Path[pos + 1]] = node.Next;
-                            node.Path = node.Path.Skip(pos + 1).ToArray();
-                            node = newNode;
+                            var oldExtension = node;
+                            _db.Remove(node.Hash());
+                            node = MerklePatriciaNode.ExtensionNode();
+                            node.Path = oldExtension.Path.Take(pos + 1).ToArray();
+
+                            var branchNode = MerklePatriciaNode.BranchNode();
+                            oldExtension.Path = oldExtension.Path.Skip(pos + 1).ToArray();
+                            if (oldExtension.Path.Length == 1)
+                            {
+                                branchNode[oldExtension.Path[0]] = oldExtension.Next;
+                            }
+                            else
+                            {
+                                var postion = oldExtension.Path[0];
+                                oldExtension.Path = oldExtension.Path.Skip(1).ToArray();
+                                branchNode[postion] = oldExtension.Hash();
+                                _db[branchNode[postion]] = oldExtension;
+                            }
+
+                            node.Next = Set(branchNode, new byte[0], key, value);
                             break;
                         }
 
@@ -486,6 +517,7 @@ namespace Neo.Ledger
         public MerklePatricia Clone()
         {
             var resp = new MerklePatricia();
+            resp._rootHash = _rootHash?.ToArray();
             foreach (var entry in _db)
             {
                 resp._db[entry.Key.ToArray()] = entry.Value.Clone();
@@ -498,6 +530,7 @@ namespace Neo.Ledger
         public void FromReplica(MerklePatricia replica)
         {
             _db.Clear();
+            _rootHash = replica._rootHash?.ToArray();
             foreach (var entry in replica._db)
             {
                 _db[entry.Key.ToArray()] = entry.Value.Clone();
@@ -510,6 +543,11 @@ namespace Neo.Ledger
             base.Deserialize(reader);
             _db.Clear();
             _rootHash = reader.ReadVarBytes();
+            if (_rootHash.Length == 0)
+            {
+                _rootHash = null;
+            }
+
             var size = reader.ReadVarInt();
             for (var i = 0ul; i < size; i++)
             {
@@ -520,13 +558,11 @@ namespace Neo.Ledger
             }
         }
 
-        public int Count() => _db.Count(x => x.Value.IsLeaf || (x.Value.IsBranch && x.Value.Value != null));
-
         /// <inheritdoc />
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.WriteVarBytes(_rootHash);
+            writer.WriteVarBytes(_rootHash ?? new byte[0]);
             writer.WriteVarInt(_db.Count);
             foreach (var it in _db)
             {
@@ -535,11 +571,20 @@ namespace Neo.Ledger
             }
         }
 
+        public int Count() => _db.Count(x => x.Value.IsLeaf || (x.Value.IsBranch && x.Value.Value != null));
+
         /// <inheritdoc />
         public bool Equals(MerklePatricia other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
+            if (_rootHash == null && other._rootHash == null) return true;
+            if ((_rootHash == null && other._rootHash != null) ||
+                (_rootHash != null && other._rootHash == null))
+            {
+                return false;
+            }
+
             if (!_rootHash.SequenceEqual(other._rootHash) || _db.Count != other._db.Count)
             {
                 return false;
@@ -566,6 +611,6 @@ namespace Neo.Ledger
         }
 
         /// <inheritdoc />
-        public override int GetHashCode() => _rootHash != null ? _rootHash.GetHashCode() : 0;
+        public override int GetHashCode() => _rootHash != null ? _rootHash.Sum(x => x) : 0;
     }
 }
