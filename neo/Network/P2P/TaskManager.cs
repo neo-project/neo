@@ -164,7 +164,10 @@ namespace Neo.Network.P2P
                 return;
             sessions.Remove(actor);
             foreach (UInt256 hash in session.Tasks.Keys)
-                DecrementGlobalTask(hash);
+            {
+                if (globalTasks.ContainsKey(hash))
+                    DecrementGlobalTask(hash);
+            }
         }
 
         private void OnTimer()
