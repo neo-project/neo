@@ -7,6 +7,7 @@ using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -53,48 +54,170 @@ namespace Neo.Network.P2P
             switch (msg.Command)
             {
                 case "addr":
-                    OnAddrMessageReceived(msg.Payload.AsSerializable<AddrPayload>());
-                    break;
+                    {
+                        var payload = msg.Payload.AsSerializable<AddrPayload>();
+
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
+                        {
+                            return;
+                        }
+
+                        OnAddrMessageReceived(payload);
+                        break;
+                    }
                 case "block":
-                    OnInventoryReceived(msg.Payload.AsSerializable<Block>());
-                    break;
+                    {
+                        var payload = msg.Payload.AsSerializable<Block>();
+
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
+                        {
+                            return;
+                        }
+
+                        OnInventoryReceived(payload);
+                        break;
+                    }
                 case "consensus":
-                    OnInventoryReceived(msg.Payload.AsSerializable<ConsensusPayload>());
-                    break;
+                    {
+                        var payload = msg.Payload.AsSerializable<ConsensusPayload>();
+
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
+                        {
+                            return;
+                        }
+
+                        OnInventoryReceived(payload);
+                        break;
+                    }
                 case "filteradd":
-                    OnFilterAddMessageReceived(msg.Payload.AsSerializable<FilterAddPayload>());
-                    break;
+                    {
+                        var payload = msg.Payload.AsSerializable<FilterAddPayload>();
+
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
+                        {
+                            return;
+                        }
+
+                        OnFilterAddMessageReceived(payload);
+                        break;
+                    }
                 case "filterclear":
-                    OnFilterClearMessageReceived();
-                    break;
+                    {
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, null))
+                        {
+                            return;
+                        }
+
+                        OnFilterClearMessageReceived();
+                        break;
+                    }
                 case "filterload":
-                    OnFilterLoadMessageReceived(msg.Payload.AsSerializable<FilterLoadPayload>());
-                    break;
+                    {
+                        var payload = msg.Payload.AsSerializable<FilterLoadPayload>();
+
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
+                        {
+                            return;
+                        }
+
+                        OnFilterLoadMessageReceived(payload);
+                        break;
+                    }
                 case "getaddr":
-                    OnGetAddrMessageReceived();
-                    break;
+                    {
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, null))
+                        {
+                            return;
+                        }
+
+                        OnGetAddrMessageReceived();
+                        break;
+                    }
                 case "getblocks":
-                    OnGetBlocksMessageReceived(msg.Payload.AsSerializable<GetBlocksPayload>());
-                    break;
+                    {
+                        var payload = msg.Payload.AsSerializable<GetBlocksPayload>();
+
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
+                        {
+                            return;
+                        }
+
+                        OnGetBlocksMessageReceived(payload);
+                        break;
+                    }
                 case "getdata":
-                    OnGetDataMessageReceived(msg.Payload.AsSerializable<InvPayload>());
-                    break;
+                    {
+                        var payload = msg.Payload.AsSerializable<InvPayload>();
+
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
+                        {
+                            return;
+                        }
+
+                        OnGetDataMessageReceived(payload);
+                        break;
+                    }
                 case "getheaders":
-                    OnGetHeadersMessageReceived(msg.Payload.AsSerializable<GetBlocksPayload>());
-                    break;
+                    {
+                        var payload = msg.Payload.AsSerializable<GetBlocksPayload>();
+
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
+                        {
+                            return;
+                        }
+
+                        OnGetHeadersMessageReceived(payload);
+                        break;
+                    }
                 case "headers":
-                    OnHeadersMessageReceived(msg.Payload.AsSerializable<HeadersPayload>());
-                    break;
+                    {
+                        var payload = msg.Payload.AsSerializable<HeadersPayload>();
+
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
+                        {
+                            return;
+                        }
+
+                        OnHeadersMessageReceived(payload);
+                        break;
+                    }
                 case "inv":
-                    OnInvMessageReceived(msg.Payload.AsSerializable<InvPayload>());
-                    break;
+                    {
+                        var payload = msg.Payload.AsSerializable<InvPayload>();
+
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
+                        {
+                            return;
+                        }
+
+                        OnInvMessageReceived(payload);
+                        break;
+                    }
                 case "mempool":
-                    OnMemPoolMessageReceived();
-                    break;
+                    {
+                        if (!Plugin.ReceivedMessageAllowed(msg.Command, null))
+                        {
+                            return;
+                        }
+
+                        OnMemPoolMessageReceived();
+                        break;
+                    }
                 case "tx":
-                    if (msg.Payload.Length <= Transaction.MaxTransactionSize)
-                        OnInventoryReceived(Transaction.DeserializeFrom(msg.Payload));
-                    break;
+                    {
+                        if (msg.Payload.Length <= Transaction.MaxTransactionSize)
+                        {
+                            var payload = Transaction.DeserializeFrom(msg.Payload);
+
+                            if (!Plugin.ReceivedMessageAllowed(msg.Command, payload))
+                            {
+                                return;
+                            }
+
+                            OnInventoryReceived(payload);
+                        }
+                        break;
+                    }
                 case "verack":
                 case "version":
                     throw new ProtocolViolationException();
