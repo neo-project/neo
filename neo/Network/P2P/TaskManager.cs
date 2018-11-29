@@ -67,7 +67,7 @@ namespace Neo.Network.P2P
             
             foreach (UInt256 hash in hashes)
             {
-                globalTasks[hash] = 1;
+                IncrementGlobalTask(hash);
                 session.Tasks[hash] = DateTime.UtcNow;
             }
                 
