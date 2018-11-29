@@ -206,7 +206,6 @@ namespace Neo.Network.P2P
                 {
                     if (!IncrementGlobalTask(hash))
                         hashes.Remove(hash);
-                        
                 }
                 if (hashes.Count > 0)
                 {
