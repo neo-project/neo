@@ -118,7 +118,7 @@ namespace Neo.Ledger
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
-        private readonly Dictionary<uint, Block> block_cache_unverified = new Dictionary<uint, Block>();
+        private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         private readonly MemoryPool mem_pool = new MemoryPool(50_000);
         private readonly ConcurrentDictionary<UInt256, Transaction> mem_pool_unverified = new ConcurrentDictionary<UInt256, Transaction>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
@@ -253,6 +253,14 @@ namespace Neo.Ledger
             Sender.Tell(new ImportCompleted());
         }
 
+        private void AddUnverifiedBlockToCache(Block block)
+        {
+            if (!block_cache_unverified.TryGetValue(block.Index, out LinkedList<Block> blocks))
+                blocks = new LinkedList<Block>();
+
+            blocks.AddLast(block);
+        }
+        
         private RelayResultReason OnNewBlock(Block block)
         {
             if (block.Index <= Height)
@@ -261,7 +269,7 @@ namespace Neo.Ledger
                 return RelayResultReason.AlreadyExists;
             if (block.Index - 1 >= header_index.Count)
             {
-                block_cache_unverified[block.Index] = block;
+                AddUnverifiedBlockToCache(block);
                 return RelayResultReason.UnableToVerify;
             }
             if (block.Index == header_index.Count)
@@ -274,9 +282,7 @@ namespace Neo.Ledger
                     // will already have the hash so won't attempt to get the data again. (This code being missing
                     // is very likely why nodes were getting stuck)
 
-                    // Note:also in the future may need to be able to hold multiple blocks 
-                    // at an index to prevent losing the valid one if an attack sent invalid future blocks.
-                    block_cache_unverified[block.Index] = block;
+                    AddUnverifiedBlockToCache(block);
                     return RelayResultReason.UnableToVerify;
                 }
                 if (!block.Verify(currentSnapshot))
@@ -313,8 +319,12 @@ namespace Neo.Ledger
                         system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 }
                 SaveHeaderHashList();
-                if (block_cache_unverified.TryGetValue(Height + 1, out block_persist))
-                    Self.Tell(block_persist, ActorRefs.NoSender);
+
+                if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
+                {
+                    foreach (var unverifiedBlock in unverifiedBlocks)
+                        Self.Tell(unverifiedBlock, ActorRefs.NoSender);                
+                }
             }
             else
             {
