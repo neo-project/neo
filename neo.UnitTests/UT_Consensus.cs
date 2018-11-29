@@ -13,7 +13,6 @@ using System.Threading;
 using Neo.Consensus;
 using Neo.Plugins;
 using Neo.Cryptography.ECC;
-using Neo.Time;
 using Moq;
 
 namespace Neo.UnitTests

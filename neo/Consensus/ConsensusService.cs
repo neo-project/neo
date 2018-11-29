@@ -8,7 +8,6 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
-using Neo.Time;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;

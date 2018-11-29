@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Neo.Time
+namespace Neo
 {
     public abstract class TimeProvider
     {
