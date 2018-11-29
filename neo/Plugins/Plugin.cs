@@ -61,8 +61,8 @@ namespace Neo.Plugins
                 NotifyFilter = NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
             };
 
-            _configWatcher.Changed += _configWatcher_Changed;
-            _configWatcher.Created += _configWatcher_Changed;
+            _configWatcher.Changed += configWatcher_Changed;
+            _configWatcher.Created += configWatcher_Changed;
 
             foreach (string filename in Directory.EnumerateFiles(path, "*.dll", SearchOption.TopDirectoryOnly))
             {
@@ -81,22 +81,20 @@ namespace Neo.Plugins
             }
         }
 
-        private static void _configWatcher_Changed(object sender, FileSystemEventArgs e)
+        private static void configWatcher_Changed(object sender, FileSystemEventArgs e)
         {
             foreach (var plugin in Plugins)
             {
                 if (plugin.ConfigFile == e.FullPath)
                 {
                     plugin.Configure(plugin.GetType().Assembly.GetConfiguration());
+                    Log(Name, LogLevel.Info, $"Reloaded config for {plugin.Name}");
                     break;
                 }
             }
         }
 
-        public virtual void Configure(IConfigurationSection config)
-        {
-            Log(Name, LogLevel.Info, $"Loaded config for {Name}");
-        }
+        public abstract void Configure(IConfigurationSection config);
 
         public static void Log(string source, LogLevel level, string message)
         {
