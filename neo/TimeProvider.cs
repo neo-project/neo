@@ -1,46 +1,17 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Neo
 {
-    public abstract class TimeProvider
+    public class TimeProvider
     {
-        private static TimeProvider current =
-            DefaultTimeProvider.Instance;
+        private static readonly TimeProvider Default = new TimeProvider();
 
-        public static TimeProvider Current
+        public static TimeProvider Current { get; internal set; } = Default;
+        public virtual DateTime UtcNow => DateTime.UtcNow;
+
+        internal static void ResetToDefault()
         {
-           get { return TimeProvider.current; }
-           internal set
-           {
-               if (value != null)
-               {
-                   TimeProvider.current = value;
-               }
-           }
-       }
-
-       public abstract DateTime UtcNow { get; }
-
-       internal static void ResetToDefault()
-       {
-           TimeProvider.current = DefaultTimeProvider.Instance;
-       }
-    }
-
-
-    internal class DefaultTimeProvider : TimeProvider
-    {
-        private static readonly DefaultTimeProvider current = new DefaultTimeProvider();
-        public static DefaultTimeProvider Instance
-        {
-             get { return DefaultTimeProvider.current; }
-        }
-
-        public override DateTime UtcNow
-        {
-            get { return DateTime.UtcNow; }
+            Current = Default;
         }
     }
 }
