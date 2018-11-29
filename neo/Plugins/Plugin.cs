@@ -20,7 +20,7 @@ namespace Neo.Plugins
         protected static NeoSystem System { get; private set; }
         public virtual string Name => GetType().Name;
         public virtual Version Version => GetType().Assembly.GetName().Version;
-        public string ConfigFile => Path.GetFullPath(Path.Combine("Plugins", GetType().Assembly.GetName().Name, "config.json"));
+        public virtual string ConfigFile => Path.GetFullPath(Path.Combine("Plugins", GetType().Assembly.GetName().Name, "config.json"));
 
         protected virtual bool OnMessage(object message) => false;
 
@@ -44,12 +44,6 @@ namespace Neo.Plugins
 
         internal static void LoadPlugins(NeoSystem system)
         {
-            if (_configWatcher != null)
-            {
-                _configWatcher?.Dispose();
-                _configWatcher = null;
-            }
-
             System = system;
             string path = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
             if (!Directory.Exists(path)) return;
