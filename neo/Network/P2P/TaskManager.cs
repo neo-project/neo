@@ -136,10 +136,13 @@ namespace Neo.Network.P2P
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void DecrementGlobalTask(UInt256 hash)
         {
-            if (globalTasks[hash] == 1)
-                globalTasks.Remove(hash);
-            else
-                globalTasks[hash]--;       
+            if (globalTasks.ContainsKey(hash))
+            {
+                if (globalTasks[hash] == 1)
+                    globalTasks.Remove(hash);
+                else
+                    globalTasks[hash]--;   
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -164,10 +167,7 @@ namespace Neo.Network.P2P
                 return;
             sessions.Remove(actor);
             foreach (UInt256 hash in session.Tasks.Keys)
-            {
-                if (globalTasks.ContainsKey(hash))
-                    DecrementGlobalTask(hash);
-            }
+                DecrementGlobalTask(hash);
         }
 
         private void OnTimer()
