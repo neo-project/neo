@@ -1,11 +1,10 @@
 ﻿using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.VM;
 using System.Linq;
 
 namespace Neo.SmartContract
 {
-    internal class WitnessWrapper : IInteropInterface
+    internal class WitnessWrapper
     {
         public byte[] VerificationScript;
 

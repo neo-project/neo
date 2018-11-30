@@ -18,13 +18,15 @@ namespace Neo.Network.P2P
 {
     public abstract class Peer : UntypedActor
     {
-        public class Start { public int Port; public int WsPort; }
+        public class Start { public int Port; public int WsPort; public int MinDesiredConnections; public int MaxConnections; }
         public class Peers { public IEnumerable<IPEndPoint> EndPoints; }
-        public class Connect { public IPEndPoint EndPoint; }
+        public class Connect { public IPEndPoint EndPoint; public bool IsTrusted = false; }
         private class Timer { }
         private class WsConnected { public WebSocket Socket; public IPEndPoint Remote; public IPEndPoint Local; }
 
         private const int MaxConnectionsPerAddress = 3;
+        public const int DefaultMinDesiredConnections = 10;
+        public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
 
         private static readonly IActorRef tcp_manager = Context.System.Tcp();
         private IActorRef tcp_listener;
@@ -37,11 +39,22 @@ namespace Neo.Network.P2P
         protected readonly ConcurrentDictionary<IActorRef, IPEndPoint> ConnectedPeers = new ConcurrentDictionary<IActorRef, IPEndPoint>();
         protected ImmutableHashSet<IPEndPoint> UnconnectedPeers = ImmutableHashSet<IPEndPoint>.Empty;
         protected ImmutableHashSet<IPEndPoint> ConnectingPeers = ImmutableHashSet<IPEndPoint>.Empty;
-
+        protected HashSet<IPAddress> TrustedIpAddresses { get; } = new HashSet<IPAddress>();
+        
         public int ListenerPort { get; private set; }
-        protected abstract int ConnectedMax { get; }
-        protected abstract int UnconnectedMax { get; }
-        protected virtual int ConnectingMax => ConnectedMax - ConnectedPeers.Count;
+        public int MinDesiredConnections { get; private set; } = DefaultMinDesiredConnections;
+        public int MaxConnections { get; private set; } = DefaultMaxConnections;
+        protected int UnconnectedMax { get; } = 1000;
+        protected virtual int ConnectingMax
+        {
+            get
+            {
+                var allowedConnecting = MinDesiredConnections * 4;
+                allowedConnecting = MaxConnections != -1 && allowedConnecting > MaxConnections 
+                    ? MaxConnections : allowedConnecting; 
+                return allowedConnecting - ConnectedPeers.Count;
+            }
+        }
 
         static Peer()
         {
@@ -57,16 +70,18 @@ namespace Neo.Network.P2P
             }
         }
 
-        protected void ConnectToPeer(IPEndPoint endPoint)
+        protected void ConnectToPeer(IPEndPoint endPoint, bool isTrusted = false)
         {
             endPoint = endPoint.Unmap();
             if (endPoint.Port == ListenerPort && localAddresses.Contains(endPoint.Address)) return;
+
+            if (isTrusted) TrustedIpAddresses.Add(endPoint.Address);
             if (ConnectedAddresses.TryGetValue(endPoint.Address, out int count) && count >= MaxConnectionsPerAddress)
                 return;
             if (ConnectedPeers.Values.Contains(endPoint)) return;
             ImmutableInterlocked.Update(ref ConnectingPeers, p =>
             {
-                if (p.Count >= ConnectingMax || p.Contains(endPoint)) return p;
+                if ((p.Count >= ConnectingMax && !isTrusted) || p.Contains(endPoint)) return p;
                 tcp_manager.Tell(new Tcp.Connect(endPoint));
                 return p.Add(endPoint);
             });
@@ -87,7 +102,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case Start start:
-                    OnStart(start.Port, start.WsPort);
+                    OnStart(start.Port, start.WsPort, start.MinDesiredConnections, start.MaxConnections);
                     break;
                 case Timer _:
                     OnTimer();
@@ -96,7 +111,7 @@ namespace Neo.Network.P2P
                     AddPeers(peers.EndPoints);
                     break;
                 case Connect connect:
-                    ConnectToPeer(connect.EndPoint);
+                    ConnectToPeer(connect.EndPoint, connect.IsTrusted);
                     break;
                 case WsConnected ws:
                     OnWsConnected(ws.Socket, ws.Remote, ws.Local);
@@ -116,11 +131,13 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnStart(int port, int ws_port)
+        private void OnStart(int port, int wsPort, int minDesiredConnections, int maxConnections)
         {
             ListenerPort = port;
+            MinDesiredConnections = minDesiredConnections;
+            MaxConnections = maxConnections;
             timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
-            if ((port > 0 || ws_port > 0)
+            if ((port > 0 || wsPort > 0)
                 && localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
                 && UPnP.Discover())
             {
@@ -129,8 +146,8 @@ namespace Neo.Network.P2P
                     localAddresses.Add(UPnP.GetExternalIP());
                     if (port > 0)
                         UPnP.ForwardPort(port, ProtocolType.Tcp, "NEO");
-                    if (ws_port > 0)
-                        UPnP.ForwardPort(ws_port, ProtocolType.Tcp, "NEO WebSocket");
+                    if (wsPort > 0)
+                        UPnP.ForwardPort(wsPort, ProtocolType.Tcp, "NEO WebSocket");
                 }
                 catch { }
             }
@@ -138,9 +155,9 @@ namespace Neo.Network.P2P
             {
                 tcp_manager.Tell(new Tcp.Bind(Self, new IPEndPoint(IPAddress.Any, port), options: new[] { new Inet.SO.ReuseAddress(true) }));
             }
-            if (ws_port > 0)
+            if (wsPort > 0)
             {
-                ws_host = new WebHostBuilder().UseKestrel().UseUrls($"http://*:{ws_port}").Configure(app => app.UseWebSockets().Run(ProcessWebSocketAsync)).Build();
+                ws_host = new WebHostBuilder().UseKestrel().UseUrls($"http://*:{wsPort}").Configure(app => app.UseWebSockets().Run(ProcessWebSocketAsync)).Build();
                 ws_host.Start();
             }
         }
@@ -148,6 +165,12 @@ namespace Neo.Network.P2P
         private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
             ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(remote));
+            if (MaxConnections != -1 && ConnectedPeers.Count >= MaxConnections && !TrustedIpAddresses.Contains(remote.Address))
+            {
+                Sender.Tell(Tcp.Abort.Instance);
+                return;
+            }
+            
             ConnectedAddresses.TryGetValue(remote.Address, out int count);
             if (count >= MaxConnectionsPerAddress)
             {
@@ -188,10 +211,10 @@ namespace Neo.Network.P2P
 
         private void OnTimer()
         {
-            if (ConnectedPeers.Count >= ConnectedMax) return;
+            if (ConnectedPeers.Count >= MinDesiredConnections) return;
             if (UnconnectedPeers.Count == 0)
-                NeedMorePeers(ConnectedMax - ConnectedPeers.Count);
-            IPEndPoint[] endpoints = UnconnectedPeers.Take(ConnectedMax - ConnectedPeers.Count).ToArray();
+                NeedMorePeers(MinDesiredConnections - ConnectedPeers.Count);
+            IPEndPoint[] endpoints = UnconnectedPeers.Take(MinDesiredConnections - ConnectedPeers.Count).ToArray();
             ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Except(endpoints));
             foreach (IPEndPoint endpoint in endpoints)
             {
