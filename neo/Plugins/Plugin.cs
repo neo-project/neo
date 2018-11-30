@@ -71,8 +71,16 @@ namespace Neo.Plugins
                     ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
                     if (constructor == null) continue;
 
-                    var plugin = (Plugin)constructor.Invoke(null);
-                    plugin?.Configure(assembly.GetConfiguration());
+                    Plugin plugin;
+                    try
+                    {
+                        plugin = (Plugin)constructor.Invoke(null);
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                    plugin.Configure(assembly.GetConfiguration());
                 }
             }
         }
