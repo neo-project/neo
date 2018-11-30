@@ -82,7 +82,7 @@ namespace Neo.Plugins
                 if (plugin.ConfigFile == e.FullPath)
                 {
                     plugin.Configure(plugin.GetType().Assembly.GetConfiguration());
-                    Log(Name, LogLevel.Info, $"Reloaded config for {plugin.Name}");
+                    Log(plugin.Name, LogLevel.Info, $"Reloaded config for {plugin.Name}");
                     break;
                 }
             }
