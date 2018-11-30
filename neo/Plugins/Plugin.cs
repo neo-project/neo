@@ -62,7 +62,7 @@ namespace Neo.Plugins
                 if (plugin.ConfigFile == e.FullPath)
                 {
                     plugin.Configure();
-                    Log(plugin.Name, LogLevel.Info, $"Reloaded config for {plugin.Name}");
+                    plugin.Log($"Reloaded config for {plugin.Name}");
                     break;
                 }
             }
@@ -100,6 +100,11 @@ namespace Neo.Plugins
                     plugin.Configure();
                 }
             }
+        }
+
+        protected void Log(string message, LogLevel level = LogLevel.Info)
+        {
+            Log($"{nameof(Plugin)}:{Name}", level, message);
         }
 
         public static void Log(string source, LogLevel level, string message)
