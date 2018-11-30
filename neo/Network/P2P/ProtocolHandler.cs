@@ -233,6 +233,7 @@ namespace Neo.Network.P2P
         private void OnHeadersMessageReceived(HeadersPayload payload)
         {
             if (payload.Headers.Length == 0) return;
+            system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = UInt256.Zero }, Context.Parent);
             system.Blockchain.Tell(payload.Headers, Context.Parent);
         }
 
