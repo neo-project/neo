@@ -64,13 +64,13 @@ namespace Neo.Network.P2P
                 RequestTasks(session);
                 return;
             }
-            
+
             foreach (UInt256 hash in hashes)
             {
                 IncrementGlobalTask(hash);
                 session.Tasks[hash] = DateTime.UtcNow;
             }
-                
+
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, hashes.ToArray()))
                 Sender.Tell(Message.Create("getdata", group));
         }
@@ -141,7 +141,7 @@ namespace Neo.Network.P2P
                 if (globalTasks[hash] == 1)
                     globalTasks.Remove(hash);
                 else
-                    globalTasks[hash]--;   
+                    globalTasks[hash]--;
             }
         }
 
@@ -155,7 +155,7 @@ namespace Neo.Network.P2P
             }
             if (globalTasks[hash] >= MaxConncurrentTasks)
                 return false;
-            
+
             globalTasks[hash]++;
 
             return true;
@@ -202,13 +202,13 @@ namespace Neo.Network.P2P
                 session.AvailableTasks.ExceptWith(knownHashes);
                 session.AvailableTasks.RemoveWhere(p => Blockchain.Singleton.ContainsBlock(p));
                 HashSet<UInt256> hashes = new HashSet<UInt256>(session.AvailableTasks);
-                foreach (UInt256 hash in hashes.ToArray())
-                {
-                    if (!IncrementGlobalTask(hash))
-                        hashes.Remove(hash);
-                }
                 if (hashes.Count > 0)
                 {
+                    foreach (UInt256 hash in hashes.ToArray())
+                    {
+                        if (!IncrementGlobalTask(hash))
+                            hashes.Remove(hash);
+                    }
                     session.AvailableTasks.ExceptWith(hashes);
                     foreach (UInt256 hash in hashes)
                         session.Tasks[hash] = DateTime.UtcNow;
