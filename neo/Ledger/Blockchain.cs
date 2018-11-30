@@ -114,6 +114,7 @@ namespace Neo.Ledger
             }
         };
 
+        private object lockObj = new object();
         private readonly NeoSystem system;
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
@@ -150,7 +151,7 @@ namespace Neo.Ledger
         {
             this.system = system;
             this.Store = store;
-            lock (GetType())
+            lock (lockObj)
             {
                 if (singleton != null)
                     throw new InvalidOperationException();

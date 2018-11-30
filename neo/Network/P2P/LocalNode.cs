@@ -21,6 +21,7 @@ namespace Neo.Network.P2P
 
         public const uint ProtocolVersion = 0;
 
+        private object lockObj = new object();
         private readonly NeoSystem system;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new ConcurrentDictionary<IActorRef, RemoteNode>();
 
@@ -48,7 +49,7 @@ namespace Neo.Network.P2P
 
         public LocalNode(NeoSystem system)
         {
-            lock (GetType())
+            lock (lockObj)
             {
                 if (singleton != null)
                     throw new InvalidOperationException();
