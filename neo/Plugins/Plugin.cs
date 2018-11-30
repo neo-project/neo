@@ -15,27 +15,24 @@ namespace Neo.Plugins
         internal static readonly List<IRpcPlugin> RpcPlugins = new List<IRpcPlugin>();
         internal static readonly List<IPersistencePlugin> PersistencePlugins = new List<IPersistencePlugin>();
 
-        private static readonly string PluginsPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
-        private static readonly FileSystemWatcher _configWatcher;
+        private static readonly string pluginsPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
+        private static readonly FileSystemWatcher configWatcher;
 
         protected static NeoSystem System { get; private set; }
         public virtual string Name => GetType().Name;
         public virtual Version Version => GetType().Assembly.GetName().Version;
-        public virtual string ConfigFile => Path.Combine(PluginsPath, GetType().Assembly.GetName().Name, "config.json");
-
-        protected virtual bool OnMessage(object message) => false;
+        public virtual string ConfigFile => Path.Combine(pluginsPath, GetType().Assembly.GetName().Name, "config.json");
 
         static Plugin()
         {
-            _configWatcher = new FileSystemWatcher(PluginsPath, "*.json")
+            configWatcher = new FileSystemWatcher(pluginsPath, "*.json")
             {
                 EnableRaisingEvents = true,
                 IncludeSubdirectories = true,
                 NotifyFilter = NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
             };
-
-            _configWatcher.Changed += configWatcher_Changed;
-            _configWatcher.Created += configWatcher_Changed;
+            configWatcher.Changed += ConfigWatcher_Changed;
+            configWatcher.Created += ConfigWatcher_Changed;
         }
 
         protected Plugin()
@@ -56,6 +53,21 @@ namespace Neo.Plugins
             return true;
         }
 
+        public abstract void Configure();
+
+        private static void ConfigWatcher_Changed(object sender, FileSystemEventArgs e)
+        {
+            foreach (var plugin in Plugins)
+            {
+                if (plugin.ConfigFile == e.FullPath)
+                {
+                    plugin.Configure();
+                    Log(plugin.Name, LogLevel.Info, $"Reloaded config for {plugin.Name}");
+                    break;
+                }
+            }
+        }
+
         protected IConfigurationSection GetConfiguration()
         {
             return new ConfigurationBuilder().AddJsonFile(ConfigFile, optional: true).Build().GetSection("PluginConfiguration");
@@ -64,8 +76,8 @@ namespace Neo.Plugins
         internal static void LoadPlugins(NeoSystem system)
         {
             System = system;
-            if (!Directory.Exists(PluginsPath)) return;
-            foreach (string filename in Directory.EnumerateFiles(PluginsPath, "*.dll", SearchOption.TopDirectoryOnly))
+            if (!Directory.Exists(pluginsPath)) return;
+            foreach (string filename in Directory.EnumerateFiles(pluginsPath, "*.dll", SearchOption.TopDirectoryOnly))
             {
                 Assembly assembly = Assembly.LoadFile(filename);
                 foreach (Type type in assembly.ExportedTypes)
@@ -90,26 +102,13 @@ namespace Neo.Plugins
             }
         }
 
-        private static void configWatcher_Changed(object sender, FileSystemEventArgs e)
-        {
-            foreach (var plugin in Plugins)
-            {
-                if (plugin.ConfigFile == e.FullPath)
-                {
-                    plugin.Configure();
-                    Log(plugin.Name, LogLevel.Info, $"Reloaded config for {plugin.Name}");
-                    break;
-                }
-            }
-        }
-
-        public abstract void Configure();
-
         public static void Log(string source, LogLevel level, string message)
         {
             foreach (ILogPlugin plugin in Loggers)
                 plugin.Log(source, level, message);
         }
+
+        protected virtual bool OnMessage(object message) => false;
 
         public static bool SendMessage(object message)
         {
