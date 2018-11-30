@@ -49,7 +49,6 @@ namespace Neo.Consensus
                 {
                     Log($"send prepare response");
                     context.SignedPayloads[context.MyIndex] = context.SignPreparePayload();
-                    context.State |= ConsensusState.SignatureSent;
                     system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.SignedPayloads[context.MyIndex]) });
                     CheckPayloadSignatures();
                 }
@@ -458,12 +457,8 @@ namespace Neo.Consensus
             {
                 Log($"send prepare request: height={timer.Height} view={timer.ViewNumber}");
                 context.State |= ConsensusState.RequestSent;
-
-                if (!context.State.HasFlag(ConsensusState.SignatureSent))
-                {
-                    context.Fill();
-                    context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
-                }
+                context.Fill();
+                context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
                 Block block = context.MakeHeader();
                 if (block == null) return;
                 context.FinalSignatures[context.MyIndex] = context.SignBlock(block);

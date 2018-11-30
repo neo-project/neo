@@ -78,18 +78,12 @@ namespace Neo.Consensus
 
         public void ChangeView(byte view_number)
         {
-            State &= ConsensusState.SignatureSent;
             ViewNumber = view_number;
             PrimaryIndex = GetPrimaryIndex(view_number);
-
-            if (State == ConsensusState.Initial)
-            {
-                PreparePayload = null;
-                TransactionHashes = null;
-                SignedPayloads = new byte[Validators.Length][];
-                FinalSignatures = new byte[Validators.Length][];
-            }
-
+            PreparePayload = null;
+            TransactionHashes = null;
+            SignedPayloads = new byte[Validators.Length][];
+            FinalSignatures = new byte[Validators.Length][];
             if (MyIndex >= 0)
             {
                 ExpectedView[MyIndex] = view_number;
