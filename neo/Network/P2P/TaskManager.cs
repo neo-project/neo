@@ -234,7 +234,8 @@ namespace Neo.Network.P2P
                         break;
                     }
                 }
-                session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hash)));
+                if (!globalTasks.Contains(hash))
+                    session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hash)));
             }
         }
     }
