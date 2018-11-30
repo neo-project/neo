@@ -156,7 +156,8 @@ namespace Neo.Network.P2P
             BlockState state = Blockchain.Singleton.Store.GetBlocks().TryGet(hash);
             if (state == null) return;
             List<UInt256> hashes = new List<UInt256>();
-            for (uint i = 1; i <= InvPayload.MaxHashesCount; i++)
+            hashes.Add(hash);
+            for (uint i = 1; i < InvPayload.MaxHashesCount; i++)
             {
                 uint index = state.TrimmedBlock.Index + i;
                 if (index > Blockchain.Singleton.Height)
