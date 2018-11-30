@@ -277,17 +277,6 @@ namespace Neo.Ledger
             }
             if (block.Index == header_index.Count)
             {
-                if (block.Index > Height + 1)
-                {                        
-                    // This could be a couple blocks ahead, and though it doesn't verify against our current
-                    // snapshot, it may verify later. If we were to lose this block and not add it to
-                    // block_cache_unverified here it will never be tried again because knownHashes in TaskManager
-                    // will already have the hash so won't attempt to get the data again. (This code being missing
-                    // is very likely why nodes were getting stuck)
-
-                    AddUnverifiedBlockToCache(block);
-                    return RelayResultReason.UnableToVerify;
-                }
                 if (!block.Verify(currentSnapshot))
                     return RelayResultReason.Invalid;
             }
