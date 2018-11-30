@@ -256,7 +256,10 @@ namespace Neo.Ledger
         private void AddUnverifiedBlockToCache(Block block)
         {
             if (!block_cache_unverified.TryGetValue(block.Index, out LinkedList<Block> blocks))
+            {
                 blocks = new LinkedList<Block>();
+                block_cache_unverified.Add(block.Index, blocks);
+            }
 
             blocks.AddLast(block);
         }
