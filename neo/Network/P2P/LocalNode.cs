@@ -21,7 +21,7 @@ namespace Neo.Network.P2P
 
         public const uint ProtocolVersion = 0;
 
-        private static object lockObj = new object();
+        private static readonly object lockObj = new object();
         private readonly NeoSystem system;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new ConcurrentDictionary<IActorRef, RemoteNode>();
 

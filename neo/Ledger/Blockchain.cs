@@ -114,7 +114,7 @@ namespace Neo.Ledger
             }
         };
 
-        private static object lockObj = new object();
+        private static readonly object lockObj = new object();
         private readonly NeoSystem system;
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
@@ -293,7 +293,7 @@ namespace Neo.Ledger
                 {
                     block_cache_unverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
-                    
+
                     if (blocksPersisted++ < blocksToPersistList.Count - 2) continue;
                     // Relay most recent 2 blocks persisted
 
