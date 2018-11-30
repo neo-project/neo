@@ -9,13 +9,14 @@ namespace Neo.Plugins
 {
     public abstract class Plugin
     {
-        private static FileSystemWatcher _configWatcher;
-
         public static readonly List<Plugin> Plugins = new List<Plugin>();
         private static readonly List<ILogPlugin> Loggers = new List<ILogPlugin>();
         internal static readonly List<IPolicyPlugin> Policies = new List<IPolicyPlugin>();
         internal static readonly List<IRpcPlugin> RpcPlugins = new List<IRpcPlugin>();
         internal static readonly List<IPersistencePlugin> PersistencePlugins = new List<IPersistencePlugin>();
+
+        private static readonly string PluginsPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
+        private static readonly FileSystemWatcher _configWatcher;
 
         protected static NeoSystem System { get; private set; }
         public virtual string Name => GetType().Name;
@@ -23,6 +24,19 @@ namespace Neo.Plugins
         public virtual string ConfigFile => Path.GetFullPath(Path.Combine("Plugins", GetType().Assembly.GetName().Name, "config.json"));
 
         protected virtual bool OnMessage(object message) => false;
+
+        static Plugin()
+        {
+            _configWatcher = new FileSystemWatcher(PluginsPath, "*.json")
+            {
+                EnableRaisingEvents = true,
+                IncludeSubdirectories = true,
+                NotifyFilter = NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
+            };
+
+            _configWatcher.Changed += configWatcher_Changed;
+            _configWatcher.Created += configWatcher_Changed;
+        }
 
         protected Plugin()
         {
@@ -45,20 +59,8 @@ namespace Neo.Plugins
         internal static void LoadPlugins(NeoSystem system)
         {
             System = system;
-            string path = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
-            if (!Directory.Exists(path)) return;
-
-            _configWatcher = new FileSystemWatcher(path, "*.json")
-            {
-                EnableRaisingEvents = true,
-                IncludeSubdirectories = true,
-                NotifyFilter = NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
-            };
-
-            _configWatcher.Changed += configWatcher_Changed;
-            _configWatcher.Created += configWatcher_Changed;
-
-            foreach (string filename in Directory.EnumerateFiles(path, "*.dll", SearchOption.TopDirectoryOnly))
+            if (!Directory.Exists(PluginsPath)) return;
+            foreach (string filename in Directory.EnumerateFiles(PluginsPath, "*.dll", SearchOption.TopDirectoryOnly))
             {
                 Assembly assembly = Assembly.LoadFile(filename);
                 foreach (Type type in assembly.ExportedTypes)
