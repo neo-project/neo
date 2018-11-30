@@ -23,6 +23,7 @@ namespace Neo.Consensus
 
         private readonly ConsensusContext context;
         private readonly NeoSystem system;
+        private ICancelable timer_token;
         private DateTime block_received_time;
 
         public ConsensusService(NeoSystem system, Wallet wallet)
@@ -63,7 +64,8 @@ namespace Neo.Consensus
 
         private void ChangeTimer(TimeSpan delay)
         {
-            Context.System.Scheduler.ScheduleTellOnce(delay, Self, new Timer
+            timer_token.CancelIfNotNull();
+            timer_token = Context.System.Scheduler.ScheduleTellOnceCancelable(delay, Self, new Timer
             {
                 Height = context.BlockIndex,
                 ViewNumber = context.ViewNumber
