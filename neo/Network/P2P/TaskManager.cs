@@ -29,8 +29,6 @@ namespace Neo.Network.P2P
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
-        private bool HeaderTask => sessions.Values.Any(p => p.HeaderTask);
-
         public TaskManager(NeoSystem system)
         {
             this.system = system;
@@ -217,7 +215,7 @@ namespace Neo.Network.P2P
                     return;
                 }
             }
-            if (!HeaderTask && Blockchain.Singleton.HeaderHeight < session.Version.StartHeight)
+            if (!session.HeaderTask && Blockchain.Singleton.HeaderHeight < session.Version.StartHeight)
             {
                 session.Tasks[UInt256.Zero] = DateTime.UtcNow;
                 session.RemoteNode.Tell(Message.Create("getheaders", GetBlocksPayload.Create(Blockchain.Singleton.CurrentHeaderHash)));
