@@ -195,14 +195,19 @@ namespace Neo.Network.P2P
                 {
                     session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hashToStart)));
                     return;
-                 }
-                 uint iFinish = iStart + 1;
-                 UInt256 hashToFinish = Blockchain.Singleton.GetBlockHash(iFinish);
-                 while (!globalTasks.Contains(hashToFinish) && iFinish + 1 <= Blockchain.Singleton.HeaderHeight)
-                 {
+                }
+                uint iFinish = iStart + 1;
+                UInt256 hashToFinish = Blockchain.Singleton.GetBlockHash(iFinish);
+                while (!globalTasks.Contains(hashToFinish) && iFinish + 1 <= Blockchain.Singleton.HeaderHeight)
+                {
                     iFinish++;
                     hashToFinish = Blockchain.Singleton.GetBlockHash(iFinish);
-                 }
+                }
+                if(iFinish == Blockchain.Singleton.HeaderHeight)
+                {
+                    session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hashToStart)));
+                    return;
+                }                 
                 session.RemoteNode.Tell(Message.Create("getblocks", GetBlocksPayload.Create(hashToStart, hashToFinish)));
             }
         }
