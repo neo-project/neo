@@ -56,6 +56,11 @@ namespace Neo.Plugins
             return true;
         }
 
+        protected IConfigurationSection GetConfiguration()
+        {
+            return new ConfigurationBuilder().AddJsonFile(ConfigFile, optional: true).Build().GetSection("PluginConfiguration");
+        }
+
         internal static void LoadPlugins(NeoSystem system)
         {
             System = system;
@@ -80,7 +85,7 @@ namespace Neo.Plugins
                     {
                         continue;
                     }
-                    plugin.Configure(assembly.GetConfiguration());
+                    plugin.Configure();
                 }
             }
         }
@@ -91,14 +96,14 @@ namespace Neo.Plugins
             {
                 if (plugin.ConfigFile == e.FullPath)
                 {
-                    plugin.Configure(plugin.GetType().Assembly.GetConfiguration());
+                    plugin.Configure();
                     Log(plugin.Name, LogLevel.Info, $"Reloaded config for {plugin.Name}");
                     break;
                 }
             }
         }
 
-        public abstract void Configure(IConfigurationSection config);
+        public abstract void Configure();
 
         public static void Log(string source, LogLevel level, string message)
         {
