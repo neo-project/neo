@@ -25,7 +25,7 @@ namespace Neo.Consensus
         private readonly IActorRef localNode;
         private readonly IActorRef taskManager;
         private ICancelable timer_token;
-        public DateTime block_received_time;
+        private DateTime block_received_time;
 
         public ConsensusService(IActorRef _LocalNode, IActorRef _TaskManager, Wallet wallet)
         {
