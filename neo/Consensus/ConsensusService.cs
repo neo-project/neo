@@ -21,9 +21,11 @@ namespace Neo.Consensus
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
+
         private readonly IConsensusContext context;
         private readonly IActorRef localNode;
         private readonly IActorRef taskManager;
+        private ICancelable timer_token;
 
         public ConsensusService(IActorRef _LocalNode, IActorRef _TaskManager, Wallet wallet)
         {
@@ -69,7 +71,8 @@ namespace Neo.Consensus
 
         private void ChangeTimer(TimeSpan delay)
         {
-            Context.System.Scheduler.ScheduleTellOnce(delay, Self, new Timer
+            timer_token.CancelIfNotNull();
+            timer_token = Context.System.Scheduler.ScheduleTellOnceCancelable(delay, Self, new Timer
             {
                 Height = context.BlockIndex,
                 ViewNumber = context.ViewNumber
