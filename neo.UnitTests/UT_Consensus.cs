@@ -4,6 +4,7 @@ using Neo.IO.Json;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P;
+using Neo.Ledger;
 using Akka.TestKit;
 using Akka.TestKit.Xunit2;
 using Akka;
@@ -46,13 +47,25 @@ namespace Neo.UnitTests
           mockConsensusContext.Setup(mr => mr.GetPrimaryIndex(It.IsAny<byte>())).Returns(2);
           mockConsensusContext.SetupProperty(mr => mr.State);  // allows get and set to update mock state on Initialize method
           mockConsensusContext.Object.State = ConsensusState.Initial;
-          mockConsensusContext.SetupProperty(mr => mr.block_received_time);
 
-          mockConsensusContext.Object.block_received_time = new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc);
+          int timeIndex = 0;
+          var timeValues = new[] {
+              new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For tests here
+              new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc),  // For receiving block
+              new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For Initialize
+              new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // unused
+              new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc)  // unused
+          };
+
+          Console.WriteLine($"time 0: {timeValues[0].ToString()} 1: {timeValues[1].ToString()} 2: {timeValues[2].ToString()} 3: {timeValues[3].ToString()}");
+
+          //mockConsensusContext.Object.block_received_time = new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc);
           //mockConsensusContext.Setup(mr => mr.GetUtcNow()).Returns(new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc));
 
           var timeMock = new Mock<TimeProvider>();
-          timeMock.SetupGet(tp => tp.UtcNow).Returns(new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc));
+          timeMock.SetupGet(tp => tp.UtcNow).Returns( () => timeValues[timeIndex] )
+                                            .Callback( () => timeIndex++ );
+                                //new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc));
           TimeProvider.Current = timeMock.Object;
 
           //public void Log(string message, LogLevel level)
@@ -75,13 +88,13 @@ namespace Neo.UnitTests
           TestUtils.SetupHeaderWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
           header.Size.Should().Be(109);
 
-          Console.WriteLine($"header {header} hash {header.Hash} timstamp {timestampVal} now {TimeProvider.Current.UtcNow.ToTimestamp()}");
+          Console.WriteLine($"header {header} hash {header.Hash} timstamp {timestampVal}");
 
           timestampVal.Should().Be(4244941696); //1968-06-01 00:00:00
+          TimeProvider.Current.UtcNow.ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
           // check basic ConsensusContext
           mockConsensusContext.Object.MyIndex.Should().Be(2);
-          mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
-          TimeProvider.Current.UtcNow.ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
+          ///mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
 
           MinerTransaction minerTx = new MinerTransaction();
           minerTx.Attributes = new TransactionAttribute[0];
@@ -120,9 +133,25 @@ namespace Neo.UnitTests
 
           TestActorRef<ConsensusService> actorConsensus = ActorOfAsTestActorRef<ConsensusService>(
                                    Akka.Actor.Props.Create(() => new ConsensusService(subscriber, subscriber, mockConsensusContext.Object))
-                                                                                                 );
-          Console.WriteLine("will start consensus!");
-          actorConsensus.Tell(new ConsensusService.Start());
+                                   );
+
+          Console.WriteLine("will trigger OnPersistCompleted!");
+
+          actorConsensus.Tell(new Blockchain.PersistCompleted{
+                Block = new Block
+                {
+                    Version = header.Version,
+                    PrevHash = header.PrevHash,
+                    MerkleRoot = header.MerkleRoot,
+                    Timestamp = header.Timestamp,
+                    Index = header.Index,
+                    ConsensusData = header.ConsensusData,
+                    NextConsensus = header.NextConsensus
+                }
+            } );
+
+          //Console.WriteLine("will start consensus!");
+          //actorConsensus.Tell(new ConsensusService.Start());
 
           Console.WriteLine("OnTimer should expire!");
           Console.WriteLine("Waiting for subscriber message!");

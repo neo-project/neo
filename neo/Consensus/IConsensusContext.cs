@@ -17,7 +17,6 @@ namespace Neo.Consensus
     public interface IConsensusContext : IDisposable
     {
         //public const uint Version = 0;
-        DateTime block_received_time {get; set;}
         ConsensusState State {get; set;}
         UInt256 PrevHash {get;}
         uint BlockIndex {get;}

@@ -21,11 +21,11 @@ namespace Neo.Consensus
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
-
         private readonly IConsensusContext context;
         private readonly IActorRef localNode;
         private readonly IActorRef taskManager;
         private ICancelable timer_token;
+        public DateTime block_received_time;
 
         public ConsensusService(IActorRef _LocalNode, IActorRef _TaskManager, Wallet wallet)
         {
@@ -114,7 +114,7 @@ namespace Neo.Consensus
             if (context.MyIndex == context.PrimaryIndex)
             {
                 context.State |= ConsensusState.Primary;
-                TimeSpan span = TimeProvider.Current.UtcNow - context.block_received_time;
+                TimeSpan span = TimeProvider.Current.UtcNow - block_received_time;
                 if (span >= Blockchain.TimePerBlock)
                     ChangeTimer(TimeSpan.Zero);
                 else
@@ -179,7 +179,7 @@ namespace Neo.Consensus
         private void OnPersistCompleted(Block block)
         {
             context.Log($"persist block: {block.Hash}");
-            context.block_received_time = TimeProvider.Current.UtcNow;
+            block_received_time = TimeProvider.Current.UtcNow;
             InitializeConsensus(0);
         }
 

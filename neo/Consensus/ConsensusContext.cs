@@ -16,7 +16,6 @@ namespace Neo.Consensus
     internal class ConsensusContext : IConsensusContext
     {
         public const uint Version = 0;
-        public DateTime block_received_time { get; set; }
         public ConsensusState State { get; set; }
         public UInt256 PrevHash { get; set; }
         public uint BlockIndex { get; set; }
