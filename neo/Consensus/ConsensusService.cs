@@ -127,7 +127,7 @@ namespace Neo.Consensus
             }
         }
 
-        public void Log(string message, LogLevel level = LogLevel.Info)
+        private void Log(string message, LogLevel level = LogLevel.Info)
         {
             Plugin.Log(nameof(ConsensusService), level, message);
         }
