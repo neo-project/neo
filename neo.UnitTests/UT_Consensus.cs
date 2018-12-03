@@ -69,13 +69,14 @@ namespace Neo.UnitTests
           TimeProvider.Current = timeMock.Object;
 
           //public void Log(string message, LogLevel level)
-
+          // TODO: create ILogPlugin for Tests
+          /*
           mockConsensusContext.Setup(mr => mr.Log(It.IsAny<string>(), It.IsAny<LogLevel>()))
                        .Callback((string message, LogLevel level) => {
                                        Console.WriteLine($"CONSENSUS LOG: {message}");
                                                                  }
                                 );
-
+           */
 
           // Creating proposed block
           UInt256 val256 = UInt256.Zero;
