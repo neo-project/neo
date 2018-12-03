@@ -151,7 +151,7 @@ namespace Neo.Consensus
             {
                 if (context.BlockIndex < payload.BlockIndex)
                 {
-                    Log($"chain sync: expected={payload.BlockIndex - 1} current={context.BlockIndex - 1} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
+                    Log($"chain sync: expected={payload.BlockIndex} current={context.BlockIndex - 1} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
                 }
                 return;
             }
