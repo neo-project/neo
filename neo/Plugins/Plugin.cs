@@ -25,14 +25,17 @@ namespace Neo.Plugins
 
         static Plugin()
         {
-            configWatcher = new FileSystemWatcher(pluginsPath, "*.json")
+            if (Directory.Exists(pluginsPath))
             {
-                EnableRaisingEvents = true,
-                IncludeSubdirectories = true,
-                NotifyFilter = NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
-            };
-            configWatcher.Changed += ConfigWatcher_Changed;
-            configWatcher.Created += ConfigWatcher_Changed;
+                configWatcher = new FileSystemWatcher(pluginsPath, "*.json")
+                {
+                    EnableRaisingEvents = true,
+                    IncludeSubdirectories = true,
+                    NotifyFilter = NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
+                };
+                configWatcher.Changed += ConfigWatcher_Changed;
+                configWatcher.Created += ConfigWatcher_Changed;
+            }
         }
 
         protected Plugin()
