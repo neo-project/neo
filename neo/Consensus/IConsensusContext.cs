@@ -62,7 +62,5 @@ namespace Neo.Consensus
         void Fill();
 
         bool VerifyRequest();
-
-        void Log(string message, LogLevel level = LogLevel.Info);
     }
 }

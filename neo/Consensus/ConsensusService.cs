@@ -45,7 +45,7 @@ namespace Neo.Consensus
               (verify && !context.VerifyTransaction(tx)) ||
               !Plugin.CheckPolicy(tx))
             {
-                context.Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
+                Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
                 RequestChangeView();
                 return false;
             }
@@ -54,7 +54,7 @@ namespace Neo.Consensus
             {
                 if (context.VerifyRequest())
                 {
-                    context.Log($"send prepare response");
+                    Log($"send prepare response");
                     context.State |= ConsensusState.SignatureSent;
                     context.SignHeader();
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.Signatures[context.MyIndex]) });
@@ -93,7 +93,7 @@ namespace Neo.Consensus
             if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 Block block = context.CreateBlock();
-                context.Log($"relay block: {block.Hash}");
+                Log($"relay block: {block.Hash}");
                 localNode.Tell(new LocalNode.Relay { Inventory = block });
                 context.State |= ConsensusState.BlockSent;
             }
@@ -109,8 +109,8 @@ namespace Neo.Consensus
                 context.ChangeView(view_number);
             if (context.MyIndex < 0) return;
             if (view_number > 0)
-                context.Log($"changeview: view={view_number} primary={context.Validators[context.GetPrimaryIndex((byte)(view_number - 1u))]}", LogLevel.Warning);
-            context.Log($"initialize: height={context.BlockIndex} view={view_number} index={context.MyIndex} role={(context.MyIndex == context.PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup)}");
+                Log($"changeview: view={view_number} primary={context.Validators[context.GetPrimaryIndex((byte)(view_number - 1u))]}", LogLevel.Warning);
+            Log($"initialize: height={context.BlockIndex} view={view_number} index={context.MyIndex} role={(context.MyIndex == context.PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup)}");
             if (context.MyIndex == context.PrimaryIndex)
             {
                 context.State |= ConsensusState.Primary;
@@ -127,11 +127,16 @@ namespace Neo.Consensus
             }
         }
 
+        public void Log(string message, LogLevel level = LogLevel.Info)
+        {
+            Plugin.Log(nameof(ConsensusService), level, message);
+        }
+
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
             if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
                 return;
-            context.Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
+            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
             context.ExpectedView[payload.ValidatorIndex] = message.NewViewNumber;
             CheckExpectedView(message.NewViewNumber);
         }
@@ -146,7 +151,7 @@ namespace Neo.Consensus
             {
                 if (context.BlockIndex < payload.BlockIndex)
                 {
-                    context.Log($"chain sync: expected={payload.BlockIndex - 1} current={context.BlockIndex - 1} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
+                    Log($"chain sync: expected={payload.BlockIndex - 1} current={context.BlockIndex - 1} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
                 }
                 return;
             }
@@ -178,7 +183,7 @@ namespace Neo.Consensus
 
         private void OnPersistCompleted(Block block)
         {
-            context.Log($"persist block: {block.Hash}");
+            Log($"persist block: {block.Hash}");
             block_received_time = TimeProvider.Current.UtcNow;
             InitializeConsensus(0);
         }
@@ -187,11 +192,11 @@ namespace Neo.Consensus
         {
             if (context.State.HasFlag(ConsensusState.RequestReceived)) return;
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
-            context.Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
+            Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (!context.State.HasFlag(ConsensusState.Backup)) return;
             if (payload.Timestamp <= context.PrevHeader.Timestamp || payload.Timestamp > TimeProvider.Current.UtcNow.AddMinutes(10).ToTimestamp())
             {
-                context.Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
+                Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
                 return;
             }
             context.State |= ConsensusState.RequestReceived;
@@ -240,7 +245,7 @@ namespace Neo.Consensus
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
             if (context.Signatures[payload.ValidatorIndex] != null) return;
-            context.Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+            Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             byte[] hashData = context.MakeHeader()?.GetHashData();
             if (hashData == null)
             {
@@ -280,7 +285,7 @@ namespace Neo.Consensus
 
         private void OnStart()
         {
-            context.Log("OnStart");
+            Log("OnStart");
             InitializeConsensus(0);
         }
 
@@ -288,10 +293,10 @@ namespace Neo.Consensus
         {
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             if (timer.Height != context.BlockIndex || timer.ViewNumber != context.ViewNumber) return;
-            context.Log($"timeout: height={timer.Height} view={timer.ViewNumber} state={context.State}");
+            Log($"timeout: height={timer.Height} view={timer.ViewNumber} state={context.State}");
             if (context.State.HasFlag(ConsensusState.Primary) && !context.State.HasFlag(ConsensusState.RequestSent))
             {
-                context.Log($"send prepare request: height={timer.Height} view={timer.ViewNumber}");
+                Log($"send prepare request: height={timer.Height} view={timer.ViewNumber}");
                 context.State |= ConsensusState.RequestSent;
                 if (!context.State.HasFlag(ConsensusState.SignatureSent))
                 {
@@ -324,7 +329,7 @@ namespace Neo.Consensus
 
         protected override void PostStop()
         {
-            context.Log("OnStop");
+            Log("OnStop");
             context.Dispose();
             base.PostStop();
         }
@@ -338,7 +343,7 @@ namespace Neo.Consensus
         {
             context.State |= ConsensusState.ViewChanging;
             context.ExpectedView[context.MyIndex]++;
-            context.Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
+            Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)));
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
             CheckExpectedView(context.ExpectedView[context.MyIndex]);

@@ -256,10 +256,5 @@ namespace Neo.Consensus
             if (tx_gen?.Outputs.Sum(p => p.Value) != amount_netfee) return false;
             return true;
         }
-
-        public void Log(string message, LogLevel level = LogLevel.Info)
-        {
-            Plugin.Log(nameof(ConsensusService), level, message);
-        }
     }
 }
