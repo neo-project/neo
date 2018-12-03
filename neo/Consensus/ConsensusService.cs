@@ -6,7 +6,6 @@ using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.Plugins;
 using Neo.Wallets;
 using System;
@@ -27,17 +26,15 @@ namespace Neo.Consensus
         private ICancelable timer_token;
         private DateTime block_received_time;
 
-        public ConsensusService(IActorRef _LocalNode, IActorRef _TaskManager, Wallet wallet)
+        public ConsensusService(IActorRef localNode, IActorRef taskManager, Wallet wallet)
+            : this(localNode, taskManager, new ConsensusContext(wallet))
         {
-            this.localNode = _LocalNode;
-            this.taskManager = _TaskManager;
-            this.context = new ConsensusContext(wallet);
         }
 
-        public ConsensusService(IActorRef _LocalNode, IActorRef _TaskManager, IConsensusContext context)
+        public ConsensusService(IActorRef localNode, IActorRef taskManager, IConsensusContext context)
         {
-            this.localNode = _LocalNode;
-            this.taskManager = _TaskManager;
+            this.localNode = localNode;
+            this.taskManager = taskManager;
             this.context = context;
         }
 
