@@ -30,10 +30,16 @@ namespace Neo.Network
 
                 DateTime start = DateTime.Now;
 
-                //Commenting these lines until we found the source of problem with this socket Discover
-                //s.SendTo(data, ipe);
-                //s.SendTo(data, ipe);
-                //s.SendTo(data, ipe);
+                try
+                {
+                    s.SendTo(data, ipe);
+                    s.SendTo(data, ipe);
+                    s.SendTo(data, ipe);
+                }
+                catch (SocketException)
+                {
+                    return false;
+                }
 
                 byte[] buffer = new byte[0x1000];
 
