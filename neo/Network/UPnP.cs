@@ -36,7 +36,7 @@ namespace Neo.Network
                     s.SendTo(data, ipe);
                     s.SendTo(data, ipe);
                 }
-                catch (SocketException)
+                catch
                 {
                     return false;
                 }
