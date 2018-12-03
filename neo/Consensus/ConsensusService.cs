@@ -38,9 +38,12 @@ namespace Neo.Consensus
             this.context = context;
         }
 
+
         private bool AddTransaction(Transaction tx, bool verify)
         {
-            if (context.RejectTx(tx, verify))
+            if (context.ContainsTransaction(tx.Hash) ||
+              (verify && !context.VerifyTransaction(tx)) ||
+              !Plugin.CheckPolicy(tx))
             {
                 context.Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
                 RequestChangeView();
