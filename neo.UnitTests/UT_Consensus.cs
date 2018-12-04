@@ -100,7 +100,8 @@ namespace Neo.UnitTests
                 NextConsensus = mockConsensusContext.Object.NextConsensus,
                 TransactionHashes = new UInt256[0],
                 MinerTransaction = minerTx, //(MinerTransaction)Transactions[TransactionHashes[0]],
-                Signature = new byte[64]//Signatures[MyIndex]
+                PrepReqSignature = new byte[64],//PrepReqSignature[MyIndex]
+                FinalSignature = new byte[64]//FinalSignature[MyIndex]
             };
 
             ConsensusMessage mprep = prep;
@@ -116,7 +117,7 @@ namespace Neo.UnitTests
                 Data = prepData
             };
 
-            mockConsensusContext.Setup(mr => mr.MakePrepareRequest()).Returns(prepPayload);
+            mockConsensusContext.Setup(mr => mr.MakePrepareRequest(new byte[64],new byte[64])).Returns(prepPayload);
 
             // ============================================================================
             //                      creating ConsensusService actor

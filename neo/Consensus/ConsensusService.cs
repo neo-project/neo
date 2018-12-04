@@ -57,7 +57,7 @@ namespace Neo.Consensus
                 {
                     Log($"send prepare response");
                     context.SignedPayloads[context.MyIndex] = context.SignPreparePayload();
-                    system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.SignedPayloads[context.MyIndex]) });
+                    LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.SignedPayloads[context.MyIndex]) });
                     CheckPayloadSignatures();
                 }
                 else
@@ -96,31 +96,10 @@ namespace Neo.Consensus
         {
             if (context.FinalSignatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                Block block = context.MakeHeader();
-                if (block == null) return;
-                Contract contract = Contract.CreateMultiSigContract(context.M, context.Validators);
-                ContractParametersContext sc = new ContractParametersContext(block);
-                for (int i = 0, j = 0; i < context.Validators.Length && j < context.M; i++)
-                    if (context.FinalSignatures[i] != null)
-                    {
-                        //Checking Speaker Final Signature that was given along with PrepareRequest Payload
-                        if(context.PrimaryIndex == i && !Crypto.Default.VerifySignature(block.GetHashData(), context.FinalSignatures[i], context.Validators[i].EncodePoint(false)))
-                        {
-                            Log($"CheckFinalSignatures...It looks like that Primary tried to cheat providing wrong final signature! His header signature will not be considered");
-                            if ((context.FinalSignatures.Count(p => p != null) - 1) >= context.M)
-                                continue;
-                            else
-                                return;
-                        }
-                            
-                        sc.AddSignature(contract, context.Validators[i], context.FinalSignatures[i]);
-                        j++;
-                    }
-                sc.Verifiable.Witnesses = sc.GetWitnesses();
-                block.Transactions = context.TransactionHashes.Select(p => context.Transactions[p]).ToArray();
+                Block block = context.CreateBlock();
                 context.State |= ConsensusState.BlockSent;
                 Log($"{nameof(OnCommitAgreement)}: relay block: height={context.BlockIndex} hash={block.Hash}");
-                system.LocalNode.Tell(new LocalNode.Relay { Inventory = block });
+                LocalNode.Tell(new LocalNode.Relay { Inventory = block });
             }
         }
   
@@ -160,7 +139,7 @@ namespace Neo.Consensus
         {
             if (context.State.HasFlag(ConsensusState.CommitSent))
             {
-                system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRegeneration() });
+                LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRegeneration() });
                 Log($"Regeneration sent: height={context.BlockIndex} view={context.ViewNumber} state={context.State}");
                 return true;
             }
@@ -186,7 +165,7 @@ namespace Neo.Consensus
             if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
             {
                 if (context.BlockIndex < payload.BlockIndex)
-                    Log($"chain sync: expected={payload.BlockIndex} current: {context.Snapshot.Height} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
+                    Log($"chain sync: expected={payload.BlockIndex} current={context.BlockIndex - 1} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
 
                 return;
             }

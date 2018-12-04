@@ -20,7 +20,8 @@ namespace Neo.Consensus
         UInt160 NextConsensus { get; set; }
         UInt256[] TransactionHashes { get; set; }
         Dictionary<UInt256, Transaction> Transactions { get; set; }
-        byte[][] Signatures { get; set; }
+        byte[][] SignedPayloads { get; set; }
+        byte[][] FinalSignatures { get; set; }
         byte[] ExpectedView { get; set; }
 
         int M { get; }
@@ -29,6 +30,8 @@ namespace Neo.Consensus
 
         bool ContainsTransaction(UInt256 hash);
         bool VerifyTransaction(Transaction tx);
+
+        //ConsensusPayload PreparePayload;
 
         void ChangeView(byte view_number);
 
@@ -42,11 +45,21 @@ namespace Neo.Consensus
 
         Block MakeHeader();
 
-        void SignHeader();
-
-        ConsensusPayload MakePrepareRequest();
+        ConsensusPayload MakePrepareRequest(byte[] prepReqSignature, byte[] finalSignature);
 
         ConsensusPayload MakePrepareResponse(byte[] signature);
+
+        ConsensusPayload MakeCommitAgreement(byte[] finalSignature);
+
+        ConsensusPayload MakeRegeneration();
+
+        void UpdateSpeakerSignatureAtPreparePayload();
+
+        byte[] SignBlock(Block block);
+
+        byte[] SignPreparePayload();
+
+        void SignPayload(ConsensusPayload payload);
 
         void Reset();
 

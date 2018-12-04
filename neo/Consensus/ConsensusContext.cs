@@ -28,7 +28,6 @@ namespace Neo.Consensus
         public UInt160 NextConsensus { get; set; }
         public UInt256[] TransactionHashes { get; set; }
         public Dictionary<UInt256, Transaction> Transactions { get; set; }
-        public byte[][] Signatures { get; set; }
         public byte[][] SignedPayloads { get; set; }
         public byte[][] FinalSignatures { get; set; }
         public byte[] ExpectedView { get; set; }
@@ -95,6 +94,33 @@ namespace Neo.Consensus
             }
 
             _header = null;
+        }
+
+        public Block CreateBlock()
+        {
+            Block block = MakeHeader();
+            if (block == null) return;
+            Contract contract = Contract.CreateMultiSigContract(M, Validators);
+            ContractParametersContext sc = new ContractParametersContext(block);
+            for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
+                if (FinalSignatures[i] != null)
+                {
+                    //Checking Speaker Final Signature that was given along with PrepareRequest Payload
+                    if (PrimaryIndex == i && !Crypto.Default.VerifySignature(block.GetHashData(), FinalSignatures[i], Validators[i].EncodePoint(false)))
+                    {
+                        //Log($"CheckFinalSignatures...It looks like that Primary tried to cheat providing wrong final signature! His header signature will not be considered");
+                        if ((FinalSignatures.Count(p => p != null) - 1) >= M)
+                            continue;
+                        else
+                            return;
+                    }
+
+                    sc.AddSignature(contract, Validators[i], FinalSignatures[i]);
+                    j++;
+                }
+            sc.Verifiable.Witnesses = sc.GetWitnesses();
+            block.Transactions = TransactionHashes.Select(p => context.Transactions[p]).ToArray();
+            return block;
         }
 
         public void Dispose()
@@ -263,12 +289,12 @@ namespace Neo.Consensus
 
         public byte[] SignBlock(Block block)
         {
-            return block.Sign(KeyPair);
+            return block.Sign(keyPair);
         }
 
         public byte[] SignPreparePayload()
         {
-            return PreparePayload.Sign(KeyPair);
+            return PreparePayload.Sign(keyPair);
         }
 
         public void SignPayload(ConsensusPayload payload)
