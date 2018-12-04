@@ -1,40 +1,31 @@
-using Neo.Cryptography;
 using Neo.Cryptography.ECC;
-using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
-using Neo.Plugins;
-using Neo.SmartContract;
-using Neo.Wallets;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Neo.Network.P2P;
 
 namespace Neo.Consensus
 {
     public interface IConsensusContext : IDisposable
     {
         //public const uint Version = 0;
-        ConsensusState State {get; set;}
-        UInt256 PrevHash {get;}
-        uint BlockIndex {get;}
-        byte ViewNumber {get;}
-        ECPoint[] Validators {get;}
-        int MyIndex {get;}
-        uint PrimaryIndex {get;}
-        uint Timestamp {get; set;}
-        ulong Nonce {get; set;}
-        UInt160 NextConsensus {get; set;}
-        UInt256[] TransactionHashes {get; set;}
-        Dictionary<UInt256, Transaction> Transactions {get; set;}
-        byte[][] Signatures {get; set;}
-        byte[] ExpectedView {get; set;}
+        ConsensusState State { get; set; }
+        UInt256 PrevHash { get; }
+        uint BlockIndex { get; }
+        byte ViewNumber { get; }
+        ECPoint[] Validators { get; }
+        int MyIndex { get; }
+        uint PrimaryIndex { get; }
+        uint Timestamp { get; set; }
+        ulong Nonce { get; set; }
+        UInt160 NextConsensus { get; set; }
+        UInt256[] TransactionHashes { get; set; }
+        Dictionary<UInt256, Transaction> Transactions { get; set; }
+        byte[][] Signatures { get; set; }
+        byte[] ExpectedView { get; set; }
 
-        int M {get;}
+        int M { get; }
 
-        Header PrevHeader {get;}
+        Header PrevHeader { get; }
 
         bool ContainsTransaction(UInt256 hash);
         bool VerifyTransaction(Transaction tx);
