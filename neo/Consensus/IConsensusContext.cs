@@ -31,7 +31,7 @@ namespace Neo.Consensus
         bool ContainsTransaction(UInt256 hash);
         bool VerifyTransaction(Transaction tx);
 
-        //ConsensusPayload PreparePayload;
+        ConsensusPayload PreparePayload { get; set; }
 
         void ChangeView(byte view_number);
 

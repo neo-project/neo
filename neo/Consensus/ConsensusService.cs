@@ -280,7 +280,16 @@ namespace Neo.Consensus
 
         private bool CheckPrimaryPayloadSignature(ConsensusPayload payload)
         {
-            PrepareRequest message = context.GetPrepareRequestMessage(payload);
+            PrepareRequest message;
+
+            try
+            {
+                message = (PrepareRequest)ConsensusMessage.DeserializeFrom(payload.Data);
+            }
+            catch
+            {
+                return false;
+            }
 
             if (message == null) return false;
 
@@ -302,7 +311,6 @@ namespace Neo.Consensus
             payload.Data = message.ToArray();
             return true;
         }
-
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
@@ -348,7 +356,6 @@ namespace Neo.Consensus
                 CheckFinalSignatures();
             }
         }
-
 
         private void OnCommitAgreement(ConsensusPayload payload, CommitAgreement message)
         {
@@ -447,7 +454,6 @@ namespace Neo.Consensus
                 Log($"send prepare request: height={timer.Height} view={timer.ViewNumber}");
                 context.State |= ConsensusState.RequestSent;
                 context.Fill();
-                context.Timestamp = Math.Max(DateTime.UtcNow.ToTimestamp(), context.Snapshot.GetHeader(context.PrevHash).Timestamp + 1);
                 Block block = context.MakeHeader();
                 if (block == null) return;
                 context.FinalSignatures[context.MyIndex] = context.SignBlock(block);

@@ -2,6 +2,7 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
@@ -44,8 +45,9 @@ namespace Neo.Consensus
         /// <summary>
         /// Local PrepareRequest original Payload
         /// </summary>
-        public ConsensusPayload PreparePayload;
+        public ConsensusPayload PreparePayload { get; set; }
 
+        /*
         /// <summary>
         /// Serialize PreparePayload Data into the desired PrepareRequest message
         /// </summary>
@@ -59,14 +61,23 @@ namespace Neo.Consensus
             {
                 return null;
             }
-        }
+        }*/
 
         /// <summary>
         /// Update the Speaker signature inside the context PreparePayload
         /// </summary>
         public void UpdateSpeakerSignatureAtPreparePayload()
         {
-            PrepareRequest tempPrePrepareWithSignature = GetPrepareRequestMessage(PreparePayload);
+            PrepareRequest tempPrePrepareWithSignature;
+
+            try
+            {
+                tempPrePrepareWithSignature = (PrepareRequest)ConsensusMessage.DeserializeFrom(PreparePayload.Data);
+            }
+            catch
+            {
+                return;
+            }
 
             if (tempPrePrepareWithSignature == null) return;
 
@@ -99,7 +110,7 @@ namespace Neo.Consensus
         public Block CreateBlock()
         {
             Block block = MakeHeader();
-            if (block == null) return;
+            if (block == null) return null;
             Contract contract = Contract.CreateMultiSigContract(M, Validators);
             ContractParametersContext sc = new ContractParametersContext(block);
             for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
@@ -112,14 +123,14 @@ namespace Neo.Consensus
                         if ((FinalSignatures.Count(p => p != null) - 1) >= M)
                             continue;
                         else
-                            return;
+                            return null;
                     }
 
                     sc.AddSignature(contract, Validators[i], FinalSignatures[i]);
                     j++;
                 }
             sc.Verifiable.Witnesses = sc.GetWitnesses();
-            block.Transactions = TransactionHashes.Select(p => context.Transactions[p]).ToArray();
+            block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
             return block;
         }
 

@@ -41,6 +41,7 @@ namespace Neo.UnitTests
             mockConsensusContext.Setup(mr => mr.GetPrimaryIndex(It.IsAny<byte>())).Returns(2);
             mockConsensusContext.SetupProperty(mr => mr.State);  // allows get and set to update mock state on Initialize method
             mockConsensusContext.Object.State = ConsensusState.Initial;
+            mockConsensusContext.Object.PreparePayload = null;
 
             int timeIndex = 0;
             var timeValues = new[] {
@@ -49,7 +50,7 @@ namespace Neo.UnitTests
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For Initialize
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // unused
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc)  // unused
-          };
+            };
 
             Console.WriteLine($"time 0: {timeValues[0].ToString()} 1: {timeValues[1].ToString()} 2: {timeValues[2].ToString()} 3: {timeValues[3].ToString()}");
 
@@ -100,8 +101,8 @@ namespace Neo.UnitTests
                 NextConsensus = mockConsensusContext.Object.NextConsensus,
                 TransactionHashes = new UInt256[0],
                 MinerTransaction = minerTx, //(MinerTransaction)Transactions[TransactionHashes[0]],
-                PrepReqSignature = new byte[64],//PrepReqSignature[MyIndex]
-                FinalSignature = new byte[64]//FinalSignature[MyIndex]
+                PrepReqSignature = new byte[64], //PrepReqSignature[MyIndex]
+                FinalSignature = new byte[64] //FinalSignature[MyIndex]
             };
 
             ConsensusMessage mprep = prep;
@@ -117,7 +118,8 @@ namespace Neo.UnitTests
                 Data = prepData
             };
 
-            mockConsensusContext.Setup(mr => mr.MakePrepareRequest(new byte[64],new byte[64])).Returns(prepPayload);
+
+            mockConsensusContext.Setup(mr => mr.MakePrepareRequest(prep.PrepReqSignature,prep.FinalSignature)).Returns(prepPayload);
 
             // ============================================================================
             //                      creating ConsensusService actor
