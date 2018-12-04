@@ -42,8 +42,8 @@ namespace Neo.Consensus
         private bool AddTransaction(Transaction tx, bool verify)
         {
             if (context.ContainsTransaction(tx.Hash) ||
-              (verify && !context.VerifyTransaction(tx)) ||
-              !Plugin.CheckPolicy(tx))
+                (verify && !context.VerifyTransaction(tx)) ||
+                !Plugin.CheckPolicy(tx))
             {
                 Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
                 RequestChangeView();
@@ -102,9 +102,7 @@ namespace Neo.Consensus
         private void InitializeConsensus(byte view_number)
         {
             if (view_number == 0)
-            {
                 context.Reset();
-            }
             else
                 context.ChangeView(view_number);
             if (context.MyIndex < 0) return;
