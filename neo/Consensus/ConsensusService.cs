@@ -57,7 +57,7 @@ namespace Neo.Consensus
                 {
                     Log($"send prepare response");
                     context.SignedPayloads[context.MyIndex] = context.SignPreparePayload();
-                    LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.SignedPayloads[context.MyIndex]) });
+                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.SignedPayloads[context.MyIndex]) });
                     CheckPayloadSignatures();
                 }
                 else
@@ -99,7 +99,7 @@ namespace Neo.Consensus
                 Block block = context.CreateBlock();
                 context.State |= ConsensusState.BlockSent;
                 Log($"{nameof(OnCommitAgreement)}: relay block: height={context.BlockIndex} hash={block.Hash}");
-                LocalNode.Tell(new LocalNode.Relay { Inventory = block });
+                localNode.Tell(new LocalNode.Relay { Inventory = block });
             }
         }
   
@@ -139,7 +139,7 @@ namespace Neo.Consensus
         {
             if (context.State.HasFlag(ConsensusState.CommitSent))
             {
-                LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRegeneration() });
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRegeneration() });
                 Log($"Regeneration sent: height={context.BlockIndex} view={context.ViewNumber} state={context.State}");
                 return true;
             }
@@ -336,14 +336,14 @@ namespace Neo.Consensus
                 if (block == null) return;
 
                 /// Do not sign for Primary because it will generate a signature different than the one provide in the PrepareRequest to the Backups
-                /// In principle, we could also skip the LocalNode.Tell of Primary (because they will discard it).
+                /// In principle, we could also skip the localNode.Tell of Primary (because they will discard it).
                 /// However, it is a way of notifying the nodes that the primary is commited and will be surely be a metric in the future
                 if ((uint)context.MyIndex != context.PrimaryIndex)
                     context.FinalSignatures[context.MyIndex] = context.SignBlock(block);
                 
                 context.State |= ConsensusState.CommitSent;
 
-                system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeCommitAgreement(context.FinalSignatures[context.MyIndex]) });
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeCommitAgreement(context.FinalSignatures[context.MyIndex]) });
                 Log($"Commit sent: height={context.BlockIndex} hash={block.Hash} state={context.State}");
                 CheckFinalSignatures();
             }
@@ -457,7 +457,7 @@ namespace Neo.Consensus
                 if (context.PreparePayload == null) return;
 
                 context.SignPayload(context.PreparePayload);
-                system.LocalNode.Tell(new LocalNode.SendDirectly { Inventory = context.PreparePayload });
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.PreparePayload });
 
                 if (context.TransactionHashes.Length > 1)
                 {
