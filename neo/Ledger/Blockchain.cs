@@ -223,6 +223,11 @@ namespace Neo.Ledger
             return mem_pool;
         }
 
+        public IEnumerable<Transaction> GetMemoryPoolVerified()
+        {
+            return mem_pool.GetVerifiedTransactions();
+        }
+
         public Snapshot GetSnapshot()
         {
             return Store.GetSnapshot();
@@ -237,7 +242,7 @@ namespace Neo.Ledger
 
         internal Transaction GetUnverifiedTransaction(UInt256 hash)
         {
-            mem_pool_unverified.TryGetValue(hash, out Transaction transaction);
+            mem_pool.TryGetUnverified(hash, out Transaction transaction);
             return transaction;
         }
 
@@ -385,7 +390,9 @@ namespace Neo.Ledger
                 return RelayResultReason.Invalid;
             if (ContainsTransaction(transaction.Hash))
                 return RelayResultReason.AlreadyExists;
-            if (!transaction.Verify(currentSnapshot, GetMemoryPool()))
+            if (!mem_pool.CanTransactionFitInPool(transaction))
+                return RelayResultReason.OutOfMemory;
+            if (!transaction.Verify(currentSnapshot, GetMemoryPoolVerified()))
                 return RelayResultReason.Invalid;
             if (!Plugin.CheckPolicy(transaction))
                 return RelayResultReason.Unknown;
@@ -400,18 +407,7 @@ namespace Neo.Ledger
         private void OnPersistCompleted(Block block)
         {
             block_cache.Remove(block.Hash);
-            foreach (Transaction tx in block.Transactions)
-                mem_pool.TryRemove(tx.Hash, out _);
-            mem_pool_unverified.Clear();
-            foreach (Transaction tx in mem_pool
-                .OrderByDescending(p => p.NetworkFee / p.Size)
-                .ThenByDescending(p => p.NetworkFee)
-                .ThenByDescending(p => new BigInteger(p.Hash.ToArray())))
-            {
-                mem_pool_unverified.TryAdd(tx.Hash, tx);
-                Self.Tell(tx, ActorRefs.NoSender);
-            }
-            mem_pool.Clear();
+            mem_pool.UpdatePoolForBlockPersisted(block, Self, currentSnapshot);
             PersistCompleted completed = new PersistCompleted { Block = block };
             system.Consensus?.Tell(completed);
             Distribute(completed);

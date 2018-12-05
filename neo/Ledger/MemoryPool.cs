@@ -4,161 +4,312 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
+using Akka.Actor;
+using Neo.Persistence;
 
 namespace Neo.Ledger
 {
     internal class MemoryPool : IReadOnlyCollection<Transaction>
     {
-        private class PoolItem
+        private class PoolItem : IComparable
         {
             public readonly Transaction Transaction;
             public readonly DateTime Timestamp;
+            public readonly Fixed8 FeePerByte;
 
             public PoolItem(Transaction tx)
             {
                 Transaction = tx;
                 Timestamp = DateTime.UtcNow;
+                FeePerByte = Transaction.NetworkFee / Transaction.Size;
+            }
+
+            public int CompareTo(Transaction tx, Fixed8 feePerByte)
+            {
+                if (tx == null) return 1;
+                int ret = FeePerByte.CompareTo(feePerByte);
+                if (ret != 0) return ret;
+                ret = Transaction.NetworkFee.CompareTo(tx.NetworkFee);
+                if (ret != 0) return ret;
+
+                return Transaction.Hash.CompareTo(tx.Hash);
+            }
+            
+            public int CompareTo(object obj)
+            {
+                if (obj == null) return 1;
+                var otherItem = (PoolItem) obj;
+                return CompareTo(otherItem.Transaction, otherItem.FeePerByte);
             }
         }
 
-        private readonly ConcurrentDictionary<UInt256, PoolItem> _mem_pool_fee = new ConcurrentDictionary<UInt256, PoolItem>();
-        private readonly ConcurrentDictionary<UInt256, PoolItem> _mem_pool_free = new ConcurrentDictionary<UInt256, PoolItem>();
+        private static readonly double MaxSecondsToReverifyHighPrioTx = (double) Blockchain.SecondsPerBlock / 3;
+        private static readonly double MaxSecondsToReverifyLowPrioTx = (double) Blockchain.SecondsPerBlock / 5;
 
+        /// <summary>
+        /// Store all verified unsorted transactions currently in the pool
+        /// </summary>
+        private readonly ConcurrentDictionary<UInt256, PoolItem> _unsortedTransactions = new ConcurrentDictionary<UInt256, PoolItem>();
+        /// <summary>
+        ///  Stores the verified low priority sorted transactions currently in the pool
+        /// </summary>
+        private readonly SortedSet<PoolItem> _sortedLowPrioTransactions = new SortedSet<PoolItem>();
+        /// <summary>
+        /// Stores the verified high priority sorted transactins currently in the pool
+        /// </summary>
+        private readonly SortedSet<PoolItem> _sortedHighPrioTransactions = new SortedSet<PoolItem>();
+
+        /// <summary>
+        /// Store the unverified transactions currently in the pool.
+        ///
+        /// Transactions in this data structure were valid in some prior block, but may no longer be valid.
+        /// The top ones that could make it into the next block get verified and moved into the verified data structures
+        /// (_unsortedTransactions, _sortedLowPrioTransactions, and _sortedHighPrioTransactions) after each block.
+        /// </summary>
+        private readonly ConcurrentDictionary<UInt256, PoolItem> _unverifiedTransactions = new ConcurrentDictionary<UInt256, PoolItem>();
+        private readonly SortedSet<PoolItem> _unverifiedSortedHighPriorityTransactions = new SortedSet<PoolItem>();
+        private readonly SortedSet<PoolItem> _unverifiedSortedLowPriorityTransactions = new SortedSet<PoolItem>();
+        
+        /// <summary>
+        /// Total maximum capacity of transactions the pool can hold
+        /// </summary>
         public int Capacity { get; }
-        public int Count => _mem_pool_fee.Count + _mem_pool_free.Count;
+        
+        /// <summary>
+        /// Total count of transactions in the pool
+        /// </summary>
+        public int Count => _unsortedTransactions.Count + _unverifiedTransactions.Count;
 
+        /// <summary>
+        /// Total count of verified transactions in the pool.
+        /// </summary>
+        public int VerifiedCount => _unsortedTransactions.Count;
+
+        
         public MemoryPool(int capacity)
         {
             Capacity = capacity;
         }
 
-        public void Clear()
+        /// <summary>
+        /// Determine whether the pool is holding this transaction and has at some point verified it.
+        /// Note: The pool may not have verified it since the last block was persisted. To get only the
+        ///       transactions that have been verified during this block use GetVerifiedTransactions()
+        /// </summary>
+        /// <param name="hash">the transaction hash</param>
+        /// <returns>true if the MemoryPool contain the transaction</returns>
+        public bool ContainsKey(UInt256 hash) => _unsortedTransactions.ContainsKey(hash) 
+             || _unverifiedTransactions.ContainsKey(hash);
+        
+        public bool TryGetValue(UInt256 hash, out Transaction tx)
         {
-            _mem_pool_free.Clear();
-            _mem_pool_fee.Clear();
+            bool ret = _unsortedTransactions.TryGetValue(hash, out PoolItem item)
+                       || _unverifiedTransactions.TryGetValue(hash, out item);
+            tx = ret ? item.Transaction : null;
+            return ret;
         }
-
-        public bool ContainsKey(UInt256 hash) => _mem_pool_free.ContainsKey(hash) || _mem_pool_fee.ContainsKey(hash);
-
+        
+        public bool TryGetUnverified(UInt256 hash, out Transaction tx)
+        {
+            bool ret = _unverifiedTransactions.TryGetValue(hash, out PoolItem item);
+            tx = ret ? item.Transaction : null;
+            return ret;
+        }
+        
+        // Note: this isn't used in Fill during consensus, fill uses GetVerifiedTransactions()
         public IEnumerator<Transaction> GetEnumerator()
         {
-            return
-                _mem_pool_fee.Select(p => p.Value.Transaction)
-                .Concat(_mem_pool_free.Select(p => p.Value.Transaction))
+            return _unsortedTransactions.Select(p => p.Value.Transaction)
+                .Concat(_unverifiedTransactions.Select(p => p.Value.Transaction))
                 .GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        static void RemoveLowestFee(ConcurrentDictionary<UInt256, PoolItem> pool, int count)
+        public IEnumerable<Transaction> GetVerifiedTransactions()
         {
-            if (count <= 0) return;
-            if (count >= pool.Count)
-            {
-                pool.Clear();
-            }
-            else
-            {
-                UInt256[] delete = pool.AsParallel()
-                    .OrderBy(p => p.Value.Transaction.NetworkFee / p.Value.Transaction.Size)
-                    .ThenBy(p => p.Value.Transaction.NetworkFee)
-                    .ThenBy(p => new BigInteger(p.Key.ToArray()))
-                    .Take(count)
-                    .Select(p => p.Key)
-                    .ToArray();
+            IEnumerator verifiedTxEnumerator = _unsortedTransactions.Select(p => p.Value.Transaction).GetEnumerator();
+            while (verifiedTxEnumerator.MoveNext())
+                yield return (Transaction) verifiedTxEnumerator.Current;
+        }
 
-                foreach (UInt256 hash in delete)
+        private PoolItem GetLowestFeeTransaction(out SortedSet<PoolItem> sortedPool)
+        {
+            PoolItem minItem = null;
+            sortedPool = null;
+
+            if (_unverifiedSortedLowPriorityTransactions.Count > 0)
+            {
+                sortedPool = _unverifiedSortedLowPriorityTransactions;
+                minItem = _unverifiedSortedLowPriorityTransactions.Min;
+            }
+
+            if (_sortedLowPrioTransactions.Count > 0)
+            {
+                PoolItem verifiedMin = _sortedLowPrioTransactions.Min;
+                if (minItem == null || verifiedMin.CompareTo(minItem) < 0)
                 {
-                    pool.TryRemove(hash, out _);
+                    sortedPool = _sortedLowPrioTransactions;
+                    minItem = verifiedMin;
                 }
             }
-        }
 
-        static void RemoveOldest(ConcurrentDictionary<UInt256, PoolItem> pool, DateTime time)
-        {
-            UInt256[] hashes = pool
-                .Where(p => p.Value.Timestamp < time)
-                .Select(p => p.Key)
-                .ToArray();
-
-            foreach (UInt256 hash in hashes)
+            if (minItem == null)
             {
-                pool.TryRemove(hash, out _);
-            }
-        }
-
-        public bool TryAdd(UInt256 hash, Transaction tx)
-        {
-            ConcurrentDictionary<UInt256, PoolItem> pool;
-
-            if (tx.IsLowPriority)
-            {
-                pool = _mem_pool_free;
-            }
-            else
-            {
-                pool = _mem_pool_fee;
-            }
-
-            pool.TryAdd(hash, new PoolItem(tx));
-
-            if (Count > Capacity)
-            {
-                RemoveOldest(_mem_pool_free, DateTime.UtcNow.AddSeconds(-Blockchain.SecondsPerBlock * 20));
-
-                var exceed = Count - Capacity;
-
-                if (exceed > 0)
+                if (_unverifiedSortedHighPriorityTransactions.Count > 0)
                 {
-                    RemoveLowestFee(_mem_pool_free, exceed);
-                    exceed = Count - Capacity;
+                    sortedPool = _unverifiedSortedHighPriorityTransactions;
+                    minItem = _unverifiedSortedHighPriorityTransactions.Min;
+                }
 
-                    if (exceed > 0)
+                if (_sortedHighPrioTransactions.Count > 0)
+                {
+                    PoolItem verifiedMin = _sortedHighPrioTransactions.Min;
+                    if (minItem == null || verifiedMin.CompareTo(minItem) < 0)
                     {
-                        RemoveLowestFee(_mem_pool_fee, exceed);
+                        minItem = verifiedMin;
+                        sortedPool = _sortedHighPrioTransactions;
                     }
                 }
             }
 
-            return pool.ContainsKey(hash);
+            return minItem;
         }
 
-        public bool TryRemove(UInt256 hash, out Transaction tx)
+        // Note: this must only be called from a single thread (the Blockchain actor)
+        public bool CanTransactionFitInPool(Transaction tx)
         {
-            if (_mem_pool_free.TryRemove(hash, out PoolItem item))
-            {
-                tx = item.Transaction;
-                return true;
-            }
-            else if (_mem_pool_free.TryRemove(hash, out item))
-            {
-                tx = item.Transaction;
-                return true;
-            }
-            else
-            {
-                tx = null;
-                return false;
-            }
+            if (Count < Capacity) return true;
+
+            return GetLowestFeeTransaction(out _).CompareTo(tx, tx.NetworkFee / tx.Size) <= 0;
         }
 
-        public bool TryGetValue(UInt256 hash, out Transaction tx)
+        // Note: this must only be called from a single thread (the Blockchain actor)
+        public bool TryAdd(UInt256 hash, Transaction tx)
         {
-            if (_mem_pool_free.TryGetValue(hash, out PoolItem item))
+            var poolItem = new PoolItem(tx);
+            if (!_unsortedTransactions.TryAdd(hash, poolItem)) return false;
+            
+            SortedSet<PoolItem> pool = tx.IsLowPriority ? _sortedLowPrioTransactions : _sortedHighPrioTransactions;
+            pool.Add(poolItem);
+            RemoveOverCapacity();
+            return _unsortedTransactions.ContainsKey(hash);
+        }
+        
+        private void RemoveOverCapacity()
+        {
+            while (Count > Capacity)
             {
+                PoolItem minItem = GetLowestFeeTransaction(out var sortedPool);
+
+                _unsortedTransactions.TryRemove(minItem.Transaction.Hash, out _);    
+                sortedPool.Remove(minItem);
+            }
+        }
+        
+        private bool TryRemoveInternal(UInt256 hash, out Transaction tx)
+        {
+            if (_unsortedTransactions.TryRemove(hash, out PoolItem item))
+            {
+                SortedSet<PoolItem> pool = item.Transaction.IsLowPriority
+                    ? _sortedLowPrioTransactions : _sortedHighPrioTransactions;
+                pool.Remove(item);
                 tx = item.Transaction;
                 return true;
             }
-            else if (_mem_pool_fee.TryGetValue(hash, out item))
+
+            tx = null;
+            return false;
+        }
+
+        public void UpdatePoolForBlockPersisted(Block block, IActorRef blockchain, Snapshot snapshot)
+        {
+            // First remove the transactions verified in the block.
+            foreach (Transaction tx in block.Transactions)
             {
-                tx = item.Transaction;
-                return true;
+                if (!TryRemoveInternal(tx.Hash, out _))
+                {
+                    if (_unverifiedTransactions.TryRemove(tx.Hash, out PoolItem item))
+                    {
+                        SortedSet<PoolItem> pool = tx.IsLowPriority
+                            ? _unverifiedSortedLowPriorityTransactions : _unverifiedSortedHighPriorityTransactions;
+                        pool.Remove(item);
+                    }
+                }
             }
-            else
+
+            // Add all the previously verified transactions back to the unverified transactions
+            foreach (PoolItem item in _sortedHighPrioTransactions)
             {
-                tx = null;
-                return false;
+                _unverifiedTransactions.TryAdd(item.Transaction.Hash, item);
+                _unverifiedSortedHighPriorityTransactions.Add(item);
+            }
+            
+            // NOTE: This really shouldn't be necessary any more and can actually be counter-productive, since
+            //       they can be re-added anyway and would incur a potential addtional verification setting to 1000
+            //        blocks for now. If transactions want to only be valid for short times they can include a script.
+            var lowPriorityCutOffTime = DateTime.UtcNow.AddSeconds(-Blockchain.SecondsPerBlock * 1000);
+            foreach (PoolItem item in _sortedLowPrioTransactions)
+            {
+                // Expire old free transactions
+                if (item.Transaction.IsLowPriority && item.Timestamp < lowPriorityCutOffTime) continue;
+
+                _unverifiedTransactions.TryAdd(item.Transaction.Hash, item);
+                _unverifiedSortedLowPriorityTransactions.Add(item);
+            }
+            
+            RemoveOverCapacity();
+            
+            // Clear the verified transactions now, since they all must be reverified.
+            _unsortedTransactions.Clear();
+            _sortedHighPrioTransactions.Clear();
+            _sortedLowPrioTransactions.Clear();
+
+            // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
+            // until we get caught up.
+            if (block.Index < Blockchain.Singleton.HeaderHeight)
+                return;
+
+            uint maxHighPrioTransactionsPerBlock =
+                Settings.Default.MaxTransactionsPerBlock - Settings.Default.MaxFreeTransactionsPerBlock;
+            
+            DateTime reverifyCutOffTimeStamp = DateTime.UtcNow.AddSeconds(MaxSecondsToReverifyHighPrioTx);
+
+            int reverifiedHighPrioCount = 0;
+            foreach (PoolItem item in _unverifiedSortedHighPriorityTransactions.Reverse().ToArray())
+            {
+                if (DateTime.UtcNow > reverifyCutOffTimeStamp || reverifiedHighPrioCount >= maxHighPrioTransactionsPerBlock)
+                    break;
+
+                // Re-verify the top fee max high priority transactions that can be verified in a block
+                if (!item.Transaction.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Transaction)))
+                    continue;
+
+                reverifiedHighPrioCount++;
+                _unsortedTransactions.TryAdd(item.Transaction.Hash, item);
+                _sortedHighPrioTransactions.Add(item);
+                _unverifiedTransactions.TryRemove(item.Transaction.Hash, out _);
+                _unverifiedSortedHighPriorityTransactions.Remove(item);
+            }
+
+            reverifyCutOffTimeStamp = DateTime.UtcNow.AddSeconds(MaxSecondsToReverifyLowPrioTx);
+            
+            int reverifiedLowPrioCount = 0;
+            foreach (PoolItem item in _unverifiedSortedLowPriorityTransactions.Reverse().ToArray())
+            {
+                if (DateTime.UtcNow > reverifyCutOffTimeStamp ||
+                    reverifiedLowPrioCount >= Settings.Default.MaxFreeTransactionsPerBlock)
+                    break;
+               
+                // Re-verify the top fee max low priority transactions that can be verified in a block
+                if (!item.Transaction.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Transaction)))
+                    continue;
+                
+                reverifiedLowPrioCount++;
+                _unsortedTransactions.TryAdd(item.Transaction.Hash, item);
+                _sortedLowPrioTransactions.Add(item);
+                _unverifiedTransactions.TryRemove(item.Transaction.Hash, out _);
+                _unverifiedSortedLowPriorityTransactions.Remove(item);
             }
         }
     }
