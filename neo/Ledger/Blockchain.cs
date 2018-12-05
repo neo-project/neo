@@ -294,8 +294,7 @@ namespace Neo.Ledger
             if (block.Index == Height + 1)
             {
                 Block block_persist = block;
-                List<Block> blocksToPersistList = new List<Block>();
-
+                List<Block> blocksToPersistList = new List<Block>();                                
                 while (true)
                 {
                     blocksToPersistList.Add(block_persist);
@@ -321,7 +320,8 @@ namespace Neo.Ledger
                 if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks)
-                        Self.Tell(unverifiedBlock, ActorRefs.NoSender);                
+                        Self.Tell(unverifiedBlock, ActorRefs.NoSender);   
+                    block_cache_unverified.Remove(Height + 1);
                 }
             }
             else
