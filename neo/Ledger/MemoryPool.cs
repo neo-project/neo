@@ -37,8 +37,7 @@ namespace Neo.Ledger
             
             public int CompareTo(object obj)
             {
-                if (obj == null) return 1;
-                var otherItem = (PoolItem) obj;
+                if (obj == null || !(obj is PoolItem otherItem)) return 1;
                 return CompareTo(otherItem.Transaction, otherItem.FeePerByte);
             }
         }

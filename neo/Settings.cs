@@ -36,7 +36,7 @@ namespace Neo
             this.SecondsPerBlock = GetValueOrDefault(section.GetSection("SecondsPerBlock"), 15u, p => uint.Parse(p));
             this.LowPriorityThreshold = GetValueOrDefault(section.GetSection("LowPriorityThreshold"), Fixed8.FromDecimal(0.001m), p => Fixed8.Parse(p));
             this.MaxTransactionsPerBlock = GetValueOrDefault(section.GetSection("MaxTransactionsPerBlock"), (uint) 500, uint.Parse);
-            this.MaxFreeTransactionsPerBlock = GetValueOrDefault(section.GetSection("MaxTransactionsPerBlock"), (uint) 20, uint.Parse);
+            this.MaxFreeTransactionsPerBlock = GetValueOrDefault(section.GetSection("MaxFreeTransactionsPerBlock"), (uint) 20, uint.Parse);
         }
 
         public T GetValueOrDefault<T>(IConfigurationSection section, T defaultValue, Func<string, T> selector)
