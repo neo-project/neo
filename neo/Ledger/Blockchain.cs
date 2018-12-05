@@ -336,8 +336,8 @@ namespace Neo.Ledger
                         });
                         snapshot.HeaderHashIndex.GetAndChange().Hash = block.Hash;
                         snapshot.HeaderHashIndex.GetAndChange().Index = block.Index;
-                        SaveHeaderHashList(snapshot);
                         snapshot.Commit();
+                        SaveHeaderHashList(snapshot);
                     }
                     UpdateCurrentSnapshot();
                 }
