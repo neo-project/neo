@@ -291,13 +291,15 @@ namespace Neo.Ledger
                 Block block_persist = block;
                 List<Block> blocksToPersistList = new List<Block>();
                 
-                foreach (Block blockUnverified in block_cache_unverified.Values)
+                foreach (LinkedList<Block> blocksUnverifiedLL in block_cache_unverified.Values)
                 {
-                       if (blockUnverified.Index <= block_persist.Index)
-                       {
-                                Console.WriteLine("\n\n\n\n\n\n\n\n This is strange blockUnverified.Index:{blockUnverified.Index} \n\n\n\n\n\n");
-                                //Just clean the block_cache, but we should find why it is not been cleaned as expected.
-                                block_cache_unverified.Remove(blockUnverified.Index);
+                    foreach (var unverifiedBlock in blocksUnverifiedLL)
+                        if(unverifiedBlock.Index <= block_persist.Index)  
+                        {
+                            Console.WriteLine("\n\n\n\n\n\n\n\n This is strange blockUnverified.Index:{blockUnverified.Index} \n\n\n\n\n\n");
+                            //Just clean the block_cache, but we should find why it is not been cleaned as expected.
+                            block_cache_unverified.Remove(unverifiedBlock.Index);
+                            break;
                         }
                 }
                 
