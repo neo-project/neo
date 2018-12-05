@@ -37,7 +37,7 @@ namespace Neo.Ledger
             
             public int CompareTo(object obj)
             {
-                if (obj == null || !(obj is PoolItem otherItem)) return 1;
+                if (!(obj is PoolItem otherItem)) return 1;
                 return CompareTo(otherItem.Transaction, otherItem.FeePerByte);
             }
         }
@@ -49,7 +49,6 @@ namespace Neo.Ledger
         private static readonly double MaxSecondsToReverifyHighPrioTxPerIdle = (double) Blockchain.SecondsPerBlock / 15;
         private static readonly double MaxSecondsToReverifyLowPrioTxPerIdle = (double) Blockchain.SecondsPerBlock / 30;
         
-
         /// <summary>
         /// Store all verified unsorted transactions currently in the pool
         /// </summary>
@@ -91,7 +90,6 @@ namespace Neo.Ledger
         /// Total count of verified transactions in the pool.
         /// </summary>
         public int VerifiedCount => _unsortedTransactions.Count;
-
         
         public MemoryPool(int capacity)
         {
