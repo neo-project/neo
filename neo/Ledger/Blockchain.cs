@@ -290,19 +290,7 @@ namespace Neo.Ledger
             {
                 Block block_persist = block;
                 List<Block> blocksToPersistList = new List<Block>();
-                
-                foreach (LinkedList<Block> blocksUnverifiedLL in block_cache_unverified.Values)
-                {
-                    foreach (var unverifiedBlock in blocksUnverifiedLL)
-                        if(unverifiedBlock.Index <= block_persist.Index)  
-                        {
-                            Console.WriteLine("\n\n\n\n\n\n\n\n This is strange blockUnverified.Index:{blockUnverified.Index} \n\n\n\n\n\n");
-                            //Just clean the block_cache, but we should find why it is not been cleaned as expected.
-                            block_cache_unverified.Remove(unverifiedBlock.Index);
-                            break;
-                        }
-                }
-                
+                                
                 while (true)
                 {
                     blocksToPersistList.Add(block_persist);
@@ -328,7 +316,8 @@ namespace Neo.Ledger
                 if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks)
-                        Self.Tell(unverifiedBlock, ActorRefs.NoSender);                
+                        Self.Tell(unverifiedBlock, ActorRefs.NoSender);   
+                    block_cache_unverified.Remove(Height + 1);
                 }
             }
             else
