@@ -290,7 +290,22 @@ namespace Neo.Ledger
             {
                 Block block_persist = block;
                 List<Block> blocksToPersistList = new List<Block>();
+                
+                foreach (Block blockUnverified in block_cache_unverified.Values)
+                {
+                       if (blockUnverified.Index <= block_persist.Index)
+                       {
+                                Console.WriteLine("\n\n\n\n\n\n\n\n This is strange blockUnverified.Index:{blockUnverified.Index} \n\n\n\n\n\n");
+                                
+                                //This part can be removed, there is not sense to Persist I again...aeguageuhea
+                                if (blockUnverified.Verify(currentSnapshot))
+                                    blocksToPersistList.Add(blockUnverified);
 
+                                //Just clean the block_cache, but we should find why it is not been cleaned as expected.
+                                 block_cache_unverified.Remove(blockUnverified.Index);
+                        }
+                }
+                
                 while (true)
                 {
                     blocksToPersistList.Add(block_persist);
@@ -371,11 +386,6 @@ namespace Neo.Ledger
                     });
                     snapshot.HeaderHashIndex.GetAndChange().Hash = header.Hash;
                     snapshot.HeaderHashIndex.GetAndChange().Index = header.Index;
-                    if (block_cache_unverified.TryGetValue(header.Index, out LinkedList<Block> unverifiedBlocks))
-                    {
-                        foreach (var unverifiedBlock in unverifiedBlocks)
-                            Self.Tell(unverifiedBlock, ActorRefs.NoSender);
-                    }
                 }
                 SaveHeaderHashList(snapshot);
                 snapshot.Commit();
