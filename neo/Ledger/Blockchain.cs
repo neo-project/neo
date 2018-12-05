@@ -371,6 +371,11 @@ namespace Neo.Ledger
                     });
                     snapshot.HeaderHashIndex.GetAndChange().Hash = header.Hash;
                     snapshot.HeaderHashIndex.GetAndChange().Index = header.Index;
+                    if (block_cache_unverified.TryGetValue(header.Index, out LinkedList<Block> unverifiedBlocks))
+                    {
+                        foreach (var unverifiedBlock in unverifiedBlocks)
+                            Self.Tell(unverifiedBlock, ActorRefs.NoSender);
+                    }
                 }
                 SaveHeaderHashList(snapshot);
                 snapshot.Commit();
