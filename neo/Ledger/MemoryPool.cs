@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Akka.Actor;
+using System.Runtime.CompilerServices;
 using Neo.Persistence;
 
 namespace Neo.Ledger
@@ -44,6 +44,11 @@ namespace Neo.Ledger
 
         private static readonly double MaxSecondsToReverifyHighPrioTx = (double) Blockchain.SecondsPerBlock / 3;
         private static readonly double MaxSecondsToReverifyLowPrioTx = (double) Blockchain.SecondsPerBlock / 5;
+        
+        // These two are not expected to be hit, they are just safegaurds. 
+        private static readonly double MaxSecondsToReverifyHighPrioTxPerIdle = (double) Blockchain.SecondsPerBlock / 15;
+        private static readonly double MaxSecondsToReverifyLowPrioTxPerIdle = (double) Blockchain.SecondsPerBlock / 30;
+        
 
         /// <summary>
         /// Store all verified unsorted transactions currently in the pool
@@ -68,6 +73,9 @@ namespace Neo.Ledger
         private readonly ConcurrentDictionary<UInt256, PoolItem> _unverifiedTransactions = new ConcurrentDictionary<UInt256, PoolItem>();
         private readonly SortedSet<PoolItem> _unverifiedSortedHighPriorityTransactions = new SortedSet<PoolItem>();
         private readonly SortedSet<PoolItem> _unverifiedSortedLowPriorityTransactions = new SortedSet<PoolItem>();
+        
+        private int MaxHighPriorityTxsPerBlock => Settings.Default.MaxTransactionsPerBlock 
+            - Settings.Default.MaxFreeTransactionsPerBlock;
         
         /// <summary>
         /// Total maximum capacity of transactions the pool can hold
@@ -221,7 +229,7 @@ namespace Neo.Ledger
             return false;
         }
 
-        public void UpdatePoolForBlockPersisted(Block block, IActorRef blockchain, Snapshot snapshot)
+        public void UpdatePoolForBlockPersisted(Block block, Snapshot snapshot)
         {
             // First remove the transactions verified in the block.
             foreach (Transaction tx in block.Transactions)
@@ -269,46 +277,84 @@ namespace Neo.Ledger
             if (block.Index < Blockchain.Singleton.HeaderHeight)
                 return;
 
-            uint maxHighPrioTransactionsPerBlock =
-                Settings.Default.MaxTransactionsPerBlock - Settings.Default.MaxFreeTransactionsPerBlock;
+            int maxHighPrioTransactionsPerBlock = MaxHighPriorityTxsPerBlock;
+
+            ReverifyHighPriorityTransactions(maxHighPrioTransactionsPerBlock, MaxSecondsToReverifyHighPrioTx, snapshot);
+            ReverifyLowPriorityTransactions(Settings.Default.MaxFreeTransactionsPerBlock, MaxSecondsToReverifyLowPrioTx,
+                snapshot);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int ReverifyHighPriorityTransactions(int count, double secondsTimeout, Snapshot snapshot)
+        {
+            DateTime reverifyCutOffTimeStamp = DateTime.UtcNow.AddSeconds(secondsTimeout);
+            int addedCount = 0;
             
-            DateTime reverifyCutOffTimeStamp = DateTime.UtcNow.AddSeconds(MaxSecondsToReverifyHighPrioTx);
-
-            int reverifiedHighPrioCount = 0;
-            foreach (PoolItem item in _unverifiedSortedHighPriorityTransactions.Reverse().ToArray())
+            foreach (PoolItem item in _unverifiedSortedHighPriorityTransactions.Reverse().Take(count).ToArray())
             {
-                if (DateTime.UtcNow > reverifyCutOffTimeStamp || reverifiedHighPrioCount >= maxHighPrioTransactionsPerBlock)
-                    break;
-
                 // Re-verify the top fee max high priority transactions that can be verified in a block
-                if (!item.Transaction.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Transaction)))
-                    continue;
+                if (item.Transaction.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Transaction)))
+                {
+                    _unsortedTransactions.TryAdd(item.Transaction.Hash, item);
+                    _sortedHighPrioTransactions.Add(item);
+                    addedCount++;
+                    _unverifiedTransactions.TryRemove(item.Transaction.Hash, out _);
+                    _unverifiedSortedHighPriorityTransactions.Remove(item);                        
+                }
 
-                reverifiedHighPrioCount++;
-                _unsortedTransactions.TryAdd(item.Transaction.Hash, item);
-                _sortedHighPrioTransactions.Add(item);
-                _unverifiedTransactions.TryRemove(item.Transaction.Hash, out _);
-                _unverifiedSortedHighPriorityTransactions.Remove(item);
+                if (DateTime.UtcNow > reverifyCutOffTimeStamp) break;
             }
 
-            reverifyCutOffTimeStamp = DateTime.UtcNow.AddSeconds(MaxSecondsToReverifyLowPrioTx);
+            return addedCount;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int ReverifyLowPriorityTransactions(int count, double secondsTimeout, Snapshot snapshot)
+        {
+            DateTime reverifyCutOffTimeStamp = DateTime.UtcNow.AddSeconds(secondsTimeout);
+            int addedCount = 0;            
             
-            int reverifiedLowPrioCount = 0;
-            foreach (PoolItem item in _unverifiedSortedLowPriorityTransactions.Reverse().ToArray())
+            foreach (PoolItem item in _unverifiedSortedLowPriorityTransactions.Reverse().Take(count).ToArray())
             {
-                if (DateTime.UtcNow > reverifyCutOffTimeStamp ||
-                    reverifiedLowPrioCount >= Settings.Default.MaxFreeTransactionsPerBlock)
-                    break;
-               
                 // Re-verify the top fee max low priority transactions that can be verified in a block
-                if (!item.Transaction.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Transaction)))
-                    continue;
+                if (item.Transaction.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Transaction)))
+                {
+                    _unsortedTransactions.TryAdd(item.Transaction.Hash, item);
+                    _sortedLowPrioTransactions.Add(item);
+                    _unverifiedTransactions.TryRemove(item.Transaction.Hash, out _);
+                    _unverifiedSortedLowPriorityTransactions.Remove(item);
+                }
                 
-                reverifiedLowPrioCount++;
-                _unsortedTransactions.TryAdd(item.Transaction.Hash, item);
-                _sortedLowPrioTransactions.Add(item);
-                _unverifiedTransactions.TryRemove(item.Transaction.Hash, out _);
-                _unverifiedSortedLowPriorityTransactions.Remove(item);
+                if (DateTime.UtcNow > reverifyCutOffTimeStamp) break;
+            }
+
+            return addedCount;
+        }
+
+        /// <summary>
+        /// Reverify up to a given maximum count of transactions. Verifies less at a time once the max that can be
+        /// persisted per block has been reached. 
+        /// </summary>
+        /// <param name="maxToVerify">max tx to reverify, if 1 is passed, </param>
+        /// <param name="snapshot"></param>
+        public void ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, Snapshot snapshot)
+        {
+            if (_unverifiedSortedHighPriorityTransactions.Count > 0)
+            {
+                // Always leave at least 1 tx for low priority tx
+                int verifyCount = _sortedHighPrioTransactions.Count > MaxHighPriorityTxsPerBlock || maxToVerify == 1
+                    ? 1 : maxToVerify - 1; 
+                maxToVerify -= ReverifyHighPriorityTransactions(verifyCount, MaxSecondsToReverifyHighPrioTxPerIdle, 
+                    snapshot);
+                
+                if (maxToVerify == 0) maxToVerify++;
+            }
+
+            if (_unverifiedSortedLowPriorityTransactions.Count > 0)
+            {
+                int verifyCount = _sortedLowPrioTransactions.Count > Settings.Default.MaxFreeTransactionsPerBlock
+                    ? 1 : maxToVerify;
+                ReverifyLowPriorityTransactions(verifyCount, MaxSecondsToReverifyLowPrioTxPerIdle, snapshot);
             }
         }
     }
