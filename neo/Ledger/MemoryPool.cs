@@ -212,6 +212,7 @@ namespace Neo.Ledger
             }
         }
         
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool TryRemoveInternal(UInt256 hash, out Transaction tx)
         {
             if (_unsortedTransactions.TryRemove(hash, out PoolItem item))
@@ -333,8 +334,9 @@ namespace Neo.Ledger
         /// Reverify up to a given maximum count of transactions. Verifies less at a time once the max that can be
         /// persisted per block has been reached. 
         /// </summary>
-        /// <param name="maxToVerify">max tx to reverify, if 1 is passed, </param>
-        /// <param name="snapshot"></param>
+        /// <param name="maxToVerify">Max transactions to reverify, the value passed should be >=2. If 1 is passed it
+        ///                           will still potentially use 2.</param>
+        /// <param name="snapshot">The snapshot to use for verifying.</param>
         public void ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, Snapshot snapshot)
         {
             if (_unverifiedSortedHighPriorityTransactions.Count > 0)
