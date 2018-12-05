@@ -296,13 +296,8 @@ namespace Neo.Ledger
                        if (blockUnverified.Index <= block_persist.Index)
                        {
                                 Console.WriteLine("\n\n\n\n\n\n\n\n This is strange blockUnverified.Index:{blockUnverified.Index} \n\n\n\n\n\n");
-                                
-                                //This part can be removed, there is not sense to Persist I again...aeguageuhea
-                                if (blockUnverified.Verify(currentSnapshot))
-                                    blocksToPersistList.Add(blockUnverified);
-
                                 //Just clean the block_cache, but we should find why it is not been cleaned as expected.
-                                 block_cache_unverified.Remove(blockUnverified.Index);
+                                block_cache_unverified.Remove(blockUnverified.Index);
                         }
                 }
                 
