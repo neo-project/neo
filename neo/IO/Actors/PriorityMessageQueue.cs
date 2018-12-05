@@ -38,10 +38,9 @@ namespace Neo.IO.Actors
 
         public bool TryDequeue(out Envelope envelope)
         {
-            if (high.TryDequeue(out envelope)) return true;
-            if (low.TryDequeue(out envelope))
+            if (high.TryDequeue(out envelope) || low.TryDequeue(out envelope))
             {
-                if (low.Count == 0 && !(envelope.Message is Idle))
+                if (Count == 0 && !(envelope.Message is Idle))
                     low.Enqueue(new Envelope(Idle.Instance, ActorRefs.NoSender));
                 return true;
             }
