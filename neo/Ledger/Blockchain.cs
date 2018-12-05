@@ -289,8 +289,7 @@ namespace Neo.Ledger
             if (block.Index == Height + 1)
             {
                 Block block_persist = block;
-                List<Block> blocksToPersistList = new List<Block>();
-                                
+                List<Block> blocksToPersistList = new List<Block>();                                
                 while (true)
                 {
                     blocksToPersistList.Add(block_persist);
