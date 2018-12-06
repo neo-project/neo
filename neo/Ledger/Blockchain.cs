@@ -433,7 +433,8 @@ namespace Neo.Ledger
                     Sender.Tell(OnNewConsensus(payload));
                     break;
                 case Idle _:
-                    mem_pool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot);
+                    if (mem_pool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
+                        Self.Tell(Idle.Instance, ActorRefs.NoSender);
                     break;
                 case Terminated terminated:
                     subscribers.Remove(terminated.ActorRef);

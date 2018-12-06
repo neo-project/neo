@@ -159,22 +159,21 @@ namespace Neo.Ledger
                 }
             }
 
-            if (minItem == null)
-            {
-                if (_unverifiedSortedHighPriorityTransactions.Count > 0)
-                {
-                    sortedPool = _unverifiedSortedHighPriorityTransactions;
-                    minItem = _unverifiedSortedHighPriorityTransactions.Min;
-                }
+            if (minItem != null) return minItem;
 
-                if (_sortedHighPrioTransactions.Count > 0)
+            if (_unverifiedSortedHighPriorityTransactions.Count > 0)
+            {
+                sortedPool = _unverifiedSortedHighPriorityTransactions;
+                minItem = _unverifiedSortedHighPriorityTransactions.Min;
+            }
+
+            if (_sortedHighPrioTransactions.Count > 0)
+            {
+                PoolItem verifiedMin = _sortedHighPrioTransactions.Min;
+                if (minItem == null || verifiedMin.CompareTo(minItem) < 0)
                 {
-                    PoolItem verifiedMin = _sortedHighPrioTransactions.Min;
-                    if (minItem == null || verifiedMin.CompareTo(minItem) < 0)
-                    {
-                        minItem = verifiedMin;
-                        sortedPool = _sortedHighPrioTransactions;
-                    }
+                    minItem = verifiedMin;
+                    sortedPool = _sortedHighPrioTransactions;
                 }
             }
 
@@ -252,8 +251,8 @@ namespace Neo.Ledger
             }
             
             // NOTE: This really shouldn't be necessary any more and can actually be counter-productive, since
-            //       they can be re-added anyway and would incur a potential addtional verification setting to 1000
-            //        blocks for now. If transactions want to only be valid for short times they can include a script.
+            //       they can be re-added anyway and would incur a potential addtional verification; setting to 1000
+            //       blocks for now. If transactions want to only be valid for short times they can include a script.
             var lowPriorityCutOffTime = DateTime.UtcNow.AddSeconds(-Blockchain.SecondsPerBlock * 1000);
             foreach (PoolItem item in _sortedLowPrioTransactions)
             {
@@ -337,7 +336,8 @@ namespace Neo.Ledger
         /// <param name="maxToVerify">Max transactions to reverify, the value passed should be >=2. If 1 is passed it
         ///                           will still potentially use 2.</param>
         /// <param name="snapshot">The snapshot to use for verifying.</param>
-        public void ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, Snapshot snapshot)
+        /// <returns>true if more unsorted messages exist, otherwise false</returns>
+        public bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, Snapshot snapshot)
         {
             if (_unverifiedSortedHighPriorityTransactions.Count > 0)
             {
@@ -356,6 +356,8 @@ namespace Neo.Ledger
                     ? 1 : maxToVerify;
                 ReverifyLowPriorityTransactions(verifyCount, MaxSecondsToReverifyLowPrioTxPerIdle, snapshot);
             }
+
+            return _unverifiedTransactions.Count > 0;
         }
     }
 }
