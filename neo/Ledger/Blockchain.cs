@@ -248,8 +248,7 @@ namespace Neo.Ledger
                 if (block.Index <= Height) continue;
                 if (block.Index != Height + 1)
                     throw new InvalidOperationException();
-                Persist(block);
-                SaveHeaderHashList();
+                Persist(block);                
             }
             Sender.Tell(new ImportCompleted());
         }
@@ -310,8 +309,7 @@ namespace Neo.Ledger
                     if (blockToPersist.Index + 100 >= header_index.Count)
                         system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 }
-                SaveHeaderHashList();
-
+                
                 if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks)
@@ -336,8 +334,8 @@ namespace Neo.Ledger
                         });
                         snapshot.HeaderHashIndex.GetAndChange().Hash = block.Hash;
                         snapshot.HeaderHashIndex.GetAndChange().Index = block.Index;
-                        snapshot.Commit();
-                        SaveHeaderHashList(snapshot);
+                        SaveHeaderHashList();
+                        snapshot.Commit();                        
                     }
                     UpdateCurrentSnapshot();
                 }
@@ -621,6 +619,7 @@ namespace Neo.Ledger
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot);
+                SaveHeaderHashList(snapshot);    
                 snapshot.Commit();
             }
             UpdateCurrentSnapshot();
