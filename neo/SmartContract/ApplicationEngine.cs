@@ -463,11 +463,9 @@ namespace Neo.SmartContract
 
         protected virtual long GetPrice(OpCode nextInstruction)
         {
-            if (nextInstruction <= OpCode.PUSH16) return 0;
+            if (nextInstruction <= OpCode.NOP) return 0;
             switch (nextInstruction)
             {
-                case OpCode.NOP:
-                    return 0;
                 case OpCode.APPCALL:
                 case OpCode.TAILCALL:
                     return 10;
