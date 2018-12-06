@@ -33,6 +33,8 @@ namespace Neo.Consensus
 
         ConsensusPayload PreparePayload { get; set; }
 
+        void UpdateSpeakerSignatureAtPreparePayload();
+
         void ChangeView(byte view_number);
 
         Block CreateBlock();
@@ -47,24 +49,22 @@ namespace Neo.Consensus
 
         ConsensusPayload MakePrepareRequest(byte[] prepReqSignature, byte[] finalSignature);
 
-        ConsensusPayload MakePrepareResponse(byte[] signature);
+        ConsensusPayload MakePrepareResponse(byte[] responseSignature);
 
         ConsensusPayload MakeCommitAgreement(byte[] finalSignature);
 
         ConsensusPayload MakeRegeneration();
-
-        void UpdateSpeakerSignatureAtPreparePayload();
-
-        byte[] SignBlock(Block block);
-
-        byte[] SignPreparePayload();
-
-        void SignPayload(ConsensusPayload payload);
 
         void Reset();
 
         void Fill();
 
         bool VerifyRequest();
+
+        byte[] SignBlock(Block block);
+
+        byte[] SignPreparePayload();
+
+        void SignPayload(ConsensusPayload payload);
     }
 }

@@ -37,11 +37,12 @@ namespace Neo.UnitTests
             mockConsensusContext.SetupGet(mr => mr.ViewNumber).Returns(0);
             mockConsensusContext.SetupProperty(mr => mr.Nonce);
             mockConsensusContext.SetupProperty(mr => mr.NextConsensus);
+            mockConsensusContext.SetupProperty(mr => mr.PreparePayload);
             mockConsensusContext.Object.NextConsensus = UInt160.Zero;
+            mockConsensusContext.SetupGet(mr => mr.FinalSignatures).Returns(new byte[4][]);
             mockConsensusContext.Setup(mr => mr.GetPrimaryIndex(It.IsAny<byte>())).Returns(2);
             mockConsensusContext.SetupProperty(mr => mr.State);  // allows get and set to update mock state on Initialize method
             mockConsensusContext.Object.State = ConsensusState.Initial;
-            mockConsensusContext.Object.PreparePayload = null;
 
             int timeIndex = 0;
             var timeValues = new[] {
@@ -118,8 +119,19 @@ namespace Neo.UnitTests
                 Data = prepData
             };
 
-
-            mockConsensusContext.Setup(mr => mr.MakePrepareRequest(prep.PrepReqSignature,prep.FinalSignature)).Returns(prepPayload);
+            //mockConsensusContext.SetupGet(mr => mr.PreparePayload).Returns(prepPayload);
+            mockConsensusContext.Setup(mr => mr.SignBlock(It.IsAny<Block>())).Returns(new byte[64]);
+            mockConsensusContext.Setup(mr => mr.MakePrepareRequest(It.IsAny<byte[]>(), It.IsAny<byte[]>())).Returns(prepPayload);
+            mockConsensusContext.Setup(mr => mr.MakeHeader()).Returns(new Block
+            {
+                Version = header.Version,
+                PrevHash = header.PrevHash,
+                MerkleRoot = header.MerkleRoot,
+                Timestamp = header.Timestamp,
+                Index = header.Index + 1,
+                ConsensusData = prep.Nonce,
+                NextConsensus = header.NextConsensus
+            });
 
             // ============================================================================
             //                      creating ConsensusService actor
@@ -140,20 +152,27 @@ namespace Neo.UnitTests
                     MerkleRoot = header.MerkleRoot,
                     Timestamp = header.Timestamp,
                     Index = header.Index,
-                    ConsensusData = header.ConsensusData,
-                    NextConsensus = header.NextConsensus
+                    ConsensusData = prep.Nonce,
+                    NextConsensus = header.NextConsensus,
+                    Transactions = new Transaction[0]
                 }
             });
+
+            Console.WriteLine("OnTimer should expire!");
+
+            Console.WriteLine("Waiting for subscriber message!");
+            var answer = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            Console.WriteLine($"MESSAGE 1: {answer}");
+
+            Console.WriteLine("Ok, subscriber!");
 
             //Console.WriteLine("will start consensus!");
             //actorConsensus.Tell(new ConsensusService.Start());
 
-            Console.WriteLine("OnTimer should expire!");
-            Console.WriteLine("Waiting for subscriber message!");
-
-            //Commented here until FIX TODO
-            //var answer = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            //Console.WriteLine($"MESSAGE 1: {answer}");
+            /*Within(TimeSpan.FromSeconds(10),() => {
+                Console.WriteLine("Waiting for subscriber message!");
+                var answer = subscriber.ExpectMsg<LocalNode.SendDirectly>();
+            });*/
 
             //var answer2 = subscriber.ExpectMsg<LocalNode.SendDirectly>(); // expects to fail!
 
