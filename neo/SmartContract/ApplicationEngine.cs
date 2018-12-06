@@ -275,6 +275,9 @@ namespace Neo.SmartContract
             else
                 switch (nextInstruction)
                 {
+                    case OpCode.RET:
+                        is_stackitem_count_strict = false;
+                        break;
                     case OpCode.JMPIF:
                     case OpCode.JMPIFNOT:
                     case OpCode.DROP:
