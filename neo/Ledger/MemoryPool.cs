@@ -11,7 +11,7 @@ namespace Neo.Ledger
 {
     internal class MemoryPool : IReadOnlyCollection<Transaction>
     {
-        private class PoolItem : IComparable
+        private class PoolItem : IComparable<PoolItem>
         {
             public readonly Transaction Transaction;
             public readonly DateTime Timestamp;
@@ -35,9 +35,9 @@ namespace Neo.Ledger
                 return Transaction.Hash.CompareTo(tx.Hash);
             }
             
-            public int CompareTo(object obj)
+            public int CompareTo(PoolItem otherItem)
             {
-                if (!(obj is PoolItem otherItem)) return 1;
+                if (otherItem == null) return 1;
                 return CompareTo(otherItem.Transaction, otherItem.FeePerByte);
             }
         }
@@ -133,9 +133,7 @@ namespace Neo.Ledger
 
         public IEnumerable<Transaction> GetVerifiedTransactions()
         {
-            IEnumerator verifiedTxEnumerator = _unsortedTransactions.Select(p => p.Value.Transaction).GetEnumerator();
-            while (verifiedTxEnumerator.MoveNext())
-                yield return (Transaction) verifiedTxEnumerator.Current;
+            return _unsortedTransactions.Select(p => p.Value.Transaction);
         }
 
         private PoolItem GetLowestFeeTransaction(out SortedSet<PoolItem> sortedPool)
