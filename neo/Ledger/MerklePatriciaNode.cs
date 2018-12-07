@@ -218,8 +218,15 @@ namespace Neo.Ledger
             _hashes = new byte[reader.ReadByte()][];
             for (var i = 0; i < _hashes.Length; i++)
             {
-                _hashes[i] = reader.ReadVarBytes();
-                _hashes[i] = IsBranch && _hashes[i].Length == 0 ? null : _hashes[i];
+                if (i == 0 && !IsBranch)
+                {
+                    _hashes[i] = reader.ReadVarBytes().CompactDecode();
+                }
+                else
+                {
+                    _hashes[i] = reader.ReadVarBytes();
+                    _hashes[i] = IsBranch && _hashes[i].Length == 0 ? null : _hashes[i];
+                }
             }
         }
 
@@ -228,9 +235,16 @@ namespace Neo.Ledger
         {
             base.Serialize(writer);
             writer.Write((byte) _hashes.Length);
-            foreach (var hash in _hashes)
+            for (var i = 0; i < _hashes.Length; i++)
             {
-                writer.WriteVarBytes(hash ?? new byte[0]);
+                if (i == 0 && !IsBranch)
+                {
+                    writer.WriteVarBytes(_hashes[i] != null ?_hashes[i].CompactEncode() : new byte[0]);
+                }
+                else
+                {
+                    writer.WriteVarBytes(_hashes[i] ?? new byte[0]);
+                }
             }
         }
     }

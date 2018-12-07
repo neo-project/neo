@@ -158,7 +158,7 @@ namespace Neo.UnitTests.Ledger
         public void SerializeLeaf()
         {
             var mptItem = MerklePatriciaNode.LeafNode();
-            mptItem.Path = Encoding.UTF8.GetBytes("2");
+            mptItem.Path = new byte[] {0, 1, 3, 4};
             mptItem.Key = Encoding.UTF8.GetBytes("oi").Sha256();
             mptItem.Value = Encoding.UTF8.GetBytes("abc");
 
@@ -177,18 +177,18 @@ namespace Neo.UnitTests.Ledger
             }
 
             Assert.IsTrue(cloned.IsLeaf);
-            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            Assert.IsTrue(new byte[] {0, 1, 3, 4}.SequenceEqual(cloned.Path));
             Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Key));
             Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
 
             Assert.AreEqual(mptItem, cloned);
 
             mptItem.Path = Encoding.UTF8.GetBytes("23f");
-            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            Assert.IsTrue(new byte[] {0, 1, 3, 4}.SequenceEqual(cloned.Path));
             mptItem.Value = Encoding.UTF8.GetBytes("abc1");
             Assert.IsTrue(Encoding.UTF8.GetBytes("abc").SequenceEqual(cloned.Value));
         }
-        
+
         [TestMethod]
         public void SerializeLeafEmptyPath()
         {
@@ -228,7 +228,7 @@ namespace Neo.UnitTests.Ledger
         public void SerializeExtension()
         {
             var mptItem = MerklePatriciaNode.ExtensionNode();
-            mptItem.Path = Encoding.UTF8.GetBytes("2");
+            mptItem.Path = new byte[] {0, 1};
             mptItem.Next = Encoding.UTF8.GetBytes("oi").Sha256();
 
             var cloned = MerklePatriciaNode.BranchNode();
@@ -246,13 +246,13 @@ namespace Neo.UnitTests.Ledger
             }
 
             Assert.IsTrue(cloned.IsExtension);
-            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            Assert.IsTrue(new byte[] {0, 1}.SequenceEqual(cloned.Path));
             Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Next));
 
             Assert.AreEqual(mptItem, cloned);
 
-            mptItem.Path = Encoding.UTF8.GetBytes("23");
-            Assert.IsTrue(Encoding.UTF8.GetBytes("2").SequenceEqual(cloned.Path));
+            mptItem.Path = new byte[] {2, 3, 7, 8};
+            Assert.IsTrue(new byte[] {0, 1}.SequenceEqual(cloned.Path));
             mptItem.Next = Encoding.UTF8.GetBytes("oi4").Sha256();
             Assert.IsTrue(Encoding.UTF8.GetBytes("oi").Sha256().SequenceEqual(cloned.Next));
         }
