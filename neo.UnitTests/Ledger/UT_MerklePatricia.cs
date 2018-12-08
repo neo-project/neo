@@ -11,49 +11,74 @@ namespace Neo.UnitTests.Ledger
     [TestClass]
     public class UT_MerklePatricia
     {
-        private static void EqualsAfterRemove(List<string> values, int selected = 0)
+        private static void EqualsAfterRemove(List<string> values, int selected = 0, int? max = null)
         {
-            while (true)
+            for (max = max ?? 1 << values.Count; selected < max; selected++)
             {
-                if (selected < 1 << values.Count)
+                var inserted = new MerklePatricia();
+                var insertedRemoved = new MerklePatricia();
+                var insertedRemovedBackwards = new MerklePatricia();
+
+                for (var i = 0; i < values.Count; i++)
                 {
-                    var inserido = new MerklePatricia();
-                    var inseridoRemovido = new MerklePatricia();
-                    for (var i = 0; i < values.Count; i++)
+                    if (selected.GetBit(i))
                     {
-                        if (selected.GetBit(i))
-                        {
-                            inserido[values[i]] = values[i];
-                        }
-
-                        inseridoRemovido[values[i]] = values[i];
+                        inserted[values[i]] = values[i];
                     }
 
-                    for (var i = 0; i < values.Count; i++)
-                    {
-                        if (selected.GetBit(i)) continue;
-                        inseridoRemovido.Remove(values[i]);
-                    }
-
-                    Assert.AreEqual(inserido, inseridoRemovido);
-
-                    selected = selected + 1;
-                    continue;
+                    insertedRemoved[values[i]] = values[i];
+                    insertedRemovedBackwards[values[i]] = values[i];
                 }
 
-                break;
+                for (var i = 0; i < values.Count; i++)
+                {
+                    if (selected.GetBit(i)) continue;
+                    insertedRemoved.Remove(values[i]);
+                }
+
+                for (var i = values.Count - 1; i >= 0; i--)
+                {
+                    if (selected.GetBit(i)) continue;
+                    insertedRemovedBackwards.Remove(values[i]);
+                }
+
+                var testMessage = $"Test {selected}/{max}";
+                var testBackwardsMessage = $"Test backwards {selected}/{max}";
+                for (var i = 0; i < values.Count; i++)
+                {
+                    if (selected.GetBit(i))
+                    {
+                        Assert.AreEqual(values[i], inserted[values[i]], testMessage);
+                        Assert.AreEqual(values[i], insertedRemoved[values[i]], testMessage);
+                        Assert.AreEqual(values[i], insertedRemovedBackwards[values[i]], testBackwardsMessage);
+                    }
+                    else
+                    {
+                        Assert.IsFalse(inserted.ContainsKey(values[i]), testMessage);
+                        Assert.IsFalse(insertedRemoved.ContainsKey(values[i]), testMessage);
+                        Assert.IsFalse(insertedRemovedBackwards.ContainsKey(values[i]), testBackwardsMessage);
+                    }
+                }
+
+                Assert.AreEqual(inserted, insertedRemoved, testMessage);
+                Assert.AreEqual(inserted, insertedRemovedBackwards, testBackwardsMessage);
+                // At this point insertedRemoved should be equals to insertedRemovedBackwards so it must be
+                Assert.AreEqual(insertedRemoved, insertedRemovedBackwards, testBackwardsMessage);
             }
         }
 
         [TestMethod]
         public void EqualsAfterRemove()
         {
+            EqualsAfterRemove(new List<string> {"a", "ab", "ba", "bb", "zba"}, 3);
+            
             EqualsAfterRemove(new List<string> {"a"});
             EqualsAfterRemove(new List<string> {"a", "ab"});
             EqualsAfterRemove(new List<string> {"a", "ab", "ba"});
             EqualsAfterRemove(new List<string> {"a", "ab", "ba", "bb"});
             EqualsAfterRemove(new List<string> {"a", "ab", "ba", "bb", "zba"});
             EqualsAfterRemove(new List<string> {"a", "ab", "ba", "bb", "zba", "cba"});
+            EqualsAfterRemove(new List<string> {"a", "b", "aaaa", "baaa", "aaab", "baab"});
         }
 
         private static void CheckCopy(MerklePatricia mp)
