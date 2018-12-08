@@ -131,7 +131,14 @@ namespace Neo.IO
 
         public static byte[] ReadVarBytes(this BinaryReader reader, int max = 0x1000000)
         {
-            return reader.ReadBytes((int)reader.ReadVarInt((ulong)max));
+            max = (int)reader.ReadVarInt((ulong)max);
+
+            if (reader.BaseStream.CanSeek)
+            {
+                max = Math.Min((int)(reader.BaseStream.Length - reader.BaseStream.Position), max);
+            }
+
+            return reader.ReadBytes(max);
         }
 
         public static ulong ReadVarInt(this BinaryReader reader, ulong max = ulong.MaxValue)
