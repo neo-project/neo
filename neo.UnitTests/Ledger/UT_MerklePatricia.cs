@@ -13,6 +13,7 @@ namespace Neo.UnitTests.Ledger
     {
         private static void EqualsAfterRemove(List<string> values, int selected = 0, int? max = null)
         {
+            values = new List<string>(new HashSet<string>(values));
             for (max = max ?? 1 << values.Count; selected < max; selected++)
             {
                 var inserted = new MerklePatricia();
@@ -78,6 +79,8 @@ namespace Neo.UnitTests.Ledger
             EqualsAfterRemove(new List<string> {"a", "ab", "ba", "bb"});
             EqualsAfterRemove(new List<string> {"a", "ab", "ba", "bb", "zba"});
             EqualsAfterRemove(new List<string> {"a", "ab", "ba", "bb", "zba", "cba"});
+            EqualsAfterRemove(new List<string> {"a", "b", "aaaa", "baaa", "aaab", "baab"});
+            
             EqualsAfterRemove(new List<string> {"a", "b", "aaaa", "baaa", "aaab", "baab"});
         }
 
