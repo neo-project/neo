@@ -29,8 +29,6 @@ namespace Neo.UnitTests
 
             var mockConsensusContext = new Mock<IConsensusContext>();
 
-            // context.Reset(): do nothing
-            //mockConsensusContext.Setup(mr => mr.Reset()).Verifiable(); // void
             mockConsensusContext.SetupGet(mr => mr.MyIndex).Returns(2); // MyIndex == 2
             mockConsensusContext.SetupGet(mr => mr.BlockIndex).Returns(2);
             mockConsensusContext.SetupGet(mr => mr.PrimaryIndex).Returns(2);
@@ -55,24 +53,10 @@ namespace Neo.UnitTests
 
             Console.WriteLine($"time 0: {timeValues[0].ToString()} 1: {timeValues[1].ToString()} 2: {timeValues[2].ToString()} 3: {timeValues[3].ToString()}");
 
-            //mockConsensusContext.Object.block_received_time = new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc);
-            //mockConsensusContext.Setup(mr => mr.GetUtcNow()).Returns(new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc));
-
             var timeMock = new Mock<TimeProvider>();
             timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[timeIndex])
                                               .Callback(() => timeIndex++);
-            //new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc));
             TimeProvider.Current = timeMock.Object;
-
-            //public void Log(string message, LogLevel level)
-            // TODO: create ILogPlugin for Tests
-            /*
-            mockConsensusContext.Setup(mr => mr.Log(It.IsAny<string>(), It.IsAny<LogLevel>()))
-                         .Callback((string message, LogLevel level) => {
-                                         Console.WriteLine($"CONSENSUS LOG: {message}");
-                                                                   }
-                                  );
-             */
 
             // Creating proposed block
             Header header = new Header();
@@ -85,7 +69,6 @@ namespace Neo.UnitTests
             TimeProvider.Current.UtcNow.ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
                                                                                // check basic ConsensusContext
             mockConsensusContext.Object.MyIndex.Should().Be(2);
-            //mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
 
             MinerTransaction minerTx = new MinerTransaction
             {
@@ -119,7 +102,6 @@ namespace Neo.UnitTests
                 Data = prepData
             };
 
-            //mockConsensusContext.SetupGet(mr => mr.PreparePayload).Returns(prepPayload);
             mockConsensusContext.Setup(mr => mr.SignBlock(It.IsAny<Block>())).Returns(new byte[64]);
             mockConsensusContext.Setup(mr => mr.MakePrepareRequest(It.IsAny<byte[]>(), It.IsAny<byte[]>())).Returns(prepPayload);
             mockConsensusContext.Setup(mr => mr.MakeHeader()).Returns(new Block
@@ -165,16 +147,6 @@ namespace Neo.UnitTests
             Console.WriteLine($"MESSAGE 1: {answer}");
 
             Console.WriteLine("Ok, subscriber!");
-
-            //Console.WriteLine("will start consensus!");
-            //actorConsensus.Tell(new ConsensusService.Start());
-
-            /*Within(TimeSpan.FromSeconds(10),() => {
-                Console.WriteLine("Waiting for subscriber message!");
-                var answer = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            });*/
-
-            //var answer2 = subscriber.ExpectMsg<LocalNode.SendDirectly>(); // expects to fail!
 
             // ============================================================================
             //                      finalize ConsensusService actor

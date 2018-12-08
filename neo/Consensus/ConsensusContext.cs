@@ -47,22 +47,6 @@ namespace Neo.Consensus
         /// </summary>
         public ConsensusPayload PreparePayload { get; set; }
 
-        /*
-        /// <summary>
-        /// Serialize PreparePayload Data into the desired PrepareRequest message
-        /// </summary>
-        public PrepareRequest GetPrepareRequestMessage(ConsensusPayload preparePayloadToGet)
-        {
-            try
-            {
-                return (PrepareRequest)ConsensusMessage.DeserializeFrom(preparePayloadToGet.Data);
-            }
-            catch
-            {
-                return null;
-            }
-        }*/
-
         /// <summary>
         /// Update the Speaker signature inside the context PreparePayload
         /// </summary>
@@ -116,10 +100,10 @@ namespace Neo.Consensus
             for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
                 if (FinalSignatures[i] != null)
                 {
-                    //Checking Speaker Final Signature that was given along with PrepareRequest Payload
+                    // Checking Speaker Final Signature that was given along with PrepareRequest Payload
                     if (PrimaryIndex == i && !Crypto.Default.VerifySignature(block.GetHashData(), FinalSignatures[i], Validators[i].EncodePoint(false)))
                     {
-                        //Log($"CheckFinalSignatures...It looks like that Primary tried to cheat providing wrong final signature! His header signature will not be considered");
+                        // CheckFinalSignatures...It looks like that Primary tried to cheat providing wrong final signature! His header signature will not be considered
                         if ((FinalSignatures.Count(p => p != null) - 1) >= M)
                             continue;
                         else
