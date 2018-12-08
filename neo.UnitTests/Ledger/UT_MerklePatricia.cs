@@ -11,7 +11,52 @@ namespace Neo.UnitTests.Ledger
     [TestClass]
     public class UT_MerklePatricia
     {
-        private void CheckCopy(MerklePatricia mp)
+        private static void EqualsAfterRemove(List<string> values, int selected = 0)
+        {
+            while (true)
+            {
+                if (selected < 1 << values.Count)
+                {
+                    var inserido = new MerklePatricia();
+                    var inseridoRemovido = new MerklePatricia();
+                    for (var i = 0; i < values.Count; i++)
+                    {
+                        if (selected.GetBit(i))
+                        {
+                            inserido[values[i]] = values[i];
+                        }
+
+                        inseridoRemovido[values[i]] = values[i];
+                    }
+
+                    for (var i = 0; i < values.Count; i++)
+                    {
+                        if (selected.GetBit(i)) continue;
+                        inseridoRemovido.Remove(values[i]);
+                    }
+
+                    Assert.AreEqual(inserido, inseridoRemovido);
+
+                    selected = selected + 1;
+                    continue;
+                }
+
+                break;
+            }
+        }
+
+        [TestMethod]
+        public void EqualsAfterRemove()
+        {
+            EqualsAfterRemove(new List<string> {"a"});
+            EqualsAfterRemove(new List<string> {"a", "ab"});
+            EqualsAfterRemove(new List<string> {"a", "ab", "ba"});
+            EqualsAfterRemove(new List<string> {"a", "ab", "ba", "bb"});
+            EqualsAfterRemove(new List<string> {"a", "ab", "ba", "bb", "zba"});
+            EqualsAfterRemove(new List<string> {"a", "ab", "ba", "bb", "zba", "cba"});
+        }
+
+        private static void CheckCopy(MerklePatricia mp)
         {
             var cloned = new MerklePatricia();
             using (var ms = new MemoryStream())
@@ -41,8 +86,6 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(mp.Validate());
             Assert.IsTrue(cloned.Validate());
             Assert.AreEqual(mp, cloned);
-            /* 
-            */
         }
 
         [TestMethod]
