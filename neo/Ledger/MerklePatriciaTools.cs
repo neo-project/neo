@@ -35,7 +35,7 @@ namespace Neo.Ledger
             if (first % 2 == 0)
             {
                 hexarrayList.Insert(0, first);
-                hexarrayList.Insert(0, 0);
+                hexarrayList.Insert(1, 0);
             }
             else
             {

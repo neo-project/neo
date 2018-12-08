@@ -33,6 +33,14 @@ namespace Neo.UnitTests.Ledger
                 .SequenceEqual(new byte[] {0x10, 0xf1, 0xcb, 0x8a}));
             Assert.IsTrue(new byte[] {0xf, 1, 0xc, 0xb, 8, 10}.CompactEncode()
                 .SequenceEqual(new byte[] {0x00, 0xf1, 0xcb, 0x8a}));
+            
+            Assert.IsTrue(new byte[] {1, 2, 3, 4, 5}.CompactEncode(true).SequenceEqual(new byte[] {0x31, 0x23, 0x45}));
+            Assert.IsTrue(new byte[] {0, 1, 2, 3, 4, 5}.CompactEncode(true)
+                .SequenceEqual(new byte[] {0x20, 0x01, 0x23, 0x45}));
+            Assert.IsTrue(new byte[] {0, 0xf, 1, 0xc, 0xb, 8, 10}.CompactEncode(true)
+                .SequenceEqual(new byte[] {0x30, 0xf1, 0xcb, 0x8a}));
+            Assert.IsTrue(new byte[] {0xf, 1, 0xc, 0xb, 8, 10}.CompactEncode(true)
+                .SequenceEqual(new byte[] {0x20, 0xf1, 0xcb, 0x8a}));
         }
 
         [TestMethod]
@@ -44,6 +52,14 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(new byte[] {0x10, 0xf1, 0xcb, 0x8a}.CompactDecode()
                 .SequenceEqual(new byte[] {0, 0xf, 1, 0xc, 0xb, 8, 10}));
             Assert.IsTrue(new byte[] {0x00, 0xf1, 0xcb, 0x8a}.CompactDecode()
+                .SequenceEqual(new byte[] {0xf, 1, 0xc, 0xb, 8, 10}));
+            
+            Assert.IsTrue(new byte[] {0x31, 0x23, 0x45}.CompactDecode().SequenceEqual(new byte[] {1, 2, 3, 4, 5}));
+            Assert.IsTrue(new byte[] {0x20, 0x01, 0x23, 0x45}.CompactDecode()
+                .SequenceEqual(new byte[] {0, 1, 2, 3, 4, 5}));
+            Assert.IsTrue(new byte[] {0x30, 0xf1, 0xcb, 0x8a}.CompactDecode()
+                .SequenceEqual(new byte[] {0, 0xf, 1, 0xc, 0xb, 8, 10}));
+            Assert.IsTrue(new byte[] {0x20, 0xf1, 0xcb, 0x8a}.CompactDecode()
                 .SequenceEqual(new byte[] {0xf, 1, 0xc, 0xb, 8, 10}));
         }
     }
