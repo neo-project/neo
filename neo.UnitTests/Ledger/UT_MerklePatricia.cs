@@ -323,8 +323,7 @@ namespace Neo.UnitTests.Ledger
             foreach (var it in lista)
             {
                 mp[it] = it;
-                System.Console.WriteLine(
-                    $"Linha: '{it}:{Encoding.UTF8.GetBytes(it).ByteToHexString(false, false)}':\n{mp}");
+                Console.WriteLine($"Linha: '{it}:{Encoding.UTF8.GetBytes(it).ByteToHexString(false, false)}':\n{mp}");
                 Assert.AreEqual(it, mp[it]);
                 Assert.IsTrue(mp.Validate());
             }
@@ -417,6 +416,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void EqualsThree()
         {
+            Assert.AreNotEqual(null, new MerklePatricia());
+            Assert.AreNotEqual(new MerklePatricia(), new MerklePatricia{["oi"] = "oi"});
+
             var mpA = new MerklePatricia
             {
                 ["oi"] = "bola",
@@ -480,7 +482,7 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        public void ToString()
+        public void ToStringTesting()
         {
             var mp = new MerklePatricia();
             Assert.AreEqual("{}", mp.ToString());

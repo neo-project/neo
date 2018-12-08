@@ -7,7 +7,6 @@ using Neo.IO;
 
 namespace Neo.Ledger
 {
-    /// <inheritdoc />
     /// <summary>
     /// Modified Merkel Patricia Tree.
     /// Note: It is not a thread safe implementation.
@@ -29,7 +28,7 @@ namespace Neo.Ledger
             {
                 if (key == null)
                 {
-                    throw new ArgumentNullException("The key parameter can not be null");
+                    throw new ArgumentNullException(nameof(key));
                 }
 
                 var resp = this[Encoding.UTF8.GetBytes(key)];
@@ -39,12 +38,12 @@ namespace Neo.Ledger
             {
                 if (key == null)
                 {
-                    throw new ArgumentNullException("The key parameter can not be null");
+                    throw new ArgumentNullException(nameof(key));
                 }
 
                 if (value == null)
                 {
-                    throw new ArgumentNullException("The value parameter can not be null");
+                    throw new ArgumentNullException(nameof(value));
                 }
 
                 this[Encoding.UTF8.GetBytes(key)] = Encoding.UTF8.GetBytes(value);
@@ -61,7 +60,7 @@ namespace Neo.Ledger
             {
                 if (key == null)
                 {
-                    throw new ArgumentNullException("The key parameter can not be null");
+                    throw new ArgumentNullException(nameof(key));
                 }
 
                 return _rootHash == null ? null : Get(_db[_rootHash], ConvertToNibble(key));
@@ -70,12 +69,12 @@ namespace Neo.Ledger
             {
                 if (key == null)
                 {
-                    throw new ArgumentNullException("The key parameter can not be null");
+                    throw new ArgumentNullException(nameof(key));
                 }
 
                 if (value == null)
                 {
-                    throw new ArgumentNullException("The value parameter can not be null");
+                    throw new ArgumentNullException(nameof(value));
                 }
 
                 var node = _rootHash == null ? null : _db[_rootHash];
@@ -175,7 +174,7 @@ namespace Neo.Ledger
             {
                 if (o.Path.Length == 1)
                 {
-                    node[o.Path[0]] = o.Next;
+                    n[o.Path[0]] = o.Next;
                 }
                 else
                 {
@@ -435,49 +434,6 @@ namespace Neo.Ledger
             }
 
             return respHash;
-            /*
-            if (respHash == null) return null;
-            var nodeResp = _db[respHash];
-            if (!nodeResp.IsBranch)
-            {
-                return respHash;
-            }
-
-            var cont = 0;
-            var index = -1;
-            for (var i = 0; i < node.Length - 2 && cont < 2; i++)
-            {
-                if (nodeResp[i] != null)
-                {
-                    cont++;
-                    index = i;
-                }
-            }
-
-            if (cont == 0)
-            {
-                _db.Remove(respHash);
-                
-                var newNodeResp = MerklePatriciaNode.LeafNode();
-                newNodeResp.Path = nodeResp.Path;
-                newNodeResp.Value = nodeResp.Value;
-                respHash = newNodeResp.Hash();
-                _db[respHash] = newNodeResp;
-            }
-            else if (cont == 1 && nodeResp.Value == null)
-            {
-                if (node.IsExtension)
-                {
-                    node.Path = node.Path.Concat(new [] {(byte)index}).ToArray();
-                    node.Next = nodeResp[index];
-                }
-            }
-
-            _db.Remove(nodeHash);
-            nodeHash = node.Hash();
-            _db[nodeHash] = node;
-            return nodeHash;
-            */
         }
 
         private byte[] RemoveLeaf(byte[] nodeHash, byte[] path, MerklePatriciaNode node)
