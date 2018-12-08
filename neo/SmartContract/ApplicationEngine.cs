@@ -317,6 +317,7 @@ namespace Neo.SmartContract
                     case OpCode.CALL_EDT:
                         stackitem_count -= 1;
                         break;
+                    case OpCode.RET:
                     case OpCode.APPCALL:
                     case OpCode.TAILCALL:
                     case OpCode.NOT:
@@ -460,11 +461,9 @@ namespace Neo.SmartContract
 
         protected virtual long GetPrice(OpCode nextInstruction)
         {
-            if (nextInstruction <= OpCode.PUSH16) return 0;
+            if (nextInstruction <= OpCode.NOP) return 0;
             switch (nextInstruction)
             {
-                case OpCode.NOP:
-                    return 0;
                 case OpCode.APPCALL:
                 case OpCode.TAILCALL:
                     return 10;
