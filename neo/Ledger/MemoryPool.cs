@@ -133,46 +133,44 @@ namespace Neo.Ledger
             return _unsortedTransactions.Select(p => p.Value.Transaction);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private PoolItem GetLowestFeeTransaction(SortedSet<PoolItem> verifiedTxSorted, 
+            SortedSet<PoolItem> unverifiedTxSorted, out SortedSet<PoolItem> sortedPool)
+        {
+            PoolItem minItem;
+            if (unverifiedTxSorted.Count > 0)
+            {
+                sortedPool = unverifiedTxSorted;
+                minItem = unverifiedTxSorted.Min;
+            }
+            else
+            {
+                sortedPool = null;
+                minItem = null;
+            }
+
+            if (_sortedLowPrioTransactions.Count == 0)
+                return minItem;
+            
+            PoolItem verifiedMin = verifiedTxSorted.Min;
+            if (minItem != null && verifiedMin.CompareTo(minItem) >= 0) 
+                return minItem;
+            
+            sortedPool = verifiedTxSorted;
+            minItem = verifiedMin;
+
+            return minItem;
+        }
+
         private PoolItem GetLowestFeeTransaction(out SortedSet<PoolItem> sortedPool)
         {
-            PoolItem minItem = null;
-            sortedPool = null;
-
-            if (_unverifiedSortedLowPriorityTransactions.Count > 0)
-            {
-                sortedPool = _unverifiedSortedLowPriorityTransactions;
-                minItem = _unverifiedSortedLowPriorityTransactions.Min;
-            }
-
-            if (_sortedLowPrioTransactions.Count > 0)
-            {
-                PoolItem verifiedMin = _sortedLowPrioTransactions.Min;
-                if (minItem == null || verifiedMin.CompareTo(minItem) < 0)
-                {
-                    sortedPool = _sortedLowPrioTransactions;
-                    minItem = verifiedMin;
-                }
-            }
+            var minItem = GetLowestFeeTransaction(_sortedLowPrioTransactions, _unverifiedSortedLowPriorityTransactions,
+                out sortedPool);
 
             if (minItem != null) return minItem;
 
-            if (_unverifiedSortedHighPriorityTransactions.Count > 0)
-            {
-                sortedPool = _unverifiedSortedHighPriorityTransactions;
-                minItem = _unverifiedSortedHighPriorityTransactions.Min;
-            }
-
-            if (_sortedHighPrioTransactions.Count > 0)
-            {
-                PoolItem verifiedMin = _sortedHighPrioTransactions.Min;
-                if (minItem == null || verifiedMin.CompareTo(minItem) < 0)
-                {
-                    minItem = verifiedMin;
-                    sortedPool = _sortedHighPrioTransactions;
-                }
-            }
-
-            return minItem;
+            return GetLowestFeeTransaction(_sortedHighPrioTransactions, _unverifiedSortedHighPriorityTransactions,
+                out sortedPool);
         }
 
         // Note: this must only be called from a single thread (the Blockchain actor)
