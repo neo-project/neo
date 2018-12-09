@@ -133,9 +133,9 @@ namespace Neo.IO
         {
             max = (int)reader.ReadVarInt((ulong)max);
 
-            if (reader.BaseStream.CanSeek)
+            if (reader.BaseStream.CanSeek && (reader.BaseStream.Length - reader.BaseStream.Position) < max)
             {
-                max = Math.Min((int)(reader.BaseStream.Length - reader.BaseStream.Position), max);
+                throw new FormatException();
             }
 
             return reader.ReadBytes(max);
