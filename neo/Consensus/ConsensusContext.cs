@@ -202,7 +202,7 @@ namespace Neo.Consensus
 
         public void Fill()
         {
-            IEnumerable<Transaction> mem_pool = Blockchain.Singleton.GetMemoryPoolVerified();
+            IEnumerable<Transaction> mem_pool = Blockchain.Singleton.GetMemoryPoolVerifiedAndSorted();
             foreach (IPolicyPlugin plugin in Plugin.Policies)
                 mem_pool = plugin.FilterForBlock(mem_pool);
             List<Transaction> transactions = mem_pool.ToList();

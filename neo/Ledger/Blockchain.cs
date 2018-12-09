@@ -225,6 +225,16 @@ namespace Neo.Ledger
             return mem_pool.GetVerifiedTransactions();
         }
 
+        public Transaction GetMemoryPoolTransaction(UInt256 hash)
+        {
+            return mem_pool.TryGetValue(hash, out Transaction transaction) ? transaction : null;
+        }
+
+        public IEnumerable<Transaction> GetMemoryPoolVerifiedAndSorted()
+        {
+            return mem_pool.GetSortedVerifiedTransactions();
+        }
+        
         public Snapshot GetSnapshot()
         {
             return Store.GetSnapshot();
@@ -235,12 +245,6 @@ namespace Neo.Ledger
             if (mem_pool.TryGetValue(hash, out Transaction transaction))
                 return transaction;
             return Store.GetTransaction(hash);
-        }
-
-        internal Transaction GetUnverifiedTransaction(UInt256 hash)
-        {
-            mem_pool.TryGetUnverified(hash, out Transaction transaction);
-            return transaction;
         }
 
         private void OnImport(IEnumerable<Block> blocks)

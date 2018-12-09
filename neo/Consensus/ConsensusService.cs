@@ -210,18 +210,19 @@ namespace Neo.Consensus
                     if (!Crypto.Default.VerifySignature(hashData, context.Signatures[i], context.Validators[i].EncodePoint(false)))
                         context.Signatures[i] = null;
             context.Signatures[payload.ValidatorIndex] = message.Signature;
-            Dictionary<UInt256, Transaction> mempool = Blockchain.Singleton.GetMemoryPool().ToDictionary(p => p.Hash);
+            Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.GetMemoryPoolVerified().ToDictionary(p => p.Hash);
+            
             List<Transaction> unverified = new List<Transaction>();
             foreach (UInt256 hash in context.TransactionHashes.Skip(1))
             {
-                if (mempool.TryGetValue(hash, out Transaction tx))
+                if (mempoolVerified.TryGetValue(hash, out Transaction tx))
                 {
                     if (!AddTransaction(tx, false))
                         return;
                 }
                 else
                 {
-                    tx = Blockchain.Singleton.GetUnverifiedTransaction(hash);
+                    tx = Blockchain.Singleton.GetMemoryPoolTransaction(hash);
                     if (tx != null)
                         unverified.Add(tx);
                 }
