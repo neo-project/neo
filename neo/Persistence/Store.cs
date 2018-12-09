@@ -16,7 +16,7 @@ namespace Neo.Persistence
         DataCache<UInt256, AssetState> IPersistence.Assets => GetAssets();
         DataCache<UInt160, ContractState> IPersistence.Contracts => GetContracts();
         DataCache<StorageKey, StorageItem> IPersistence.Storages => GetStorages();
-        DataCache<MPTKey, MPTItem> IPersistence.MPTStorages => GetMPTStorages();
+        DataCache<MPTKey, MerklePatricia> IPersistence.MPTStorages => GetMPTStorages();
         DataCache<UInt32Wrapper, HeaderHashList> IPersistence.HeaderHashList => GetHeaderHashList();
         MetaDataCache<ValidatorsCountState> IPersistence.ValidatorsCount => GetValidatorsCount();
         MetaDataCache<HashIndexState> IPersistence.BlockHashIndex => GetBlockHashIndex();
@@ -31,7 +31,7 @@ namespace Neo.Persistence
         public abstract DataCache<UInt256, AssetState> GetAssets();
         public abstract DataCache<UInt160, ContractState> GetContracts();
         public abstract DataCache<StorageKey, StorageItem> GetStorages();
-        public abstract DataCache<MPTKey, MPTItem> GetMPTStorages();
+        public abstract DataCache<MPTKey, MerklePatricia> GetMPTStorages();
         public abstract DataCache<UInt32Wrapper, HeaderHashList> GetHeaderHashList();
         public abstract MetaDataCache<ValidatorsCountState> GetValidatorsCount();
         public abstract MetaDataCache<HashIndexState> GetBlockHashIndex();

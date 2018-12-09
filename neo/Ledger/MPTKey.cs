@@ -1,8 +1,6 @@
-﻿using Neo.Cryptography;
-using Neo.IO;
+﻿using Neo.IO;
 using System;
 using System.IO;
-using System.Linq;
 
 namespace Neo.Ledger
 {
@@ -31,14 +29,10 @@ namespace Neo.Ledger
         public override bool Equals(object obj)
         {
             if (obj is null) return false;
-            if (!(obj is MPTKey)) return false;
-            return Equals((MPTKey)obj);
+            return obj is MPTKey key && Equals(key);
         }
 
-        public override int GetHashCode()
-        {
-            return ScriptHash.GetHashCode() + HashKey.GetHashCode();
-        }
+        public override int GetHashCode() => ScriptHash.GetHashCode() + HashKey.GetHashCode();
 
         void ISerializable.Serialize(BinaryWriter writer)
         {

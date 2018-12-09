@@ -594,11 +594,13 @@ namespace Neo.SmartContract
                 StorageContext context = _interface.GetInterface<StorageContext>();
                 if (!CheckStorageContext(context)) return false;
                 byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-                StorageItem item = Snapshot.Storages.TryGet(new StorageKey
+                var storageKey = new StorageKey
                 {
                     ScriptHash = context.ScriptHash,
                     Key = key
-                });
+                };
+//                Snapshot.Storages.TryGet(storageKey);
+                StorageItem item = MPT.GetFromStorage(Snapshot, context.ScriptHash, storageKey);
                 engine.CurrentContext.EvaluationStack.Push(item?.Value ?? new byte[0]);
                 return true;
             }

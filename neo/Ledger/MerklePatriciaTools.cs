@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Neo.Ledger
@@ -72,6 +73,27 @@ namespace Neo.Ledger
             }
 
             return resp.ToArray();
+        }
+
+        /// <summary>
+        /// Converts byte array to StorageItem
+        /// </summary>
+        /// <param name="data">The byte array.</param>
+        /// <returns>The generated StorageItem.</returns>
+        public static StorageItem ToStorageItem(this byte[] data)
+        {
+            using (var memoryStream = new MemoryStream())
+            using (var binWriter = new BinaryWriter(memoryStream))
+            {
+                binWriter.Write(data);
+                using (var br = new BinaryReader(binWriter.BaseStream))
+                {
+                    br.BaseStream.Position = 0;
+                    var item = new StorageItem();
+                    item.Deserialize(br);
+                    return item;
+                }
+            }
         }
     }
 }
