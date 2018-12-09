@@ -275,52 +275,31 @@ namespace Neo.Ledger
 
             int maxHighPrioTransactionsPerBlock = MaxHighPriorityTxsPerBlock;
 
-            ReverifyHighPriorityTransactions(maxHighPrioTransactionsPerBlock, MaxSecondsToReverifyHighPrioTx, snapshot);
-            ReverifyLowPriorityTransactions(Settings.Default.MaxFreeTransactionsPerBlock, MaxSecondsToReverifyLowPrioTx,
-                snapshot);
+            ReverifyTransactions(_sortedHighPrioTransactions, _unverifiedSortedHighPriorityTransactions,
+                maxHighPrioTransactionsPerBlock, MaxSecondsToReverifyHighPrioTx, snapshot);
+            ReverifyTransactions(_sortedLowPrioTransactions, _unverifiedSortedLowPriorityTransactions,
+                Settings.Default.MaxFreeTransactionsPerBlock, MaxSecondsToReverifyLowPrioTx, snapshot);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int ReverifyHighPriorityTransactions(int count, double secondsTimeout, Snapshot snapshot)
+        private int ReverifyTransactions(SortedSet<PoolItem> verifiedSortedTxPool,
+            SortedSet<PoolItem> unverifiedSortedTxPool, int count, double secondsTimeout, Snapshot snapshot)
         {
             DateTime reverifyCutOffTimeStamp = DateTime.UtcNow.AddSeconds(secondsTimeout);
             int addedCount = 0;
             
-            foreach (PoolItem item in _unverifiedSortedHighPriorityTransactions.Reverse().Take(count).ToArray())
+            foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count).ToArray())
             {
                 // Re-verify the top fee max high priority transactions that can be verified in a block
                 if (item.Transaction.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Transaction)))
                 {
                     _unsortedTransactions.TryAdd(item.Transaction.Hash, item);
-                    _sortedHighPrioTransactions.Add(item);
+                    verifiedSortedTxPool.Add(item);
                     addedCount++;
                     _unverifiedTransactions.TryRemove(item.Transaction.Hash, out _);
-                    _unverifiedSortedHighPriorityTransactions.Remove(item);                        
+                    unverifiedSortedTxPool.Remove(item);                        
                 }
 
-                if (DateTime.UtcNow > reverifyCutOffTimeStamp) break;
-            }
-
-            return addedCount;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int ReverifyLowPriorityTransactions(int count, double secondsTimeout, Snapshot snapshot)
-        {
-            DateTime reverifyCutOffTimeStamp = DateTime.UtcNow.AddSeconds(secondsTimeout);
-            int addedCount = 0;            
-            
-            foreach (PoolItem item in _unverifiedSortedLowPriorityTransactions.Reverse().Take(count).ToArray())
-            {
-                // Re-verify the top fee max low priority transactions that can be verified in a block
-                if (item.Transaction.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Transaction)))
-                {
-                    _unsortedTransactions.TryAdd(item.Transaction.Hash, item);
-                    _sortedLowPrioTransactions.Add(item);
-                    _unverifiedTransactions.TryRemove(item.Transaction.Hash, out _);
-                    _unverifiedSortedLowPriorityTransactions.Remove(item);
-                }
-                
                 if (DateTime.UtcNow > reverifyCutOffTimeStamp) break;
             }
 
@@ -342,9 +321,9 @@ namespace Neo.Ledger
                 // Always leave at least 1 tx for low priority tx
                 int verifyCount = _sortedHighPrioTransactions.Count > MaxHighPriorityTxsPerBlock || maxToVerify == 1
                     ? 1 : maxToVerify - 1; 
-                maxToVerify -= ReverifyHighPriorityTransactions(verifyCount, MaxSecondsToReverifyHighPrioTxPerIdle, 
-                    snapshot);
-                
+                maxToVerify -= ReverifyTransactions(_sortedHighPrioTransactions, _unverifiedSortedHighPriorityTransactions,
+                    verifyCount, MaxSecondsToReverifyHighPrioTxPerIdle, snapshot);
+
                 if (maxToVerify == 0) maxToVerify++;
             }
 
@@ -352,7 +331,8 @@ namespace Neo.Ledger
             {
                 int verifyCount = _sortedLowPrioTransactions.Count > Settings.Default.MaxFreeTransactionsPerBlock
                     ? 1 : maxToVerify;
-                ReverifyLowPriorityTransactions(verifyCount, MaxSecondsToReverifyLowPrioTxPerIdle, snapshot);
+                ReverifyTransactions(_sortedLowPrioTransactions, _unverifiedSortedLowPriorityTransactions,
+                    verifyCount, MaxSecondsToReverifyLowPrioTxPerIdle, snapshot);
             }
 
             return _unverifiedTransactions.Count > 0;
