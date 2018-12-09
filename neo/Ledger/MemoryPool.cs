@@ -73,9 +73,6 @@ namespace Neo.Ledger
         private readonly SortedSet<PoolItem> _unverifiedSortedHighPriorityTransactions = new SortedSet<PoolItem>();
         private readonly SortedSet<PoolItem> _unverifiedSortedLowPriorityTransactions = new SortedSet<PoolItem>();
         
-        private int MaxHighPriorityTxsPerBlock => Settings.Default.MaxTransactionsPerBlock 
-            - Settings.Default.MaxFreeTransactionsPerBlock;
-        
         /// <summary>
         /// Total maximum capacity of transactions the pool can hold
         /// </summary>
@@ -273,10 +270,8 @@ namespace Neo.Ledger
             if (block.Index < Blockchain.Singleton.HeaderHeight)
                 return;
 
-            int maxHighPrioTransactionsPerBlock = MaxHighPriorityTxsPerBlock;
-
             ReverifyTransactions(_sortedHighPrioTransactions, _unverifiedSortedHighPriorityTransactions,
-                maxHighPrioTransactionsPerBlock, MaxSecondsToReverifyHighPrioTx, snapshot);
+                Settings.Default.MaxTransactionsPerBlock, MaxSecondsToReverifyHighPrioTx, snapshot);
             ReverifyTransactions(_sortedLowPrioTransactions, _unverifiedSortedLowPriorityTransactions,
                 Settings.Default.MaxFreeTransactionsPerBlock, MaxSecondsToReverifyLowPrioTx, snapshot);
         }
@@ -319,7 +314,7 @@ namespace Neo.Ledger
             if (_unverifiedSortedHighPriorityTransactions.Count > 0)
             {
                 // Always leave at least 1 tx for low priority tx
-                int verifyCount = _sortedHighPrioTransactions.Count > MaxHighPriorityTxsPerBlock || maxToVerify == 1
+                int verifyCount = _sortedHighPrioTransactions.Count > Settings.Default.MaxTransactionsPerBlock || maxToVerify == 1
                     ? 1 : maxToVerify - 1; 
                 maxToVerify -= ReverifyTransactions(_sortedHighPrioTransactions, _unverifiedSortedHighPriorityTransactions,
                     verifyCount, MaxSecondsToReverifyHighPrioTxPerIdle, snapshot);
