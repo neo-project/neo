@@ -72,7 +72,7 @@ namespace Neo.UnitTests.Ledger
         public void EqualsAfterRemove()
         {
             EqualsAfterRemove(new List<string> {"a", "ab", "ba", "bb", "zba"}, 3);
-            
+
             EqualsAfterRemove(new List<string> {"a"});
             EqualsAfterRemove(new List<string> {"a", "ab"});
             EqualsAfterRemove(new List<string> {"a", "ab", "ba"});
@@ -80,7 +80,7 @@ namespace Neo.UnitTests.Ledger
             EqualsAfterRemove(new List<string> {"a", "ab", "ba", "bb", "zba"});
             EqualsAfterRemove(new List<string> {"a", "ab", "ba", "bb", "zba", "cba"});
             EqualsAfterRemove(new List<string> {"a", "b", "aaaa", "baaa", "aaab", "baab"});
-            
+
             EqualsAfterRemove(new List<string> {"a", "b", "aaaa", "baaa", "aaab", "baab"});
         }
 
@@ -88,15 +88,13 @@ namespace Neo.UnitTests.Ledger
         {
             var cloned = new MerklePatricia();
             using (var ms = new MemoryStream())
+            using (var bw = new BinaryWriter(ms))
             {
-                using (var bw = new BinaryWriter(ms))
+                mp.Serialize(bw);
+                using (var br = new BinaryReader(bw.BaseStream))
                 {
-                    mp.Serialize(bw);
-                    using (var br = new BinaryReader(bw.BaseStream))
-                    {
-                        br.BaseStream.Position = 0;
-                        cloned.Deserialize(br);
-                    }
+                    br.BaseStream.Position = 0;
+                    cloned.Deserialize(br);
                 }
             }
 
@@ -420,7 +418,7 @@ namespace Neo.UnitTests.Ledger
         public void EqualsThree()
         {
             Assert.AreNotEqual(null, new MerklePatricia());
-            Assert.AreNotEqual(new MerklePatricia(), new MerklePatricia{["oi"] = "oi"});
+            Assert.AreNotEqual(new MerklePatricia(), new MerklePatricia {["oi"] = "oi"});
 
             var mpA = new MerklePatricia
             {

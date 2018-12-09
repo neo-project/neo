@@ -1,3 +1,4 @@
+using Neo.IO;
 using Neo.Ledger;
 
 namespace Neo.Persistence
@@ -7,30 +8,28 @@ namespace Neo.Persistence
     /// </summary>
     public class MPT
     {
-        private static MPTKey GetMPTRootKey(Snapshot snapshot, UInt160 contract)
+        private static MPTKey GetMPTRootKey(Snapshot snapshot, UInt160 contract) => new MPTKey
         {
-            UInt256 rootHash = snapshot.Contracts[contract].MPTHashRoot;
-            return new MPTKey
-            {
-                ScriptHash = contract,
-                HashKey = rootHash
-            };
-        }
+            ScriptHash = contract,
+            HashKey = snapshot.Contracts[contract].MPTHashRoot
+        };
 
         public static void AddToStorage(Snapshot snapshot, UInt160 contract, StorageKey key, StorageItem item)
         {
-            MPTKey rootKey = GetMPTRootKey(snapshot, contract);
-            MPTItem rootItem = snapshot.MPTStorages[rootKey];
-
-            // TODO: include on MPT or update!
+            var rootItem = snapshot.MPTStorages[GetMPTRootKey(snapshot, contract)];
+            rootItem[key.ToArray()] = item.ToArray();
         }
 
         public static void DeleteFromStorage(Snapshot snapshot, UInt160 contract, StorageKey key)
         {
-            MPTKey rootKey = GetMPTRootKey(snapshot, contract);
-            MPTItem rootItem = snapshot.MPTStorages[rootKey];
+            var rootItem = snapshot.MPTStorages[GetMPTRootKey(snapshot, contract)];
+            rootItem.Remove(key.ToArray());
+        }
 
-            // TODO: include on MPT
+        public static StorageItem GetFromStorage(Snapshot snapshot, UInt160 contract, StorageKey key)
+        {
+            var rootItem = snapshot.MPTStorages[GetMPTRootKey(snapshot, contract)];
+            return rootItem[key.ToArray()].ToStorageItem();
         }
     }
 }

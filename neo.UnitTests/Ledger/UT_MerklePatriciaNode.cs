@@ -164,15 +164,13 @@ namespace Neo.UnitTests.Ledger
 
             var cloned = MerklePatriciaNode.BranchNode();
             using (var ms = new MemoryStream())
+            using (var bw = new BinaryWriter(ms))
             {
-                using (var bw = new BinaryWriter(ms))
+                mptItem.Serialize(bw);
+                using (var br = new BinaryReader(bw.BaseStream))
                 {
-                    mptItem.Serialize(bw);
-                    using (var br = new BinaryReader(bw.BaseStream))
-                    {
-                        br.BaseStream.Position = 0;
-                        cloned.Deserialize(br);
-                    }
+                    br.BaseStream.Position = 0;
+                    cloned.Deserialize(br);
                 }
             }
 
@@ -199,15 +197,13 @@ namespace Neo.UnitTests.Ledger
 
             var cloned = MerklePatriciaNode.BranchNode();
             using (var ms = new MemoryStream())
+            using (var bw = new BinaryWriter(ms))
             {
-                using (var bw = new BinaryWriter(ms))
+                mptItem.Serialize(bw);
+                using (var br = new BinaryReader(bw.BaseStream))
                 {
-                    mptItem.Serialize(bw);
-                    using (var br = new BinaryReader(bw.BaseStream))
-                    {
-                        br.BaseStream.Position = 0;
-                        cloned.Deserialize(br);
-                    }
+                    br.BaseStream.Position = 0;
+                    cloned.Deserialize(br);
                 }
             }
 
@@ -233,15 +229,13 @@ namespace Neo.UnitTests.Ledger
 
             var cloned = MerklePatriciaNode.BranchNode();
             using (var ms = new MemoryStream())
+            using (var bw = new BinaryWriter(ms))
             {
-                using (var bw = new BinaryWriter(ms))
+                mptItem.Serialize(bw);
+                using (var br = new BinaryReader(bw.BaseStream))
                 {
-                    mptItem.Serialize(bw);
-                    using (var br = new BinaryReader(bw.BaseStream))
-                    {
-                        br.BaseStream.Position = 0;
-                        cloned.Deserialize(br);
-                    }
+                    br.BaseStream.Position = 0;
+                    cloned.Deserialize(br);
                 }
             }
 
@@ -269,15 +263,13 @@ namespace Neo.UnitTests.Ledger
 
             var cloned = MerklePatriciaNode.LeafNode();
             using (var ms = new MemoryStream())
+            using (var bw = new BinaryWriter(ms))
             {
-                using (var bw = new BinaryWriter(ms))
+                mptItem.Serialize(bw);
+                using (var br = new BinaryReader(bw.BaseStream))
                 {
-                    mptItem.Serialize(bw);
-                    using (var br = new BinaryReader(bw.BaseStream))
-                    {
-                        br.BaseStream.Position = 0;
-                        cloned.Deserialize(br);
-                    }
+                    br.BaseStream.Position = 0;
+                    cloned.Deserialize(br);
                 }
             }
 
