@@ -4,13 +4,18 @@ using System.Collections.Generic;
 
 namespace Neo.SmartContract.Iterators
 {
-    internal class StorageIterator : IIterator
+    public class StorageIterator : IIterator
     {
         private readonly IEnumerator<KeyValuePair<StorageKey, StorageItem>> enumerator;
 
         public StorageIterator(IEnumerator<KeyValuePair<StorageKey, StorageItem>> enumerator)
         {
             this.enumerator = enumerator;
+        }
+
+        public IEnumerator<KeyValuePair<StorageKey, StorageItem>> GetEnumerator()
+        {
+            return enumerator;
         }
 
         public void Dispose()
