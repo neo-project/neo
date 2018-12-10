@@ -27,7 +27,7 @@ namespace Neo.Consensus
 
         Header PrevHeader { get; }
 
-        bool ContainsTransaction(UInt256 hash);
+        bool TransactionExists(UInt256 hash);
         bool VerifyTransaction(Transaction tx);
 
         void ChangeView(byte view_number);
