@@ -201,7 +201,7 @@ namespace Neo.Consensus
                 Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
                 return;
             }
-            if (message.TransactionHashes.Any(p => context.ContainsTransaction(p)))
+            if (message.TransactionHashes.Any(p => context.TransactionExists(p)))
             {
                 Log($"Invalid request: transaction already exists", LogLevel.Warning);
                 return;
