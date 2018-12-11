@@ -58,6 +58,12 @@ namespace Neo.Wallets.NEP6
             return key;
         }
 
+        public void RemoveKey()
+        {
+            if (key != null)
+                key = null;
+        }
+
         public JObject ToJson()
         {
             JObject account = new JObject();

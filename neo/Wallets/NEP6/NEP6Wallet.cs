@@ -337,6 +337,10 @@ namespace Neo.Wallets.NEP6
         internal void Lock()
         {
             password = null;
+            foreach (NEP6Account account in accounts.Values)
+            {
+                account.RemoveKey();
+            }
         }
 
         public static NEP6Wallet Migrate(WalletIndexer indexer, string path, string db3path, string password)
