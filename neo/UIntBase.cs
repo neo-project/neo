@@ -5,9 +5,9 @@ using System.Linq;
 
 namespace Neo
 {
-    
+
     /// <summary>
-    /// Base class for little-endian unsigned integers. Two classes inherit from this: UInt160 and UInt256.
+    /// Base class for little-endian unsigned integers. Two classes inherit from this: UInt160, UInt256 and UInt512.
     /// Only basic comparison/serialization are proposed for these classes. For arithmetic purposes, use BigInteger class.
     /// </summary>
     public abstract class UIntBase : IEquatable<UIntBase>, ISerializable
@@ -19,12 +19,12 @@ namespace Neo
 
         /// <summary>
         /// Number of bytes of the unsigned int.
-        /// Currently, inherited classes use 20-bytes (UInt160) or 32-bytes (UInt256)
+        /// Currently, inherited classes use 20-bytes (UInt160), 32-bytes (UInt256) or 64-bytes (UInt512)
         /// </summary>
         public int Size => data_bytes.Length;
 
         /// <summary>
-        /// Base constructor receives the intended number of bytes and a byte array. 
+        /// Base constructor receives the intended number of bytes and a byte array.
         /// If byte array is null, it's automatically initialized with given size.
         /// </summary>
         protected UIntBase(int bytes, byte[] value)
@@ -93,6 +93,8 @@ namespace Neo
                 return UInt160.Parse(s);
             else if (s.Length == 64 || s.Length == 66)
                 return UInt256.Parse(s);
+            else if (s.Length == 128 || s.Length == 130)
+                return UInt512.Parse(s);
             else
                 throw new FormatException();
         }
@@ -133,10 +135,14 @@ namespace Neo
                 size = 20;
             else if (typeof(T) == typeof(UInt256))
                 size = 32;
+            else if (typeof(T) == typeof(UInt512))
+                size = 64;
             else if (s.Length == 40 || s.Length == 42)
                 size = 20;
             else if (s.Length == 64 || s.Length == 66)
                 size = 32;
+            else if (s.Length == 128 || s.Length == 130)
+                size = 64;
             else
                 size = 0;
             if (size == 20)
@@ -150,6 +156,14 @@ namespace Neo
             else if (size == 32)
             {
                 if (UInt256.TryParse(s, out UInt256 r))
+                {
+                    result = (T)(UIntBase)r;
+                    return true;
+                }
+            }
+            else if (size == 64)
+            {
+                if (UInt512.TryParse(s, out UInt512 r))
                 {
                     result = (T)(UIntBase)r;
                     return true;
