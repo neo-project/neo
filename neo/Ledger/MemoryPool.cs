@@ -354,6 +354,9 @@ namespace Neo.Ledger
         /// <returns>true if more unsorted messages exist, otherwise false</returns>
         public bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, Snapshot snapshot)
         {
+            if (Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
+                return false;
+            
             if (_unverifiedSortedHighPriorityTransactions.Count > 0)
             {
                 // Always leave at least 1 tx for low priority tx
