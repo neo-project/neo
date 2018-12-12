@@ -159,7 +159,7 @@ namespace Neo.Ledger
             }
         }
 
-        // Note: This isn't used in Fill during consensus, fill uses GetVerifiedTransactions()
+        // Note: This isn't used in Fill during consensus, fill uses GetSortedVerifiedTransactions()
         public IEnumerator<Transaction> GetEnumerator()
         {
             _txRwLock.EnterReadLock();
@@ -167,6 +167,7 @@ namespace Neo.Ledger
             {
                 return _unsortedTransactions.Select(p => p.Value.Transaction)
                     .Concat(_unverifiedTransactions.Select(p => p.Value.Transaction))
+                    .ToList()
                     .GetEnumerator();
             }
             finally
