@@ -17,13 +17,11 @@ namespace Neo.Ledger
         {
             public readonly Transaction Transaction;
             public readonly DateTime Timestamp;
-            public readonly Fixed8 FeePerByte;
 
             public PoolItem(Transaction tx)
             {
                 Transaction = tx;
                 Timestamp = DateTime.UtcNow;
-                FeePerByte = Transaction.NetworkFee / Transaction.Size;
             }
 
             public int CompareTo(Transaction tx)
