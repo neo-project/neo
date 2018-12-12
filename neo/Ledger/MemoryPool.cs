@@ -398,7 +398,6 @@ namespace Neo.Ledger
                 if (DateTime.UtcNow > reverifyCutOffTimeStamp) break;
             }
 
-
             _txRwLock.EnterWriteLock();
             try
             {
