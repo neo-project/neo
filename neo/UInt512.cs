@@ -11,22 +11,15 @@ namespace Neo
     {
         public static readonly UInt512 Zero = new UInt512();
 
-
         /// <summary>
         /// The empty constructor stores a null byte array
         /// </summary>
-        public UInt512()
-            : this(null)
-        {
-        }
+        public UInt512() : this(null) { }
 
         /// <summary>
         /// The byte[] constructor invokes base class UIntBase constructor for 64 bytes
         /// </summary>
-        public UInt512(byte[] value)
-            : base(64, value)
-        {
-        }
+        public UInt512(byte[] value) : base(64, value) { }
 
         /// <summary>
         /// Method CompareTo returns 1 if this UInt512 is bigger than other UInt512; -1 if it's smaller; 0 if it's equals
