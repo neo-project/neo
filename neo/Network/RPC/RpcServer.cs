@@ -297,7 +297,7 @@ namespace Neo.Network.RPC
                         return json;
                     }
                 case "getrawmempool":
-                    return new JArray(Blockchain.Singleton.GetMemoryPool().Select(p => (JObject)p.Hash.ToString()));
+                    return new JArray(Blockchain.Singleton.GetMemoryPoolVerified().Select(p => (JObject)p.Hash.ToString()));
                 case "getrawtransaction":
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());

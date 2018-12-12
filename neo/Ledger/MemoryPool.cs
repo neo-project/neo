@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Akka.Util.Internal;
 using Neo.Persistence;
 
 namespace Neo.Ledger
@@ -50,19 +51,27 @@ namespace Neo.Ledger
         private static readonly double MaxSecondsToReverifyHighPrioTxPerIdle = (double) Blockchain.SecondsPerBlock / 15;
         private static readonly double MaxSecondsToReverifyLowPrioTxPerIdle = (double) Blockchain.SecondsPerBlock / 30;
 
-        private readonly ReaderWriterLockSlim _verifiedTxRwLock
+        //
+        /// <summary>
+        /// Guarantees consistency of the pool data structures.
+        ///
+        /// Note: The data structures are only modified from the `Blockchain` actor; so operations guaranteed to be
+        ///       performed by the blockchain actor do not need to acquire the read lock; they only need the write
+        ///       lock for write operations.
+        /// </summary>
+        private readonly ReaderWriterLockSlim _txRwLock
             = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
         /// <summary>
-        /// Store all verified unsorted transactions currently in the pool
+        /// Store all verified unsorted transactions currently in the pool.
         /// </summary>
-        private readonly ConcurrentDictionary<UInt256, PoolItem> _unsortedTransactions = new ConcurrentDictionary<UInt256, PoolItem>();
+        private readonly Dictionary<UInt256, PoolItem> _unsortedTransactions = new Dictionary<UInt256, PoolItem>();
         /// <summary>
-        ///  Stores the verified low priority sorted transactions currently in the pool
+        ///  Stores the verified low priority sorted transactions currently in the pool.
         /// </summary>
         private readonly SortedSet<PoolItem> _sortedLowPrioTransactions = new SortedSet<PoolItem>();
         /// <summary>
-        /// Stores the verified high priority sorted transactins currently in the pool
+        /// Stores the verified high priority sorted transactins currently in the pool.
         /// </summary>
         private readonly SortedSet<PoolItem> _sortedHighPrioTransactions = new SortedSet<PoolItem>();
 
@@ -73,24 +82,41 @@ namespace Neo.Ledger
         /// The top ones that could make it into the next block get verified and moved into the verified data structures
         /// (_unsortedTransactions, _sortedLowPrioTransactions, and _sortedHighPrioTransactions) after each block.
         /// </summary>
-        private readonly ConcurrentDictionary<UInt256, PoolItem> _unverifiedTransactions = new ConcurrentDictionary<UInt256, PoolItem>();
+        private readonly Dictionary<UInt256, PoolItem> _unverifiedTransactions = new Dictionary<UInt256, PoolItem>();
         private readonly SortedSet<PoolItem> _unverifiedSortedHighPriorityTransactions = new SortedSet<PoolItem>();
         private readonly SortedSet<PoolItem> _unverifiedSortedLowPriorityTransactions = new SortedSet<PoolItem>();
 
         /// <summary>
-        /// Total maximum capacity of transactions the pool can hold
+        /// Total maximum capacity of transactions the pool can hold.
         /// </summary>
         public int Capacity { get; }
 
         /// <summary>
-        /// Total count of transactions in the pool
+        /// Total count of transactions in the pool.
         /// </summary>
-        public int Count => _unsortedTransactions.Count + _unverifiedTransactions.Count;
+        public int Count
+        {
+            get
+            {
+                _txRwLock.EnterReadLock();
+                try
+                {
+                    return _unsortedTransactions.Count + _unverifiedTransactions.Count;
+                }
+                finally
+                {
+                    _txRwLock.ExitReadLock();
+                }
+
+            }
+        }
 
         /// <summary>
         /// Total count of verified transactions in the pool.
         /// </summary>
-        public int VerifiedCount => _unsortedTransactions.Count;
+        public int VerifiedCount => _unsortedTransactions.Count; // read of 32 bit type is atomic (no lock)
+
+        public int UnVerifiedCount => _unverifiedTransactions.Count;
 
         public MemoryPool(int capacity)
         {
@@ -104,36 +130,87 @@ namespace Neo.Ledger
         /// </summary>
         /// <param name="hash">the transaction hash</param>
         /// <returns>true if the MemoryPool contain the transaction</returns>
-        public bool ContainsKey(UInt256 hash) => _unsortedTransactions.ContainsKey(hash)
-             || _unverifiedTransactions.ContainsKey(hash);
+        public bool ContainsKey(UInt256 hash)
+        {
+            _txRwLock.EnterReadLock();
+            try
+            {
+                return _unsortedTransactions.ContainsKey(hash)
+                       || _unverifiedTransactions.ContainsKey(hash);
+            }
+            finally
+            {
+                _txRwLock.ExitReadLock();
+            }
+
+        }
 
         public bool TryGetValue(UInt256 hash, out Transaction tx)
         {
-            bool ret = _unsortedTransactions.TryGetValue(hash, out PoolItem item)
-                       || _unverifiedTransactions.TryGetValue(hash, out item);
-            tx = ret ? item.Transaction : null;
-            return ret;
+            _txRwLock.EnterReadLock();
+            try
+            {
+                bool ret = _unsortedTransactions.TryGetValue(hash, out PoolItem item)
+                           || _unverifiedTransactions.TryGetValue(hash, out item);
+                tx = ret ? item.Transaction : null;
+                return ret;
+            }
+            finally
+            {
+                _txRwLock.ExitReadLock();
+            }
         }
 
-        // Note: this isn't used in Fill during consensus, fill uses GetVerifiedTransactions()
+        // Note: This isn't used in Fill during consensus, fill uses GetVerifiedTransactions()
         public IEnumerator<Transaction> GetEnumerator()
         {
-            return _unsortedTransactions.Select(p => p.Value.Transaction)
-                .Concat(_unverifiedTransactions.Select(p => p.Value.Transaction))
-                .GetEnumerator();
+            _txRwLock.EnterReadLock();
+            try
+            {
+                return _unsortedTransactions.Select(p => p.Value.Transaction)
+                    .Concat(_unverifiedTransactions.Select(p => p.Value.Transaction))
+                    .GetEnumerator();
+            }
+            finally
+            {
+                _txRwLock.ExitReadLock();
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         public IEnumerable<Transaction> GetVerifiedTransactions()
         {
-            return _unsortedTransactions.Select(p => p.Value.Transaction);
+            _txRwLock.EnterReadLock();
+            try
+            {
+                return _unsortedTransactions.Select(p => p.Value.Transaction).ToArray();
+            }
+            finally
+            {
+                _txRwLock.ExitReadLock();
+            }
+        }
+
+        public void GetVerifiedAndUnverifiedTransactions(out IEnumerable<Transaction> verifiedTransactions,
+            out IEnumerable<Transaction> unverifiedTransactions)
+        {
+            _txRwLock.EnterReadLock();
+            try
+            {
+                verifiedTransactions = _sortedHighPrioTransactions.Select(p => p.Transaction)
+                    .Concat(_sortedLowPrioTransactions.Select(p => p.Transaction)).ToArray();
+                unverifiedTransactions = _unverifiedTransactions.Select(p => p.Value.Transaction).ToArray();
+            }
+            finally
+            {
+                _txRwLock.ExitReadLock();
+            }
         }
 
         public IEnumerable<Transaction> GetSortedVerifiedTransactions()
         {
-            _verifiedTxRwLock.EnterReadLock();
-
+            _txRwLock.EnterReadLock();
             try
             {
                return _sortedHighPrioTransactions.Select(p => p.Transaction)
@@ -142,7 +219,7 @@ namespace Neo.Ledger
             }
             finally
             {
-                _verifiedTxRwLock.ExitReadLock();
+                _txRwLock.ExitReadLock();
             }
         }
 
@@ -150,22 +227,12 @@ namespace Neo.Ledger
         private PoolItem GetLowestFeeTransaction(SortedSet<PoolItem> verifiedTxSorted,
             SortedSet<PoolItem> unverifiedTxSorted, out SortedSet<PoolItem> sortedPool)
         {
-            PoolItem minItem;
-            if (unverifiedTxSorted.Count > 0)
-            {
-                sortedPool = unverifiedTxSorted;
-                minItem = unverifiedTxSorted.Min;
-            }
-            else
-            {
-                sortedPool = null;
-                minItem = null;
-            }
-
-            if (_sortedLowPrioTransactions.Count == 0)
-                return minItem;
+            PoolItem minItem = unverifiedTxSorted.Min;
+            sortedPool = minItem != null ? unverifiedTxSorted : null;
 
             PoolItem verifiedMin = verifiedTxSorted.Min;
+            if (verifiedMin == null) return minItem;
+
             if (minItem != null && verifiedMin.CompareTo(minItem) >= 0)
                 return minItem;
 
@@ -187,29 +254,39 @@ namespace Neo.Ledger
         }
 
         // Note: this must only be called from a single thread (the Blockchain actor)
-        public bool CanTransactionFitInPool(Transaction tx)
+        internal bool CanTransactionFitInPool(Transaction tx)
         {
             if (Count < Capacity) return true;
 
             return GetLowestFeeTransaction(out _).CompareTo(tx, tx.NetworkFee / tx.Size) <= 0;
         }
 
-        // Note: this must only be called from a single thread (the Blockchain actor)
-        public bool TryAdd(UInt256 hash, Transaction tx)
+        /// <summary>
+        ///
+        /// Note: This must only be called from a single thread (the Blockchain actor) to add a transaction to the pool
+        ///       one should tell the Blockchain actor about the transaction.
+        /// </summary>
+        /// <param name="hash"></param>
+        /// <param name="tx"></param>
+        /// <returns></returns>
+        internal bool TryAdd(UInt256 hash, Transaction tx)
         {
             var poolItem = new PoolItem(tx);
-            if (!_unsortedTransactions.TryAdd(hash, poolItem)) return false;
 
-            SortedSet<PoolItem> pool = tx.IsLowPriority ? _sortedLowPrioTransactions : _sortedHighPrioTransactions;
-            _verifiedTxRwLock.EnterWriteLock();
+            if (_unsortedTransactions.ContainsKey(hash)) return false;
+
+            _txRwLock.EnterWriteLock();
             try
             {
+                _unsortedTransactions.Add(hash, poolItem);
+
+                SortedSet<PoolItem> pool = tx.IsLowPriority ? _sortedLowPrioTransactions : _sortedHighPrioTransactions;
                 pool.Add(poolItem);
                 RemoveOverCapacity();
             }
             finally
             {
-                _verifiedTxRwLock.ExitWriteLock();
+                _txRwLock.ExitWriteLock();
             }
 
             return _unsortedTransactions.ContainsKey(hash);
@@ -221,52 +298,55 @@ namespace Neo.Ledger
             {
                 PoolItem minItem = GetLowestFeeTransaction(out var sortedPool);
 
-                _unsortedTransactions.TryRemove(minItem.Transaction.Hash, out _);
+                _unsortedTransactions.Remove(minItem.Transaction.Hash);
                 sortedPool.Remove(minItem);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool TryRemoveInternal(UInt256 hash, out Transaction tx)
+        private bool TryRemoveVerified(UInt256 hash, out PoolItem item)
         {
-            if (_unsortedTransactions.TryRemove(hash, out PoolItem item))
-            {
-                SortedSet<PoolItem> pool = item.Transaction.IsLowPriority
-                    ? _sortedLowPrioTransactions : _sortedHighPrioTransactions;
-                pool.Remove(item);
-                tx = item.Transaction;
-                return true;
-            }
+            if (!_unsortedTransactions.TryGetValue(hash, out item))
+                return false;
 
-            tx = null;
-            return false;
+            _unsortedTransactions.Remove(hash);
+            SortedSet<PoolItem> pool = item.Transaction.IsLowPriority
+                ? _sortedLowPrioTransactions : _sortedHighPrioTransactions;
+            pool.Remove(item);
+            return true;
         }
 
-        public void UpdatePoolForBlockPersisted(Block block, Snapshot snapshot)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryRemoveUnVerified(UInt256 hash, out PoolItem item)
         {
-            _verifiedTxRwLock.EnterWriteLock();
+            if (!_unverifiedTransactions.TryGetValue(hash, out item))
+                return false;
+
+            _unsortedTransactions.Remove(hash);
+            SortedSet<PoolItem> pool = item.Transaction.IsLowPriority
+                ? _unverifiedSortedLowPriorityTransactions : _unverifiedSortedHighPriorityTransactions;
+            pool.Remove(item);
+            return true;
+        }
+
+        // Note: this must only be called from a single thread (the Blockchain actor)
+        internal void UpdatePoolForBlockPersisted(Block block, Snapshot snapshot)
+        {
+            _txRwLock.EnterWriteLock();
             try
             {
                 // First remove the transactions verified in the block.
                 foreach (Transaction tx in block.Transactions)
                 {
-                    if (!TryRemoveInternal(tx.Hash, out _))
-                    {
-                        if (_unverifiedTransactions.TryRemove(tx.Hash, out PoolItem item))
-                        {
-                            SortedSet<PoolItem> pool = tx.IsLowPriority
-                                ? _unverifiedSortedLowPriorityTransactions
-                                : _unverifiedSortedHighPriorityTransactions;
-                            pool.Remove(item);
-                        }
-                    }
+                    if (TryRemoveVerified(tx.Hash, out _)) continue;
+                    TryRemoveUnVerified(tx.Hash, out _);
                 }
 
                 // Add all the previously verified transactions back to the unverified transactions
                 foreach (PoolItem item in _sortedHighPrioTransactions)
                 {
-                    _unverifiedTransactions.TryAdd(item.Transaction.Hash, item);
-                    _unverifiedSortedHighPriorityTransactions.Add(item);
+                    if (_unverifiedTransactions.TryAdd(item.Transaction.Hash, item))
+                        _unverifiedSortedHighPriorityTransactions.Add(item);
                 }
 
                 // NOTE: This really shouldn't be necessary any more and can actually be counter-productive, since
@@ -278,29 +358,29 @@ namespace Neo.Ledger
                     // Expire old free transactions
                     if (item.Transaction.IsLowPriority && item.Timestamp < lowPriorityCutOffTime) continue;
 
-                    _unverifiedTransactions.TryAdd(item.Transaction.Hash, item);
-                    _unverifiedSortedLowPriorityTransactions.Add(item);
+                    if (_unverifiedTransactions.TryAdd(item.Transaction.Hash, item))
+                        _unverifiedSortedLowPriorityTransactions.Add(item);
                 }
 
                 // Clear the verified transactions now, since they all must be reverified.
                 _unsortedTransactions.Clear();
                 _sortedHighPrioTransactions.Clear();
                 _sortedLowPrioTransactions.Clear();
-
-                // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
-                // until we get caught up.
-                if (block.Index < Blockchain.Singleton.HeaderHeight)
-                    return;
-
-                ReverifyTransactions(_sortedHighPrioTransactions, _unverifiedSortedHighPriorityTransactions,
-                    Settings.Default.MaxTransactionsPerBlock, MaxSecondsToReverifyHighPrioTx, snapshot);
-                ReverifyTransactions(_sortedLowPrioTransactions, _unverifiedSortedLowPriorityTransactions,
-                    Settings.Default.MaxFreeTransactionsPerBlock, MaxSecondsToReverifyLowPrioTx, snapshot);
             }
             finally
             {
-                _verifiedTxRwLock.ExitWriteLock();
+                _txRwLock.ExitWriteLock();
             }
+
+            // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
+            // until we get caught up.
+            if (block.Index < Blockchain.Singleton.HeaderHeight)
+                return;
+
+            ReverifyTransactions(_sortedHighPrioTransactions, _unverifiedSortedHighPriorityTransactions,
+                Settings.Default.MaxTransactionsPerBlock, MaxSecondsToReverifyHighPrioTx, snapshot);
+            ReverifyTransactions(_sortedLowPrioTransactions, _unverifiedSortedLowPriorityTransactions,
+                Settings.Default.MaxFreeTransactionsPerBlock, MaxSecondsToReverifyLowPrioTx, snapshot);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -319,25 +399,20 @@ namespace Neo.Ledger
             }
 
 
-            _verifiedTxRwLock.EnterWriteLock();
+            _txRwLock.EnterWriteLock();
             try
             {
                 foreach (PoolItem item in reverifiedItems)
                 {
-                    verifiedSortedTxPool.Add(item);
+                    if (_unsortedTransactions.TryAdd(item.Transaction.Hash, item))
+                        verifiedSortedTxPool.Add(item);
+                    _unverifiedTransactions.Remove(item.Transaction.Hash);
+                    unverifiedSortedTxPool.Remove(item);
                 }
             }
             finally
             {
-                _verifiedTxRwLock.ExitWriteLock();
-            }
-
-            foreach (PoolItem item in reverifiedItems)
-            {
-                _unsortedTransactions.TryAdd(item.Transaction.Hash, item);
-
-                _unverifiedTransactions.TryRemove(item.Transaction.Hash, out _);
-                unverifiedSortedTxPool.Remove(item);
+                _txRwLock.ExitWriteLock();
             }
 
             return reverifiedItems.Count;
@@ -346,12 +421,14 @@ namespace Neo.Ledger
         /// <summary>
         /// Reverify up to a given maximum count of transactions. Verifies less at a time once the max that can be
         /// persisted per block has been reached.
+        ///
+        /// Note: this must only be called from a single thread (the Blockchain actor)
         /// </summary>
         /// <param name="maxToVerify">Max transactions to reverify, the value passed should be >=2. If 1 is passed it
         ///                           will still potentially use 2.</param>
         /// <param name="snapshot">The snapshot to use for verifying.</param>
         /// <returns>true if more unsorted messages exist, otherwise false</returns>
-        public bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, Snapshot snapshot)
+        internal bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, Snapshot snapshot)
         {
             if (Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
                 return false;

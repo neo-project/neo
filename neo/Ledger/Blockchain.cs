@@ -215,14 +215,19 @@ namespace Neo.Ledger
             return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
         }
 
-        public IEnumerable<Transaction> GetMemoryPool()
-        {
-            return mem_pool;
-        }
-
         public IEnumerable<Transaction> GetMemoryPoolVerified()
         {
             return mem_pool.GetVerifiedTransactions();
+        }
+
+        public IEnumerable<Transaction> GetMemoryPoolVerifiedAndSorted()
+        {
+            return mem_pool.GetSortedVerifiedTransactions();
+        }
+
+        public IEnumerable<Transaction> GetMemoryPoolVerifiedAndUnverified()
+        {
+            return mem_pool;
         }
 
         public Transaction GetMemoryPoolTransaction(UInt256 hash)
@@ -230,11 +235,6 @@ namespace Neo.Ledger
             return mem_pool.TryGetValue(hash, out Transaction transaction) ? transaction : null;
         }
 
-        public IEnumerable<Transaction> GetMemoryPoolVerifiedAndSorted()
-        {
-            return mem_pool.GetSortedVerifiedTransactions();
-        }
-        
         public Snapshot GetSnapshot()
         {
             return Store.GetSnapshot();
@@ -270,7 +270,7 @@ namespace Neo.Ledger
 
             blocks.AddLast(block);
         }
-        
+
         private RelayResultReason OnNewBlock(Block block)
         {
             if (block.Index <= Height)
