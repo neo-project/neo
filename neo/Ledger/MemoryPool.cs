@@ -22,7 +22,7 @@ namespace Neo.Ledger
             {
                 Transaction = tx;
                 Timestamp = DateTime.UtcNow;
-                FeePerByte = Transaction.FeePerByte;
+                FeePerByte = Transaction.NetworkFee / Transaction.Size;
             }
 
             public int CompareTo(Transaction tx, Fixed8 feePerByte)
