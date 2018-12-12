@@ -131,7 +131,7 @@ namespace Neo.Ledger
                 tx = item.Transaction;
                 return true;
             }
-            else if (_mem_pool_free.TryRemove(hash, out item))
+            else if (_mem_pool_fee.TryRemove(hash, out item))
             {
                 tx = item.Transaction;
                 return true;
