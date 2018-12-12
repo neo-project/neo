@@ -93,6 +93,18 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
+        private Fixed8 _feePerByte = -Fixed8.Satoshi;
+
+        public Fixed8 FeePerByte
+        {
+            get
+            {
+                if(_feePerByte == -Fixed8.Satoshi)
+                    _feePerByte = NetworkFee / Size;
+                return _feePerByte;
+            }
+        }
+
         public virtual int Size => sizeof(TransactionType) + sizeof(byte) + Attributes.GetVarSize() + Inputs.GetVarSize() + Outputs.GetVarSize() + Witnesses.GetVarSize();
 
         public virtual Fixed8 SystemFee => Settings.Default.SystemFee.TryGetValue(Type, out Fixed8 fee) ? fee : Fixed8.Zero;
