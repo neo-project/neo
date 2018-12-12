@@ -16,17 +16,19 @@ namespace Neo.Ledger
         {
             public readonly Transaction Transaction;
             public readonly DateTime Timestamp;
+            public readonly Fixed8 FeePerByte;
 
             public PoolItem(Transaction tx)
             {
                 Transaction = tx;
                 Timestamp = DateTime.UtcNow;
+                FeePerByte = Transaction.FeePerByte;
             }
 
-            public int CompareTo(Transaction tx)
+            public int CompareTo(Transaction tx, Fixed8 feePerByte)
             {
                 if (tx == null) return 1;
-                int ret = Transaction.FeePerByte.CompareTo(tx.FeePerByte);
+                int ret = FeePerByte.CompareTo(feePerByte);
                 if (ret != 0) return ret;
                 ret = Transaction.NetworkFee.CompareTo(tx.NetworkFee);
                 if (ret != 0) return ret;
@@ -37,7 +39,7 @@ namespace Neo.Ledger
             public int CompareTo(PoolItem otherItem)
             {
                 if (otherItem == null) return 1;
-                return CompareTo(otherItem.Transaction);
+                return CompareTo(otherItem.Transaction, otherItem.FeePerByte);
             }
         }
 
@@ -48,7 +50,7 @@ namespace Neo.Ledger
         private static readonly double MaxSecondsToReverifyHighPrioTxPerIdle = (double) Blockchain.SecondsPerBlock / 15;
         private static readonly double MaxSecondsToReverifyLowPrioTxPerIdle = (double) Blockchain.SecondsPerBlock / 30;
 
-        private readonly ReaderWriterLockSlim verifiedTxRwLock
+        private readonly ReaderWriterLockSlim _verifiedTxRwLock
             = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
         /// <summary>
@@ -130,7 +132,7 @@ namespace Neo.Ledger
 
         public IEnumerable<Transaction> GetSortedVerifiedTransactions()
         {
-            verifiedTxRwLock.EnterReadLock();
+            _verifiedTxRwLock.EnterReadLock();
 
             try
             {
@@ -140,7 +142,7 @@ namespace Neo.Ledger
             }
             finally
             {
-                verifiedTxRwLock.ExitReadLock();
+                _verifiedTxRwLock.ExitReadLock();
             }
         }
 
@@ -199,7 +201,7 @@ namespace Neo.Ledger
             if (!_unsortedTransactions.TryAdd(hash, poolItem)) return false;
 
             SortedSet<PoolItem> pool = tx.IsLowPriority ? _sortedLowPrioTransactions : _sortedHighPrioTransactions;
-            verifiedTxRwLock.EnterWriteLock();
+            _verifiedTxRwLock.EnterWriteLock();
             try
             {
                 pool.Add(poolItem);
@@ -207,7 +209,7 @@ namespace Neo.Ledger
             }
             finally
             {
-                verifiedTxRwLock.ExitWriteLock();
+                _verifiedTxRwLock.ExitWriteLock();
             }
 
             return _unsortedTransactions.ContainsKey(hash);
@@ -242,7 +244,7 @@ namespace Neo.Ledger
 
         public void UpdatePoolForBlockPersisted(Block block, Snapshot snapshot)
         {
-            verifiedTxRwLock.EnterWriteLock();
+            _verifiedTxRwLock.EnterWriteLock();
             try
             {
                 // First remove the transactions verified in the block.
@@ -297,7 +299,7 @@ namespace Neo.Ledger
             }
             finally
             {
-                verifiedTxRwLock.ExitWriteLock();
+                _verifiedTxRwLock.ExitWriteLock();
             }
         }
 
@@ -317,7 +319,7 @@ namespace Neo.Ledger
             }
 
 
-            verifiedTxRwLock.EnterWriteLock();
+            _verifiedTxRwLock.EnterWriteLock();
             try
             {
                 foreach (PoolItem item in reverifiedItems)
@@ -327,9 +329,8 @@ namespace Neo.Ledger
             }
             finally
             {
-                verifiedTxRwLock.ExitWriteLock();
+                _verifiedTxRwLock.ExitWriteLock();
             }
-
 
             foreach (PoolItem item in reverifiedItems)
             {

@@ -97,7 +97,7 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual Fixed8 SystemFee => Settings.Default.SystemFee.TryGetValue(Type, out Fixed8 fee) ? fee : Fixed8.Zero;
 
-        public readonly Fixed8 FeePerByte => NetworkFee / Size;
+        public Fixed8 FeePerByte => NetworkFee / Size;
 
         protected Transaction(TransactionType type)
         {
