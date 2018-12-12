@@ -230,6 +230,12 @@ namespace Neo.Ledger
             return mem_pool;
         }
 
+        public void GetMemoryPoolSeparateVerfiedAndUnverified(out IEnumerable<Transaction> verifiedTransactions,
+            out IEnumerable<Transaction> unverifiedTransactions)
+        {
+            mem_pool.GetVerifiedAndUnverifiedTransactions(out verifiedTransactions, out unverifiedTransactions);
+        }
+
         public Transaction GetMemoryPoolTransaction(UInt256 hash)
         {
             return mem_pool.TryGetValue(hash, out Transaction transaction) ? transaction : null;
