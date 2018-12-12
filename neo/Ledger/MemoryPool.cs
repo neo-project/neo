@@ -26,10 +26,10 @@ namespace Neo.Ledger
                 FeePerByte = Transaction.NetworkFee / Transaction.Size;
             }
 
-            public int CompareTo(Transaction tx, Fixed8 feePerByte)
+            public int CompareTo(Transaction tx)
             {
                 if (tx == null) return 1;
-                int ret = FeePerByte.CompareTo(feePerByte);
+                int ret = Transaction.FeePerByte.CompareTo(tx.FeePerByte);
                 if (ret != 0) return ret;
                 ret = Transaction.NetworkFee.CompareTo(tx.NetworkFee);
                 if (ret != 0) return ret;
@@ -40,7 +40,7 @@ namespace Neo.Ledger
             public int CompareTo(PoolItem otherItem)
             {
                 if (otherItem == null) return 1;
-                return CompareTo(otherItem.Transaction, otherItem.FeePerByte);
+                return CompareTo(otherItem.Transaction);
             }
         }
 
@@ -258,7 +258,7 @@ namespace Neo.Ledger
         {
             if (Count < Capacity) return true;
 
-            return GetLowestFeeTransaction(out _).CompareTo(tx, tx.NetworkFee / tx.Size) <= 0;
+            return GetLowestFeeTransaction(out _).CompareTo(tx) <= 0;
         }
 
         /// <summary>
