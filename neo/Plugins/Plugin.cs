@@ -3,6 +3,7 @@ using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace Neo.Plugins
@@ -35,6 +36,7 @@ namespace Neo.Plugins
                 };
                 configWatcher.Changed += ConfigWatcher_Changed;
                 configWatcher.Created += ConfigWatcher_Changed;
+                AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
             }
         }
 
@@ -95,7 +97,10 @@ namespace Neo.Plugins
                     {
                         constructor?.Invoke(null);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Failed to initialize plugin: " + ex); 
+                    }
                 }
             }
         }
@@ -119,6 +124,27 @@ namespace Neo.Plugins
                 if (plugin.OnMessage(message))
                     return true;
             return false;
+        }
+
+        private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            if (args.Name.Contains(".resources"))
+                return null;
+
+            Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name);
+            if (assembly != null)
+                return assembly;
+
+            string filename = args.Name.Split(',')[0] + ".dll";
+
+            try
+            {
+                return Assembly.LoadFrom(filename);
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
         }
     }
 }
