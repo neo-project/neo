@@ -303,10 +303,10 @@ namespace Neo.Network.RPC
                             return new JArray(Blockchain.Singleton.GetMemoryPoolVerified().Select(p => (JObject)p.Hash.ToString()));
 
                         JObject json = new JObject();
+                        json["height"] = Blockchain.Singleton.Height;
                         Blockchain.Singleton.GetMemoryPoolSeparateVerfiedAndUnverified(
                             out IEnumerable<Transaction> verifiedTransactions,
                             out IEnumerable<Transaction> unverifiedTransactions);
-                        json["height"] = Blockchain.Singleton.Height;
                         json["verified"] = new JArray(verifiedTransactions.Select(p => (JObject) p.Hash.ToString()));
                         json["unverified"] = new JArray(unverifiedTransactions.Select(p => (JObject) p.Hash.ToString()));
                         return json;
