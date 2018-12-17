@@ -99,7 +99,7 @@ namespace Neo.Plugins
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Failed to initialize plugin: " + ex); 
+                        Plugin.Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin: {ex.Message}");
                     }
                 }
             }
@@ -143,6 +143,7 @@ namespace Neo.Plugins
             }
             catch (Exception ex)
             {
+                Plugin.Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin dependency: {ex.Message}");
                 return null;
             }
         }
