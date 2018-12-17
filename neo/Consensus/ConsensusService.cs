@@ -230,6 +230,12 @@ namespace Neo.Consensus
                 Log($"Invalid request: transaction already exists", LogLevel.Warning);
                 return;
             }
+            if (!CheckPrimaryPayloadSignature(payload))
+            {
+                Log($"Invalid primary signature partial signature for this PrepareRequest payload!", LogLevel.Warning);
+                return;
+            }
+
             context.State |= ConsensusState.RequestReceived;
             context.Timestamp = payload.Timestamp;
             context.Nonce = message.Nonce;
@@ -239,20 +245,6 @@ namespace Neo.Consensus
             context.PreparePayload = payload;
             context.SignedPayloads[payload.ValidatorIndex] = message.PrepReqSignature;
             context.FinalSignatures[payload.ValidatorIndex] = message.FinalSignature;
-
-            if (!CheckPrimaryPayloadSignature(payload))
-            {
-                context.SignedPayloads[payload.ValidatorIndex] = null;
-                return;
-            }
-
-            for (int i = 0; i < context.SignedPayloads.Length; i++)
-                if (context.SignedPayloads[i] != null && i != payload.ValidatorIndex)
-                    if (!Crypto.Default.VerifySignature(context.PreparePayload.GetHashData(), context.SignedPayloads[i], context.Validators[i].EncodePoint(false)))
-                    {
-                        Log($"{nameof(OnPrepareRequestReceived)}:Index {i} payload:{payload.ValidatorIndex} length:{context.SignedPayloads.Length} is being set to null");
-                        context.SignedPayloads[i] = null;
-                    }
 
             Dictionary<UInt256, Transaction> mempool = Blockchain.Singleton.GetMemoryPool().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
@@ -329,7 +321,6 @@ namespace Neo.Consensus
             {
                 Log($"{nameof(OnPrepareRequestReceived)}: indirectly from index={payload.ValidatorIndex}, try to speed up p2p route.");
                 if (message.PreparePayload.ValidatorIndex != context.PrimaryIndex) return;
-                if (!CheckPrimaryPayloadSignature(message.PreparePayload)) return;
                 OnConsensusPayload(message.PreparePayload);
             }
 
