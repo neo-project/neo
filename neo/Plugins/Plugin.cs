@@ -135,7 +135,8 @@ namespace Neo.Plugins
             if (assembly != null)
                 return assembly;
 
-            string filename = args.Name.Split(',')[0] + ".dll";
+            AssemblyName an = new AssemblyName(args.Name);
+            string filename = an.Name + ".dll";
 
             try
             {
