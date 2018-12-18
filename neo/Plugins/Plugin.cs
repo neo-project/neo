@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 
 namespace Neo.Plugins
 {
@@ -17,6 +18,8 @@ namespace Neo.Plugins
 
         private static readonly string pluginsPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
         private static readonly FileSystemWatcher configWatcher;
+
+        private static int suspend = 0;
 
         protected static NeoSystem System { get; private set; }
         public virtual string Name => GetType().Name;
@@ -113,12 +116,26 @@ namespace Neo.Plugins
 
         protected virtual bool OnMessage(object message) => false;
 
+        protected static bool ResumeNodeStartup()
+        {
+            if (Interlocked.Decrement(ref suspend) != 0)
+                return false;
+            System.ResumeNodeStartup();
+            return true;
+        }
+
         public static bool SendMessage(object message)
         {
             foreach (Plugin plugin in Plugins)
                 if (plugin.OnMessage(message))
                     return true;
             return false;
+        }
+
+        protected static void SuspendNodeStartup()
+        {
+            Interlocked.Increment(ref suspend);
+            System.SuspendNodeStartup();
         }
     }
 }
