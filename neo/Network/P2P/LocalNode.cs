@@ -91,7 +91,7 @@ namespace Neo.Network.P2P
             if (seedsToTake > 0)
             {
                 Random rand = new Random();
-                foreach (string hostAndPort in Settings.Default.SeedList.OrderBy(p => rand.Next()))
+                foreach (string hostAndPort in ProtocolSettings.Default.SeedList.OrderBy(p => rand.Next()))
                 {
                     if (seedsToTake == 0) break;
                     string[] p = hostAndPort.Split(':');
