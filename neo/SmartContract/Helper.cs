@@ -4,7 +4,6 @@ using Neo.Persistence;
 using Neo.VM;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Text;
 
 namespace Neo.SmartContract
@@ -77,11 +76,7 @@ namespace Neo.SmartContract
 
         public static uint ToInteropMethodHash(this string method)
         {
-            if (MethodHashes.TryGetValue(method, out uint hash))
-                return hash;
-            hash = BitConverter.ToUInt32(Encoding.ASCII.GetBytes(method).Sha256(), 0);
-            MethodHashes[method] = hash;
-            return hash;
+            return MethodHashes.GetOrAdd(method, p => BitConverter.ToUInt32(Encoding.ASCII.GetBytes(p).Sha256(), 0));
         }
 
         public static UInt160 ToScriptHash(this byte[] script)
