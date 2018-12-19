@@ -3,6 +3,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 
@@ -10,7 +11,8 @@ namespace Neo.SmartContract
 {
     public static class Helper
     {
-        private static readonly Dictionary<string, uint> method_hashes = new Dictionary<string, uint>();
+        private static readonly ConcurrentDictionary<string, uint> MethodHashes
+            = new ConcurrentDictionary<string, uint>();
 
         public static bool IsMultiSigContract(this byte[] script)
         {
@@ -75,10 +77,10 @@ namespace Neo.SmartContract
 
         public static uint ToInteropMethodHash(this string method)
         {
-            if (method_hashes.TryGetValue(method, out uint hash))
+            if (MethodHashes.TryGetValue(method, out uint hash))
                 return hash;
             hash = BitConverter.ToUInt32(Encoding.ASCII.GetBytes(method).Sha256(), 0);
-            method_hashes[method] = hash;
+            MethodHashes[method] = hash;
             return hash;
         }
 
