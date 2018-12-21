@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,7 +19,7 @@ namespace Neo.Ledger
             Dictionary<byte[], MerklePatriciaNode>(new ByteArrayComparer());
 
         /// <summary>
-        /// Get and set the key and valeu pairs of the tree.
+        /// Get and set the key and value pairs of the tree.
         /// </summary>
         /// <param name="key">The string key that indicates the reference.</param>
         public string this[string key]
@@ -51,7 +51,7 @@ namespace Neo.Ledger
         }
 
         /// <summary>
-        /// Get and set the key and valeu pairs of the tree.
+        /// Get and set the key and value pairs of the tree.
         /// </summary>
         /// <param name="key">The key that indicates the reference.</param>
         public byte[] this[byte[] key]
