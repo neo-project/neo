@@ -238,10 +238,10 @@ namespace Neo.Ledger
                         }
                         else
                         {
-                            var postion = oldExtension.Path[0];
+                            var position = oldExtension.Path[0];
                             oldExtension.Path = oldExtension.Path.Skip(1).ToArray();
-                            branchNode[postion] = oldExtension.Hash();
-                            _db[branchNode[postion]] = oldExtension;
+                            branchNode[position] = oldExtension.Hash();
+                            _db[branchNode[position]] = oldExtension;
                         }
 
                         node.Next = SetBranch(branchNode, new byte[0], key, value);
