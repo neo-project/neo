@@ -321,7 +321,7 @@ namespace Neo.Ledger
             if (!_unverifiedTransactions.TryGetValue(hash, out item))
                 return false;
 
-            _unsortedTransactions.Remove(hash);
+            _unverifiedTransactions.Remove(hash);
             SortedSet<PoolItem> pool = item.Transaction.IsLowPriority
                 ? _unverifiedSortedLowPriorityTransactions : _unverifiedSortedHighPriorityTransactions;
             pool.Remove(item);
