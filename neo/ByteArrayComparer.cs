@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Neo.Cryptography;
 
 namespace Neo
 {
+    /// <inheritdoc />
     /// <summary>
     /// Byte array comparer, usefull to have a byte array on a set or as key of a dictionary.
     /// </summary>
@@ -25,10 +27,10 @@ namespace Neo
         {
             if (key == null)
             {
-                throw new ArgumentNullException("key");
+                throw new ArgumentNullException(nameof(key));
             }
 
-            return key.Sum(b => b);
+            return (int) key.Murmur32(0);
         }
     }
 }
