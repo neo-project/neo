@@ -389,11 +389,15 @@ namespace Neo.Ledger
             DateTime reverifyCutOffTimeStamp = DateTime.UtcNow.AddSeconds(secondsTimeout);
 
             List<PoolItem> reverifiedItems = new List<PoolItem>(count);
-            foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count).ToArray())
+            List<PoolItem> invalidItems = new List<PoolItem>();
+            foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
             {
                 // Re-verify the top fee max high priority transactions that can be verified in a block
                 if (item.Transaction.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Transaction)))
                     reverifiedItems.Add(item);
+                else // Transaction no longer valid -- will be removed from unverifiedTxPool.
+                    invalidItems.Add(item);
+
                 if (DateTime.UtcNow > reverifyCutOffTimeStamp) break;
             }
 
@@ -404,6 +408,12 @@ namespace Neo.Ledger
                 {
                     if (_unsortedTransactions.TryAdd(item.Transaction.Hash, item))
                         verifiedSortedTxPool.Add(item);
+                    _unverifiedTransactions.Remove(item.Transaction.Hash);
+                    unverifiedSortedTxPool.Remove(item);
+                }
+
+                foreach (PoolItem item in invalidItems)
+                {
                     _unverifiedTransactions.Remove(item.Transaction.Hash);
                     unverifiedSortedTxPool.Remove(item);
                 }
