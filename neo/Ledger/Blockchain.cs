@@ -612,7 +612,7 @@ namespace Neo.Ledger
                             Transaction = tx,
                             ExecutionResults = execution_results.ToArray()
                         });
-                        all_execution_results.AddRange(execution_results.ToArray());
+                        all_execution_results.AddRange(execution_results);
                     }
                 }
                 snapshot.BlockHashIndex.GetAndChange().Hash = block.Hash;
