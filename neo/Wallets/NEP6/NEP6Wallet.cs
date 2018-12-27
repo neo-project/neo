@@ -336,7 +336,7 @@ namespace Neo.Wallets.NEP6
             return account;
         }
 
-        public override void Lock()
+        public override void Lock(object obj = null)
         {
             password = null;
             foreach (NEP6Account account in accounts.Values)
@@ -345,13 +345,13 @@ namespace Neo.Wallets.NEP6
             }
         }
 
-        public static NEP6Wallet Migrate(WalletIndexer indexer, string path, string db3path, string password)
+        public static NEP6Wallet Migrate(WalletIndexer indexer, string path, string db3path, string password, uint second)
         {
             using (UserWallet wallet_old = UserWallet.Open(indexer, db3path))
             {
-                wallet_old.Unlock(password);
+                wallet_old.Unlock(password, second);
                 NEP6Wallet wallet_new = new NEP6Wallet(indexer, path, wallet_old.Name);
-                using (wallet_new.Unlock(password))
+                using (wallet_new.Unlock(password, second))
                 {
                     foreach (WalletAccount account in wallet_old.GetAccounts())
                     {
@@ -373,12 +373,12 @@ namespace Neo.Wallets.NEP6
             File.WriteAllText(path, wallet.ToString());
         }
 
-        public override IDisposable Unlock(string password)
+        public override WalletLocker Unlock(string password, uint second)
         {
             if (!VerifyPassword(password))
                 throw new CryptographicException();
             this.password = password;
-            return new WalletLocker(this);
+            return new WalletLocker(this, second);
         }
 
         public override bool VerifyPassword(string password)

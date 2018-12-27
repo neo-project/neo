@@ -626,7 +626,14 @@ namespace Neo.Network.RPC
                         throw new RpcException(-400, "Access denied");
                     else
                     {
-                        walletLocker = wallet.Unlock(_params[0].AsString());
+                        try
+                        {
+                            walletLocker = wallet.Unlock(_params[0].AsString(), uint.Parse(_params[1].AsString()));
+                        }
+                        catch (FormatException)
+                        {
+                            throw new RpcException(-32602, "Invalid params");
+                        }
                         return true;
                     }
                 case "validateaddress":

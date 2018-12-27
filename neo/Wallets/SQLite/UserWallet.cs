@@ -423,7 +423,7 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        public override void Lock()
+        public override void Lock(object obj)
         {
             masterKey = null;
             foreach (UserWalletAccount account in accounts.Values)
@@ -464,12 +464,12 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        public override IDisposable Unlock(string password)
+        public override WalletLocker Unlock(string password, uint second)
         {
             if (!VerifyPassword(password))
                 throw new CryptographicException();
             this.masterKey = LoadStoredData("MasterKey").AesDecrypt(password.ToAesKey(), iv);
-            return new WalletLocker(this);
+            return new WalletLocker(this, second);
         }
 
         public override bool VerifyPassword(string password)
