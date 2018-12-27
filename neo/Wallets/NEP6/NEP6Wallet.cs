@@ -336,7 +336,7 @@ namespace Neo.Wallets.NEP6
             return account;
         }
 
-        public override void Lock(object obj = null)
+        public override void Lock()
         {
             password = null;
             foreach (NEP6Account account in accounts.Values)
@@ -373,11 +373,16 @@ namespace Neo.Wallets.NEP6
             File.WriteAllText(path, wallet.ToString());
         }
 
-        public override WalletLocker Unlock(string password, uint second)
+        public override void Unlock(string password)
         {
             if (!VerifyPassword(password))
                 throw new CryptographicException();
             this.password = password;
+        }
+
+        public override WalletLocker Unlock(string password, uint second)
+        {
+            Unlock(password);
             return new WalletLocker(this, second);
         }
 

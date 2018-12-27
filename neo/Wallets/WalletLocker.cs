@@ -8,7 +8,7 @@ namespace Neo.Wallets
         private Wallet wallet;
         private Timer timer;
         private DateTime unlockTime;
-        private int duration;
+        private uint duration;
 
         public WalletLocker(Wallet wallet)
         {
@@ -18,21 +18,27 @@ namespace Neo.Wallets
         public WalletLocker(Wallet wallet, uint second)
             :this(wallet)
         {
-            Unlock(second);
+            if (timer == null)
+                timer = new Timer(new TimerCallback(Lock), null, 1000 * second, -1);
         }
 
-        public void Unlock(uint second)
+        public void Unlock(string password, uint second)
         {
             if (timer == null)
-                timer = new Timer(new TimerCallback(wallet.Lock), null, 1000 * second, -1);
+                timer = new Timer(new TimerCallback(Lock), null, 1000 * second, -1);
             else
             {
                 if (DateTime.Now.AddSeconds(second) > unlockTime.AddSeconds(duration))
+                {
+                    unlockTime = DateTime.Now;
+                    duration = second;
                     timer.Change(1000 * second, -1);
+                }
             }
+            wallet.Unlock(password);
         }
 
-        public void Lock()
+        public void Lock(object obj)
         {
             wallet.Lock();
         }
