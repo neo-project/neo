@@ -165,6 +165,8 @@ namespace Neo.Wallets.NEP6
 
         public KeyPair DecryptKey(string nep2key)
         {
+            if (password == null)
+                return null;
             return new KeyPair(GetPrivateKeyFromNEP2(nep2key, password, Scrypt.N, Scrypt.R, Scrypt.P));
         }
 
@@ -334,15 +336,20 @@ namespace Neo.Wallets.NEP6
             return account;
         }
 
-        internal void Lock()
+        public override void Lock()
         {
             password = null;
+            foreach (NEP6Account account in accounts.Values)
+            {
+                account.RemoveKey();
+            }
         }
 
         public static NEP6Wallet Migrate(WalletIndexer indexer, string path, string db3path, string password)
         {
-            using (UserWallet wallet_old = UserWallet.Open(indexer, db3path, password))
+            using (UserWallet wallet_old = UserWallet.Open(indexer, db3path))
             {
+                wallet_old.Unlock(password);
                 NEP6Wallet wallet_new = new NEP6Wallet(indexer, path, wallet_old.Name);
                 using (wallet_new.Unlock(password))
                 {
@@ -366,7 +373,7 @@ namespace Neo.Wallets.NEP6
             File.WriteAllText(path, wallet.ToString());
         }
 
-        public IDisposable Unlock(string password)
+        public override IDisposable Unlock(string password)
         {
             if (!VerifyPassword(password))
                 throw new CryptographicException();
@@ -384,22 +391,7 @@ namespace Neo.Wallets.NEP6
                     account = accounts.Values.FirstOrDefault(p => p.HasKey);
                 }
                 if (account == null) return true;
-                if (account.Decrypted)
-                {
-                    return account.VerifyPassword(password);
-                }
-                else
-                {
-                    try
-                    {
-                        account.GetKey(password);
-                        return true;
-                    }
-                    catch (FormatException)
-                    {
-                        return false;
-                    }
-                }
+                return account.VerifyPassword(password);
             }
         }
 

@@ -1,12 +1,12 @@
 ﻿using System;
 
-namespace Neo.Wallets.NEP6
+namespace Neo.Wallets
 {
     internal class WalletLocker : IDisposable
     {
-        private NEP6Wallet wallet;
+        private Wallet wallet;
 
-        public WalletLocker(NEP6Wallet wallet)
+        public WalletLocker(Wallet wallet)
         {
             this.wallet = wallet;
         }

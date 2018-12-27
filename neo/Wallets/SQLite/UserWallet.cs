@@ -22,7 +22,7 @@ namespace Neo.Wallets.SQLite
         private readonly WalletIndexer indexer;
         private readonly string path;
         private readonly byte[] iv;
-        private readonly byte[] masterKey;
+        private byte[] masterKey;
         private readonly Dictionary<UInt160, UserWalletAccount> accounts;
         private readonly Dictionary<UInt256, Transaction> unconfirmed = new Dictionary<UInt256, Transaction>();
 
@@ -43,14 +43,13 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        private UserWallet(WalletIndexer indexer, string path, byte[] passwordKey, bool create)
+        private UserWallet(WalletIndexer indexer, string path, byte[] passwordKey = null)
         {
             this.indexer = indexer;
             this.path = path;
-            if (create)
+            if (passwordKey != null)
             {
                 this.iv = new byte[16];
-                this.masterKey = new byte[32];
                 this.accounts = new Dictionary<UInt160, UserWalletAccount>();
                 using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
                 {
@@ -61,16 +60,13 @@ namespace Neo.Wallets.SQLite
                 BuildDatabase();
                 SaveStoredData("PasswordHash", passwordKey.Sha256());
                 SaveStoredData("IV", iv);
-                SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
+                SaveStoredData("MasterKey", new byte[32].AesEncrypt(passwordKey, iv));
                 SaveStoredData("Version", new[] { version.Major, version.Minor, version.Build, version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
             }
             else
             {
                 byte[] passwordHash = LoadStoredData("PasswordHash");
-                if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Sha256()))
-                    throw new CryptographicException();
                 this.iv = LoadStoredData("IV");
-                this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
                 this.accounts = LoadAccounts();
                 indexer.RegisterAccounts(accounts.Keys);
             }
@@ -200,12 +196,12 @@ namespace Neo.Wallets.SQLite
 
         public static UserWallet Create(WalletIndexer indexer, string path, string password)
         {
-            return new UserWallet(indexer, path, password.ToAesKey(), true);
+            return new UserWallet(indexer, path, password.ToAesKey());
         }
 
         public static UserWallet Create(WalletIndexer indexer, string path, SecureString password)
         {
-            return new UserWallet(indexer, path, password.ToAesKey(), true);
+            return new UserWallet(indexer, path, password.ToAesKey());
         }
 
         public override WalletAccount CreateAccount(byte[] privateKey)
@@ -216,9 +212,10 @@ namespace Neo.Wallets.SQLite
                 Script = SmartContract.Contract.CreateSignatureRedeemScript(key.PublicKey),
                 ParameterList = new[] { ContractParameterType.Signature }
             };
-            UserWalletAccount account = new UserWalletAccount(contract.ScriptHash)
+            UserWalletAccount account = new UserWalletAccount(this, contract.ScriptHash)
             {
                 Key = key,
+                EncryptedPrivateKey = privateKey,
                 Contract = contract
             };
             AddAccount(account, false);
@@ -236,9 +233,10 @@ namespace Neo.Wallets.SQLite
                     ParameterList = contract.ParameterList
                 };
             }
-            UserWalletAccount account = new UserWalletAccount(verification_contract.ScriptHash)
+            UserWalletAccount account = new UserWalletAccount(this, verification_contract.ScriptHash)
             {
                 Key = key,
+                EncryptedPrivateKey = EncryptPrivateKey(key.PrivateKey),
                 Contract = verification_contract
             };
             AddAccount(account, false);
@@ -247,12 +245,12 @@ namespace Neo.Wallets.SQLite
 
         public override WalletAccount CreateAccount(UInt160 scriptHash)
         {
-            UserWalletAccount account = new UserWalletAccount(scriptHash);
+            UserWalletAccount account = new UserWalletAccount(this, scriptHash);
             AddAccount(account, true);
             return account;
         }
 
-        private byte[] DecryptPrivateKey(byte[] encryptedPrivateKey)
+        public byte[] DecryptPrivateKey(byte[] encryptedPrivateKey)
         {
             if (encryptedPrivateKey == null) throw new ArgumentNullException(nameof(encryptedPrivateKey));
             if (encryptedPrivateKey.Length != 96) throw new ArgumentException();
@@ -396,13 +394,21 @@ namespace Neo.Wallets.SQLite
         {
             using (WalletDataContext ctx = new WalletDataContext(path))
             {
-                Dictionary<UInt160, UserWalletAccount> accounts = ctx.Addresses.Select(p => p.ScriptHash).AsEnumerable().Select(p => new UserWalletAccount(new UInt160(p))).ToDictionary(p => p.ScriptHash);
+                Dictionary<UInt160, UserWalletAccount> accounts = ctx.Addresses.Select(p => p.ScriptHash).AsEnumerable().Select(p => new UserWalletAccount(this, new UInt160(p))).ToDictionary(p => p.ScriptHash);
                 foreach (Contract db_contract in ctx.Contracts.Include(p => p.Account))
                 {
                     VerificationContract contract = db_contract.RawData.AsSerializable<VerificationContract>();
                     UserWalletAccount account = accounts[contract.ScriptHash];
                     account.Contract = contract;
-                    account.Key = new KeyPair(DecryptPrivateKey(db_contract.Account.PrivateKeyEncrypted));
+                    account.EncryptedPrivateKey = db_contract.Account.PrivateKeyEncrypted;
+                    try
+                    {
+                        account.Key = new KeyPair(DecryptPrivateKey(db_contract.Account.PrivateKeyEncrypted));
+                    }
+                    catch (ArgumentNullException)
+                    {
+                        account.Key = null;
+                    }
                 }
                 return accounts;
             }
@@ -416,14 +422,18 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        public static UserWallet Open(WalletIndexer indexer, string path, string password)
+        public override void Lock()
         {
-            return new UserWallet(indexer, path, password.ToAesKey(), false);
+            masterKey = null;
+            foreach (UserWalletAccount account in accounts.Values)
+            {
+                account.Key = null;
+            }
         }
 
-        public static UserWallet Open(WalletIndexer indexer, string path, SecureString password)
+        public static UserWallet Open(WalletIndexer indexer, string path)
         {
-            return new UserWallet(indexer, path, password.ToAesKey(), false);
+            return new UserWallet(indexer, path);
         }
 
         private void SaveStoredData(string name, byte[] value)
@@ -451,6 +461,14 @@ namespace Neo.Wallets.SQLite
             {
                 key.Value = value;
             }
+        }
+
+        public override IDisposable Unlock(string password)
+        {
+            if (!VerifyPassword(password))
+                throw new CryptographicException();
+            this.masterKey = LoadStoredData("MasterKey").AesDecrypt(password.ToAesKey(), iv);
+            return new WalletLocker(this);
         }
 
         public override bool VerifyPassword(string password)
