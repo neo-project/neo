@@ -43,13 +43,14 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        private UserWallet(WalletIndexer indexer, string path, byte[] passwordKey = null)
+        private UserWallet(WalletIndexer indexer, string path, byte[] passwordKey, bool create)
         {
             this.indexer = indexer;
             this.path = path;
-            if (passwordKey != null)
+            if (create)
             {
                 this.iv = new byte[16];
+                this.masterKey = new byte[32];
                 this.accounts = new Dictionary<UInt160, UserWalletAccount>();
                 using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
                 {
@@ -60,7 +61,7 @@ namespace Neo.Wallets.SQLite
                 BuildDatabase();
                 SaveStoredData("PasswordHash", passwordKey.Sha256());
                 SaveStoredData("IV", iv);
-                SaveStoredData("MasterKey", new byte[32].AesEncrypt(passwordKey, iv));
+                SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
                 SaveStoredData("Version", new[] { version.Major, version.Minor, version.Build, version.Revision }.Select(p => BitConverter.GetBytes(p)).SelectMany(p => p).ToArray());
             }
             else
@@ -196,12 +197,12 @@ namespace Neo.Wallets.SQLite
 
         public static UserWallet Create(WalletIndexer indexer, string path, string password)
         {
-            return new UserWallet(indexer, path, password.ToAesKey());
+            return new UserWallet(indexer, path, password.ToAesKey(), true);
         }
 
         public static UserWallet Create(WalletIndexer indexer, string path, SecureString password)
         {
-            return new UserWallet(indexer, path, password.ToAesKey());
+            return new UserWallet(indexer, path, password.ToAesKey(), true);
         }
 
         public override WalletAccount CreateAccount(byte[] privateKey)
@@ -433,7 +434,7 @@ namespace Neo.Wallets.SQLite
 
         public static UserWallet Open(WalletIndexer indexer, string path)
         {
-            return new UserWallet(indexer, path);
+            return new UserWallet(indexer, path, null, false);
         }
 
         private void SaveStoredData(string name, byte[] value)
