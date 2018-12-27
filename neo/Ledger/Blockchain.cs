@@ -453,9 +453,9 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
-            List<ApplicationExecutionResult> all_execution_results = new List<ApplicationExecutionResult>();
             using (Snapshot snapshot = GetSnapshot())
             {
+                List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
                 snapshot.Blocks.Add(block.Hash, new BlockState
                 {
@@ -607,12 +607,13 @@ namespace Neo.Ledger
                     }
                     if (execution_results.Count > 0)
                     {
-                        Distribute(new ApplicationExecuted
+                        ApplicationExecuted application_executed = new ApplicationExecuted
                         {
                             Transaction = tx,
                             ExecutionResults = execution_results.ToArray()
-                        });
-                        all_execution_results.AddRange(execution_results);
+                        };
+                        Distribute(application_executed);
+                        all_application_executed.Add(application_executed);
                     }
                 }
                 snapshot.BlockHashIndex.GetAndChange().Hash = block.Hash;
@@ -624,7 +625,7 @@ namespace Neo.Ledger
                     snapshot.HeaderHashIndex.GetAndChange().Index = block.Index;
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
-                    plugin.OnPersist(snapshot, all_execution_results);
+                    plugin.OnPersist(snapshot, all_application_executed);
                 snapshot.Commit();
             }
             UpdateCurrentSnapshot();

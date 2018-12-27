@@ -1,11 +1,12 @@
 ﻿using Neo.Ledger;
 using Neo.Persistence;
 using System.Collections.Generic;
+using static Neo.Ledger.Blockchain;
 
 namespace Neo.Plugins
 {
     public interface IPersistencePlugin
     {
-        void OnPersist(Snapshot snapshot, List<ApplicationExecutionResult> application);
+        void OnPersist(Snapshot snapshot, List<ApplicationExecuted> applicationExecutedList);
     }
 }
