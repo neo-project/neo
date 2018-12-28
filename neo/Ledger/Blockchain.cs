@@ -453,6 +453,7 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
+            List<ApplicationExecutionResult> all_execution_results = new List<ApplicationExecutionResult>();
             using (Snapshot snapshot = GetSnapshot())
             {
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
