@@ -33,7 +33,6 @@ namespace Neo.Network.RPC
     {
         private readonly NeoSystem system;
         private Wallet wallet;
-        private IDisposable walletLocker;
         private IWebHost host;
         private Fixed8 maxGasInvoke;
         public static int MAX_CLAIMS_AMOUNT = 50;
@@ -457,11 +456,11 @@ namespace Neo.Network.RPC
                             return account;
                         }).ToArray();
                 case "lockwallet":
-                    if (wallet == null || walletLocker == null)
+                    if (wallet == null)
                         throw new RpcException(-400, "Access denied");
                     else
                     {
-                        walletLocker.Dispose();
+                        WalletLocker.Lock();
                         return true;
                     }
                 case "sendfrom":
@@ -628,7 +627,7 @@ namespace Neo.Network.RPC
                     {
                         try
                         {
-                            walletLocker = wallet.Unlock(_params[0].AsString(), uint.Parse(_params[1].AsString()));
+                            WalletLocker.Unlock(wallet, _params[0].AsString(), uint.Parse(_params[1].AsString()));
                         }
                         catch (FormatException)
                         {

@@ -351,12 +351,10 @@ namespace Neo.Wallets.NEP6
             {
                 wallet_old.Unlock(password, second);
                 NEP6Wallet wallet_new = new NEP6Wallet(indexer, path, wallet_old.Name);
-                using (wallet_new.Unlock(password, second))
+                wallet_new.Unlock(password, second);
+                foreach (WalletAccount account in wallet_old.GetAccounts())
                 {
-                    foreach (WalletAccount account in wallet_old.GetAccounts())
-                    {
-                        wallet_new.CreateAccount(account.Contract, account.GetKey());
-                    }
+                    wallet_new.CreateAccount(account.Contract, account.GetKey());
                 }
                 return wallet_new;
             }
@@ -378,12 +376,6 @@ namespace Neo.Wallets.NEP6
             if (!VerifyPassword(password))
                 throw new CryptographicException();
             this.password = password;
-        }
-
-        public override WalletLocker Unlock(string password, uint second)
-        {
-            Unlock(password);
-            return WalletLocker.GetLocker(this, second);
         }
 
         public override bool VerifyPassword(string password)

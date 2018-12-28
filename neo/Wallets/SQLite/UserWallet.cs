@@ -471,12 +471,6 @@ namespace Neo.Wallets.SQLite
             this.masterKey = LoadStoredData("MasterKey").AesDecrypt(password.ToAesKey(), iv);
         }
 
-        public override WalletLocker Unlock(string password, uint second)
-        {
-            Unlock(password);
-            return WalletLocker.GetLocker(this, second);
-        }
-
         public override bool VerifyPassword(string password)
         {
             return password.ToAesKey().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));

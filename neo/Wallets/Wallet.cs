@@ -405,10 +405,9 @@ namespace Neo.Wallets
                 throw new CryptographicException();
         }
 
-        public virtual WalletLocker Unlock(string password, uint second)
+        public void Unlock(string password, uint second)
         {
-            Unlock(password);
-            return WalletLocker.GetLocker(this, second);
+            WalletLocker.Unlock(this, password, second);
         }
 
         public abstract bool VerifyPassword(string password);

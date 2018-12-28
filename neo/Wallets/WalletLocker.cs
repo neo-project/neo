@@ -17,50 +17,35 @@ namespace Neo.Wallets
             this.wallet = wallet;
         }
 
-        private WalletLocker(Wallet wallet, uint second)
-            :this(wallet)
+        private static WalletLocker GetLocker(Wallet wallet)
         {
-            if (timer == null)
-                timer = new Timer(new TimerCallback(Lock), null, 1000 * second, -1);
-        }
-
-        public static WalletLocker GetLocker(Wallet wallet)
-        {
-            if (singleton == null)
+            if (singleton == null || singleton.wallet != wallet)
             {
                 singleton = new WalletLocker(wallet);
             }
             return singleton;
         }
 
-        public static WalletLocker GetLocker(Wallet wallet, uint second)
+        public static void Unlock(Wallet wallet, string password, uint second)
         {
-            if (singleton == null)
-            {
-                singleton = new WalletLocker(wallet, second);
-            }
-            return singleton;
-        }
-
-        public void Unlock(string password, uint second)
-        {
-            if (timer == null)
-                timer = new Timer(new TimerCallback(Lock), null, 1000 * second, -1);
+            WalletLocker locker = GetLocker(wallet);
+            if (locker.timer == null)
+                locker.timer = new Timer(new TimerCallback(Lock), null, 1000 * second, -1);
             else
             {
-                if (DateTime.Now.AddSeconds(second) > unlockTime.AddSeconds(duration))
+                if (DateTime.Now.AddSeconds(second) > locker.unlockTime.AddSeconds(locker.duration))
                 {
-                    unlockTime = DateTime.Now;
-                    duration = second;
-                    timer.Change(1000 * second, -1);
+                    locker.unlockTime = DateTime.Now;
+                    locker.duration = second;
+                    locker.timer.Change(1000 * second, -1);
                 }
             }
             wallet.Unlock(password);
         }
 
-        public void Lock(object obj)
+        public static void Lock(object obj = null)
         {
-            wallet.Lock();
+            singleton.wallet.Lock();
         }
 
         public void Dispose()
