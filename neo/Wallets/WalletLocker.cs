@@ -10,16 +10,36 @@ namespace Neo.Wallets
         private DateTime unlockTime;
         private uint duration;
 
-        public WalletLocker(Wallet wallet)
+        private static WalletLocker singleton;
+
+        private WalletLocker(Wallet wallet)
         {
             this.wallet = wallet;
         }
 
-        public WalletLocker(Wallet wallet, uint second)
+        private WalletLocker(Wallet wallet, uint second)
             :this(wallet)
         {
             if (timer == null)
                 timer = new Timer(new TimerCallback(Lock), null, 1000 * second, -1);
+        }
+
+        public static WalletLocker GetLocker(Wallet wallet)
+        {
+            if (singleton == null)
+            {
+                singleton = new WalletLocker(wallet);
+            }
+            return singleton;
+        }
+
+        public static WalletLocker GetLocker(Wallet wallet, uint second)
+        {
+            if (singleton == null)
+            {
+                singleton = new WalletLocker(wallet, second);
+            }
+            return singleton;
         }
 
         public void Unlock(string password, uint second)

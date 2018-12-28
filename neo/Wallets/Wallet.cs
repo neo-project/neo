@@ -408,7 +408,7 @@ namespace Neo.Wallets
         public virtual WalletLocker Unlock(string password, uint second)
         {
             Unlock(password);
-            return new WalletLocker(this, second);
+            return WalletLocker.GetLocker(this, second);
         }
 
         public abstract bool VerifyPassword(string password);

@@ -383,7 +383,7 @@ namespace Neo.Wallets.NEP6
         public override WalletLocker Unlock(string password, uint second)
         {
             Unlock(password);
-            return new WalletLocker(this, second);
+            return WalletLocker.GetLocker(this, second);
         }
 
         public override bool VerifyPassword(string password)
