@@ -162,7 +162,7 @@ namespace Neo.Network.RPC
                                 {
                                     AssetId = Blockchain.UtilityToken.Hash,
                                     Value = snapshot.CalculateBonus(claims.Take(MAX_CLAIMS_AMOUNT)),
-                                    ScriptHash = _params[0].AsString().ToScriptHash()
+                                    ScriptHash = _params.Count > 0 ? _params[0].AsString().ToScriptHash() : wallet.GetChangeAddress()
                                 }
                             }
 
@@ -181,14 +181,11 @@ namespace Neo.Network.RPC
                         {
                             context.Verifiable.Witnesses = context.GetWitnesses();
                             wallet.ApplyTransaction(tx);
-
-                            bool relay_result = system.Blockchain.Ask<RelayResultReason>(tx).Result == RelayResultReason.Succeed;
-
                             return tx.ToJson();
                         }
                         else
                         {
-                            return context.ToString();
+                            return context.ToJson();
                         }
                     }
                 case "dumpprivkey":

@@ -30,7 +30,11 @@ namespace Neo.Wallets
         {
             WalletLocker locker = GetLocker(wallet);
             if (locker.timer == null)
+            {
+                locker.unlockTime = DateTime.Now;
+                locker.duration = second;
                 locker.timer = new Timer(new TimerCallback(Lock), null, 1000 * second, -1);
+            }
             else
             {
                 if (DateTime.Now.AddSeconds(second) > locker.unlockTime.AddSeconds(locker.duration))
@@ -45,7 +49,8 @@ namespace Neo.Wallets
 
         public static void Lock(object obj = null)
         {
-            singleton.wallet.Lock();
+            if (singleton != null)
+                singleton.wallet.Lock();
         }
 
         public void Dispose()
