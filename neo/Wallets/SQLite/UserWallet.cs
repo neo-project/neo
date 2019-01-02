@@ -66,7 +66,6 @@ namespace Neo.Wallets.SQLite
             }
             else
             {
-                byte[] passwordHash = LoadStoredData("PasswordHash");
                 this.iv = LoadStoredData("IV");
                 this.accounts = LoadAccounts();
                 indexer.RegisterAccounts(accounts.Keys);
@@ -213,10 +212,13 @@ namespace Neo.Wallets.SQLite
                 Script = SmartContract.Contract.CreateSignatureRedeemScript(key.PublicKey),
                 ParameterList = new[] { ContractParameterType.Signature }
             };
+            byte[] decryptedPrivateKey = new byte[96];
+            Buffer.BlockCopy(key.PublicKey.EncodePoint(false), 1, decryptedPrivateKey, 0, 64);
+            Buffer.BlockCopy(key.PrivateKey, 0, decryptedPrivateKey, 64, 32);
             UserWalletAccount account = new UserWalletAccount(this, contract.ScriptHash)
             {
                 Key = key,
-                EncryptedPrivateKey = privateKey,
+                EncryptedPrivateKey = EncryptPrivateKey(decryptedPrivateKey),
                 Contract = contract
             };
             AddAccount(account, false);
@@ -234,10 +236,13 @@ namespace Neo.Wallets.SQLite
                     ParameterList = contract.ParameterList
                 };
             }
+            byte[] decryptedPrivateKey = new byte[96];
+            Buffer.BlockCopy(key.PublicKey.EncodePoint(false), 1, decryptedPrivateKey, 0, 64);
+            Buffer.BlockCopy(key.PrivateKey, 0, decryptedPrivateKey, 64, 32);
             UserWalletAccount account = new UserWalletAccount(this, verification_contract.ScriptHash)
             {
                 Key = key,
-                EncryptedPrivateKey = EncryptPrivateKey(key.PrivateKey),
+                EncryptedPrivateKey = EncryptPrivateKey(decryptedPrivateKey),
                 Contract = verification_contract
             };
             AddAccount(account, false);
@@ -402,14 +407,6 @@ namespace Neo.Wallets.SQLite
                     UserWalletAccount account = accounts[contract.ScriptHash];
                     account.Contract = contract;
                     account.EncryptedPrivateKey = db_contract.Account.PrivateKeyEncrypted;
-                    try
-                    {
-                        account.Key = new KeyPair(DecryptPrivateKey(db_contract.Account.PrivateKeyEncrypted));
-                    }
-                    catch (ArgumentNullException)
-                    {
-                        account.Key = null;
-                    }
                 }
                 return accounts;
             }
