@@ -9,6 +9,7 @@ namespace Neo.Wallets
         private Timer timer;
         private DateTime unlockTime;
         private uint duration;
+        public bool locked = true;
 
         private static WalletLocker singleton;
 
@@ -25,6 +26,8 @@ namespace Neo.Wallets
             }
             return singleton;
         }
+
+        public static bool Locked() => singleton == null || singleton.locked == true;
 
         public static void Unlock(Wallet wallet, string password, uint second)
         {
@@ -45,12 +48,16 @@ namespace Neo.Wallets
                 }
             }
             wallet.Unlock(password);
+            locker.locked = false;
         }
 
         public static void Lock(object obj = null)
         {
             if (singleton != null)
+            {
                 singleton.wallet.Lock();
+                singleton.locked = true;
+            }
         }
 
         public void Dispose()

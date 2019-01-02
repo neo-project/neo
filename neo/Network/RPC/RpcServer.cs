@@ -36,6 +36,7 @@ namespace Neo.Network.RPC
         private IWebHost host;
         private Fixed8 maxGasInvoke;
         public static int MAX_CLAIMS_AMOUNT = 50;
+        public static uint DEFAULT_UNLOCK_TIME = 15;
 
         public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8))
         {
@@ -142,6 +143,8 @@ namespace Neo.Network.RPC
             switch (method)
             {
                 case "claimgas":
+                    if (wallet == null || WalletLocker.Locked())
+                        throw new RpcException(-400, "Access denied.");
                     using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                     {
                         if (snapshot.CalculateBonus(wallet.GetUnclaimedCoins().Select(p => p.Reference)) == Fixed8.Zero)
@@ -189,8 +192,8 @@ namespace Neo.Network.RPC
                         }
                     }
                 case "dumpprivkey":
-                    if (wallet == null)
-                        throw new RpcException(-400, "Access denied");
+                    if (wallet == null || WalletLocker.Locked())
+                        throw new RpcException(-400, "Access denied.");
                     else
                     {
                         UInt160 scriptHash = _params[0].AsString().ToScriptHash();
@@ -315,8 +318,8 @@ namespace Neo.Network.RPC
                         return contract?.ToJson() ?? throw new RpcException(-100, "Unknown contract");
                     }
                 case "getnewaddress":
-                    if (wallet == null)
-                        throw new RpcException(-400, "Access denied");
+                    if (wallet == null || WalletLocker.Locked())
+                        throw new RpcException(-400, "Access denied.");
                     else
                     {
                         WalletAccount account = wallet.CreateAccount();
@@ -461,8 +464,8 @@ namespace Neo.Network.RPC
                         return true;
                     }
                 case "sendfrom":
-                    if (wallet == null)
-                        throw new RpcException(-400, "Access denied");
+                    if (wallet == null || WalletLocker.Locked())
+                        throw new RpcException(-400, "Access denied.");
                     else
                     {
                         UIntBase assetId = UIntBase.Parse(_params[0].AsString());
@@ -502,8 +505,8 @@ namespace Neo.Network.RPC
                         }
                     }
                 case "sendmany":
-                    if (wallet == null)
-                        throw new RpcException(-400, "Access denied");
+                    if (wallet == null || WalletLocker.Locked())
+                        throw new RpcException(-400, "Access denied.");
                     else
                     {
                         JArray to = (JArray)_params[0];
@@ -551,8 +554,8 @@ namespace Neo.Network.RPC
                         return GetRelayResult(reason);
                     }
                 case "sendtoaddress":
-                    if (wallet == null)
-                        throw new RpcException(-400, "Access denied");
+                    if (wallet == null || WalletLocker.Locked())
+                        throw new RpcException(-400, "Access denied.");
                     else
                     {
                         UIntBase assetId = UIntBase.Parse(_params[0].AsString());
@@ -624,7 +627,10 @@ namespace Neo.Network.RPC
                     {
                         try
                         {
-                            WalletLocker.Unlock(wallet, _params[0].AsString(), uint.Parse(_params[1].AsString()));
+                            if (_params.Count > 1)
+                                WalletLocker.Unlock(wallet, _params[0].AsString(), uint.Parse(_params[1].AsString()));
+                            else;
+                                WalletLocker.Unlock(wallet, _params[0].AsString(), DEFAULT_UNLOCK_TIME);
                         }
                         catch (FormatException)
                         {
