@@ -44,7 +44,7 @@ For more information about how to build DAPPs for NEO, please read the [document
 Daily builds
 --------
 
-If you want to use the latest daily build then you need to add a NuGet.Config to your app with the following content:
+If you want to use the [latest daily build](https://www.myget.org/feed/neo/package/nuget/Neo) then you need to add a NuGet.Config to your app with the following content:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>

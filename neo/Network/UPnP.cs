@@ -30,9 +30,16 @@ namespace Neo.Network
 
                 DateTime start = DateTime.Now;
 
-                s.SendTo(data, ipe);
-                s.SendTo(data, ipe);
-                s.SendTo(data, ipe);
+                try
+                {
+                    s.SendTo(data, ipe);
+                    s.SendTo(data, ipe);
+                    s.SendTo(data, ipe);
+                }
+                catch
+                {
+                    return false;
+                }
 
                 byte[] buffer = new byte[0x1000];
 

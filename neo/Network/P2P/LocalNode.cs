@@ -20,9 +20,8 @@ namespace Neo.Network.P2P
         internal class SendDirectly { public IInventory Inventory; }
 
         public const uint ProtocolVersion = 0;
-        protected override int ConnectedMax => 10;
-        protected override int UnconnectedMax => 1000;
 
+        private static readonly object lockObj = new object();
         private readonly NeoSystem system;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new ConcurrentDictionary<IActorRef, RemoteNode>();
 
@@ -50,7 +49,7 @@ namespace Neo.Network.P2P
 
         public LocalNode(NeoSystem system)
         {
-            lock (GetType())
+            lock (lockObj)
             {
                 if (singleton != null)
                     throw new InvalidOperationException();
@@ -92,7 +91,7 @@ namespace Neo.Network.P2P
             if (seedsToTake > 0)
             {
                 Random rand = new Random();
-                foreach (string hostAndPort in Settings.Default.SeedList.OrderBy(p => rand.Next()))
+                foreach (string hostAndPort in ProtocolSettings.Default.SeedList.OrderBy(p => rand.Next()))
                 {
                     if (seedsToTake == 0) break;
                     string[] p = hostAndPort.Split(':');
