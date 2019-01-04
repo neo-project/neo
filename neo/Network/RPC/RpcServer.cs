@@ -182,8 +182,9 @@ namespace Neo.Network.RPC
                         wallet.Sign(context);
                         if (context.Completed)
                         {
-                            context.Verifiable.Witnesses = context.GetWitnesses();
+                            tx.Witnesses = context.GetWitnesses();
                             wallet.ApplyTransaction(tx);
+                            system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
                             return tx.ToJson();
                         }
                         else
@@ -629,7 +630,7 @@ namespace Neo.Network.RPC
                         {
                             if (_params.Count > 1)
                                 WalletLocker.Unlock(wallet, _params[0].AsString(), uint.Parse(_params[1].AsString()));
-                            else;
+                            else
                                 WalletLocker.Unlock(wallet, _params[0].AsString(), DEFAULT_UNLOCK_TIME);
                         }
                         catch (FormatException)
