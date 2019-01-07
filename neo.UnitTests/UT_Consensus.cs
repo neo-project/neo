@@ -99,8 +99,7 @@ namespace Neo.UnitTests
                 Nonce = mockConsensusContext.Object.Nonce,
                 NextConsensus = mockConsensusContext.Object.NextConsensus,
                 TransactionHashes = new UInt256[0],
-                MinerTransaction = minerTx, //(MinerTransaction)Transactions[TransactionHashes[0]],
-                Signature = new byte[64]//Signatures[MyIndex]
+                MinerTransaction = minerTx //(MinerTransaction)Transactions[TransactionHashes[0]],
             };
 
             ConsensusMessage mprep = prep;
