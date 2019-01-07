@@ -7,6 +7,7 @@
         OutOfMemory,
         UnableToVerify,
         Invalid,
+        PolicyFail,
         Unknown
     }
 }
