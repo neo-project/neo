@@ -10,8 +10,9 @@ namespace Neo.Consensus
         Backup = 0x02,
         RequestSent = 0x04,
         RequestReceived = 0x08,
-        SignatureSent = 0x10,
-        BlockSent = 0x20,
-        ViewChanging = 0x40,
+        ResponseSent = 0x10,
+        CommitSent = 0x20,
+        BlockSent = 0x40,
+        ViewChanging = 0x80,
     }
 }

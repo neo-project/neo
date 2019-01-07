@@ -20,7 +20,8 @@ namespace Neo.Consensus
         UInt160 NextConsensus { get; set; }
         UInt256[] TransactionHashes { get; set; }
         Dictionary<UInt256, Transaction> Transactions { get; set; }
-        byte[][] Signatures { get; set; }
+        bool[] Preparations { get; set; }
+        byte[][] Commits { get; set; }
         byte[] ExpectedView { get; set; }
 
         int M { get; }
@@ -40,13 +41,13 @@ namespace Neo.Consensus
 
         ConsensusPayload MakeChangeView();
 
-        Block MakeHeader();
+        ConsensusPayload MakeCommit();
 
-        void SignHeader();
+        Block MakeHeader();
 
         ConsensusPayload MakePrepareRequest();
 
-        ConsensusPayload MakePrepareResponse(byte[] signature);
+        ConsensusPayload MakePrepareResponse();
 
         void Reset();
 
