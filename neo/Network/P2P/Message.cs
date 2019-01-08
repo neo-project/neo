@@ -10,7 +10,7 @@ namespace Neo.Network.P2P
         public const int HeaderSize = sizeof(uint) + 12 + sizeof(int) + sizeof(uint);
         public const int PayloadMaxSize = 0x02000000;
 
-        public static readonly uint Magic = Settings.Default.Magic;
+        public static readonly uint Magic = ProtocolSettings.Default.Magic;
         public string Command;
         public uint Checksum;
         public byte[] Payload;

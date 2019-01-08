@@ -25,12 +25,12 @@ namespace Neo.Ledger
         public class Import { public IEnumerable<Block> Blocks; }
         public class ImportCompleted { }
 
-        public static readonly uint SecondsPerBlock = Settings.Default.SecondsPerBlock;
+        public static readonly uint SecondsPerBlock = ProtocolSettings.Default.SecondsPerBlock;
         public const uint DecrementInterval = 2000000;
         public const uint MaxValidators = 1024;
         public static readonly uint[] GenerationAmount = { 8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromSeconds(SecondsPerBlock);
-        public static readonly ECPoint[] StandbyValidators = Settings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+        public static readonly ECPoint[] StandbyValidators = ProtocolSettings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
 
 #pragma warning disable CS0612
         public static readonly RegisterTransaction GoverningToken = new RegisterTransaction
@@ -320,7 +320,7 @@ namespace Neo.Ledger
                     // Relay most recent 2 blocks persisted
 
                     if (blockToPersist.Index + 100 >= header_index.Count)
-                        system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
+                        system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = blockToPersist });
                 }
                 SaveHeaderHashList();
 
@@ -462,6 +462,7 @@ namespace Neo.Ledger
         {
             using (Snapshot snapshot = GetSnapshot())
             {
+                List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
                 snapshot.Blocks.Add(block.Hash, new BlockState
                 {
@@ -612,11 +613,15 @@ namespace Neo.Ledger
                             break;
                     }
                     if (execution_results.Count > 0)
-                        Distribute(new ApplicationExecuted
+                    {
+                        ApplicationExecuted application_executed = new ApplicationExecuted
                         {
                             Transaction = tx,
                             ExecutionResults = execution_results.ToArray()
-                        });
+                        };
+                        Distribute(application_executed);
+                        all_application_executed.Add(application_executed);
+                    }
                 }
                 snapshot.BlockHashIndex.GetAndChange().Hash = block.Hash;
                 snapshot.BlockHashIndex.GetAndChange().Index = block.Index;
@@ -627,7 +632,7 @@ namespace Neo.Ledger
                     snapshot.HeaderHashIndex.GetAndChange().Index = block.Index;
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
-                    plugin.OnPersist(snapshot);
+                    plugin.OnPersist(snapshot, all_application_executed);
                 snapshot.Commit();
             }
             UpdateCurrentSnapshot();

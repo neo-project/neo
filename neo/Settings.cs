@@ -6,27 +6,27 @@ using System.Linq;
 
 namespace Neo
 {
-    internal class Settings
+    public class ProtocolSettings
     {
-        public uint Magic { get; private set; }
-        public byte AddressVersion { get; private set; }
-        public string[] StandbyValidators { get; private set; }
-        public string[] SeedList { get; private set; }
-        public IReadOnlyDictionary<TransactionType, Fixed8> SystemFee { get; private set; }
-        public Fixed8 LowPriorityThreshold { get; private set; }
-        public int MaxTransactionsPerBlock { get; private set; }
-        public int MaxFreeTransactionsPerBlock { get; private set; }
-        public uint SecondsPerBlock { get; private set; }
+        public uint Magic { get; }
+        public byte AddressVersion { get; }
+        public string[] StandbyValidators { get; }
+        public string[] SeedList { get; }
+        public IReadOnlyDictionary<TransactionType, Fixed8> SystemFee { get; }
+        public Fixed8 LowPriorityThreshold { get; }
+        public int MaxTransactionsPerBlock { get; }
+        public int MaxFreeTransactionsPerBlock { get; }
+        public uint SecondsPerBlock { get; }
 
-        public static Settings Default { get; private set; }
+        public static ProtocolSettings Default { get; }
 
-        static Settings()
+        static ProtocolSettings()
         {
             IConfigurationSection section = new ConfigurationBuilder().AddJsonFile("protocol.json").Build().GetSection("ProtocolConfiguration");
-            Default = new Settings(section);
+            Default = new ProtocolSettings(section);
         }
 
-        public Settings(IConfigurationSection section)
+        private ProtocolSettings(IConfigurationSection section)
         {
             this.Magic = uint.Parse(section.GetSection("Magic").Value);
             this.AddressVersion = byte.Parse(section.GetSection("AddressVersion").Value);
@@ -39,7 +39,7 @@ namespace Neo
             this.MaxFreeTransactionsPerBlock = GetValueOrDefault(section.GetSection("MaxFreeTransactionsPerBlock"), 20, int.Parse);
         }
 
-        public T GetValueOrDefault<T>(IConfigurationSection section, T defaultValue, Func<string, T> selector)
+        internal T GetValueOrDefault<T>(IConfigurationSection section, T defaultValue, Func<string, T> selector)
         {
             if (section.Value == null) return defaultValue;
             return selector(section.Value);

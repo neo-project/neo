@@ -89,10 +89,18 @@ namespace Neo.IO.Json
                 if (c == '\\')
                 {
                     c = (char)reader.Read();
-                    if (c == 'u')
+                    switch (c)
                     {
-                        reader.Read(buffer, 0, 4);
-                        c = (char)short.Parse(new string(buffer), NumberStyles.HexNumber);
+                        case 'u':
+                            reader.Read(buffer, 0, 4);
+                            c = (char)short.Parse(new string(buffer), NumberStyles.HexNumber);
+                            break;
+                        case 'r':
+                            c = '\r';
+                            break;
+                        case 'n':
+                            c = '\n';
+                            break;
                     }
                 }
                 sb.Append(c);
