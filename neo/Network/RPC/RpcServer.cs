@@ -636,6 +636,8 @@ namespace Neo.Network.RPC
             JObject result = null;
             try
             {
+                context.Items["Wallet"] = wallet;
+
                 string method = request["method"].AsString();
                 JArray _params = (JArray)request["params"];
                 foreach (IRpcPlugin plugin in Plugin.RpcPlugins)
