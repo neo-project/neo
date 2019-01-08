@@ -219,7 +219,7 @@ namespace Neo.Wallets
             Array.Clear(privateKey, 0, privateKey.Length);
             return account;
         }
-        public abstract void Lock();
+        internal abstract void Lock();
 
         public T MakeTransaction<T>(T tx, UInt160 from = null, UInt160 change_address = null, Fixed8 fee = default(Fixed8)) where T : Transaction
         {
@@ -399,11 +399,7 @@ namespace Neo.Wallets
             return fSuccess;
         }
 
-        public virtual void Unlock(string password)
-        {
-            if (!VerifyPassword(password))
-                throw new CryptographicException();
-        }
+        internal abstract void Unlock(string password);
 
         public void Unlock(string password, uint second)
         {

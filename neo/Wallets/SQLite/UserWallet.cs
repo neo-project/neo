@@ -420,7 +420,7 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        public override void Lock()
+        internal override void Lock()
         {
             masterKey = null;
             foreach (UserWalletAccount account in accounts.Values)
@@ -461,7 +461,7 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        public override void Unlock(string password)
+        internal override void Unlock(string password)
         {
             if (!VerifyPassword(password))
                 throw new CryptographicException();
