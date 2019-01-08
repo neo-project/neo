@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Akka.Util.Internal;
+using Neo.Network.P2P;
 using Neo.Persistence;
 using Neo.Plugins;
 
@@ -18,11 +19,13 @@ namespace Neo.Ledger
         {
             public readonly Transaction Transaction;
             public readonly DateTime Timestamp;
+            public DateTime LastBroadcastTimestamp;
 
             public PoolItem(Transaction tx)
             {
                 Transaction = tx;
                 Timestamp = DateTime.UtcNow;
+                LastBroadcastTimestamp = Timestamp;
             }
 
             public int CompareTo(Transaction tx)
@@ -43,12 +46,17 @@ namespace Neo.Ledger
             }
         }
 
+        // Allow reverified transactions to be rebroadcast if it has been this many block times since last broadcast.
+        private const int BlocksTillRebroadcastPoolTx = 12;
+
         private static readonly double MaxSecondsToReverifyHighPrioTx = (double) Blockchain.SecondsPerBlock / 3;
         private static readonly double MaxSecondsToReverifyLowPrioTx = (double) Blockchain.SecondsPerBlock / 5;
 
         // These two are not expected to be hit, they are just safegaurds.
         private static readonly double MaxSecondsToReverifyHighPrioTxPerIdle = (double) Blockchain.SecondsPerBlock / 15;
         private static readonly double MaxSecondsToReverifyLowPrioTxPerIdle = (double) Blockchain.SecondsPerBlock / 30;
+
+        private readonly NeoSystem _system;
 
         //
         /// <summary>
@@ -85,8 +93,8 @@ namespace Neo.Ledger
         private readonly SortedSet<PoolItem> _unverifiedSortedHighPriorityTransactions = new SortedSet<PoolItem>();
         private readonly SortedSet<PoolItem> _unverifiedSortedLowPriorityTransactions = new SortedSet<PoolItem>();
 
-        private int _maxTxPerBlock = int.MaxValue;
-        private int _maxLowPriorityTxPerBlock = int.MaxValue;
+        private int _maxTxPerBlock;
+        private int _maxLowPriorityTxPerBlock;
 
         /// <summary>
         /// Total maximum capacity of transactions the pool can hold.
@@ -120,8 +128,9 @@ namespace Neo.Ledger
 
         public int UnVerifiedCount => _unverifiedTransactions.Count;
 
-        public MemoryPool(int capacity)
+        public MemoryPool(NeoSystem system, int capacity)
         {
+            _system = system;
             Capacity = capacity;
             LoadMaxTxLimitsFromPolicyPlugins();
         }
@@ -425,10 +434,21 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
+                var rebroadcastCutOffTime = DateTime.UtcNow.AddSeconds(
+                    -Blockchain.SecondsPerBlock * BlocksTillRebroadcastPoolTx);
                 foreach (PoolItem item in reverifiedItems)
                 {
                     if (_unsortedTransactions.TryAdd(item.Transaction.Hash, item))
+                    {
                         verifiedSortedTxPool.Add(item);
+
+                        if (item.LastBroadcastTimestamp < rebroadcastCutOffTime)
+                        {
+                            _system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = item.Transaction }, _system.Blockchain);
+                            item.LastBroadcastTimestamp = DateTime.UtcNow;
+                        }
+                    }
+
                     _unverifiedTransactions.Remove(item.Transaction.Hash);
                     unverifiedSortedTxPool.Remove(item);
                 }

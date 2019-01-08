@@ -111,6 +111,7 @@ namespace Neo.Ledger
             }
         };
 
+        private const int MemoryPoolMaxTransactions = 50_000;
         private const int MaxTxToReverifyPerIdle = 10;
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
@@ -118,7 +119,7 @@ namespace Neo.Ledger
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
-        private readonly MemoryPool mem_pool = new MemoryPool(50_000);
+        private readonly MemoryPool mem_pool;
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private readonly HashSet<IActorRef> subscribers = new HashSet<IActorRef>();
         private Snapshot currentSnapshot;
@@ -147,6 +148,7 @@ namespace Neo.Ledger
         public Blockchain(NeoSystem system, Store store)
         {
             this.system = system;
+            this.mem_pool = new MemoryPool(system, MemoryPoolMaxTransactions);
             this.Store = store;
             lock (lockObj)
             {
