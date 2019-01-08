@@ -377,9 +377,9 @@ namespace Neo.Ledger
                 return;
 
             ReverifyTransactions(_sortedHighPrioTransactions, _unverifiedSortedHighPriorityTransactions,
-                Settings.Default.MaxTransactionsPerBlock, MaxSecondsToReverifyHighPrioTx, snapshot);
+                ProtocolSettings.Default.MaxTransactionsPerBlock, MaxSecondsToReverifyHighPrioTx, snapshot);
             ReverifyTransactions(_sortedLowPrioTransactions, _unverifiedSortedLowPriorityTransactions,
-                Settings.Default.MaxFreeTransactionsPerBlock, MaxSecondsToReverifyLowPrioTx, snapshot);
+                ProtocolSettings.Default.MaxFreeTransactionsPerBlock, MaxSecondsToReverifyLowPrioTx, snapshot);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -444,7 +444,7 @@ namespace Neo.Ledger
             if (_unverifiedSortedHighPriorityTransactions.Count > 0)
             {
                 // Always leave at least 1 tx for low priority tx
-                int verifyCount = _sortedHighPrioTransactions.Count > Settings.Default.MaxTransactionsPerBlock || maxToVerify == 1
+                int verifyCount = _sortedHighPrioTransactions.Count > ProtocolSettings.Default.MaxTransactionsPerBlock || maxToVerify == 1
                     ? 1 : maxToVerify - 1;
                 maxToVerify -= ReverifyTransactions(_sortedHighPrioTransactions, _unverifiedSortedHighPriorityTransactions,
                     verifyCount, MaxSecondsToReverifyHighPrioTxPerIdle, snapshot);
@@ -454,7 +454,7 @@ namespace Neo.Ledger
 
             if (_unverifiedSortedLowPriorityTransactions.Count > 0)
             {
-                int verifyCount = _sortedLowPrioTransactions.Count > Settings.Default.MaxFreeTransactionsPerBlock
+                int verifyCount = _sortedLowPrioTransactions.Count > ProtocolSettings.Default.MaxFreeTransactionsPerBlock
                     ? 1 : maxToVerify;
                 ReverifyTransactions(_sortedLowPrioTransactions, _unverifiedSortedLowPriorityTransactions,
                     verifyCount, MaxSecondsToReverifyLowPrioTxPerIdle, snapshot);
