@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Akka.Util.Internal;
 using Neo.Persistence;
+using Neo.Plugins;
 
 namespace Neo.Ledger
 {
@@ -84,6 +85,9 @@ namespace Neo.Ledger
         private readonly SortedSet<PoolItem> _unverifiedSortedHighPriorityTransactions = new SortedSet<PoolItem>();
         private readonly SortedSet<PoolItem> _unverifiedSortedLowPriorityTransactions = new SortedSet<PoolItem>();
 
+        private int _maxTxPerBlock = int.MaxValue;
+        private int _maxLowPriorityTxPerBlock = int.MaxValue;
+
         /// <summary>
         /// Total maximum capacity of transactions the pool can hold.
         /// </summary>
@@ -119,6 +123,18 @@ namespace Neo.Ledger
         public MemoryPool(int capacity)
         {
             Capacity = capacity;
+            LoadMaxTxLimitsFromPolicyPlugins();
+        }
+
+        public void LoadMaxTxLimitsFromPolicyPlugins()
+        {
+            _maxTxPerBlock = int.MaxValue;
+            _maxLowPriorityTxPerBlock = int.MaxValue;
+            foreach (IPolicyPlugin plugin in Plugin.Policies)
+            {
+                _maxTxPerBlock = Math.Min(_maxTxPerBlock, plugin.MaxTxPerBlock);
+                _maxLowPriorityTxPerBlock = Math.Min(_maxLowPriorityTxPerBlock, plugin.MaxLowPriorityTxPerBlock);
+            }
         }
 
         /// <summary>
@@ -376,10 +392,15 @@ namespace Neo.Ledger
             if (block.Index < Blockchain.Singleton.HeaderHeight)
                 return;
 
+            if (Plugin.Policies.Count == 0)
+                return;
+
+            LoadMaxTxLimitsFromPolicyPlugins();
+
             ReverifyTransactions(_sortedHighPrioTransactions, _unverifiedSortedHighPriorityTransactions,
-                ProtocolSettings.Default.MaxTransactionsPerBlock, MaxSecondsToReverifyHighPrioTx, snapshot);
+                _maxTxPerBlock, MaxSecondsToReverifyHighPrioTx, snapshot);
             ReverifyTransactions(_sortedLowPrioTransactions, _unverifiedSortedLowPriorityTransactions,
-                ProtocolSettings.Default.MaxFreeTransactionsPerBlock, MaxSecondsToReverifyLowPrioTx, snapshot);
+                _maxLowPriorityTxPerBlock, MaxSecondsToReverifyLowPrioTx, snapshot);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -444,7 +465,7 @@ namespace Neo.Ledger
             if (_unverifiedSortedHighPriorityTransactions.Count > 0)
             {
                 // Always leave at least 1 tx for low priority tx
-                int verifyCount = _sortedHighPrioTransactions.Count > ProtocolSettings.Default.MaxTransactionsPerBlock || maxToVerify == 1
+                int verifyCount = _sortedHighPrioTransactions.Count > _maxTxPerBlock || maxToVerify == 1
                     ? 1 : maxToVerify - 1;
                 maxToVerify -= ReverifyTransactions(_sortedHighPrioTransactions, _unverifiedSortedHighPriorityTransactions,
                     verifyCount, MaxSecondsToReverifyHighPrioTxPerIdle, snapshot);
@@ -454,7 +475,7 @@ namespace Neo.Ledger
 
             if (_unverifiedSortedLowPriorityTransactions.Count > 0)
             {
-                int verifyCount = _sortedLowPrioTransactions.Count > ProtocolSettings.Default.MaxFreeTransactionsPerBlock
+                int verifyCount = _sortedLowPrioTransactions.Count > _maxLowPriorityTxPerBlock
                     ? 1 : maxToVerify;
                 ReverifyTransactions(_sortedLowPrioTransactions, _unverifiedSortedLowPriorityTransactions,
                     verifyCount, MaxSecondsToReverifyLowPrioTxPerIdle, snapshot);
