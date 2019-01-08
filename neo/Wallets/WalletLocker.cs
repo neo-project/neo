@@ -60,6 +60,11 @@ namespace Neo.Wallets
             }
         }
 
+        public static void Reset()
+        {
+            singleton = null;
+        }
+
         public void Dispose()
         {
             wallet.Lock();
