@@ -359,7 +359,7 @@ namespace Neo.SmartContract
                         stackitem_count += ((Array)CurrentContext.EvaluationStack.Peek()).Count;
                         break;
                     case OpCode.KEYS:
-                        stackitem_count += ((Array)CurrentContext.EvaluationStack.Peek()).Count;
+                        stackitem_count += ((Map)CurrentContext.EvaluationStack.Peek()).Count;
                         is_stackitem_count_strict = false;
                         break;
                 }
