@@ -320,7 +320,7 @@ namespace Neo.Network.RPC
                         }
                         return tx.ToArray().ToHexString();
                     }
-                case "getrawtransactionheight":
+                case "gettransactionheight":
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
                         Transaction tx = Blockchain.Singleton.GetTransaction(hash);
