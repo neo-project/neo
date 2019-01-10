@@ -329,7 +329,7 @@ namespace Neo.Network.RPC
 
                         uint? height = Blockchain.Singleton.Store.GetTransactions().TryGet(hash)?.BlockIndex;
                         if (height != null)
-                            return header.Index;
+                            return height;
 
                        throw new RpcException(-32603, "Invalid height");
                     }                    
