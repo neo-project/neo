@@ -1,7 +1,6 @@
 ﻿using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -387,15 +386,8 @@ namespace Neo.Ledger
                         _unverifiedSortedHighPriorityTransactions.Add(item);
                 }
 
-                // NOTE: This really shouldn't be necessary any more and can actually be counter-productive, since
-                //       they can be re-added anyway and would incur a potential addtional verification; setting to 1000
-                //       blocks for now. If transactions want to only be valid for short times they can include a script.
-                var lowPriorityCutOffTime = DateTime.UtcNow.AddSeconds(-Blockchain.SecondsPerBlock * 1000);
                 foreach (PoolItem item in _sortedLowPrioTransactions)
                 {
-                    // Expire old free transactions
-                    if (item.Transaction.IsLowPriority && item.Timestamp < lowPriorityCutOffTime) continue;
-
                     if (_unverifiedTransactions.TryAdd(item.Transaction.Hash, item))
                         _unverifiedSortedLowPriorityTransactions.Add(item);
                 }
