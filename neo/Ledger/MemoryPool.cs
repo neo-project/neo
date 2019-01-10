@@ -267,15 +267,28 @@ namespace Neo.Ledger
             return minItem;
         }
 
-        private PoolItem GetLowestFeeTransaction(out SortedSet<PoolItem> sortedPool)
+        private PoolItem GetLowestFeeTransaction(out Dictionary<UInt256, PoolItem> unsortedTxPool, out SortedSet<PoolItem> sortedPool)
         {
             var minItem = GetLowestFeeTransaction(_sortedLowPrioTransactions, _unverifiedSortedLowPriorityTransactions,
                 out sortedPool);
 
-            if (minItem != null) return minItem;
+            if (minItem != null)
+            {
+                unsortedTxPool = sortedPool == _unverifiedSortedLowPriorityTransactions
+                    ? _unverifiedTransactions : _unsortedTransactions;
+                return minItem;
+            }
 
-            return GetLowestFeeTransaction(_sortedHighPrioTransactions, _unverifiedSortedHighPriorityTransactions,
-                out sortedPool);
+            try
+            {
+                return GetLowestFeeTransaction(_sortedHighPrioTransactions, _unverifiedSortedHighPriorityTransactions,
+                    out sortedPool);
+            }
+            finally
+            {
+                unsortedTxPool = sortedPool == _unverifiedSortedHighPriorityTransactions
+                    ? _unverifiedTransactions : _unsortedTransactions;
+            }
         }
 
         // Note: this must only be called from a single thread (the Blockchain actor)
@@ -283,7 +296,7 @@ namespace Neo.Ledger
         {
             if (Count < Capacity) return true;
 
-            return GetLowestFeeTransaction(out _).CompareTo(tx) <= 0;
+            return GetLowestFeeTransaction(out _, out _).CompareTo(tx) <= 0;
         }
 
         /// <summary>
@@ -321,9 +334,9 @@ namespace Neo.Ledger
         {
             while (Count > Capacity)
             {
-                PoolItem minItem = GetLowestFeeTransaction(out var sortedPool);
+                PoolItem minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
 
-                _unsortedTransactions.Remove(minItem.Transaction.Hash);
+                unsortedPool.Remove(minItem.Transaction.Hash);
                 sortedPool.Remove(minItem);
             }
         }
