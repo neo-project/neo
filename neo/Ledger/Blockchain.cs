@@ -388,7 +388,7 @@ namespace Neo.Ledger
             if (!transaction.Verify(currentSnapshot, GetMemoryPool()))
                 return RelayResultReason.Invalid;
             if (!Plugin.CheckPolicy(transaction))
-                return RelayResultReason.Unknown;
+                return RelayResultReason.PolicyFail;
 
             if (!mem_pool.TryAdd(transaction.Hash, transaction))
                 return RelayResultReason.OutOfMemory;
