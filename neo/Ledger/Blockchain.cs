@@ -119,12 +119,12 @@ namespace Neo.Ledger
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
-        private readonly MemoryPool mem_pool;
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private readonly HashSet<IActorRef> subscribers = new HashSet<IActorRef>();
         private Snapshot currentSnapshot;
 
         public Store Store { get; }
+        public MemoryPool MemPool { get; }
         public uint Height => currentSnapshot.Height;
         public uint HeaderHeight => (uint)header_index.Count - 1;
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
@@ -148,7 +148,7 @@ namespace Neo.Ledger
         public Blockchain(NeoSystem system, Store store)
         {
             this.system = system;
-            this.mem_pool = new MemoryPool(system, MemoryPoolMaxTransactions);
+            this.MemPool = new MemoryPool(system, MemoryPoolMaxTransactions);
             this.Store = store;
             lock (lockObj)
             {
@@ -189,7 +189,7 @@ namespace Neo.Ledger
 
         public bool ContainsTransaction(UInt256 hash)
         {
-            if (mem_pool.ContainsKey(hash)) return true;
+            if (MemPool.ContainsKey(hash)) return true;
             return Store.ContainsTransaction(hash);
         }
 
@@ -217,32 +217,6 @@ namespace Neo.Ledger
             return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
         }
 
-        public IEnumerable<Transaction> GetMemoryPoolVerified()
-        {
-            return mem_pool.GetVerifiedTransactions();
-        }
-
-        public IEnumerable<Transaction> GetMemoryPoolVerifiedAndSorted()
-        {
-            return mem_pool.GetSortedVerifiedTransactions();
-        }
-
-        public IEnumerable<Transaction> GetMemoryPoolVerifiedAndUnverified()
-        {
-            return mem_pool;
-        }
-
-        public void GetMemoryPoolSeparateVerfiedAndUnverified(out IEnumerable<Transaction> verifiedTransactions,
-            out IEnumerable<Transaction> unverifiedTransactions)
-        {
-            mem_pool.GetVerifiedAndUnverifiedTransactions(out verifiedTransactions, out unverifiedTransactions);
-        }
-
-        public Transaction GetMemoryPoolTransaction(UInt256 hash)
-        {
-            return mem_pool.TryGetValue(hash, out Transaction transaction) ? transaction : null;
-        }
-
         public Snapshot GetSnapshot()
         {
             return Store.GetSnapshot();
@@ -250,7 +224,7 @@ namespace Neo.Ledger
 
         public Transaction GetTransaction(UInt256 hash)
         {
-            if (mem_pool.TryGetValue(hash, out Transaction transaction))
+            if (MemPool.TryGetValue(hash, out Transaction transaction))
                 return transaction;
             return Store.GetTransaction(hash);
         }
@@ -399,14 +373,14 @@ namespace Neo.Ledger
                 return RelayResultReason.Invalid;
             if (ContainsTransaction(transaction.Hash))
                 return RelayResultReason.AlreadyExists;
-            if (!mem_pool.CanTransactionFitInPool(transaction))
+            if (!MemPool.CanTransactionFitInPool(transaction))
                 return RelayResultReason.OutOfMemory;
-            if (!transaction.Verify(currentSnapshot, GetMemoryPoolVerified()))
+            if (!transaction.Verify(currentSnapshot, MemPool.GetVerifiedTransactions()))
                 return RelayResultReason.Invalid;
             if (!Plugin.CheckPolicy(transaction))
                 return RelayResultReason.PolicyFail;
 
-            if (!mem_pool.TryAdd(transaction.Hash, transaction))
+            if (!MemPool.TryAdd(transaction.Hash, transaction))
                 return RelayResultReason.OutOfMemory;
 
             system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
@@ -416,7 +390,7 @@ namespace Neo.Ledger
         private void OnPersistCompleted(Block block)
         {
             block_cache.Remove(block.Hash);
-            mem_pool.UpdatePoolForBlockPersisted(block, currentSnapshot);
+            MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             PersistCompleted completed = new PersistCompleted { Block = block };
             system.Consensus?.Tell(completed);
             Distribute(completed);
@@ -445,7 +419,7 @@ namespace Neo.Ledger
                     Sender.Tell(OnNewConsensus(payload));
                     break;
                 case Idle _:
-                    if (mem_pool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
+                    if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
                         Self.Tell(Idle.Instance, ActorRefs.NoSender);
                     break;
                 case Terminated terminated:
