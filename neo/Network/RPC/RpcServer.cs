@@ -320,19 +320,6 @@ namespace Neo.Network.RPC
                         }
                         return tx.ToArray().ToHexString();
                     }
-                case "gettransactionheight":
-                    {
-                        UInt256 hash = UInt256.Parse(_params[0].AsString());
-                        Transaction tx = Blockchain.Singleton.GetTransaction(hash);
-                        if (tx == null)
-                            throw new RpcException(-100, "Unknown transaction");
-
-                        uint? height = Blockchain.Singleton.Store.GetTransactions().TryGet(hash)?.BlockIndex;
-                        if (height != null)
-                            return height;
-
-                       throw new RpcException(-32603, "Invalid height");
-                    }                    
                 case "getstorage":
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
@@ -343,6 +330,13 @@ namespace Neo.Network.RPC
                             Key = key
                         }) ?? new StorageItem();
                         return item.Value?.ToHexString();
+                    }
+                case "gettransactionheight":
+                    {
+                        UInt256 hash = UInt256.Parse(_params[0].AsString());
+                        uint? height = Blockchain.Singleton.Store.GetTransactions().TryGet(hash)?.BlockIndex;
+                        if (height.HasValue) return height.Value;
+                        throw new RpcException(-100, "Unknown transaction");
                     }
                 case "gettxout":
                     {
