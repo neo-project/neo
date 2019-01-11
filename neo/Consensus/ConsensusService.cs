@@ -285,6 +285,7 @@ namespace Neo.Consensus
         {
             if (context.Preparations[payload.ValidatorIndex]) return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+            if (context.State.HasFlag(ConsensusState.CommitSent)) return;
             context.Preparations[payload.ValidatorIndex] = true;
             if (context.State.HasFlag(ConsensusState.RequestSent) || context.State.HasFlag(ConsensusState.RequestReceived))
                 CheckPreparations();
