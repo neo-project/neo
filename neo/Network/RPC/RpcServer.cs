@@ -332,6 +332,13 @@ namespace Neo.Network.RPC
                         }) ?? new StorageItem();
                         return item.Value?.ToHexString();
                     }
+                case "gettransactionheight":
+                    {
+                        UInt256 hash = UInt256.Parse(_params[0].AsString());
+                        uint? height = Blockchain.Singleton.Store.GetTransactions().TryGet(hash)?.BlockIndex;
+                        if (height.HasValue) return height.Value;
+                        throw new RpcException(-100, "Unknown transaction");
+                    }
                 case "gettxout":
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
