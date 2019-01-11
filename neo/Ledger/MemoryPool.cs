@@ -12,7 +12,7 @@ using Neo.Plugins;
 
 namespace Neo.Ledger
 {
-    internal class MemoryPool : IReadOnlyCollection<Transaction>
+    public class MemoryPool : IReadOnlyCollection<Transaction>
     {
         private class PoolItem : IComparable<PoolItem>
         {
