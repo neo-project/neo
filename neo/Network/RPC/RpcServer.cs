@@ -127,6 +127,8 @@ namespace Neo.Network.RPC
                     throw new RpcException(-503, "The block cannot be validated.");
                 case RelayResultReason.Invalid:
                     throw new RpcException(-504, "Block or transaction validation failed.");
+                case RelayResultReason.PolicyFail:
+                    throw new RpcException(-505, "One of the Policy filters failed [tx_size_limits_fees or blocked_accounts].");
                 default:
                     throw new RpcException(-500, "Unkown error.");
             }
