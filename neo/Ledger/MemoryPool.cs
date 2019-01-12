@@ -66,7 +66,7 @@ namespace Neo.Ledger
         ///       performed by the blockchain actor do not need to acquire the read lock; they only need the write
         ///       lock for write operations.
         /// </summary>
-        private readonly ReaderWriterLockSlim _txRwLockm = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+        private readonly ReaderWriterLockSlim _txRwLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
         /// <summary>
         /// Store all verified unsorted transactions currently in the pool.
