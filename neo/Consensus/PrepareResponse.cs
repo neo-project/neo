@@ -2,9 +2,6 @@
 {
     internal class PrepareResponse : ConsensusMessage
     {
-        public PrepareResponse()
-            : base(ConsensusMessageType.PrepareResponse)
-        {
-        }
+        public PrepareResponse() : base(ConsensusMessageType.PrepareResponse) { }
     }
 }
