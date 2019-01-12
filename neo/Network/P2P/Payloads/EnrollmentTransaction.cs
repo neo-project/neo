@@ -41,9 +41,9 @@ namespace Neo.Network.P2P.Payloads
             PublicKey = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
         }
 
-        public override UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+        public override UInt160[] GetScriptHashesForVerifying(Snapshot snapshot, UInt160 executingScriptHash = null)
         {
-            return base.GetScriptHashesForVerifying(snapshot).Union(new UInt160[] { ScriptHash }).OrderBy(p => p).ToArray();
+            return base.GetScriptHashesForVerifying(snapshot, executingScriptHash).Union(new UInt160[] { ScriptHash }).OrderBy(p => p).ToArray();
         }
 
         protected override void SerializeExclusiveData(BinaryWriter writer)

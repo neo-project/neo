@@ -71,7 +71,7 @@ namespace Neo.Network.P2P.Payloads
             return this.GetHashData();
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(Snapshot snapshot)
+        UInt160[] IVerifiable.GetScriptHashesForVerifying(Snapshot snapshot, UInt160 executingScriptHash = null)
         {
             ECPoint[] validators = snapshot.GetValidators();
             if (validators.Length <= ValidatorIndex)

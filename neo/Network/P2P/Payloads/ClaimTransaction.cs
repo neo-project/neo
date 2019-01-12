@@ -29,9 +29,9 @@ namespace Neo.Network.P2P.Payloads
             if (Claims.Length == 0) throw new FormatException();
         }
 
-        public override UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+        public override UInt160[] GetScriptHashesForVerifying(Snapshot snapshot, UInt160 executingScriptHash = null)
         {
-            HashSet<UInt160> hashes = new HashSet<UInt160>(base.GetScriptHashesForVerifying(snapshot));
+            HashSet<UInt160> hashes = new HashSet<UInt160>(base.GetScriptHashesForVerifying(snapshot, executingScriptHash));
             foreach (var group in Claims.GroupBy(p => p.PrevHash))
             {
                 Transaction tx = snapshot.GetTransaction(group.Key);

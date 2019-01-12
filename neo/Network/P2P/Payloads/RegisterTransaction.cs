@@ -65,10 +65,10 @@ namespace Neo.Network.P2P.Payloads
             Admin = reader.ReadSerializable<UInt160>();
         }
 
-        public override UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+        public override UInt160[] GetScriptHashesForVerifying(Snapshot snapshot, UInt160 executingScriptHash = null)
         {
             UInt160 owner = Contract.CreateSignatureRedeemScript(Owner).ToScriptHash();
-            return base.GetScriptHashesForVerifying(snapshot).Union(new[] { owner }).OrderBy(p => p).ToArray();
+            return base.GetScriptHashesForVerifying(snapshot, executingScriptHash).Union(new[] { owner }).OrderBy(p => p).ToArray();
         }
 
         protected override void OnDeserialized()

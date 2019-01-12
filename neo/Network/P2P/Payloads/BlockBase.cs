@@ -73,7 +73,7 @@ namespace Neo.Network.P2P.Payloads
             return this.GetHashData();
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(Snapshot snapshot)
+        UInt160[] IVerifiable.GetScriptHashesForVerifying(Snapshot snapshot, UInt160 executingScriptHash = null)
         {
             if (PrevHash == UInt256.Zero)
                 return new[] { Witness.ScriptHash };

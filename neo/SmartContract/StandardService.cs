@@ -157,7 +157,7 @@ namespace Neo.SmartContract
         protected bool CheckWitness(ExecutionEngine engine, UInt160 hash)
         {
             IVerifiable container = (IVerifiable)engine.ScriptContainer;
-            UInt160[] _hashes_for_verifying = container.GetScriptHashesForVerifying(Snapshot);
+            UInt160[] _hashes_for_verifying = container.GetScriptHashesForVerifying(Snapshot, new UInt160(engine.CurrentContext.ScriptHash));
             return _hashes_for_verifying.Contains(hash);
         }
 

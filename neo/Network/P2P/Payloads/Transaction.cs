@@ -187,11 +187,31 @@ namespace Neo.Network.P2P.Payloads
             return this.GetHashData();
         }
 
-        public virtual UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+        private bool AllowScriptHash(byte[] Data, UInt160 executingScriptHash)
+        {
+            if ((executingScriptHash == null) || Data.Length <= 20)
+                return true; // global behavior
+            // parse list of allowed contract-specific witnesses
+            int count = Data.Skip(20).Take(1).ToArray()[0]; // maximum 255 hashes
+            if (Data.Length != (21+20*count))
+                return false;
+            for(var i=0; i<count; i++)
+            {
+                UInt160 allowed = new UInt160(Data.Skip(21+i*20).Take(20).ToArray());
+                if(executingScriptHash == allowed)
+                    return true;
+            }
+            return false;
+        }
+
+        public virtual UInt160[] GetScriptHashesForVerifying(Snapshot snapshot, UInt160 executingScriptHash = null)
         {
             if (References == null) throw new InvalidOperationException();
             HashSet<UInt160> hashes = new HashSet<UInt160>(Inputs.Select(p => References[p].ScriptHash));
-            hashes.UnionWith(Attributes.Where(p => p.Usage == TransactionAttributeUsage.Script).Select(p => new UInt160(p.Data)));
+            //hashes.UnionWith(Attributes.Where(p => p.Usage == TransactionAttributeUsage.Script).Select(p => new UInt160(p.Data)));
+            hashes.UnionWith(Attributes.Where(p => (p.Usage == TransactionAttributeUsage.Script) && (AllowScriptHash(p.Data, executingScriptHash))
+                                              ).Select(p => new UInt160(p.Data.Take(20).ToArray()))
+                            );
             foreach (var group in Outputs.GroupBy(p => p.AssetId))
             {
                 AssetState asset = snapshot.Assets.TryGet(group.Key);

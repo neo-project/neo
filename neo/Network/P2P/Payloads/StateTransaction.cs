@@ -27,9 +27,9 @@ namespace Neo.Network.P2P.Payloads
             Descriptors = reader.ReadSerializableArray<StateDescriptor>(16);
         }
 
-        public override UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+        public override UInt160[] GetScriptHashesForVerifying(Snapshot snapshot, UInt160 executingScriptHash = null)
         {
-            HashSet<UInt160> hashes = new HashSet<UInt160>(base.GetScriptHashesForVerifying(snapshot));
+            HashSet<UInt160> hashes = new HashSet<UInt160>(base.GetScriptHashesForVerifying(snapshot, executingScriptHash));
             foreach (StateDescriptor descriptor in Descriptors)
             {
                 switch (descriptor.Type)

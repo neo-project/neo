@@ -11,7 +11,7 @@ namespace Neo.Network.P2P.Payloads
 
         void DeserializeUnsigned(BinaryReader reader);
 
-        UInt160[] GetScriptHashesForVerifying(Snapshot snapshot);
+        UInt160[] GetScriptHashesForVerifying(Snapshot snapshot, UInt160 executingScriptHash = null);
 
         void SerializeUnsigned(BinaryWriter writer);
     }

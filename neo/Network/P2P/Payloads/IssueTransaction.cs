@@ -30,7 +30,7 @@ namespace Neo.Network.P2P.Payloads
             if (Version > 1) throw new FormatException();
         }
 
-        public override UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+        public override UInt160[] GetScriptHashesForVerifying(Snapshot snapshot, UInt160 executingScriptHash = null)
         {
             HashSet<UInt160> hashes = new HashSet<UInt160>(base.GetScriptHashesForVerifying(snapshot));
             foreach (TransactionResult result in GetTransactionResults().Where(p => p.Amount < Fixed8.Zero))
