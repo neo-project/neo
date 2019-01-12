@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -128,9 +128,9 @@ namespace Neo.Network.RPC
                 case RelayResultReason.Invalid:
                     throw new RpcException(-504, "Block or transaction validation failed.");
                 case RelayResultReason.PolicyFail:
-                    throw new RpcException(-505, "One of the Policy filters failed [tx_size_limits_fees or blocked_accounts].");
+                    throw new RpcException(-505, "One of the Policy filters failed.");
                 default:
-                    throw new RpcException(-500, "Unkown error.");
+                    throw new RpcException(-500, "Unknown error.");
             }
         }
 
