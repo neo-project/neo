@@ -8,10 +8,7 @@ namespace Neo.Consensus
 
         public override int Size => base.Size + Signature.Length;
 
-        public Commit()
-          : base(ConsensusMessageType.Commit)
-        {
-        }
+        public Commit() : base(ConsensusMessageType.Commit) { }
 
         public override void Deserialize(BinaryReader reader)
         {
