@@ -247,12 +247,11 @@ namespace Neo.Consensus
             context.Transactions = new Dictionary<UInt256, Transaction>();
             context.Preparations[payload.ValidatorIndex] = true;
             byte[] hashData = context.MakeHeader().GetHashData();
-
             for (int i = 0; i < context.Commits.Length; i++)
                 if (context.Commits[i] != null)
                     if (!Crypto.Default.VerifySignature(hashData, context.Commits[i], context.Validators[i].EncodePoint(false)))
                         context.Commits[i] = null;
-            Dictionary<UInt256, Transaction> mempool = Blockchain.Singleton.GetMemoryPool().ToDictionary(p => p.Hash);
+            Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
 
             List<Transaction> unverified = new List<Transaction>();
             foreach (UInt256 hash in context.TransactionHashes.Skip(1))
