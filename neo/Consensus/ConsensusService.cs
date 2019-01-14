@@ -59,10 +59,10 @@ namespace Neo.Consensus
                 if (context.VerifyRequest())
                 {
                     Log($"send prepare response");
-                    context.State |= ConsensusState.SignatureSent;
-                    context.SignHeader();
-                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.Signatures[context.MyIndex]) });
-                    CheckSignatures();
+                    context.State |= ConsensusState.ResponseSent;
+                    context.Preparations[context.MyIndex] = true;
+                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
+                    CheckPreparations();
                 }
                 else
                 {
@@ -83,6 +83,17 @@ namespace Neo.Consensus
             }, ActorRefs.NoSender);
         }
 
+        private void CheckCommits()
+        {
+            if (context.Commits.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
+            {
+                Block block = context.CreateBlock();
+                Log($"relay block: {block.Hash}");
+                localNode.Tell(new LocalNode.Relay { Inventory = block });
+                context.State |= ConsensusState.BlockSent;
+            }
+        }
+
         private void CheckExpectedView(byte view_number)
         {
             if (context.ViewNumber == view_number) return;
@@ -92,14 +103,15 @@ namespace Neo.Consensus
             }
         }
 
-        private void CheckSignatures()
+        private void CheckPreparations()
         {
-            if (context.Signatures.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
+            if (context.Preparations.Count(p => p) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                Block block = context.CreateBlock();
-                Log($"relay block: {block.Hash}");
-                localNode.Tell(new LocalNode.Relay { Inventory = block });
-                context.State |= ConsensusState.BlockSent;
+                ConsensusPayload payload = context.MakeCommit();
+                Log($"send commit");
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
+                context.State |= ConsensusState.CommitSent;
+                CheckCommits();
             }
         }
 
@@ -136,11 +148,29 @@ namespace Neo.Consensus
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
+            if (context.State.HasFlag(ConsensusState.CommitSent))
+                return;
             if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
                 return;
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
             context.ExpectedView[payload.ValidatorIndex] = message.NewViewNumber;
             CheckExpectedView(message.NewViewNumber);
+        }
+
+        private void OnCommitReceived(ConsensusPayload payload, Commit commit)
+        {
+            if (context.Commits[payload.ValidatorIndex] != null) return;
+            Log($"{nameof(OnCommitReceived)}: height={payload.BlockIndex} view={commit.ViewNumber} index={payload.ValidatorIndex}");
+            byte[] hashData = context.MakeHeader()?.GetHashData();
+            if (hashData == null)
+            {
+                context.Commits[payload.ValidatorIndex] = commit.Signature;
+            }
+            else if (Crypto.Default.VerifySignature(hashData, commit.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
+            {
+                context.Commits[payload.ValidatorIndex] = commit.Signature;
+                CheckCommits();
+            }
         }
 
         private void OnConsensusPayload(ConsensusPayload payload)
@@ -169,16 +199,19 @@ namespace Neo.Consensus
             }
             if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView)
                 return;
-            switch (message.Type)
+            switch (message)
             {
-                case ConsensusMessageType.ChangeView:
-                    OnChangeViewReceived(payload, (ChangeView)message);
+                case ChangeView view:
+                    OnChangeViewReceived(payload, view);
                     break;
-                case ConsensusMessageType.PrepareRequest:
-                    OnPrepareRequestReceived(payload, (PrepareRequest)message);
+                case PrepareRequest request:
+                    OnPrepareRequestReceived(payload, request);
                     break;
-                case ConsensusMessageType.PrepareResponse:
-                    OnPrepareResponseReceived(payload, (PrepareResponse)message);
+                case PrepareResponse response:
+                    OnPrepareResponseReceived(payload, response);
+                    break;
+                case Commit commit:
+                    OnCommitReceived(payload, commit);
                     break;
             }
         }
@@ -212,13 +245,12 @@ namespace Neo.Consensus
             context.NextConsensus = message.NextConsensus;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
+            context.Preparations[payload.ValidatorIndex] = true;
             byte[] hashData = context.MakeHeader().GetHashData();
-            if (!Crypto.Default.VerifySignature(hashData, message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false))) return;
-            for (int i = 0; i < context.Signatures.Length; i++)
-                if (context.Signatures[i] != null)
-                    if (!Crypto.Default.VerifySignature(hashData, context.Signatures[i], context.Validators[i].EncodePoint(false)))
-                        context.Signatures[i] = null;
-            context.Signatures[payload.ValidatorIndex] = message.Signature;
+            for (int i = 0; i < context.Commits.Length; i++)
+                if (context.Commits[i] != null)
+                    if (!Crypto.Default.VerifySignature(hashData, context.Commits[i], context.Validators[i].EncodePoint(false)))
+                        context.Commits[i] = null;
             Dictionary<UInt256, Transaction> mempool = Blockchain.Singleton.GetMemoryPool().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
             foreach (UInt256 hash in context.TransactionHashes.Skip(1))
@@ -251,18 +283,12 @@ namespace Neo.Consensus
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
-            if (context.Signatures[payload.ValidatorIndex] != null) return;
+            if (context.Preparations[payload.ValidatorIndex]) return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
-            byte[] hashData = context.MakeHeader()?.GetHashData();
-            if (hashData == null)
-            {
-                context.Signatures[payload.ValidatorIndex] = message.Signature;
-            }
-            else if (Crypto.Default.VerifySignature(hashData, message.Signature, context.Validators[payload.ValidatorIndex].EncodePoint(false)))
-            {
-                context.Signatures[payload.ValidatorIndex] = message.Signature;
-                CheckSignatures();
-            }
+            if (context.State.HasFlag(ConsensusState.CommitSent)) return;
+            context.Preparations[payload.ValidatorIndex] = true;
+            if (context.State.HasFlag(ConsensusState.RequestSent) || context.State.HasFlag(ConsensusState.RequestReceived))
+                CheckPreparations();
         }
 
         protected override void OnReceive(object message)
@@ -304,13 +330,10 @@ namespace Neo.Consensus
             if (context.State.HasFlag(ConsensusState.Primary) && !context.State.HasFlag(ConsensusState.RequestSent))
             {
                 Log($"send prepare request: height={timer.Height} view={timer.ViewNumber}");
-                context.State |= ConsensusState.RequestSent;
-                if (!context.State.HasFlag(ConsensusState.SignatureSent))
-                {
-                    context.Fill();
-                    context.SignHeader();
-                }
+                context.Fill();
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
+                context.State |= ConsensusState.RequestSent;
+                context.Preparations[context.MyIndex] = true;
                 if (context.TransactionHashes.Length > 1)
                 {
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
@@ -320,14 +343,15 @@ namespace Neo.Consensus
             }
             else if ((context.State.HasFlag(ConsensusState.Primary) && context.State.HasFlag(ConsensusState.RequestSent)) || context.State.HasFlag(ConsensusState.Backup))
             {
-                RequestChangeView();
+                if (!context.State.HasFlag(ConsensusState.CommitSent))
+                    RequestChangeView();
             }
         }
 
         private void OnTransaction(Transaction transaction)
         {
             if (transaction.Type == TransactionType.MinerTransaction) return;
-            if (!context.State.HasFlag(ConsensusState.Backup) || !context.State.HasFlag(ConsensusState.RequestReceived) || context.State.HasFlag(ConsensusState.SignatureSent) || context.State.HasFlag(ConsensusState.ViewChanging) || context.State.HasFlag(ConsensusState.BlockSent))
+            if (!context.State.HasFlag(ConsensusState.Backup) || !context.State.HasFlag(ConsensusState.RequestReceived) || context.State.HasFlag(ConsensusState.ResponseSent) || context.State.HasFlag(ConsensusState.ViewChanging) || context.State.HasFlag(ConsensusState.BlockSent))
                 return;
             if (context.Transactions.ContainsKey(transaction.Hash)) return;
             if (!context.TransactionHashes.Contains(transaction.Hash)) return;

@@ -28,7 +28,8 @@ namespace Neo.Consensus
         public UInt160 NextConsensus { get; set; }
         public UInt256[] TransactionHashes { get; set; }
         public Dictionary<UInt256, Transaction> Transactions { get; set; }
-        public byte[][] Signatures { get; set; }
+        public bool[] Preparations { get; set; }
+        public byte[][] Commits { get; set; }
         public byte[] ExpectedView { get; set; }
         private Snapshot snapshot;
         private KeyPair keyPair;
@@ -46,14 +47,12 @@ namespace Neo.Consensus
 
         public void ChangeView(byte view_number)
         {
-            State &= ConsensusState.SignatureSent;
+            State = ConsensusState.Initial;
             ViewNumber = view_number;
             PrimaryIndex = GetPrimaryIndex(view_number);
-            if (State == ConsensusState.Initial)
-            {
-                TransactionHashes = null;
-                Signatures = new byte[Validators.Length][];
-            }
+            TransactionHashes = null;
+            Preparations = new bool[Validators.Length];
+            Commits = new byte[Validators.Length][];
             if (MyIndex >= 0)
                 ExpectedView[MyIndex] = view_number;
             _header = null;
@@ -66,9 +65,9 @@ namespace Neo.Consensus
             Contract contract = Contract.CreateMultiSigContract(M, Validators);
             ContractParametersContext sc = new ContractParametersContext(block);
             for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
-                if (Signatures[i] != null)
+                if (Commits[i] != null)
                 {
-                    sc.AddSignature(contract, Validators[i], Signatures[i]);
+                    sc.AddSignature(contract, Validators[i], Commits[i]);
                     j++;
                 }
             sc.Verifiable.Witnesses = sc.GetWitnesses();
@@ -92,6 +91,16 @@ namespace Neo.Consensus
             return MakeSignedPayload(new ChangeView
             {
                 NewViewNumber = ExpectedView[MyIndex]
+            });
+        }
+
+        public ConsensusPayload MakeCommit()
+        {
+            if (Commits[MyIndex] == null)
+                Commits[MyIndex] = MakeHeader()?.Sign(keyPair);
+            return MakeSignedPayload(new Commit
+            {
+                Signature = Commits[MyIndex]
             });
         }
 
@@ -132,11 +141,6 @@ namespace Neo.Consensus
             return payload;
         }
 
-        public void SignHeader()
-        {
-            Signatures[MyIndex] = MakeHeader()?.Sign(keyPair);
-        }
-
         private void SignPayload(ConsensusPayload payload)
         {
             ContractParametersContext sc;
@@ -159,17 +163,13 @@ namespace Neo.Consensus
                 Nonce = Nonce,
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
-                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                Signature = Signatures[MyIndex]
+                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]]
             });
         }
 
-        public ConsensusPayload MakePrepareResponse(byte[] signature)
+        public ConsensusPayload MakePrepareResponse()
         {
-            return MakeSignedPayload(new PrepareResponse
-            {
-                Signature = signature
-            });
+            return MakeSignedPayload(new PrepareResponse());
         }
 
         public void Reset()
@@ -184,7 +184,8 @@ namespace Neo.Consensus
             MyIndex = -1;
             PrimaryIndex = BlockIndex % (uint)Validators.Length;
             TransactionHashes = null;
-            Signatures = new byte[Validators.Length][];
+            Preparations = new bool[Validators.Length];
+            Commits = new byte[Validators.Length][];
             ExpectedView = new byte[Validators.Length];
             keyPair = null;
             for (int i = 0; i < Validators.Length; i++)

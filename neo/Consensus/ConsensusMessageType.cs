@@ -10,5 +10,7 @@ namespace Neo.Consensus
         PrepareRequest = 0x20,
         [ReflectionCache(typeof(PrepareResponse))]
         PrepareResponse = 0x21,
+        [ReflectionCache(typeof(Commit))]
+        Commit = 0x30,
     }
 }
