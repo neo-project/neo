@@ -298,7 +298,20 @@ namespace Neo.Network.RPC
                         return json;
                     }
                 case "getrawmempool":
-                    return new JArray(Blockchain.Singleton.GetMemoryPool().Select(p => (JObject)p.Hash.ToString()));
+                    {
+                        bool shouldGetUnverified = _params.Count >= 1 && _params[0].AsBooleanOrDefault(false);
+                        if (!shouldGetUnverified)
+                            return new JArray(Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => (JObject)p.Hash.ToString()));
+
+                        JObject json = new JObject();
+                        json["height"] = Blockchain.Singleton.Height;
+                        Blockchain.Singleton.MemPool.GetVerifiedAndUnverifiedTransactions(
+                            out IEnumerable<Transaction> verifiedTransactions,
+                            out IEnumerable<Transaction> unverifiedTransactions);
+                        json["verified"] = new JArray(verifiedTransactions.Select(p => (JObject) p.Hash.ToString()));
+                        json["unverified"] = new JArray(unverifiedTransactions.Select(p => (JObject) p.Hash.ToString()));
+                        return json;
+                    }
                 case "getrawtransaction":
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
