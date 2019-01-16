@@ -92,6 +92,10 @@ namespace Neo.Ledger
         private readonly SortedSet<PoolItem> _unverifiedSortedHighPriorityTransactions = new SortedSet<PoolItem>();
         private readonly SortedSet<PoolItem> _unverifiedSortedLowPriorityTransactions = new SortedSet<PoolItem>();
 
+        // internal methods to aid in unit testing
+        internal int SortedLowPrioTxCount => _sortedLowPrioTransactions.Count;
+        internal int SortedHighPrioTxCount => _sortedHighPrioTransactions.Count;
+
         private int _maxTxPerBlock;
         private int _maxLowPriorityTxPerBlock;
 
@@ -401,7 +405,7 @@ namespace Neo.Ledger
 
             // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
             // until we get caught up.
-            if (block.Index < Blockchain.Singleton.HeaderHeight)
+            if (block.Index > 0 && block.Index < Blockchain.Singleton.HeaderHeight)
                 return;
 
             if (Plugin.Policies.Count == 0)
