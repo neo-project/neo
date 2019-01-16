@@ -51,6 +51,28 @@ namespace Neo.UnitTests
             return randomBytes;
         }
 
+        public delegate Object BenchmarkMethod();
+
+        public (TimeSpan, Object) Benchmark(BenchmarkMethod method)
+        {
+            Stopwatch sw0 = new Stopwatch();
+            sw0.Start();
+            var result = method();
+            sw0.Stop();
+            TimeSpan elapsed = sw0.Elapsed;
+            Console.WriteLine($"Elapsed={elapsed} Sum={result}");
+            return (elapsed, result);
+        }
+
+        /* Could do this also so just pass the method to benchmark, but overhead of delegate call might affect benchmark
+        public delegate int ComparisonMethod(byte[] b1, byte[] b2);
+
+        public int BechmarkComparisonMethod(ComparisonMethod compareMethod)
+        {
+        }
+        */
+
+
         [TestMethod]
         public void Benchmark_CompareTo()
         {
@@ -63,60 +85,54 @@ namespace Neo.UnitTests
                 uut_32_1[i] = new UInt256(base_32_1[i]);
                 uut_32_2[i] = new UInt256(base_32_2[i]);
             }
-            Stopwatch sw0 = new Stopwatch();
-            sw0.Start();
-            int checksum0 = 0;
-            for(var i=0; i<MAX_TESTS; i++)
+
+            var checksum0 = Benchmark(() =>
             {
-                checksum0 += uut_32_1[i].CompareTo(uut_32_2[i]);
-            }
-            sw0.Stop();
-            TimeSpan time0 = sw0.Elapsed;
-            Console.WriteLine("Elapsed={0} Sum={1}",time0, checksum0);
+                var checksum = 0;
+                for(var i=0; i<MAX_TESTS; i++)
+                {
+                    checksum += uut_32_1[i].CompareTo(uut_32_2[i]);
+                }
 
-            // testing code1 algorithm
-            Stopwatch sw1 = new Stopwatch();
-            sw1.Start();
-            int checksum1 = 0;
-            for(var i=0; i<MAX_TESTS; i++)
+                return checksum;
+            }).Item2;
+
+            var checksum1 = Benchmark(() =>
             {
-                checksum1 += code1_UInt256CompareTo(base_32_1[i], base_32_2[i]);
-            }
-            sw1.Stop();
-            TimeSpan time1 = sw1.Elapsed;
-            Console.WriteLine("Elapsed={0} Sum={1}",time1, checksum1);
+                var checksum = 0;
+                for(var i=0; i<MAX_TESTS; i++)
+                {
+                    checksum += code1_UInt256CompareTo(base_32_1[i], base_32_2[i]);
+                }
 
+                return checksum;
+            }).Item2;
 
-            // testing code2 algorithm
-            Stopwatch sw2 = new Stopwatch();
-            sw2.Start();
-            int checksum2 = 0;
-            for(var i=0; i<MAX_TESTS; i++)
+            var checksum2 = Benchmark(() =>
             {
-                checksum2 += code2_UInt256CompareTo(base_32_1[i], base_32_2[i]);
-            }
-            sw2.Stop();
-            TimeSpan time2 = sw2.Elapsed;
+                var checksum = 0;
+                for(var i=0; i<MAX_TESTS; i++)
+                {
+                    checksum += code2_UInt256CompareTo(base_32_1[i], base_32_2[i]);
+                }
 
-            Console.WriteLine("Elapsed={0} Sum={1}",time2, checksum2);
+                return checksum;
+            }).Item2;
 
-            // testing code3 algorithm
-            Stopwatch sw3 = new Stopwatch();
-            sw3.Start();
-            int checksum3 = 0;
-            for(var i=0; i<MAX_TESTS; i++)
+            var checksum3 = Benchmark(() =>
             {
-                checksum3 += code3_UInt256CompareTo(base_32_1[i], base_32_2[i]);
-            }
-            sw3.Stop();
-            TimeSpan time3 = sw3.Elapsed;
+                var checksum = 0;
+                for(var i=0; i<MAX_TESTS; i++)
+                {
+                    checksum += code3_UInt256CompareTo(base_32_1[i], base_32_2[i]);
+                }
 
-            Console.WriteLine("Elapsed={0} Sum={1}",time3, checksum3);
-
+                return checksum;
+            }).Item2;
 
             checksum0.Should().Be(checksum1);
             checksum0.Should().Be(checksum2);
-            checksum0.Should().Be(checksum3);
+            checksum0.Should().Be(0);
         }
 
         private int code1_UInt256CompareTo(byte[] b1, byte[] b2)
