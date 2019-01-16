@@ -86,6 +86,7 @@ namespace Neo.UnitTests
             TimeSpan time1 = sw1.Elapsed;
             Console.WriteLine("Elapsed={0} Sum={1}",time1, checksum1);
 
+/*
             // testing code2 algorithm
             Stopwatch sw2 = new Stopwatch();
             sw2.Start();
@@ -98,9 +99,10 @@ namespace Neo.UnitTests
             TimeSpan time2 = sw2.Elapsed;
 
             Console.WriteLine("Elapsed={0} Sum={1}",time2, checksum2);
+*/
 
             checksum0.Should().Be(checksum1);
-            checksum1.Should().Be(checksum2);
+            //checksum1.Should().Be(checksum2);
         }
 
         private int code1_UInt256CompareTo(byte[] b1, byte[] b2)
@@ -116,7 +118,7 @@ namespace Neo.UnitTests
             }
             return 0;
         }
-
+/*
         private unsafe int code2_UInt256CompareTo(byte[] b1, byte[] b2)
         {
             fixed (byte* px = b1, py = b2)
@@ -133,5 +135,6 @@ namespace Neo.UnitTests
             }
             return 0;
         }
+*/
     }
 }
