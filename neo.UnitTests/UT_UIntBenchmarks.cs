@@ -15,7 +15,7 @@ namespace Neo.UnitTests
     [TestClass]
     public class UT_UIntBenchmarks
     {
-        int MAX_TESTS = 1000000; // 1 million
+        int MAX_TESTS = 10000000; // 1 million
 
         byte[][] base_32_1;
         byte[][] base_32_2;
@@ -132,7 +132,7 @@ namespace Neo.UnitTests
 
             checksum0.Should().Be(checksum1);
             checksum0.Should().Be(checksum2);
-            checksum0.Should().Be(0);
+            checksum0.Should().Be(checksum3);
         }
 
         private int code1_UInt256CompareTo(byte[] b1, byte[] b2)
