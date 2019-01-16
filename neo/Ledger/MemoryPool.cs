@@ -73,13 +73,14 @@ namespace Neo.Ledger
         /// </summary>
         private readonly Dictionary<UInt256, PoolItem> _unsortedTransactions = new Dictionary<UInt256, PoolItem>();
         /// <summary>
-        ///  Stores the verified low priority sorted transactions currently in the pool.
-        /// </summary>
-        private readonly SortedSet<PoolItem> _sortedLowPrioTransactions = new SortedSet<PoolItem>();
-        /// <summary>
         /// Stores the verified high priority sorted transactins currently in the pool.
         /// </summary>
         private readonly SortedSet<PoolItem> _sortedHighPrioTransactions = new SortedSet<PoolItem>();
+        /// <summary>
+        ///  Stores the verified low priority sorted transactions currently in the pool.
+        /// </summary>
+        private readonly SortedSet<PoolItem> _sortedLowPrioTransactions = new SortedSet<PoolItem>();
+
 
         /// <summary>
         /// Store the unverified transactions currently in the pool.
@@ -91,6 +92,13 @@ namespace Neo.Ledger
         private readonly Dictionary<UInt256, PoolItem> _unverifiedTransactions = new Dictionary<UInt256, PoolItem>();
         private readonly SortedSet<PoolItem> _unverifiedSortedHighPriorityTransactions = new SortedSet<PoolItem>();
         private readonly SortedSet<PoolItem> _unverifiedSortedLowPriorityTransactions = new SortedSet<PoolItem>();
+
+        // internal methods to aid in unit testing
+        internal int SortedHighPrioTxCount => _sortedHighPrioTransactions.Count;
+        internal int SortedLowPrioTxCount => _sortedLowPrioTransactions.Count;
+        internal int UnverifiedSortedHighPrioTxCount => _unverifiedSortedHighPriorityTransactions.Count;
+        internal int UnverifiedSortedLowPrioTxCount => _unverifiedSortedLowPriorityTransactions.Count;
+
 
         private int _maxTxPerBlock;
         private int _maxLowPriorityTxPerBlock;
@@ -401,7 +409,7 @@ namespace Neo.Ledger
 
             // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
             // until we get caught up.
-            if (block.Index < Blockchain.Singleton.HeaderHeight)
+            if (block.Index > 0 && block.Index < Blockchain.Singleton.HeaderHeight)
                 return;
 
             if (Plugin.Policies.Count == 0)
