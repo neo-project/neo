@@ -15,7 +15,7 @@ namespace Neo.UnitTests
     [TestClass]
     public class UT_UIntBenchmarks
     {
-        int MAX_TESTS = 10000000; // 1 million
+        int MAX_TESTS = 1000000; // 1 million
 
         byte[][] base_32_1;
         byte[][] base_32_2;
