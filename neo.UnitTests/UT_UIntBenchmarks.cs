@@ -86,7 +86,7 @@ namespace Neo.UnitTests
             TimeSpan time1 = sw1.Elapsed;
             Console.WriteLine("Elapsed={0} Sum={1}",time1, checksum1);
 
-/*
+
             // testing code2 algorithm
             Stopwatch sw2 = new Stopwatch();
             sw2.Start();
@@ -99,10 +99,24 @@ namespace Neo.UnitTests
             TimeSpan time2 = sw2.Elapsed;
 
             Console.WriteLine("Elapsed={0} Sum={1}",time2, checksum2);
-*/
+
+            // testing code3 algorithm
+            Stopwatch sw3 = new Stopwatch();
+            sw3.Start();
+            int checksum3 = 0;
+            for(var i=0; i<MAX_TESTS; i++)
+            {
+                checksum3 += code3_UInt256CompareTo(base_32_1[i], base_32_2[i]);
+            }
+            sw3.Stop();
+            TimeSpan time3 = sw3.Elapsed;
+
+            Console.WriteLine("Elapsed={0} Sum={1}",time3, checksum3);
+
 
             checksum0.Should().Be(checksum1);
-            //checksum1.Should().Be(checksum2);
+            checksum0.Should().Be(checksum2);
+            checksum0.Should().Be(checksum3);
         }
 
         private int code1_UInt256CompareTo(byte[] b1, byte[] b2)
@@ -118,14 +132,14 @@ namespace Neo.UnitTests
             }
             return 0;
         }
-/*
+
         private unsafe int code2_UInt256CompareTo(byte[] b1, byte[] b2)
         {
             fixed (byte* px = b1, py = b2)
             {
                 uint* lpx = (uint*)px;
                 uint* lpy = (uint*)py;
-                for (int i = 8; i >= 0; i--)
+                for (int i = 7; i >= 0; i--)
                 {
                     if (lpx[i] > lpy[i])
                         return 1;
@@ -135,6 +149,26 @@ namespace Neo.UnitTests
             }
             return 0;
         }
-*/
+
+        private unsafe int code3_UInt256CompareTo(byte[] b1, byte[] b2)
+        {
+            byte[] xB = b1;
+            int len = xB.Length >> 2;
+            fixed (byte* px = xB, py = b2)
+            {
+                uint* lpx = (uint*)px+len;
+                uint* lpy = (uint*)py+len;
+                uint *lpxStart = (uint*)px;
+                while (lpx > lpxStart)
+                {
+                    uint x = *(--lpx);
+                    uint y = *(--lpy);
+                    if (x > y) return 1;
+                    if (y > x) return -1;
+                }
+            }
+            return 0;
+        }
+
     }
 }
