@@ -31,16 +31,19 @@ namespace Neo
         /// Method CompareTo returns 1 if this UInt160 is bigger than other UInt160; -1 if it's smaller; 0 if it's equals
         /// Example: assume this is 01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4, this.CompareTo(02ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) returns 1
         /// </summary>
-        public int CompareTo(UInt160 other)
+        public unsafe int CompareTo(UInt160 other)
         {
-            byte[] x = ToArray();
-            byte[] y = other.ToArray();
-            for (int i = x.Length - 1; i >= 0; i--)
+            fixed (byte* px = ToArray(), py = other.ToArray())
             {
-                if (x[i] > y[i])
-                    return 1;
-                if (x[i] < y[i])
-                    return -1;
+                uint* lpx = (uint*)px;
+                uint* lpy = (uint*)py;
+                for (int i = 5; i >= 0; i--)
+                {
+                    if (lpx[i] > lpy[i])
+                        return 1;
+                    if (lpx[i] < lpy[i])
+                        return -1;
+                }
             }
             return 0;
         }

@@ -32,16 +32,19 @@ namespace Neo
         /// Method CompareTo returns 1 if this UInt256 is bigger than other UInt256; -1 if it's smaller; 0 if it's equals
         /// Example: assume this is 01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4, this.CompareTo(02ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) returns 1
         /// </summary>
-        public int CompareTo(UInt256 other)
+        public unsafe int CompareTo(UInt256 other)
         {
-            byte[] x = ToArray();
-            byte[] y = other.ToArray();
-            for (int i = x.Length - 1; i >= 0; i--)
+            fixed (byte* px = ToArray(), py = other.ToArray())
             {
-                if (x[i] > y[i])
-                    return 1;
-                if (x[i] < y[i])
-                    return -1;
+                ulong* lpx = (ulong*)px;
+                ulong* lpy = (ulong*)py;
+                for (int i = 4; i >= 0; i--)
+                {
+                    if (lpx[i] > lpy[i])
+                        return 1;
+                    if (lpx[i] < lpy[i])
+                        return -1;
+                }
             }
             return 0;
         }
@@ -58,7 +61,7 @@ namespace Neo
         /// Method Parse receives a big-endian hex string and stores as a UInt256 little-endian 32-bytes array
         /// Example: Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01") should create UInt256 01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4
         /// </summary>
-        public static new UInt256 Parse(string s)
+        public  static new UInt256 Parse(string s)
         {
             if (s == null)
                 throw new ArgumentNullException();
