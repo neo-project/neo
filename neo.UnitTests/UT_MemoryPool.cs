@@ -46,7 +46,7 @@ namespace Neo.UnitTests
 
                 var defaultTx = CreateRandomHashInvocationMockTransaction().Object;
                 defaultTx.Outputs = new TransactionOutput[1];
-                long randomFeeLong = _random.Next(2000000) + 1000000; // (0.001 + [0,0.002]) GAS (enough to be a high priority TX)
+                long randomFeeLong = _random.Next(200000) + 100000; // (0.001 + [0,0.002]) GAS (enough to be a high priority TX)
                 defaultTx.Outputs[0] = new TransactionOutput
                 {
                     AssetId = Blockchain.UtilityToken.Hash,
@@ -110,7 +110,7 @@ namespace Neo.UnitTests
         private Transaction CreateMockHighPriorityTransaction()
         {
             var mockTx = CreateRandomHashInvocationMockTransaction();
-            long randomFeeLong = _random.Next(2000000) + 1000000;
+            long randomFeeLong = _random.Next(200000) + 100000;
             mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(randomFeeLong));
             var tx = mockTx.Object;
             tx.Inputs = new CoinReference[1];
