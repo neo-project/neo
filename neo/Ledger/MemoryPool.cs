@@ -433,10 +433,12 @@ namespace Neo.Ledger
             List<PoolItem> invalidItems = new List<PoolItem>();
             foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
             {
-                // Re-verify the top fee max high priority transactions that can be verified in a block
+                // Re-verify up to `count` transactions that can be verified in a block
+                // for High Priority fees it is limited to _maxTxPerBlock, while
+                // for Low Priority fees it is limited to _maxLowPriorityTxPerBlock
                 if (item.Transaction.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Transaction)))
                     reverifiedItems.Add(item);
-                else // Transaction no longer valid -- will be removed from unverifiedTxPool.
+                else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
                     invalidItems.Add(item);
 
                 if (DateTime.UtcNow > reverifyCutOffTimeStamp) break;
