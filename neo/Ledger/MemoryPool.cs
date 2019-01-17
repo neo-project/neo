@@ -434,8 +434,8 @@ namespace Neo.Ledger
             foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
             {
                 // Re-verify up to `count` transactions that can be verified in a block
-                // for High Priority fees it is limited to _maxTxPerBlock, while
-                // for Low Priority fees it is limited to _maxLowPriorityTxPerBlock
+                // for high priority txs cut-off is limited to _maxTxPerBlock, while
+                // for low priority txs cut-off is limited to _maxLowPriorityTxPerBlock
                 if (item.Transaction.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Transaction)))
                     reverifiedItems.Add(item);
                 else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
