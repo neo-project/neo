@@ -290,7 +290,7 @@ namespace Neo.Ledger
                     out sortedPool);
             }
             finally
-            {    
+            {
                 unsortedTxPool = Object.ReferenceEquals(sortedPool, _unverifiedSortedHighPriorityTransactions)
                     ? _unverifiedTransactions : _unsortedTransactions;
             }
