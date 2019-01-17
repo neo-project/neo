@@ -279,7 +279,7 @@ namespace Neo.Ledger
 
             if (minItem != null)
             {
-                unsortedTxPool = sortedPool == _unverifiedSortedLowPriorityTransactions
+                unsortedTxPool = Object.ReferenceEquals(sortedPool, _unverifiedSortedLowPriorityTransactions)
                     ? _unverifiedTransactions : _unsortedTransactions;
                 return minItem;
             }
@@ -291,7 +291,7 @@ namespace Neo.Ledger
             }
             finally
             {
-                unsortedTxPool = sortedPool == _unverifiedSortedHighPriorityTransactions
+                unsortedTxPool = Object.ReferenceEquals(sortedPool, _unverifiedSortedHighPriorityTransactions)
                     ? _unverifiedTransactions : _unsortedTransactions;
             }
         }
@@ -446,7 +446,7 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                int blocksTillRebroadcast = unverifiedSortedTxPool == _sortedHighPrioTransactions
+                int blocksTillRebroadcast = Object.ReferenceEquals(unverifiedSortedTxPool, _sortedHighPrioTransactions)
                     ? BlocksTillRebroadcastHighPriorityPoolTx : BlocksTillRebroadcastLowPriorityPoolTx;
 
                 if (Count > RebroadcastMultiplierThreshold)
