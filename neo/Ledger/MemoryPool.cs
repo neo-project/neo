@@ -445,7 +445,7 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                int blocksTillRebroadcast = unverifiedSortedTxPool == _sortedHighPrioTransactions
+                int blocksTillRebroadcast = count == _maxTxPerBlock
                     ? BlocksTillRebroadcastHighPriorityPoolTx : BlocksTillRebroadcastLowPriorityPoolTx;
 
                 var rebroadcastCutOffTime = DateTime.UtcNow.AddSeconds(
