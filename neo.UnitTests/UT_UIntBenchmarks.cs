@@ -38,17 +38,19 @@ namespace Neo.UnitTests
             for(var i=0; i<MAX_TESTS; i++)
             {
                 base_32_1[i] = RandomBytes(32);
+                base_20_1[i] = RandomBytes(20);
                 if (i % 2 == 0)
                 {
                     base_32_2[i] = RandomBytes(32);
+                    base_20_2[i] = RandomBytes(20);
                 }
                 else
                 {
                     base_32_2[i] = new byte[32];
                     Buffer.BlockCopy(base_32_1[i], 0, base_32_2[i], 0, 32);
+                    base_20_2[i] = new byte[20];
+                    Buffer.BlockCopy(base_20_1[i], 0, base_20_2[i], 0, 20);
                 }
-                base_20_1[i] = RandomBytes(20);
-                base_20_2[i] = RandomBytes(20);
             }
         }
 
@@ -147,8 +149,8 @@ namespace Neo.UnitTests
         public void Benchmark_CompareTo_UInt160()
         {
             // testing "official version"
-            UInt256[] uut_20_1 = new UInt160[MAX_TESTS];
-            UInt256[] uut_20_2 = new UInt160[MAX_TESTS];
+            UInt160[] uut_20_1 = new UInt160[MAX_TESTS];
+            UInt160[] uut_20_2 = new UInt160[MAX_TESTS];
 
             for(var i=0; i<MAX_TESTS; i++)
             {
@@ -205,7 +207,7 @@ namespace Neo.UnitTests
             checksum0.Should().Be(checksum3);
             checksum0.Should().Be(0);
         }
-        
+
         private int code1_UInt256CompareTo(byte[] b1, byte[] b2)
         {
             byte[] x = b1;
@@ -299,7 +301,7 @@ namespace Neo.UnitTests
                 }
             }
             return 0;
-        }        
+        }
 
     }
 }
