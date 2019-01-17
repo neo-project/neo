@@ -127,6 +127,8 @@ namespace Neo.UnitTests
         private Transaction CreateMockLowPriorityTransaction()
         {
             var mockTx = CreateRandomHashInvocationMockTransaction();
+            long randomFeeLong = _random.Next(1000000); // a fee lower than 0.001 GAS (not enough to be a high priority TX)
+            mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(randomFeeLong));            
             return mockTx.Object;
         }
 
