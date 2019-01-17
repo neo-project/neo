@@ -97,8 +97,6 @@ namespace Neo.UnitTests
             var tx = mockTx.Object;
             var randomBytes = new byte[16];
             _random.NextBytes(randomBytes);
-            // Can't override
-            // mockTx.SetupGet(p => p.Hash).Returns(new UInt256(Crypto.Default.Hash256(randomBytes)));
             tx.Script = randomBytes;
             tx.Attributes = new TransactionAttribute[0];
             tx.Inputs = new CoinReference[0];
