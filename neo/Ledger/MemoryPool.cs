@@ -427,13 +427,12 @@ namespace Neo.Ledger
             SortedSet<PoolItem> unverifiedSortedTxPool, int count, double secondsTimeout, Snapshot snapshot)
         {
             DateTime reverifyCutOffTimeStamp = DateTime.UtcNow.AddSeconds(secondsTimeout);
-
             List<PoolItem> reverifiedItems = new List<PoolItem>(count);
             List<PoolItem> invalidItems = new List<PoolItem>();
+            
+            // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
             foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
             {
-                // Re-verify up to `count` transactions since unverifiedSortedTxPool is ordered
-                // in an ascending manner, the end of it is taken.
                 if (item.Transaction.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Transaction)))
                     reverifiedItems.Add(item);
                 else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
