@@ -274,7 +274,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void CapacityTestWithUnverifiedHighProirtyTransactions()
         {
-            // Verify that unverified high priority transactions will not pushed out of the queue by incoming
+            // Verify that unverified high priority transactions will not be pushed out of the queue by incoming
             // low priority transactions
 
             // Fill pool with high priority transactions
