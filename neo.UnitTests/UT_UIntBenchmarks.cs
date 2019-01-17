@@ -28,7 +28,7 @@ namespace Neo.UnitTests
         public void TestSetup()
         {
             int SEED = 123456789;
-            random = new Random();//new Random(SEED);
+            random = new Random(SEED);
 
             base_32_1 = new byte[MAX_TESTS][];
             base_32_2 = new byte[MAX_TESTS][];
@@ -142,7 +142,6 @@ namespace Neo.UnitTests
             checksum0.Should().Be(checksum1);
             checksum0.Should().Be(checksum2);
             checksum0.Should().Be(checksum3);
-            checksum0.Should().Be(0);
         }
 
         [TestMethod]
@@ -205,7 +204,20 @@ namespace Neo.UnitTests
             checksum0.Should().Be(checksum1);
             checksum0.Should().Be(checksum2);
             checksum0.Should().Be(checksum3);
-            checksum0.Should().Be(0);
+        }
+
+        [TestMethod]
+        public void Benchmark_UInt_IsCorrect_Self_CompareTo()
+        {
+            for(var i=0; i<MAX_TESTS; i++)
+            {
+                code1_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
+                code2_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
+                code3_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
+                code1_UInt256CompareTo(base_32_1[i], base_32_1[i]).Should().Be(0);
+                code2_UInt256CompareTo(base_32_1[i], base_32_1[i]).Should().Be(0);
+                code3_UInt256CompareTo(base_32_1[i], base_32_1[i]).Should().Be(0);
+            }
         }
 
         private int code1_UInt256CompareTo(byte[] b1, byte[] b2)
