@@ -279,7 +279,7 @@ namespace Neo.Ledger
 
             if (minItem != null)
             {
-                unsortedTxPool = minItem.Transaction.IsLowPriority
+                unsortedTxPool = Object.ReferenceEquals(sortedPool, _unverifiedSortedLowPriorityTransactions)
                     ? _unverifiedTransactions : _unsortedTransactions;
                 return minItem;
             }
@@ -290,7 +290,7 @@ namespace Neo.Ledger
                     out sortedPool);
             }
             finally
-            {        
+            {    
                 unsortedTxPool = sortedPool == _unverifiedSortedHighPriorityTransactions
                     ? _unverifiedTransactions : _unsortedTransactions;
             }
