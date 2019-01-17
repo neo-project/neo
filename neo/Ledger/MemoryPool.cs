@@ -278,7 +278,7 @@ namespace Neo.Ledger
 
             if (minItem != null)
             {
-                unsortedTxPool = minItem.IsLowPriority
+                unsortedTxPool = minItem.Transaction.IsLowPriority
                     ? _unverifiedTransactions : _unsortedTransactions;
                 return minItem;
             }
