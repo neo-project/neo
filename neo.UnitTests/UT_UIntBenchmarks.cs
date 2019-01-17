@@ -240,7 +240,7 @@ namespace Neo.UnitTests
             {
                 uint* lpx = (uint*)px;
                 uint* lpy = (uint*)py;
-                for (int i = 7; i >= 0; i--)
+                for (int i = 256/32-1; i >= 0; i--)
                 {
                     if (lpx[i] > lpy[i])
                         return 1;
@@ -257,7 +257,7 @@ namespace Neo.UnitTests
             {
                 ulong* lpx = (ulong*)px;
                 ulong* lpy = (ulong*)py;
-                for (int i = 3; i >= 0; i--)
+                for (int i = 256/64-1; i >= 0; i--)
                 {
                     if (lpx[i] > lpy[i])
                         return 1;
@@ -287,7 +287,7 @@ namespace Neo.UnitTests
             {
                 uint* lpx = (uint*)px;
                 uint* lpy = (uint*)py;
-                for (int i = 4; i >= 0; i--)
+                for (int i = 160/32-1; i >= 0; i--)
                 {
                     if (lpx[i] > lpy[i])
                         return 1;
