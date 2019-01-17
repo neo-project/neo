@@ -117,7 +117,7 @@ namespace Neo.UnitTests
         private Transaction CreateMockHighPriorityTransaction()
         {
             var mockTx = CreateRandomHashInvocationMockTransaction();
-            long rNetFee = LongRandom(100000, 100000000, _random); // (0.001 + [0,0.002]) GAS (enough to be a high priority TX)
+            long rNetFee = LongRandom(100000, 100000000, _random); // [0.001,1]) GAS (enough to be a high priority TX)
             mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(rNetFee));
             var tx = mockTx.Object;
             tx.Inputs = new CoinReference[1];
@@ -133,7 +133,7 @@ namespace Neo.UnitTests
         private Transaction CreateMockLowPriorityTransaction()
         {
             var mockTx = CreateRandomHashInvocationMockTransaction(); 
-            long rNetFee = LongRandom(0, 100000, _random);  // a fee lower than 0.001 GAS (not enough to be a high priority TX)
+            long rNetFee = LongRandom(0, 100000, _random);  // [0,0.001] GAS a fee lower than the threshold of 0.001 GAS (not enough to be a high priority TX)
             mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(rNetFee));
             return mockTx.Object;
         }
