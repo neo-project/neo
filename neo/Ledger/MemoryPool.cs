@@ -45,7 +45,7 @@ namespace Neo.Ledger
             }
         }
 
-        // Allow reverified transactions to be rebroadcast if it has been this many block times since last broadcast.
+        // Allow a reverified transaction to be rebroadcasted if it has been this many block times since last broadcast.
         private const int BlocksTillRebroadcastLowPriorityPoolTx = 30;
         private const int BlocksTillRebroadcastHighPriorityPoolTx = 10;
         private int RebroadcastMultiplierThreshold => Capacity / 10;
@@ -82,7 +82,6 @@ namespace Neo.Ledger
         /// </summary>
         private readonly SortedSet<PoolItem> _sortedLowPrioTransactions = new SortedSet<PoolItem>();
 
-
         /// <summary>
         /// Store the unverified transactions currently in the pool.
         ///
@@ -94,12 +93,11 @@ namespace Neo.Ledger
         private readonly SortedSet<PoolItem> _unverifiedSortedHighPriorityTransactions = new SortedSet<PoolItem>();
         private readonly SortedSet<PoolItem> _unverifiedSortedLowPriorityTransactions = new SortedSet<PoolItem>();
 
-        // internal methods to aid in unit testing
+        // Internal methods to aid in unit testing
         internal int SortedHighPrioTxCount => _sortedHighPrioTransactions.Count;
         internal int SortedLowPrioTxCount => _sortedLowPrioTransactions.Count;
         internal int UnverifiedSortedHighPrioTxCount => _unverifiedSortedHighPriorityTransactions.Count;
         internal int UnverifiedSortedLowPrioTxCount => _unverifiedSortedLowPriorityTransactions.Count;
-
 
         private int _maxTxPerBlock;
         private int _maxLowPriorityTxPerBlock;
