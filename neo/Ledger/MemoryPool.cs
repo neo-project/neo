@@ -34,7 +34,7 @@ namespace Neo.Ledger
                 if (ret != 0) return ret;
                 ret = Transaction.NetworkFee.CompareTo(tx.NetworkFee);
                 if (ret != 0) return ret;
-
+                
                 return Transaction.Hash.CompareTo(tx.Hash);
             }
 
@@ -278,7 +278,7 @@ namespace Neo.Ledger
 
             if (minItem != null)
             {
-                unsortedTxPool = sortedPool == _unverifiedSortedLowPriorityTransactions
+                unsortedTxPool = minItem.Transaction.NetworkFee < ProtocolSettings.Default.LowPriorityThreshold
                     ? _unverifiedTransactions : _unsortedTransactions;
                 return minItem;
             }
@@ -290,7 +290,7 @@ namespace Neo.Ledger
             }
             finally
             {
-                unsortedTxPool = sortedPool == _unverifiedSortedHighPriorityTransactions
+                unsortedTxPool = minItem.Transaction.NetworkFee >= ProtocolSettings.Default.LowPriorityThreshold
                     ? _unverifiedTransactions : _unsortedTransactions;
             }
         }
