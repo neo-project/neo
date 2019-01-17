@@ -140,7 +140,7 @@ namespace Neo.UnitTests
 
             checksum0.Should().Be(checksum1);
             checksum0.Should().Be(checksum2);
-            checksum0.Should().Be(0);
+            checksum0.Should().Be(checksum3);
         }
 
         private int code1_UInt256CompareTo(byte[] b1, byte[] b2)
