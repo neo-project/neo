@@ -80,7 +80,6 @@ namespace Neo.UnitTests
         }
         */
 
-
         [TestMethod]
         public void Benchmark_CompareTo_UInt256()
         {
@@ -144,6 +143,69 @@ namespace Neo.UnitTests
             checksum0.Should().Be(0);
         }
 
+        [TestMethod]
+        public void Benchmark_CompareTo_UInt160()
+        {
+            // testing "official version"
+            UInt256[] uut_20_1 = new UInt160[MAX_TESTS];
+            UInt256[] uut_20_2 = new UInt160[MAX_TESTS];
+
+            for(var i=0; i<MAX_TESTS; i++)
+            {
+                uut_20_1[i] = new UInt160(base_20_1[i]);
+                uut_20_2[i] = new UInt160(base_20_2[i]);
+            }
+
+            var checksum0 = Benchmark(() =>
+            {
+                var checksum = 0;
+                for(var i=0; i<MAX_TESTS; i++)
+                {
+                    checksum += uut_20_1[i].CompareTo(uut_20_2[i]);
+                }
+
+                return checksum;
+            }).Item2;
+
+            var checksum1 = Benchmark(() =>
+            {
+                var checksum = 0;
+                for(var i=0; i<MAX_TESTS; i++)
+                {
+                    checksum += code1_UInt160CompareTo(base_20_1[i], base_20_2[i]);
+                }
+
+                return checksum;
+            }).Item2;
+
+            var checksum2 = Benchmark(() =>
+            {
+                var checksum = 0;
+                for(var i=0; i<MAX_TESTS; i++)
+                {
+                    checksum += code2_UInt160CompareTo(base_20_1[i], base_20_2[i]);
+                }
+
+                return checksum;
+            }).Item2;
+
+            var checksum3 = Benchmark(() =>
+            {
+                var checksum = 0;
+                for(var i=0; i<MAX_TESTS; i++)
+                {
+                    checksum += code3_UInt160CompareTo(base_20_1[i], base_20_2[i]);
+                }
+
+                return checksum;
+            }).Item2;
+
+            checksum0.Should().Be(checksum1);
+            checksum0.Should().Be(checksum2);
+            checksum0.Should().Be(checksum3);
+            checksum0.Should().Be(0);
+        }
+        
         private int code1_UInt256CompareTo(byte[] b1, byte[] b2)
         {
             byte[] x = b1;
@@ -191,6 +253,53 @@ namespace Neo.UnitTests
             }
             return 0;
         }
+        private int code1_UInt160CompareTo(byte[] b1, byte[] b2)
+        {
+            byte[] x = b1;
+            byte[] y = b2;
+            for (int i = x.Length - 1; i >= 0; i--)
+            {
+                if (x[i] > y[i])
+                    return 1;
+                if (x[i] < y[i])
+                    return -1;
+            }
+            return 0;
+        }
+
+        private unsafe int code2_UInt160CompareTo(byte[] b1, byte[] b2)
+        {
+            fixed (byte* px = b1, py = b2)
+            {
+                uint* lpx = (uint*)px;
+                uint* lpy = (uint*)py;
+                for (int i = 4; i >= 0; i--)
+                {
+                    if (lpx[i] > lpy[i])
+                        return 1;
+                    if (lpx[i] < lpy[i])
+                        return -1;
+                }
+            }
+            return 0;
+        }
+
+        private unsafe int code3_UInt160CompareTo(byte[] b1, byte[] b2)
+        {
+            fixed (byte* px = b1, py = b2)
+            {
+                ulong* lpx = (ulong*)px;
+                ulong* lpy = (ulong*)py;
+                for (int i = 2; i >= 0; i--)
+                {
+                    if (lpx[i] > lpy[i])
+                        return 1;
+                    if (lpx[i] < lpy[i])
+                        return -1;
+                }
+            }
+            return 0;
+        }        
 
     }
 }
