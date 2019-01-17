@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Ledger;
 using FluentAssertions;
-using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO.Wrappers;
 using Neo.Network.P2P.Payloads;
