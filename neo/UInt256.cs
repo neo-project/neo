@@ -61,7 +61,7 @@ namespace Neo
         /// Method Parse receives a big-endian hex string and stores as a UInt256 little-endian 32-bytes array
         /// Example: Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01") should create UInt256 01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4
         /// </summary>
-        public  static new UInt256 Parse(string s)
+        public static new UInt256 Parse(string s)
         {
             if (s == null)
                 throw new ArgumentNullException();
