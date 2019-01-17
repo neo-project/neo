@@ -289,7 +289,7 @@ namespace Neo.Ledger
                     out sortedPool);
             }
             finally
-            {            
+            {        
                 unsortedTxPool = sortedPool == _unverifiedSortedHighPriorityTransactions
                     ? _unverifiedTransactions : _unsortedTransactions;
             }
