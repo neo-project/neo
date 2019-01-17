@@ -432,8 +432,8 @@ namespace Neo.Ledger
             List<PoolItem> invalidItems = new List<PoolItem>();
             foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
             {
-                // Re-verify up to `count` transactions that can be verified in a block
-                // since unverifiedSortedTxPool is ordered in an ascending manner, we take the end of it
+                // Re-verify up to `count` transactions since unverifiedSortedTxPool is ordered
+                // in an ascending manner, we take the end of it
                 if (item.Transaction.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Transaction)))
                     reverifiedItems.Add(item);
                 else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
