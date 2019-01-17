@@ -37,7 +37,8 @@ namespace Neo
             {
                 uint* lpx = (uint*)px;
                 uint* lpy = (uint*)py;
-                for (int i = 5; i >= 0; i--)
+                //160 bit / 32 bit step   -1
+                for (int i = (160 / 32 - 1); i >= 0; i--)
                 {
                     if (lpx[i] > lpy[i])
                         return 1;
@@ -51,9 +52,20 @@ namespace Neo
         /// <summary>
         /// Method Equals returns true if objects are equal, false otherwise
         /// </summary>
-        bool IEquatable<UInt160>.Equals(UInt160 other)
+        public unsafe bool Equals(UInt160 other)
         {
-            return Equals(other);
+            fixed (byte* px = ToArray(), py = other.ToArray())
+            {
+                uint* lpx = (uint*)px;
+                uint* lpy = (uint*)py;
+                //160 bit / 32 bit(uint step)   -1
+                for (int i = (160 / 32 - 1); i >= 0; i--)
+                {
+                    if (lpx[i] != lpy[i])
+                        return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>

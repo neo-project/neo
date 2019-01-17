@@ -38,7 +38,8 @@ namespace Neo
             {
                 ulong* lpx = (ulong*)px;
                 ulong* lpy = (ulong*)py;
-                for (int i = 4; i >= 0; i--)
+                //256bit / 64bit(ulong step) -1
+                for (int i = (256 / 64 - 1); i >= 0; i--)
                 {
                     if (lpx[i] > lpy[i])
                         return 1;
@@ -52,9 +53,20 @@ namespace Neo
         /// <summary>
         /// Method Equals returns true if objects are equal, false otherwise
         /// </summary>
-        bool IEquatable<UInt256>.Equals(UInt256 other)
+        public unsafe bool Equals(UInt256 other)
         {
-            return Equals(other);
+            fixed (byte* px = ToArray(), py = other.ToArray())
+            {
+                ulong* lpx = (ulong*)px;
+                ulong* lpy = (ulong*)py;
+                //256bit / 64bit(ulong step) -1
+                for (int i = (256 / 64 - 1); i >= 0; i--)
+                {
+                    if (lpx[i] != lpy[i])
+                        return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>
