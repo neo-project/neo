@@ -291,7 +291,7 @@ namespace Neo.Ledger
             }
             finally
             {    
-                unsortedTxPool = sortedPool == _unverifiedSortedHighPriorityTransactions
+                unsortedTxPool = Object.ReferenceEquals(sortedPool, _unverifiedSortedHighPriorityTransactions)
                     ? _unverifiedTransactions : _unsortedTransactions;
             }
         }
@@ -446,7 +446,7 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                int blocksTillRebroadcast = count == _maxTxPerBlock
+                int blocksTillRebroadcast = Object.ReferenceEquals(unverifiedSortedTxPool,_sortedHighPrioTransactions)
                     ? BlocksTillRebroadcastHighPriorityPoolTx : BlocksTillRebroadcastLowPriorityPoolTx;
 
                 if (Count > RebroadcastMultiplierThreshold)
