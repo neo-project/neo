@@ -34,7 +34,7 @@ namespace Neo.Ledger
                 if (ret != 0) return ret;
                 ret = Transaction.NetworkFee.CompareTo(tx.NetworkFee);
                 if (ret != 0) return ret;
-                
+
                 return Transaction.Hash.CompareTo(tx.Hash);
             }
 
