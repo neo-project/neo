@@ -48,6 +48,7 @@ namespace Neo.Ledger
         // Allow reverified transactions to be rebroadcast if it has been this many block times since last broadcast.
         private const int BlocksTillRebroadcastLowPriorityPoolTx = 30;
         private const int BlocksTillRebroadcastHighPriorityPoolTx = 10;
+        private int RebroadcastMultiplierThreshold => Capacity / 10;
 
         private static readonly double MaxSecondsToReverifyHighPrioTx = (double) Blockchain.SecondsPerBlock / 3;
         private static readonly double MaxSecondsToReverifyLowPrioTx = (double) Blockchain.SecondsPerBlock / 5;
@@ -449,6 +450,9 @@ namespace Neo.Ledger
             {
                 int blocksTillRebroadcast = unverifiedSortedTxPool == _sortedHighPrioTransactions
                     ? BlocksTillRebroadcastHighPriorityPoolTx : BlocksTillRebroadcastLowPriorityPoolTx;
+
+                if (Count > RebroadcastMultiplierThreshold)
+                    blocksTillRebroadcast = blocksTillRebroadcast * Count / RebroadcastMultiplierThreshold;
 
                 var rebroadcastCutOffTime = DateTime.UtcNow.AddSeconds(
                     -Blockchain.SecondsPerBlock * blocksTillRebroadcast);
