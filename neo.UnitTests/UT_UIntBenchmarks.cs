@@ -28,7 +28,7 @@ namespace Neo.UnitTests
         public void TestSetup()
         {
             int SEED = 123456789;
-            random = new Random(SEED);
+            random = new Random();//new Random(SEED);
 
             base_32_1 = new byte[MAX_TESTS][];
             base_32_2 = new byte[MAX_TESTS][];
@@ -85,7 +85,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Benchmark_CompareTo_UInt256()
         {
-            // testing "official version"
+            // testing "official UInt256 version"
             UInt256[] uut_32_1 = new UInt256[MAX_TESTS];
             UInt256[] uut_32_2 = new UInt256[MAX_TESTS];
 
@@ -148,7 +148,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Benchmark_CompareTo_UInt160()
         {
-            // testing "official version"
+            // testing "official UInt160 version"
             UInt160[] uut_20_1 = new UInt160[MAX_TESTS];
             UInt160[] uut_20_2 = new UInt160[MAX_TESTS];
 
@@ -288,17 +288,30 @@ namespace Neo.UnitTests
 
         private unsafe int code3_UInt160CompareTo(byte[] b1, byte[] b2)
         {
+            // --------------------------
+            // | 8B      | 8B      | 4B |
+            // --------------------------
+            //   0l        1l        4i
+            // --------------------------
             fixed (byte* px = b1, py = b2)
             {
+                uint* lpxi = (uint*)px;
+                uint* lpyi = (uint*)py;
+                if (lpxi[4] > lpyi[4])
+                    return 1;
+                if (lpxi[4] < lpyi[4])
+                    return -1;
+
                 ulong* lpx = (ulong*)px;
                 ulong* lpy = (ulong*)py;
-                for (int i = 2; i >= 0; i--)
-                {
-                    if (lpx[i] > lpy[i])
-                        return 1;
-                    if (lpx[i] < lpy[i])
-                        return -1;
-                }
+                if (lpx[1] > lpy[1])
+                    return 1;
+                if (lpx[1] < lpy[1])
+                    return -1;
+                if (lpx[0] > lpy[0])
+                    return 1;
+                if (lpx[0] < lpy[0])
+                    return -1;
             }
             return 0;
         }
