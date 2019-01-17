@@ -278,7 +278,7 @@ namespace Neo.Ledger
 
             if (minItem != null)
             {
-                unsortedTxPool = minItem.Transaction.NetworkFee < ProtocolSettings.Default.LowPriorityThreshold
+                unsortedTxPool = minItem.IsLowPriority
                     ? _unverifiedTransactions : _unsortedTransactions;
                 return minItem;
             }
