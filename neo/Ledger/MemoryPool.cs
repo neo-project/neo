@@ -446,7 +446,7 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                int blocksTillRebroadcast = Object.ReferenceEquals(unverifiedSortedTxPool,_sortedHighPrioTransactions)
+                int blocksTillRebroadcast = Object.ReferenceEquals(unverifiedSortedTxPool, _sortedHighPrioTransactions)
                     ? BlocksTillRebroadcastHighPriorityPoolTx : BlocksTillRebroadcastLowPriorityPoolTx;
 
                 if (Count > RebroadcastMultiplierThreshold)
