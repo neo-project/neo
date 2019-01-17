@@ -38,7 +38,15 @@ namespace Neo.UnitTests
             for(var i=0; i<MAX_TESTS; i++)
             {
                 base_32_1[i] = RandomBytes(32);
-                base_32_2[i] = RandomBytes(32);
+                if (i % 2 == 0)
+                {
+                    base_32_2[i] = RandomBytes(32);
+                }
+                else
+                {
+                    base_32_2[i] = new byte[32];
+                    Buffer.BlockCopy(base_32_1[i], 0, base_32_2[i], 0, 32);
+                }
                 base_20_1[i] = RandomBytes(20);
                 base_20_2[i] = RandomBytes(20);
             }
