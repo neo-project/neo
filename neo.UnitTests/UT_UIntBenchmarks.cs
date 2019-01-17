@@ -300,6 +300,7 @@ namespace Neo.UnitTests
 
         private unsafe int code3_UInt160CompareTo(byte[] b1, byte[] b2)
         {
+            // LSB -----------------> MSB
             // --------------------------
             // | 8B      | 8B      | 4B |
             // --------------------------
@@ -307,11 +308,11 @@ namespace Neo.UnitTests
             // --------------------------
             fixed (byte* px = b1, py = b2)
             {
-                uint* lpxi = (uint*)px;
-                uint* lpyi = (uint*)py;
-                if (lpxi[4] > lpyi[4])
+                uint* ipx = (uint*)px;
+                uint* ipy = (uint*)py;
+                if (ipx[4] > ipy[4])
                     return 1;
-                if (lpxi[4] < lpyi[4])
+                if (ipx[4] < ipy[4])
                     return -1;
 
                 ulong* lpx = (ulong*)px;
