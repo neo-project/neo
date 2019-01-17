@@ -82,7 +82,7 @@ namespace Neo.UnitTests
 
 
         [TestMethod]
-        public void Benchmark_CompareTo()
+        public void Benchmark_CompareTo_UInt256()
         {
             // testing "official version"
             UInt256[] uut_32_1 = new UInt256[MAX_TESTS];
