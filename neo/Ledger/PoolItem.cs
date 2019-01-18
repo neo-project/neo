@@ -40,7 +40,7 @@ namespace Neo.Ledger
         public int CompareTo(PoolItem otherItem)
         {
             if (otherItem == null) return 1;
-            return CompareTo(otherItem.Transaction);
+            return CompareTo(otherItem.Tx);
         }
     }
 }
