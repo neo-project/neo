@@ -14,26 +14,27 @@ namespace Neo.Ledger
 {
     public class PoolItem : IComparable<PoolItem>
     {
-        public readonly Transaction Transaction;
+        public readonly Transaction Tx;
         public readonly DateTime Timestamp;
         public DateTime LastBroadcastTimestamp;
 
         public PoolItem(Transaction tx)
         {
-            Transaction = tx;
+            Tx = tx;
             Timestamp = DateTime.UtcNow;
             LastBroadcastTimestamp = Timestamp;
         }
 
-        public int CompareTo(Transaction tx)
+        public int CompareTo(Transaction otherTx)
         {
             if (tx == null) return 1;
+            // Fees sorted ascending
             int ret = Transaction.FeePerByte.CompareTo(tx.FeePerByte);
             if (ret != 0) return ret;
             ret = Transaction.NetworkFee.CompareTo(tx.NetworkFee);
             if (ret != 0) return ret;
-
-            return Transaction.Hash.CompareTo(tx.Hash);
+            // Transaction hash sorted descending
+            return otherTx.Hash.CompareTo(Tx.Hash);
         }
 
         public int CompareTo(PoolItem otherItem)
