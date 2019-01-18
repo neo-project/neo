@@ -72,7 +72,8 @@ namespace Neo.Plugins
                     return false;
 
             return true;
-
+        }
+        
         public abstract void Configure();
 
         private static void ConfigWatcher_Changed(object sender, FileSystemEventArgs e)
