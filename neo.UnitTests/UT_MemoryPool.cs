@@ -113,28 +113,34 @@ namespace Neo.UnitTests
             return longRand % (max - min) + min;
         }
 
-        private Transaction CreateMockHighPriorityTransaction()
+        private Transaction CreateMockTransactionWithFee(long fee)
         {
             var mockTx = CreateRandomHashInvocationMockTransaction();
-            long rNetFee = LongRandom(100000, 100000000, _random); // [0.001,1]) GAS (enough to be a high priority TX)
-            mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(rNetFee));
+            mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(fee));
             var tx = mockTx.Object;
-            tx.Inputs = new CoinReference[1];
-            // Any input will trigger reading the transaction output and get our mocked transaction output.
-            tx.Inputs[0] = new CoinReference
+            if (fee > 0)
             {
-                PrevHash = UInt256.Zero,
-                PrevIndex = 0
-            };
+                tx.Inputs = new CoinReference[1];
+                // Any input will trigger reading the transaction output and get our mocked transaction output.
+                tx.Inputs[0] = new CoinReference
+                {
+                    PrevHash = UInt256.Zero,
+                    PrevIndex = 0
+                };
+            }
             return tx;
+        }
+
+        private Transaction CreateMockHighPriorityTransaction()
+        {
+            return CreateMockTransactionWithFee(LongRandom(100000, 100000000, _random));
         }
 
         private Transaction CreateMockLowPriorityTransaction()
         {
-            var mockTx = CreateRandomHashInvocationMockTransaction();
-            long rNetFee = LongRandom(0, 100000, _random);  // [0,0.001] GAS a fee lower than the threshold of 0.001 GAS (not enough to be a high priority TX)
-            mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(rNetFee));
-            return mockTx.Object;
+            long rNetFee = LongRandom(0, 100000, _random);
+            // [0,0.001] GAS a fee lower than the threshold of 0.001 GAS (not enough to be a high priority TX)
+            return CreateMockTransactionWithFee(rNetFee);
         }
 
         private  void AddTransactions(int count, bool isHighPriority=false)
@@ -348,6 +354,27 @@ namespace Neo.UnitTests
             }
             _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(0);
             _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(0);
+        }
+
+        void VerifyCapacityThresholdForAttemptingToAddATransaction()
+        {
+            var sortedVerified = _unit.GetSortedVerifiedTransactions().ToArray();
+
+            var txBarelyWontFit = CreateMockTransactionWithFee(sortedVerified.Last().NetworkFee.GetData() - 1);
+            _unit.CanTransactionFitInPool(txBarelyWontFit).ShouldBeEquivalentTo(false);
+            var txBarelyFits = CreateMockTransactionWithFee(sortedVerified.Last().NetworkFee.GetData() + 1);
+            _unit.CanTransactionFitInPool(txBarelyFits).ShouldBeEquivalentTo(true);
+        }
+
+        [TestMethod]
+        public void VerifyCanTransactionFitInPoolWorksAsIntended()
+        {
+            AddLowPriorityTransactions(100);
+            VerifyCapacityThresholdForAttemptingToAddATransaction();
+            AddHighPriorityTransactions(50);
+            VerifyCapacityThresholdForAttemptingToAddATransaction();
+            AddHighPriorityTransactions(50);
+            VerifyCapacityThresholdForAttemptingToAddATransaction();
         }
 
         [TestMethod]
