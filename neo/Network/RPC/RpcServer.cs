@@ -314,6 +314,10 @@ namespace Neo.Network.RPC
                         json["unverified"] = new JArray(unverifiedTransactions.Select(p => (JObject) p.Hash.ToString()));
                         return json;
                     }
+                case "getmempoolnextblockinfo":
+                    {
+                        return Blockchain.Singleton.MemPool.GetMemPoolInfoForNextBlock();
+                    }
                 case "getrawtransaction":
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());

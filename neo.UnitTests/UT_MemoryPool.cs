@@ -9,6 +9,7 @@ using Neo.Cryptography.ECC;
 using Neo.IO.Wrappers;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.IO.Json;
 
 namespace Neo.UnitTests
 {
@@ -117,6 +118,7 @@ namespace Neo.UnitTests
         {
             var mockTx = CreateRandomHashInvocationMockTransaction();
             mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(fee));
+            mockTx.SetupGet(mr => mr.Size).Returns(10);
             var tx = mockTx.Object;
             if (fee > 0)
             {
@@ -131,30 +133,33 @@ namespace Neo.UnitTests
             return tx;
         }
 
-        private Transaction CreateMockHighPriorityTransaction()
+        private Transaction CreateMockHighPriorityTransaction(long fixedFee = -1)
         {
-            return CreateMockTransactionWithFee(LongRandom(100000, 100000000, _random));
+            long rNetFee = LongRandom(100000, 100000000, _random); // [0.001,1]) GAS (enough to be a high priority TX)
+            if (fixedFee != -1) rNetFee = fixedFee;
+            return CreateMockTransactionWithFee(rNetFee);
         }
 
-        private Transaction CreateMockLowPriorityTransaction()
+        private Transaction CreateMockLowPriorityTransaction(long fixedFee = -1)
         {
             long rNetFee = LongRandom(0, 100000, _random);
+            if (fixedFee != -1) rNetFee = fixedFee;
             // [0,0.001] GAS a fee lower than the threshold of 0.001 GAS (not enough to be a high priority TX)
             return CreateMockTransactionWithFee(rNetFee);
         }
 
-        private  void AddTransactions(int count, bool isHighPriority=false)
+        private  void AddTransactions(int count, bool isHighPriority, long fixedFee = -1)
         {
             for (int i = 0; i < count; i++)
             {
-                var txToAdd = isHighPriority ? CreateMockHighPriorityTransaction(): CreateMockLowPriorityTransaction();
+                var txToAdd = isHighPriority ? CreateMockHighPriorityTransaction(fixedFee): CreateMockLowPriorityTransaction(fixedFee);
                 Console.WriteLine($"created tx: {txToAdd.Hash}");
                 _unit.TryAdd(txToAdd.Hash, txToAdd);
             }
         }
 
-        private void AddLowPriorityTransactions(int count) => AddTransactions(count);
-        public void AddHighPriorityTransactions(int count) => AddTransactions(count, true);
+        private void AddLowPriorityTransactions(int count, long fixedFee = -1) => AddTransactions(count, false, fixedFee);
+        public void AddHighPriorityTransactions(int count, long fixedFee = -1) => AddTransactions(count, true, fixedFee);
 
         [TestMethod]
         public void LowPriorityCapacityTest()
@@ -393,6 +398,27 @@ namespace Neo.UnitTests
             _unit.CanTransactionFitInPool(CreateMockLowPriorityTransaction()).ShouldBeEquivalentTo(true);
             AddHighPriorityTransactions(1);
             _unit.CanTransactionFitInPool(CreateMockLowPriorityTransaction()).ShouldBeEquivalentTo(false);
+        }
+
+        [TestMethod]
+        public void TestMemPoolInfoForNextBlock()
+        {
+            AddHighPriorityTransactions(50, 100000);
+            JObject json = new JObject();
+            json["sortedHP_avgNetFees"] = "100000";
+            json["sortedLP_avgNetFees"] = "10000";
+            json["unverifiedHP_avgNetFees"] = "0";
+            json["unverifiedLP_avgNetFees"] = "0";
+            json["sortedHP_avgNetFeesPerByte"] = "0";
+            json["sortedLP_avgNetFeesPerByte"] = "0";
+            json["unverifiedHP_avgNetFeesPerByte"] = "0";
+            json["unverifiedLP_avgNetFeesPerByte"] = "0";
+   
+            _unit.GetMemPoolInfoForNextBlock().ShouldBeEquivalentTo(json);
+            AddHighPriorityTransactions(50, 200000);
+            json["sortedHP_avgNetFees"] = "200000";
+            json["sortedLP_avgNetFees"] = "20000";
+            _unit.GetMemPoolInfoForNextBlock().ShouldBeEquivalentTo(json);
         }
     }
 }

@@ -9,6 +9,8 @@ using Akka.Util.Internal;
 using Neo.Network.P2P;
 using Neo.Persistence;
 using Neo.Plugins;
+using Neo.IO;
+using Neo.IO.Json;
 
 namespace Neo.Ledger
 {
@@ -251,6 +253,28 @@ namespace Neo.Ledger
             {
                 _txRwLock.ExitReadLock();
             }
+        }
+
+        public JObject GetMemPoolInfoForNextBlock()
+        {
+            JObject json = new JObject();
+            _txRwLock.EnterReadLock();
+            try
+            {
+                json["sortedHP_avgNetFees"] = new JArray((_sortedHighPrioTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.NetworkFee) / _maxTxPerBlock).ToString());
+                json["sortedLP_avgNetFees"] = new JArray((_sortedLowPrioTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.NetworkFee) / _maxTxPerBlock).ToString());
+                json["unverifiedHP_avgNetFees"] = new JArray((_unverifiedSortedHighPriorityTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.NetworkFee) / _maxTxPerBlock).ToString());
+                json["unverifiedLP_avgNetFees"] = new JArray((_unverifiedSortedLowPriorityTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.NetworkFee) / _maxTxPerBlock).ToString());
+                json["sortedHP_avgNetFeesPerByte"] = new JArray((_sortedHighPrioTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.FeePerByte) / _maxTxPerBlock).ToString());
+                json["sortedLP_avgNetFeesPerByte"] = new JArray((_sortedLowPrioTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.FeePerByte) / _maxTxPerBlock).ToString());
+                json["unverifiedHP_avgNetFeesPerByte"] = new JArray((_unverifiedSortedHighPriorityTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.FeePerByte) / _maxTxPerBlock).ToString());
+                json["unverifiedLP_avgNetFeesPerByte"] = new JArray((_unverifiedSortedLowPriorityTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.FeePerByte) / _maxTxPerBlock).ToString());
+            }
+            finally
+            {
+                _txRwLock.ExitReadLock();
+            }
+            return json;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
