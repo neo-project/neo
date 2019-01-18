@@ -17,9 +17,32 @@ namespace Neo.UnitTests
     {
         //private PoolItem uut;
 
+/*
         [TestInitialize]
         public void TestSetup()
         {
+            int timeIndex = 0;
+            var timeValues = new[] {
+                new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc),
+                new DateTime(1968, 06, 01, 0, 0, 2, DateTimeKind.Utc),
+                new DateTime(1968, 06, 01, 0, 0, 3, DateTimeKind.Utc),
+                new DateTime(1968, 06, 01, 0, 0, 4, DateTimeKind.Utc),
+                new DateTime(1968, 06, 01, 0, 0, 5, DateTimeKind.Utc)
+            };
+
+            var timeMock = new Mock<TimeProvider>();
+
+            timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[timeIndex])
+                                              .Callback(() => timeIndex++);
+            TimeProvider.Current = timeMock.Object;
+        }
+*/
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            Console.WriteLine("CLEANUP TEST!!!!");
+            // important to leave TimeProvider correct
+            TimeProvider.ResetToDefault();
         }
 
         [TestMethod]
@@ -33,7 +56,9 @@ namespace Neo.UnitTests
                 new DateTime(1968, 06, 01, 0, 0, 4, DateTimeKind.Utc),
                 new DateTime(1968, 06, 01, 0, 0, 5, DateTimeKind.Utc)
             };
+
             var timeMock = new Mock<TimeProvider>();
+
             timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[timeIndex])
                                               .Callback(() => timeIndex++);
             TimeProvider.Current = timeMock.Object;
@@ -47,12 +72,16 @@ namespace Neo.UnitTests
 
             PoolItem pitem1 = new PoolItem(tx1.Object);
             PoolItem pitem2 = new PoolItem(tx2.Object);
+
+            Console.WriteLine($"item1 time {pitem1.Timestamp} item2 time {pitem2.Timestamp}");
             // pitem1 < pitem2 (fee) => -1
             pitem1.CompareTo(pitem2).Should().Be(-1);
-            
+            // pitem2 > pitem1 (fee) => 1
+            pitem2.CompareTo(pitem1).Should().Be(1);
+
             TimeProvider.ResetToDefault();
         }
-
+/*
         [TestMethod]
         public void PoolItem_CompareTo_Hash()
         {
@@ -68,7 +97,7 @@ namespace Neo.UnitTests
             timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[timeIndex])
                                               .Callback(() => timeIndex++);
             TimeProvider.Current = timeMock.Object;
-            
+
             int sizeFixed = 50;
             int netFeeSatoshiFixed = 1;
             var tx1 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, UInt256.Zero);
@@ -78,7 +107,7 @@ namespace Neo.UnitTests
             PoolItem pitem2 = new PoolItem(tx2.Object);
             // pitem2 < pitem1 (fee) => -1
             pitem2.CompareTo(pitem1).Should().Be(-1);
-            
+
             TimeProvider.ResetToDefault();
         }
 
@@ -97,7 +126,7 @@ namespace Neo.UnitTests
             timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[timeIndex])
                                               .Callback(() => timeIndex++);
             TimeProvider.Current = timeMock.Object;
-            
+
             int sizeFixed = 500;
             int netFeeSatoshiFixed = 10;
             var tx1 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, UInt256.Zero);
@@ -107,10 +136,10 @@ namespace Neo.UnitTests
             PoolItem pitem2 = new PoolItem(tx2.Object);
             // pitem1 == pitem2 (fee) => 0
             pitem1.CompareTo(pitem2).Should().Be(0);
-            
+
             TimeProvider.ResetToDefault();
         }
-
+*/
         // Generate Mock InvocationTransaction with different sizes and prices
         public static Mock<Transaction> MockGenerateInvocationTx(Fixed8 networkFee, int size, UInt256 hash)
         {
