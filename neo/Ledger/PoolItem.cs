@@ -13,7 +13,10 @@ using Neo.Plugins;
 namespace Neo.Ledger
 {
     /// <summary>
-    /// PoolItem are compared to each other only between a given class of transaction priority (low or high)
+    /// Represents an item in the Memory Pool. 
+    ///
+    //  Note: PoolItem objects don't consider transaction priority (low or high) in their compare CompareTo method.
+    ///       This is because items of differing priority are never added to the same sorted set in MemoryPool.
     /// </summary>
     internal class PoolItem : IComparable<PoolItem>
     {
