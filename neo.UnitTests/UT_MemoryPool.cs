@@ -108,12 +108,11 @@ namespace Neo.UnitTests
 
         long LongRandom(long min, long max, Random rand)
         {
-            byte[] buf = new byte[8];
-            rand.NextBytes(buf);
-            long longRand = BitConverter.ToInt64(buf, 0);
-            return (Math.Abs(longRand % (max - min)) + min);
+            // Only returns positive random long values.
+            long longRand = (long) rand.NextBigInteger(63);
+            return longRand % (max - min) + min;
         }
-        
+
         private Transaction CreateMockHighPriorityTransaction()
         {
             var mockTx = CreateRandomHashInvocationMockTransaction();
@@ -132,7 +131,7 @@ namespace Neo.UnitTests
 
         private Transaction CreateMockLowPriorityTransaction()
         {
-            var mockTx = CreateRandomHashInvocationMockTransaction(); 
+            var mockTx = CreateRandomHashInvocationMockTransaction();
             long rNetFee = LongRandom(0, 100000, _random);  // [0,0.001] GAS a fee lower than the threshold of 0.001 GAS (not enough to be a high priority TX)
             mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(rNetFee));
             return mockTx.Object;
