@@ -12,13 +12,13 @@ using Neo.Plugins;
 
 namespace Neo.Ledger
 {
-    public class PoolItem : IComparable<PoolItem>
+    internal class PoolItem : IComparable<PoolItem>
     {
         public readonly Transaction Tx;
         public readonly DateTime Timestamp;
         public DateTime LastBroadcastTimestamp;
 
-        public PoolItem(Transaction tx)
+        internal PoolItem(Transaction tx)
         {
             Tx = tx;
             Timestamp = DateTime.UtcNow;
