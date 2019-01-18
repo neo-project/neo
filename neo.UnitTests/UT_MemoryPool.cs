@@ -49,7 +49,7 @@ namespace Neo.UnitTests
                 defaultTx.Outputs[0] = new TransactionOutput
                 {
                     AssetId = Blockchain.UtilityToken.Hash,
-                    Value = new Fixed8(1000000), // 0.001 GAS (enough to be a high priority TX
+                    Value = new Fixed8(1000000),
                     ScriptHash = UInt160.Zero // doesn't matter for our purposes.
                 };
 
@@ -106,10 +106,18 @@ namespace Neo.UnitTests
             return mockTx;
         }
 
+        long LongRandom(long min, long max, Random rand)
+        {
+            // Only returns positive random long values.
+            long longRand = (long) rand.NextBigInteger(63);
+            return longRand % (max - min) + min;
+        }
+
         private Transaction CreateMockHighPriorityTransaction()
         {
             var mockTx = CreateRandomHashInvocationMockTransaction();
-            mockTx.SetupGet(p => p.NetworkFee).Returns(Fixed8.FromDecimal(0.001m));
+            long rNetFee = LongRandom(100000, 100000000, _random); // [0.001,1]) GAS (enough to be a high priority TX)
+            mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(rNetFee));
             var tx = mockTx.Object;
             tx.Inputs = new CoinReference[1];
             // Any input will trigger reading the transaction output and get our mocked transaction output.
@@ -121,10 +129,11 @@ namespace Neo.UnitTests
             return tx;
         }
 
-
         private Transaction CreateMockLowPriorityTransaction()
         {
             var mockTx = CreateRandomHashInvocationMockTransaction();
+            long rNetFee = LongRandom(0, 100000, _random);  // [0,0.001] GAS a fee lower than the threshold of 0.001 GAS (not enough to be a high priority TX)
+            mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(rNetFee));
             return mockTx.Object;
         }
 
@@ -132,9 +141,9 @@ namespace Neo.UnitTests
         {
             for (int i = 0; i < count; i++)
             {
-                var lowPrioTx = isHighPriority ? CreateMockHighPriorityTransaction(): CreateMockLowPriorityTransaction();
-                Console.WriteLine($"created tx: {lowPrioTx.Hash}");
-                _unit.TryAdd(lowPrioTx.Hash, lowPrioTx);
+                var txToAdd = isHighPriority ? CreateMockHighPriorityTransaction(): CreateMockLowPriorityTransaction();
+                Console.WriteLine($"created tx: {txToAdd.Hash}");
+                _unit.TryAdd(txToAdd.Hash, txToAdd);
             }
         }
 
