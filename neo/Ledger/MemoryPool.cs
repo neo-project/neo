@@ -255,20 +255,26 @@ namespace Neo.Ledger
             }
         }
 
+        // This function return some statistics about the best _maxTxPerBlock and _maxLowPriorityTxPerBlock txs of the mempool
         public JObject GetMemPoolInfoForNextBlock()
         {
+            int minSizeSortedHP = Math.Min(_maxTxPerBlock, _sortedHighPrioTransactions.Count);
+            int minSizeSortedLP = Math.Min(_maxLowPriorityTxPerBlock, _sortedLowPrioTransactions.Count);
+            int minSizeUnverifiedHP = Math.Max(Math.Min(_maxTxPerBlock, _unverifiedSortedHighPriorityTransactions.Count) - minSizeSortedHP, 0);
+            int minSizeUnverifiedLP = Math.Max(Math.Min(_maxLowPriorityTxPerBlock, _unverifiedSortedLowPriorityTransactions.Count) - minSizeSortedLP, 0);
+                                      
             JObject json = new JObject();
             _txRwLock.EnterReadLock();
             try
             {
-                json["sortedHP_avgNetFees"] = new JArray((_sortedHighPrioTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.NetworkFee) / _maxTxPerBlock).ToString());
-                json["sortedLP_avgNetFees"] = new JArray((_sortedLowPrioTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.NetworkFee) / _maxTxPerBlock).ToString());
-                json["unverifiedHP_avgNetFees"] = new JArray((_unverifiedSortedHighPriorityTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.NetworkFee) / _maxTxPerBlock).ToString());
-                json["unverifiedLP_avgNetFees"] = new JArray((_unverifiedSortedLowPriorityTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.NetworkFee) / _maxTxPerBlock).ToString());
-                json["sortedHP_avgNetFeesPerByte"] = new JArray((_sortedHighPrioTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.FeePerByte) / _maxTxPerBlock).ToString());
-                json["sortedLP_avgNetFeesPerByte"] = new JArray((_sortedLowPrioTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.FeePerByte) / _maxTxPerBlock).ToString());
-                json["unverifiedHP_avgNetFeesPerByte"] = new JArray((_unverifiedSortedHighPriorityTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.FeePerByte) / _maxTxPerBlock).ToString());
-                json["unverifiedLP_avgNetFeesPerByte"] = new JArray((_unverifiedSortedLowPriorityTransactions.Reverse().Take(_maxTxPerBlock).Sum(p => p.Tx.FeePerByte) / _maxTxPerBlock).ToString());
+                json["sortedHP_avgNetFees"] = new JArray((_sortedHighPrioTransactions.Reverse().Take(minSizeSortedHP).Sum(p => p.Tx.NetworkFee) / Math.Max(minSizeSortedHP, 1)).ToString());
+                json["sortedLP_avgNetFees"] = new JArray((_sortedLowPrioTransactions.Reverse().Take(minSizeSortedLP).Sum(p => p.Tx.NetworkFee) / Math.Max(minSizeSortedLP, 1)).ToString());
+                json["unverifiedHP_avgNetFees"] = new JArray((_unverifiedSortedHighPriorityTransactions.Reverse().Take(minSizeUnverifiedHP).Sum(p => p.Tx.NetworkFee) / Math.Max(minSizeUnverifiedHP, 1)).ToString());
+                json["unverifiedLP_avgNetFees"] = new JArray((_unverifiedSortedLowPriorityTransactions.Reverse().Take(minSizeUnverifiedLP).Sum(p => p.Tx.NetworkFee) / Math.Max(minSizeUnverifiedLP, 1)).ToString());
+                json["sortedHP_avgNetFeesPerByte"] = new JArray((_sortedHighPrioTransactions.Reverse().Take(minSizeSortedHP).Sum(p => p.Tx.FeePerByte) / Math.Max(minSizeSortedHP, 1)).ToString());
+                json["sortedLP_avgNetFeesPerByte"] = new JArray((_sortedLowPrioTransactions.Reverse().Take(minSizeSortedLP).Sum(p => p.Tx.FeePerByte) / Math.Max(minSizeSortedLP, 1)).ToString());
+                json["unverifiedHP_avgNetFeesPerByte"] = new JArray((_unverifiedSortedHighPriorityTransactions.Reverse().Take(minSizeUnverifiedHP).Sum(p => p.Tx.FeePerByte) / Math.Max(minSizeUnverifiedHP, 1)).ToString());
+                json["unverifiedLP_avgNetFeesPerByte"] = new JArray((_unverifiedSortedLowPriorityTransactions.Reverse().Take(minSizeUnverifiedLP).Sum(p => p.Tx.FeePerByte) / Math.Max(minSizeUnverifiedLP, 1)).ToString());
             }
             finally
             {
