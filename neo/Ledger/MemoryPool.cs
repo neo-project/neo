@@ -148,7 +148,7 @@ namespace Neo.Ledger
             {
                 bool ret = _unsortedTransactions.TryGetValue(hash, out PoolItem item)
                            || _unverifiedTransactions.TryGetValue(hash, out item);
-                tx = ret ? item.Transaction : null;
+                tx = ret ? item.Tx : null;
                 return ret;
             }
             finally
@@ -163,8 +163,8 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
-                return _unsortedTransactions.Select(p => p.Value.Transaction)
-                    .Concat(_unverifiedTransactions.Select(p => p.Value.Transaction))
+                return _unsortedTransactions.Select(p => p.Value.Tx)
+                    .Concat(_unverifiedTransactions.Select(p => p.Value.Tx))
                     .ToList()
                     .GetEnumerator();
             }
@@ -181,7 +181,7 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
-                return _unsortedTransactions.Select(p => p.Value.Transaction).ToArray();
+                return _unsortedTransactions.Select(p => p.Value.Tx).ToArray();
             }
             finally
             {
@@ -195,10 +195,10 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
-                verifiedTransactions = _sortedHighPrioTransactions.Reverse().Select(p => p.Transaction)
-                    .Concat(_sortedLowPrioTransactions.Reverse().Select(p => p.Transaction)).ToArray();
-                unverifiedTransactions = _unverifiedSortedHighPriorityTransactions.Reverse().Select(p => p.Transaction)
-                    .Concat(_unverifiedSortedLowPriorityTransactions.Reverse().Select(p => p.Transaction)).ToArray();
+                verifiedTransactions = _sortedHighPrioTransactions.Reverse().Select(p => p.Tx)
+                    .Concat(_sortedLowPrioTransactions.Reverse().Select(p => p.Tx)).ToArray();
+                unverifiedTransactions = _unverifiedSortedHighPriorityTransactions.Reverse().Select(p => p.Tx)
+                    .Concat(_unverifiedSortedLowPriorityTransactions.Reverse().Select(p => p.Tx)).ToArray();
             }
             finally
             {
@@ -211,8 +211,8 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
-               return _sortedHighPrioTransactions.Reverse().Select(p => p.Transaction)
-                        .Concat(_sortedLowPrioTransactions.Reverse().Select(p => p.Transaction))
+               return _sortedHighPrioTransactions.Reverse().Select(p => p.Tx)
+                        .Concat(_sortedLowPrioTransactions.Reverse().Select(p => p.Tx))
                         .ToArray();
             }
             finally
@@ -309,7 +309,7 @@ namespace Neo.Ledger
             {
                 PoolItem minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
 
-                unsortedPool.Remove(minItem.Transaction.Hash);
+                unsortedPool.Remove(minItem.Tx.Hash);
                 sortedPool.Remove(minItem);
             }
         }
@@ -321,7 +321,7 @@ namespace Neo.Ledger
                 return false;
 
             _unsortedTransactions.Remove(hash);
-            SortedSet<PoolItem> pool = item.Transaction.IsLowPriority
+            SortedSet<PoolItem> pool = item.Tx.IsLowPriority
                 ? _sortedLowPrioTransactions : _sortedHighPrioTransactions;
             pool.Remove(item);
             return true;
@@ -334,7 +334,7 @@ namespace Neo.Ledger
                 return false;
 
             _unverifiedTransactions.Remove(hash);
-            SortedSet<PoolItem> pool = item.Transaction.IsLowPriority
+            SortedSet<PoolItem> pool = item.Tx.IsLowPriority
                 ? _unverifiedSortedLowPriorityTransactions : _unverifiedSortedHighPriorityTransactions;
             pool.Remove(item);
             return true;
@@ -356,13 +356,13 @@ namespace Neo.Ledger
                 // Add all the previously verified transactions back to the unverified transactions
                 foreach (PoolItem item in _sortedHighPrioTransactions)
                 {
-                    if (_unverifiedTransactions.TryAdd(item.Transaction.Hash, item))
+                    if (_unverifiedTransactions.TryAdd(item.Tx.Hash, item))
                         _unverifiedSortedHighPriorityTransactions.Add(item);
                 }
 
                 foreach (PoolItem item in _sortedLowPrioTransactions)
                 {
-                    if (_unverifiedTransactions.TryAdd(item.Transaction.Hash, item))
+                    if (_unverifiedTransactions.TryAdd(item.Tx.Hash, item))
                         _unverifiedSortedLowPriorityTransactions.Add(item);
                 }
 
@@ -403,7 +403,7 @@ namespace Neo.Ledger
             // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
             foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
             {
-                if (item.Transaction.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Transaction)))
+                if (item.Tx.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Tx)))
                     reverifiedItems.Add(item);
                 else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
                     invalidItems.Add(item);
@@ -424,24 +424,24 @@ namespace Neo.Ledger
                     -Blockchain.SecondsPerBlock * blocksTillRebroadcast);
                 foreach (PoolItem item in reverifiedItems)
                 {
-                    if (_unsortedTransactions.TryAdd(item.Transaction.Hash, item))
+                    if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
                     {
                         verifiedSortedTxPool.Add(item);
 
                         if (item.LastBroadcastTimestamp < rebroadcastCutOffTime)
                         {
-                            _system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = item.Transaction }, _system.Blockchain);
+                            _system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = item.Tx }, _system.Blockchain);
                             item.LastBroadcastTimestamp = DateTime.UtcNow;
                         }
                     }
 
-                    _unverifiedTransactions.Remove(item.Transaction.Hash);
+                    _unverifiedTransactions.Remove(item.Tx.Hash);
                     unverifiedSortedTxPool.Remove(item);
                 }
 
                 foreach (PoolItem item in invalidItems)
                 {
-                    _unverifiedTransactions.Remove(item.Transaction.Hash);
+                    _unverifiedTransactions.Remove(item.Tx.Hash);
                     unverifiedSortedTxPool.Remove(item);
                 }
             }
