@@ -32,7 +32,7 @@ namespace Neo.Ledger
         internal PoolItem(Transaction tx)
         {
             Tx = tx;
-            Timestamp = DateTime.UtcNow;
+            Timestamp = TimeProvider.Current.UtcNow;
             LastBroadcastTimestamp = Timestamp;
         }
 
