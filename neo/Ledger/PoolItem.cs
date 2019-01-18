@@ -29,9 +29,9 @@ namespace Neo.Ledger
         {
             if (otherTx == null) return 1;
             // Fees sorted ascending
-            int ret = Transaction.FeePerByte.CompareTo(otherTx.FeePerByte);
+            int ret = Tx.FeePerByte.CompareTo(otherTx.FeePerByte);
             if (ret != 0) return ret;
-            ret = Transaction.NetworkFee.CompareTo(otherTx.NetworkFee);
+            ret = Tx.NetworkFee.CompareTo(otherTx.NetworkFee);
             if (ret != 0) return ret;
             // Transaction hash sorted descending
             return -1*(Tx.Hash.CompareTo(otherTx.Hash));
