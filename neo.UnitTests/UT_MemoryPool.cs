@@ -49,7 +49,7 @@ namespace Neo.UnitTests
                 defaultTx.Outputs[0] = new TransactionOutput
                 {
                     AssetId = Blockchain.UtilityToken.Hash,
-                    Value = new Fixed8(1000000), // 0.001 GAS (enough to be a high priority TX
+                    Value = new Fixed8(1000000),
                     ScriptHash = UInt160.Zero // doesn't matter for our purposes.
                 };
 
@@ -106,35 +106,50 @@ namespace Neo.UnitTests
             return mockTx;
         }
 
-        private Transaction CreateMockHighPriorityTransaction()
+        long LongRandom(long min, long max, Random rand)
+        {
+            // Only returns positive random long values.
+            long longRand = (long) rand.NextBigInteger(63);
+            return longRand % (max - min) + min;
+        }
+
+        private Transaction CreateMockTransactionWithFee(long fee)
         {
             var mockTx = CreateRandomHashInvocationMockTransaction();
-            mockTx.SetupGet(p => p.NetworkFee).Returns(Fixed8.FromDecimal(0.001m));
+            mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(fee));
             var tx = mockTx.Object;
-            tx.Inputs = new CoinReference[1];
-            // Any input will trigger reading the transaction output and get our mocked transaction output.
-            tx.Inputs[0] = new CoinReference
+            if (fee > 0)
             {
-                PrevHash = UInt256.Zero,
-                PrevIndex = 0
-            };
+                tx.Inputs = new CoinReference[1];
+                // Any input will trigger reading the transaction output and get our mocked transaction output.
+                tx.Inputs[0] = new CoinReference
+                {
+                    PrevHash = UInt256.Zero,
+                    PrevIndex = 0
+                };
+            }
             return tx;
         }
 
+        private Transaction CreateMockHighPriorityTransaction()
+        {
+            return CreateMockTransactionWithFee(LongRandom(100000, 100000000, _random));
+        }
 
         private Transaction CreateMockLowPriorityTransaction()
         {
-            var mockTx = CreateRandomHashInvocationMockTransaction();
-            return mockTx.Object;
+            long rNetFee = LongRandom(0, 100000, _random);
+            // [0,0.001] GAS a fee lower than the threshold of 0.001 GAS (not enough to be a high priority TX)
+            return CreateMockTransactionWithFee(rNetFee);
         }
 
         private  void AddTransactions(int count, bool isHighPriority=false)
         {
             for (int i = 0; i < count; i++)
             {
-                var lowPrioTx = isHighPriority ? CreateMockHighPriorityTransaction(): CreateMockLowPriorityTransaction();
-                Console.WriteLine($"created tx: {lowPrioTx.Hash}");
-                _unit.TryAdd(lowPrioTx.Hash, lowPrioTx);
+                var txToAdd = isHighPriority ? CreateMockHighPriorityTransaction(): CreateMockLowPriorityTransaction();
+                Console.WriteLine($"created tx: {txToAdd.Hash}");
+                _unit.TryAdd(txToAdd.Hash, txToAdd);
             }
         }
 
@@ -269,6 +284,97 @@ namespace Neo.UnitTests
             _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(25);
             _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(0);
             _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(0);
+        }
+
+        private void verifyTransactionsSortedDescending(IEnumerable<Transaction> transactions)
+        {
+            Transaction lastTransaction = null;
+            foreach (var tx in transactions)
+            {
+                if (lastTransaction != null)
+                {
+                    if (lastTransaction.FeePerByte == tx.FeePerByte)
+                    {
+                        if (lastTransaction.NetworkFee == tx.NetworkFee)
+                            lastTransaction.Hash.Should().BeGreaterThan(tx.Hash);
+                        else
+                            lastTransaction.NetworkFee.Should().BeGreaterThan(tx.NetworkFee);
+                    }
+                    else
+                    {
+                        lastTransaction.FeePerByte.Should().BeGreaterThan(tx.FeePerByte);
+                    }
+                }
+                lastTransaction = tx;
+            }
+        }
+
+        [TestMethod]
+        public void VerifySortOrderAndThatHighetFeeTransactionsAreReverifiedFirst()
+        {
+            AddLowPriorityTransactions(50);
+            AddHighPriorityTransactions(50);
+
+            var sortedVerifiedTxs = _unit.GetSortedVerifiedTransactions().ToList();
+            // verify all 100 transactions are returned in sorted order
+            sortedVerifiedTxs.Count.ShouldBeEquivalentTo(100);
+            verifyTransactionsSortedDescending(sortedVerifiedTxs);
+
+            // move all to unverified
+            var block = new Block { Transactions = new Transaction[0] };
+            _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
+
+            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(0);
+            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(0);
+            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(50);
+            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(50);
+
+            // We can verify the order they are re-verified by reverifying 2 at a time
+            while (_unit.UnVerifiedCount > 0)
+            {
+                _unit.GetVerifiedAndUnverifiedTransactions(out IEnumerable<Transaction> sortedVerifiedTransactions,
+                    out IEnumerable<Transaction> sortedUnverifiedTransactions);
+                sortedVerifiedTransactions.Count().ShouldBeEquivalentTo(0);
+                var sortedUnverifiedArray = sortedUnverifiedTransactions.ToArray();
+                verifyTransactionsSortedDescending(sortedUnverifiedArray);
+                var maxHighPriorityTransaction = sortedUnverifiedArray.First();
+                var maxLowPriorityTransaction = sortedUnverifiedArray.First(tx => tx.IsLowPriority);
+
+                // reverify 1 high priority and 1 low priority transaction
+                _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(2, Blockchain.Singleton.GetSnapshot());
+                var verifiedTxs = _unit.GetSortedVerifiedTransactions().ToArray();
+                verifiedTxs.Length.ShouldBeEquivalentTo(2);
+                verifiedTxs[0].ShouldBeEquivalentTo(maxHighPriorityTransaction);
+                verifiedTxs[1].ShouldBeEquivalentTo(maxLowPriorityTransaction);
+                var blockWith2Tx = new Block { Transactions = new Transaction[2] { maxHighPriorityTransaction, maxLowPriorityTransaction }};
+                // verify and remove the 2 transactions from the verified pool
+                _unit.UpdatePoolForBlockPersisted(blockWith2Tx, Blockchain.Singleton.GetSnapshot());
+                _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(0);
+                _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(0);
+            }
+            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(0);
+            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(0);
+        }
+
+        void VerifyCapacityThresholdForAttemptingToAddATransaction()
+        {
+            var sortedVerified = _unit.GetSortedVerifiedTransactions().ToArray();
+
+            var txBarelyWontFit = CreateMockTransactionWithFee(sortedVerified.Last().NetworkFee.GetData() - 1);
+            _unit.CanTransactionFitInPool(txBarelyWontFit).ShouldBeEquivalentTo(false);
+            var txBarelyFits = CreateMockTransactionWithFee(sortedVerified.Last().NetworkFee.GetData() + 1);
+            _unit.CanTransactionFitInPool(txBarelyFits).ShouldBeEquivalentTo(true);
+        }
+
+        [TestMethod]
+        public void VerifyCanTransactionFitInPoolWorksAsIntended()
+        {
+            AddLowPriorityTransactions(100);
+            VerifyCapacityThresholdForAttemptingToAddATransaction();
+            AddHighPriorityTransactions(50);
+            VerifyCapacityThresholdForAttemptingToAddATransaction();
+            AddHighPriorityTransactions(50);
+            VerifyCapacityThresholdForAttemptingToAddATransaction();
         }
 
         [TestMethod]

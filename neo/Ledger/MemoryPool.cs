@@ -45,7 +45,7 @@ namespace Neo.Ledger
             }
         }
 
-        // Allow reverified transactions to be rebroadcast if it has been this many block times since last broadcast.
+        // Allow a reverified transaction to be rebroadcasted if it has been this many block times since last broadcast.
         private const int BlocksTillRebroadcastLowPriorityPoolTx = 30;
         private const int BlocksTillRebroadcastHighPriorityPoolTx = 10;
         private int RebroadcastMultiplierThreshold => Capacity / 10;
@@ -82,7 +82,6 @@ namespace Neo.Ledger
         /// </summary>
         private readonly SortedSet<PoolItem> _sortedLowPrioTransactions = new SortedSet<PoolItem>();
 
-
         /// <summary>
         /// Store the unverified transactions currently in the pool.
         ///
@@ -94,12 +93,11 @@ namespace Neo.Ledger
         private readonly SortedSet<PoolItem> _unverifiedSortedHighPriorityTransactions = new SortedSet<PoolItem>();
         private readonly SortedSet<PoolItem> _unverifiedSortedLowPriorityTransactions = new SortedSet<PoolItem>();
 
-        // internal methods to aid in unit testing
+        // Internal methods to aid in unit testing
         internal int SortedHighPrioTxCount => _sortedHighPrioTransactions.Count;
         internal int SortedLowPrioTxCount => _sortedLowPrioTransactions.Count;
         internal int UnverifiedSortedHighPrioTxCount => _unverifiedSortedHighPriorityTransactions.Count;
         internal int UnverifiedSortedLowPrioTxCount => _unverifiedSortedLowPriorityTransactions.Count;
-
 
         private int _maxTxPerBlock;
         private int _maxLowPriorityTxPerBlock;
@@ -228,9 +226,10 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
-                verifiedTransactions = _sortedHighPrioTransactions.Select(p => p.Transaction)
-                    .Concat(_sortedLowPrioTransactions.Select(p => p.Transaction)).ToArray();
-                unverifiedTransactions = _unverifiedTransactions.Select(p => p.Value.Transaction).ToArray();
+                verifiedTransactions = _sortedHighPrioTransactions.Reverse().Select(p => p.Transaction)
+                    .Concat(_sortedLowPrioTransactions.Reverse().Select(p => p.Transaction)).ToArray();
+                unverifiedTransactions = _unverifiedSortedHighPriorityTransactions.Reverse().Select(p => p.Transaction)
+                    .Concat(_unverifiedSortedLowPriorityTransactions.Reverse().Select(p => p.Transaction)).ToArray();
             }
             finally
             {
@@ -243,8 +242,8 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
-               return _sortedHighPrioTransactions.Select(p => p.Transaction)
-                        .Concat(_sortedLowPrioTransactions.Select(p => p.Transaction))
+               return _sortedHighPrioTransactions.Reverse().Select(p => p.Transaction)
+                        .Concat(_sortedLowPrioTransactions.Reverse().Select(p => p.Transaction))
                         .ToArray();
             }
             finally
@@ -429,15 +428,15 @@ namespace Neo.Ledger
             SortedSet<PoolItem> unverifiedSortedTxPool, int count, double secondsTimeout, Snapshot snapshot)
         {
             DateTime reverifyCutOffTimeStamp = DateTime.UtcNow.AddSeconds(secondsTimeout);
-
             List<PoolItem> reverifiedItems = new List<PoolItem>(count);
             List<PoolItem> invalidItems = new List<PoolItem>();
+
+            // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
             foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
             {
-                // Re-verify the top fee max high priority transactions that can be verified in a block
                 if (item.Transaction.Verify(snapshot, _unsortedTransactions.Select(p => p.Value.Transaction)))
                     reverifiedItems.Add(item);
-                else // Transaction no longer valid -- will be removed from unverifiedTxPool.
+                else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
                     invalidItems.Add(item);
 
                 if (DateTime.UtcNow > reverifyCutOffTimeStamp) break;
