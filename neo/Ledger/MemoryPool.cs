@@ -14,37 +14,6 @@ namespace Neo.Ledger
 {
     public class MemoryPool : IReadOnlyCollection<Transaction>
     {
-        private class PoolItem : IComparable<PoolItem>
-        {
-            public readonly Transaction Transaction;
-            public readonly DateTime Timestamp;
-            public DateTime LastBroadcastTimestamp;
-
-            public PoolItem(Transaction tx)
-            {
-                Transaction = tx;
-                Timestamp = DateTime.UtcNow;
-                LastBroadcastTimestamp = Timestamp;
-            }
-
-            public int CompareTo(Transaction tx)
-            {
-                if (tx == null) return 1;
-                int ret = Transaction.FeePerByte.CompareTo(tx.FeePerByte);
-                if (ret != 0) return ret;
-                ret = Transaction.NetworkFee.CompareTo(tx.NetworkFee);
-                if (ret != 0) return ret;
-
-                return Transaction.Hash.CompareTo(tx.Hash);
-            }
-
-            public int CompareTo(PoolItem otherItem)
-            {
-                if (otherItem == null) return 1;
-                return CompareTo(otherItem.Transaction);
-            }
-        }
-
         // Allow a reverified transaction to be rebroadcasted if it has been this many block times since last broadcast.
         private const int BlocksTillRebroadcastLowPriorityPoolTx = 30;
         private const int BlocksTillRebroadcastHighPriorityPoolTx = 10;
