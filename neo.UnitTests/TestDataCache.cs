@@ -10,6 +10,17 @@ namespace Neo.UnitTests
         where TKey : IEquatable<TKey>, ISerializable
         where TValue : class, ICloneable<TValue>, ISerializable, new()
     {
+        private readonly TValue _defaultValue;
+
+        public TestDataCache()
+        {
+            _defaultValue = null;
+        }
+
+        public TestDataCache(TValue defaultValue)
+        {
+            this._defaultValue = defaultValue;
+        }
         public override void DeleteInternal(TKey key)
         {
         }
@@ -25,12 +36,13 @@ namespace Neo.UnitTests
 
         protected override TValue GetInternal(TKey key)
         {
-            throw new NotImplementedException();
+            if (_defaultValue == null) throw new NotImplementedException();
+            return _defaultValue;
         }
 
         protected override TValue TryGetInternal(TKey key)
         {
-            return null;
+            return _defaultValue;
         }
 
         protected override void UpdateInternal(TKey key, TValue value)

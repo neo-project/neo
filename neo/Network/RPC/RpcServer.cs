@@ -1,4 +1,14 @@
-﻿using Akka.Actor;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Net;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Threading.Tasks;
+using Akka.Actor;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -16,30 +26,21 @@ using Neo.SmartContract;
 using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Net;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Neo.Network.RPC
 {
     public sealed class RpcServer : IDisposable
     {
-        private readonly NeoSystem system;
-        private Wallet wallet;
+        public Wallet Wallet;
+
         private IWebHost host;
         private Fixed8 maxGasInvoke;
+        private readonly NeoSystem system;
 
         public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8))
         {
             this.system = system;
-            this.wallet = wallet;
+            this.Wallet = wallet;
             this.maxGasInvoke = maxGasInvoke;
         }
 
@@ -86,7 +87,7 @@ namespace Neo.Network.RPC
             {
                 json["stack"] = "error: recursive reference";
             }
-            if (wallet != null)
+            if (Wallet != null)
             {
                 InvocationTransaction tx = new InvocationTransaction
                 {
@@ -97,11 +98,11 @@ namespace Neo.Network.RPC
                 tx.Gas -= Fixed8.FromDecimal(10);
                 if (tx.Gas < Fixed8.Zero) tx.Gas = Fixed8.Zero;
                 tx.Gas = tx.Gas.Ceiling();
-                tx = wallet.MakeTransaction(tx);
+                tx = Wallet.MakeTransaction(tx);
                 if (tx != null)
                 {
                     ContractParametersContext context = new ContractParametersContext(tx);
-                    wallet.Sign(context);
+                    Wallet.Sign(context);
                     if (context.Completed)
                         tx.Witnesses = context.GetWitnesses();
                     else
@@ -126,14 +127,16 @@ namespace Neo.Network.RPC
                     throw new RpcException(-503, "The block cannot be validated.");
                 case RelayResultReason.Invalid:
                     throw new RpcException(-504, "Block or transaction validation failed.");
+                case RelayResultReason.PolicyFail:
+                    throw new RpcException(-505, "One of the Policy filters failed.");
                 default:
-                    throw new RpcException(-500, "Unkown error.");
+                    throw new RpcException(-500, "Unknown error.");
             }
         }
 
         public void OpenWallet(Wallet wallet)
         {
-            this.wallet = wallet;
+            this.Wallet = wallet;
         }
 
         private JObject Process(string method, JArray _params)
@@ -141,12 +144,12 @@ namespace Neo.Network.RPC
             switch (method)
             {
                 case "dumpprivkey":
-                    if (wallet == null)
+                    if (Wallet == null)
                         throw new RpcException(-400, "Access denied");
                     else
                     {
                         UInt160 scriptHash = _params[0].AsString().ToScriptHash();
-                        WalletAccount account = wallet.GetAccount(scriptHash);
+                        WalletAccount account = Wallet.GetAccount(scriptHash);
                         return account.GetKey().Export();
                     }
                 case "getaccountstate":
@@ -162,7 +165,7 @@ namespace Neo.Network.RPC
                         return asset?.ToJson() ?? throw new RpcException(-100, "Unknown asset");
                     }
                 case "getbalance":
-                    if (wallet == null)
+                    if (Wallet == null)
                         throw new RpcException(-400, "Access denied.");
                     else
                     {
@@ -170,10 +173,10 @@ namespace Neo.Network.RPC
                         switch (UIntBase.Parse(_params[0].AsString()))
                         {
                             case UInt160 asset_id_160: //NEP-5 balance
-                                json["balance"] = wallet.GetAvailable(asset_id_160).ToString();
+                                json["balance"] = Wallet.GetAvailable(asset_id_160).ToString();
                                 break;
                             case UInt256 asset_id_256: //Global Assets balance
-                                IEnumerable<Coin> coins = wallet.GetCoins().Where(p => !p.State.HasFlag(CoinState.Spent) && p.Output.AssetId.Equals(asset_id_256));
+                                IEnumerable<Coin> coins = Wallet.GetCoins().Where(p => !p.State.HasFlag(CoinState.Spent) && p.Output.AssetId.Equals(asset_id_256));
                                 json["balance"] = coins.Sum(p => p.Output.Value).ToString();
                                 json["confirmed"] = coins.Where(p => p.State.HasFlag(CoinState.Confirmed)).Sum(p => p.Output.Value).ToString();
                                 break;
@@ -267,12 +270,12 @@ namespace Neo.Network.RPC
                         return contract?.ToJson() ?? throw new RpcException(-100, "Unknown contract");
                     }
                 case "getnewaddress":
-                    if (wallet == null)
+                    if (Wallet == null)
                         throw new RpcException(-400, "Access denied");
                     else
                     {
-                        WalletAccount account = wallet.CreateAccount();
-                        if (wallet is NEP6Wallet nep6)
+                        WalletAccount account = Wallet.CreateAccount();
+                        if (Wallet is NEP6Wallet nep6)
                             nep6.Save();
                         return account.Address;
                     }
@@ -297,7 +300,20 @@ namespace Neo.Network.RPC
                         return json;
                     }
                 case "getrawmempool":
-                    return new JArray(Blockchain.Singleton.GetMemoryPool().Select(p => (JObject)p.Hash.ToString()));
+                    {
+                        bool shouldGetUnverified = _params.Count >= 1 && _params[0].AsBooleanOrDefault(false);
+                        if (!shouldGetUnverified)
+                            return new JArray(Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => (JObject)p.Hash.ToString()));
+
+                        JObject json = new JObject();
+                        json["height"] = Blockchain.Singleton.Height;
+                        Blockchain.Singleton.MemPool.GetVerifiedAndUnverifiedTransactions(
+                            out IEnumerable<Transaction> verifiedTransactions,
+                            out IEnumerable<Transaction> unverifiedTransactions);
+                        json["verified"] = new JArray(verifiedTransactions.Select(p => (JObject) p.Hash.ToString()));
+                        json["unverified"] = new JArray(unverifiedTransactions.Select(p => (JObject) p.Hash.ToString()));
+                        return json;
+                    }
                 case "getrawtransaction":
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
@@ -331,6 +347,13 @@ namespace Neo.Network.RPC
                         }) ?? new StorageItem();
                         return item.Value?.ToHexString();
                     }
+                case "gettransactionheight":
+                    {
+                        UInt256 hash = UInt256.Parse(_params[0].AsString());
+                        uint? height = Blockchain.Singleton.Store.GetTransactions().TryGet(hash)?.BlockIndex;
+                        if (height.HasValue) return height.Value;
+                        throw new RpcException(-100, "Unknown transaction");
+                    }
                 case "gettxout":
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
@@ -359,10 +382,10 @@ namespace Neo.Network.RPC
                         return json;
                     }
                 case "getwalletheight":
-                    if (wallet == null)
+                    if (Wallet == null)
                         throw new RpcException(-400, "Access denied.");
                     else
-                        return (wallet.WalletHeight > 0) ? wallet.WalletHeight - 1 : 0;
+                        return (Wallet.WalletHeight > 0) ? Wallet.WalletHeight - 1 : 0;
                 case "invoke":
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
@@ -392,10 +415,10 @@ namespace Neo.Network.RPC
                         return GetInvokeResult(script);
                     }
                 case "listaddress":
-                    if (wallet == null)
+                    if (Wallet == null)
                         throw new RpcException(-400, "Access denied.");
                     else
-                        return wallet.GetAccounts().Select(p =>
+                        return Wallet.GetAccounts().Select(p =>
                         {
                             JObject account = new JObject();
                             account["address"] = p.Address;
@@ -405,7 +428,7 @@ namespace Neo.Network.RPC
                             return account;
                         }).ToArray();
                 case "sendfrom":
-                    if (wallet == null)
+                    if (Wallet == null)
                         throw new RpcException(-400, "Access denied");
                     else
                     {
@@ -420,7 +443,7 @@ namespace Neo.Network.RPC
                         if (fee < Fixed8.Zero)
                             throw new RpcException(-32602, "Invalid params");
                         UInt160 change_address = _params.Count >= 6 ? _params[5].AsString().ToScriptHash() : null;
-                        Transaction tx = wallet.MakeTransaction(null, new[]
+                        Transaction tx = Wallet.MakeTransaction(null, new[]
                         {
                             new TransferOutput
                             {
@@ -432,11 +455,11 @@ namespace Neo.Network.RPC
                         if (tx == null)
                             throw new RpcException(-300, "Insufficient funds");
                         ContractParametersContext context = new ContractParametersContext(tx);
-                        wallet.Sign(context);
+                        Wallet.Sign(context);
                         if (context.Completed)
                         {
                             tx.Witnesses = context.GetWitnesses();
-                            wallet.ApplyTransaction(tx);
+                            Wallet.ApplyTransaction(tx);
                             system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
                             return tx.ToJson();
                         }
@@ -446,7 +469,7 @@ namespace Neo.Network.RPC
                         }
                     }
                 case "sendmany":
-                    if (wallet == null)
+                    if (Wallet == null)
                         throw new RpcException(-400, "Access denied");
                     else
                     {
@@ -471,15 +494,15 @@ namespace Neo.Network.RPC
                         if (fee < Fixed8.Zero)
                             throw new RpcException(-32602, "Invalid params");
                         UInt160 change_address = _params.Count >= 3 ? _params[2].AsString().ToScriptHash() : null;
-                        Transaction tx = wallet.MakeTransaction(null, outputs, change_address: change_address, fee: fee);
+                        Transaction tx = Wallet.MakeTransaction(null, outputs, change_address: change_address, fee: fee);
                         if (tx == null)
                             throw new RpcException(-300, "Insufficient funds");
                         ContractParametersContext context = new ContractParametersContext(tx);
-                        wallet.Sign(context);
+                        Wallet.Sign(context);
                         if (context.Completed)
                         {
                             tx.Witnesses = context.GetWitnesses();
-                            wallet.ApplyTransaction(tx);
+                            Wallet.ApplyTransaction(tx);
                             system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
                             return tx.ToJson();
                         }
@@ -495,7 +518,7 @@ namespace Neo.Network.RPC
                         return GetRelayResult(reason);
                     }
                 case "sendtoaddress":
-                    if (wallet == null)
+                    if (Wallet == null)
                         throw new RpcException(-400, "Access denied");
                     else
                     {
@@ -509,7 +532,7 @@ namespace Neo.Network.RPC
                         if (fee < Fixed8.Zero)
                             throw new RpcException(-32602, "Invalid params");
                         UInt160 change_address = _params.Count >= 5 ? _params[4].AsString().ToScriptHash() : null;
-                        Transaction tx = wallet.MakeTransaction(null, new[]
+                        Transaction tx = Wallet.MakeTransaction(null, new[]
                         {
                             new TransferOutput
                             {
@@ -521,11 +544,11 @@ namespace Neo.Network.RPC
                         if (tx == null)
                             throw new RpcException(-300, "Insufficient funds");
                         ContractParametersContext context = new ContractParametersContext(tx);
-                        wallet.Sign(context);
+                        Wallet.Sign(context);
                         if (context.Completed)
                         {
                             tx.Witnesses = context.GetWitnesses();
-                            wallet.ApplyTransaction(tx);
+                            Wallet.ApplyTransaction(tx);
                             system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
                             return tx.ToJson();
                         }
