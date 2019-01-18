@@ -27,14 +27,14 @@ namespace Neo.Ledger
 
         public int CompareTo(Transaction otherTx)
         {
-            if (tx == null) return 1;
+            if (otherTx == null) return 1;
             // Fees sorted ascending
-            int ret = Transaction.FeePerByte.CompareTo(tx.FeePerByte);
+            int ret = Transaction.FeePerByte.CompareTo(otherTx.FeePerByte);
             if (ret != 0) return ret;
-            ret = Transaction.NetworkFee.CompareTo(tx.NetworkFee);
+            ret = Transaction.NetworkFee.CompareTo(otherTx.NetworkFee);
             if (ret != 0) return ret;
             // Transaction hash sorted descending
-            return (Tx.Hash.CompareTo(otherTx.Hash))*-1;
+            return -1*(Tx.Hash.CompareTo(otherTx.Hash));
         }
 
         public int CompareTo(PoolItem otherItem)
