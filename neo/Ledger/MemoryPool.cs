@@ -226,9 +226,10 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
-                verifiedTransactions = _sortedHighPrioTransactions.Select(p => p.Transaction)
-                    .Concat(_sortedLowPrioTransactions.Select(p => p.Transaction)).ToArray();
-                unverifiedTransactions = _unverifiedTransactions.Select(p => p.Value.Transaction).ToArray();
+                verifiedTransactions = _sortedHighPrioTransactions.Reverse().Select(p => p.Transaction)
+                    .Concat(_sortedLowPrioTransactions.Reverse().Select(p => p.Transaction)).ToArray();
+                unverifiedTransactions = _unverifiedSortedHighPriorityTransactions.Reverse().Select(p => p.Transaction)
+                    .Concat(_unverifiedSortedLowPriorityTransactions.Reverse().Select(p => p.Transaction)).ToArray();
             }
             finally
             {
@@ -241,8 +242,8 @@ namespace Neo.Ledger
             _txRwLock.EnterReadLock();
             try
             {
-               return _sortedHighPrioTransactions.Select(p => p.Transaction)
-                        .Concat(_sortedLowPrioTransactions.Select(p => p.Transaction))
+               return _sortedHighPrioTransactions.Reverse().Select(p => p.Transaction)
+                        .Concat(_sortedLowPrioTransactions.Reverse().Select(p => p.Transaction))
                         .ToArray();
             }
             finally
@@ -429,7 +430,7 @@ namespace Neo.Ledger
             DateTime reverifyCutOffTimeStamp = DateTime.UtcNow.AddSeconds(secondsTimeout);
             List<PoolItem> reverifiedItems = new List<PoolItem>(count);
             List<PoolItem> invalidItems = new List<PoolItem>();
-            
+
             // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
             foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
             {
