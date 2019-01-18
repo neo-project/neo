@@ -72,7 +72,7 @@ namespace Neo.UnitTests
             int sizeFixed = 50;
             int netFeeSatoshiFixed = 1;
             var tx1 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, UInt256.Zero);
-            var tx2 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, UInt256.Zero + 1);
+            var tx2 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new UInt256(TestUtils.GetByteArray(32, 0x42)));
 
             PoolItem pitem1 = new PoolItem(tx1.Object);
             PoolItem pitem2 = new PoolItem(tx2.Object);
