@@ -12,7 +12,7 @@ using Neo.Plugins;
 
 namespace Neo.Ledger
 {
-    public class PoolItem : IComparable<PoolItem>
+    internal class PoolItem : IComparable<PoolItem>
     {
         public readonly Transaction Tx;
         public readonly DateTime Timestamp;
