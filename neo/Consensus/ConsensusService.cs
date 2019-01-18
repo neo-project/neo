@@ -256,6 +256,8 @@ namespace Neo.Consensus
         {
             if (context.Signatures[payload.ValidatorIndex] != null) return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+            foreach (IConsensusMetricsPlugin plugin in Plugin.ConsensusPlugins)
+                plugin.AnalyzePrepareResponse(payload);
             byte[] hashData = context.MakeHeader()?.GetHashData();
             if (hashData == null)
             {

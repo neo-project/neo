@@ -5,5 +5,6 @@ namespace Neo.Plugins
     public interface IConsensusMetricsPlugin
     {
         void AnalyzePrepareRequest(ConsensusPayload payload);
+        void AnalyzePrepareResponse(ConsensusPayload payload);
     }
 }
