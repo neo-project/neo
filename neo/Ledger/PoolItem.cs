@@ -18,7 +18,7 @@ namespace Neo.Ledger
         public readonly DateTime Timestamp;
         public DateTime LastBroadcastTimestamp;
 
-        public PoolItem(Transaction tx)
+        internal PoolItem(Transaction tx)
         {
             Tx = tx;
             Timestamp = DateTime.UtcNow;
