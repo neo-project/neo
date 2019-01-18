@@ -12,6 +12,9 @@ using Neo.Plugins;
 
 namespace Neo.Ledger
 {
+    /// <summary>
+    /// PoolItem are compared to each other only between a given class of transaction priority (low or high)
+    /// </summary>
     internal class PoolItem : IComparable<PoolItem>
     {
         /// <summary>
