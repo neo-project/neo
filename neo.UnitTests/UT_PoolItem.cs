@@ -49,13 +49,20 @@ namespace Neo.UnitTests
             PoolItem pitem2 = new PoolItem(tx2.Object);
             // pitem1 < pitem2 (fee) => -1
             pitem1.CompareTo(pitem2).Should().Be(-1);
-
-            TimeProvider.ResetToDefault();
         }
 
         [TestMethod]
         public void PoolItem_CompareTo_Hash()
         {
+            int sizeFixed = 50;
+            int netFeeSatoshiFixed = 1;
+            var tx1 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, UInt256.Zero);
+            var tx2 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, UInt256.Zero + 1);
+
+            PoolItem pitem1 = new PoolItem(tx1.Object);
+            PoolItem pitem2 = new PoolItem(tx2.Object);
+            // pitem2 < pitem1 (fee) => -1
+            pitem2.CompareTo(pitem1).Should().Be(-1);
         }
 
         [TestMethod]
