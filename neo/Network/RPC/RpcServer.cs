@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -127,8 +127,10 @@ namespace Neo.Network.RPC
                     throw new RpcException(-503, "The block cannot be validated.");
                 case RelayResultReason.Invalid:
                     throw new RpcException(-504, "Block or transaction validation failed.");
+                case RelayResultReason.PolicyFail:
+                    throw new RpcException(-505, "One of the Policy filters failed.");
                 default:
-                    throw new RpcException(-500, "Unkown error.");
+                    throw new RpcException(-500, "Unknown error.");
             }
         }
 
@@ -298,7 +300,20 @@ namespace Neo.Network.RPC
                         return json;
                     }
                 case "getrawmempool":
-                    return new JArray(Blockchain.Singleton.GetMemoryPool().Select(p => (JObject)p.Hash.ToString()));
+                    {
+                        bool shouldGetUnverified = _params.Count >= 1 && _params[0].AsBooleanOrDefault(false);
+                        if (!shouldGetUnverified)
+                            return new JArray(Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => (JObject)p.Hash.ToString()));
+
+                        JObject json = new JObject();
+                        json["height"] = Blockchain.Singleton.Height;
+                        Blockchain.Singleton.MemPool.GetVerifiedAndUnverifiedTransactions(
+                            out IEnumerable<Transaction> verifiedTransactions,
+                            out IEnumerable<Transaction> unverifiedTransactions);
+                        json["verified"] = new JArray(verifiedTransactions.Select(p => (JObject) p.Hash.ToString()));
+                        json["unverified"] = new JArray(unverifiedTransactions.Select(p => (JObject) p.Hash.ToString()));
+                        return json;
+                    }
                 case "getrawtransaction":
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
