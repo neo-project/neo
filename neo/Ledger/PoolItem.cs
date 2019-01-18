@@ -14,8 +14,19 @@ namespace Neo.Ledger
 {
     internal class PoolItem : IComparable<PoolItem>
     {
+        /// <summary>
+        /// Internal transaction for PoolItem
+        /// </summary>
         public readonly Transaction Tx;
+
+        /// <summary>
+        /// Timestamp when transaction was stored on PoolItem
+        /// </summary>
         public readonly DateTime Timestamp;
+
+        /// <summary>
+        /// Timestamp where this transaction was last broadcast to other nodes
+        /// </summary>
         public DateTime LastBroadcastTimestamp;
 
         internal PoolItem(Transaction tx)
