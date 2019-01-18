@@ -296,7 +296,7 @@ namespace Neo.UnitTests
                     if (lastTransaction.FeePerByte == tx.FeePerByte)
                     {
                         if (lastTransaction.NetworkFee == tx.NetworkFee)
-                            lastTransaction.Hash.Should().BeGreaterThan(tx.Hash);
+                            lastTransaction.Hash.Should().BeLessThan(tx.Hash);
                         else
                             lastTransaction.NetworkFee.Should().BeGreaterThan(tx.NetworkFee);
                     }
