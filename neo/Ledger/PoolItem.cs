@@ -34,7 +34,7 @@ namespace Neo.Ledger
             ret = Tx.NetworkFee.CompareTo(otherTx.NetworkFee);
             if (ret != 0) return ret;
             // Transaction hash sorted descending
-            return -1*(Tx.Hash.CompareTo(otherTx.Hash));
+            return otherTx.Hash.CompareTo(Tx.Hash);
         }
 
         public int CompareTo(PoolItem otherItem)
