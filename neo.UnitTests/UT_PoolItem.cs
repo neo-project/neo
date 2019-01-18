@@ -131,11 +131,8 @@ namespace Neo.UnitTests
             mockTx.SetupGet(mr => mr.NetworkFee).Returns(networkFee);
             mockTx.SetupGet(mr => mr.Size).Returns(size);
 
-            //mockTx.SetupGet(mr => mr.Hash).Returns(hash); // cannot overwrite this method, will see GetHashData
-            // method get_Hash requires GetHashData, which eventually calls SerializeUnsigned on Transaction class
-            // we need attributes here
-            //mockTx.SetupProperty(mr => mr.Attributes);
             var tx = mockTx.Object;
+            // use random bytes in the script to get a different hash since we cannot mock the Hash
             byte[] randomBytes;
             if (overrideScriptBytes != null)
                 randomBytes = overrideScriptBytes;
