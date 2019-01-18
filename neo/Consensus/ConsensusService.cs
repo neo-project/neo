@@ -195,6 +195,8 @@ namespace Neo.Consensus
             if (context.State.HasFlag(ConsensusState.RequestReceived)) return;
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
+            foreach (IConsensusMetricsPlugin plugin in Plugin.ConsensusPlugins)
+                plugin.AnalyzePrepareRequestReceived(payload);
             if (!context.State.HasFlag(ConsensusState.Backup)) return;
             if (payload.Timestamp <= context.PrevHeader.Timestamp || payload.Timestamp > TimeProvider.Current.UtcNow.AddMinutes(10).ToTimestamp())
             {
