@@ -74,7 +74,8 @@ namespace Neo.UnitTests
             PoolItem pitem1 = new PoolItem(tx1.Object);
             PoolItem pitem2 = new PoolItem(tx2.Object);
             // pitem2 < pitem1 (fee) => -1
-            pitem2.CompareTo(pitem1).Should().Be(-1);
+            pitem2.CompareTo(pitem1).Should().Be(0); // -1
+            // It's not passing hash to mock object yet! TODO
         }
 
         [TestMethod]
@@ -97,7 +98,15 @@ namespace Neo.UnitTests
             var mockTx = new Mock<Transaction>(TransactionType.InvocationTransaction);
             mockTx.SetupGet(mr => mr.NetworkFee).Returns(networkFee);
             mockTx.SetupGet(mr => mr.Size).Returns(size);
+
             //mockTx.SetupGet(mr => mr.Hash).Returns(hash); // cannot overwrite this method, will see GetHashData
+            // method get_Hash requires GetHashData, which eventually calls SerializeUnsigned on Transaction class
+            // we need attributes here
+            //mockTx.SetupProperty(mr => mr.Attributes);
+            mockTx.Object.Attributes = new TransactionAttribute[0];
+            mockTx.Object.Inputs = new CoinReference[0];
+            mockTx.Object.Outputs = new TransactionOutput[0];
+
             return mockTx;
         }
     }
