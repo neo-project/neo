@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Ledger;
 using FluentAssertions;
-using Neo.Cryptography.ECC;
-using Neo.IO.Wrappers;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 
 namespace Neo.UnitTests
 {
@@ -16,23 +11,18 @@ namespace Neo.UnitTests
     public class UT_PoolItem
     {
         //private PoolItem uut;
+        private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
 
         [TestInitialize]
         public void TestSetup()
         {
-            int timeIndex = 0;
             var timeValues = new[] {
                 new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc),
-                new DateTime(1968, 06, 01, 0, 0, 2, DateTimeKind.Utc),
-                new DateTime(1968, 06, 01, 0, 0, 3, DateTimeKind.Utc),
-                new DateTime(1968, 06, 01, 0, 0, 4, DateTimeKind.Utc),
-                new DateTime(1968, 06, 01, 0, 0, 5, DateTimeKind.Utc)
             };
 
             var timeMock = new Mock<TimeProvider>();
-
-            timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[timeIndex])
-                                              .Callback(() => timeIndex++);
+            timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[0])
+                                              .Callback(() => timeValues[0] = timeValues[0].Add(TimeSpan.FromSeconds(1)));
             TimeProvider.Current = timeMock.Object;
         }
 
@@ -48,10 +38,10 @@ namespace Neo.UnitTests
         {
             int size1 = 50;
             int netFeeSatoshi1 = 1;
-            var tx1 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshi1), size1, UInt256.Zero);
+            var tx1 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshi1), size1);
             int size2 = 50;
             int netFeeSatoshi2 = 2;
-            var tx2 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshi2), size2, UInt256.Zero);
+            var tx2 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshi2), size2);
 
             PoolItem pitem1 = new PoolItem(tx1.Object);
             PoolItem pitem2 = new PoolItem(tx2.Object);
@@ -68,14 +58,30 @@ namespace Neo.UnitTests
         {
             int sizeFixed = 50;
             int netFeeSatoshiFixed = 1;
-            var tx1 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, UInt256.Zero);
-            var tx2 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new UInt256(TestUtils.GetByteArray(32, 0x42)));
 
-            PoolItem pitem1 = new PoolItem(tx1.Object);
-            PoolItem pitem2 = new PoolItem(tx2.Object);
-            // pitem2 < pitem1 (fee) => -1
-            pitem2.CompareTo(pitem1).Should().Be(0); // -1
-            // It's not passing hash to mock object yet! TODO
+            for (int testRuns = 0; testRuns < 30; testRuns++)
+            {
+                var tx1 = GenerateMockTxWithFirstByteOfHashGreaterThanOrEqualTo(0x80, new Fixed8(netFeeSatoshiFixed), sizeFixed);
+                var tx2 = GenerateMockTxWithFirstByteOfHashLessThanOrEqualTo(0x79,new Fixed8(netFeeSatoshiFixed), sizeFixed);
+
+                PoolItem pitem1 = new PoolItem(tx1.Object);
+                PoolItem pitem2 = new PoolItem(tx2.Object);
+
+                // pitem2 < pitem1 (fee) => -1
+                pitem2.CompareTo(pitem1).Should().Be(-1);
+
+                // pitem1 > pitem2  (fee) => 1
+                pitem1.CompareTo(pitem2).Should().Be(1);
+            }
+
+            // equal hashes should be equal
+            var tx3 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
+            var tx4 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
+            PoolItem pitem3 = new PoolItem(tx3.Object);
+            PoolItem pitem4 = new PoolItem(tx4.Object);
+
+            pitem3.CompareTo(pitem4).Should().Be(0);
+            pitem4.CompareTo(pitem3).Should().Be(0);
         }
 
         [TestMethod]
@@ -83,19 +89,45 @@ namespace Neo.UnitTests
         {
             int sizeFixed = 500;
             int netFeeSatoshiFixed = 10;
-            var tx1 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, UInt256.Zero);
-            var tx2 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, UInt256.Zero);
+            var tx1 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
+            var tx2 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
 
             PoolItem pitem1 = new PoolItem(tx1.Object);
             PoolItem pitem2 = new PoolItem(tx2.Object);
+
             // pitem1 == pitem2 (fee) => 0
             pitem1.CompareTo(pitem2).Should().Be(0);
+            pitem2.CompareTo(pitem1).Should().Be(0);
         }
 
-        // Generate Mock InvocationTransaction with different sizes and prices
-        public static Mock<Transaction> MockGenerateInvocationTx(Fixed8 networkFee, int size, UInt256 hash)
+        public Mock<InvocationTransaction> GenerateMockTxWithFirstByteOfHashGreaterThanOrEqualTo(byte firstHashByte, Fixed8 networkFee, int size)
         {
-            var mockTx = new Mock<Transaction>(TransactionType.InvocationTransaction);
+            Mock<InvocationTransaction> mockTx;
+            do
+            {
+                mockTx = MockGenerateInvocationTx(networkFee, size);
+            } while (mockTx.Object.Hash >= new UInt256(TestUtils.GetByteArray(32, firstHashByte)));
+
+            return mockTx;
+        }
+
+        public Mock<InvocationTransaction> GenerateMockTxWithFirstByteOfHashLessThanOrEqualTo(byte firstHashByte, Fixed8 networkFee, int size)
+        {
+            Mock<InvocationTransaction> mockTx;
+            do
+            {
+                mockTx = MockGenerateInvocationTx(networkFee, size);
+            } while (mockTx.Object.Hash <= new UInt256(TestUtils.GetByteArray(32, firstHashByte)));
+
+            return mockTx;
+        }
+
+
+        // Generate Mock InvocationTransaction with different sizes and prices
+        public static Mock<InvocationTransaction> MockGenerateInvocationTx(Fixed8 networkFee, int size, byte[] overrideScriptBytes=null)
+        {
+            var mockTx = new Mock<InvocationTransaction>();
+            mockTx.CallBase = true;
             mockTx.SetupGet(mr => mr.NetworkFee).Returns(networkFee);
             mockTx.SetupGet(mr => mr.Size).Returns(size);
 
@@ -103,10 +135,20 @@ namespace Neo.UnitTests
             // method get_Hash requires GetHashData, which eventually calls SerializeUnsigned on Transaction class
             // we need attributes here
             //mockTx.SetupProperty(mr => mr.Attributes);
-            mockTx.Object.Attributes = new TransactionAttribute[0];
-            mockTx.Object.Inputs = new CoinReference[0];
-            mockTx.Object.Outputs = new TransactionOutput[0];
-
+            var tx = mockTx.Object;
+            byte[] randomBytes;
+            if (overrideScriptBytes != null)
+                randomBytes = overrideScriptBytes;
+            else
+            {
+                randomBytes = new byte[16];
+                TestRandom.NextBytes(randomBytes);
+            }
+            tx.Script = randomBytes;
+            tx.Attributes = new TransactionAttribute[0];
+            tx.Inputs = new CoinReference[0];
+            tx.Outputs = new TransactionOutput[0];
+            tx.Witnesses = new Witness[0];
             return mockTx;
         }
     }
