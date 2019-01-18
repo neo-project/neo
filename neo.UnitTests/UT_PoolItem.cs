@@ -49,6 +49,8 @@ namespace Neo.UnitTests
             PoolItem pitem2 = new PoolItem(tx2.Object);
             // pitem1 < pitem2 (fee) => -1
             pitem1.CompareTo(pitem2).Should().Be(-1);
+
+            TimeProvider.ResetToDefault();
         }
 
         [TestMethod]
