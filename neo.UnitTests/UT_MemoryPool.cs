@@ -24,6 +24,9 @@ namespace Neo.UnitTests
         [TestInitialize]
         public void TestSetup()
         {
+            // protect against external changes on TimeProvider
+            TimeProvider.ResetToDefault();
+
             if (TheNeoSystem == null)
             {
                 var mockSnapshot = new Mock<Snapshot>();
@@ -296,7 +299,7 @@ namespace Neo.UnitTests
                     if (lastTransaction.FeePerByte == tx.FeePerByte)
                     {
                         if (lastTransaction.NetworkFee == tx.NetworkFee)
-                            lastTransaction.Hash.Should().BeGreaterThan(tx.Hash);
+                            lastTransaction.Hash.Should().BeLessThan(tx.Hash);
                         else
                             lastTransaction.NetworkFee.Should().BeGreaterThan(tx.NetworkFee);
                     }
