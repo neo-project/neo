@@ -25,6 +25,9 @@ namespace Neo.UnitTests
         [TestInitialize]
         public void TestSetup()
         {
+            // protect against external changes on TimeProvider
+            TimeProvider.ResetToDefault();
+
             if (TheNeoSystem == null)
             {
                 var mockSnapshot = new Mock<Snapshot>();
