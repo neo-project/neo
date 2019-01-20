@@ -1,19 +1,10 @@
 using Neo.Network.P2P.Payloads;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using Akka.Util.Internal;
-using Neo.Network.P2P;
-using Neo.Persistence;
-using Neo.Plugins;
 
 namespace Neo.Ledger
 {
     /// <summary>
-    /// Represents an item in the Memory Pool. 
+    /// Represents an item in the Memory Pool.
     ///
     //  Note: PoolItem objects don't consider transaction priority (low or high) in their compare CompareTo method.
     ///       This is because items of differing priority are never added to the same sorted set in MemoryPool.
@@ -31,7 +22,7 @@ namespace Neo.Ledger
         public readonly DateTime Timestamp;
 
         /// <summary>
-        /// Timestamp where this transaction was last broadcast to other nodes
+        /// Timestamp when this transaction was last broadcast to other nodes
         /// </summary>
         public DateTime LastBroadcastTimestamp;
 
@@ -45,6 +36,18 @@ namespace Neo.Ledger
         public int CompareTo(Transaction otherTx)
         {
             if (otherTx == null) return 1;
+            if (Tx.IsLowPriority && otherTx.IsLowPriority)
+            {
+                bool thisIsClaimTx = Tx is ClaimTransaction;
+                bool otherIsClaimTx = otherTx is ClaimTransaction;
+                if (thisIsClaimTx != otherIsClaimTx)
+                {
+                    // This is a claim Tx and other isn't.
+                    if (thisIsClaimTx) return 1;
+                    // The other is claim Tx and this isn't.
+                    return -1;
+                }
+            }
             // Fees sorted ascending
             int ret = Tx.FeePerByte.CompareTo(otherTx.FeePerByte);
             if (ret != 0) return ret;
