@@ -406,22 +406,21 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestMemPoolInfoForNextBlock()
         {
-            AddHighPriorityTransactions(50, 100000);
-            JObject json = new JObject();
-            json["sortedHP_avgNetFees"] = "100000";
-            json["sortedLP_avgNetFees"] = "10000";
-            json["unverifiedHP_avgNetFees"] = "0";
-            json["unverifiedLP_avgNetFees"] = "0";
-            json["sortedHP_avgNetFeesPerByte"] = "0";
-            json["sortedLP_avgNetFeesPerByte"] = "0";
-            json["unverifiedHP_avgNetFeesPerByte"] = "0";
-            json["unverifiedLP_avgNetFeesPerByte"] = "0";
-   
-            _unit.GetMemPoolInfoForNextBlock().ShouldBeEquivalentTo(json);
-            AddHighPriorityTransactions(50, 200000);
-            json["sortedHP_avgNetFees"] = "200000";
-            json["sortedLP_avgNetFees"] = "20000";
-            _unit.GetMemPoolInfoForNextBlock().ShouldBeEquivalentTo(json);
+            AddHighPriorityTransactions(10, 100000);
+            var list = new List<Fixed8> { new Fixed8(100000), new Fixed8(0), new Fixed8(0), new Fixed8(0), new Fixed8(10000), new Fixed8(0), new Fixed8(0), new Fixed8(0) }; 
+            _unit.GetStatisticsForNextBlock().ShouldBeEquivalentTo(list);
+
+            AddHighPriorityTransactions(10, 200000);
+            list = new List<Fixed8> { new Fixed8(150000), new Fixed8(0), new Fixed8(0), new Fixed8(0), new Fixed8(15000), new Fixed8(0), new Fixed8(0), new Fixed8(0) }; 
+            _unit.GetStatisticsForNextBlock().ShouldBeEquivalentTo(list);
+
+            AddLowPriorityTransactions(10, 50);
+            list = new List<Fixed8> { new Fixed8(150000), new Fixed8(50), new Fixed8(0), new Fixed8(0), new Fixed8(15000), new Fixed8(50/10), new Fixed8(0), new Fixed8(0) }; 
+            _unit.GetStatisticsForNextBlock().ShouldBeEquivalentTo(list);
+
+            AddLowPriorityTransactions(10, 500);
+            list = new List<Fixed8> { new Fixed8(150000), new Fixed8(275), new Fixed8(0), new Fixed8(0), new Fixed8(15000), new Fixed8(275/10), new Fixed8(0), new Fixed8(0) };
+            _unit.GetStatisticsForNextBlock().ShouldBeEquivalentTo(list);
         }
     }
 }

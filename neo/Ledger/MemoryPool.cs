@@ -9,8 +9,6 @@ using Akka.Util.Internal;
 using Neo.Network.P2P;
 using Neo.Persistence;
 using Neo.Plugins;
-using Neo.IO;
-using Neo.IO.Json;
 
 namespace Neo.Ledger
 {
@@ -221,34 +219,6 @@ namespace Neo.Ledger
             {
                 _txRwLock.ExitReadLock();
             }
-        }
-
-        // This function return some statistics about the best _maxTxPerBlock and _maxLowPriorityTxPerBlock txs of the mempool
-        public JObject GetMemPoolInfoForNextBlock()
-        {
-            int minSizeSortedHP = Math.Min(_maxTxPerBlock, _sortedHighPrioTransactions.Count);
-            int minSizeSortedLP = Math.Min(_maxLowPriorityTxPerBlock, _sortedLowPrioTransactions.Count);
-            int minSizeUnverifiedHP = Math.Max(Math.Min(_maxTxPerBlock, _unverifiedSortedHighPriorityTransactions.Count) - minSizeSortedHP, 0);
-            int minSizeUnverifiedLP = Math.Max(Math.Min(_maxLowPriorityTxPerBlock, _unverifiedSortedLowPriorityTransactions.Count) - minSizeSortedLP, 0);
-                                      
-            JObject json = new JObject();
-            _txRwLock.EnterReadLock();
-            try
-            {
-                json["sortedHP_avgNetFees"] = new JArray((_sortedHighPrioTransactions.Reverse().Take(minSizeSortedHP).Sum(p => p.Tx.NetworkFee) / Math.Max(minSizeSortedHP, 1)).ToString());
-                json["sortedLP_avgNetFees"] = new JArray((_sortedLowPrioTransactions.Reverse().Take(minSizeSortedLP).Sum(p => p.Tx.NetworkFee) / Math.Max(minSizeSortedLP, 1)).ToString());
-                json["unverifiedHP_avgNetFees"] = new JArray((_unverifiedSortedHighPriorityTransactions.Reverse().Take(minSizeUnverifiedHP).Sum(p => p.Tx.NetworkFee) / Math.Max(minSizeUnverifiedHP, 1)).ToString());
-                json["unverifiedLP_avgNetFees"] = new JArray((_unverifiedSortedLowPriorityTransactions.Reverse().Take(minSizeUnverifiedLP).Sum(p => p.Tx.NetworkFee) / Math.Max(minSizeUnverifiedLP, 1)).ToString());
-                json["sortedHP_avgNetFeesPerByte"] = new JArray((_sortedHighPrioTransactions.Reverse().Take(minSizeSortedHP).Sum(p => p.Tx.FeePerByte) / Math.Max(minSizeSortedHP, 1)).ToString());
-                json["sortedLP_avgNetFeesPerByte"] = new JArray((_sortedLowPrioTransactions.Reverse().Take(minSizeSortedLP).Sum(p => p.Tx.FeePerByte) / Math.Max(minSizeSortedLP, 1)).ToString());
-                json["unverifiedHP_avgNetFeesPerByte"] = new JArray((_unverifiedSortedHighPriorityTransactions.Reverse().Take(minSizeUnverifiedHP).Sum(p => p.Tx.FeePerByte) / Math.Max(minSizeUnverifiedHP, 1)).ToString());
-                json["unverifiedLP_avgNetFeesPerByte"] = new JArray((_unverifiedSortedLowPriorityTransactions.Reverse().Take(minSizeUnverifiedLP).Sum(p => p.Tx.FeePerByte) / Math.Max(minSizeUnverifiedLP, 1)).ToString());
-            }
-            finally
-            {
-                _txRwLock.ExitReadLock();
-            }
-            return json;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -518,6 +488,41 @@ namespace Neo.Ledger
             }
 
             return _unverifiedTransactions.Count > 0;
+        }
+
+        /// <summary>
+        /// This function return statistics about the best _maxTxPerBlock and _maxLowPriorityTxPerBlock txs of the mempool
+        /// The set of TXs used for calculating the metrics are taken for the ones most prone to be added to the next block
+        /// It is noteworthy that this call may vary from node to node, since mempool is in constantly updating
+        /// </summary>
+        /// <returns> Return a list of Fixed8 values with current statistics of : 
+        /// [sortedHP_avgNetFees,sortedLP_avgNetFees,unverifiedHP_avgNetFees,unverifiedLP_avgNetFees,
+        /// sortedHP_avgNetFeesPerByte,sortedLP_avgNetFeesPerByte,unverifiedHP_avgNetFeesPerByte,unverifiedLP_avgNetFeesPerByte]
+        /// </returns>
+        public List<Fixed8> GetStatisticsForNextBlock()
+        {
+            int minSizeSortedHP = Math.Min(_maxTxPerBlock, _sortedHighPrioTransactions.Count);
+            int minSizeSortedLP = Math.Min(_maxLowPriorityTxPerBlock, _sortedLowPrioTransactions.Count);
+            int minSizeUnverifiedHP = Math.Max(Math.Min(_maxTxPerBlock, _unverifiedSortedHighPriorityTransactions.Count) - minSizeSortedHP, 0);
+            int minSizeUnverifiedLP = Math.Max(Math.Min(_maxLowPriorityTxPerBlock, _unverifiedSortedLowPriorityTransactions.Count) - minSizeSortedLP, 0);
+            List<Fixed8> mempoolStatistics = new List<Fixed8>();
+            _txRwLock.EnterReadLock();
+            try
+            {
+                mempoolStatistics.Add(_sortedHighPrioTransactions.Reverse().Take(minSizeSortedHP).Sum(p => p.Tx.NetworkFee) / Math.Max(minSizeSortedHP, 1));
+                mempoolStatistics.Add(_sortedLowPrioTransactions.Reverse().Take(minSizeSortedLP).Sum(p => p.Tx.NetworkFee) / Math.Max(minSizeSortedLP, 1));
+                mempoolStatistics.Add(_unverifiedSortedHighPriorityTransactions.Reverse().Take(minSizeUnverifiedHP).Sum(p => p.Tx.NetworkFee) / Math.Max(minSizeUnverifiedHP, 1));
+                mempoolStatistics.Add(_unverifiedSortedLowPriorityTransactions.Reverse().Take(minSizeUnverifiedLP).Sum(p => p.Tx.NetworkFee) / Math.Max(minSizeUnverifiedLP, 1));
+                mempoolStatistics.Add(_sortedHighPrioTransactions.Reverse().Take(minSizeSortedHP).Sum(p => p.Tx.FeePerByte) / Math.Max(minSizeSortedHP, 1));
+                mempoolStatistics.Add(_sortedLowPrioTransactions.Reverse().Take(minSizeSortedLP).Sum(p => p.Tx.FeePerByte) / Math.Max(minSizeSortedLP, 1));
+                mempoolStatistics.Add(_unverifiedSortedHighPriorityTransactions.Reverse().Take(minSizeUnverifiedHP).Sum(p => p.Tx.FeePerByte) / Math.Max(minSizeUnverifiedHP, 1));
+                mempoolStatistics.Add(_unverifiedSortedLowPriorityTransactions.Reverse().Take(minSizeUnverifiedLP).Sum(p => p.Tx.FeePerByte) / Math.Max(minSizeUnverifiedLP, 1));
+            }
+            finally
+            {
+                _txRwLock.ExitReadLock();
+            }
+            return mempoolStatistics;
         }
     }
 }
