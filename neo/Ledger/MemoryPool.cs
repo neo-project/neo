@@ -494,6 +494,8 @@ namespace Neo.Ledger
         /// This function return statistics about the best _maxTxPerBlock and _maxLowPriorityTxPerBlock txs of the mempool
         /// The set of TXs used for calculating the metrics are taken for the ones most prone to be added to the next block
         /// It is noteworthy that this call may vary from node to node, since mempool is in constantly updating
+        /// 
+        /// Note: SimplePolicy (IPolicyPlugin) is needed for loading _maxTxPerBlock and _maxLowPriorityTxPerBlock values correctly
         /// </summary>
         /// <returns> Return a list of Fixed8 values with current statistics of : 
         /// [sortedHP_avgNetFees,sortedLP_avgNetFees,unverifiedHP_avgNetFees,unverifiedLP_avgNetFees,

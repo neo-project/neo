@@ -314,7 +314,7 @@ namespace Neo.Network.RPC
                         json["unverified"] = new JArray(unverifiedTransactions.Select(p => (JObject) p.Hash.ToString()));
                         return json;
                     }
-                case "getmempoolnextblockinfo":
+                case "getmempoolstatisticsnextblock":
                     {
                         List<Fixed8>  mempoolStatistics = Blockchain.Singleton.MemPool.GetStatisticsForNextBlock();
                         JObject json = new JObject();
@@ -326,8 +326,7 @@ namespace Neo.Network.RPC
                         json["sortedLP_avgNetFeesPerByte"] = new JArray(mempoolStatistics[5].ToString());
                         json["unverifiedHP_avgNetFeesPerByte"] = new JArray(mempoolStatistics[6].ToString());
                         json["unverifiedLP_avgNetFeesPerByte"] = new JArray(mempoolStatistics[7].ToString());
-                        return json;
-  
+                        return json;  
                     }
                 case "getrawtransaction":
                     {
