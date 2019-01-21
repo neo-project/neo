@@ -12,6 +12,7 @@ namespace Neo.Persistence
         public override DataCache<UInt160, AccountState> Accounts { get; }
         public override DataCache<UInt256, UnspentCoinState> UnspentCoins { get; }
         public override DataCache<UInt256, SpentCoinState> SpentCoins { get; }
+        public override DataCache<UserUnspentCoinOutputsKey, UserUnspentCoinOutputs> UserUnspentCoins { get; }
         public override DataCache<ECPoint, ValidatorState> Validators { get; }
         public override DataCache<UInt256, AssetState> Assets { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
@@ -29,6 +30,7 @@ namespace Neo.Persistence
             this.Accounts = snapshot.Accounts.CreateSnapshot();
             this.UnspentCoins = snapshot.UnspentCoins.CreateSnapshot();
             this.SpentCoins = snapshot.SpentCoins.CreateSnapshot();
+            this.UserUnspentCoins = snapshot.UserUnspentCoins.CreateSnapshot();
             this.Validators = snapshot.Validators.CreateSnapshot();
             this.Assets = snapshot.Assets.CreateSnapshot();
             this.Contracts = snapshot.Contracts.CreateSnapshot();

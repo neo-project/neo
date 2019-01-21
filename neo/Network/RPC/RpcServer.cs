@@ -360,6 +360,74 @@ namespace Neo.Network.RPC
                         ushort index = (ushort)_params[1].AsNumber();
                         return Blockchain.Singleton.Store.GetUnspent(hash, index)?.ToJson(index);
                     }
+                case "getunspents":
+                    {
+                        if (!ProtocolSettings.Default.EnableUTXOTracking)
+                            throw new RpcException(-32601, "Method not found");
+
+                        UInt160 scriptHash = UInt160.Parse(_params[0].AsString());
+
+                        string[] nativeAssetNames = {"GAS", "NEO"};
+                        UInt256[] nativeAssetIds = {Blockchain.UtilityToken.Hash, Blockchain.GoverningToken.Hash};
+                        int maxUnspentsToReturn = 1000;
+
+                        byte startingToken = 0; // 0 = Utility Token (GAS), 1 = Governing Token (NEO)
+                        int maxIterations = 2;
+
+                        if (_params.Count > 1)
+                        {
+                            maxIterations = 1;
+                            bool isGoverningToken = _params[1].AsBoolean();
+                            if (isGoverningToken) startingToken = 1;
+                        }
+
+                        (JArray, Fixed8) RetreiveUnspentsForPrefix(byte[] prefix)
+                        {
+                            var unspents = new JArray();
+                            Fixed8 total = new Fixed8(0);
+
+                            foreach (var unspentInTx in Blockchain.Singleton.Store.GetUserUnspentCoins().Find(prefix))
+                            {
+                                var txId = unspentInTx.Key.TxHash.ToString().Substring(2);
+                                foreach (var unspent in unspentInTx.Value.AmountByTxIndex)
+                                {
+                                    var utxo = new JObject();
+                                    utxo["txid"] = txId;
+                                    utxo["n"] = unspent.Key;
+                                    utxo["value"] = (double) (decimal) unspent.Value;
+                                    total += unspent.Value;
+
+                                    unspents.Add(utxo);
+                                    if (unspents.Count > maxUnspentsToReturn)
+                                        return (unspents, total);
+                                }
+                            }
+                            return (unspents, total);
+                        }
+
+                        JObject json = new JObject();
+                        JArray balances = new JArray();
+                        json["balance"] = balances;
+                        json["address"] = scriptHash.ToAddress();
+                        for (byte tokenIndex = startingToken; maxIterations-- > 0; tokenIndex++)
+                        {
+                            byte[] prefix = new [] { tokenIndex }.Concat(scriptHash.ToArray()).ToArray();
+
+                            var (unspents, total) = RetreiveUnspentsForPrefix(prefix);
+
+                            if (unspents.Count > 0)
+                            {
+                                var balance = new JObject();
+                                balance["unspent"] = unspents;
+                                balance["asset_hash"] = nativeAssetIds[tokenIndex].ToString().Substring(2);
+                                balance["asset_symbol"] = balance["asset"] = nativeAssetNames[tokenIndex];
+                                balance["amount"] = new JNumber((double) (decimal) total); ;
+                                balances.Add(balance);
+                            }
+                        }
+
+                        return json;
+                    }
                 case "getvalidators":
                     using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                     {

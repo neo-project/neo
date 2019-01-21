@@ -80,6 +80,12 @@ namespace Neo.Persistence.LevelDB
             return new DbCache<UInt256, UnspentCoinState>(db, null, null, Prefixes.ST_Coin);
         }
 
+        public override DataCache<UserUnspentCoinOutputsKey, UserUnspentCoinOutputs> GetUserUnspentCoins()
+        {
+            return new DbCache<UserUnspentCoinOutputsKey, UserUnspentCoinOutputs>(db, null, null,
+                Prefixes.ST_UserUnspentCoin);
+        }
+
         public override DataCache<ECPoint, ValidatorState> GetValidators()
         {
             return new DbCache<ECPoint, ValidatorState>(db, null, null, Prefixes.ST_Validator);

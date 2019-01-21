@@ -445,6 +445,7 @@ namespace Neo.Ledger
                     SystemFeeAmount = snapshot.GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.SystemFee),
                     TrimmedBlock = block.Trim()
                 });
+                bool isUTXOTrackingEnabled = ProtocolSettings.Default.EnableUTXOTracking;
                 foreach (Transaction tx in block.Transactions)
                 {
                     snapshot.Transactions.Add(tx.Hash, new TransactionState
@@ -456,30 +457,52 @@ namespace Neo.Ledger
                     {
                         Items = Enumerable.Repeat(CoinState.Confirmed, tx.Outputs.Length).ToArray()
                     });
+                    ushort outputIndex = 0;
                     foreach (TransactionOutput output in tx.Outputs)
                     {
                         AccountState account = snapshot.Accounts.GetAndChange(output.ScriptHash, () => new AccountState(output.ScriptHash));
+                        // Update account balance for new outputs.
                         if (account.Balances.ContainsKey(output.AssetId))
                             account.Balances[output.AssetId] += output.Value;
                         else
                             account.Balances[output.AssetId] = output.Value;
-                        if (output.AssetId.Equals(GoverningToken.Hash) && account.Votes.Length > 0)
+
+                        bool isGoverningToken = output.AssetId.Equals(GoverningToken.Hash);
+                        if (isGoverningToken && account.Votes.Length > 0)
                         {
                             foreach (ECPoint pubkey in account.Votes)
                                 snapshot.Validators.GetAndChange(pubkey, () => new ValidatorState(pubkey)).Votes += output.Value;
                             snapshot.ValidatorsCount.GetAndChange().Votes[account.Votes.Length - 1] += output.Value;
                         }
+
+                        if (isUTXOTrackingEnabled && (isGoverningToken || output.AssetId.Equals(UtilityToken.Hash)))
+                        {
+                            // Add new unspent UTXOs by account script hash.
+                            UserUnspentCoinOutputs outputs = snapshot.UserUnspentCoins.GetAndChange(
+                                new UserUnspentCoinOutputsKey(isGoverningToken, output.ScriptHash, tx.Hash),
+                                () => new UserUnspentCoinOutputs());
+                            outputs.AddTxIndex(outputIndex, output.Value);
+                        }
+
+                        outputIndex++;
                     }
+
+                    // Iterate all input Transactions by grouping by common input hashes.
                     foreach (var group in tx.Inputs.GroupBy(p => p.PrevHash))
                     {
                         TransactionState tx_prev = snapshot.Transactions[group.Key];
+                        // For each input being spent by this transaction.
                         foreach (CoinReference input in group)
                         {
+                            // Mark the UTXO for the input as spent
                             snapshot.UnspentCoins.GetAndChange(input.PrevHash).Items[input.PrevIndex] |= CoinState.Spent;
                             TransactionOutput out_prev = tx_prev.Transaction.Outputs[input.PrevIndex];
+                            // Get the account for the address that owned the output being spent.
                             AccountState account = snapshot.Accounts.GetAndChange(out_prev.ScriptHash);
-                            if (out_prev.AssetId.Equals(GoverningToken.Hash))
+                            bool isGoverningToken = out_prev.AssetId.Equals(GoverningToken.Hash);
+                            if (isGoverningToken)
                             {
+                                // Keep track of height when governing token inputs are spent to be able to calculate claims.
                                 snapshot.SpentCoins.GetAndChange(input.PrevHash, () => new SpentCoinState
                                 {
                                     TransactionHash = input.PrevHash,
@@ -488,6 +511,8 @@ namespace Neo.Ledger
                                 }).Items.Add(input.PrevIndex, block.Index);
                                 if (account.Votes.Length > 0)
                                 {
+                                    // Reduce the number of votes selected validators have due to the voter's reduced
+                                    // governing token blance.
                                     foreach (ECPoint pubkey in account.Votes)
                                     {
                                         ValidatorState validator = snapshot.Validators.GetAndChange(pubkey);
@@ -498,7 +523,20 @@ namespace Neo.Ledger
                                     snapshot.ValidatorsCount.GetAndChange().Votes[account.Votes.Length - 1] -= out_prev.Value;
                                 }
                             }
+                            // Reduce owner account balance by the amount spent.
                             account.Balances[out_prev.AssetId] -= out_prev.Value;
+
+                            if (isUTXOTrackingEnabled && (isGoverningToken || out_prev.AssetId.Equals(UtilityToken.Hash)))
+                            {
+                                // Remove spent UTXOs for unspents by account script hash.
+                                var userUnspentCoinOutputsKey =
+                                    new UserUnspentCoinOutputsKey(isGoverningToken, out_prev.ScriptHash, input.PrevHash);
+                                UserUnspentCoinOutputs outputs = snapshot.UserUnspentCoins.GetAndChange(
+                                    userUnspentCoinOutputsKey, () => new UserUnspentCoinOutputs());
+                                outputs.RemoveTxIndex(input.PrevIndex);
+                                if (outputs.AmountByTxIndex.Count == 0)
+                                    snapshot.UserUnspentCoins.Delete(userUnspentCoinOutputsKey);
+                            }
                         }
                     }
                     List<ApplicationExecutionResult> execution_results = new List<ApplicationExecutionResult>();

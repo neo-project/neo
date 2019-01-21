@@ -18,6 +18,7 @@ namespace Neo.Persistence
         public abstract DataCache<UInt160, AccountState> Accounts { get; }
         public abstract DataCache<UInt256, UnspentCoinState> UnspentCoins { get; }
         public abstract DataCache<UInt256, SpentCoinState> SpentCoins { get; }
+        public abstract DataCache<UserUnspentCoinOutputsKey, UserUnspentCoinOutputs> UserUnspentCoins { get; }
         public abstract DataCache<ECPoint, ValidatorState> Validators { get; }
         public abstract DataCache<UInt256, AssetState> Assets { get; }
         public abstract DataCache<UInt160, ContractState> Contracts { get; }
@@ -130,6 +131,7 @@ namespace Neo.Persistence
             Accounts.Commit();
             UnspentCoins.Commit();
             SpentCoins.Commit();
+            UserUnspentCoins.Commit();
             Validators.Commit();
             Assets.Commit();
             Contracts.Commit();
