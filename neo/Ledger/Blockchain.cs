@@ -609,9 +609,9 @@ namespace Neo.Ledger
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot, all_application_executed);
-                snapshot.Commit();
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnCommit(snapshot);
+                snapshot.Commit();
             }
             UpdateCurrentSnapshot();
             OnPersistCompleted(block);
