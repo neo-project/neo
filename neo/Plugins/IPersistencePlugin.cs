@@ -8,5 +8,6 @@ namespace Neo.Plugins
     {
         void OnPersist(Snapshot snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList);
         void OnCommit(Snapshot snapshot);
+        bool ShouldThrowExceptionFromCommit(Exception ex);
     }
 }
