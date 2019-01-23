@@ -1,4 +1,5 @@
-﻿using Neo.Persistence;
+﻿using System;
+using Neo.Persistence;
 using System.Collections.Generic;
 using static Neo.Ledger.Blockchain;
 

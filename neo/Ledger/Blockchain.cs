@@ -610,6 +610,7 @@ namespace Neo.Ledger
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot, all_application_executed);
                 snapshot.Commit();
+                List<Exception> commitExceptions = null;
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                 {
                     try
@@ -620,11 +621,14 @@ namespace Neo.Ledger
                     {
                         if (plugin.ShouldThrowExceptionFromCommit(ex))
                         {
-                            lastException = ex;
+                            if (commitExceptions == null)
+                                commitExceptions = new List<Exception>();
+
+                            commitExceptions.Add(ex);
                         }
                     }
                 }
-                if (lastException != null) throw lastException;
+                if (commitExceptions != null) throw new AggregateException(commitExceptions);
             }
             UpdateCurrentSnapshot();
             OnPersistCompleted(block);
