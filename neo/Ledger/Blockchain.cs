@@ -609,9 +609,22 @@ namespace Neo.Ledger
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot, all_application_executed);
-                foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
-                    plugin.OnCommit(snapshot);
                 snapshot.Commit();
+                foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
+                {
+                    try
+                    {
+                        plugin.OnCommit(snapshot);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (plugin.ShouldThrowExceptionFromCommit(ex))
+                        {
+                            lastException = ex;
+                        }
+                    }
+                }
+                if (lastException != null) throw lastException;
             }
             UpdateCurrentSnapshot();
             OnPersistCompleted(block);
