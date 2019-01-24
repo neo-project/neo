@@ -6,6 +6,7 @@ using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.Plugins;
 using Neo.Wallets;
 using System;
@@ -23,18 +24,20 @@ namespace Neo.Consensus
         private readonly IConsensusContext context;
         private readonly IActorRef localNode;
         private readonly IActorRef taskManager;
+        private readonly Store store;
         private ICancelable timer_token;
         private DateTime block_received_time;
 
-        public ConsensusService(IActorRef localNode, IActorRef taskManager, Wallet wallet)
-            : this(localNode, taskManager, new ConsensusContext(wallet))
+        public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
+            : this(localNode, taskManager, store, new ConsensusContext(wallet))
         {
         }
 
-        public ConsensusService(IActorRef localNode, IActorRef taskManager, IConsensusContext context)
+        public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, IConsensusContext context)
         {
             this.localNode = localNode;
             this.taskManager = taskManager;
+            this.store = store;
             this.context = context;
         }
 
@@ -366,9 +369,9 @@ namespace Neo.Consensus
             base.PostStop();
         }
 
-        public static Props Props(IActorRef localNode, IActorRef taskManager, Wallet wallet)
+        public static Props Props(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
         {
-            return Akka.Actor.Props.Create(() => new ConsensusService(localNode, taskManager, wallet)).WithMailbox("consensus-service-mailbox");
+            return Akka.Actor.Props.Create(() => new ConsensusService(localNode, taskManager, store, wallet)).WithMailbox("consensus-service-mailbox");
         }
 
         private void RequestChangeView()

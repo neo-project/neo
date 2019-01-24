@@ -13,9 +13,6 @@ namespace Neo
 {
     public class NeoSystem : IDisposable
     {
-        private Peer.Start start_message = null;
-        private bool suspend = false;
-
         public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem),
             $"akka {{ log-dead-letters = off }}" +
             $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
@@ -29,8 +26,13 @@ namespace Neo
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
 
+        private readonly Store store;
+        private Peer.Start start_message = null;
+        private bool suspend = false;
+
         public NeoSystem(Store store)
         {
+            this.store = store;
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
@@ -54,9 +56,9 @@ namespace Neo
             }
         }
 
-        public void StartConsensus(Wallet wallet)
+        public void StartConsensus(Wallet wallet, Store consensus_store = null)
         {
-            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, wallet));
+            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, consensus_store ?? store, wallet));
             Consensus.Tell(new ConsensusService.Start());
         }
 
