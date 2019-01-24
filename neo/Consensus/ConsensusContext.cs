@@ -9,6 +9,7 @@ using Neo.SmartContract;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Neo.Consensus
@@ -37,6 +38,8 @@ namespace Neo.Consensus
 
         public int M => Validators.Length - (Validators.Length - 1) / 3;
         public Header PrevHeader => snapshot.GetHeader(PrevHash);
+        public int Size => throw new NotImplementedException();
+
         public bool TransactionExists(UInt256 hash) => snapshot.ContainsTransaction(hash);
         public bool VerifyTransaction(Transaction tx) => tx.Verify(snapshot, Transactions.Values);
 
@@ -73,6 +76,46 @@ namespace Neo.Consensus
             sc.Verifiable.Witnesses = sc.GetWitnesses();
             block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
             return block;
+        }
+
+        public void Deserialize(BinaryReader reader)
+        {
+            if (reader.ReadUInt32() != Version) return;
+            State = (ConsensusState)reader.ReadByte();
+            PrevHash = reader.ReadSerializable<UInt256>();
+            BlockIndex = reader.ReadUInt32();
+            ViewNumber = reader.ReadByte();
+            Validators = reader.ReadSerializableArray<ECPoint>();
+            MyIndex = reader.ReadInt32();
+            PrimaryIndex = reader.ReadUInt32();
+            Timestamp = reader.ReadUInt32();
+            Nonce = reader.ReadUInt64();
+            NextConsensus = reader.ReadSerializable<UInt160>();
+            if (NextConsensus.Equals(UInt160.Zero))
+                NextConsensus = null;
+            TransactionHashes = reader.ReadSerializableArray<UInt256>();
+            if (TransactionHashes.Length == 0)
+                TransactionHashes = null;
+            Transaction[] transactions = new Transaction[reader.ReadVarInt()];
+            if (transactions.Length == 0)
+            {
+                Transactions = null;
+            }
+            else
+            {
+                for (int i = 0; i < transactions.Length; i++)
+                    transactions[i] = Transaction.DeserializeFrom(reader);
+                Transactions = transactions.ToDictionary(p => p.Hash);
+            }
+            Preparations = reader.ReadVarBytes().Select(p => p > 0).ToArray();
+            Commits = new byte[reader.ReadVarInt()][];
+            for (int i = 0; i < Commits.Length; i++)
+            {
+                Commits[i] = reader.ReadVarBytes();
+                if (Commits[i].Length == 0)
+                    Commits[i] = null;
+            }
+            ExpectedView = reader.ReadVarBytes();
         }
 
         public void Dispose()
@@ -199,6 +242,31 @@ namespace Neo.Consensus
                 }
             }
             _header = null;
+        }
+
+        public void Serialize(BinaryWriter writer)
+        {
+            writer.Write(Version);
+            writer.Write((byte)State);
+            writer.Write(PrevHash);
+            writer.Write(BlockIndex);
+            writer.Write(ViewNumber);
+            writer.Write(Validators);
+            writer.Write(MyIndex);
+            writer.Write(PrimaryIndex);
+            writer.Write(Timestamp);
+            writer.Write(Nonce);
+            writer.Write(NextConsensus ?? UInt160.Zero);
+            writer.Write(TransactionHashes ?? new UInt256[0]);
+            writer.Write(Transactions?.Values.ToArray() ?? new Transaction[0]);
+            writer.WriteVarBytes(Preparations.Select(p => p ? byte.MaxValue : byte.MinValue).ToArray());
+            writer.WriteVarInt(Commits.Length);
+            foreach (byte[] commit in Commits)
+                if (commit is null)
+                    writer.WriteVarInt(0);
+                else
+                    writer.WriteVarBytes(commit);
+            writer.WriteVarBytes(ExpectedView);
         }
 
         public void Fill()

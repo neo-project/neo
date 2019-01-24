@@ -6,10 +6,12 @@ using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.Plugins;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Neo.Consensus
@@ -20,22 +22,26 @@ namespace Neo.Consensus
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
+        private const byte ContextSerializationPrefix = 0xf4;
+
         private readonly IConsensusContext context;
         private readonly IActorRef localNode;
         private readonly IActorRef taskManager;
+        private readonly Store store;
         private ICancelable timer_token;
         private DateTime block_received_time;
         private bool started = false;
 
-        public ConsensusService(IActorRef localNode, IActorRef taskManager, Wallet wallet)
-            : this(localNode, taskManager, new ConsensusContext(wallet))
+        public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
+            : this(localNode, taskManager, store, new ConsensusContext(wallet))
         {
         }
 
-        public ConsensusService(IActorRef localNode, IActorRef taskManager, IConsensusContext context)
+        public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, IConsensusContext context)
         {
             this.localNode = localNode;
             this.taskManager = taskManager;
+            this.store = store;
             this.context = context;
         }
 
@@ -110,8 +116,9 @@ namespace Neo.Consensus
             {
                 ConsensusPayload payload = context.MakeCommit();
                 Log($"send commit");
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 context.State |= ConsensusState.CommitSent;
+                store.Put(ContextSerializationPrefix, new byte[0], context.ToArray());
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 CheckCommits();
             }
         }
@@ -328,7 +335,19 @@ namespace Neo.Consensus
         {
             Log("OnStart");
             started = true;
-            InitializeConsensus(0);
+            byte[] data = store.Get(ContextSerializationPrefix, new byte[0]);
+            if (data != null)
+            {
+                using (MemoryStream ms = new MemoryStream(data, false))
+                using (BinaryReader reader = new BinaryReader(ms))
+                {
+                    context.Deserialize(reader);
+                }
+            }
+            if (context.State.HasFlag(ConsensusState.CommitSent))
+                CheckPreparations();
+            else
+                InitializeConsensus(0);
         }
 
         private void OnTimer(Timer timer)
@@ -375,9 +394,9 @@ namespace Neo.Consensus
             base.PostStop();
         }
 
-        public static Props Props(IActorRef localNode, IActorRef taskManager, Wallet wallet)
+        public static Props Props(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
         {
-            return Akka.Actor.Props.Create(() => new ConsensusService(localNode, taskManager, wallet)).WithMailbox("consensus-service-mailbox");
+            return Akka.Actor.Props.Create(() => new ConsensusService(localNode, taskManager, store, wallet)).WithMailbox("consensus-service-mailbox");
         }
 
         private void RequestChangeView()
