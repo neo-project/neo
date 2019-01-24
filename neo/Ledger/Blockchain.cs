@@ -610,6 +610,25 @@ namespace Neo.Ledger
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot, all_application_executed);
                 snapshot.Commit();
+                List<Exception> commitExceptions = null;
+                foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
+                {
+                    try
+                    {
+                        plugin.OnCommit(snapshot);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (plugin.ShouldThrowExceptionFromCommit(ex))
+                        {
+                            if (commitExceptions == null)
+                                commitExceptions = new List<Exception>();
+
+                            commitExceptions.Add(ex);
+                        }
+                    }
+                }
+                if (commitExceptions != null) throw new AggregateException(commitExceptions);
             }
             UpdateCurrentSnapshot();
             OnPersistCompleted(block);
