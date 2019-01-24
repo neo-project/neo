@@ -1,11 +1,12 @@
 using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Generic;
 
 namespace Neo.Consensus
 {
-    public interface IConsensusContext : IDisposable
+    public interface IConsensusContext : IDisposable, ISerializable
     {
         //public const uint Version = 0;
         ConsensusState State { get; set; }
