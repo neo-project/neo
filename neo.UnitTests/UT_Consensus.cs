@@ -9,7 +9,12 @@ using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using System;
+using System.IO;
+using System.Linq;
+using System.Numerics;
+using System.Security.Cryptography;
 using Neo.Persistence;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.UnitTests
 {
@@ -162,6 +167,88 @@ namespace Neo.UnitTests
             TimeProvider.ResetToDefault();
 
             Assert.AreEqual(1, 1);
+        }
+
+        [TestMethod]
+        public void TestSerializeAndDeserializeConsensusContext()
+        {
+            var consensusContext = new ConsensusContext(null);
+            consensusContext.State = ConsensusState.CommitSent;
+            consensusContext.PrevHash = UInt256.Parse("3333333377777777333333337777777733333333777777773333333377777777");
+            consensusContext.BlockIndex = 1337;
+            consensusContext.ViewNumber = 2;
+            consensusContext.Validators = new ECPoint[7]
+            {
+                TestUtils.StandbyValidators[0],
+                ECPoint.Multiply(TestUtils.StandbyValidators[0], new BigInteger(2)),
+                ECPoint.Multiply(TestUtils.StandbyValidators[0], new BigInteger(3)),
+                ECPoint.Multiply(TestUtils.StandbyValidators[0], new BigInteger(4)),
+                ECPoint.Multiply(TestUtils.StandbyValidators[0], new BigInteger(5)),
+                ECPoint.Multiply(TestUtils.StandbyValidators[0], new BigInteger(6)),
+                ECPoint.Multiply(TestUtils.StandbyValidators[0], new BigInteger(7)),
+            };
+            consensusContext.MyIndex = 3;
+            consensusContext.PrimaryIndex = 6;
+            consensusContext.Timestamp = 4244941711;
+            consensusContext.Nonce = UInt64.MaxValue;
+            consensusContext.NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA");
+            var testTx1 = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
+            var testTx2 = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
+
+            int txCountToInlcude = 256;
+            consensusContext.TransactionHashes = new UInt256[txCountToInlcude];
+            Transaction[] txs = new Transaction[txCountToInlcude];
+            for (int i = 0; i < txCountToInlcude; i++)
+            {
+                txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
+                consensusContext.TransactionHashes[i] = txs[i].Hash;
+            }
+            // consensusContext.TransactionHashes = new UInt256[2] {testTx1.Hash, testTx2.Hash};
+            consensusContext.Transactions = txs.ToDictionary(p => p.Hash);
+
+            consensusContext.Preparations = new [] {true, true, false, true, false, false, true};
+            consensusContext.Commits = new byte[consensusContext.Validators.Length][];
+            using (SHA256 sha256 = SHA256.Create())
+            {
+                consensusContext.Commits[3] = sha256.ComputeHash(testTx1.Hash.ToArray());
+                consensusContext.Commits[6] = sha256.ComputeHash(testTx2.Hash.ToArray());
+            }
+
+            consensusContext.ExpectedView = new byte[consensusContext.Validators.Length];
+            consensusContext.ExpectedView[0] = 2;
+            consensusContext.ExpectedView[1] = 2;
+            consensusContext.ExpectedView[2] = 1;
+            consensusContext.ExpectedView[3] = 2;
+            consensusContext.ExpectedView[4] = 1;
+            consensusContext.ExpectedView[5] = 1;
+            consensusContext.ExpectedView[6] = 2;
+
+            byte[] serializedContextData = consensusContext.ToArray();
+
+            var copiedContext = new ConsensusContext(null);
+
+            using (MemoryStream ms = new MemoryStream(serializedContextData, false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                copiedContext.Deserialize(reader);
+            }
+
+            copiedContext.State.Should().Be(consensusContext.State);
+            copiedContext.PrevHash.Should().Be(consensusContext.PrevHash);
+            copiedContext.BlockIndex.Should().Be(consensusContext.BlockIndex);
+            copiedContext.ViewNumber.Should().Be(consensusContext.ViewNumber);
+            copiedContext.Validators.ShouldAllBeEquivalentTo(consensusContext.Validators);
+            copiedContext.MyIndex.Should().Be(consensusContext.MyIndex);
+            copiedContext.PrimaryIndex.Should().Be(consensusContext.PrimaryIndex);
+            copiedContext.Timestamp.Should().Be(consensusContext.Timestamp);
+            copiedContext.Nonce.Should().Be(consensusContext.Nonce);
+            copiedContext.NextConsensus.Should().Be(consensusContext.NextConsensus);
+            copiedContext.TransactionHashes.ShouldAllBeEquivalentTo(consensusContext.TransactionHashes);
+            copiedContext.Transactions.ShouldAllBeEquivalentTo(consensusContext.Transactions);
+            copiedContext.Transactions.Values.ShouldAllBeEquivalentTo(consensusContext.Transactions.Values);
+            copiedContext.Preparations.ShouldAllBeEquivalentTo(consensusContext.Preparations);
+            copiedContext.Commits.ShouldAllBeEquivalentTo(consensusContext.Commits);
+            copiedContext.ExpectedView.ShouldAllBeEquivalentTo(consensusContext.ExpectedView);
         }
     }
 }

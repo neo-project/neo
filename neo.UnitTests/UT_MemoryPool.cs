@@ -17,8 +17,6 @@ namespace Neo.UnitTests
     {
         private static NeoSystem TheNeoSystem;
 
-        private readonly Random _random = new Random(1337); // use fixed seed for guaranteed determinism
-
         private MemoryPool _unit;
 
         [TestInitialize]
@@ -47,7 +45,7 @@ namespace Neo.UnitTests
 
                 var mockStore = new Mock<Store>();
 
-                var defaultTx = CreateRandomHashInvocationMockTransaction().Object;
+                var defaultTx = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
                 defaultTx.Outputs = new TransactionOutput[1];
                 defaultTx.Outputs[0] = new TransactionOutput
                 {
@@ -92,22 +90,7 @@ namespace Neo.UnitTests
             _unit.Count.ShouldBeEquivalentTo(0);
         }
 
-        private Mock<InvocationTransaction> CreateRandomHashInvocationMockTransaction()
-        {
-            var mockTx = new Mock<InvocationTransaction>();
-            mockTx.CallBase = true;
-            mockTx.Setup(p => p.Verify(It.IsAny<Snapshot>(), It.IsAny<IEnumerable<Transaction>>())).Returns(true);
-            var tx = mockTx.Object;
-            var randomBytes = new byte[16];
-            _random.NextBytes(randomBytes);
-            tx.Script = randomBytes;
-            tx.Attributes = new TransactionAttribute[0];
-            tx.Inputs = new CoinReference[0];
-            tx.Outputs = new TransactionOutput[0];
-            tx.Witnesses = new Witness[0];
 
-            return mockTx;
-        }
 
         long LongRandom(long min, long max, Random rand)
         {
@@ -118,7 +101,7 @@ namespace Neo.UnitTests
 
         private Transaction CreateMockTransactionWithFee(long fee)
         {
-            var mockTx = CreateRandomHashInvocationMockTransaction();
+            var mockTx = TestUtils.CreateRandomHashInvocationMockTransaction();
             mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(fee));
             var tx = mockTx.Object;
             if (fee > 0)
@@ -136,12 +119,12 @@ namespace Neo.UnitTests
 
         private Transaction CreateMockHighPriorityTransaction()
         {
-            return CreateMockTransactionWithFee(LongRandom(100000, 100000000, _random));
+            return CreateMockTransactionWithFee(LongRandom(100000, 100000000, TestUtils.TestRandom));
         }
 
         private Transaction CreateMockLowPriorityTransaction()
         {
-            long rNetFee = LongRandom(0, 100000, _random);
+            long rNetFee = LongRandom(0, 100000, TestUtils.TestRandom);
             // [0,0.001] GAS a fee lower than the threshold of 0.001 GAS (not enough to be a high priority TX)
             return CreateMockTransactionWithFee(rNetFee);
         }
