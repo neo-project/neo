@@ -8,6 +8,7 @@ using Neo.Plugins;
 using Neo.Wallets;
 using System;
 using System.Net;
+using System.Threading;
 
 namespace Neo
 {
@@ -28,6 +29,7 @@ namespace Neo
         internal IActorRef TaskManager { get; }
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
+        public delegate bool ConfirmSafeToShutdownMethod();
 
         public NeoSystem(Store store)
         {
@@ -37,12 +39,34 @@ namespace Neo
             Plugin.LoadPlugins(this);
         }
 
-        public void Dispose()
+        public void Dispose(ConfirmSafeToShutdownMethod confirmShutdownIsSafe)
         {
             RpcServer?.Dispose();
             ActorSystem.Stop(LocalNode);
+
+            Blockchain blockchain = Neo.Ledger.Blockchain.Singleton;
+            uint latestHeight = blockchain.Height;
+            uint latestHeaderHeight = blockchain.HeaderHeight;
+            bool isSafeToShutdown;
+            do
+            {
+                uint prevHeight = latestHeight;
+                uint prevHeaderHeight = latestHeaderHeight;
+                // Wait for the Blockchain to settle in case blocks are still being persisted.
+                Thread.Sleep(1000);
+
+                // Allow caller to confirm shutdown is safe in case they have work still in the actor system that needs
+                // to complete before shutting down the actors.
+                isSafeToShutdown = confirmShutdownIsSafe == null || confirmShutdownIsSafe();
+                latestHeight = blockchain.Height;
+                latestHeaderHeight = blockchain.HeaderHeight;
+                isSafeToShutdown &= prevHeight == latestHeight && latestHeaderHeight == prevHeaderHeight;
+            } while (!isSafeToShutdown);
+
             ActorSystem.Dispose();
         }
+
+        public void Dispose() => Dispose(null);
 
         internal void ResumeNodeStartup()
         {
