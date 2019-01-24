@@ -30,6 +30,7 @@ namespace Neo.Consensus
         private readonly Store store;
         private ICancelable timer_token;
         private DateTime block_received_time;
+        private bool started = false;
 
         public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
             : this(localNode, taskManager, store, new ConsensusContext(wallet))
@@ -301,32 +302,39 @@ namespace Neo.Consensus
 
         protected override void OnReceive(object message)
         {
-            switch (message)
+            if (message is Start)
             {
-                case Start _:
-                    OnStart();
-                    break;
-                case SetViewNumber setView:
-                    InitializeConsensus(setView.ViewNumber);
-                    break;
-                case Timer timer:
-                    OnTimer(timer);
-                    break;
-                case ConsensusPayload payload:
-                    OnConsensusPayload(payload);
-                    break;
-                case Transaction transaction:
-                    OnTransaction(transaction);
-                    break;
-                case Blockchain.PersistCompleted completed:
-                    OnPersistCompleted(completed.Block);
-                    break;
+                if (started) return;
+                OnStart();
+            }
+            else
+            {
+                if (!started) return;
+                switch (message)
+                {
+                    case SetViewNumber setView:
+                        InitializeConsensus(setView.ViewNumber);
+                        break;
+                    case Timer timer:
+                        OnTimer(timer);
+                        break;
+                    case ConsensusPayload payload:
+                        OnConsensusPayload(payload);
+                        break;
+                    case Transaction transaction:
+                        OnTransaction(transaction);
+                        break;
+                    case Blockchain.PersistCompleted completed:
+                        OnPersistCompleted(completed.Block);
+                        break;
+                }
             }
         }
 
         private void OnStart()
         {
             Log("OnStart");
+            started = true;
             byte[] data = store.Get(ContextSerializationPrefix, new byte[0]);
             if (data != null)
             {
@@ -381,6 +389,7 @@ namespace Neo.Consensus
         protected override void PostStop()
         {
             Log("OnStop");
+            started = false;
             context.Dispose();
             base.PostStop();
         }
