@@ -9,6 +9,7 @@ using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using System;
+using Neo.Persistence;
 
 namespace Neo.UnitTests
 {
@@ -28,6 +29,7 @@ namespace Neo.UnitTests
             TestProbe subscriber = CreateTestProbe();
 
             var mockConsensusContext = new Mock<IConsensusContext>();
+            var mockStore = new Mock<Store>();
 
             // context.Reset(): do nothing
             //mockConsensusContext.Setup(mr => mr.Reset()).Verifiable(); // void
@@ -122,7 +124,7 @@ namespace Neo.UnitTests
             // ============================================================================
 
             TestActorRef<ConsensusService> actorConsensus = ActorOfAsTestActorRef<ConsensusService>(
-                                     Akka.Actor.Props.Create(() => new ConsensusService(subscriber, subscriber, mockConsensusContext.Object))
+                                     Akka.Actor.Props.Create(() => new ConsensusService(subscriber, subscriber, mockStore.Object, mockConsensusContext.Object))
                                      );
 
             Console.WriteLine("will trigger OnPersistCompleted!");
