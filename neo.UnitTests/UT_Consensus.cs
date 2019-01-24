@@ -126,7 +126,6 @@ namespace Neo.UnitTests
                                      );
 
             Console.WriteLine("will trigger OnPersistCompleted!");
-
             actorConsensus.Tell(new Blockchain.PersistCompleted
             {
                 Block = new Block
@@ -141,8 +140,10 @@ namespace Neo.UnitTests
                 }
             });
 
-            //Console.WriteLine("will start consensus!");
-            //actorConsensus.Tell(new ConsensusService.Start());
+            // OnPersist will not launch timer, we need OnStart
+
+            Console.WriteLine("will start consensus!");
+            actorConsensus.Tell(new ConsensusService.Start());
 
             Console.WriteLine("OnTimer should expire!");
             Console.WriteLine("Waiting for subscriber message!");
