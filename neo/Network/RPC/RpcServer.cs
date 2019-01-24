@@ -314,7 +314,7 @@ namespace Neo.Network.RPC
                         json["unverified"] = new JArray(unverifiedTransactions.Select(p => (JObject) p.Hash.ToString()));
                         return json;
                     }
-                case "getmempoolstatisticsnextblock":
+                case "getmempoolstats":
                     {
                         List<Fixed8>  mempoolStatistics = Blockchain.Singleton.MemPool.GetStatisticsForNextBlock();
                         JObject json = new JObject();
