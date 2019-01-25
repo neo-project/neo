@@ -14,6 +14,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using Akka;
 
 namespace Neo.Ledger
 {
@@ -184,9 +186,15 @@ namespace Neo.Ledger
             }
         }
 
-        public void BeginShutdown()
+        internal async Task<Done> ShutdownAndWaitForIdle()
         {
             IsShuttingDown = true;
+            do
+            {
+                await Task.Delay(100);
+            } while (!IsShuttingDownAndIdle);
+
+            return Done.Instance;
         }
 
         public bool ContainsBlock(UInt256 hash)

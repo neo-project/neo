@@ -55,31 +55,9 @@ namespace Neo
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             Plugin.LoadPlugins(this);
             // NOTE: The user can add additional tasks to further delay shutdown.
-            CoordinatedShutdown.Get(ActorSystem).AddTask("wait-for-neo-shutdown", "wait-for-blockchain-idle", WaitForBlockchainIdle);
+            CoordinatedShutdown.Get(ActorSystem).AddTask("wait-for-neo-shutdown", "wait-for-blockchain-idle",
+                Neo.Ledger.Blockchain.Singleton.ShutdownAndWaitForIdle);
 
-        }
-
-        private async Task<Done> WaitForBlockchainIdle()
-        {
-            Blockchain blockchain = Neo.Ledger.Blockchain.Singleton;
-            blockchain.BeginShutdown();
-            uint latestHeight = blockchain.Height;
-            uint latestHeaderHeight = blockchain.HeaderHeight;
-            bool isSafeToShutdown;
-            do
-            {
-                uint prevHeight = latestHeight;
-                uint prevHeaderHeight = latestHeaderHeight;
-                // Wait for the Blockchain to settle in case blocks are still being persisted.
-                await Task.Delay(1000);
-
-                latestHeight = blockchain.Height;
-                latestHeaderHeight = blockchain.HeaderHeight;
-                isSafeToShutdown = prevHeight == latestHeight && latestHeaderHeight == prevHeaderHeight
-                                                               && blockchain.IsShuttingDownAndIdle;
-            } while (!isSafeToShutdown);
-
-            return Done.Instance;
         }
 
         public void Dispose()
