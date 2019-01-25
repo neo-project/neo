@@ -45,6 +45,7 @@ namespace Neo
             ActorSystem.Stop(LocalNode);
 
             Blockchain blockchain = Neo.Ledger.Blockchain.Singleton;
+            blockchain.BeginShutdown();
             uint latestHeight = blockchain.Height;
             uint latestHeaderHeight = blockchain.HeaderHeight;
             bool isSafeToShutdown;
@@ -60,7 +61,8 @@ namespace Neo
                 isSafeToShutdown = confirmShutdownIsSafe == null || confirmShutdownIsSafe();
                 latestHeight = blockchain.Height;
                 latestHeaderHeight = blockchain.HeaderHeight;
-                isSafeToShutdown &= prevHeight == latestHeight && latestHeaderHeight == prevHeaderHeight;
+                isSafeToShutdown &= prevHeight == latestHeight && latestHeaderHeight == prevHeaderHeight
+                                                               && blockchain.IsShuttingDownAndIdle;
             } while (!isSafeToShutdown);
 
             ActorSystem.Dispose();

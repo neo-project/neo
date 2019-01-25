@@ -129,6 +129,9 @@ namespace Neo.Ledger
         public uint HeaderHeight => (uint)header_index.Count - 1;
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
         public UInt256 CurrentHeaderHash => header_index[header_index.Count - 1];
+        public bool IsShuttingDown { get; private set; }
+        public bool IsShuttingDownAndIdle { get; private set; }
+
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -179,6 +182,11 @@ namespace Neo.Ledger
                     UpdateCurrentSnapshot();
                 singleton = this;
             }
+        }
+
+        public void BeginShutdown()
+        {
+            IsShuttingDown = true;
         }
 
         public bool ContainsBlock(UInt256 hash)
@@ -419,6 +427,12 @@ namespace Neo.Ledger
                     Sender.Tell(OnNewConsensus(payload));
                     break;
                 case Idle _:
+                    if (IsShuttingDown)
+                    {
+                        // Stop reverifying when shutting down.
+                        IsShuttingDownAndIdle = true;
+                        break;
+                    }
                     if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
                         Self.Tell(Idle.Instance, ActorRefs.NoSender);
                     break;
