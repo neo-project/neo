@@ -8,9 +8,6 @@ using Neo.Plugins;
 using Neo.Wallets;
 using System;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
-using Akka;
 
 namespace Neo
 {

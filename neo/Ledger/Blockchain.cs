@@ -132,7 +132,7 @@ namespace Neo.Ledger
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
         public UInt256 CurrentHeaderHash => header_index[header_index.Count - 1];
         public bool IsShuttingDown { get; private set; }
-        public bool IsShuttingDownAndIdle { get; private set; }
+        private static readonly SemaphoreSlim WaitForShutdownAndIdleSemaphore = new SemaphoreSlim(0);
 
 
         private static Blockchain singleton;
@@ -189,11 +189,7 @@ namespace Neo.Ledger
         internal async Task<Done> ShutdownAndWaitForIdle()
         {
             IsShuttingDown = true;
-            do
-            {
-                await Task.Delay(100);
-            } while (!IsShuttingDownAndIdle);
-
+            await WaitForShutdownAndIdleSemaphore.WaitAsync();
             return Done.Instance;
         }
 
@@ -437,8 +433,8 @@ namespace Neo.Ledger
                 case Idle _:
                     if (IsShuttingDown)
                     {
-                        // Stop reverifying when shutting down.
-                        IsShuttingDownAndIdle = true;
+                        if (WaitForShutdownAndIdleSemaphore.CurrentCount == 0)
+                            WaitForShutdownAndIdleSemaphore.Release();
                         break;
                     }
                     if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
@@ -660,6 +656,7 @@ namespace Neo.Ledger
         {
             base.PostStop();
             currentSnapshot?.Dispose();
+            WaitForShutdownAndIdleSemaphore.Dispose();
         }
 
         internal static void ProcessAccountStateDescriptor(StateDescriptor descriptor, Snapshot snapshot)
