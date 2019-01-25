@@ -48,19 +48,6 @@ namespace Neo.Consensus
             this.wallet = wallet;
         }
 
-        public void ChangeView(byte view_number)
-        {
-            State = ConsensusState.Initial;
-            ViewNumber = view_number;
-            PrimaryIndex = GetPrimaryIndex(view_number);
-            TransactionHashes = null;
-            Preparations = new bool[Validators.Length];
-            Commits = new byte[Validators.Length][];
-            if (MyIndex >= 0)
-                ExpectedView[MyIndex] = view_number;
-            _header = null;
-        }
-
         public Block CreateBlock()
         {
             Block block = MakeHeader();
@@ -215,32 +202,37 @@ namespace Neo.Consensus
             return MakeSignedPayload(new PrepareResponse());
         }
 
-        public void Reset()
+        public void Reset(byte view_number)
         {
-            snapshot?.Dispose();
-            snapshot = Blockchain.Singleton.GetSnapshot();
+            if (view_number == 0)
+            {
+                snapshot?.Dispose();
+                snapshot = Blockchain.Singleton.GetSnapshot();
+                PrevHash = snapshot.CurrentBlockHash;
+                BlockIndex = snapshot.Height + 1;
+                Validators = snapshot.GetValidators();
+                MyIndex = -1;
+                ExpectedView = new byte[Validators.Length];
+                keyPair = null;
+                for (int i = 0; i < Validators.Length; i++)
+                {
+                    WalletAccount account = wallet.GetAccount(Validators[i]);
+                    if (account?.HasKey == true)
+                    {
+                        MyIndex = i;
+                        keyPair = account.GetKey();
+                        break;
+                    }
+                }
+            }
             State = ConsensusState.Initial;
-            PrevHash = snapshot.CurrentBlockHash;
-            BlockIndex = snapshot.Height + 1;
-            ViewNumber = 0;
-            Validators = snapshot.GetValidators();
-            MyIndex = -1;
-            PrimaryIndex = BlockIndex % (uint)Validators.Length;
+            ViewNumber = view_number;
+            PrimaryIndex = GetPrimaryIndex(view_number);
             TransactionHashes = null;
             Preparations = new bool[Validators.Length];
             Commits = new byte[Validators.Length][];
-            ExpectedView = new byte[Validators.Length];
-            keyPair = null;
-            for (int i = 0; i < Validators.Length; i++)
-            {
-                WalletAccount account = wallet.GetAccount(Validators[i]);
-                if (account?.HasKey == true)
-                {
-                    MyIndex = i;
-                    keyPair = account.GetKey();
-                    break;
-                }
-            }
+            if (MyIndex >= 0)
+                ExpectedView[MyIndex] = view_number;
             _header = null;
         }
 

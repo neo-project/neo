@@ -32,8 +32,6 @@ namespace Neo.Consensus
         bool TransactionExists(UInt256 hash);
         bool VerifyTransaction(Transaction tx);
 
-        void ChangeView(byte view_number);
-
         Block CreateBlock();
 
         //void Dispose();
@@ -50,7 +48,7 @@ namespace Neo.Consensus
 
         ConsensusPayload MakePrepareResponse();
 
-        void Reset();
+        void Reset(byte view_number);
 
         void Fill();
 
