@@ -11,7 +11,6 @@ using Neo.Plugins;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace Neo.Consensus

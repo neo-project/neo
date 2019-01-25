@@ -11,7 +11,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Neo.Persistence.LevelDB;
 
 namespace Neo.Consensus
 {
