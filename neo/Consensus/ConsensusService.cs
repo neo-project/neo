@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Neo.Persistence.LevelDB;
 
 namespace Neo.Consensus
 {
@@ -22,7 +23,7 @@ namespace Neo.Consensus
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
-        private const byte ContextSerializationPrefix = 0xf4;
+        private const byte ContextSerializationPrefix = Prefixes.CN_CONTEXT;
 
         private readonly IConsensusContext context;
         private readonly IActorRef localNode;
@@ -107,6 +108,8 @@ namespace Neo.Consensus
             if (context.ExpectedView.Count(p => p == view_number) >= context.M)
             {
                 InitializeConsensus(view_number);
+                // Save our view so if we crash and come back we will be closer to the correct view.
+                store.Put(ContextSerializationPrefix, new byte[0], context.ToArray());
             }
         }
 
@@ -271,7 +274,6 @@ namespace Neo.Consensus
                 }
                 else
                 {
-
                     if (Blockchain.Singleton.MemPool.TryGetValue(hash, out tx))
                         unverified.Add(tx);
                 }
@@ -347,7 +349,7 @@ namespace Neo.Consensus
             if (context.State.HasFlag(ConsensusState.CommitSent))
                 CheckPreparations();
             else
-                InitializeConsensus(0);
+                InitializeConsensus(context.ViewNumber);
         }
 
         private void OnTimer(Timer timer)
