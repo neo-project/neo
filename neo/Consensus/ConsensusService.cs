@@ -125,10 +125,7 @@ namespace Neo.Consensus
 
         private void InitializeConsensus(byte view_number)
         {
-            if (view_number == 0)
-                context.Reset();
-            else
-                context.ChangeView(view_number);
+            context.Reset(view_number);
             if (context.MyIndex < 0) return;
             if (view_number > 0)
                 Log($"changeview: view={view_number} primary={context.Validators[context.GetPrimaryIndex((byte)(view_number - 1u))]}", LogLevel.Warning);
