@@ -13,7 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Neo.Persistence.LevelDB;
 
 namespace Neo.Consensus
 {
@@ -22,8 +21,6 @@ namespace Neo.Consensus
         public class Start { }
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
-
-        private const byte ContextSerializationPrefix = Prefixes.CN_CONTEXT;
 
         private readonly IConsensusContext context;
         private readonly IActorRef localNode;
@@ -109,7 +106,7 @@ namespace Neo.Consensus
             {
                 InitializeConsensus(view_number);
                 // Save our view so if we crash and come back we will be closer to the correct view.
-                store.Put(ContextSerializationPrefix, new byte[0], context.ToArray());
+                context.WriteContextToStore(store);
             }
         }
 
@@ -120,7 +117,7 @@ namespace Neo.Consensus
                 ConsensusPayload payload = context.MakeCommit();
                 Log($"send commit");
                 context.State |= ConsensusState.CommitSent;
-                store.Put(ContextSerializationPrefix, new byte[0], context.ToArray());
+                context.WriteContextToStore(store);
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 CheckCommits();
             }
@@ -337,15 +334,7 @@ namespace Neo.Consensus
         {
             Log("OnStart");
             started = true;
-            byte[] data = store.Get(ContextSerializationPrefix, new byte[0]);
-            if (data != null)
-            {
-                using (MemoryStream ms = new MemoryStream(data, false))
-                using (BinaryReader reader = new BinaryReader(ms))
-                {
-                    context.Deserialize(reader);
-                }
-            }
+            context.LoadContextFromStore(store);
             if (context.State.HasFlag(ConsensusState.CommitSent))
                 CheckPreparations();
             else
