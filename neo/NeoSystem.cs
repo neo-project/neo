@@ -26,7 +26,7 @@ namespace Neo
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
 
-        private readonly Store store;
+        internal readonly Store store;
         private Peer.Start start_message = null;
         private bool suspend = false;
 
