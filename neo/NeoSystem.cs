@@ -9,6 +9,8 @@ using Neo.Wallets;
 using System;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
+using Akka;
 
 namespace Neo
 {
@@ -19,6 +21,13 @@ namespace Neo
 
         public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem),
             $"akka {{ log-dead-letters = off }}" +
+            $"akka.coordinated-shutdown.phases {{\n" +
+            $"  wait-for-neo-shutdown {{\n" +
+            $"    Timeout = 120 s\n" +
+            $"    depends-on = [before-actor-system-terminate]\n" +
+            $"  }}\n" +
+            $"  actor-system-terminate.depends-on = [wait-for-neo-shutdown]\n" +
+            $"}}" +
             $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
             $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
             $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}" +
@@ -29,7 +38,15 @@ namespace Neo
         internal IActorRef TaskManager { get; }
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
-        public delegate bool ConfirmSafeToShutdownMethod();
+
+        public class NeoSystemShutdownReason : CoordinatedShutdown.Reason
+        {
+            public static CoordinatedShutdown.Reason Instance = new NeoSystemShutdownReason();
+
+            private NeoSystemShutdownReason()
+            {
+            }
+        }
 
         public NeoSystem(Store store)
         {
@@ -37,13 +54,13 @@ namespace Neo
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             Plugin.LoadPlugins(this);
+            // NOTE: The user can add additional tasks to further delay shutdown.
+            CoordinatedShutdown.Get(ActorSystem).AddTask("wait-for-neo-shutdown", "wait-for-blockchain-idle", WaitForBlockchainIdle);
+
         }
 
-        public void Dispose(ConfirmSafeToShutdownMethod confirmShutdownIsSafe)
+        private async Task<Done> WaitForBlockchainIdle()
         {
-            RpcServer?.Dispose();
-            ActorSystem.Stop(LocalNode);
-
             Blockchain blockchain = Neo.Ledger.Blockchain.Singleton;
             blockchain.BeginShutdown();
             uint latestHeight = blockchain.Height;
@@ -54,21 +71,24 @@ namespace Neo
                 uint prevHeight = latestHeight;
                 uint prevHeaderHeight = latestHeaderHeight;
                 // Wait for the Blockchain to settle in case blocks are still being persisted.
-                Thread.Sleep(1000);
+                await Task.Delay(1000);
 
-                // Allow caller to confirm shutdown is safe in case they have work still in the actor system that needs
-                // to complete before shutting down the actors.
-                isSafeToShutdown = confirmShutdownIsSafe == null || confirmShutdownIsSafe();
                 latestHeight = blockchain.Height;
                 latestHeaderHeight = blockchain.HeaderHeight;
-                isSafeToShutdown &= prevHeight == latestHeight && latestHeaderHeight == prevHeaderHeight
+                isSafeToShutdown = prevHeight == latestHeight && latestHeaderHeight == prevHeaderHeight
                                                                && blockchain.IsShuttingDownAndIdle;
             } while (!isSafeToShutdown);
 
-            ActorSystem.Dispose();
+            return Done.Instance;
         }
 
-        public void Dispose() => Dispose(null);
+        public void Dispose()
+        {
+            RpcServer?.Dispose();
+            ActorSystem.Stop(LocalNode);
+            CoordinatedShutdown.Get(ActorSystem).Run(NeoSystemShutdownReason.Instance).Wait();
+            ActorSystem.Dispose();
+        }
 
         internal void ResumeNodeStartup()
         {
