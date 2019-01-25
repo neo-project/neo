@@ -9,6 +9,7 @@ using Neo.Cryptography.ECC;
 using Neo.IO.Wrappers;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Persistence.LevelDB;
 
 namespace Neo.UnitTests
 {
@@ -74,6 +75,7 @@ namespace Neo.UnitTests
                 mockStore.Setup(p => p.GetBlockHashIndex()).Returns(new TestMetaDataCache<HashIndexState>());
                 mockStore.Setup(p => p.GetHeaderHashIndex()).Returns(new TestMetaDataCache<HashIndexState>());
                 mockStore.Setup(p => p.GetSnapshot()).Returns(mockSnapshot.Object);
+                mockStore.Setup(p => p.Get(Prefixes.CN_CONTEXT, It.IsAny<byte[]>())).Returns((byte[]) null);
 
                 Console.WriteLine("initialize NeoSystem");
                 TheNeoSystem = new NeoSystem(mockStore.Object); // new Mock<NeoSystem>(mockStore.Object);
