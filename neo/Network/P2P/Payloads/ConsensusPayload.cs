@@ -20,7 +20,7 @@ namespace Neo.Network.P2P.Payloads
         public Witness Witness;
 
         private UInt256 _hash = null;
-        UInt256 IInventory.Hash
+        public UInt256 Hash
         {
             get
             {

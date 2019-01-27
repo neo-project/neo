@@ -207,7 +207,7 @@ namespace Neo.UnitTests
             // consensusContext.TransactionHashes = new UInt256[2] {testTx1.Hash, testTx2.Hash};
             consensusContext.Transactions = txs.ToDictionary(p => p.Hash);
 
-            consensusContext.Preparations = new [] {true, true, false, true, false, false, true};
+            consensusContext.Preparations = new [] {null, null, null, consensusContext.PrevHash, null, null, null };
             consensusContext.Commits = new byte[consensusContext.Validators.Length][];
             using (SHA256 sha256 = SHA256.Create())
             {

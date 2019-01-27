@@ -67,7 +67,7 @@ namespace Neo.Consensus
                 {
                     Log($"send prepare response");
                     context.State |= ConsensusState.ResponseSent;
-                    context.Preparations[context.MyIndex] = true;
+                    context.Preparations[context.MyIndex] = context.Preparations[context.PrimaryIndex];
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
                     CheckPreparations();
                 }
@@ -112,7 +112,7 @@ namespace Neo.Consensus
 
         private void CheckPreparations()
         {
-            if (context.Preparations.Count(p => p) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
+            if (context.Preparations.Count(p => p != null) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 ConsensusPayload payload = context.MakeCommit();
                 Log($"send commit");
@@ -250,7 +250,11 @@ namespace Neo.Consensus
             context.NextConsensus = message.NextConsensus;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
-            context.Preparations[payload.ValidatorIndex] = true;
+            for (int i = 0; i < context.Preparations.Length; i++)
+                if (context.Preparations[i] != null)
+                    if (!context.Preparations[i].Equals(payload.Hash))
+                        context.Preparations[i] = null;
+            context.Preparations[payload.ValidatorIndex] = payload.Hash;
             byte[] hashData = context.MakeHeader().GetHashData();
             for (int i = 0; i < context.Commits.Length; i++)
                 if (context.Commits[i] != null)
@@ -289,10 +293,12 @@ namespace Neo.Consensus
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
-            if (context.Preparations[payload.ValidatorIndex]) return;
+            if (context.Preparations[payload.ValidatorIndex] != null) return;
+            if (context.Preparations[context.PrimaryIndex] != null && !message.PreparationHash.Equals(context.Preparations[context.PrimaryIndex]))
+                return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             if (context.State.HasFlag(ConsensusState.CommitSent)) return;
-            context.Preparations[payload.ValidatorIndex] = true;
+            context.Preparations[payload.ValidatorIndex] = message.PreparationHash;
             if (context.State.HasFlag(ConsensusState.RequestSent) || context.State.HasFlag(ConsensusState.RequestReceived))
                 CheckPreparations();
         }
@@ -356,9 +362,10 @@ namespace Neo.Consensus
             {
                 Log($"send prepare request: height={timer.Height} view={timer.ViewNumber}");
                 context.Fill();
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
+                ConsensusPayload request = context.MakePrepareRequest();
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = request });
                 context.State |= ConsensusState.RequestSent;
-                context.Preparations[context.MyIndex] = true;
+                context.Preparations[context.MyIndex] = request.Hash;
                 if (context.TransactionHashes.Length > 1)
                 {
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
