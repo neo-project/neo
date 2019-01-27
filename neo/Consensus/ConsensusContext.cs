@@ -29,7 +29,7 @@ namespace Neo.Consensus
         public UInt160 NextConsensus { get; set; }
         public UInt256[] TransactionHashes { get; set; }
         public Dictionary<UInt256, Transaction> Transactions { get; set; }
-        public bool[] Preparations { get; set; }
+        public UInt256[] Preparations { get; set; }
         public byte[][] Commits { get; set; }
         public byte[] ExpectedView { get; set; }
         private Snapshot snapshot;
@@ -94,7 +94,10 @@ namespace Neo.Consensus
                     transactions[i] = Transaction.DeserializeFrom(reader);
                 Transactions = transactions.ToDictionary(p => p.Hash);
             }
-            Preparations = reader.ReadVarBytes().Select(p => p > 0).ToArray();
+            Preparations = reader.ReadSerializableArray<UInt256>();
+            for (int i = 0; i < Preparations.Length; i++)
+                if (Preparations[i].Equals(UInt256.Zero))
+                    Preparations[i] = null;
             Commits = new byte[reader.ReadVarInt()][];
             for (int i = 0; i < Commits.Length; i++)
             {
@@ -229,7 +232,7 @@ namespace Neo.Consensus
             ViewNumber = view_number;
             PrimaryIndex = GetPrimaryIndex(view_number);
             TransactionHashes = null;
-            Preparations = new bool[Validators.Length];
+            Preparations = new UInt256[Validators.Length];
             Commits = new byte[Validators.Length][];
             if (MyIndex >= 0)
                 ExpectedView[MyIndex] = view_number;
@@ -251,7 +254,12 @@ namespace Neo.Consensus
             writer.Write(NextConsensus ?? UInt160.Zero);
             writer.Write(TransactionHashes ?? new UInt256[0]);
             writer.Write(Transactions?.Values.ToArray() ?? new Transaction[0]);
-            writer.WriteVarBytes(Preparations.Select(p => p ? byte.MaxValue : byte.MinValue).ToArray());
+            writer.WriteVarInt(Preparations.Length);
+            foreach (UInt256 hash in Preparations)
+                if (hash is null)
+                    writer.Write(UInt256.Zero);
+                else
+                    writer.Write(hash);
             writer.WriteVarInt(Commits.Length);
             foreach (byte[] commit in Commits)
                 if (commit is null)
