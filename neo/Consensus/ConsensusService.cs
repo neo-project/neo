@@ -65,7 +65,7 @@ namespace Neo.Consensus
                     Log($"send prepare response");
                     context.State |= ConsensusState.ResponseSent;
                     context.Preparations[context.MyIndex] = context.Preparations[context.PrimaryIndex];
-                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
+                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.Preparations[context.MyIndex]) });
                     CheckPreparations();
                 }
                 else
