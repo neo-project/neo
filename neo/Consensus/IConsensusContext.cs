@@ -46,7 +46,7 @@ namespace Neo.Consensus
 
         ConsensusPayload MakePrepareRequest();
 
-        ConsensusPayload MakePrepareResponse();
+        ConsensusPayload MakePrepareResponse(UInt256 preparation);
 
         void Reset(byte view_number);
 

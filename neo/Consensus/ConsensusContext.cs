@@ -200,9 +200,12 @@ namespace Neo.Consensus
             });
         }
 
-        public ConsensusPayload MakePrepareResponse()
+        public ConsensusPayload MakePrepareResponse(UInt256 preparation)
         {
-            return MakeSignedPayload(new PrepareResponse());
+            return MakeSignedPayload(new PrepareResponse
+            {
+                PreparationHash = preparation
+            });
         }
 
         public void Reset(byte view_number)
