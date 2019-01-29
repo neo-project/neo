@@ -188,11 +188,7 @@ namespace Neo.Ledger
 
         internal async Task<Done> WaitForStopped()
         {
-            do
-            {
-                logger.Info($"Wait for Blockchain Idle, height: {Height} headerheight: {HeaderHeight}");
-            } while (!await WaitForStoppedSemaphore.WaitAsync(1000));
-
+            await WaitForStoppedSemaphore.WaitAsync();
             return Done.Instance;
         }
 
