@@ -113,6 +113,7 @@ namespace Neo.Ledger
             if (context.Transactions == null) return;
             foreach (var tx in context.Transactions.Values)
             {
+                if (system.store.ContainsTransaction(tx.Hash)) continue;
                 TryAdd(tx.Hash, tx);
             }
         }
