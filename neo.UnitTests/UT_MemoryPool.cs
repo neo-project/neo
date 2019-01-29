@@ -75,7 +75,7 @@ namespace Neo.UnitTests
                 mockStore.Setup(p => p.GetBlockHashIndex()).Returns(new TestMetaDataCache<HashIndexState>());
                 mockStore.Setup(p => p.GetHeaderHashIndex()).Returns(new TestMetaDataCache<HashIndexState>());
                 mockStore.Setup(p => p.GetSnapshot()).Returns(mockSnapshot.Object);
-                mockStore.Setup(p => p.Get(Prefixes.CN_CONTEXT, It.IsAny<byte[]>())).Returns((byte[]) null);
+                mockStore.Setup(p => p.Get(Prefixes.CN_Context, It.IsAny<byte[]>())).Returns((byte[]) null);
 
                 Console.WriteLine("initialize NeoSystem");
                 TheNeoSystem = new NeoSystem(mockStore.Object); // new Mock<NeoSystem>(mockStore.Object);

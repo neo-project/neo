@@ -109,7 +109,7 @@ namespace Neo.Ledger
             Capacity = capacity;
             LoadMaxTxLimitsFromPolicyPlugins();
             IConsensusContext context = new ConsensusContext(null);
-            context.LoadContextFromStore(system.store);
+            context.LoadContextFromStore(system.consensusStore);
             if (context.Transactions == null) return;
             foreach (var tx in context.Transactions.Values)
             {

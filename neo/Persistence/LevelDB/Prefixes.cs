@@ -19,6 +19,6 @@
         public const byte IX_CurrentHeader = 0xc1;
 
         public const byte SYS_Version = 0xf0;
-        public const byte CN_CONTEXT = 0xf4;
+        public const byte CN_Context = 0xf4;
     }
 }

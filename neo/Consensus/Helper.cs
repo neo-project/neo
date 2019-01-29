@@ -9,12 +9,12 @@ namespace Neo.Consensus
     {
         internal static void WriteContextToStore(this IConsensusContext context, Store store)
         {
-            store.Put(Prefixes.CN_CONTEXT, new byte[0], context.ToArray());
+            store.Put(Prefixes.CN_Context, new byte[0], context.ToArray());
         }
 
         internal static void LoadContextFromStore(this IConsensusContext context, Store store)
         {
-            byte[] data = store.Get(Prefixes.CN_CONTEXT, new byte[0]);
+            byte[] data = store.Get(Prefixes.CN_Context, new byte[0]);
             if (data != null)
             {
                 using (MemoryStream ms = new MemoryStream(data, false))
