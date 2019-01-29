@@ -6,7 +6,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Akka.Util.Internal;
-using Neo.Consensus;
 using Neo.Network.P2P;
 using Neo.Persistence;
 using Neo.Plugins;
@@ -108,14 +107,6 @@ namespace Neo.Ledger
             _system = system;
             Capacity = capacity;
             LoadMaxTxLimitsFromPolicyPlugins();
-            IConsensusContext context = new ConsensusContext(null);
-            context.LoadContextFromStore(system.consensusStore);
-            if (context.Transactions == null) return;
-            foreach (var tx in context.Transactions.Values)
-            {
-                if (system.store.ContainsTransaction(tx.Hash)) continue;
-                TryAdd(tx.Hash, tx);
-            }
         }
 
         public void LoadMaxTxLimitsFromPolicyPlugins()
