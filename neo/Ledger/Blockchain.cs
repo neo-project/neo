@@ -14,7 +14,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Neo.Consensus;
 
 namespace Neo.Ledger
 {
@@ -151,15 +150,7 @@ namespace Neo.Ledger
             this.system = system;
             this.Store = store;
             this.MemPool = new MemoryPool(system, MemoryPoolMaxTransactions);
-
-            IConsensusContext context = new ConsensusContext(null);
-            context.LoadContextFromStore(system.consensusStore);
-            if (context.Transactions == null) return;
-            foreach (var tx in context.Transactions.Values)
-            {
-                if (store.ContainsTransaction(tx.Hash)) continue;
-                MemPool.TryAdd(tx.Hash, tx);
-            }
+            Consensus.Helper.LoadTransactionsToMemoryPoolFromSavedConsensusContext(MemPool, store, system.ConsensusStore);
 
             lock (lockObj)
             {

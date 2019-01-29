@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Neo.IO;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.Persistence.LevelDB;
 
@@ -22,6 +23,18 @@ namespace Neo.Consensus
                 {
                     context.Deserialize(reader);
                 }
+            }
+        }
+
+        internal static void LoadTransactionsToMemoryPoolFromSavedConsensusContext(MemoryPool memoryPool, Store store, Store consensusStore)
+        {
+            IConsensusContext context = new ConsensusContext(null);
+            context.LoadContextFromStore(consensusStore);
+            if (context.Transactions == null) return;
+            foreach (var tx in context.Transactions.Values)
+            {
+                if (store.ContainsTransaction(tx.Hash)) continue;
+                memoryPool.TryAdd(tx.Hash, tx);
             }
         }
     }

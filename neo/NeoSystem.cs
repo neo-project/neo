@@ -26,15 +26,13 @@ namespace Neo
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
 
-        internal readonly Store store;
-        internal readonly Store consensusStore;
+        internal readonly Store ConsensusStore;
         private Peer.Start start_message = null;
         private bool suspend = false;
 
         public NeoSystem(Store store, Store consensusStore = null)
         {
-            this.store = store;
-            this.consensusStore = consensusStore ?? store;
+            this.ConsensusStore = consensusStore ?? store;
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
@@ -60,7 +58,7 @@ namespace Neo
 
         public void StartConsensus(Wallet wallet)
         {
-            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, consensusStore, wallet));
+            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, ConsensusStore, wallet));
             Consensus.Tell(new ConsensusService.Start());
         }
 
