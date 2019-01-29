@@ -8,6 +8,8 @@ using Neo.Plugins;
 using Neo.Wallets;
 using System;
 using System.Net;
+using System.Threading.Tasks;
+using Akka;
 
 namespace Neo
 {
@@ -19,9 +21,13 @@ namespace Neo
         public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem),
             $"akka {{ log-dead-letters = off }}" +
             $"akka.coordinated-shutdown.phases {{\n" +
-            $"  wait-for-neo-shutdown {{\n" +
-            $"    Timeout = 120 s\n" +
+            $"  wait-for-localnode-shutdown {{\n" +
+            $"    Timeout = 60 s\n" +
             $"    depends-on = [before-actor-system-terminate]\n" +
+            $"  }}\n" +
+            $"  wait-for-neo-shutdown {{\n" +
+            $"    Timeout = 60 s\n" +
+            $"    depends-on = [wait-for-localnode-shutdown]\n" +
             $"  }}\n" +
             $"  actor-system-terminate.depends-on = [wait-for-neo-shutdown]\n" +
             $"}}" +
@@ -45,16 +51,24 @@ namespace Neo
             }
         }
 
+        private async Task<Done> StopBlockchainAndWaitForStopped()
+        {
+            ActorSystem.Stop(Blockchain);
+            await Neo.Ledger.Blockchain.Singleton.WaitForStopped();
+            return Done.Instance;
+        }
+
         public NeoSystem(Store store)
         {
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             Plugin.LoadPlugins(this);
-            // NOTE: The user can add additional tasks to further delay shutdown.
-            CoordinatedShutdown.Get(ActorSystem).AddTask("wait-for-neo-shutdown", "wait-for-blockchain-idle",
-                Neo.Ledger.Blockchain.Singleton.ShutdownAndWaitForIdle);
-
+            // NOTE: The user can add additional tasks to these shutdown phases to further delay shutdown.
+            CoordinatedShutdown.Get(ActorSystem).AddTask("wait-for-localnode-shutdown", "wait-for-localnode-stopped",
+                Neo.Network.P2P.LocalNode.Singleton.WaitForStopped);
+            CoordinatedShutdown.Get(ActorSystem).AddTask("wait-for-neo-shutdown", "wait-for-blockchain-stopped",
+                StopBlockchainAndWaitForStopped);
         }
 
         public void Dispose()

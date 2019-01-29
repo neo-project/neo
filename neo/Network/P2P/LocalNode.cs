@@ -10,6 +10,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
+using Akka;
 
 namespace Neo.Network.P2P
 {
@@ -39,6 +41,7 @@ namespace Neo.Network.P2P
                 return singleton;
             }
         }
+        private static readonly SemaphoreSlim WaitForStoppedSemaphore = new SemaphoreSlim(0);
 
         static LocalNode()
         {
@@ -56,6 +59,18 @@ namespace Neo.Network.P2P
                 this.system = system;
                 singleton = this;
             }
+        }
+
+        protected override void PostStop()
+        {
+            base.PostStop();
+            WaitForStoppedSemaphore.Release(short.MaxValue);
+        }
+
+        internal async Task<Done> WaitForStopped()
+        {
+            await WaitForStoppedSemaphore.WaitAsync();
+            return Done.Instance;
         }
 
         private void BroadcastMessage(string command, ISerializable payload = null)

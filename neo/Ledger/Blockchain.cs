@@ -11,6 +11,7 @@ using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -131,8 +132,7 @@ namespace Neo.Ledger
         public uint HeaderHeight => (uint)header_index.Count - 1;
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
         public UInt256 CurrentHeaderHash => header_index[header_index.Count - 1];
-        public bool IsShuttingDown { get; private set; }
-        private static readonly SemaphoreSlim WaitForShutdownAndIdleSemaphore = new SemaphoreSlim(0);
+        private static readonly SemaphoreSlim WaitForStoppedSemaphore = new SemaphoreSlim(0);
 
 
         private static Blockchain singleton;
@@ -186,10 +186,13 @@ namespace Neo.Ledger
             }
         }
 
-        internal async Task<Done> ShutdownAndWaitForIdle()
+        internal async Task<Done> WaitForStopped()
         {
-            IsShuttingDown = true;
-            await WaitForShutdownAndIdleSemaphore.WaitAsync();
+            do
+            {
+                logger.Info($"Wait for Blockchain Idle, height: {Height} headerheight: {HeaderHeight}");
+            } while (!await WaitForStoppedSemaphore.WaitAsync(1000));
+
             return Done.Instance;
         }
 
@@ -431,12 +434,6 @@ namespace Neo.Ledger
                     Sender.Tell(OnNewConsensus(payload));
                     break;
                 case Idle _:
-                    if (IsShuttingDown)
-                    {
-                        if (WaitForShutdownAndIdleSemaphore.CurrentCount == 0)
-                            WaitForShutdownAndIdleSemaphore.Release();
-                        break;
-                    }
                     if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
                         Self.Tell(Idle.Instance, ActorRefs.NoSender);
                     break;
@@ -656,7 +653,7 @@ namespace Neo.Ledger
         {
             base.PostStop();
             currentSnapshot?.Dispose();
-            WaitForShutdownAndIdleSemaphore.Dispose();
+            WaitForStoppedSemaphore.Release(short.MaxValue);
         }
 
         internal static void ProcessAccountStateDescriptor(StateDescriptor descriptor, Snapshot snapshot)
