@@ -13,7 +13,7 @@ namespace Neo.Consensus
             store.Put(Prefixes.CN_Context, new byte[0], context.ToArray());
         }
 
-        internal static void LoadContextFromStore(this IConsensusContext context, Store store)
+        internal static bool LoadContextFromStore(this IConsensusContext context, Store store)
         {
             byte[] data = store.Get(Prefixes.CN_Context, new byte[0]);
             if (data != null)
@@ -22,8 +22,10 @@ namespace Neo.Consensus
                 using (BinaryReader reader = new BinaryReader(ms))
                 {
                     context.Deserialize(reader);
+                    return true;
                 }
             }
+            return false;
         }
 
         internal static void LoadTransactionsToMemoryPoolFromSavedConsensusContext(MemoryPool memoryPool, Store store, Store consensusStore)

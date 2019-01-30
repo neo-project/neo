@@ -65,6 +65,7 @@ namespace Neo.Consensus
                     Log($"send prepare response");
                     context.State |= ConsensusState.ResponseSent;
                     context.Preparations[context.MyIndex] = context.Preparations[context.PrimaryIndex];
+                    context.WriteContextToStore(store);
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.Preparations[context.MyIndex]) });
                     CheckPreparations();
                 }
@@ -104,8 +105,10 @@ namespace Neo.Consensus
             if (context.ExpectedView.Count(p => p == view_number) >= context.M)
             {
                 InitializeConsensus(view_number);
-                // Save our view so if we crash and come back we will be closer to the correct view.
-                context.WriteContextToStore(store);
+                // TODO: Can save here also, once we have the regeneration message, and if we restart without
+                // TODO: ConsensusState.RequestSent or ConsensusState.ResponseSent set then we can send change view
+                // TODO: again to potentially receive the regeneration message.
+                // context.WriteContextToStore(store);
             }
         }
 
@@ -227,6 +230,37 @@ namespace Neo.Consensus
             InitializeConsensus(0);
         }
 
+        private void ObtainTransactionsForConsensus(Transaction minerTransaction)
+        {
+            Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
+            List<Transaction> unverified = new List<Transaction>();
+            foreach (UInt256 hash in context.TransactionHashes.Skip(1))
+            {
+                if (mempoolVerified.TryGetValue(hash, out Transaction tx))
+                {
+                    if (!AddTransaction(tx, false))
+                        return;
+                }
+                else
+                {
+                    if (Blockchain.Singleton.MemPool.TryGetValue(hash, out tx))
+                        unverified.Add(tx);
+                }
+            }
+            foreach (Transaction tx in unverified)
+                if (!AddTransaction(tx, true))
+                    return;
+            if (!AddTransaction(minerTransaction, true)) return;
+            if (context.Transactions.Count < context.TransactionHashes.Length)
+            {
+                UInt256[] hashes = context.TransactionHashes.Where(i => !context.Transactions.ContainsKey(i)).ToArray();
+                taskManager.Tell(new TaskManager.RestartTasks
+                {
+                    Payload = InvPayload.Create(InventoryType.TX, hashes)
+                });
+            }
+        }
+
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
         {
             if (context.State.HasFlag(ConsensusState.RequestReceived)) return;
@@ -259,34 +293,10 @@ namespace Neo.Consensus
                 if (context.Commits[i] != null)
                     if (!Crypto.Default.VerifySignature(hashData, context.Commits[i], context.Validators[i].EncodePoint(false)))
                         context.Commits[i] = null;
-            Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
 
-            List<Transaction> unverified = new List<Transaction>();
-            foreach (UInt256 hash in context.TransactionHashes.Skip(1))
-            {
-                if (mempoolVerified.TryGetValue(hash, out Transaction tx))
-                {
-                    if (!AddTransaction(tx, false))
-                        return;
-                }
-                else
-                {
-                    if (Blockchain.Singleton.MemPool.TryGetValue(hash, out tx))
-                        unverified.Add(tx);
-                }
-            }
-            foreach (Transaction tx in unverified)
-                if (!AddTransaction(tx, true))
-                    return;
-            if (!AddTransaction(message.MinerTransaction, true)) return;
-            if (context.Transactions.Count < context.TransactionHashes.Length)
-            {
-                UInt256[] hashes = context.TransactionHashes.Where(i => !context.Transactions.ContainsKey(i)).ToArray();
-                taskManager.Tell(new TaskManager.RestartTasks
-                {
-                    Payload = InvPayload.Create(InventoryType.TX, hashes)
-                });
-            }
+            // Save our view so if we crash and come back we will be on the last view that received the PrepareRequest
+            context.WriteContextToStore(store);
+            ObtainTransactionsForConsensus(message.MinerTransaction);
         }
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
@@ -336,11 +346,37 @@ namespace Neo.Consensus
         {
             Log("OnStart");
             started = true;
-            context.LoadContextFromStore(store);
+            bool loadedState = context.LoadContextFromStore(store);
+            if (!loadedState || Blockchain.Singleton.Height >= context.BlockIndex)
+            {
+                InitializeConsensus(0);
+                return;
+            }
+
             if (context.State.HasFlag(ConsensusState.CommitSent))
                 CheckPreparations();
             else
-                InitializeConsensus(context.ViewNumber);
+            {
+                if (context.State.HasFlag(ConsensusState.RequestSent))
+                {
+                    // Note: The code that starts consensus should wait till some peers are connected to start consensus.
+                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
+                }
+                else if (context.State.HasFlag(ConsensusState.ResponseSent))
+                {
+                    localNode.Tell(new LocalNode.SendDirectly
+                    {
+                        Inventory = context.MakePrepareResponse(context.Preparations[context.MyIndex])
+                    });
+                }
+                else if (context.State.HasFlag(ConsensusState.RequestReceived))
+                {
+                    ObtainTransactionsForConsensus(context.Transactions[context.TransactionHashes[0]]);
+                }
+                // TODO: else Request change view to the current view in order to receive regeneration
+
+                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ViewNumber + 1)));
+            }
         }
 
         private void OnTimer(Timer timer)
@@ -353,9 +389,11 @@ namespace Neo.Consensus
                 Log($"send prepare request: height={timer.Height} view={timer.ViewNumber}");
                 context.Fill();
                 ConsensusPayload request = context.MakePrepareRequest();
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = request });
-                context.State |= ConsensusState.RequestSent;
                 context.Preparations[context.MyIndex] = request.Hash;
+                context.State |= ConsensusState.RequestSent;
+                context.WriteContextToStore(store);
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = request });
+
                 if (context.TransactionHashes.Length > 1)
                 {
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
