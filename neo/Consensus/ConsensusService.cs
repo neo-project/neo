@@ -65,7 +65,8 @@ namespace Neo.Consensus
                     Log($"send prepare response");
                     context.State |= ConsensusState.ResponseSent;
                     context.Preparations[context.MyIndex] = context.Preparations[context.PrimaryIndex];
-                    context.WriteContextToStore(store);
+                    // For performance reasons, we won't write the context again here.
+                    // context.WriteContextToStore(store);
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.Preparations[context.MyIndex]) });
                     CheckPreparations();
                 }
@@ -363,6 +364,8 @@ namespace Neo.Consensus
                     // Note: The code that starts consensus should wait till some peers are connected to start consensus.
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
                 }
+                /*
+                // Note: We don't write the state out at ResponseSent in order to reduce writes.
                 else if (context.State.HasFlag(ConsensusState.ResponseSent))
                 {
                     localNode.Tell(new LocalNode.SendDirectly
@@ -370,6 +373,7 @@ namespace Neo.Consensus
                         Inventory = context.MakePrepareResponse(context.Preparations[context.MyIndex])
                     });
                 }
+                */
                 else if (context.State.HasFlag(ConsensusState.RequestReceived))
                 {
                     ObtainTransactionsForConsensus(context.Transactions[context.TransactionHashes[0]]);
