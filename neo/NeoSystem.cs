@@ -1,4 +1,5 @@
-﻿using Akka.Actor;
+﻿using Akka;
+using Akka.Actor;
 using Neo.Consensus;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -9,7 +10,6 @@ using Neo.Wallets;
 using System;
 using System.Net;
 using System.Threading.Tasks;
-using Akka;
 
 namespace Neo
 {
@@ -42,11 +42,11 @@ namespace Neo
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
 
-        public class NeoSystemShutdownReason : CoordinatedShutdown.Reason
+        private class ShutdownReason : CoordinatedShutdown.Reason
         {
-            public static CoordinatedShutdown.Reason Instance = new NeoSystemShutdownReason();
+            public static CoordinatedShutdown.Reason Instance = new ShutdownReason();
 
-            private NeoSystemShutdownReason()
+            private ShutdownReason()
             {
             }
         }
@@ -75,7 +75,7 @@ namespace Neo
         {
             RpcServer?.Dispose();
             ActorSystem.Stop(LocalNode);
-            CoordinatedShutdown.Get(ActorSystem).Run(NeoSystemShutdownReason.Instance).Wait();
+            CoordinatedShutdown.Get(ActorSystem).Run(ShutdownReason.Instance).Wait();
             ActorSystem.Dispose();
         }
 
