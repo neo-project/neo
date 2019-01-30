@@ -301,16 +301,13 @@ namespace Neo.Consensus
                 }
                 if (validCount >= context.M-1)
                 {
+                    // If only lacking 1 signature (M-1 of the message signatures are valid), then regenerate.
                     Log("initiating regeneration");
-                    // If only lacking 1 signature (M-1 of the message signatures are valid), we can immediately jump
-                    // our view forward in to become the last committer required.
                     context.Reset(message.ViewNumber, snap);
                     OnPrepareRequestReceived(regeneratedPrepareRequest, message);
-
                     foreach (var (prepareRespPayload, prepareResp) in prepareResponses)
-                    {
                         OnPrepareResponseReceived(prepareRespPayload, prepareResp);
-                    }
+
                     break;
                 }
             }
