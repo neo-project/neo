@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Neo.SmartContract;
 
 namespace Neo.Consensus
 {
@@ -31,10 +32,12 @@ namespace Neo.Consensus
         private ICancelable timer_token;
         private DateTime block_received_time;
         private bool started = false;
+        private readonly Wallet wallet;
 
         public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
             : this(localNode, taskManager, store, new ConsensusContext(wallet))
         {
+            this.wallet = wallet;
         }
 
         public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, IConsensusContext context)
@@ -151,12 +154,28 @@ namespace Neo.Consensus
             Plugin.Log(nameof(ConsensusService), level, message);
         }
 
+        private void SendRegenerationMessageIfNecessary()
+        {
+            // The primary can regenerate other nodes trying to request change view.
+            if (context.PrimaryIndex == context.MyIndex)
+            {
+                // As long as we are lacking one preparation or less, it is safe to regenerate.
+                if (context.Preparations.Count(p => p != null) >= context.M - 1)
+                {
+                    // Send a regeneration message
+                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRegenerationMessage() });
+                }
+            }
+        }
+
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
-            if (context.State.HasFlag(ConsensusState.CommitSent))
+            if (context.State.HasFlag(ConsensusState.CommitSent) || message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
+            {
+                SendRegenerationMessageIfNecessary();
                 return;
-            if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
-                return;
+            }
+
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
             context.ExpectedView[payload.ValidatorIndex] = message.NewViewNumber;
             CheckExpectedView(message.NewViewNumber);
@@ -209,6 +228,9 @@ namespace Neo.Consensus
                 case ChangeView view:
                     OnChangeViewReceived(payload, view);
                     break;
+                case RegenerationMessage regeneration:
+                    OnRegenerationMessageReceived(payload, regeneration);
+                    break;
                 case PrepareRequest request:
                     OnPrepareRequestReceived(payload, request);
                     break;
@@ -226,6 +248,72 @@ namespace Neo.Consensus
             Log($"persist block: {block.Hash}");
             block_received_time = TimeProvider.Current.UtcNow;
             InitializeConsensus(0);
+        }
+
+        private void OnRegenerationMessageReceived(ConsensusPayload payload, RegenerationMessage message)
+        {
+            if (context.State.HasFlag(ConsensusState.CommitSent)) return;
+            if (context.BlockIndex > payload.BlockIndex) return;
+            // TODO: ensure we don't need to verify more here
+
+            Snapshot snap =  Blockchain.Singleton.GetSnapshot();
+            if (payload.BlockIndex > snap.Height + 1) return;
+
+            var tempContext = new ConsensusContext(wallet);
+            tempContext.Reset(message.ViewNumber, snap);
+            tempContext.Nonce = message.Nonce;
+            tempContext.TransactionHashes = message.TransactionHashes;
+            tempContext.NextConsensus = message.NextConsensus;
+            tempContext.Transactions = new Dictionary<UInt256, Transaction>
+            {
+                [message.TransactionHashes[0]] = message.MinerTransaction
+            };
+            tempContext.Timestamp = message.PrepareRequestPayloadTimestamp;
+
+            Log($"{nameof(OnRegenerationMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+
+            var regeneratedPrepareRequest = tempContext.RegenerateSignedPayload(new PrepareRequest
+                {
+                    Nonce = message.Nonce,
+                    NextConsensus = message.NextConsensus,
+                    TransactionHashes = message.TransactionHashes,
+                    MinerTransaction = message.MinerTransaction
+                }, (ushort) tempContext.PrimaryIndex,
+                message.WitnessInvocationScripts[tempContext.PrimaryIndex]);
+            if (!regeneratedPrepareRequest.Verify(snap)) return;
+
+            int validCount = 1;
+
+            var prepareResponses = new List<(ConsensusPayload, PrepareResponse)>();
+            for (int i = 0; i < context.Validators.Length; i++)
+            {
+                if (i == context.PrimaryIndex) continue;
+                var prepareResponseMsg = new PrepareResponse()
+                {
+                    PreparationHash = regeneratedPrepareRequest.Hash
+                };
+                var regeneratedPrepareResponse = tempContext.RegenerateSignedPayload(prepareResponseMsg, (ushort) i,
+                    message.WitnessInvocationScripts[i]);
+                if (regeneratedPrepareResponse.Verify(snap))
+                {
+                    prepareResponses.Add((regeneratedPrepareResponse, prepareResponseMsg));
+                    validCount++;
+                }
+                if (validCount >= context.M-1)
+                {
+                    Log("initiating regeneration");
+                    // If only lacking 1 signature (M-1 of the message signatures are valid), we can immediately jump
+                    // our view forward in to become the last committer required.
+                    context.Reset(message.ViewNumber, snap);
+                    OnPrepareRequestReceived(regeneratedPrepareRequest, message);
+
+                    foreach (var (prepareRespPayload, prepareResp) in prepareResponses)
+                    {
+                        OnPrepareResponseReceived(prepareRespPayload, prepareResp);
+                    }
+                    break;
+                }
+            }
         }
 
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
@@ -366,6 +454,8 @@ namespace Neo.Consensus
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = request });
                 context.State |= ConsensusState.RequestSent;
                 context.Preparations[context.MyIndex] = request.Hash;
+                context.PreparationWitnessInvocationScripts[context.MyIndex] = request.Witness.InvocationScript;
+
                 if (context.TransactionHashes.Length > 1)
                 {
                     foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))

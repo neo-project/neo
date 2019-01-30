@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Generic;
+using Neo.Persistence;
 
 namespace Neo.Consensus
 {
@@ -22,6 +23,7 @@ namespace Neo.Consensus
         UInt256[] TransactionHashes { get; set; }
         Dictionary<UInt256, Transaction> Transactions { get; set; }
         UInt256[] Preparations { get; set; }
+        byte[][] PreparationWitnessInvocationScripts { get; set; }
         byte[][] Commits { get; set; }
         byte[] ExpectedView { get; set; }
 
@@ -46,9 +48,11 @@ namespace Neo.Consensus
 
         ConsensusPayload MakePrepareRequest();
 
+        ConsensusPayload MakeRegenerationMessage();
+
         ConsensusPayload MakePrepareResponse(UInt256 preparation);
 
-        void Reset(byte view_number);
+        void Reset(byte view_number, Snapshot newSnapshot=null);
 
         void Fill();
 

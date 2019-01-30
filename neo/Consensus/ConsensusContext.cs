@@ -30,6 +30,7 @@ namespace Neo.Consensus
         public UInt256[] TransactionHashes { get; set; }
         public Dictionary<UInt256, Transaction> Transactions { get; set; }
         public UInt256[] Preparations { get; set; }
+        public byte[][] PreparationWitnessInvocationScripts { get; set; }
         public byte[][] Commits { get; set; }
         public byte[] ExpectedView { get; set; }
         private Snapshot snapshot;
@@ -174,6 +175,28 @@ namespace Neo.Consensus
             return payload;
         }
 
+        public ConsensusPayload RegenerateSignedPayload(ConsensusMessage message, ushort validatorIndex,
+            byte[] witnessInvocationScript)
+        {
+            message.ViewNumber = ViewNumber;
+            ConsensusPayload payload = new ConsensusPayload
+            {
+                Version = Version,
+                PrevHash = PrevHash,
+                BlockIndex = BlockIndex,
+                ValidatorIndex = validatorIndex,
+                Timestamp = Timestamp,
+                Data = message.ToArray()
+            };
+            Witness[] witnesses = new Witness[1];
+            witnesses[0].InvocationScript = witnessInvocationScript;
+            witnesses[0].VerificationScript = Contract.CreateSignatureRedeemScript(Validators[validatorIndex]);
+            ((IVerifiable) payload).Witnesses = witnesses;
+
+            // need to put signature in the payload
+            return payload;
+        }
+
         private void SignPayload(ConsensusPayload payload)
         {
             ContractParametersContext sc;
@@ -200,6 +223,15 @@ namespace Neo.Consensus
             });
         }
 
+        public ConsensusPayload MakeRegenerationMessage()
+        {
+            return MakeSignedPayload(new RegenerationMessage((byte) Validators.Length)
+            {
+                WitnessInvocationScripts = PreparationWitnessInvocationScripts,
+                PrepareRequestPayloadTimestamp = Timestamp
+            });
+        }
+
         public ConsensusPayload MakePrepareResponse(UInt256 preparation)
         {
             return MakeSignedPayload(new PrepareResponse
@@ -208,12 +240,15 @@ namespace Neo.Consensus
             });
         }
 
-        public void Reset(byte view_number)
+        public void Reset(byte view_number, Snapshot newSnapshot=null)
         {
             if (view_number == 0)
             {
                 snapshot?.Dispose();
-                snapshot = Blockchain.Singleton.GetSnapshot();
+                if (newSnapshot == null)
+                    snapshot = Blockchain.Singleton.GetSnapshot();
+                else
+                    snapshot = newSnapshot;
                 PrevHash = snapshot.CurrentBlockHash;
                 BlockIndex = snapshot.Height + 1;
                 Validators = snapshot.GetValidators();
