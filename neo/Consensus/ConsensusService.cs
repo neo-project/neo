@@ -347,6 +347,7 @@ namespace Neo.Consensus
             Log("OnStart");
             started = true;
             bool loadedState = context.LoadContextFromStore(store);
+            Console.WriteLine($"loaded state as {loadedState}");
             if (!loadedState || Blockchain.Singleton.Height >= context.BlockIndex)
             {
                 InitializeConsensus(0);
@@ -389,10 +390,12 @@ namespace Neo.Consensus
                 Log($"send prepare request: height={timer.Height} view={timer.ViewNumber}");
                 context.Fill();
                 ConsensusPayload request = context.MakePrepareRequest();
+                // TODO: fix the unit tests; would like to move this line to after line 397, but tests have an issue with line 395.
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = request });
                 context.Preparations[context.MyIndex] = request.Hash;
                 context.State |= ConsensusState.RequestSent;
                 context.WriteContextToStore(store);
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = request });
+
 
                 if (context.TransactionHashes.Length > 1)
                 {
