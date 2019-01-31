@@ -167,7 +167,7 @@ namespace Neo.Consensus
             if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
                 return;
 
-            if (message.NewViewNumber <= context.ViewNumber)
+            if (message.NewViewNumber < context.ViewNumber)
             {
                 // If we are at a higher view or already on the view being requested, we can send the regeneration msg.
                 SendRecoveryMessageIfNecessary();
