@@ -157,11 +157,8 @@ namespace Neo.Consensus
 
         private void SendRecoveryMessageIfNecessary()
         {
-            // Allow the primary or any node that has received the prepare request to regenerate other nodes trying
-            // to request change view.
-            // Note: In the future, we may want to limit how many nodes will send a regeneration msg if not the primary.
-            if (context.MyIndex == context.PrimaryIndex || context.Preparations[context.PrimaryIndex] != null )
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
+            // Note: In the future, we may want to limit how many nodes will send a regeneration msg
+            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
         }
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
@@ -315,10 +312,17 @@ namespace Neo.Consensus
             };
             tempContext.Timestamp = message.PrepareRequestPayloadTimestamp;
 
-            // We have to have the PrepareRequest payload to be able to regenerate, since we need the PreparationHash.
-            if (message.PrepareMsgWitnessInvocationScripts[tempContext.PrimaryIndex] == null) return;
-            var (regeneratedPrepareRequestPayload, regeneratedPrepareRequest) = ReverifyPrepareRequest(tempContext, message);
-            if (!regeneratedPrepareRequestPayload.Verify(snap)) return;
+            ConsensusPayload regeneratedPrepareRequestPayload = null;
+            PrepareRequest regeneratedPrepareRequest = null;
+
+            if (message.PrepareMsgWitnessInvocationScripts[tempContext.PrimaryIndex] != null)
+            {
+                // We have to have the PrepareRequest payload to be able to regenerate the PrepareResposnes, since we
+                // need the PreparationHash. However, we could still verify the change views and bump our view forward.
+                (regeneratedPrepareRequestPayload, regeneratedPrepareRequest) = ReverifyPrepareRequest(tempContext, message);
+                if (!regeneratedPrepareRequestPayload.Verify(snap))
+                    regeneratedPrepareRequestPayload = null;
+            }
 
             var prepareResponses = new List<(ConsensusPayload, PrepareResponse)>();
             var verifiedChangeViewWitnessInvocationScripts = new byte[context.Validators.Length][];
@@ -338,6 +342,7 @@ namespace Neo.Consensus
                     validChangeViewCount++;
                 }
 
+                if (regeneratedPrepareRequestPayload == null) continue;
                 if (i == context.PrimaryIndex) continue;
 
                 if (message.PrepareMsgWitnessInvocationScripts[i] == null) continue;
@@ -352,7 +357,7 @@ namespace Neo.Consensus
             // As long as we had enough valid change view messages to prove we should really move to this view number.
             if (validChangeViewCount >= context.M)
             {
-                Log("initiating regeneration");
+                Log($"regenerating view: {message.ViewNumber}");
                 context.Reset(message.ViewNumber, snap);
                 for (int i = 0; i < context.Validators.Length; i++)
                 {
@@ -362,9 +367,14 @@ namespace Neo.Consensus
                         context.ExpectedView[i] = message.ViewNumber;
                     }
                 }
-                OnPrepareRequestReceived(regeneratedPrepareRequestPayload, regeneratedPrepareRequest);
-                foreach (var (prepareRespPayload, prepareResp) in prepareResponses)
-                    OnPrepareResponseReceived(prepareRespPayload, prepareResp);
+
+                if (regeneratedPrepareRequestPayload != null)
+                {
+                    Log($"regenerating preparations: {prepareResponses.Count+1}");
+                    OnPrepareRequestReceived(regeneratedPrepareRequestPayload, regeneratedPrepareRequest);
+                    foreach (var (prepareRespPayload, prepareResp) in prepareResponses)
+                        OnPrepareResponseReceived(prepareRespPayload, prepareResp);
+                }
             }
         }
 
