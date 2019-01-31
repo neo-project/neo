@@ -344,7 +344,7 @@ namespace Neo.Consensus
             started = true;
             bool loadedState = context.LoadContextFromStore(store);
             Console.WriteLine($"loaded state as {loadedState}");
-            if (!loadedState || Blockchain.Singleton.Height >= context.BlockIndex)
+            if (!loadedState || Blockchain.Singleton.Height + 1 != context.BlockIndex)
             {
                 InitializeConsensus(0);
                 return;
