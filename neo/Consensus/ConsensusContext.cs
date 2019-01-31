@@ -306,18 +306,18 @@ namespace Neo.Consensus
                     writer.Write(UInt256.Zero);
                 else
                     writer.Write(hash);
-            writer.WriteVarInt(Commits.Length);
-            foreach (byte[] commit in Commits)
-                if (commit is null)
-                    writer.WriteVarInt(0);
-                else
-                    writer.WriteVarBytes(commit);
             writer.WriteVarInt(PreparationWitnessInvocationScripts.Length);
             foreach (byte[] witnessInvocationScript in PreparationWitnessInvocationScripts)
                 if (witnessInvocationScript is null)
                     writer.WriteVarInt(0);
                 else
                     writer.WriteVarBytes(witnessInvocationScript);
+            writer.WriteVarInt(Commits.Length);
+            foreach (byte[] commit in Commits)
+                if (commit is null)
+                    writer.WriteVarInt(0);
+                else
+                    writer.WriteVarBytes(commit);
             writer.WriteVarBytes(ExpectedView);
         }
 

@@ -208,6 +208,15 @@ namespace Neo.UnitTests
             consensusContext.Transactions = txs.ToDictionary(p => p.Hash);
 
             consensusContext.Preparations = new [] {null, null, null, consensusContext.PrevHash, null, null, null };
+            consensusContext.PreparationWitnessInvocationScripts = new byte[consensusContext.Validators.Length][];
+            consensusContext.PreparationWitnessInvocationScripts[0] = new [] {(byte)'t', (byte)'e'};
+            consensusContext.PreparationWitnessInvocationScripts[1] = new [] {(byte)'s', (byte)'t'};
+            consensusContext.PreparationWitnessInvocationScripts[2] = null;
+            consensusContext.PreparationWitnessInvocationScripts[3] = new [] {(byte)'1', (byte)'2'};
+            consensusContext.PreparationWitnessInvocationScripts[4] = null;
+            consensusContext.PreparationWitnessInvocationScripts[5] = null;
+            consensusContext.PreparationWitnessInvocationScripts[6] = new [] {(byte)'3', (byte)'!'};
+
             consensusContext.Commits = new byte[consensusContext.Validators.Length][];
             using (SHA256 sha256 = SHA256.Create())
             {
@@ -247,6 +256,7 @@ namespace Neo.UnitTests
             copiedContext.TransactionHashes.ShouldAllBeEquivalentTo(consensusContext.TransactionHashes);
             copiedContext.Transactions.ShouldAllBeEquivalentTo(consensusContext.Transactions);
             copiedContext.Transactions.Values.ShouldAllBeEquivalentTo(consensusContext.Transactions.Values);
+            copiedContext.PreparationWitnessInvocationScripts.ShouldAllBeEquivalentTo(consensusContext.PreparationWitnessInvocationScripts);
             copiedContext.Preparations.ShouldAllBeEquivalentTo(consensusContext.Preparations);
             copiedContext.Commits.ShouldAllBeEquivalentTo(consensusContext.Commits);
             copiedContext.ExpectedView.ShouldAllBeEquivalentTo(consensusContext.ExpectedView);
