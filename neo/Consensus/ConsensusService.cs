@@ -225,7 +225,7 @@ namespace Neo.Consensus
             InitializeConsensus(0);
         }
 
-        private void ObtainTransactionsForConsensus(Transaction minerTransaction)
+        private void ObtainTransactionsForConsensus()
         {
             Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
@@ -245,7 +245,6 @@ namespace Neo.Consensus
             foreach (Transaction tx in unverified)
                 if (!AddTransaction(tx, true))
                     return;
-            if (!AddTransaction(minerTransaction, true)) return;
             if (context.Transactions.Count < context.TransactionHashes.Length)
             {
                 UInt256[] hashes = context.TransactionHashes.Where(i => !context.Transactions.ContainsKey(i)).ToArray();
@@ -289,9 +288,11 @@ namespace Neo.Consensus
                     if (!Crypto.Default.VerifySignature(hashData, context.Commits[i], context.Validators[i].EncodePoint(false)))
                         context.Commits[i] = null;
 
+            if (!AddTransaction(message.MinerTransaction, true)) return;
+
             // Save our view so if we crash and come back we will be on the last view that received the PrepareRequest
             context.WriteContextToStore(store);
-            ObtainTransactionsForConsensus(message.MinerTransaction);
+            ObtainTransactionsForConsensus();
         }
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
@@ -360,7 +361,9 @@ namespace Neo.Consensus
                 }
                 else if (context.State.HasFlag(ConsensusState.RequestReceived))
                 {
-                    ObtainTransactionsForConsensus(context.Transactions[context.TransactionHashes[0]]);
+                    var minerTransaction = context.Transactions[context.TransactionHashes[0]];
+                    if (AddTransaction(minerTransaction, true))
+                        ObtainTransactionsForConsensus();
                 }
                 // TODO: Request change view to the current view in order to receive regeneration
 
