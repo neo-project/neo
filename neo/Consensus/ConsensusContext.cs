@@ -106,6 +106,12 @@ namespace Neo.Consensus
                 if (Commits[i].Length == 0)
                     Commits[i] = null;
             }
+            for (int i = 0; i < PreparationWitnessInvocationScripts.Length; i++)
+            {
+                PreparationWitnessInvocationScripts[i] = reader.ReadVarBytes();
+                if (PreparationWitnessInvocationScripts[i].Length == 0)
+                    PreparationWitnessInvocationScripts[i] = null;
+            }
             ExpectedView = reader.ReadVarBytes();
         }
 
@@ -271,6 +277,7 @@ namespace Neo.Consensus
             PrimaryIndex = GetPrimaryIndex(view_number);
             TransactionHashes = null;
             Preparations = new UInt256[Validators.Length];
+            PreparationWitnessInvocationScripts = new byte[Validators.Length][];
             Commits = new byte[Validators.Length][];
             if (MyIndex >= 0)
                 ExpectedView[MyIndex] = view_number;
@@ -304,6 +311,11 @@ namespace Neo.Consensus
                     writer.WriteVarInt(0);
                 else
                     writer.WriteVarBytes(commit);
+            foreach (byte[] witnessInvocationScript in PreparationWitnessInvocationScripts)
+                if (witnessInvocationScript is null)
+                    writer.WriteVarInt(0);
+                else
+                    writer.WriteVarBytes(witnessInvocationScript);
             writer.WriteVarBytes(ExpectedView);
         }
 
