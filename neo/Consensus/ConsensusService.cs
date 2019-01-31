@@ -162,9 +162,9 @@ namespace Neo.Consensus
 
             if (message.NewViewNumber < context.ViewNumber)
             {
-                // If we are at a higher view or already on the view being requested, we can send the regeneration msg.
-                // Note: In the future, we may want to limit how many nodes will send a regeneration msg
+                // If we are at a higher view, we can send the regeneration msg.
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
+                // Note: In the future, we may want to limit how many nodes will send a regeneration msg
                 return;
             }
 
