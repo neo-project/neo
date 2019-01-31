@@ -49,7 +49,7 @@ namespace Neo.Consensus
 
         ConsensusPayload MakePrepareRequest();
 
-        ConsensusPayload MakeRegenerationMessage();
+        ConsensusPayload MakeRecoveryMessage();
 
         ConsensusPayload MakePrepareResponse(UInt256 preparation);
 

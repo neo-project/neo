@@ -153,13 +153,13 @@ namespace Neo.Consensus
             Plugin.Log(nameof(ConsensusService), level, message);
         }
 
-        private void SendRegenerationMessageIfNecessary()
+        private void SendRecoveryMessageIfNecessary()
         {
             // Allow the primary or any node that has received the prepare request to regenerate other nodes trying
             // to request change view.
             // Note: In the future, we may want to limit how many nodes will send a regeneration msg if not the primary.
             if (context.MyIndex == context.PrimaryIndex || context.Preparations[context.PrimaryIndex] != null )
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRegenerationMessage() });
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
         }
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
@@ -170,7 +170,7 @@ namespace Neo.Consensus
             if (message.NewViewNumber <= context.ViewNumber)
             {
                 // If we are at a higher view or already on the view being requested, we can send the regeneration msg.
-                SendRegenerationMessageIfNecessary();
+                SendRecoveryMessageIfNecessary();
                 return;
             }
 
@@ -230,8 +230,8 @@ namespace Neo.Consensus
                 case ChangeView view:
                     OnChangeViewReceived(payload, view);
                     break;
-                case RegenerationMessage regeneration:
-                    OnRegenerationMessageReceived(payload, regeneration);
+                case RecoveryMessage regeneration:
+                    OnRecoveryMessageReceived(payload, regeneration);
                     break;
                 case PrepareRequest request:
                     OnPrepareRequestReceived(payload, request);
@@ -252,7 +252,7 @@ namespace Neo.Consensus
             InitializeConsensus(0);
         }
 
-        private (ConsensusPayload, PrepareRequest) ReverifyPrepareRequest(ConsensusContext consensusContext, RegenerationMessage message)
+        private (ConsensusPayload, PrepareRequest) ReverifyPrepareRequest(ConsensusContext consensusContext, RecoveryMessage message)
         {
             PrepareRequest prepareRequest = new PrepareRequest
             {
@@ -265,7 +265,7 @@ namespace Neo.Consensus
                 message.PrepareMsgWitnessInvocationScripts[consensusContext.PrimaryIndex]), prepareRequest);
         }
 
-        private void OnRegenerationMessageReceived(ConsensusPayload payload, RegenerationMessage message)
+        private void OnRecoveryMessageReceived(ConsensusPayload payload, RecoveryMessage message)
         {
             if (context.State.HasFlag(ConsensusState.CommitSent)) return;
             if (context.BlockIndex > payload.BlockIndex) return;
@@ -273,7 +273,7 @@ namespace Neo.Consensus
             Snapshot snap =  Blockchain.Singleton.GetSnapshot();
             if (payload.BlockIndex > snap.Height + 1) return;
 
-            Log($"{nameof(OnRegenerationMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+            Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
             if (context.ViewNumber == message.ViewNumber)
             {

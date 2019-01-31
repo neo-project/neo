@@ -4,13 +4,13 @@ using Neo.Ledger;
 
 namespace Neo.Consensus
 {
-    internal class RegenerationMessage : PrepareRequest
+    internal class RecoveryMessage : PrepareRequest
     {
         public byte[][] PrepareMsgWitnessInvocationScripts;
         public uint PrepareRequestPayloadTimestamp;
         public byte[][] ChangeViewWitnessInvocationScripts;
 
-        public RegenerationMessage() : base(ConsensusMessageType.RegenerationMessage)
+        public RecoveryMessage() : base(ConsensusMessageType.RecoveryMessage)
         {
         }
 

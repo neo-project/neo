@@ -238,9 +238,9 @@ namespace Neo.Consensus
             });
         }
 
-        public ConsensusPayload MakeRegenerationMessage()
+        public ConsensusPayload MakeRecoveryMessage()
         {
-            return MakeSignedPayload(new RegenerationMessage()
+            return MakeSignedPayload(new RecoveryMessage()
             {
                 PrepareMsgWitnessInvocationScripts = PreparationWitnessInvocationScripts,
                 ChangeViewWitnessInvocationScripts = ChangeViewWitnessInvocationScripts,
