@@ -155,8 +155,10 @@ namespace Neo.Consensus
 
         private void SendRegenerationMessageIfNecessary()
         {
-            // The primary can regenerate other nodes trying to request change view.
-            if (context.PrimaryIndex == context.MyIndex)
+            // Allow the primary or any node that has received the prepare request to regenerate other nodes trying
+            // to request change view.
+            // Note: In the future, we may want to limit how many nodes will send a regeneration msg if not the primary.
+            if (context.MyIndex == context.PrimaryIndex || context.Preparations[context.PrimaryIndex] != null )
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRegenerationMessage() });
         }
 
