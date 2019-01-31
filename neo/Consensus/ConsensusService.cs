@@ -65,8 +65,6 @@ namespace Neo.Consensus
                     Log($"send prepare response");
                     context.State |= ConsensusState.ResponseSent;
                     context.Preparations[context.MyIndex] = context.Preparations[context.PrimaryIndex];
-                    // For performance reasons, we won't write the context again here.
-                    // context.WriteContextToStore(store);
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse(context.Preparations[context.MyIndex]) });
                     CheckPreparations();
                 }
@@ -106,10 +104,6 @@ namespace Neo.Consensus
             if (context.ExpectedView.Count(p => p == view_number) >= context.M)
             {
                 InitializeConsensus(view_number);
-                // TODO: Can save here also, once we have the regeneration message, and if we restart without
-                // TODO: ConsensusState.RequestSent or ConsensusState.ResponseSent set then we can send change view
-                // TODO: again to potentially receive the regeneration message.
-                // context.WriteContextToStore(store);
             }
         }
 
@@ -364,21 +358,11 @@ namespace Neo.Consensus
                     // Note: The code that starts consensus should wait till some peers are connected to start consensus.
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
                 }
-                /*
-                // Note: We don't write the state out at ResponseSent in order to reduce writes.
-                else if (context.State.HasFlag(ConsensusState.ResponseSent))
-                {
-                    localNode.Tell(new LocalNode.SendDirectly
-                    {
-                        Inventory = context.MakePrepareResponse(context.Preparations[context.MyIndex])
-                    });
-                }
-                */
                 else if (context.State.HasFlag(ConsensusState.RequestReceived))
                 {
                     ObtainTransactionsForConsensus(context.Transactions[context.TransactionHashes[0]]);
                 }
-                // TODO: else Request change view to the current view in order to receive regeneration
+                // TODO: Request change view to the current view in order to receive regeneration
 
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ViewNumber + 1)));
             }
