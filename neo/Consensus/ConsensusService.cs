@@ -13,7 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Neo.SmartContract;
 
 namespace Neo.Consensus
 {
@@ -340,6 +339,7 @@ namespace Neo.Consensus
                     if (!context.Preparations[i].Equals(payload.Hash))
                         context.Preparations[i] = null;
             context.Preparations[payload.ValidatorIndex] = payload.Hash;
+            context.PreparationWitnessInvocationScripts[payload.ValidatorIndex] = payload.Witness.InvocationScript;
             byte[] hashData = context.MakeHeader().GetHashData();
             for (int i = 0; i < context.Commits.Length; i++)
                 if (context.Commits[i] != null)
@@ -384,6 +384,7 @@ namespace Neo.Consensus
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             if (context.State.HasFlag(ConsensusState.CommitSent)) return;
             context.Preparations[payload.ValidatorIndex] = message.PreparationHash;
+            context.PreparationWitnessInvocationScripts[payload.ValidatorIndex] = payload.Witness.InvocationScript;
             if (context.State.HasFlag(ConsensusState.RequestSent) || context.State.HasFlag(ConsensusState.RequestReceived))
                 CheckPreparations();
         }
