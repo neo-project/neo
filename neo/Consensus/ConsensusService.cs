@@ -488,7 +488,11 @@ namespace Neo.Consensus
                 }
             }
             if (context.State.HasFlag(ConsensusState.CommitSent) && context.BlockIndex == Blockchain.Singleton.Height + 1)
+            {
                 CheckPreparations();
+                // Set timer, so we will resend the commit in case of a networking issue
+                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock));
+            }
             else
                 InitializeConsensus(0);
         }
@@ -517,8 +521,18 @@ namespace Neo.Consensus
             }
             else if ((context.State.HasFlag(ConsensusState.Primary) && context.State.HasFlag(ConsensusState.RequestSent)) || context.State.HasFlag(ConsensusState.Backup))
             {
-                if (!context.State.HasFlag(ConsensusState.CommitSent))
+                if (context.State.HasFlag(ConsensusState.CommitSent))
+                {
+                    // Re-send commit periodically in case of a network issue.
+                    ConsensusPayload payload = context.MakeCommit();
+                    Log($"resend commit");
+                    localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
+                    ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << 1));
+                }
+                else
+                {
                     RequestChangeView();
+                }
             }
         }
 
