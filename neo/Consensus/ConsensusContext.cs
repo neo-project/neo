@@ -99,18 +99,19 @@ namespace Neo.Consensus
             for (int i = 0; i < Preparations.Length; i++)
                 if (Preparations[i].Equals(UInt256.Zero))
                     Preparations[i] = null;
+            PreparationWitnessInvocationScripts = new byte[reader.ReadVarInt()][];
+            for (int i = 0; i < PreparationWitnessInvocationScripts.Length; i++)
+            {
+                PreparationWitnessInvocationScripts[i] = reader.ReadVarBytes();
+                if (PreparationWitnessInvocationScripts[i].Length == 0)
+                    PreparationWitnessInvocationScripts[i] = null;
+            }
             Commits = new byte[reader.ReadVarInt()][];
             for (int i = 0; i < Commits.Length; i++)
             {
                 Commits[i] = reader.ReadVarBytes();
                 if (Commits[i].Length == 0)
                     Commits[i] = null;
-            }
-            for (int i = 0; i < PreparationWitnessInvocationScripts.Length; i++)
-            {
-                PreparationWitnessInvocationScripts[i] = reader.ReadVarBytes();
-                if (PreparationWitnessInvocationScripts[i].Length == 0)
-                    PreparationWitnessInvocationScripts[i] = null;
             }
             ExpectedView = reader.ReadVarBytes();
         }
@@ -311,6 +312,7 @@ namespace Neo.Consensus
                     writer.WriteVarInt(0);
                 else
                     writer.WriteVarBytes(commit);
+            writer.WriteVarInt(PreparationWitnessInvocationScripts.Length);
             foreach (byte[] witnessInvocationScript in PreparationWitnessInvocationScripts)
                 if (witnessInvocationScript is null)
                     writer.WriteVarInt(0);
