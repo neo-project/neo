@@ -157,23 +157,22 @@ namespace Neo.Consensus
         {
             // The primary can regenerate other nodes trying to request change view.
             if (context.PrimaryIndex == context.MyIndex)
-            {
-                // As long as we are lacking one preparation or less, it is safe to regenerate.
-                if (context.Preparations.Count(p => p != null) >= context.M - 1)
-                {
-                    // Send a regeneration message
-                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRegenerationMessage() });
-                }
-            }
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRegenerationMessage() });
         }
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
-            if (context.State.HasFlag(ConsensusState.CommitSent) || message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
+            if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
+                return;
+
+            if (message.NewViewNumber < context.ViewNumber)
             {
                 SendRegenerationMessageIfNecessary();
                 return;
             }
+
+            if (context.State.HasFlag(ConsensusState.CommitSent))
+                return;
 
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
             context.ExpectedView[payload.ValidatorIndex] = message.NewViewNumber;
