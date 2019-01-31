@@ -487,7 +487,7 @@ namespace Neo.Consensus
                     context.Deserialize(reader);
                 }
             }
-            if (context.BlockIndex == Blockchain.Singleton.Height + 1 && context.State.HasFlag(ConsensusState.CommitSent))
+            if (context.State.HasFlag(ConsensusState.CommitSent) && context.BlockIndex == Blockchain.Singleton.Height + 1)
                 CheckPreparations();
             else
                 InitializeConsensus(0);
