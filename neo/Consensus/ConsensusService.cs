@@ -155,12 +155,6 @@ namespace Neo.Consensus
             Plugin.Log(nameof(ConsensusService), level, message);
         }
 
-        private void SendRecoveryMessageIfNecessary()
-        {
-            // Note: In the future, we may want to limit how many nodes will send a regeneration msg
-            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
-        }
-
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
             if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
@@ -169,7 +163,8 @@ namespace Neo.Consensus
             if (message.NewViewNumber < context.ViewNumber)
             {
                 // If we are at a higher view or already on the view being requested, we can send the regeneration msg.
-                SendRecoveryMessageIfNecessary();
+                // Note: In the future, we may want to limit how many nodes will send a regeneration msg
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
                 return;
             }
 
