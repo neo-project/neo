@@ -296,7 +296,7 @@ namespace Neo.Consensus
                     var regeneratedPrepareResponse = ((ConsensusContext) context).RegenerateSignedPayload(
                         prepareResponseMsg, (ushort) i, message.PrepareMsgWitnessInvocationScripts[i]);
                     if (regeneratedPrepareResponse.Verify(snap))
-                        OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
+                        OnPrepareResponseReceived(prepareRequestPayload, prepareResponseMsg);
                 }
                 return;
             }
