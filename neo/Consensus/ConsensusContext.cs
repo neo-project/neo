@@ -268,10 +268,7 @@ namespace Neo.Consensus
             if (view_number == 0)
             {
                 snapshot?.Dispose();
-                if (newSnapshot == null)
-                    snapshot = Blockchain.Singleton.GetSnapshot();
-                else
-                    snapshot = newSnapshot;
+                snapshot = newSnapshot ?? Blockchain.Singleton.GetSnapshot();
                 PrevHash = snapshot.CurrentBlockHash;
                 BlockIndex = snapshot.Height + 1;
                 Validators = snapshot.GetValidators();
