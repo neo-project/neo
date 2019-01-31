@@ -281,17 +281,15 @@ namespace Neo.Consensus
                 if (message.PrepareMsgWitnessInvocationScripts[context.PrimaryIndex] == null) return;
                 var (prepareRequestPayload, prepareRequest) = ReverifyPrepareRequest((ConsensusContext) context, message);
                 if (!prepareRequestPayload.Verify(snap)) return;
+                OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
 
                 for (int i = 0; i < context.Validators.Length; i++)
                 {
+                    // If we are missing this preparation.
                     if (context.Preparations[i] != null) continue;
+                    if (i == context.PrimaryIndex) continue;
+                    // If the recovery message has this preparations
                     if (message.PrepareMsgWitnessInvocationScripts[i] == null) continue;
-                    if (i == context.PrimaryIndex)
-                    {
-                        OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
-                        continue;
-                    }
-
                     var prepareResponseMsg = new PrepareResponse { PreparationHash = prepareRequestPayload.Hash };
                     var regeneratedPrepareResponse = ((ConsensusContext) context).RegenerateSignedPayload(
                         prepareResponseMsg, (ushort) i, message.PrepareMsgWitnessInvocationScripts[i]);
