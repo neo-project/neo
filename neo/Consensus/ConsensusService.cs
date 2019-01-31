@@ -121,6 +121,8 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.CommitSent;
                 store.Put(ContextSerializationPrefix, new byte[0], context.ToArray());
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
+                // Set timer, so we will resend the commit in case of a networking issue
+                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock));
                 CheckCommits();
             }
         }
@@ -490,8 +492,6 @@ namespace Neo.Consensus
             if (context.State.HasFlag(ConsensusState.CommitSent) && context.BlockIndex == Blockchain.Singleton.Height + 1)
             {
                 CheckPreparations();
-                // Set timer, so we will resend the commit in case of a networking issue
-                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock));
             }
             else
                 InitializeConsensus(0);
