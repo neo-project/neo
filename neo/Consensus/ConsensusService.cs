@@ -281,6 +281,7 @@ namespace Neo.Consensus
             if (!regeneratedPrepareRequest.Verify(snap)) return;
 
             var prepareResponses = new List<(ConsensusPayload, PrepareResponse)>();
+            var verifiedChangeViewWitnessInvocationScripts = new byte[context.Validators.Length][];
             var changeViewMsg = new ChangeView
             {
                 NewViewNumber = message.ViewNumber
@@ -292,7 +293,10 @@ namespace Neo.Consensus
                 var regeneratedChangeView = tempContext.RegenerateSignedPayload(changeViewMsg, (ushort) i,
                     message.ChangeViewWitnessInvocationScripts[i]);
                 if (regeneratedChangeView.Verify(snap))
+                {
+                    verifiedChangeViewWitnessInvocationScripts[i] = message.ChangeViewWitnessInvocationScripts[i];
                     validChangeViewCount++;
+                }
 
                 if (i == context.PrimaryIndex) continue;
                 if (message.PrepareMsgWitnessInvocationScripts[i] == null) continue;
@@ -312,6 +316,14 @@ namespace Neo.Consensus
             {
                 Log("initiating regeneration");
                 context.Reset(message.ViewNumber, snap);
+                for (int i = 0; i < context.Validators.Length; i++)
+                {
+                    if (verifiedChangeViewWitnessInvocationScripts[i] != null)
+                    {
+                        context.ChangeViewWitnessInvocationScripts[i] = verifiedChangeViewWitnessInvocationScripts[i];
+                        context.ExpectedView[i] = message.ViewNumber;
+                    }
+                }
                 OnPrepareRequestReceived(regeneratedPrepareRequest, message);
                 foreach (var (prepareRespPayload, prepareResp) in prepareResponses)
                     OnPrepareResponseReceived(prepareRespPayload, prepareResp);
