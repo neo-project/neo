@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.AspNetCore.Connections.Features;
 
 namespace Neo.Consensus
 {
@@ -167,8 +168,9 @@ namespace Neo.Consensus
             if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
                 return;
 
-            if (message.NewViewNumber < context.ViewNumber)
+            if (message.NewViewNumber <= context.ViewNumber)
             {
+                // If we are at a higher view or already on the view being requested, we can send the regeneration msg.
                 SendRegenerationMessageIfNecessary();
                 return;
             }
@@ -251,6 +253,19 @@ namespace Neo.Consensus
             InitializeConsensus(0);
         }
 
+        private (ConsensusPayload, PrepareRequest) ReverifyPrepareRequest(ConsensusContext consensusContext, RegenerationMessage message)
+        {
+            PrepareRequest prepareRequest = new PrepareRequest
+            {
+                Nonce = message.Nonce,
+                NextConsensus = message.NextConsensus,
+                TransactionHashes = message.TransactionHashes,
+                MinerTransaction = message.MinerTransaction
+            };
+            return (consensusContext.RegenerateSignedPayload(prepareRequest, (ushort) consensusContext.PrimaryIndex,
+                message.PrepareMsgWitnessInvocationScripts[consensusContext.PrimaryIndex]), prepareRequest);
+        }
+
         private void OnRegenerationMessageReceived(ConsensusPayload payload, RegenerationMessage message)
         {
             if (context.State.HasFlag(ConsensusState.CommitSent)) return;
@@ -258,6 +273,35 @@ namespace Neo.Consensus
             if (context.ViewNumber > message.ViewNumber) return;
             Snapshot snap =  Blockchain.Singleton.GetSnapshot();
             if (payload.BlockIndex > snap.Height + 1) return;
+
+            Log($"{nameof(OnRegenerationMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+
+            if (context.ViewNumber == message.ViewNumber)
+            {
+                // if we are already on the right view number the only thing we might want to do is accept more
+                // Preparation messages if they can be reconstructed from the regeneration message.
+                if (message.PrepareMsgWitnessInvocationScripts[context.PrimaryIndex] == null) return;
+                var (prepareRequestPayload, prepareRequest) = ReverifyPrepareRequest((ConsensusContext) context, message);
+                if (!prepareRequestPayload.Verify(snap)) return;
+
+                for (int i = 0; i < context.Validators.Length; i++)
+                {
+                    if (context.Preparations[i] != null) continue;
+                    if (message.PrepareMsgWitnessInvocationScripts[i] == null) continue;
+                    if (i == context.PrimaryIndex)
+                    {
+                        OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
+                        continue;
+                    }
+
+                    var prepareResponseMsg = new PrepareResponse { PreparationHash = prepareRequestPayload.Hash };
+                    var regeneratedPrepareResponse = ((ConsensusContext) context).RegenerateSignedPayload(
+                        prepareResponseMsg, (ushort) i, message.PrepareMsgWitnessInvocationScripts[i]);
+                    if (regeneratedPrepareResponse.Verify(snap))
+                        OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
+                }
+                return;
+            }
 
             var tempContext = new ConsensusContext(wallet);
             tempContext.Reset(message.ViewNumber, snap);
@@ -270,17 +314,10 @@ namespace Neo.Consensus
             };
             tempContext.Timestamp = message.PrepareRequestPayloadTimestamp;
 
-            Log($"{nameof(OnRegenerationMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
-
-            var regeneratedPrepareRequest = tempContext.RegenerateSignedPayload(new PrepareRequest
-                {
-                    Nonce = message.Nonce,
-                    NextConsensus = message.NextConsensus,
-                    TransactionHashes = message.TransactionHashes,
-                    MinerTransaction = message.MinerTransaction
-                }, (ushort) tempContext.PrimaryIndex,
-                message.PrepareMsgWitnessInvocationScripts[tempContext.PrimaryIndex]);
-            if (!regeneratedPrepareRequest.Verify(snap)) return;
+            // We have to have the PrepareRequest payload to be able to regenerate, since we need the PreparationHash.
+            if (message.PrepareMsgWitnessInvocationScripts[tempContext.PrimaryIndex] == null) return;
+            var (regeneratedPrepareRequestPayload, regeneratedPrepareRequest) = ReverifyPrepareRequest(tempContext, message);
+            if (!regeneratedPrepareRequestPayload.Verify(snap)) return;
 
             var prepareResponses = new List<(ConsensusPayload, PrepareResponse)>();
             var verifiedChangeViewWitnessInvocationScripts = new byte[context.Validators.Length][];
@@ -301,12 +338,10 @@ namespace Neo.Consensus
                 }
 
                 if (i == context.PrimaryIndex) continue;
+
                 if (message.PrepareMsgWitnessInvocationScripts[i] == null) continue;
 
-                var prepareResponseMsg = new PrepareResponse()
-                {
-                    PreparationHash = regeneratedPrepareRequest.Hash
-                };
+                var prepareResponseMsg = new PrepareResponse { PreparationHash = regeneratedPrepareRequestPayload.Hash };
                 var regeneratedPrepareResponse = tempContext.RegenerateSignedPayload(prepareResponseMsg, (ushort) i,
                     message.PrepareMsgWitnessInvocationScripts[i]);
                 if (regeneratedPrepareResponse.Verify(snap))
@@ -326,7 +361,7 @@ namespace Neo.Consensus
                         context.ExpectedView[i] = message.ViewNumber;
                     }
                 }
-                OnPrepareRequestReceived(regeneratedPrepareRequest, message);
+                OnPrepareRequestReceived(regeneratedPrepareRequestPayload, regeneratedPrepareRequest);
                 foreach (var (prepareRespPayload, prepareResp) in prepareResponses)
                     OnPrepareResponseReceived(prepareRespPayload, prepareResp);
             }
