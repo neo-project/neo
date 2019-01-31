@@ -244,6 +244,10 @@ namespace Neo.Consensus
             {
                 PrepareMsgWitnessInvocationScripts = PreparationWitnessInvocationScripts,
                 ChangeViewWitnessInvocationScripts = ChangeViewWitnessInvocationScripts,
+                Nonce = Nonce,
+                NextConsensus = NextConsensus,
+                TransactionHashes = TransactionHashes,
+                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
                 PrepareRequestPayloadTimestamp = Timestamp
             });
         }
