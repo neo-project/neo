@@ -204,8 +204,11 @@ namespace Neo.Consensus
                 Data = message.ToArray()
             };
             Witness[] witnesses = new Witness[1];
-            witnesses[0].InvocationScript = witnessInvocationScript;
-            witnesses[0].VerificationScript = Contract.CreateSignatureRedeemScript(Validators[validatorIndex]);
+            witnesses[0] = new Witness
+            {
+                InvocationScript = witnessInvocationScript,
+                VerificationScript = Contract.CreateSignatureRedeemScript(Validators[validatorIndex])
+            };
             ((IVerifiable) payload).Witnesses = witnesses;
 
             // need to put signature in the payload
