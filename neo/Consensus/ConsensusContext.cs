@@ -33,6 +33,7 @@ namespace Neo.Consensus
         public byte[][] PreparationWitnessInvocationScripts { get; set; }
         public byte[][] Commits { get; set; }
         public byte[] ExpectedView { get; set; }
+        public byte[][] ChangeViewWitnessInvocationScripts { get; set; }
         private Snapshot snapshot;
         private KeyPair keyPair;
         private readonly Wallet wallet;
@@ -114,6 +115,13 @@ namespace Neo.Consensus
                     Commits[i] = null;
             }
             ExpectedView = reader.ReadVarBytes();
+            ChangeViewWitnessInvocationScripts = new byte[reader.ReadVarInt()][];
+            for (int i = 0; i < ChangeViewWitnessInvocationScripts.Length; i++)
+            {
+                ChangeViewWitnessInvocationScripts[i] = reader.ReadVarBytes();
+                if (ChangeViewWitnessInvocationScripts[i].Length == 0)
+                    ChangeViewWitnessInvocationScripts[i] = null;
+            }
         }
 
         public void Dispose()
@@ -232,9 +240,10 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeRegenerationMessage()
         {
-            return MakeSignedPayload(new RegenerationMessage((byte) Validators.Length)
+            return MakeSignedPayload(new RegenerationMessage()
             {
-                WitnessInvocationScripts = PreparationWitnessInvocationScripts,
+                PrepareMsgWitnessInvocationScripts = PreparationWitnessInvocationScripts,
+                ChangeViewWitnessInvocationScripts = ChangeViewWitnessInvocationScripts,
                 PrepareRequestPayloadTimestamp = Timestamp
             });
         }
@@ -261,6 +270,7 @@ namespace Neo.Consensus
                 Validators = snapshot.GetValidators();
                 MyIndex = -1;
                 ExpectedView = new byte[Validators.Length];
+                ChangeViewWitnessInvocationScripts = new byte[Validators.Length][];
                 keyPair = null;
                 for (int i = 0; i < Validators.Length; i++)
                 {
@@ -319,6 +329,12 @@ namespace Neo.Consensus
                 else
                     writer.WriteVarBytes(commit);
             writer.WriteVarBytes(ExpectedView);
+            writer.WriteVarInt(ChangeViewWitnessInvocationScripts.Length);
+            foreach (byte[] cvWitnessInvocationScript in ChangeViewWitnessInvocationScripts)
+                if (cvWitnessInvocationScript is null)
+                    writer.WriteVarInt(0);
+                else
+                    writer.WriteVarBytes(cvWitnessInvocationScript);
         }
 
         public void Fill()

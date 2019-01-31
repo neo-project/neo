@@ -26,6 +26,7 @@ namespace Neo.Consensus
         byte[][] PreparationWitnessInvocationScripts { get; set; }
         byte[][] Commits { get; set; }
         byte[] ExpectedView { get; set; }
+        byte[][] ChangeViewWitnessInvocationScripts { get; set; }
 
         int M { get; }
 

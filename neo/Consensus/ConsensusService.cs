@@ -177,6 +177,7 @@ namespace Neo.Consensus
 
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
             context.ExpectedView[payload.ValidatorIndex] = message.NewViewNumber;
+            context.ChangeViewWitnessInvocationScripts[payload.ValidatorIndex] = payload.Witness.InvocationScript;
             CheckExpectedView(message.NewViewNumber);
         }
 
@@ -253,8 +254,7 @@ namespace Neo.Consensus
         {
             if (context.State.HasFlag(ConsensusState.CommitSent)) return;
             if (context.BlockIndex > payload.BlockIndex) return;
-            // TODO: ensure we don't need to verify more here
-
+            if (context.ViewNumber > message.ViewNumber) return;
             Snapshot snap =  Blockchain.Singleton.GetSnapshot();
             if (payload.BlockIndex > snap.Height + 1) return;
 
@@ -278,37 +278,44 @@ namespace Neo.Consensus
                     TransactionHashes = message.TransactionHashes,
                     MinerTransaction = message.MinerTransaction
                 }, (ushort) tempContext.PrimaryIndex,
-                message.WitnessInvocationScripts[tempContext.PrimaryIndex]);
+                message.PrepareMsgWitnessInvocationScripts[tempContext.PrimaryIndex]);
             if (!regeneratedPrepareRequest.Verify(snap)) return;
 
-            int validCount = 1;
-
             var prepareResponses = new List<(ConsensusPayload, PrepareResponse)>();
+            var changeViewMsg = new ChangeView
+            {
+                NewViewNumber = message.ViewNumber
+            };
+            int validChangeViewCount = 0;
             for (int i = 0; i < context.Validators.Length; i++)
             {
+                // Regenerate the ChangeView message
+                var regeneratedChangeView = tempContext.RegenerateSignedPayload(changeViewMsg, (ushort) i,
+                    message.ChangeViewWitnessInvocationScripts[i]);
+                if (regeneratedChangeView.Verify(snap))
+                    validChangeViewCount++;
+
                 if (i == context.PrimaryIndex) continue;
+                if (message.PrepareMsgWitnessInvocationScripts[i] == null) continue;
+
                 var prepareResponseMsg = new PrepareResponse()
                 {
                     PreparationHash = regeneratedPrepareRequest.Hash
                 };
                 var regeneratedPrepareResponse = tempContext.RegenerateSignedPayload(prepareResponseMsg, (ushort) i,
-                    message.WitnessInvocationScripts[i]);
+                    message.PrepareMsgWitnessInvocationScripts[i]);
                 if (regeneratedPrepareResponse.Verify(snap))
-                {
                     prepareResponses.Add((regeneratedPrepareResponse, prepareResponseMsg));
-                    validCount++;
-                }
-                if (validCount >= context.M-1)
-                {
-                    // If only lacking 1 signature (M-1 of the message signatures are valid), then regenerate.
-                    Log("initiating regeneration");
-                    context.Reset(message.ViewNumber, snap);
-                    OnPrepareRequestReceived(regeneratedPrepareRequest, message);
-                    foreach (var (prepareRespPayload, prepareResp) in prepareResponses)
-                        OnPrepareResponseReceived(prepareRespPayload, prepareResp);
+            }
 
-                    break;
-                }
+            // As long as we had enough valid change view messages to prove we should really move to this view number.
+            if (validChangeViewCount >= context.M)
+            {
+                Log("initiating regeneration");
+                context.Reset(message.ViewNumber, snap);
+                OnPrepareRequestReceived(regeneratedPrepareRequest, message);
+                foreach (var (prepareRespPayload, prepareResp) in prepareResponses)
+                    OnPrepareResponseReceived(prepareRespPayload, prepareResp);
             }
         }
 
@@ -497,7 +504,9 @@ namespace Neo.Consensus
             context.ExpectedView[context.MyIndex]++;
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)));
-            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
+            var changeViewRequest = context.MakeChangeView();
+            context.ChangeViewWitnessInvocationScripts[context.MyIndex] = changeViewRequest.Witness.InvocationScript;
+            localNode.Tell(new LocalNode.SendDirectly { Inventory = changeViewRequest });
             CheckExpectedView(context.ExpectedView[context.MyIndex]);
         }
     }

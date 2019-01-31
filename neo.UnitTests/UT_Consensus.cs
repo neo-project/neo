@@ -233,6 +233,15 @@ namespace Neo.UnitTests
             consensusContext.ExpectedView[5] = 1;
             consensusContext.ExpectedView[6] = 2;
 
+            consensusContext.ChangeViewWitnessInvocationScripts = new byte[consensusContext.Validators.Length][];
+            consensusContext.ChangeViewWitnessInvocationScripts[0] = new [] {(byte) 'A'};
+            consensusContext.ChangeViewWitnessInvocationScripts[1] = new [] {(byte) 'B'};
+            consensusContext.ChangeViewWitnessInvocationScripts[2] = null;
+            consensusContext.ChangeViewWitnessInvocationScripts[3] = new [] {(byte) 'C'};
+            consensusContext.ChangeViewWitnessInvocationScripts[4] = null;
+            consensusContext.ChangeViewWitnessInvocationScripts[5] = null;
+            consensusContext.ChangeViewWitnessInvocationScripts[6] = new [] {(byte) 'D'};
+
             byte[] serializedContextData = consensusContext.ToArray();
 
             var copiedContext = new ConsensusContext(null);
@@ -260,6 +269,7 @@ namespace Neo.UnitTests
             copiedContext.Preparations.ShouldAllBeEquivalentTo(consensusContext.Preparations);
             copiedContext.Commits.ShouldAllBeEquivalentTo(consensusContext.Commits);
             copiedContext.ExpectedView.ShouldAllBeEquivalentTo(consensusContext.ExpectedView);
+            copiedContext.ChangeViewWitnessInvocationScripts.ShouldAllBeEquivalentTo(consensusContext.ChangeViewWitnessInvocationScripts);
         }
     }
 }
