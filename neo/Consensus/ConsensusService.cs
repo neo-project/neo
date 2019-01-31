@@ -198,21 +198,27 @@ namespace Neo.Consensus
             }
         }
 
-        private void OnConsensusPayload(ConsensusPayload payload)
+        private bool PerformBasicConsensusPayloadPreChecks(ConsensusPayload payload)
         {
-            if (context.State.HasFlag(ConsensusState.BlockSent)) return;
-            if (payload.ValidatorIndex == context.MyIndex) return;
-            if (payload.Version != ConsensusContext.Version)
-                return;
+            if (payload.ValidatorIndex == context.MyIndex) return false;
             if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
             {
                 if (context.BlockIndex < payload.BlockIndex)
                 {
                     Log($"chain sync: expected={payload.BlockIndex} current={context.BlockIndex - 1} nodes={LocalNode.Singleton.ConnectedCount}", LogLevel.Warning);
                 }
-                return;
+                return false;
             }
-            if (payload.ValidatorIndex >= context.Validators.Length) return;
+            if (payload.ValidatorIndex >= context.Validators.Length) return false;
+            return true;
+        }
+
+        private void OnConsensusPayload(ConsensusPayload payload)
+        {
+            if (context.State.HasFlag(ConsensusState.BlockSent)) return;
+            if (payload.Version != ConsensusContext.Version)
+                return;
+            if (!PerformBasicConsensusPayloadPreChecks(payload)) return;
             ConsensusMessage message;
             try
             {
@@ -276,11 +282,12 @@ namespace Neo.Consensus
 
             if (context.ViewNumber == message.ViewNumber)
             {
+                if (context.State.HasFlag(ConsensusState.BlockSent)) return;
                 // if we are already on the right view number the only thing we might want to do is accept more
                 // Preparation messages if they can be reconstructed from the regeneration message.
                 if (message.PrepareMsgWitnessInvocationScripts[context.PrimaryIndex] == null) return;
                 var (prepareRequestPayload, prepareRequest) = ReverifyPrepareRequest((ConsensusContext) context, message);
-                if (!prepareRequestPayload.Verify(snap)) return;
+                if (!prepareRequestPayload.Verify(snap) || !PerformBasicConsensusPayloadPreChecks(prepareRequestPayload)) return;
                 OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
 
                 for (int i = 0; i < context.Validators.Length; i++)
@@ -293,7 +300,7 @@ namespace Neo.Consensus
                     var prepareResponseMsg = new PrepareResponse { PreparationHash = prepareRequestPayload.Hash };
                     var regeneratedPrepareResponse = ((ConsensusContext) context).RegenerateSignedPayload(
                         prepareResponseMsg, (ushort) i, message.PrepareMsgWitnessInvocationScripts[i]);
-                    if (regeneratedPrepareResponse.Verify(snap))
+                    if (regeneratedPrepareResponse.Verify(snap) && PerformBasicConsensusPayloadPreChecks(prepareRequestPayload))
                         OnPrepareResponseReceived(prepareRequestPayload, prepareResponseMsg);
                 }
                 return;
@@ -369,9 +376,11 @@ namespace Neo.Consensus
                 if (regeneratedPrepareRequestPayload != null)
                 {
                     Log($"regenerating preparations: {prepareResponses.Count+1}");
-                    OnPrepareRequestReceived(regeneratedPrepareRequestPayload, regeneratedPrepareRequest);
+                    if (PerformBasicConsensusPayloadPreChecks(regeneratedPrepareRequestPayload))
+                        OnPrepareRequestReceived(regeneratedPrepareRequestPayload, regeneratedPrepareRequest);
                     foreach (var (prepareRespPayload, prepareResp) in prepareResponses)
-                        OnPrepareResponseReceived(prepareRespPayload, prepareResp);
+                        if (PerformBasicConsensusPayloadPreChecks(prepareRespPayload))
+                            OnPrepareResponseReceived(prepareRespPayload, prepareResp);
                 }
             }
         }
