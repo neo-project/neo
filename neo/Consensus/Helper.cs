@@ -18,6 +18,7 @@ namespace Neo.Consensus
             byte[] data = store.Get(Prefixes.CN_Context, new byte[0]);
             if (data != null)
             {
+                context.Reset(0);
                 using (MemoryStream ms = new MemoryStream(data, false))
                 using (BinaryReader reader = new BinaryReader(ms))
                 {
