@@ -129,6 +129,13 @@ namespace Neo.IO
             return array;
         }
 
+        public static uint[] ReadSerializableArray(this BinaryReader reader, int max = 0x1000000)
+        {
+            uint[] array = new uint[reader.ReadVarInt((ulong) max)];
+            for (int i = 0; i < array.Length; i++) array[i] = reader.ReadUInt32();
+            return array;
+        }
+
         public static byte[] ReadVarBytes(this BinaryReader reader, int max = 0x1000000)
         {
             return reader.ReadBytes((int)reader.ReadVarInt((ulong)max));
@@ -180,6 +187,12 @@ namespace Neo.IO
         public static void Write(this BinaryWriter writer, ISerializable value)
         {
             value.Serialize(writer);
+        }
+
+        public static void Write(this BinaryWriter writer, uint[] values)
+        {
+            writer.WriteVarInt(values.Length);
+            foreach (var val in values) writer.Write(val);
         }
 
         public static void Write<T>(this BinaryWriter writer, T[] value) where T : ISerializable

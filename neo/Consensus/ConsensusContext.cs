@@ -31,9 +31,11 @@ namespace Neo.Consensus
         public Dictionary<UInt256, Transaction> Transactions { get; set; }
         public UInt256[] Preparations { get; set; }
         public byte[][] PreparationWitnessInvocationScripts { get; set; }
+        public uint[] PreparationTimestamps { get; set; }
         public byte[][] Commits { get; set; }
         public byte[] ExpectedView { get; set; }
         public byte[][] ChangeViewWitnessInvocationScripts { get; set; }
+        public uint[] ChangeViewTimestamps { get; set; }
         private Snapshot snapshot;
         private KeyPair keyPair;
         private readonly Wallet wallet;
@@ -107,6 +109,7 @@ namespace Neo.Consensus
                 if (PreparationWitnessInvocationScripts[i].Length == 0)
                     PreparationWitnessInvocationScripts[i] = null;
             }
+            PreparationTimestamps = reader.ReadSerializableArray(Validators.Length);
             Commits = new byte[reader.ReadVarInt()][];
             for (int i = 0; i < Commits.Length; i++)
             {
@@ -122,6 +125,7 @@ namespace Neo.Consensus
                 if (ChangeViewWitnessInvocationScripts[i].Length == 0)
                     ChangeViewWitnessInvocationScripts[i] = null;
             }
+            ChangeViewTimestamps = reader.ReadSerializableArray(Validators.Length);
         }
 
         public void Dispose()
@@ -191,7 +195,7 @@ namespace Neo.Consensus
         }
 
         public ConsensusPayload RegenerateSignedPayload(ConsensusMessage message, ushort validatorIndex,
-            byte[] witnessInvocationScript)
+            byte[] witnessInvocationScript, uint timestamp)
         {
             message.ViewNumber = ViewNumber;
             ConsensusPayload payload = new ConsensusPayload
@@ -200,7 +204,7 @@ namespace Neo.Consensus
                 PrevHash = PrevHash,
                 BlockIndex = BlockIndex,
                 ValidatorIndex = validatorIndex,
-                Timestamp = Timestamp,
+                Timestamp = timestamp,
                 Data = message.ToArray()
             };
             Witness[] witnesses = new Witness[1];
@@ -245,13 +249,16 @@ namespace Neo.Consensus
         {
             return MakeSignedPayload(new RecoveryMessage()
             {
-                PrepareMsgWitnessInvocationScripts = PreparationWitnessInvocationScripts,
                 ChangeViewWitnessInvocationScripts = ChangeViewWitnessInvocationScripts,
+                ChangeViewTimestamps = ChangeViewTimestamps,
+                TransactionHashes = TransactionHashes,
                 Nonce = Nonce,
                 NextConsensus = NextConsensus,
-                TransactionHashes = TransactionHashes,
-                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
-                PrepareRequestPayloadTimestamp = Timestamp
+                MinerTransaction = (MinerTransaction) Transactions?[TransactionHashes[0]],
+                // We only need a PreparationHash set if we don't have the PrepareRequest information.
+                PreparationHash = TransactionHashes == null ? Preparations.First(p => p != null) : null,
+                PrepareWitnessInvocationScripts = PreparationWitnessInvocationScripts,
+                PrepareTimestamps = PreparationTimestamps,
             });
         }
 
@@ -275,6 +282,7 @@ namespace Neo.Consensus
                 MyIndex = -1;
                 ExpectedView = new byte[Validators.Length];
                 ChangeViewWitnessInvocationScripts = new byte[Validators.Length][];
+                ChangeViewTimestamps = new uint[Validators.Length];
                 keyPair = null;
                 for (int i = 0; i < Validators.Length; i++)
                 {
@@ -290,9 +298,11 @@ namespace Neo.Consensus
             State = ConsensusState.Initial;
             ViewNumber = view_number;
             PrimaryIndex = GetPrimaryIndex(view_number);
+            Timestamp = 0;
             TransactionHashes = null;
             Preparations = new UInt256[Validators.Length];
             PreparationWitnessInvocationScripts = new byte[Validators.Length][];
+            PreparationTimestamps = new uint[Validators.Length];
             Commits = new byte[Validators.Length][];
             if (MyIndex >= 0)
                 ExpectedView[MyIndex] = view_number;
@@ -326,6 +336,7 @@ namespace Neo.Consensus
                     writer.WriteVarInt(0);
                 else
                     writer.WriteVarBytes(witnessInvocationScript);
+            writer.Write(PreparationTimestamps);
             writer.WriteVarInt(Commits.Length);
             foreach (byte[] commit in Commits)
                 if (commit is null)
@@ -339,6 +350,7 @@ namespace Neo.Consensus
                     writer.WriteVarInt(0);
                 else
                     writer.WriteVarBytes(cvWitnessInvocationScript);
+            writer.Write(ChangeViewTimestamps);
         }
 
         public void Fill()

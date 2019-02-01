@@ -216,6 +216,15 @@ namespace Neo.UnitTests
             consensusContext.PreparationWitnessInvocationScripts[4] = null;
             consensusContext.PreparationWitnessInvocationScripts[5] = null;
             consensusContext.PreparationWitnessInvocationScripts[6] = new [] {(byte)'3', (byte)'!'};
+            consensusContext.PreparationTimestamps = new uint[7];
+            consensusContext.PreparationTimestamps[0] = 0;
+            consensusContext.PreparationTimestamps[1] = 1;
+            consensusContext.PreparationTimestamps[2] = 2;
+            consensusContext.PreparationTimestamps[3] = uint.MaxValue;
+            consensusContext.PreparationTimestamps[4] = 4;
+            consensusContext.PreparationTimestamps[5] = 5;
+            consensusContext.PreparationTimestamps[6] = 6;
+
 
             consensusContext.Commits = new byte[consensusContext.Validators.Length][];
             using (SHA256 sha256 = SHA256.Create())
@@ -241,6 +250,15 @@ namespace Neo.UnitTests
             consensusContext.ChangeViewWitnessInvocationScripts[4] = null;
             consensusContext.ChangeViewWitnessInvocationScripts[5] = null;
             consensusContext.ChangeViewWitnessInvocationScripts[6] = new [] {(byte) 'D'};
+            consensusContext.ChangeViewTimestamps = new uint[7];
+            consensusContext.ChangeViewTimestamps[0] = 6;
+            consensusContext.ChangeViewTimestamps[1] = 5;
+            consensusContext.ChangeViewTimestamps[2] = 4;
+            consensusContext.ChangeViewTimestamps[3] = 3;
+            consensusContext.ChangeViewTimestamps[4] = uint.MaxValue;
+            consensusContext.ChangeViewTimestamps[5] = 2;
+            consensusContext.ChangeViewTimestamps[6] = 1;
+
 
             byte[] serializedContextData = consensusContext.ToArray();
 
@@ -266,10 +284,12 @@ namespace Neo.UnitTests
             copiedContext.Transactions.ShouldAllBeEquivalentTo(consensusContext.Transactions);
             copiedContext.Transactions.Values.ShouldAllBeEquivalentTo(consensusContext.Transactions.Values);
             copiedContext.PreparationWitnessInvocationScripts.ShouldAllBeEquivalentTo(consensusContext.PreparationWitnessInvocationScripts);
+            copiedContext.PreparationTimestamps.ShouldAllBeEquivalentTo(consensusContext.PreparationTimestamps);
             copiedContext.Preparations.ShouldAllBeEquivalentTo(consensusContext.Preparations);
             copiedContext.Commits.ShouldAllBeEquivalentTo(consensusContext.Commits);
             copiedContext.ExpectedView.ShouldAllBeEquivalentTo(consensusContext.ExpectedView);
             copiedContext.ChangeViewWitnessInvocationScripts.ShouldAllBeEquivalentTo(consensusContext.ChangeViewWitnessInvocationScripts);
+            copiedContext.ChangeViewTimestamps.ShouldAllBeEquivalentTo(consensusContext.ChangeViewTimestamps);
         }
     }
 }

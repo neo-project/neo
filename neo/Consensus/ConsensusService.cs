@@ -252,18 +252,67 @@ namespace Neo.Consensus
             InitializeConsensus(0);
         }
 
-        private (ConsensusPayload, PrepareRequest) ReverifyPrepareRequest(ConsensusContext consensusContext, RecoveryMessage message)
+        private bool ReverifyPrepareRequest(ConsensusContext consensusContext, RecoveryMessage message, Snapshot snapshot,
+            out ConsensusPayload prepareRequestPayload, out PrepareRequest prepareRequest)
         {
-            PrepareRequest prepareRequest = new PrepareRequest
+            prepareRequest = new PrepareRequest
             {
                 Nonce = message.Nonce,
                 NextConsensus = message.NextConsensus,
                 TransactionHashes = message.TransactionHashes,
                 MinerTransaction = message.MinerTransaction
             };
-            return (consensusContext.RegenerateSignedPayload(prepareRequest, (ushort) consensusContext.PrimaryIndex,
-                message.PrepareMsgWitnessInvocationScripts[consensusContext.PrimaryIndex]), prepareRequest);
+            prepareRequestPayload = consensusContext.RegenerateSignedPayload(prepareRequest,
+                (ushort) consensusContext.PrimaryIndex,
+                message.PrepareWitnessInvocationScripts[consensusContext.PrimaryIndex], consensusContext.Timestamp);
+
+            bool result = prepareRequestPayload.Verify(snapshot) &&
+                   PerformBasicConsensusPayloadPreChecks(prepareRequestPayload);
+
+            if (!result)
+            {
+                prepareRequestPayload = null;
+                prepareRequest = null;
+            }
+            return result;
         }
+
+        private void HandleRecoveryInCurrentView(RecoveryMessage message, Snapshot snap)
+        {
+            if (context.State.HasFlag(ConsensusState.BlockSent)) return;
+
+                ConsensusPayload prepareRequestPayload = null;
+                UInt256 preparationHash;
+                // if we are already on the right view number the only thing we might want to do is accept more
+                // Preparation messages if they can be reconstructed from the regeneration message.
+                if (message.PrepareWitnessInvocationScripts[context.PrimaryIndex] != null
+                    && ReverifyPrepareRequest((ConsensusContext) context, message, snap, out prepareRequestPayload, out var prepareRequest))
+                {
+                    OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
+                    preparationHash = prepareRequestPayload.Hash;
+                }
+                else
+                {
+                    if (message.PreparationHash == null) return;
+                    preparationHash = message.PreparationHash;
+                }
+
+                for (int i = 0; i < context.Validators.Length; i++)
+                {
+                    // If we are missing this preparation.
+                    if (context.Preparations[i] != null) continue;
+                    if (i == context.PrimaryIndex) continue;
+                    // If the recovery message has this preparations
+                    if (message.PrepareWitnessInvocationScripts[i] == null) continue;
+                    var prepareResponseMsg = new PrepareResponse { PreparationHash = preparationHash };
+                    var regeneratedPrepareResponse = ((ConsensusContext) context).RegenerateSignedPayload(
+                        prepareResponseMsg, (ushort) i, message.PrepareWitnessInvocationScripts[i],
+                        message.PrepareTimestamps[i]);
+                    if (regeneratedPrepareResponse.Verify(snap) && PerformBasicConsensusPayloadPreChecks(regeneratedPrepareResponse))
+                        OnPrepareResponseReceived(regeneratedPrepareResponse, prepareResponseMsg);
+                }
+        }
+
 
         private void OnRecoveryMessageReceived(ConsensusPayload payload, RecoveryMessage message)
         {
@@ -277,52 +326,33 @@ namespace Neo.Consensus
 
             if (context.ViewNumber == message.ViewNumber)
             {
-                if (context.State.HasFlag(ConsensusState.BlockSent)) return;
-                // if we are already on the right view number the only thing we might want to do is accept more
-                // Preparation messages if they can be reconstructed from the regeneration message.
-                if (message.PrepareMsgWitnessInvocationScripts[context.PrimaryIndex] == null) return;
-                var (prepareRequestPayload, prepareRequest) = ReverifyPrepareRequest((ConsensusContext) context, message);
-                if (!prepareRequestPayload.Verify(snap) || !PerformBasicConsensusPayloadPreChecks(prepareRequestPayload)) return;
-                OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
-
-                for (int i = 0; i < context.Validators.Length; i++)
-                {
-                    // If we are missing this preparation.
-                    if (context.Preparations[i] != null) continue;
-                    if (i == context.PrimaryIndex) continue;
-                    // If the recovery message has this preparations
-                    if (message.PrepareMsgWitnessInvocationScripts[i] == null) continue;
-                    var prepareResponseMsg = new PrepareResponse { PreparationHash = prepareRequestPayload.Hash };
-                    var regeneratedPrepareResponse = ((ConsensusContext) context).RegenerateSignedPayload(
-                        prepareResponseMsg, (ushort) i, message.PrepareMsgWitnessInvocationScripts[i]);
-                    if (regeneratedPrepareResponse.Verify(snap) && PerformBasicConsensusPayloadPreChecks(prepareRequestPayload))
-                        OnPrepareResponseReceived(prepareRequestPayload, prepareResponseMsg);
-                }
+                HandleRecoveryInCurrentView(message, snap);
                 return;
             }
 
             var tempContext = new ConsensusContext(wallet);
             tempContext.Reset(message.ViewNumber, snap);
-            tempContext.Nonce = message.Nonce;
-            tempContext.TransactionHashes = message.TransactionHashes;
-            tempContext.NextConsensus = message.NextConsensus;
-            tempContext.Transactions = new Dictionary<UInt256, Transaction>
+            if (message.TransactionHashes != null)
             {
-                [message.TransactionHashes[0]] = message.MinerTransaction
-            };
-            tempContext.Timestamp = message.PrepareRequestPayloadTimestamp;
-
-            ConsensusPayload regeneratedPrepareRequestPayload = null;
-            PrepareRequest regeneratedPrepareRequest = null;
-
-            if (message.PrepareMsgWitnessInvocationScripts[tempContext.PrimaryIndex] != null)
-            {
-                // We have to have the PrepareRequest payload to be able to regenerate the PrepareResposnes, since we
-                // need the PreparationHash. However, we could still verify the change views and bump our view forward.
-                (regeneratedPrepareRequestPayload, regeneratedPrepareRequest) = ReverifyPrepareRequest(tempContext, message);
-                if (!regeneratedPrepareRequestPayload.Verify(snap))
-                    regeneratedPrepareRequestPayload = null;
+                tempContext.Nonce = message.Nonce;
+                tempContext.TransactionHashes = message.TransactionHashes;
+                tempContext.NextConsensus = message.NextConsensus;
+                tempContext.Transactions = new Dictionary<UInt256, Transaction>
+                {
+                    [message.TransactionHashes[0]] = message.MinerTransaction
+                };
+                tempContext.Timestamp = message.PrepareTimestamps[context.PrimaryIndex];
             }
+
+            ConsensusPayload prepareRequestPayload = null;
+            PrepareRequest prepareRequest = null;
+
+            UInt256 preparationHash;
+            if (message.PrepareWitnessInvocationScripts[context.PrimaryIndex] != null
+                && ReverifyPrepareRequest(tempContext, message, snap, out prepareRequestPayload, out prepareRequest))
+                preparationHash = prepareRequestPayload.Hash;
+            else
+                preparationHash = message.PreparationHash;
 
             var prepareResponses = new List<(ConsensusPayload, PrepareResponse)>();
             var verifiedChangeViewWitnessInvocationScripts = new byte[context.Validators.Length][];
@@ -335,21 +365,18 @@ namespace Neo.Consensus
             {
                 // Regenerate the ChangeView message
                 var regeneratedChangeView = tempContext.RegenerateSignedPayload(changeViewMsg, (ushort) i,
-                    message.ChangeViewWitnessInvocationScripts[i]);
+                    message.ChangeViewWitnessInvocationScripts[i], message.ChangeViewTimestamps[i]);
                 if (regeneratedChangeView.Verify(snap))
                 {
                     verifiedChangeViewWitnessInvocationScripts[i] = message.ChangeViewWitnessInvocationScripts[i];
                     validChangeViewCount++;
                 }
-
-                if (regeneratedPrepareRequestPayload == null) continue;
                 if (i == context.PrimaryIndex) continue;
+                if (message.PrepareWitnessInvocationScripts[i] == null) continue;
 
-                if (message.PrepareMsgWitnessInvocationScripts[i] == null) continue;
-
-                var prepareResponseMsg = new PrepareResponse { PreparationHash = regeneratedPrepareRequestPayload.Hash };
+                var prepareResponseMsg = new PrepareResponse { PreparationHash = preparationHash };
                 var regeneratedPrepareResponse = tempContext.RegenerateSignedPayload(prepareResponseMsg, (ushort) i,
-                    message.PrepareMsgWitnessInvocationScripts[i]);
+                    message.PrepareWitnessInvocationScripts[i], message.PrepareTimestamps[i]);
                 if (regeneratedPrepareResponse.Verify(snap))
                     prepareResponses.Add((regeneratedPrepareResponse, prepareResponseMsg));
             }
@@ -368,11 +395,16 @@ namespace Neo.Consensus
                     }
                 }
 
-                if (regeneratedPrepareRequestPayload != null)
+                if (prepareRequestPayload != null)
                 {
-                    Log($"regenerating preparations: {prepareResponses.Count+1}");
-                    if (PerformBasicConsensusPayloadPreChecks(regeneratedPrepareRequestPayload))
-                        OnPrepareRequestReceived(regeneratedPrepareRequestPayload, regeneratedPrepareRequest);
+                    Log($"regenerating prepare request");
+                    if (PerformBasicConsensusPayloadPreChecks(prepareRequestPayload))
+                        OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
+                }
+
+                if (prepareResponses.Count > 0)
+                {
+                    Log($"regenerating preparations: {prepareResponses.Count}");
                     foreach (var (prepareRespPayload, prepareResp) in prepareResponses)
                         if (PerformBasicConsensusPayloadPreChecks(prepareRespPayload))
                             OnPrepareResponseReceived(prepareRespPayload, prepareResp);
@@ -408,6 +440,7 @@ namespace Neo.Consensus
                         context.Preparations[i] = null;
             context.Preparations[payload.ValidatorIndex] = payload.Hash;
             context.PreparationWitnessInvocationScripts[payload.ValidatorIndex] = payload.Witness.InvocationScript;
+            context.PreparationTimestamps[payload.ValidatorIndex] = payload.Timestamp;
             byte[] hashData = context.MakeHeader().GetHashData();
             for (int i = 0; i < context.Commits.Length; i++)
                 if (context.Commits[i] != null)
@@ -453,6 +486,7 @@ namespace Neo.Consensus
             if (context.State.HasFlag(ConsensusState.CommitSent)) return;
             context.Preparations[payload.ValidatorIndex] = message.PreparationHash;
             context.PreparationWitnessInvocationScripts[payload.ValidatorIndex] = payload.Witness.InvocationScript;
+            context.PreparationTimestamps[payload.ValidatorIndex] = payload.Timestamp;
             if (context.State.HasFlag(ConsensusState.RequestSent) || context.State.HasFlag(ConsensusState.RequestReceived))
                 CheckPreparations();
         }
@@ -523,6 +557,7 @@ namespace Neo.Consensus
                 context.State |= ConsensusState.RequestSent;
                 context.Preparations[context.MyIndex] = request.Hash;
                 context.PreparationWitnessInvocationScripts[context.MyIndex] = request.Witness.InvocationScript;
+                context.PreparationTimestamps[context.MyIndex] = request.Timestamp;
 
                 if (context.TransactionHashes.Length > 1)
                 {
