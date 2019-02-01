@@ -263,9 +263,10 @@ namespace Neo.Consensus
                 TransactionHashes = message.TransactionHashes,
                 MinerTransaction = message.MinerTransaction
             };
+            var prepareRequestTimestamp = message.PrepareTimestamps[consensusContext.PrimaryIndex];
             prepareRequestPayload = consensusContext.RegenerateSignedPayload(prepareRequest,
                 (ushort) consensusContext.PrimaryIndex,
-                message.PrepareWitnessInvocationScripts[consensusContext.PrimaryIndex], consensusContext.Timestamp);
+                message.PrepareWitnessInvocationScripts[consensusContext.PrimaryIndex], prepareRequestTimestamp);
 
             bool result = prepareRequestPayload.Verify(snapshot) &&
                    PerformBasicConsensusPayloadPreChecks(prepareRequestPayload);
@@ -313,7 +314,6 @@ namespace Neo.Consensus
                         OnPrepareResponseReceived(regeneratedPrepareResponse, prepareResponseMsg);
                 }
         }
-
 
         private void OnRecoveryMessageReceived(ConsensusPayload payload, RecoveryMessage message)
         {
