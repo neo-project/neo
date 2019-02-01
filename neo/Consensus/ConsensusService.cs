@@ -157,9 +157,6 @@ namespace Neo.Consensus
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
-            if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
-                return;
-
             if (message.NewViewNumber < context.ViewNumber)
             {
                 // If we are at a higher view, we can send the regeneration msg.
@@ -168,7 +165,8 @@ namespace Neo.Consensus
                 // Note: In the future, we may want to limit how many nodes will send a regeneration msg
                 return;
             }
-
+            if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
+                return;
             if (context.State.HasFlag(ConsensusState.CommitSent))
                 return;
 
