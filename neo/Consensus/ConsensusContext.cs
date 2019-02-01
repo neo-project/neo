@@ -256,7 +256,7 @@ namespace Neo.Consensus
                 NextConsensus = NextConsensus,
                 MinerTransaction = (MinerTransaction) (TransactionHashes == null ? null : Transactions?[TransactionHashes[0]]),
                 // We only need a PreparationHash set if we don't have the PrepareRequest information.
-                PreparationHash = TransactionHashes == null ? Preparations.First(p => p != null) : null,
+                PreparationHash = TransactionHashes == null ? Preparations.FirstOrDefault(p => p != null) : null,
                 PrepareWitnessInvocationScripts = PreparationWitnessInvocationScripts,
                 PrepareTimestamps = PreparationTimestamps,
             });
