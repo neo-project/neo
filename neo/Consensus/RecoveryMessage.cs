@@ -88,9 +88,11 @@ namespace Neo.Consensus
                     writer.WriteVarBytes(witnessInvocationScript);
             }
 
-            writer.Write(TransactionHashes);
-            if (TransactionHashes.Length > 0)
+            if (TransactionHashes == null)
+                writer.WriteVarInt(0);
+            else
             {
+                writer.Write(TransactionHashes);
                 writer.Write(Nonce);
                 writer.Write(NextConsensus);
                 writer.Write(MinerTransaction);
