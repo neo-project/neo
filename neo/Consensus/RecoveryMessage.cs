@@ -44,7 +44,12 @@ namespace Neo.Consensus
 
             var txHashCount = reader.ReadVarInt(ushort.MaxValue);
             if (txHashCount == 0)
+            {
                 TransactionHashes = null;
+                Nonce = 0;
+                NextConsensus = null;
+                MinerTransaction = null;
+            }
             else
             {
                 TransactionHashes = new UInt256[txHashCount];
