@@ -174,6 +174,7 @@ namespace Neo.Consensus
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
             context.ExpectedView[payload.ValidatorIndex] = message.NewViewNumber;
             context.ChangeViewWitnessInvocationScripts[payload.ValidatorIndex] = payload.Witness.InvocationScript;
+            context.ChangeViewTimestamps[payload.ValidatorIndex] = payload.Timestamp;
             CheckExpectedView(message.NewViewNumber);
         }
 
@@ -356,6 +357,7 @@ namespace Neo.Consensus
 
             var prepareResponses = new List<(ConsensusPayload, PrepareResponse)>();
             var verifiedChangeViewWitnessInvocationScripts = new byte[context.Validators.Length][];
+            var verifiedChangeViewTimeStamps = new uint[context.Validators.Length];
             var changeViewMsg = new ChangeView
             {
                 NewViewNumber = message.ViewNumber
@@ -369,6 +371,7 @@ namespace Neo.Consensus
                 if (regeneratedChangeView.Verify(snap))
                 {
                     verifiedChangeViewWitnessInvocationScripts[i] = message.ChangeViewWitnessInvocationScripts[i];
+                    verifiedChangeViewTimeStamps[i] = message.ChangeViewTimestamps[i];
                     validChangeViewCount++;
                 }
                 if (i == context.PrimaryIndex) continue;
@@ -391,6 +394,7 @@ namespace Neo.Consensus
                     if (verifiedChangeViewWitnessInvocationScripts[i] != null)
                     {
                         context.ChangeViewWitnessInvocationScripts[i] = verifiedChangeViewWitnessInvocationScripts[i];
+                        context.ChangeViewTimestamps[i] = verifiedChangeViewTimeStamps[i];
                         context.ExpectedView[i] = message.ViewNumber;
                     }
                 }
@@ -614,6 +618,7 @@ namespace Neo.Consensus
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)));
             var changeViewRequest = context.MakeChangeView();
             context.ChangeViewWitnessInvocationScripts[context.MyIndex] = changeViewRequest.Witness.InvocationScript;
+            context.ChangeViewTimestamps[context.MyIndex] = changeViewRequest.Timestamp;
             localNode.Tell(new LocalNode.SendDirectly { Inventory = changeViewRequest });
             CheckExpectedView(context.ExpectedView[context.MyIndex]);
         }
