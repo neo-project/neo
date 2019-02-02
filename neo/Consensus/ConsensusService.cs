@@ -119,7 +119,7 @@ namespace Neo.Consensus
                 ConsensusPayload payload = context.MakeCommit();
                 Log($"send commit");
                 context.State |= ConsensusState.CommitSent;
-                context.WriteContextToStore(store);
+                store.Put(ContextSerializationPrefix, new byte[0], context.ToArray());
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 // Set timer, so we will resend the commit in case of a networking issue
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock));
