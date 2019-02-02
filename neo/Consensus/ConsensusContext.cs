@@ -200,7 +200,6 @@ namespace Neo.Consensus
         public ConsensusPayload RegenerateSignedPayload(ConsensusMessage message, ushort validatorIndex,
             byte[] witnessInvocationScript, uint timestamp)
         {
-            message.ViewNumber = ViewNumber;
             ConsensusPayload payload = new ConsensusPayload
             {
                 Version = Version,

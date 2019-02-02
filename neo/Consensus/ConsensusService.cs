@@ -119,7 +119,7 @@ namespace Neo.Consensus
                 ConsensusPayload payload = context.MakeCommit();
                 Log($"send commit");
                 context.State |= ConsensusState.CommitSent;
-                store.Put(ContextSerializationPrefix, new byte[0], context.ToArray());
+                context.WriteContextToStore(store);
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 // Set timer, so we will resend the commit in case of a networking issue
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock));
@@ -397,7 +397,13 @@ namespace Neo.Consensus
             if (validChangeViewCount >= context.M)
             {
                 Log($"regenerating view: {message.ViewNumber}");
-                context.Reset(message.ViewNumber, snap);
+                if (block_received_time == null)
+                {
+                    block_received_time = TimeProvider.Current.UtcNow - TimeSpan.FromSeconds(
+                                              Blockchain.TimePerBlock.TotalSeconds * Math.Pow(2, message.ViewNumber));
+                }
+
+                InitializeConsensus(message.ViewNumber);
                 for (int i = 0; i < context.Validators.Length; i++)
                 {
                     if (verifiedChangeViewWitnessInvocationScripts[i] != null)
