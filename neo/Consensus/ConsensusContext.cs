@@ -143,7 +143,7 @@ namespace Neo.Consensus
         {
             return MakeSignedPayload(new ChangeView
             {
-                // View number is ignored for ChangeView, and for regenerating we need it to be ignored, so set to 0.
+                // View number is ignored for ChangeView, and for recovery we need it to be predicatable, so set as 0.
                 ViewNumber = 0,
                 NewViewNumber = ExpectedView[MyIndex]
             }, false);
