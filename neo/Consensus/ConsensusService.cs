@@ -258,6 +258,7 @@ namespace Neo.Consensus
         {
             prepareRequest = new PrepareRequest
             {
+                ViewNumber = consensusContext.ViewNumber,
                 Nonce = message.Nonce,
                 NextConsensus = message.NextConsensus,
                 TransactionHashes = message.TransactionHashes,
@@ -307,6 +308,7 @@ namespace Neo.Consensus
                     // If the recovery message has this preparations
                     if (message.PrepareWitnessInvocationScripts[i] == null) continue;
                     var prepareResponseMsg = new PrepareResponse { PreparationHash = preparationHash };
+                    prepareResponseMsg.ViewNumber = context.ViewNumber;
                     var regeneratedPrepareResponse = ((ConsensusContext) context).RegenerateSignedPayload(
                         prepareResponseMsg, (ushort) i, message.PrepareWitnessInvocationScripts[i],
                         message.PrepareTimestamps[i]);
@@ -362,6 +364,7 @@ namespace Neo.Consensus
             var verifiedChangeViewTimeStamps = new uint[context.Validators.Length];
             var changeViewMsg = new ChangeView
             {
+                ViewNumber = 0,
                 NewViewNumber = message.ViewNumber
             };
             int validChangeViewCount = 0;
