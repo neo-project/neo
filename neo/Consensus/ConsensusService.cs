@@ -367,15 +367,19 @@ namespace Neo.Consensus
             int validChangeViewCount = 0;
             for (int i = 0; i < context.Validators.Length; i++)
             {
-                // Regenerate the ChangeView message
-                var regeneratedChangeView = tempContext.RegenerateSignedPayload(changeViewMsg, (ushort) i,
-                    message.ChangeViewWitnessInvocationScripts[i], message.ChangeViewTimestamps[i]);
-                if (regeneratedChangeView.Verify(snap))
+                if (message.ChangeViewWitnessInvocationScripts[i] != null)
                 {
-                    verifiedChangeViewWitnessInvocationScripts[i] = message.ChangeViewWitnessInvocationScripts[i];
-                    verifiedChangeViewTimeStamps[i] = message.ChangeViewTimestamps[i];
-                    validChangeViewCount++;
+                    // Regenerate the ChangeView message
+                    var regeneratedChangeView = tempContext.RegenerateSignedPayload(changeViewMsg, (ushort) i,
+                        message.ChangeViewWitnessInvocationScripts[i], message.ChangeViewTimestamps[i]);
+                    if (regeneratedChangeView.Verify(snap))
+                    {
+                        verifiedChangeViewWitnessInvocationScripts[i] = message.ChangeViewWitnessInvocationScripts[i];
+                        verifiedChangeViewTimeStamps[i] = message.ChangeViewTimestamps[i];
+                        validChangeViewCount++;
+                    }
                 }
+
                 if (i == context.PrimaryIndex) continue;
                 if (message.PrepareWitnessInvocationScripts[i] == null) continue;
 
