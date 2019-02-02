@@ -223,8 +223,8 @@ namespace Neo.Consensus
             {
                 return;
             }
-            if (message.ViewNumber != context.ViewNumber && (message.Type != ConsensusMessageType.ChangeView ||
-                                                             message.Type != ConsensusMessageType.RecoveryMessage))
+            if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView &&
+                                                            message.Type != ConsensusMessageType.RecoveryMessage)
                 return;
             switch (message)
             {
