@@ -41,6 +41,7 @@ namespace Neo.Consensus
                 else
                     ChangeViewWitnessInvocationScripts[i] = reader.ReadBytes(signatureBytes);
             }
+            ChangeViewTimestamps = reader.ReadSerializableArray(ChangeViewWitnessInvocationScripts.Length);
 
             var txHashCount = reader.ReadVarInt(ushort.MaxValue);
             if (txHashCount == 0)
@@ -79,6 +80,7 @@ namespace Neo.Consensus
                 else
                     PrepareWitnessInvocationScripts[i] = reader.ReadBytes(signatureBytes);
             }
+            PrepareTimestamps = reader.ReadSerializableArray(PrepareWitnessInvocationScripts.Length);
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -92,6 +94,7 @@ namespace Neo.Consensus
                 else
                     writer.WriteVarBytes(witnessInvocationScript);
             }
+            writer.Write(ChangeViewTimestamps);
 
             if (TransactionHashes == null)
                 writer.WriteVarInt(0);
@@ -117,6 +120,7 @@ namespace Neo.Consensus
                 else
                     writer.WriteVarBytes(witnessInvocationScript);
             }
+            writer.Write(PrepareTimestamps);
         }
     }
 }
