@@ -143,8 +143,10 @@ namespace Neo.Consensus
         {
             return MakeSignedPayload(new ChangeView
             {
+                // View number is ignored for ChangeView, and for regenerating we need it to be ignored, so set to 0.
+                ViewNumber = 0,
                 NewViewNumber = ExpectedView[MyIndex]
-            });
+            }, false);
         }
 
         public ConsensusPayload MakeCommit()
@@ -178,9 +180,10 @@ namespace Neo.Consensus
             return _header;
         }
 
-        private ConsensusPayload MakeSignedPayload(ConsensusMessage message)
+        private ConsensusPayload MakeSignedPayload(ConsensusMessage message, bool shouldSetViewNumber=true)
         {
-            message.ViewNumber = ViewNumber;
+            if (shouldSetViewNumber)
+                message.ViewNumber = ViewNumber;
             ConsensusPayload payload = new ConsensusPayload
             {
                 Version = Version,
