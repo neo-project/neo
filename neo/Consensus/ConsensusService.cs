@@ -332,6 +332,8 @@ namespace Neo.Consensus
             }
 
             var tempContext = new ConsensusContext(wallet);
+            // Have to Reset to 0 first to handle initializion of the context
+            tempContext.Reset(0, snap);
             tempContext.Reset(message.ViewNumber, snap);
             if (message.TransactionHashes != null)
             {
