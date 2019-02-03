@@ -361,7 +361,6 @@ namespace Neo.Consensus
 
             var prepareResponses = new List<(ConsensusPayload, PrepareResponse)>();
             var verifiedChangeViewWitnessInvocationScripts = new byte[context.Validators.Length][];
-            var verifiedChangeViewTimeStamps = new uint[context.Validators.Length];
             var changeViewMsg = new ChangeView
             {
                 ViewNumber = 0,
@@ -378,7 +377,6 @@ namespace Neo.Consensus
                     if (regeneratedChangeView.Verify(snap))
                     {
                         verifiedChangeViewWitnessInvocationScripts[i] = message.ChangeViewWitnessInvocationScripts[i];
-                        verifiedChangeViewTimeStamps[i] = message.ChangeViewTimestamps[i];
                         validChangeViewCount++;
                     }
                 }
@@ -409,7 +407,7 @@ namespace Neo.Consensus
                     if (verifiedChangeViewWitnessInvocationScripts[i] != null)
                     {
                         context.ChangeViewWitnessInvocationScripts[i] = verifiedChangeViewWitnessInvocationScripts[i];
-                        context.ChangeViewTimestamps[i] = verifiedChangeViewTimeStamps[i];
+                        context.ChangeViewTimestamps[i] = message.ChangeViewTimestamps[i];
                         context.ExpectedView[i] = message.ViewNumber;
                     }
                 }
