@@ -290,8 +290,6 @@ namespace Neo.Consensus
 
             if (!AddTransaction(message.MinerTransaction, true)) return;
 
-            // Save our view so if we crash and come back we will be on the last view that received the PrepareRequest
-            context.WriteContextToStore(store);
             ObtainTransactionsForConsensus();
         }
 
@@ -343,32 +341,13 @@ namespace Neo.Consensus
             Log("OnStart");
             started = true;
             bool loadedState = context.LoadContextFromStore(store);
-            Console.WriteLine($"loaded state as {loadedState}");
-            if (!loadedState || Blockchain.Singleton.Height + 1 != context.BlockIndex)
+            if (loadedState && context.State.HasFlag(ConsensusState.CommitSent) && Blockchain.Singleton.Height + 1 == context.BlockIndex)
             {
-                InitializeConsensus(0);
+                CheckPreparations();
                 return;
             }
 
-            if (context.State.HasFlag(ConsensusState.CommitSent))
-                CheckPreparations();
-            else
-            {
-                if (context.State.HasFlag(ConsensusState.RequestSent))
-                {
-                    // Note: The code that starts consensus should wait till some peers are connected to start consensus.
-                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
-                }
-                else if (context.State.HasFlag(ConsensusState.RequestReceived))
-                {
-                    var minerTransaction = context.Transactions[context.TransactionHashes[0]];
-                    if (AddTransaction(minerTransaction, true))
-                        ObtainTransactionsForConsensus();
-                }
-                // TODO: Request change view to the current view in order to receive regeneration
-
-                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ViewNumber + 1)));
-            }
+            InitializeConsensus(0);
         }
 
         private void OnTimer(Timer timer)
@@ -381,12 +360,9 @@ namespace Neo.Consensus
                 Log($"send prepare request: height={timer.Height} view={timer.ViewNumber}");
                 context.Fill();
                 ConsensusPayload request = context.MakePrepareRequest();
-                // TODO: fix the unit tests; would like to move this line to after line 397, but tests have an issue with line 395.
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = request });
                 context.Preparations[context.MyIndex] = request.Hash;
                 context.State |= ConsensusState.RequestSent;
-                context.WriteContextToStore(store);
-
 
                 if (context.TransactionHashes.Length > 1)
                 {
