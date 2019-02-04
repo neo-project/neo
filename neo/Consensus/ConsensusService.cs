@@ -557,7 +557,12 @@ namespace Neo.Consensus
                 CheckPreparations();
             }
             else
+            {
                 InitializeConsensus(0);
+                // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
+                if (Blockchain.Singleton.Height == Blockchain.Singleton.HeaderHeight)
+                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
+            }
         }
 
         private void OnTimer(Timer timer)
