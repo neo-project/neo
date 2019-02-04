@@ -22,6 +22,12 @@ namespace Neo.UnitTests
     [TestClass]
     public class ConsensusTests : TestKit
     {
+        [TestInitialize]
+        public void TestSetup()
+        {
+            TestBlockchain.InitializeMockNeoSystem();
+        }
+
         [TestCleanup]
         public void Cleanup()
         {
