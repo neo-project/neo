@@ -5,7 +5,7 @@ namespace Neo.Plugins
 {
     public interface IMemoryPoolTxObserverPlugin
     {
-        bool AddedTransaction(Transaction tx);
-        bool RemovedTransactions(MemoryPoolTxRemovalReason reason, IEnumerable<Transaction> transactions);
+        void AddedTransaction(Transaction tx);
+        void RemovedTransactions(MemoryPoolTxRemovalReason reason, IEnumerable<Transaction> transactions);
     }
 }
