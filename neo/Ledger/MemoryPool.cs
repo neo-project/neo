@@ -302,9 +302,10 @@ namespace Neo.Ledger
                 _txRwLock.ExitWriteLock();
             }
 
-            if (removedTransactions != null)
+            foreach (IMemoryPoolTxObserverPlugin plugin in Plugin.TxObserverPlugins)
             {
-                foreach (IMemoryPoolTxObserverPlugin plugin in Plugin.TxObserverPlugins)
+                plugin.AddedTransaction(poolItem.Tx);
+                if (removedTransactions != null)
                     plugin.RemovedTransactions(MemoryPoolTxRemovalReason.CapacityExceeded, removedTransactions);
             }
 
