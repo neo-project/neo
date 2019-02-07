@@ -48,7 +48,6 @@ namespace Neo.Consensus
                     TransactionHashes[i] = new UInt256();
                     ((ISerializable) TransactionHashes[i]).Deserialize(reader);
                 }
-                TransactionHashes = reader.ReadSerializableArray<UInt256>(ushort.MaxValue);
                 Nonce = reader.ReadUInt64();
                 NextConsensus = reader.ReadSerializable<UInt160>();
 
