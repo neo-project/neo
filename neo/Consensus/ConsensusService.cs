@@ -256,28 +256,28 @@ namespace Neo.Consensus
         private bool ReverifyPrepareRequest(ConsensusContext consensusContext, RecoveryMessage message, Snapshot snapshot,
             out ConsensusPayload prepareRequestPayload, out PrepareRequest prepareRequest)
         {
-            prepareRequest = new PrepareRequest
+            if (message.TransactionHashes != null)
             {
-                ViewNumber = consensusContext.ViewNumber,
-                Nonce = message.Nonce,
-                NextConsensus = message.NextConsensus,
-                TransactionHashes = message.TransactionHashes,
-                MinerTransaction = message.MinerTransaction
-            };
-            var prepareRequestTimestamp = message.PrepareTimestamps[consensusContext.PrimaryIndex];
-            prepareRequestPayload = consensusContext.RegenerateSignedPayload(prepareRequest,
-                (ushort) consensusContext.PrimaryIndex,
-                message.PrepareWitnessInvocationScripts[consensusContext.PrimaryIndex], prepareRequestTimestamp);
+                prepareRequest = new PrepareRequest
+                {
+                    ViewNumber = consensusContext.ViewNumber,
+                    Nonce = message.Nonce,
+                    NextConsensus = message.NextConsensus,
+                    TransactionHashes = message.TransactionHashes,
+                    MinerTransaction = message.MinerTransaction
+                };
+                var prepareRequestTimestamp = message.PrepareTimestamps[consensusContext.PrimaryIndex];
+                prepareRequestPayload = consensusContext.RegenerateSignedPayload(
+                    prepareRequest, (ushort) consensusContext.PrimaryIndex,
+                    message.PrepareWitnessInvocationScripts[consensusContext.PrimaryIndex], prepareRequestTimestamp);
 
-            bool result = prepareRequestPayload.Verify(snapshot) &&
-                   PerformBasicConsensusPayloadPreChecks(prepareRequestPayload);
-
-            if (!result)
-            {
-                prepareRequestPayload = null;
-                prepareRequest = null;
+                if (prepareRequestPayload.Verify(snapshot) && PerformBasicConsensusPayloadPreChecks(prepareRequestPayload))
+                    return true;
             }
-            return result;
+
+            prepareRequestPayload = null;
+            prepareRequest = null;
+            return false;
         }
 
         private void HandleRecoveryInCurrentView(RecoveryMessage message, Snapshot snap)
@@ -360,72 +360,80 @@ namespace Neo.Consensus
                 preparationHash = message.PreparationHash;
 
             var prepareResponses = new List<(ConsensusPayload, PrepareResponse)>();
-            var verifiedChangeViewWitnessInvocationScripts = new byte[context.Validators.Length][];
-            var changeViewMsg = new ChangeView
-            {
-                ViewNumber = 0,
-                NewViewNumber = message.ViewNumber
-            };
-            int validChangeViewCount = 0;
+            bool canRestoreView = false;
             for (int i = 0; i < context.Validators.Length; i++)
             {
-                if (message.ChangeViewWitnessInvocationScripts[i] != null)
-                {
-                    // Regenerate the ChangeView message
-                    var regeneratedChangeView = tempContext.RegenerateSignedPayload(changeViewMsg, (ushort) i,
-                        message.ChangeViewWitnessInvocationScripts[i], message.ChangeViewTimestamps[i]);
-                    if (regeneratedChangeView.Verify(snap))
-                    {
-                        verifiedChangeViewWitnessInvocationScripts[i] = message.ChangeViewWitnessInvocationScripts[i];
-                        validChangeViewCount++;
-                    }
-                }
-
                 if (i == context.PrimaryIndex) continue;
                 if (message.PrepareWitnessInvocationScripts[i] == null) continue;
 
                 var prepareResponseMsg = new PrepareResponse { PreparationHash = preparationHash };
                 var regeneratedPrepareResponse = tempContext.RegenerateSignedPayload(prepareResponseMsg, (ushort) i,
                     message.PrepareWitnessInvocationScripts[i], message.PrepareTimestamps[i]);
-                if (regeneratedPrepareResponse.Verify(snap))
-                    prepareResponses.Add((regeneratedPrepareResponse, prepareResponseMsg));
+                if (!regeneratedPrepareResponse.Verify(snap)) continue;
+                prepareResponses.Add((regeneratedPrepareResponse, prepareResponseMsg));
+                if (prepareRequest == null || prepareResponses.Count < context.M - 1) continue;
+                canRestoreView = true;
+                break;
             }
 
-            // As long as we had enough valid change view messages to prove we should really move to this view number.
-            if (validChangeViewCount >= context.M)
+            var verifiedChangeViewWitnessInvocationScripts = new byte[context.Validators.Length][];
+            if (!canRestoreView)
             {
-                Log($"regenerating view: {message.ViewNumber}");
-                if (block_received_time == null)
+                var changeViewMsg = new ChangeView
                 {
-                    block_received_time = TimeProvider.Current.UtcNow - TimeSpan.FromSeconds(
-                                              Blockchain.TimePerBlock.TotalSeconds * Math.Pow(2, message.ViewNumber));
-                }
-
-                InitializeConsensus(message.ViewNumber);
+                    ViewNumber = 0,
+                    NewViewNumber = message.ViewNumber
+                };
+                int validChangeViewCount = 0;
                 for (int i = 0; i < context.Validators.Length; i++)
                 {
-                    if (verifiedChangeViewWitnessInvocationScripts[i] != null)
-                    {
-                        context.ChangeViewWitnessInvocationScripts[i] = verifiedChangeViewWitnessInvocationScripts[i];
-                        context.ChangeViewTimestamps[i] = message.ChangeViewTimestamps[i];
-                        context.ExpectedView[i] = message.ViewNumber;
-                    }
-                }
+                    if (message.ChangeViewWitnessInvocationScripts[i] == null) continue;
 
-                if (prepareRequestPayload != null)
-                {
-                    Log($"regenerating prepare request");
-                    if (PerformBasicConsensusPayloadPreChecks(prepareRequestPayload))
-                        OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
+                    // Regenerate the ChangeView message
+                    var regeneratedChangeView = tempContext.RegenerateSignedPayload(changeViewMsg, (ushort) i,
+                        message.ChangeViewWitnessInvocationScripts[i], message.ChangeViewTimestamps[i]);
+                    if (!regeneratedChangeView.Verify(snap)) continue;
+                    verifiedChangeViewWitnessInvocationScripts[i] = message.ChangeViewWitnessInvocationScripts[i];
+                    validChangeViewCount++;
+                    if (validChangeViewCount < context.M) continue;
+                    canRestoreView = true;
+                    break;
                 }
+            }
 
-                if (prepareResponses.Count > 0)
+            if (!canRestoreView) return;
+            // We had enough valid change view messages or preparations to safely change the view number.
+            Log($"regenerating view: {message.ViewNumber}");
+            if (block_received_time == null)
+            {
+                block_received_time = TimeProvider.Current.UtcNow - TimeSpan.FromSeconds(
+                                          Blockchain.TimePerBlock.TotalSeconds * Math.Pow(2, message.ViewNumber));
+            }
+
+            InitializeConsensus(message.ViewNumber);
+            for (int i = 0; i < context.Validators.Length; i++)
+            {
+                if (verifiedChangeViewWitnessInvocationScripts[i] != null)
                 {
-                    Log($"regenerating preparations: {prepareResponses.Count}");
-                    foreach (var (prepareRespPayload, prepareResp) in prepareResponses)
-                        if (PerformBasicConsensusPayloadPreChecks(prepareRespPayload))
-                            OnPrepareResponseReceived(prepareRespPayload, prepareResp);
+                    context.ChangeViewWitnessInvocationScripts[i] = verifiedChangeViewWitnessInvocationScripts[i];
+                    context.ChangeViewTimestamps[i] = message.ChangeViewTimestamps[i];
+                    context.ExpectedView[i] = message.ViewNumber;
                 }
+            }
+
+            if (prepareRequestPayload != null)
+            {
+                Log($"regenerating prepare request");
+                if (PerformBasicConsensusPayloadPreChecks(prepareRequestPayload))
+                    OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
+            }
+
+            if (prepareResponses.Count > 0)
+            {
+                Log($"regenerating preparations: {prepareResponses.Count}");
+                foreach (var (prepareRespPayload, prepareResp) in prepareResponses)
+                    if (PerformBasicConsensusPayloadPreChecks(prepareRespPayload))
+                        OnPrepareResponseReceived(prepareRespPayload, prepareResp);
             }
         }
 
