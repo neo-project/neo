@@ -353,7 +353,7 @@ namespace Neo.Consensus
             PrepareRequest prepareRequest = null;
 
             UInt256 preparationHash;
-            if (message.PrepareWitnessInvocationScripts[context.PrimaryIndex] != null
+            if (message.PrepareWitnessInvocationScripts[tempContext.PrimaryIndex] != null
                 && ReverifyPrepareRequest(tempContext, message, snap, out prepareRequestPayload, out prepareRequest))
                 preparationHash = prepareRequestPayload.Hash;
             else
