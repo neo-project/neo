@@ -346,7 +346,7 @@ namespace Neo.Consensus
                 {
                     [message.TransactionHashes[0]] = message.MinerTransaction
                 };
-                tempContext.Timestamp = message.PrepareTimestamps[context.PrimaryIndex];
+                tempContext.Timestamp = message.PrepareTimestamps[tempContext.PrimaryIndex];
             }
 
             ConsensusPayload prepareRequestPayload = null;
@@ -363,7 +363,7 @@ namespace Neo.Consensus
             bool canRestoreView = false;
             for (int i = 0; i < context.Validators.Length; i++)
             {
-                if (i == context.PrimaryIndex) continue;
+                if (i == tempContext.PrimaryIndex) continue;
                 if (message.PrepareWitnessInvocationScripts[i] == null) continue;
 
                 var prepareResponseMsg = new PrepareResponse { PreparationHash = preparationHash };
