@@ -32,17 +32,6 @@ namespace Neo.Consensus
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            ChangeViewWitnessInvocationScripts = new byte[reader.ReadVarInt(255)][];
-            for (int i = 0; i < ChangeViewWitnessInvocationScripts.Length; i++)
-            {
-                int signatureBytes = (int) reader.ReadVarInt(1024);
-                if (signatureBytes == 0)
-                    ChangeViewWitnessInvocationScripts[i] = null;
-                else
-                    ChangeViewWitnessInvocationScripts[i] = reader.ReadBytes(signatureBytes);
-            }
-            ChangeViewTimestamps = reader.ReadSerializableArray(ChangeViewWitnessInvocationScripts.Length);
-
             var txHashCount = reader.ReadVarInt(ushort.MaxValue);
             if (txHashCount == 0)
             {
@@ -81,21 +70,26 @@ namespace Neo.Consensus
                     PrepareWitnessInvocationScripts[i] = reader.ReadBytes(signatureBytes);
             }
             PrepareTimestamps = reader.ReadSerializableArray(PrepareWitnessInvocationScripts.Length);
+
+            byte numChangeViews = (byte) reader.ReadVarInt(255);
+            if (numChangeViews > 0)
+            {
+                ChangeViewWitnessInvocationScripts = new byte[numChangeViews][];
+                for (int i = 0; i < ChangeViewWitnessInvocationScripts.Length; i++)
+                {
+                    int signatureBytes = (int) reader.ReadVarInt(1024);
+                    if (signatureBytes == 0)
+                        ChangeViewWitnessInvocationScripts[i] = null;
+                    else
+                        ChangeViewWitnessInvocationScripts[i] = reader.ReadBytes(signatureBytes);
+                }
+                ChangeViewTimestamps = reader.ReadSerializableArray(ChangeViewWitnessInvocationScripts.Length);
+            }
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.WriteVarInt(ChangeViewWitnessInvocationScripts.Length);
-            foreach (var witnessInvocationScript in ChangeViewWitnessInvocationScripts)
-            {
-                if (witnessInvocationScript == null)
-                    writer.WriteVarInt(0);
-                else
-                    writer.WriteVarBytes(witnessInvocationScript);
-            }
-            writer.Write(ChangeViewTimestamps);
-
             if (TransactionHashes == null)
                 writer.WriteVarInt(0);
             else
@@ -121,6 +115,21 @@ namespace Neo.Consensus
                     writer.WriteVarBytes(witnessInvocationScript);
             }
             writer.Write(PrepareTimestamps);
+
+            if (ChangeViewWitnessInvocationScripts == null)
+                writer.WriteVarInt(0);
+            else
+            {
+                writer.WriteVarInt(ChangeViewWitnessInvocationScripts.Length);
+                foreach (var witnessInvocationScript in ChangeViewWitnessInvocationScripts)
+                {
+                    if (witnessInvocationScript == null)
+                        writer.WriteVarInt(0);
+                    else
+                        writer.WriteVarBytes(witnessInvocationScript);
+                }
+                writer.Write(ChangeViewTimestamps);
+            }
         }
     }
 }

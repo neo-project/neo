@@ -377,7 +377,7 @@ namespace Neo.Consensus
             }
 
             var verifiedChangeViewWitnessInvocationScripts = new byte[context.Validators.Length][];
-            if (!canRestoreView)
+            if (!canRestoreView && message.ChangeViewWitnessInvocationScripts != null)
             {
                 var changeViewMsg = new ChangeView
                 {
@@ -561,9 +561,7 @@ namespace Neo.Consensus
                 }
             }
             if (context.State.HasFlag(ConsensusState.CommitSent) && context.BlockIndex == Blockchain.Singleton.Height + 1)
-            {
                 CheckPreparations();
-            }
             else
             {
                 InitializeConsensus(0);

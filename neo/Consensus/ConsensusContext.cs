@@ -249,9 +249,12 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeRecoveryMessage()
         {
+            var changeViewWitnessInvocationScripts = TransactionHashes == null || Preparations.Count(p => p != null) < M
+                ? ChangeViewWitnessInvocationScripts : null;
+
             return MakeSignedPayload(new RecoveryMessage()
             {
-                ChangeViewWitnessInvocationScripts = ChangeViewWitnessInvocationScripts,
+                ChangeViewWitnessInvocationScripts = changeViewWitnessInvocationScripts,
                 ChangeViewTimestamps = ChangeViewTimestamps,
                 TransactionHashes = TransactionHashes,
                 Nonce = Nonce,
