@@ -360,13 +360,16 @@ namespace Neo.Consensus
                 preparationHash = message.PreparationHash;
 
             var prepareResponses = new List<(ConsensusPayload, PrepareResponse)>();
+            var prepareResponseMsg = new PrepareResponse
+            {
+                ViewNumber = tempContext.ViewNumber,
+                PreparationHash = preparationHash
+            };
             bool canRestoreView = false;
             for (int i = 0; i < context.Validators.Length; i++)
             {
                 if (i == tempContext.PrimaryIndex) continue;
                 if (message.PrepareWitnessInvocationScripts[i] == null) continue;
-
-                var prepareResponseMsg = new PrepareResponse { PreparationHash = preparationHash };
                 var regeneratedPrepareResponse = tempContext.RegenerateSignedPayload(prepareResponseMsg, (ushort) i,
                     message.PrepareWitnessInvocationScripts[i], message.PrepareTimestamps[i]);
                 if (!regeneratedPrepareResponse.Verify(snap)) continue;
