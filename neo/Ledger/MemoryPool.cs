@@ -287,7 +287,7 @@ namespace Neo.Ledger
 
             if (_unsortedTransactions.ContainsKey(hash)) return false;
 
-            List<Transaction> removedTransactions;
+            List<Transaction> removedTransactions = null;
             _txRwLock.EnterWriteLock();
             try
             {
