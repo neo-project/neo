@@ -295,9 +295,8 @@ namespace Neo.Ledger
 
                 SortedSet<PoolItem> pool = tx.IsLowPriority ? _sortedLowPrioTransactions : _sortedHighPrioTransactions;
                 pool.Add(poolItem);
-                if (Count > Capacity) {
+                if (Count > Capacity)
                     removedTransactions = RemoveOverCapacity();
-                }
             }
             finally
             {
