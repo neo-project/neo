@@ -314,14 +314,15 @@ namespace Neo.Ledger
 
         private void RemoveOverCapacity(ref List<Transaction> removedTransactions)
         {
+            if (removedTransactions == null)
+                removedTransactions = new List<Transaction>();
+
             while (Count > Capacity)
             {
                 PoolItem minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
 
                 unsortedPool.Remove(minItem.Tx.Hash);
                 sortedPool.Remove(minItem);
-                if (removedTransactions == null)
-                    removedTransactions = new List<Transaction>();
                 removedTransactions.Add(minItem.Tx);
             }
         }
