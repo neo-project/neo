@@ -295,7 +295,9 @@ namespace Neo.Ledger
 
                 SortedSet<PoolItem> pool = tx.IsLowPriority ? _sortedLowPrioTransactions : _sortedHighPrioTransactions;
                 pool.Add(poolItem);
-                removedTransactions = RemoveOverCapacity();
+                if (Count > Capacity) {
+                    removedTransactions = RemoveOverCapacity();
+                }
             }
             finally
             {
@@ -314,17 +316,15 @@ namespace Neo.Ledger
 
         private List<Transaction> RemoveOverCapacity()
         {
-            List<Transaction> removedTransactions = null;
-            while (Count > Capacity)
+            List<Transaction> removedTransactions = new List<Transaction>();
+            do
             {
                 PoolItem minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
 
                 unsortedPool.Remove(minItem.Tx.Hash);
                 sortedPool.Remove(minItem);
-                if (removedTransactions == null)
-                    removedTransactions = new List<Transaction>();
                 removedTransactions.Add(minItem.Tx);
-            }
+            } while (Count > Capacity);
 
             return removedTransactions;
         }
