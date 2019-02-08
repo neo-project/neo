@@ -287,7 +287,7 @@ namespace Neo.Ledger
 
             if (_unsortedTransactions.ContainsKey(hash)) return false;
 
-            List<Transaction> removedTransactions = new List<Transaction>();
+            List<Transaction> removedTransactions;
             _txRwLock.EnterWriteLock();
             try
             {
@@ -295,7 +295,7 @@ namespace Neo.Ledger
 
                 SortedSet<PoolItem> pool = tx.IsLowPriority ? _sortedLowPrioTransactions : _sortedHighPrioTransactions;
                 pool.Add(poolItem);
-                RemoveOverCapacity(removedTransactions);
+                removedTransactions = RemoveOverCapacity();
             }
             finally
             {
@@ -304,16 +304,17 @@ namespace Neo.Ledger
 
             foreach (IMemoryPoolTxObserverPlugin plugin in Plugin.TxObserverPlugins)
             {
-                plugin.AddedTransaction(poolItem.Tx);
-                if (removedTransactions.Count > 0)
-                    plugin.RemovedTransactions(MemoryPoolTxRemovalReason.CapacityExceeded, removedTransactions);
+                plugin.TransactionAdded(poolItem.Tx);
+                if (removedTransactions != null)
+                    plugin.TransactionsRemoved(MemoryPoolTxRemovalReason.CapacityExceeded, removedTransactions);
             }
 
             return _unsortedTransactions.ContainsKey(hash);
         }
 
-        private void RemoveOverCapacity(List<Transaction> removedTransactions)
+        private List<Transaction> RemoveOverCapacity()
         {
+            List<Transaction> removedTransactions = null;
             while (Count > Capacity)
             {
                 PoolItem minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
@@ -322,6 +323,8 @@ namespace Neo.Ledger
                 sortedPool.Remove(minItem);
                 removedTransactions.Add(minItem.Tx);
             }
+
+            return removedTransactions;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -462,7 +465,7 @@ namespace Neo.Ledger
 
             var invalidTransactions = invalidItems.Select(p => p.Tx).ToArray();
             foreach (IMemoryPoolTxObserverPlugin plugin in Plugin.TxObserverPlugins)
-                plugin.RemovedTransactions(MemoryPoolTxRemovalReason.NoLongerValid, invalidTransactions);
+                plugin.TransactionsRemoved(MemoryPoolTxRemovalReason.NoLongerValid, invalidTransactions);
 
             return reverifiedItems.Count;
         }
