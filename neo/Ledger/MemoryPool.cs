@@ -287,7 +287,7 @@ namespace Neo.Ledger
 
             if (_unsortedTransactions.ContainsKey(hash)) return false;
 
-            List<Transaction> removedTransactions = null;
+            List<Transaction> removedTransactions = new List<Transaction>();
             _txRwLock.EnterWriteLock();
             try
             {
@@ -295,7 +295,7 @@ namespace Neo.Ledger
 
                 SortedSet<PoolItem> pool = tx.IsLowPriority ? _sortedLowPrioTransactions : _sortedHighPrioTransactions;
                 pool.Add(poolItem);
-                RemoveOverCapacity(ref removedTransactions);
+                RemoveOverCapacity(removedTransactions);
             }
             finally
             {
@@ -305,18 +305,15 @@ namespace Neo.Ledger
             foreach (IMemoryPoolTxObserverPlugin plugin in Plugin.TxObserverPlugins)
             {
                 plugin.AddedTransaction(poolItem.Tx);
-                if (removedTransactions != null)
+                if (removedTransactions.Count > 0)
                     plugin.RemovedTransactions(MemoryPoolTxRemovalReason.CapacityExceeded, removedTransactions);
             }
 
             return _unsortedTransactions.ContainsKey(hash);
         }
 
-        private void RemoveOverCapacity(ref List<Transaction> removedTransactions)
+        private void RemoveOverCapacity(List<Transaction> removedTransactions)
         {
-            if (removedTransactions == null)
-                removedTransactions = new List<Transaction>();
-
             while (Count > Capacity)
             {
                 PoolItem minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
