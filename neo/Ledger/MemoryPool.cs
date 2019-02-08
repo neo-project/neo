@@ -321,6 +321,8 @@ namespace Neo.Ledger
 
                 unsortedPool.Remove(minItem.Tx.Hash);
                 sortedPool.Remove(minItem);
+                if (removedTransactions == null)
+                    removedTransactions = new List<Transaction>();
                 removedTransactions.Add(minItem.Tx);
             }
 
