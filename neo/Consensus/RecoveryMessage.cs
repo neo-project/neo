@@ -24,6 +24,7 @@ namespace Neo.Consensus
         public UInt256 PreparationHash;
         public byte[][] PrepareWitnessInvocationScripts;
         public uint[] PrepareTimestamps;
+        public byte[][] CommitSignatures;
 
         public RecoveryMessage() : base(ConsensusMessageType.RecoveryMessage)
         {
@@ -59,31 +60,14 @@ namespace Neo.Consensus
             }
 
             PreparationHash = reader.ReadVarInt(32) == 0 ? null : reader.ReadSerializable<UInt256>();
-            PrepareWitnessInvocationScripts = new byte[reader.ReadVarInt(255)][];
-            for (int i = 0; i < PrepareWitnessInvocationScripts.Length; i++)
-            {
-                int signatureBytes = (int) reader.ReadVarInt(1024);
-                if (signatureBytes == 0)
-                    PrepareWitnessInvocationScripts[i] = null;
-                else
-                    PrepareWitnessInvocationScripts[i] = reader.ReadBytes(signatureBytes);
-            }
+            PrepareWitnessInvocationScripts = reader.ReadArrayOfVarBytesSupportingNull();
             PrepareTimestamps = reader.ReadSerializableArray(PrepareWitnessInvocationScripts.Length);
 
-            byte numChangeViews = (byte) reader.ReadVarInt(255);
-            if (numChangeViews > 0)
-            {
-                ChangeViewWitnessInvocationScripts = new byte[numChangeViews][];
-                for (int i = 0; i < ChangeViewWitnessInvocationScripts.Length; i++)
-                {
-                    int signatureBytes = (int) reader.ReadVarInt(1024);
-                    if (signatureBytes == 0)
-                        ChangeViewWitnessInvocationScripts[i] = null;
-                    else
-                        ChangeViewWitnessInvocationScripts[i] = reader.ReadBytes(signatureBytes);
-                }
+            ChangeViewWitnessInvocationScripts = reader.ReadArrayOfVarBytesSupportingNull();
+            if (ChangeViewWitnessInvocationScripts != null)
                 ChangeViewTimestamps = reader.ReadSerializableArray(ChangeViewWitnessInvocationScripts.Length);
-            }
+
+            CommitSignatures = reader.ReadArrayOfVarBytesSupportingNull();
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -105,30 +89,15 @@ namespace Neo.Consensus
                 writer.WriteVarInt(PreparationHash.Size);
                 writer.Write(PreparationHash);
             }
-            writer.WriteVarInt(PrepareWitnessInvocationScripts.Length);
-            foreach (var witnessInvocationScript in PrepareWitnessInvocationScripts)
-            {
-                if (witnessInvocationScript == null)
-                    writer.WriteVarInt(0);
-                else
-                    writer.WriteVarBytes(witnessInvocationScript);
-            }
+
+            writer.WriteArrayOfVarBytesSupportingNull(PrepareWitnessInvocationScripts);
             writer.Write(PrepareTimestamps);
 
-            if (ChangeViewWitnessInvocationScripts == null)
-                writer.WriteVarInt(0);
-            else
-            {
-                writer.WriteVarInt(ChangeViewWitnessInvocationScripts.Length);
-                foreach (var witnessInvocationScript in ChangeViewWitnessInvocationScripts)
-                {
-                    if (witnessInvocationScript == null)
-                        writer.WriteVarInt(0);
-                    else
-                        writer.WriteVarBytes(witnessInvocationScript);
-                }
+            writer.WriteArrayOfVarBytesSupportingNull(ChangeViewWitnessInvocationScripts);
+            if (ChangeViewWitnessInvocationScripts != null)
                 writer.Write(ChangeViewTimestamps);
-            }
+
+            writer.WriteArrayOfVarBytesSupportingNull(CommitSignatures);
         }
     }
 }

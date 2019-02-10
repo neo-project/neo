@@ -350,6 +350,7 @@ namespace Neo.UnitTests
             copiedMsg.PreparationHash.Should().Be(msg.PreparationHash);
             copiedMsg.PrepareWitnessInvocationScripts.ShouldAllBeEquivalentTo(msg.PrepareWitnessInvocationScripts);
             copiedMsg.PrepareTimestamps.ShouldAllBeEquivalentTo(msg.PrepareTimestamps);
+            (copiedMsg.CommitSignatures == null).Should().Be(true);
         }
 
         [TestMethod]
@@ -413,10 +414,11 @@ namespace Neo.UnitTests
             copiedMsg.PreparationHash.Should().Be(null);
             copiedMsg.PrepareWitnessInvocationScripts.ShouldAllBeEquivalentTo(msg.PrepareWitnessInvocationScripts);
             copiedMsg.PrepareTimestamps.ShouldAllBeEquivalentTo(msg.PrepareTimestamps);
+            (copiedMsg.CommitSignatures == null).Should().Be(true);
         }
 
         [TestMethod]
-        public void TestSerializeAndDeserializeRecoveryMessageWithoutChangeViews()
+        public void TestSerializeAndDeserializeRecoveryMessageWithoutChangeViewsWithoutCommits()
         {
             var msg = new RecoveryMessage();
             int txCountToInlcude = 5;
@@ -460,6 +462,59 @@ namespace Neo.UnitTests
             copiedMsg.PreparationHash.Should().Be(null);
             copiedMsg.PrepareWitnessInvocationScripts.ShouldAllBeEquivalentTo(msg.PrepareWitnessInvocationScripts);
             copiedMsg.PrepareTimestamps.ShouldAllBeEquivalentTo(msg.PrepareTimestamps);
+            (copiedMsg.CommitSignatures == null).Should().Be(true);
+        }
+
+        [TestMethod]
+        public void TestSerializeAndDeserializeRecoveryMessageWithoutChangeViewsWithCommits()
+        {
+            var msg = new RecoveryMessage();
+            int txCountToInlcude = 5;
+            msg.TransactionHashes = new UInt256[txCountToInlcude];
+            Transaction[] txs = new Transaction[txCountToInlcude];
+            txs[0] = TestUtils.CreateRandomMockMinerTransaction().Object;
+            msg.TransactionHashes[0] = txs[0].Hash;
+            for (int i = 1; i < txCountToInlcude; i++)
+            {
+                txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
+                msg.TransactionHashes[i] = txs[i].Hash;
+            }
+            msg.Nonce = UInt64.MaxValue;
+            msg.NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA");
+            msg.MinerTransaction = (MinerTransaction) txs[0];
+            msg.PrepareWitnessInvocationScripts = new byte[7][];
+            msg.PrepareWitnessInvocationScripts[0] = new [] {(byte)'t', (byte)'e'};
+            msg.PrepareWitnessInvocationScripts[1] = new [] {(byte)'s', (byte)'t'};
+            msg.PrepareWitnessInvocationScripts[2] = null;
+            msg.PrepareWitnessInvocationScripts[3] = new [] {(byte)'1', (byte)'2'};
+            msg.PrepareWitnessInvocationScripts[4] = null;
+            msg.PrepareWitnessInvocationScripts[5] = null;
+            msg.PrepareWitnessInvocationScripts[6] = new [] {(byte)'3', (byte)'!'};
+            msg.PrepareTimestamps = new uint[7];
+            msg.PrepareTimestamps[0] = 0;
+            msg.PrepareTimestamps[1] = 1;
+            msg.PrepareTimestamps[2] = 2;
+            msg.PrepareTimestamps[3] = uint.MaxValue;
+            msg.PrepareTimestamps[4] = 4;
+            msg.PrepareTimestamps[5] = 5;
+            msg.PrepareTimestamps[6] = 6;
+            msg.CommitSignatures = new byte[7][];
+            msg.CommitSignatures[0] = null;
+            msg.CommitSignatures[1] = new [] {(byte)'1', (byte)'2'};
+            msg.CommitSignatures[6] = new [] {(byte)'3', (byte)'D', (byte)'R', (byte)'I', (byte)'N', (byte)'K'};
+
+            var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage());;
+
+            copiedMsg.ChangeViewWitnessInvocationScripts.ShouldAllBeEquivalentTo(null);
+            copiedMsg.ChangeViewTimestamps.ShouldAllBeEquivalentTo(null);
+            copiedMsg.TransactionHashes.ShouldAllBeEquivalentTo(msg.TransactionHashes);
+            copiedMsg.Nonce.Should().Be(msg.Nonce);
+            copiedMsg.NextConsensus.Should().Be(msg.NextConsensus);
+            copiedMsg.MinerTransaction.Should().Be(msg.MinerTransaction);
+            copiedMsg.PreparationHash.Should().Be(null);
+            copiedMsg.PrepareWitnessInvocationScripts.ShouldAllBeEquivalentTo(msg.PrepareWitnessInvocationScripts);
+            copiedMsg.PrepareTimestamps.ShouldAllBeEquivalentTo(msg.PrepareTimestamps);
+            copiedMsg.CommitSignatures.ShouldAllBeEquivalentTo(msg.CommitSignatures);
         }
     }
 }

@@ -141,6 +141,27 @@ namespace Neo.IO
             return reader.ReadBytes((int)reader.ReadVarInt((ulong)max));
         }
 
+        public static byte[][] ReadArrayOfVarBytesSupportingNull(this BinaryReader reader, int maxItems=255, int maxItemLen = 1024)
+        {
+            byte items = (byte) reader.ReadVarInt((ulong)maxItems);
+            if (items > 0)
+            {
+                byte[][] output = new byte[items][];
+                for (int i = 0; i < items; i++)
+                {
+                    int bytes = (int) reader.ReadVarInt((ulong)maxItemLen);
+                    if (bytes == 0)
+                        output[i] = null;
+                    else
+                        output[i] = reader.ReadBytes(bytes);
+                }
+
+                return output;
+            }
+
+            return null;
+        }
+
         public static ulong ReadVarInt(this BinaryReader reader, ulong max = ulong.MaxValue)
         {
             byte fb = reader.ReadByte();
@@ -242,6 +263,23 @@ namespace Neo.IO
         {
             writer.WriteVarInt(value.Length);
             writer.Write(value);
+        }
+
+        public static void WriteArrayOfVarBytesSupportingNull(this BinaryWriter writer, byte[][] values)
+        {
+            if (values == null)
+                writer.WriteVarInt(0);
+            else
+            {
+                writer.WriteVarInt(values.Length);
+                foreach (var value in values)
+                {
+                    if (value == null)
+                        writer.WriteVarInt(0);
+                    else
+                        writer.WriteVarBytes(value);
+                }
+            }
         }
 
         public static void WriteVarInt(this BinaryWriter writer, long value)
