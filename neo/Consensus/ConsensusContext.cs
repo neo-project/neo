@@ -40,6 +40,7 @@ namespace Neo.Consensus
         private KeyPair keyPair;
         private readonly Wallet wallet;
 
+        public int F => (Validators.Length - 1) / 3;
         public int M => Validators.Length - (Validators.Length - 1) / 3;
         public Header PrevHeader => snapshot.GetHeader(PrevHash);
         public int Size => throw new NotImplementedException();
@@ -133,20 +134,26 @@ namespace Neo.Consensus
             snapshot?.Dispose();
         }
 
-        public uint GetPrimaryIndex(byte view_number)
+        public uint GetPrimaryIndex(byte viewNumber)
         {
-            int p = ((int)BlockIndex - view_number) % Validators.Length;
+            int p = ((int)BlockIndex - viewNumber) % Validators.Length;
             return p >= 0 ? (uint)p : (uint)(p + Validators.Length);
         }
 
         public ConsensusPayload MakeChangeView()
         {
-            return MakeSignedPayload(new ChangeView
+            var payload = MakeSignedPayload(new ChangeView
             {
-                // View number is ignored for ChangeView, and for recovery we need it to be predicatable, so set as 0.
+                // View number is ignored for ChangeView, set it to 0, so it doesn't have to be saved for recovery.
                 ViewNumber = 0,
                 NewViewNumber = ExpectedView[MyIndex]
             }, false);
+            // Change view messages should just use the current time as their timestamp. This allows
+            // receiving nodes to ensure they only respond once to a specific ChangeView request (it thus
+            // prevents other nodes repeatedly broadcasting the changeview message to cause CN nodes to
+            // repeatedly send recovery messages).
+            payload.Timestamp = TimeProvider.Current.UtcNow.ToTimestamp();
+            return payload;
         }
 
         public ConsensusPayload MakeCommit()
@@ -275,9 +282,9 @@ namespace Neo.Consensus
             });
         }
 
-        public void Reset(byte view_number, Snapshot newSnapshot=null)
+        public void Reset(byte viewNumber, Snapshot newSnapshot=null)
         {
-            if (view_number == 0)
+            if (viewNumber == 0)
             {
                 snapshot?.Dispose();
                 snapshot = newSnapshot ?? Blockchain.Singleton.GetSnapshot();
@@ -301,8 +308,8 @@ namespace Neo.Consensus
                 }
             }
             State = ConsensusState.Initial;
-            ViewNumber = view_number;
-            PrimaryIndex = GetPrimaryIndex(view_number);
+            ViewNumber = viewNumber;
+            PrimaryIndex = GetPrimaryIndex(viewNumber);
             Timestamp = 0;
             TransactionHashes = null;
             Preparations = new UInt256[Validators.Length];
@@ -310,7 +317,7 @@ namespace Neo.Consensus
             PreparationTimestamps = new uint[Validators.Length];
             Commits = new byte[Validators.Length][];
             if (MyIndex >= 0)
-                ExpectedView[MyIndex] = view_number;
+                ExpectedView[MyIndex] = viewNumber;
             _header = null;
         }
 

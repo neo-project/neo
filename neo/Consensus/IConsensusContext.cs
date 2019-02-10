@@ -30,6 +30,7 @@ namespace Neo.Consensus
         byte[][] ChangeViewWitnessInvocationScripts { get; set; }
         uint[] ChangeViewTimestamps { get; set; }
 
+        int F { get; }
         int M { get; }
 
         Header PrevHeader { get; }
@@ -41,7 +42,7 @@ namespace Neo.Consensus
 
         //void Dispose();
 
-        uint GetPrimaryIndex(byte view_number);
+        uint GetPrimaryIndex(byte viewNumber);
 
         ConsensusPayload MakeChangeView();
 
@@ -55,7 +56,7 @@ namespace Neo.Consensus
 
         ConsensusPayload MakePrepareResponse(UInt256 preparation);
 
-        void Reset(byte view_number, Snapshot newSnapshot=null);
+        void Reset(byte viewNumber, Snapshot newSnapshot=null);
 
         void Fill();
 

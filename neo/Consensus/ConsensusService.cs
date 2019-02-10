@@ -32,6 +32,11 @@ namespace Neo.Consensus
         private DateTime block_received_time;
         private bool started = false;
         private readonly Wallet wallet;
+        /// <summary>
+        /// This will be cleared every block (so it will not grow out of control, but is used to prevent repeatedly
+        /// responding to the same message.
+        /// </summary>
+        private readonly HashSet<UInt256> knownHashes = new HashSet<UInt256>();
 
         public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
             : this(localNode, taskManager, store, new ConsensusContext(wallet))
@@ -127,13 +132,13 @@ namespace Neo.Consensus
             }
         }
 
-        private void InitializeConsensus(byte view_number)
+        private void InitializeConsensus(byte viewNumber)
         {
-            context.Reset(view_number);
+            context.Reset(viewNumber);
             if (context.MyIndex < 0) return;
-            if (view_number > 0)
-                Log($"changeview: view={view_number} primary={context.Validators[context.GetPrimaryIndex((byte)(view_number - 1u))]}", LogLevel.Warning);
-            Log($"initialize: height={context.BlockIndex} view={view_number} index={context.MyIndex} role={(context.MyIndex == context.PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup)}");
+            if (viewNumber > 0)
+                Log($"changeview: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
+            Log($"initialize: height={context.BlockIndex} view={viewNumber} index={context.MyIndex} role={(context.MyIndex == context.PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup)}");
             if (context.MyIndex == context.PrimaryIndex)
             {
                 context.State |= ConsensusState.Primary;
@@ -146,7 +151,7 @@ namespace Neo.Consensus
             else
             {
                 context.State = ConsensusState.Backup;
-                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (view_number + 1)));
+                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (viewNumber + 1)));
             }
         }
 
@@ -157,20 +162,37 @@ namespace Neo.Consensus
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
-            if (message.NewViewNumber < context.ViewNumber
-                // Change view requested to the same view needs to issue recovery if commit is sent, otherwise
-                // another node will potentially count it's view number past the view that has commit sent.
-                || message.NewViewNumber == context.ViewNumber && context.State.HasFlag(ConsensusState.CommitSent))
+            // Node in commit receiving ChangeView should always send the recovery message, to restore
+            // nodes that may have counted their view number past the view that has commit set.
+            bool shouldSendRecovery = context.State.HasFlag(ConsensusState.CommitSent);
+            if (shouldSendRecovery || message.NewViewNumber < context.ViewNumber)
             {
-                // If we are at a higher view, we can send the regeneration msg.
+                if (!shouldSendRecovery)
+                {
+                    // Limit recovery to sending from `f` nodes when the request is from a lower view number.
+                    int allowedRecoveryNodeCount = context.F;
+                    for (int i = 1; i <= allowedRecoveryNodeCount; i++)
+                    {
+                        if (payload.ValidatorIndex + i % context.Validators.Length != context.MyIndex) continue;
+                        shouldSendRecovery = true;
+                        break;
+                    }
+                }
+
+                // We keep track of the payload hashes received in this block, and don't respond with
+                // recovery in response to the same payload that we already responded to previously.
+                // ChangeView messages always set their Timestamp to the time the change view is sent, thus
+                // if a node restarts and issues a change view for the same view, it will have a different hash
+                // and will correctly respond again; however replay attacks of the ChangeView message from arbitrary
+                // nodes will not trigger an additonal recovery message response.
+                if (!shouldSendRecovery || knownHashes.Contains(payload.Hash)) return;
+                knownHashes.Add(payload.Hash);
+
                 Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber}");
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
-                // Note: In the future, we may want to limit how many nodes will send a regeneration msg
+                localNode.Tell(new LocalNode.SendDirectly {Inventory = context.MakeRecoveryMessage()});
                 return;
             }
             if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
-                return;
-            if (context.State.HasFlag(ConsensusState.CommitSent))
                 return;
 
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
@@ -253,6 +275,7 @@ namespace Neo.Consensus
         {
             Log($"persist block: {block.Hash}");
             block_received_time = TimeProvider.Current.UtcNow;
+            knownHashes.Clear();
             InitializeConsensus(0);
         }
 
@@ -330,7 +353,6 @@ namespace Neo.Consensus
         {
             if (context.State.HasFlag(ConsensusState.CommitSent)) return;
             if (context.BlockIndex > payload.BlockIndex) return;
-            if (context.ViewNumber > message.ViewNumber) return;
             Snapshot snap =  Blockchain.Singleton.GetSnapshot();
             if (payload.BlockIndex > snap.Height + 1) return;
 
@@ -384,9 +406,13 @@ namespace Neo.Consensus
                 if (!regeneratedPrepareResponse.Verify(snap) || !PerformBasicConsensusPayloadPreChecks(regeneratedPrepareResponse)) continue;
                 prepareResponses.Add((regeneratedPrepareResponse, prepareResponseMsg));
                 if (prepareRequest == null || prepareResponses.Count < context.M - 1) continue;
+                if (context.ViewNumber >= message.ViewNumber && prepareResponses.Count < context.M) continue;
                 canRestoreView = true;
                 break;
             }
+
+            // Only accept recovery from lower views if there were at least M valid prepare requests.
+            if (context.ViewNumber > message.ViewNumber && !canRestoreView) return;
 
             var verifiedChangeViewWitnessInvocationScripts = new byte[context.Validators.Length][];
             if (!canRestoreView && message.ChangeViewWitnessInvocationScripts != null)
@@ -416,13 +442,32 @@ namespace Neo.Consensus
             if (!canRestoreView) return;
             // We had enough valid change view messages or preparations to safely change the view number.
             Log($"regenerating view: {message.ViewNumber}");
-            if (block_received_time == null)
+
+            if (context.PrimaryIndex == context.MyIndex && prepareRequestPayload != null)
             {
-                block_received_time = TimeProvider.Current.UtcNow - TimeSpan.FromSeconds(
-                                          Blockchain.TimePerBlock.TotalSeconds * Math.Pow(2, message.ViewNumber));
+                // If we are the primary and there was avalid prepare request payload, we will accept our own prepare
+                // request, so avoid the normal IntializeConsensus behavior.
+                context.Reset(message.ViewNumber);
+                // Since we won't want to fill the context, we will behave like a backup even though we have the primary
+                // index, we set the backup state so we can call OnPrepareRequestReceived below.
+                context.State |= ConsensusState.Primary | ConsensusState.Backup;
+                // As a primary, we are in the state as though we had sent a prepare request, so we set this flag so
+                // the timer will behave properly when it expires.
+                context.State |= ConsensusState.RequestSent;
+                // We set the timer in the same way a Backup sets their timer in this case.
+                Log($"initialize: height={context.BlockIndex} view={message.ViewNumber} index={context.MyIndex} role={ConsensusState.Primary}");
+                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (message.ViewNumber + 1)));
+            }
+            else
+            {
+                if (block_received_time == null)
+                {
+                    block_received_time = TimeProvider.Current.UtcNow - TimeSpan.FromSeconds(
+                                              Blockchain.TimePerBlock.TotalSeconds * Math.Pow(2, message.ViewNumber));
+                }
+                InitializeConsensus(message.ViewNumber);
             }
 
-            InitializeConsensus(message.ViewNumber);
             for (int i = 0; i < context.Validators.Length; i++)
             {
                 if (verifiedChangeViewWitnessInvocationScripts[i] != null)
@@ -433,12 +478,10 @@ namespace Neo.Consensus
                 }
             }
 
-            // If we are the primary, we only restore the view, since we will create a new prepare request.
-            if (context.PrimaryIndex == context.MyIndex) return;
-
             if (prepareRequestPayload != null)
             {
                 Log($"regenerating prepare request");
+                // Note: If our node is the primary this will accept its own previously sent prepare request here.
                 OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
             }
 
