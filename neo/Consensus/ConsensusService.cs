@@ -445,7 +445,7 @@ namespace Neo.Consensus
 
             if (context.PrimaryIndex == context.MyIndex && prepareRequestPayload != null)
             {
-                // If we are the primary and there was avalid prepare request payload, we will accept our own prepare
+                // If we are the primary and there was a valid prepare request payload, we will accept our own prepare
                 // request, so avoid the normal IntializeConsensus behavior.
                 context.Reset(message.ViewNumber);
                 // Since we won't want to fill the context, we will behave like a backup even though we have the primary
