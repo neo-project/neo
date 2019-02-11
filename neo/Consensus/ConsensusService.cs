@@ -310,33 +310,43 @@ namespace Neo.Consensus
             // If we are already on the right view number we want to accept more preparation messages and also accept
             // any commit signatures in the payload.
 
+            bool recoveryHasPrepareRequest = message.PrepareWitnessInvocationScripts[context.PrimaryIndex] != null;
+
             if (!context.State.HasFlag(ConsensusState.CommitSent))
             {
-                UInt256 preparationHash;
-                if (context.PrimaryIndex == context.MyIndex)
+                UInt256 preparationHash = null;
+                bool myIndexIsPrimary = context.MyIndex == context.PrimaryIndex;
+                if (myIndexIsPrimary)
                 {
                     preparationHash = context.Preparations[context.PrimaryIndex];
-
-                    if (preparationHash == null)
-                    {
-                        // TODO
-                        // If we haven't sent the prepare request and we are the primary. Then we can should accept
-                        // our own previously generated prepare request here if it is present in the recovery message.
-                        return;
-                    }
+                    if (preparationHash == null && !recoveryHasPrepareRequest) return;
                 }
-                else
+
+                if (preparationHash == null)
                 {
-                    if (message.PrepareWitnessInvocationScripts[context.PrimaryIndex] != null
-                        && ReverifyPrepareRequest((ConsensusContext) context, message, snap,
+                    if (recoveryHasPrepareRequest && ReverifyPrepareRequest((ConsensusContext) context, message, snap,
                             out var prepareRequestPayload, out var prepareRequest))
                     {
-                        if (context.PrimaryIndex != context.MyIndex)
-                            OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
+                        if (myIndexIsPrimary)
+                        {
+                            // In this case we are primary, but we haven't sent a prepare request, but we received a
+                            // recovery message containing our own previous prepare request; so switch to being a backup
+                            // and accept our own previous request.
+                            context.State &= ~ConsensusState.Primary;
+                            context.State |= ConsensusState.Backup;
+                            ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ViewNumber + 1)));
+                        }
+                        OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
+
                         preparationHash = prepareRequestPayload.Hash;
                     }
                     else
                     {
+                        // Can't use recover if the we are the primary and we haven't sent a prepare request and no
+                        // prepare request was present in the recovery message.
+                        if (myIndexIsPrimary) return;
+
+                        // If we have no `Preparation` hash we can't regenerate any of the `PrepareRequest` messages.
                         if (message.PreparationHash == null) return;
                         preparationHash = message.PreparationHash;
                     }
@@ -397,6 +407,10 @@ namespace Neo.Consensus
                 HandleRecoveryInCurrentView(message, snap);
                 return;
             }
+
+            // Commited nodes cannot change view or it can lead to a potential block spork, since their block signature
+            // could potentially be used twice.
+            if (context.State.HasFlag(ConsensusState.CommitSent)) return;
 
             var tempContext = new ConsensusContext(wallet);
             // Have to Reset to 0 first to handle initializion of the context
@@ -464,13 +478,7 @@ namespace Neo.Consensus
                 }
             }
 
-            if (context.State.HasFlag(ConsensusState.CommitSent))
-            {
-                var currentCommits = context.Commits.Count(p => p != null);
-                // Since we are committed, the recovery message must have more commits in order to switch view
-                if (!canRestoreView || validCommitCount <= currentCommits) return;
-            }
-            else if (message.ViewNumber < context.ViewNumber)
+            if (message.ViewNumber < context.ViewNumber)
             {
                 // Only accept recovery from lower views if there were at least M valid prepare requests
                 // and at least 2 valid commit signatures.
@@ -514,11 +522,8 @@ namespace Neo.Consensus
                 // request, so avoid the normal IntializeConsensus behavior.
                 context.Reset(message.ViewNumber);
                 // Since we won't want to fill the context, we will behave like a backup even though we have the primary
-                // index, we set the backup state so we can call OnPrepareRequestReceived below.
-                context.State |= ConsensusState.Primary | ConsensusState.Backup;
-                // As a primary, we are in the state as though we had sent a prepare request, so we set this flag so
-                // the timer will behave properly when it expires.
-                context.State |= ConsensusState.RequestSent;
+                // index; we set the backup state so we can call OnPrepareRequestReceived below.
+                context.State |= ConsensusState.Backup;
                 // We set the timer in the same way a Backup sets their timer in this case.
                 Log($"initialize: height={context.BlockIndex} view={message.ViewNumber} index={context.MyIndex} role={ConsensusState.Primary}");
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (message.ViewNumber + 1)));
