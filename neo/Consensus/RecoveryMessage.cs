@@ -60,14 +60,14 @@ namespace Neo.Consensus
             }
 
             PreparationHash = reader.ReadVarInt(32) == 0 ? null : reader.ReadSerializable<UInt256>();
-            PrepareWitnessInvocationScripts = reader.ReadArrayOfVarBytesSupportingNull();
-            PrepareTimestamps = reader.ReadSerializableArray(PrepareWitnessInvocationScripts.Length);
+            PrepareWitnessInvocationScripts = reader.ReadVarBytesArray();
+            PrepareTimestamps = reader.ReadUIntArray(PrepareWitnessInvocationScripts.Length);
 
-            ChangeViewWitnessInvocationScripts = reader.ReadArrayOfVarBytesSupportingNull();
+            ChangeViewWitnessInvocationScripts = reader.ReadVarBytesArray();
             if (ChangeViewWitnessInvocationScripts != null)
-                ChangeViewTimestamps = reader.ReadSerializableArray(ChangeViewWitnessInvocationScripts.Length);
+                ChangeViewTimestamps = reader.ReadUIntArray(ChangeViewWitnessInvocationScripts.Length);
 
-            CommitSignatures = reader.ReadArrayOfVarBytesSupportingNull();
+            CommitSignatures = reader.ReadVarBytesArray();
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -90,14 +90,14 @@ namespace Neo.Consensus
                 writer.Write(PreparationHash);
             }
 
-            writer.WriteArrayOfVarBytesSupportingNull(PrepareWitnessInvocationScripts);
+            writer.WriteArrayVarBytesArray(PrepareWitnessInvocationScripts);
             writer.Write(PrepareTimestamps);
 
-            writer.WriteArrayOfVarBytesSupportingNull(ChangeViewWitnessInvocationScripts);
+            writer.WriteArrayVarBytesArray(ChangeViewWitnessInvocationScripts);
             if (ChangeViewWitnessInvocationScripts != null)
                 writer.Write(ChangeViewTimestamps);
 
-            writer.WriteArrayOfVarBytesSupportingNull(CommitSignatures);
+            writer.WriteArrayVarBytesArray(CommitSignatures);
         }
     }
 }

@@ -20,10 +20,6 @@ namespace Neo.Consensus
         {
         }
 
-        protected PrepareRequest(ConsensusMessageType msgType) : base(msgType)
-        {
-        }
-
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);

@@ -129,7 +129,7 @@ namespace Neo.IO
             return array;
         }
 
-        public static uint[] ReadSerializableArray(this BinaryReader reader, int max = 0x1000000)
+        public static uint[] ReadUIntArray(this BinaryReader reader, int max = 0x1000000)
         {
             uint[] array = new uint[reader.ReadVarInt((ulong) max)];
             for (int i = 0; i < array.Length; i++) array[i] = reader.ReadUInt32();
@@ -141,7 +141,7 @@ namespace Neo.IO
             return reader.ReadBytes((int)reader.ReadVarInt((ulong)max));
         }
 
-        public static byte[][] ReadArrayOfVarBytesSupportingNull(this BinaryReader reader, int maxItems=255, int maxItemLen = 1024)
+        public static byte[][] ReadVarBytesArray(this BinaryReader reader, int maxItems=255, int maxItemLen = 1024)
         {
             byte items = (byte) reader.ReadVarInt((ulong)maxItems);
             if (items > 0)
@@ -265,7 +265,7 @@ namespace Neo.IO
             writer.Write(value);
         }
 
-        public static void WriteArrayOfVarBytesSupportingNull(this BinaryWriter writer, byte[][] values)
+        public static void WriteArrayVarBytesArray(this BinaryWriter writer, byte[][] values)
         {
             if (values == null)
                 writer.WriteVarInt(0);
