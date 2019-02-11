@@ -144,16 +144,14 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeChangeView()
         {
-            var payload = MakeSignedPayload(new ChangeView
-            {
-                NewViewNumber = ExpectedView[MyIndex]
-            });
             // Change view messages should just use the current time as their timestamp. This allows
             // receiving nodes to ensure they only respond once to a specific ChangeView request (it thus
             // prevents other nodes repeatedly broadcasting the ChangeView message to cause CN nodes to
             // repeatedly send recovery messages).
-            payload.Timestamp = TimeProvider.Current.UtcNow.ToTimestamp();
-            return payload;
+            return MakeSignedPayload(new ChangeView
+            {
+                NewViewNumber = ExpectedView[MyIndex]
+            }, TimeProvider.Current.UtcNow.ToTimestamp());;
         }
 
         public ConsensusPayload MakeCommit()
@@ -187,7 +185,7 @@ namespace Neo.Consensus
             return _header;
         }
 
-        private ConsensusPayload MakeSignedPayload(ConsensusMessage message)
+        private ConsensusPayload MakeSignedPayload(ConsensusMessage message, uint overrideTimestamp=0)
         {
             message.ViewNumber = ViewNumber;
             ConsensusPayload payload = new ConsensusPayload
@@ -196,7 +194,7 @@ namespace Neo.Consensus
                 PrevHash = PrevHash,
                 BlockIndex = BlockIndex,
                 ValidatorIndex = (ushort)MyIndex,
-                Timestamp = Timestamp,
+                Timestamp = (overrideTimestamp != 0) ? overrideTimestamp : Timestamp,
                 Data = message.ToArray()
             };
             SignPayload(payload);
