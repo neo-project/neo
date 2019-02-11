@@ -268,7 +268,7 @@ namespace Neo.Consensus
                 NextConsensus = NextConsensus,
                 MinerTransaction = (MinerTransaction) (TransactionHashes == null ? null : Transactions?[TransactionHashes[0]]),
                 // We only need a PreparationHash set if we don't have the PrepareRequest information.
-                PreparationHash = TransactionHashes == null ? Preparations.FirstOrDefault(p => p != null) : null,
+                PreparationHash = TransactionHashes == null ? Preparations.Where(p => p != null).GroupBy(p => p, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
                 PrepareWitnessInvocationScripts = PreparationWitnessInvocationScripts,
                 PrepareTimestamps = PreparationTimestamps,
                 CommitSignatures = State.HasFlag(ConsensusState.CommitSent) ? Commits : null
