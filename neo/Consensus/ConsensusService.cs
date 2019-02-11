@@ -309,42 +309,71 @@ namespace Neo.Consensus
         {
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
 
-            ConsensusPayload prepareRequestPayload = null;
-            UInt256 preparationHash;
-            // if we are already on the right view number the only thing we might want to do is accept more
-            // Preparation messages if they can be reconstructed from the regeneration message.
-            if (context.PrimaryIndex == context.MyIndex)
+            // If we are already on the right view number we want to accept more preparation messages and also accept
+            // any commit signatures in the payload. If we are not on
+
+            if (!context.State.HasFlag(ConsensusState.CommitSent))
             {
-                preparationHash = context.Preparations[context.PrimaryIndex];
-                if (preparationHash == null) return;
-            }
-            else if (message.PrepareWitnessInvocationScripts[context.PrimaryIndex] != null
-                && ReverifyPrepareRequest((ConsensusContext) context, message, snap, out prepareRequestPayload, out var prepareRequest))
-            {
-                if (context.PrimaryIndex != context.MyIndex)
-                    OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
-                preparationHash = prepareRequestPayload.Hash;
-            }
-            else
-            {
-                if (message.PreparationHash == null) return;
-                preparationHash = message.PreparationHash;
+                UInt256 preparationHash;
+                if (context.PrimaryIndex == context.MyIndex)
+                {
+                    preparationHash = context.Preparations[context.PrimaryIndex];
+                    if (preparationHash == null) return;
+                }
+                else
+                {
+                    if (message.PrepareWitnessInvocationScripts[context.PrimaryIndex] != null
+                        && ReverifyPrepareRequest((ConsensusContext) context, message, snap,
+                            out var prepareRequestPayload, out var prepareRequest))
+                    {
+                        if (context.PrimaryIndex != context.MyIndex)
+                            OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
+                        preparationHash = prepareRequestPayload.Hash;
+                    }
+                    else
+                    {
+                        if (message.PreparationHash == null) return;
+                        preparationHash = message.PreparationHash;
+                    }
+                }
+
+                for (int i = 0; i < context.Validators.Length; i++)
+                {
+                    // If we are missing this preparation.
+                    if (context.Preparations[i] != null) continue;
+                    if (i == context.PrimaryIndex) continue;
+                    // If the recovery message has this preparations
+                    if (message.PrepareWitnessInvocationScripts[i] == null) continue;
+                    var prepareResponseMsg = new PrepareResponse {PreparationHash = preparationHash};
+                    prepareResponseMsg.ViewNumber = context.ViewNumber;
+                    var regeneratedPrepareResponse = ((ConsensusContext) context).RegenerateSignedPayload(
+                        prepareResponseMsg, (ushort) i, message.PrepareWitnessInvocationScripts[i],
+                        message.PrepareTimestamps[i]);
+                    if (regeneratedPrepareResponse.Verify(snap) &&
+                        PerformBasicConsensusPayloadPreChecks(regeneratedPrepareResponse))
+                        OnPrepareResponseReceived(regeneratedPrepareResponse, prepareResponseMsg);
+                }
             }
 
-            for (int i = 0; i < context.Validators.Length; i++)
+            if (!context.State.HasFlag(ConsensusState.CommitSent)) return;
+
+            if (message.CommitSignatures != null)
             {
-                // If we are missing this preparation.
-                if (context.Preparations[i] != null) continue;
-                if (i == context.PrimaryIndex) continue;
-                // If the recovery message has this preparations
-                if (message.PrepareWitnessInvocationScripts[i] == null) continue;
-                var prepareResponseMsg = new PrepareResponse { PreparationHash = preparationHash };
-                prepareResponseMsg.ViewNumber = context.ViewNumber;
-                var regeneratedPrepareResponse = ((ConsensusContext) context).RegenerateSignedPayload(
-                    prepareResponseMsg, (ushort) i, message.PrepareWitnessInvocationScripts[i],
-                    message.PrepareTimestamps[i]);
-                if (regeneratedPrepareResponse.Verify(snap) && PerformBasicConsensusPayloadPreChecks(regeneratedPrepareResponse))
-                    OnPrepareResponseReceived(regeneratedPrepareResponse, prepareResponseMsg);
+                bool addedCommits = false;
+                if (message.CommitSignatures.Length < context.Validators.Length) return;
+                var header = context.MakeHeader();
+                for (int i = 0; i < context.Validators.Length; i++)
+                {
+                    if (context.Commits[i] != null) continue;
+                    if (message.CommitSignatures[i] == null) continue;
+                    var signature = message.CommitSignatures[i];
+                    if (!Crypto.Default.VerifySignature(header.GetHashData(), signature,
+                        context.Validators[i].EncodePoint(false)))
+                        continue;
+                    context.Commits[i] = signature;
+                    addedCommits = true;
+                }
+                if (addedCommits) CheckCommits();
             }
         }
 
@@ -359,11 +388,6 @@ namespace Neo.Consensus
 
             if (context.ViewNumber == message.ViewNumber)
             {
-                if (context.State.HasFlag(ConsensusState.CommitSent)) 
-                {
-                    // TODO: Accept additional commits here that may be present in the recovery message.
-                    return;
-                }
                 HandleRecoveryInCurrentView(message, snap);
                 return;
             }
