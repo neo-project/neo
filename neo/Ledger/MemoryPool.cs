@@ -273,9 +273,10 @@ namespace Neo.Ledger
         }
 
         /// <summary>
+        /// Adds an already verified transaction to the memory pool.
         ///
-        /// Note: This must only be called from a single thread (the Blockchain actor) to add a transaction to the pool
-        ///       one should tell the Blockchain actor about the transaction.
+        /// Note: This must only be called from a single thread (the Blockchain actor). To add a transaction to the pool
+        ///       tell the Blockchain actor about the transaction.
         /// </summary>
         /// <param name="hash"></param>
         /// <param name="tx"></param>
@@ -286,6 +287,7 @@ namespace Neo.Ledger
 
             if (_unsortedTransactions.ContainsKey(hash)) return false;
 
+            List<Transaction> removedTransactions = null;
             _txRwLock.EnterWriteLock();
             try
             {
@@ -293,25 +295,37 @@ namespace Neo.Ledger
 
                 SortedSet<PoolItem> pool = tx.IsLowPriority ? _sortedLowPrioTransactions : _sortedHighPrioTransactions;
                 pool.Add(poolItem);
-                RemoveOverCapacity();
+                if (Count > Capacity)
+                    removedTransactions = RemoveOverCapacity();
             }
             finally
             {
                 _txRwLock.ExitWriteLock();
             }
 
+            foreach (IMemoryPoolTxObserverPlugin plugin in Plugin.TxObserverPlugins)
+            {
+                plugin.TransactionAdded(poolItem.Tx);
+                if (removedTransactions != null)
+                    plugin.TransactionsRemoved(MemoryPoolTxRemovalReason.CapacityExceeded, removedTransactions);
+            }
+
             return _unsortedTransactions.ContainsKey(hash);
         }
 
-        private void RemoveOverCapacity()
+        private List<Transaction> RemoveOverCapacity()
         {
-            while (Count > Capacity)
+            List<Transaction> removedTransactions = new List<Transaction>();
+            do
             {
                 PoolItem minItem = GetLowestFeeTransaction(out var unsortedPool, out var sortedPool);
 
                 unsortedPool.Remove(minItem.Tx.Hash);
                 sortedPool.Remove(minItem);
-            }
+                removedTransactions.Add(minItem.Tx);
+            } while (Count > Capacity);
+
+            return removedTransactions;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -449,6 +463,10 @@ namespace Neo.Ledger
             {
                 _txRwLock.ExitWriteLock();
             }
+
+            var invalidTransactions = invalidItems.Select(p => p.Tx).ToArray();
+            foreach (IMemoryPoolTxObserverPlugin plugin in Plugin.TxObserverPlugins)
+                plugin.TransactionsRemoved(MemoryPoolTxRemovalReason.NoLongerValid, invalidTransactions);
 
             return reverifiedItems.Count;
         }
