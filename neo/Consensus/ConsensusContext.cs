@@ -110,7 +110,7 @@ namespace Neo.Consensus
                 if (PreparationWitnessInvocationScripts[i].Length == 0)
                     PreparationWitnessInvocationScripts[i] = null;
             }
-            PreparationTimestamps = reader.ReadSerializableArray(Validators.Length);
+            PreparationTimestamps = reader.ReadUIntArray(Validators.Length);
             Commits = new byte[reader.ReadVarInt()][];
             for (int i = 0; i < Commits.Length; i++)
             {
@@ -126,7 +126,7 @@ namespace Neo.Consensus
                 if (ChangeViewWitnessInvocationScripts[i].Length == 0)
                     ChangeViewWitnessInvocationScripts[i] = null;
             }
-            ChangeViewTimestamps = reader.ReadSerializableArray(Validators.Length);
+            ChangeViewTimestamps = reader.ReadUIntArray(Validators.Length);
         }
 
         public void Dispose()
