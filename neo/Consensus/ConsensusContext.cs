@@ -271,6 +271,7 @@ namespace Neo.Consensus
                 PreparationHash = TransactionHashes == null ? Preparations.FirstOrDefault(p => p != null) : null,
                 PrepareWitnessInvocationScripts = PreparationWitnessInvocationScripts,
                 PrepareTimestamps = PreparationTimestamps,
+                CommitSignatures = State.HasFlag(ConsensusState.CommitSent) ? Commits : null
             });
         }
 

@@ -52,7 +52,6 @@ namespace Neo.Consensus
             this.context = context;
         }
 
-
         private bool AddTransaction(Transaction tx, bool verify)
         {
             if (verify && !context.VerifyTransaction(tx))
@@ -351,15 +350,20 @@ namespace Neo.Consensus
 
         private void OnRecoveryMessageReceived(ConsensusPayload payload, RecoveryMessage message)
         {
-            if (context.State.HasFlag(ConsensusState.CommitSent)) return;
             if (context.BlockIndex > payload.BlockIndex) return;
             Snapshot snap =  Blockchain.Singleton.GetSnapshot();
             if (payload.BlockIndex > snap.Height + 1) return;
+            if (message.PrepareWitnessInvocationScripts.Length < context.Validators.Length) return;
 
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
             if (context.ViewNumber == message.ViewNumber)
             {
+                if (context.State.HasFlag(ConsensusState.CommitSent)) 
+                {
+                    // TODO: Accept additional commits here that may be present in the recovery message.
+                    return;
+                }
                 HandleRecoveryInCurrentView(message, snap);
                 return;
             }
@@ -411,12 +415,43 @@ namespace Neo.Consensus
                 break;
             }
 
-            // Only accept recovery from lower views if there were at least M valid prepare requests.
-            if (context.ViewNumber > message.ViewNumber && !canRestoreView) return;
+            var validCommitCount = 0;
+            byte[][] verifiedCommitSignatures = null;
+            if (message.CommitSignatures != null)
+            {
+                if (message.CommitSignatures.Length < context.Validators.Length) return;
+                verifiedCommitSignatures = new byte[context.Validators.Length][];
+                var header = tempContext.MakeHeader();
+                for (int i = 0; i < context.Validators.Length; i++)
+                {
+                    if (message.CommitSignatures[i] == null) continue;
+
+                    var signature = message.CommitSignatures[i];
+                    if (!Crypto.Default.VerifySignature(header.GetHashData(), signature, context.Validators[i].EncodePoint(false)))
+                        continue;
+                    verifiedCommitSignatures[i] = signature;
+                    validCommitCount++;
+                }
+            }
+
+            if (context.State.HasFlag(ConsensusState.CommitSent))
+            {
+                var currentCommits = context.Commits.Count(p => p != null);
+                // Since we are committed, the recovery message must have more commits in order to switch view
+                if (!canRestoreView || validCommitCount <= currentCommits) return;
+            }
+            else if (message.ViewNumber < context.ViewNumber)
+            {
+                // Only accept recovery from lower views if there were at least M valid prepare requests
+                // and at least 2 valid commit signatures.
+                if (!canRestoreView || validCommitCount < 2) return;
+            }
 
             var verifiedChangeViewWitnessInvocationScripts = new byte[context.Validators.Length][];
             if (!canRestoreView && message.ChangeViewWitnessInvocationScripts != null)
             {
+                if (message.ChangeViewWitnessInvocationScripts.Length < context.Validators.Length) return;
+
                 var changeViewMsg = new ChangeView
                 {
                     ViewNumber = 0,
@@ -492,6 +527,21 @@ namespace Neo.Consensus
                     if (prepareRespPayload.ValidatorIndex != context.MyIndex)
                         OnPrepareResponseReceived(prepareRespPayload, prepareResp);
             }
+
+            if (context.State.HasFlag(ConsensusState.CommitSent) && verifiedCommitSignatures != null)
+            {
+                // if we are now committed, we can also include all verified commit signatures
+                bool addedCommits = false;
+                for (int i = 0; i < context.Validators.Length; i++)
+                {
+                    if (context.Commits[i] != null) continue;
+                    if (verifiedCommitSignatures[i] == null) continue;
+                    context.Commits[i] = verifiedCommitSignatures[i];
+                    addedCommits = true;
+                }
+                if (addedCommits) CheckCommits();
+            }
+
         }
 
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
