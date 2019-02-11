@@ -36,6 +36,7 @@ namespace Neo.Consensus
         public byte[] ExpectedView { get; set; }
         public byte[][] ChangeViewWitnessInvocationScripts { get; set; }
         public uint[] ChangeViewTimestamps { get; set; }
+        public byte[] OriginalChangeViewNumbers { get; set; }
         private Snapshot snapshot;
         private KeyPair keyPair;
         private readonly Wallet wallet;
@@ -127,6 +128,7 @@ namespace Neo.Consensus
                     ChangeViewWitnessInvocationScripts[i] = null;
             }
             ChangeViewTimestamps = reader.ReadUIntArray(Validators.Length);
+            OriginalChangeViewNumbers = reader.ReadVarBytes(255);
         }
 
         public void Dispose()
@@ -144,13 +146,11 @@ namespace Neo.Consensus
         {
             var payload = MakeSignedPayload(new ChangeView
             {
-                // View number is ignored for ChangeView, set it to 0, so it doesn't have to be saved for recovery.
-                ViewNumber = 0,
                 NewViewNumber = ExpectedView[MyIndex]
-            }, false);
+            });
             // Change view messages should just use the current time as their timestamp. This allows
             // receiving nodes to ensure they only respond once to a specific ChangeView request (it thus
-            // prevents other nodes repeatedly broadcasting the changeview message to cause CN nodes to
+            // prevents other nodes repeatedly broadcasting the ChangeView message to cause CN nodes to
             // repeatedly send recovery messages).
             payload.Timestamp = TimeProvider.Current.UtcNow.ToTimestamp();
             return payload;
@@ -187,10 +187,9 @@ namespace Neo.Consensus
             return _header;
         }
 
-        private ConsensusPayload MakeSignedPayload(ConsensusMessage message, bool shouldSetViewNumber=true)
+        private ConsensusPayload MakeSignedPayload(ConsensusMessage message)
         {
-            if (shouldSetViewNumber)
-                message.ViewNumber = ViewNumber;
+            message.ViewNumber = ViewNumber;
             ConsensusPayload payload = new ConsensusPayload
             {
                 Version = Version,
@@ -263,6 +262,7 @@ namespace Neo.Consensus
             {
                 ChangeViewWitnessInvocationScripts = changeViewWitnessInvocationScripts,
                 ChangeViewTimestamps = ChangeViewTimestamps,
+                OriginalChangeViewNumbers = OriginalChangeViewNumbers,
                 TransactionHashes = TransactionHashes,
                 Nonce = Nonce,
                 NextConsensus = NextConsensus,
@@ -296,6 +296,7 @@ namespace Neo.Consensus
                 ExpectedView = new byte[Validators.Length];
                 ChangeViewWitnessInvocationScripts = new byte[Validators.Length][];
                 ChangeViewTimestamps = new uint[Validators.Length];
+                OriginalChangeViewNumbers = new byte[Validators.Length];
                 keyPair = null;
                 for (int i = 0; i < Validators.Length; i++)
                 {
@@ -364,6 +365,7 @@ namespace Neo.Consensus
                 else
                     writer.WriteVarBytes(cvWitnessInvocationScript);
             writer.Write(ChangeViewTimestamps);
+            writer.WriteVarBytes(OriginalChangeViewNumbers);
         }
 
         public void Fill()

@@ -266,6 +266,14 @@ namespace Neo.UnitTests
             consensusContext.ChangeViewTimestamps[4] = uint.MaxValue;
             consensusContext.ChangeViewTimestamps[5] = 2;
             consensusContext.ChangeViewTimestamps[6] = 1;
+            consensusContext.OriginalChangeViewNumbers = new byte[7];
+            consensusContext.OriginalChangeViewNumbers[0] = 5;
+            consensusContext.OriginalChangeViewNumbers[1] = 5;
+            consensusContext.OriginalChangeViewNumbers[2] = 6;
+            consensusContext.OriginalChangeViewNumbers[3] = 6;
+            consensusContext.OriginalChangeViewNumbers[4] = 5;
+            consensusContext.OriginalChangeViewNumbers[5] = 0;
+            consensusContext.OriginalChangeViewNumbers[6] = 5;
 
 
             var copiedContext = TestUtils.CopyMsgBySerialization(consensusContext, new ConsensusContext(null));
@@ -290,6 +298,7 @@ namespace Neo.UnitTests
             copiedContext.ExpectedView.ShouldAllBeEquivalentTo(consensusContext.ExpectedView);
             copiedContext.ChangeViewWitnessInvocationScripts.ShouldAllBeEquivalentTo(consensusContext.ChangeViewWitnessInvocationScripts);
             copiedContext.ChangeViewTimestamps.ShouldAllBeEquivalentTo(consensusContext.ChangeViewTimestamps);
+            copiedContext.OriginalChangeViewNumbers.ShouldAllBeEquivalentTo(consensusContext.OriginalChangeViewNumbers);
         }
 
         [TestMethod]
@@ -312,6 +321,14 @@ namespace Neo.UnitTests
             msg.ChangeViewTimestamps[4] = uint.MaxValue;
             msg.ChangeViewTimestamps[5] = 2;
             msg.ChangeViewTimestamps[6] = 1;
+            msg.OriginalChangeViewNumbers = new byte[7];
+            msg.OriginalChangeViewNumbers[0] = 9;
+            msg.OriginalChangeViewNumbers[1] = 7;
+            msg.OriginalChangeViewNumbers[2] = 6;
+            msg.OriginalChangeViewNumbers[3] = 5;
+            msg.OriginalChangeViewNumbers[4] = 4;
+            msg.OriginalChangeViewNumbers[5] = 3;
+            msg.OriginalChangeViewNumbers[6] = 2;
 
             // msg.TransactionHashes = null;
             // msg.Nonce = 0;
@@ -343,6 +360,7 @@ namespace Neo.UnitTests
 
             copiedMsg.ChangeViewWitnessInvocationScripts.ShouldAllBeEquivalentTo(msg.ChangeViewWitnessInvocationScripts);
             copiedMsg.ChangeViewTimestamps.ShouldAllBeEquivalentTo(msg.ChangeViewTimestamps);
+            copiedMsg.OriginalChangeViewNumbers.ShouldAllBeEquivalentTo(msg.OriginalChangeViewNumbers);
             copiedMsg.TransactionHashes.ShouldAllBeEquivalentTo(null);
             copiedMsg.Nonce.Should().Be(0);
             copiedMsg.NextConsensus.Should().Be(null);
@@ -373,6 +391,14 @@ namespace Neo.UnitTests
             msg.ChangeViewTimestamps[4] = uint.MaxValue;
             msg.ChangeViewTimestamps[5] = 2;
             msg.ChangeViewTimestamps[6] = 1;
+            msg.OriginalChangeViewNumbers = new byte[7];
+            msg.OriginalChangeViewNumbers[0] = 9;
+            msg.OriginalChangeViewNumbers[1] = 7;
+            msg.OriginalChangeViewNumbers[2] = 6;
+            msg.OriginalChangeViewNumbers[3] = 5;
+            msg.OriginalChangeViewNumbers[4] = 4;
+            msg.OriginalChangeViewNumbers[5] = 3;
+            msg.OriginalChangeViewNumbers[6] = 2;
             int txCountToInlcude = 5;
             msg.TransactionHashes = new UInt256[txCountToInlcude];
             Transaction[] txs = new Transaction[txCountToInlcude];

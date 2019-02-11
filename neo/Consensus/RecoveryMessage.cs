@@ -10,6 +10,7 @@ namespace Neo.Consensus
     {
         public byte[][] ChangeViewWitnessInvocationScripts;
         public uint[] ChangeViewTimestamps;
+        public byte[] OriginalChangeViewNumbers;
 
         // The following 4 fields are to be able to regenerate the PrepareRequest.
         public UInt256[] TransactionHashes;
@@ -65,7 +66,10 @@ namespace Neo.Consensus
 
             ChangeViewWitnessInvocationScripts = reader.ReadVarBytesArray();
             if (ChangeViewWitnessInvocationScripts != null)
+            {
                 ChangeViewTimestamps = reader.ReadUIntArray(ChangeViewWitnessInvocationScripts.Length);
+                OriginalChangeViewNumbers = reader.ReadVarBytes(255);
+            }
 
             CommitSignatures = reader.ReadVarBytesArray();
         }
@@ -95,8 +99,10 @@ namespace Neo.Consensus
 
             writer.WriteArrayVarBytesArray(ChangeViewWitnessInvocationScripts);
             if (ChangeViewWitnessInvocationScripts != null)
+            {
                 writer.Write(ChangeViewTimestamps);
-
+                writer.WriteVarBytes(OriginalChangeViewNumbers);
+            }
             writer.WriteArrayVarBytesArray(CommitSignatures);
         }
     }

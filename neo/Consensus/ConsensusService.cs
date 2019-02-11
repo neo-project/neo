@@ -198,6 +198,7 @@ namespace Neo.Consensus
             context.ExpectedView[payload.ValidatorIndex] = message.NewViewNumber;
             context.ChangeViewWitnessInvocationScripts[payload.ValidatorIndex] = payload.Witness.InvocationScript;
             context.ChangeViewTimestamps[payload.ValidatorIndex] = payload.Timestamp;
+            context.OriginalChangeViewNumbers[payload.ValidatorIndex] = message.ViewNumber;
             CheckExpectedView(message.NewViewNumber);
         }
 
@@ -404,6 +405,7 @@ namespace Neo.Consensus
             Snapshot snap =  Blockchain.Singleton.GetSnapshot();
             if (payload.BlockIndex > snap.Height + 1) return;
             if (message.PrepareWitnessInvocationScripts.Length < context.Validators.Length) return;
+            if (message.PrepareTimestamps.Length < context.Validators.Length) return;
 
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
@@ -471,17 +473,16 @@ namespace Neo.Consensus
             if (!canRestoreView && message.ChangeViewWitnessInvocationScripts != null)
             {
                 if (message.ChangeViewWitnessInvocationScripts.Length < context.Validators.Length) return;
+                if (message.ChangeViewTimestamps.Length < context.Validators.Length) return;
+                if (message.OriginalChangeViewNumbers.Length < context.Validators.Length) return;
 
-                var changeViewMsg = new ChangeView
-                {
-                    ViewNumber = 0,
-                    NewViewNumber = message.ViewNumber
-                };
+                var changeViewMsg = new ChangeView { NewViewNumber = message.ViewNumber };
                 int validChangeViewCount = 0;
                 for (int i = 0; i < context.Validators.Length; i++)
                 {
                     if (message.ChangeViewWitnessInvocationScripts[i] == null) continue;
 
+                    changeViewMsg.ViewNumber = message.OriginalChangeViewNumbers[i];
                     // Regenerate the ChangeView message
                     var regeneratedChangeView = tempContext.RegenerateSignedPayload(changeViewMsg, (ushort) i,
                         message.ChangeViewWitnessInvocationScripts[i], message.ChangeViewTimestamps[i]);
@@ -526,6 +527,7 @@ namespace Neo.Consensus
                 {
                     context.ChangeViewWitnessInvocationScripts[i] = verifiedChangeViewWitnessInvocationScripts[i];
                     context.ChangeViewTimestamps[i] = message.ChangeViewTimestamps[i];
+                    context.OriginalChangeViewNumbers[i] = message.OriginalChangeViewNumbers[i];
                     context.ExpectedView[i] = message.ViewNumber;
                 }
             }
@@ -754,6 +756,7 @@ namespace Neo.Consensus
             var changeViewRequest = context.MakeChangeView();
             context.ChangeViewWitnessInvocationScripts[context.MyIndex] = changeViewRequest.Witness.InvocationScript;
             context.ChangeViewTimestamps[context.MyIndex] = changeViewRequest.Timestamp;
+            context.OriginalChangeViewNumbers[context.MyIndex] = context.ViewNumber;
             localNode.Tell(new LocalNode.SendDirectly { Inventory = changeViewRequest });
             CheckExpectedView(context.ExpectedView[context.MyIndex]);
         }

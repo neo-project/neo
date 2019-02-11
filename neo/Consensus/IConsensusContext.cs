@@ -29,6 +29,7 @@ namespace Neo.Consensus
         byte[] ExpectedView { get; set; }
         byte[][] ChangeViewWitnessInvocationScripts { get; set; }
         uint[] ChangeViewTimestamps { get; set; }
+        byte[] OriginalChangeViewNumbers { get; set; }
 
         int F { get; }
         int M { get; }
