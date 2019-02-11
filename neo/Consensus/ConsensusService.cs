@@ -307,10 +307,8 @@ namespace Neo.Consensus
 
         private void HandleRecoveryInCurrentView(RecoveryMessage message, Snapshot snap)
         {
-            if (context.State.HasFlag(ConsensusState.BlockSent)) return;
-
             // If we are already on the right view number we want to accept more preparation messages and also accept
-            // any commit signatures in the payload. If we are not on
+            // any commit signatures in the payload.
 
             if (!context.State.HasFlag(ConsensusState.CommitSent))
             {
@@ -318,7 +316,14 @@ namespace Neo.Consensus
                 if (context.PrimaryIndex == context.MyIndex)
                 {
                     preparationHash = context.Preparations[context.PrimaryIndex];
-                    if (preparationHash == null) return;
+
+                    if (preparationHash == null)
+                    {
+                        // TODO
+                        // If we haven't sent the prepare request and we are the primary. Then we can should accept
+                        // our own previously generated prepare request here if it is present in the recovery message.
+                        return;
+                    }
                 }
                 else
                 {
@@ -380,6 +385,7 @@ namespace Neo.Consensus
         private void OnRecoveryMessageReceived(ConsensusPayload payload, RecoveryMessage message)
         {
             if (context.BlockIndex > payload.BlockIndex) return;
+            if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             Snapshot snap =  Blockchain.Singleton.GetSnapshot();
             if (payload.BlockIndex > snap.Height + 1) return;
             if (message.PrepareWitnessInvocationScripts.Length < context.Validators.Length) return;
