@@ -374,8 +374,8 @@ namespace Neo.Consensus
                     }
                     else
                     {
-                        // Can't use recover if the we are the primary and we haven't sent a prepare request and no
-                        // prepare request was present in the recovery message.
+                        // Can't use anything from the recovery message if we are primary and haven't sent a prepare
+                        // request and no prepare request was present in the recovery message.
                         if (myIndexIsPrimary) return;
 
                         // If we have no `Preparation` hash we can't regenerate any of the `PrepareRequest` messages.
