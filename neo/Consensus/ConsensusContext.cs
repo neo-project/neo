@@ -42,7 +42,7 @@ namespace Neo.Consensus
         private readonly Wallet wallet;
 
         public int F => (Validators.Length - 1) / 3;
-        public int M => Validators.Length - (Validators.Length - 1) / 3;
+        public int M => Validators.Length - F;
         public Header PrevHeader => snapshot.GetHeader(PrevHash);
         public int Size => throw new NotImplementedException();
 
