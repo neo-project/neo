@@ -34,9 +34,7 @@ namespace Neo.Consensus
         public uint[] PreparationTimestamps { get; set; }
         public byte[][] Commits { get; set; }
         public byte[] ExpectedView { get; set; }
-        public byte[][] ChangeViewWitnessInvocationScripts { get; set; }
-        public uint[] ChangeViewTimestamps { get; set; }
-        public byte[] OriginalChangeViewNumbers { get; set; }
+        public ConsensusPayload[] ChangeViewPayloads { get; set; }
         private Snapshot snapshot;
         private KeyPair keyPair;
         private readonly Wallet wallet;
@@ -78,7 +76,7 @@ namespace Neo.Consensus
             PrevHash = reader.ReadSerializable<UInt256>();
             BlockIndex = reader.ReadUInt32();
             ViewNumber = reader.ReadByte();
-            Validators = reader.ReadSerializableArray<ECPoint>();
+            Validators = reader.ReadSerializableArray<ECPoint>(byte.MaxValue);
             MyIndex = reader.ReadInt32();
             PrimaryIndex = reader.ReadUInt32();
             Timestamp = reader.ReadUInt32();
@@ -89,7 +87,7 @@ namespace Neo.Consensus
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
             if (TransactionHashes.Length == 0)
                 TransactionHashes = null;
-            Transaction[] transactions = new Transaction[reader.ReadVarInt()];
+            Transaction[] transactions = new Transaction[reader.ReadVarInt(ushort.MaxValue)];
             if (transactions.Length == 0)
             {
                 Transactions = null;
@@ -100,11 +98,11 @@ namespace Neo.Consensus
                     transactions[i] = Transaction.DeserializeFrom(reader);
                 Transactions = transactions.ToDictionary(p => p.Hash);
             }
-            Preparations = reader.ReadSerializableArray<UInt256>();
+            Preparations = reader.ReadSerializableArray<UInt256>(byte.MaxValue);
             for (int i = 0; i < Preparations.Length; i++)
                 if (Preparations[i].Equals(UInt256.Zero))
                     Preparations[i] = null;
-            PreparationWitnessInvocationScripts = new byte[reader.ReadVarInt()][];
+            PreparationWitnessInvocationScripts = new byte[reader.ReadVarInt(byte.MaxValue)][];
             for (int i = 0; i < PreparationWitnessInvocationScripts.Length; i++)
             {
                 PreparationWitnessInvocationScripts[i] = reader.ReadVarBytes();
@@ -112,7 +110,7 @@ namespace Neo.Consensus
                     PreparationWitnessInvocationScripts[i] = null;
             }
             PreparationTimestamps = reader.ReadUIntArray(Validators.Length);
-            Commits = new byte[reader.ReadVarInt()][];
+            Commits = new byte[reader.ReadVarInt(byte.MaxValue)][];
             for (int i = 0; i < Commits.Length; i++)
             {
                 Commits[i] = reader.ReadVarBytes();
@@ -120,15 +118,13 @@ namespace Neo.Consensus
                     Commits[i] = null;
             }
             ExpectedView = reader.ReadVarBytes();
-            ChangeViewWitnessInvocationScripts = new byte[reader.ReadVarInt()][];
-            for (int i = 0; i < ChangeViewWitnessInvocationScripts.Length; i++)
+            var numChangeViews = reader.ReadVarInt(byte.MaxValue);
+            if (numChangeViews > 0)
             {
-                ChangeViewWitnessInvocationScripts[i] = reader.ReadVarBytes();
-                if (ChangeViewWitnessInvocationScripts[i].Length == 0)
-                    ChangeViewWitnessInvocationScripts[i] = null;
+                ChangeViewPayloads = new ConsensusPayload[numChangeViews];
+                for (int i = 0; i < ChangeViewPayloads.Length; i++)
+                    ChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
             }
-            ChangeViewTimestamps = reader.ReadUIntArray(Validators.Length);
-            OriginalChangeViewNumbers = reader.ReadVarBytes(255);
         }
 
         public void Dispose()
@@ -194,8 +190,8 @@ namespace Neo.Consensus
                 BlockIndex = BlockIndex,
                 ValidatorIndex = (ushort)MyIndex,
                 Timestamp = (overrideTimestamp != 0) ? overrideTimestamp : Timestamp,
-                Data = message.ToArray()
             };
+            payload.SetMessage(message);
             SignPayload(payload);
             return payload;
         }
@@ -252,14 +248,14 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeRecoveryMessage()
         {
-            var changeViewWitnessInvocationScripts = TransactionHashes == null || Preparations.Count(p => p != null) < M
-                ? ChangeViewWitnessInvocationScripts : null;
+            var changeViewPayloads = TransactionHashes == null || Preparations.Count(p => p != null) < M
+                ? ChangeViewPayloads : null;
 
             return MakeSignedPayload(new RecoveryMessage()
             {
-                ChangeViewWitnessInvocationScripts = changeViewWitnessInvocationScripts,
-                ChangeViewTimestamps = ChangeViewTimestamps,
-                OriginalChangeViewNumbers = OriginalChangeViewNumbers,
+                ChangeViewWitnessInvocationScripts = changeViewPayloads?.Select(p => p.Witness.InvocationScript).ToArray(),
+                ChangeViewTimestamps = changeViewPayloads?.Select(p => p.Timestamp).ToArray(),
+                OriginalChangeViewNumbers = changeViewPayloads?.Select(p => p.GetDeserializedMessage<ChangeView>().NewViewNumber).ToArray(),
                 TransactionHashes = TransactionHashes,
                 Nonce = Nonce,
                 NextConsensus = NextConsensus,
@@ -291,9 +287,7 @@ namespace Neo.Consensus
                 Validators = snapshot.GetValidators();
                 MyIndex = -1;
                 ExpectedView = new byte[Validators.Length];
-                ChangeViewWitnessInvocationScripts = new byte[Validators.Length][];
-                ChangeViewTimestamps = new uint[Validators.Length];
-                OriginalChangeViewNumbers = new byte[Validators.Length];
+                ChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 keyPair = null;
                 for (int i = 0; i < Validators.Length; i++)
                 {
@@ -355,14 +349,22 @@ namespace Neo.Consensus
                 else
                     writer.WriteVarBytes(commit);
             writer.WriteVarBytes(ExpectedView);
-            writer.WriteVarInt(ChangeViewWitnessInvocationScripts.Length);
-            foreach (byte[] cvWitnessInvocationScript in ChangeViewWitnessInvocationScripts)
-                if (cvWitnessInvocationScript is null)
-                    writer.WriteVarInt(0);
-                else
-                    writer.WriteVarBytes(cvWitnessInvocationScript);
-            writer.Write(ChangeViewTimestamps);
-            writer.WriteVarBytes(OriginalChangeViewNumbers);
+            if (ChangeViewPayloads == null)
+                writer.WriteVarInt(0);
+            else
+            {
+                writer.WriteVarInt(ChangeViewPayloads.Length);
+                foreach (var payload in ChangeViewPayloads)
+                {
+                    if (payload == null)
+                        writer.Write(false);
+                    else
+                    {
+                        writer.Write(true);
+                        writer.Write(payload);
+                    }
+                }
+            }
         }
 
         public void Fill()

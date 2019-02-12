@@ -27,9 +27,7 @@ namespace Neo.Consensus
         uint[] PreparationTimestamps { get; set; }
         byte[][] Commits { get; set; }
         byte[] ExpectedView { get; set; }
-        byte[][] ChangeViewWitnessInvocationScripts { get; set; }
-        uint[] ChangeViewTimestamps { get; set; }
-        byte[] OriginalChangeViewNumbers { get; set; }
+        ConsensusPayload[] ChangeViewPayloads { get; set; }
 
         int F { get; }
         int M { get; }

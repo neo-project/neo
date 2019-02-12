@@ -6,6 +6,7 @@ using Neo.SmartContract;
 using Neo.VM;
 using System;
 using System.IO;
+using Neo.Consensus;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -48,6 +49,20 @@ namespace Neo.Network.P2P.Payloads
         }
 
         public int Size => sizeof(uint) + PrevHash.Size + sizeof(uint) + sizeof(ushort) + sizeof(uint) + Data.GetVarSize() + 1 + Witness.Size;
+
+        private ConsensusMessage _deserializedMessage = null;
+        internal T GetDeserializedMessage<T>() where T : ConsensusMessage
+        {
+            if (_deserializedMessage is null)
+                _deserializedMessage = ConsensusMessage.DeserializeFrom(Data);
+            return (T)_deserializedMessage;
+        }
+
+        internal void SetMessage(ConsensusMessage message)
+        {
+            Data = message.ToArray();
+            _deserializedMessage = message;
+        }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {

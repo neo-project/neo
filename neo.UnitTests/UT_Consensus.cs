@@ -250,31 +250,17 @@ namespace Neo.UnitTests
             consensusContext.ExpectedView[5] = 1;
             consensusContext.ExpectedView[6] = 2;
 
-            consensusContext.ChangeViewWitnessInvocationScripts = new byte[consensusContext.Validators.Length][];
-            consensusContext.ChangeViewWitnessInvocationScripts[0] = new [] {(byte) 'A'};
-            consensusContext.ChangeViewWitnessInvocationScripts[1] = new [] {(byte) 'B'};
-            consensusContext.ChangeViewWitnessInvocationScripts[2] = null;
-            consensusContext.ChangeViewWitnessInvocationScripts[3] = new [] {(byte) 'C'};
-            consensusContext.ChangeViewWitnessInvocationScripts[4] = null;
-            consensusContext.ChangeViewWitnessInvocationScripts[5] = null;
-            consensusContext.ChangeViewWitnessInvocationScripts[6] = new [] {(byte) 'D'};
-            consensusContext.ChangeViewTimestamps = new uint[7];
-            consensusContext.ChangeViewTimestamps[0] = 6;
-            consensusContext.ChangeViewTimestamps[1] = 5;
-            consensusContext.ChangeViewTimestamps[2] = 4;
-            consensusContext.ChangeViewTimestamps[3] = 3;
-            consensusContext.ChangeViewTimestamps[4] = uint.MaxValue;
-            consensusContext.ChangeViewTimestamps[5] = 2;
-            consensusContext.ChangeViewTimestamps[6] = 1;
-            consensusContext.OriginalChangeViewNumbers = new byte[7];
-            consensusContext.OriginalChangeViewNumbers[0] = 5;
-            consensusContext.OriginalChangeViewNumbers[1] = 5;
-            consensusContext.OriginalChangeViewNumbers[2] = 6;
-            consensusContext.OriginalChangeViewNumbers[3] = 6;
-            consensusContext.OriginalChangeViewNumbers[4] = 5;
-            consensusContext.OriginalChangeViewNumbers[5] = 0;
-            consensusContext.OriginalChangeViewNumbers[6] = 5;
+            consensusContext.Timestamp = TimeProvider.Current.UtcNow.ToTimestamp();
 
+            consensusContext.ChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
+
+            consensusContext.ChangeViewPayloads[0] = consensusContext.RegenerateSignedPayload(new ChangeView { ViewNumber = 1, NewViewNumber = 2 }, 0, new [] {(byte) 'A'}, 6);
+            consensusContext.ChangeViewPayloads[1] = consensusContext.RegenerateSignedPayload(new ChangeView { ViewNumber = 1, NewViewNumber = 2 }, 0, new [] {(byte) 'B'}, 5);
+            consensusContext.ChangeViewPayloads[2] = null;
+            consensusContext.ChangeViewPayloads[3] = consensusContext.RegenerateSignedPayload(new ChangeView { ViewNumber = 1, NewViewNumber = 2 }, 0, new [] {(byte) 'C'}, uint.MaxValue);
+            consensusContext.ChangeViewPayloads[4] = null;
+            consensusContext.ChangeViewPayloads[5] = null;
+            consensusContext.ChangeViewPayloads[6] = consensusContext.RegenerateSignedPayload(new ChangeView { ViewNumber = 1, NewViewNumber = 2 }, 0, new [] {(byte) 'D'}, 1);
 
             var copiedContext = TestUtils.CopyMsgBySerialization(consensusContext, new ConsensusContext(null));
 
@@ -296,9 +282,7 @@ namespace Neo.UnitTests
             copiedContext.Preparations.ShouldAllBeEquivalentTo(consensusContext.Preparations);
             copiedContext.Commits.ShouldAllBeEquivalentTo(consensusContext.Commits);
             copiedContext.ExpectedView.ShouldAllBeEquivalentTo(consensusContext.ExpectedView);
-            copiedContext.ChangeViewWitnessInvocationScripts.ShouldAllBeEquivalentTo(consensusContext.ChangeViewWitnessInvocationScripts);
-            copiedContext.ChangeViewTimestamps.ShouldAllBeEquivalentTo(consensusContext.ChangeViewTimestamps);
-            copiedContext.OriginalChangeViewNumbers.ShouldAllBeEquivalentTo(consensusContext.OriginalChangeViewNumbers);
+            copiedContext.ChangeViewPayloads.ShouldAllBeEquivalentTo(consensusContext.ChangeViewPayloads);
         }
 
         [TestMethod]
