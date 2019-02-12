@@ -71,9 +71,14 @@ namespace Neo.Consensus
             {
                 if (context.VerifyRequest())
                 {
-                    Log($"send prepare response");
                     context.State |= ConsensusState.ResponseSent;
                     context.Preparations[context.MyIndex] = context.Preparations[context.PrimaryIndex];
+
+                    // if we are the primary for this view, but acting as a backup because we recovered our own
+                    // previously sent prepare request, then we don't want to send a prepare response.
+                    if (context.MyIndex == context.PrimaryIndex) return true;
+
+                    Log($"send prepare response");
                     var payload = context.MakePrepareResponse(context.Preparations[context.MyIndex]);
                     context.PreparationWitnessInvocationScripts[context.MyIndex] = payload.Witness.InvocationScript;
                     context.PreparationTimestamps[context.MyIndex] = payload.Timestamp;
