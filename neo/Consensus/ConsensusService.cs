@@ -510,7 +510,7 @@ namespace Neo.Consensus
             // We had enough valid change view messages or preparations to safely change the view number.
             Log($"regenerating view: {message.ViewNumber}");
 
-            if (context.PrimaryIndex == context.MyIndex && prepareRequestPayload != null)
+            if (tempContext.PrimaryIndex == context.MyIndex && prepareRequestPayload != null)
             {
                 // If we are the primary and there was a valid prepare request payload, we will accept our own prepare
                 // request, so avoid the normal IntializeConsensus behavior.
