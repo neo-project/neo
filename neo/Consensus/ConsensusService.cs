@@ -722,10 +722,9 @@ namespace Neo.Consensus
             {
                 if (context.State.HasFlag(ConsensusState.CommitSent))
                 {
-                    // Re-send commit periodically in case of a network issue.
-                    ConsensusPayload payload = context.MakeCommit();
-                    Log($"resend commit");
-                    localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
+                    // Re-send commit periodically by sending recover message in case of a network issue.
+                    Log($"send recovery to resend commit");
+                    localNode.Tell(new LocalNode.SendDirectly {Inventory = context.MakeRecoveryMessage()});
                     ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << 1));
                 }
                 else
