@@ -447,11 +447,11 @@ namespace Neo.Consensus
             }
 
             ConsensusPayload prepareRequestPayload = null;
-            PrepareRequest prepareRequest = null;
+            PrepareRequest prepareRequestMessage = null;
 
             UInt256 preparationHash;
             if (message.PrepareWitnessInvocationScripts[tempContext.PrimaryIndex] != null
-                && ReverifyPrepareRequest(tempContext, message, snap, out prepareRequestPayload, out prepareRequest))
+                && ReverifyPrepareRequest(tempContext, message, snap, out prepareRequestPayload, out prepareRequestMessage))
                 preparationHash = prepareRequestPayload.Hash;
             else
                 preparationHash = message.PreparationHash;
@@ -472,7 +472,7 @@ namespace Neo.Consensus
                 if (!regeneratedPrepareResponse.Verify(snap) || !PerformBasicConsensusPayloadPreChecks(regeneratedPrepareResponse)) continue;
                 prepareResponses.Add((regeneratedPrepareResponse, prepareResponseMsg));
                 // Verify that there are M valid preparations, 1 Prepare Request + (M-1) Prepare responses
-                if (prepareRequest == null || prepareResponses.Count < context.M - 1) continue;
+                if (prepareRequestMessage == null || prepareResponses.Count < context.M - 1) continue;
                 canRestoreView = true;
                 break;
             }
@@ -547,7 +547,7 @@ namespace Neo.Consensus
             {
                 Log($"regenerating prepare request");
                 // Note: If our node is the primary this will accept its own previously sent prepare request here.
-                OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
+                OnPrepareRequestReceived(prepareRequestPayload, prepareRequestMessage);
             }
 
             if (prepareResponses.Count > 0)
