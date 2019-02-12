@@ -360,10 +360,12 @@ namespace Neo.Consensus
                         if (myIndexIsPrimary)
                         {
                             // In this case we are primary, but we haven't sent a prepare request, but we received a
-                            // recovery message containing our own previous prepare request; so switch to being a backup
-                            // and accept our own previous request.
-                            context.State &= ~ConsensusState.Primary;
+                            // recovery message containing our own previous prepare request; so we now are acting as
+                            // a backup and accepting our own previous request.
                             context.State |= ConsensusState.Backup;
+                            // Since our Primary flag is still set, we must act as though we already sent the request.
+                            context.State |= ConsensusState.RequestSent;
+
                             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ViewNumber + 1)));
                         }
                         OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
@@ -519,7 +521,7 @@ namespace Neo.Consensus
                 context.Reset(message.ViewNumber);
                 // Since we won't want to fill the context, we will behave like a backup even though we have the primary
                 // index; we set the backup state so we can call OnPrepareRequestReceived below.
-                context.State |= ConsensusState.Backup;
+                context.State |= ConsensusState.Primary | ConsensusState.RequestSent | ConsensusState.Backup;
                 // We set the timer in the same way a Backup sets their timer in this case.
                 Log($"initialize: height={context.BlockIndex} view={message.ViewNumber} index={context.MyIndex} role={ConsensusState.Primary}");
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (message.ViewNumber + 1)));
