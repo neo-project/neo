@@ -76,6 +76,9 @@ namespace Neo
             RpcServer?.Dispose();
             ActorSystem.Stop(LocalNode);
             CoordinatedShutdown.Get(ActorSystem).Run(ShutdownReason.Instance).Wait();
+
+            ActorSystem.Terminate();
+            ActorSystem.WhenTerminated.Wait();
             ActorSystem.Dispose();
         }
 
