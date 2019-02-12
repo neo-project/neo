@@ -319,24 +319,22 @@ namespace Neo.Consensus
 
         private void RestoreCommits(RecoveryMessage message)
         {
-            if (message.CommitSignatures != null)
+            if (message.CommitSignatures == null) return;
+            bool addedCommits = false;
+            if (message.CommitSignatures.Length < context.Validators.Length) return;
+            var header = context.MakeHeader();
+            for (int i = 0; i < context.Validators.Length; i++)
             {
-                bool addedCommits = false;
-                if (message.CommitSignatures.Length < context.Validators.Length) return;
-                var header = context.MakeHeader();
-                for (int i = 0; i < context.Validators.Length; i++)
-                {
-                    if (context.Commits[i] != null) continue;
-                    if (message.CommitSignatures[i] == null) continue;
-                    var signature = message.CommitSignatures[i];
-                    if (!Crypto.Default.VerifySignature(header.GetHashData(), signature,
-                        context.Validators[i].EncodePoint(false)))
-                        continue;
-                    context.Commits[i] = signature;
-                    addedCommits = true;
-                }
-                if (addedCommits) CheckCommits();
+                if (context.Commits[i] != null) continue;
+                if (message.CommitSignatures[i] == null) continue;
+                var signature = message.CommitSignatures[i];
+                if (!Crypto.Default.VerifySignature(header.GetHashData(), signature,
+                    context.Validators[i].EncodePoint(false)))
+                    continue;
+                context.Commits[i] = signature;
+                addedCommits = true;
             }
+            if (addedCommits) CheckCommits();
         }
 
         private void HandleRecoveryInCurrentView(RecoveryMessage message, Snapshot snap)
