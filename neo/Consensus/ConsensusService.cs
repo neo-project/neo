@@ -463,8 +463,8 @@ namespace Neo.Consensus
                     message.PrepareWitnessInvocationScripts[i], message.PrepareTimestamps[i]);
                 if (!regeneratedPrepareResponse.Verify(snap) || !PerformBasicConsensusPayloadPreChecks(regeneratedPrepareResponse)) continue;
                 prepareResponses.Add((regeneratedPrepareResponse, prepareResponseMsg));
+                // Verify that there are M valid preparations, 1 Prepare Request + (M-1) Prepare responses
                 if (prepareRequest == null || prepareResponses.Count < context.M - 1) continue;
-                if (context.ViewNumber >= message.ViewNumber && prepareResponses.Count < context.M) continue;
                 canRestoreView = true;
                 break;
             }
