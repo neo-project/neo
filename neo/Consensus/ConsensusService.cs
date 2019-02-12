@@ -461,18 +461,24 @@ namespace Neo.Consensus
                 PreparationHash = preparationHash
             };
             bool canRestoreView = false;
-            for (int i = 0; i < context.Validators.Length; i++)
+            if (preparationHash != null)
             {
-                if (i == tempContext.PrimaryIndex) continue;
-                if (message.PrepareWitnessInvocationScripts[i] == null) continue;
-                var regeneratedPrepareResponse = tempContext.RegenerateSignedPayload(prepareResponseMsg, (ushort) i,
-                    message.PrepareWitnessInvocationScripts[i], message.PrepareTimestamps[i]);
-                if (!regeneratedPrepareResponse.Verify(snap) || !PerformBasicConsensusPayloadPreChecks(regeneratedPrepareResponse)) continue;
-                prepareResponses.Add((regeneratedPrepareResponse, prepareResponseMsg));
-                // Verify that there are M valid preparations, 1 Prepare Request + (M-1) Prepare responses
-                if (prepareRequestMessage == null || prepareResponses.Count < context.M - 1) continue;
-                canRestoreView = true;
-                break;
+                for (int i = 0; i < context.Validators.Length; i++)
+                {
+                    if (i == tempContext.PrimaryIndex) continue;
+                    if (message.PrepareWitnessInvocationScripts[i] == null) continue;
+                    Log($" considering prepare request {i}");
+                    var regeneratedPrepareResponse = tempContext.RegenerateSignedPayload(prepareResponseMsg, (ushort) i,
+                        message.PrepareWitnessInvocationScripts[i], message.PrepareTimestamps[i]);
+                    if (!regeneratedPrepareResponse.Verify(snap) ||
+                        !PerformBasicConsensusPayloadPreChecks(regeneratedPrepareResponse)) continue;
+                    prepareResponses.Add((regeneratedPrepareResponse, prepareResponseMsg));
+                    Log($" verified prepare {i}");
+                    // Verify that there are M valid preparations, 1 Prepare Request + (M-1) Prepare responses
+                    if (prepareRequestMessage == null || prepareResponses.Count < context.M - 1) continue;
+                    canRestoreView = true;
+                    break;
+                }
             }
 
             // Only accept recovery from lower views if there were at least M valid prepare requests
