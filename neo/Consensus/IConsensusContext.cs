@@ -23,8 +23,7 @@ namespace Neo.Consensus
         UInt256[] TransactionHashes { get; set; }
         Dictionary<UInt256, Transaction> Transactions { get; set; }
         UInt256[] Preparations { get; set; }
-        byte[][] PreparationWitnessInvocationScripts { get; set; }
-        uint[] PreparationTimestamps { get; set; }
+        ConsensusPayload[] PreparationPayloads { get; set; }
         byte[][] Commits { get; set; }
         byte[] ExpectedView { get; set; }
         ConsensusPayload[] ChangeViewPayloads { get; set; }

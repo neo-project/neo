@@ -80,8 +80,7 @@ namespace Neo.Consensus
 
                     Log($"send prepare response");
                     var payload = context.MakePrepareResponse(context.Preparations[context.MyIndex]);
-                    context.PreparationWitnessInvocationScripts[context.MyIndex] = payload.Witness.InvocationScript;
-                    context.PreparationTimestamps[context.MyIndex] = payload.Timestamp;
+                    context.PreparationPayloads[context.MyIndex] = payload;
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                     CheckPreparations();
                 }
@@ -590,8 +589,7 @@ namespace Neo.Consensus
                     if (!context.Preparations[i].Equals(payload.Hash))
                         context.Preparations[i] = null;
             context.Preparations[payload.ValidatorIndex] = payload.Hash;
-            context.PreparationWitnessInvocationScripts[payload.ValidatorIndex] = payload.Witness.InvocationScript;
-            context.PreparationTimestamps[payload.ValidatorIndex] = payload.Timestamp;
+            context.PreparationPayloads[payload.ValidatorIndex] = payload;
             byte[] hashData = context.MakeHeader().GetHashData();
             for (int i = 0; i < context.Commits.Length; i++)
                 if (context.Commits[i] != null)
@@ -636,8 +634,7 @@ namespace Neo.Consensus
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             if (context.State.HasFlag(ConsensusState.CommitSent)) return;
             context.Preparations[payload.ValidatorIndex] = message.PreparationHash;
-            context.PreparationWitnessInvocationScripts[payload.ValidatorIndex] = payload.Witness.InvocationScript;
-            context.PreparationTimestamps[payload.ValidatorIndex] = payload.Timestamp;
+            context.PreparationPayloads[payload.ValidatorIndex] = payload;
             if (context.State.HasFlag(ConsensusState.RequestSent) || context.State.HasFlag(ConsensusState.RequestReceived))
                 CheckPreparations();
         }
@@ -706,12 +703,11 @@ namespace Neo.Consensus
             {
                 Log($"send prepare request: height={timer.Height} view={timer.ViewNumber}");
                 context.Fill();
-                ConsensusPayload request = context.MakePrepareRequest();
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = request });
+                ConsensusPayload prepareRequestPayload = context.MakePrepareRequest();
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = prepareRequestPayload });
                 context.State |= ConsensusState.RequestSent;
-                context.Preparations[context.MyIndex] = request.Hash;
-                context.PreparationWitnessInvocationScripts[context.MyIndex] = request.Witness.InvocationScript;
-                context.PreparationTimestamps[context.MyIndex] = request.Timestamp;
+                context.Preparations[context.MyIndex] = prepareRequestPayload.Hash;
+                context.PreparationPayloads[context.MyIndex] = prepareRequestPayload;
 
                 if (context.TransactionHashes.Length > 1)
                 {

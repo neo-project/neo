@@ -206,8 +206,11 @@ namespace Neo.UnitTests
 
             int txCountToInlcude = 256;
             consensusContext.TransactionHashes = new UInt256[txCountToInlcude];
+
             Transaction[] txs = new Transaction[txCountToInlcude];
-            for (int i = 0; i < txCountToInlcude; i++)
+            txs[0] = TestUtils.CreateRandomMockMinerTransaction().Object;
+            consensusContext.TransactionHashes[0] = txs[0].Hash;
+            for (int i = 1; i < txCountToInlcude; i++)
             {
                 txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
                 consensusContext.TransactionHashes[i] = txs[i].Hash;
@@ -215,24 +218,21 @@ namespace Neo.UnitTests
             // consensusContext.TransactionHashes = new UInt256[2] {testTx1.Hash, testTx2.Hash};
             consensusContext.Transactions = txs.ToDictionary(p => p.Hash);
 
-            consensusContext.Preparations = new [] {null, null, null, consensusContext.PrevHash, null, null, null };
-            consensusContext.PreparationWitnessInvocationScripts = new byte[consensusContext.Validators.Length][];
-            consensusContext.PreparationWitnessInvocationScripts[0] = new [] {(byte)'t', (byte)'e'};
-            consensusContext.PreparationWitnessInvocationScripts[1] = new [] {(byte)'s', (byte)'t'};
-            consensusContext.PreparationWitnessInvocationScripts[2] = null;
-            consensusContext.PreparationWitnessInvocationScripts[3] = new [] {(byte)'1', (byte)'2'};
-            consensusContext.PreparationWitnessInvocationScripts[4] = null;
-            consensusContext.PreparationWitnessInvocationScripts[5] = null;
-            consensusContext.PreparationWitnessInvocationScripts[6] = new [] {(byte)'3', (byte)'!'};
-            consensusContext.PreparationTimestamps = new uint[7];
-            consensusContext.PreparationTimestamps[0] = 0;
-            consensusContext.PreparationTimestamps[1] = 1;
-            consensusContext.PreparationTimestamps[2] = 2;
-            consensusContext.PreparationTimestamps[3] = uint.MaxValue;
-            consensusContext.PreparationTimestamps[4] = 4;
-            consensusContext.PreparationTimestamps[5] = 5;
-            consensusContext.PreparationTimestamps[6] = 6;
-
+            consensusContext.Preparations = new [] { null, null, null, consensusContext.PrevHash, null, null, null };
+            consensusContext.PreparationPayloads = new ConsensusPayload[consensusContext.Validators.Length];
+            var prepareRequestMessage = new PrepareRequest{
+                Nonce = consensusContext.Nonce,
+                NextConsensus = consensusContext.NextConsensus,
+                TransactionHashes = consensusContext.TransactionHashes,
+                MinerTransaction = (MinerTransaction)consensusContext.Transactions[consensusContext.TransactionHashes[0]]
+            };
+            consensusContext.PreparationPayloads[6] = consensusContext.RegenerateSignedPayload(prepareRequestMessage, 6, new [] {(byte)'3', (byte)'!'}, 23);
+            consensusContext.PreparationPayloads[0] = consensusContext.RegenerateSignedPayload( new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash }, 0, new[] {(byte)'t', (byte)'e'}, 77);
+            consensusContext.PreparationPayloads[1] = consensusContext.RegenerateSignedPayload( new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash }, 1, new[] {(byte)'s', (byte)'t'}, 77);
+            consensusContext.PreparationPayloads[2] = null;
+            consensusContext.PreparationPayloads[3] = consensusContext.RegenerateSignedPayload( new PrepareResponse { PreparationHash = consensusContext.PreparationPayloads[6].Hash }, 3, new[] {(byte)'1', (byte)'2'}, 77);
+            consensusContext.PreparationPayloads[4] = null;
+            consensusContext.PreparationPayloads[5] = null;
 
             consensusContext.Commits = new byte[consensusContext.Validators.Length][];
             using (SHA256 sha256 = SHA256.Create())
@@ -253,14 +253,13 @@ namespace Neo.UnitTests
             consensusContext.Timestamp = TimeProvider.Current.UtcNow.ToTimestamp();
 
             consensusContext.ChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
-
             consensusContext.ChangeViewPayloads[0] = consensusContext.RegenerateSignedPayload(new ChangeView { ViewNumber = 1, NewViewNumber = 2 }, 0, new [] {(byte) 'A'}, 6);
-            consensusContext.ChangeViewPayloads[1] = consensusContext.RegenerateSignedPayload(new ChangeView { ViewNumber = 1, NewViewNumber = 2 }, 0, new [] {(byte) 'B'}, 5);
+            consensusContext.ChangeViewPayloads[1] = consensusContext.RegenerateSignedPayload(new ChangeView { ViewNumber = 1, NewViewNumber = 2 }, 1, new [] {(byte) 'B'}, 5);
             consensusContext.ChangeViewPayloads[2] = null;
-            consensusContext.ChangeViewPayloads[3] = consensusContext.RegenerateSignedPayload(new ChangeView { ViewNumber = 1, NewViewNumber = 2 }, 0, new [] {(byte) 'C'}, uint.MaxValue);
+            consensusContext.ChangeViewPayloads[3] = consensusContext.RegenerateSignedPayload(new ChangeView { ViewNumber = 1, NewViewNumber = 2 }, 3, new [] {(byte) 'C'}, uint.MaxValue);
             consensusContext.ChangeViewPayloads[4] = null;
             consensusContext.ChangeViewPayloads[5] = null;
-            consensusContext.ChangeViewPayloads[6] = consensusContext.RegenerateSignedPayload(new ChangeView { ViewNumber = 1, NewViewNumber = 2 }, 0, new [] {(byte) 'D'}, 1);
+            consensusContext.ChangeViewPayloads[6] = consensusContext.RegenerateSignedPayload(new ChangeView { ViewNumber = 1, NewViewNumber = 2 }, 6, new [] {(byte) 'D'}, 1);
 
             var copiedContext = TestUtils.CopyMsgBySerialization(consensusContext, new ConsensusContext(null));
 
@@ -277,8 +276,7 @@ namespace Neo.UnitTests
             copiedContext.TransactionHashes.ShouldAllBeEquivalentTo(consensusContext.TransactionHashes);
             copiedContext.Transactions.ShouldAllBeEquivalentTo(consensusContext.Transactions);
             copiedContext.Transactions.Values.ShouldAllBeEquivalentTo(consensusContext.Transactions.Values);
-            copiedContext.PreparationWitnessInvocationScripts.ShouldAllBeEquivalentTo(consensusContext.PreparationWitnessInvocationScripts);
-            copiedContext.PreparationTimestamps.ShouldAllBeEquivalentTo(consensusContext.PreparationTimestamps);
+            copiedContext.PreparationPayloads.ShouldAllBeEquivalentTo(consensusContext.PreparationPayloads);
             copiedContext.Preparations.ShouldAllBeEquivalentTo(consensusContext.Preparations);
             copiedContext.Commits.ShouldAllBeEquivalentTo(consensusContext.Commits);
             copiedContext.ExpectedView.ShouldAllBeEquivalentTo(consensusContext.ExpectedView);
