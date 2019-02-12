@@ -34,6 +34,12 @@ namespace Neo.Consensus
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
+            ChangeViewWitnessInvocationScripts = reader.ReadVarBytesArray();
+            if (ChangeViewWitnessInvocationScripts != null)
+            {
+                ChangeViewTimestamps = reader.ReadUIntArray(ChangeViewWitnessInvocationScripts.Length);
+                OriginalChangeViewNumbers = reader.ReadVarBytes(255);
+            }
             var txHashCount = reader.ReadVarInt(ushort.MaxValue);
             if (txHashCount == 0)
             {
@@ -59,24 +65,21 @@ namespace Neo.Consensus
                 if (MinerTransaction.Hash != TransactionHashes[0])
                     throw new FormatException();
             }
-
             PreparationHash = reader.ReadVarInt(32) == 0 ? null : reader.ReadSerializable<UInt256>();
             PrepareWitnessInvocationScripts = reader.ReadVarBytesArray();
             PrepareTimestamps = reader.ReadUIntArray(PrepareWitnessInvocationScripts.Length);
-
-            ChangeViewWitnessInvocationScripts = reader.ReadVarBytesArray();
-            if (ChangeViewWitnessInvocationScripts != null)
-            {
-                ChangeViewTimestamps = reader.ReadUIntArray(ChangeViewWitnessInvocationScripts.Length);
-                OriginalChangeViewNumbers = reader.ReadVarBytes(255);
-            }
-
             CommitSignatures = reader.ReadVarBytesArray();
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
+            writer.WriteArrayVarBytesArray(ChangeViewWitnessInvocationScripts);
+            if (ChangeViewWitnessInvocationScripts != null)
+            {
+                writer.Write(ChangeViewTimestamps);
+                writer.WriteVarBytes(OriginalChangeViewNumbers);
+            }
             if (TransactionHashes == null)
                 writer.WriteVarInt(0);
             else
@@ -93,16 +96,8 @@ namespace Neo.Consensus
                 writer.WriteVarInt(PreparationHash.Size);
                 writer.Write(PreparationHash);
             }
-
             writer.WriteArrayVarBytesArray(PrepareWitnessInvocationScripts);
             writer.Write(PrepareTimestamps);
-
-            writer.WriteArrayVarBytesArray(ChangeViewWitnessInvocationScripts);
-            if (ChangeViewWitnessInvocationScripts != null)
-            {
-                writer.Write(ChangeViewTimestamps);
-                writer.WriteVarBytes(OriginalChangeViewNumbers);
-            }
             writer.WriteArrayVarBytesArray(CommitSignatures);
         }
     }
