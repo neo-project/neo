@@ -173,7 +173,7 @@ namespace Neo.Consensus
                     for (int i = 0; i < allowedRecoveryNodeCount; i++)
                     {
                         var eligibleResponders = context.Validators.Length - 1;
-                        var chosenIndex = payload.ValidatorIndex + i + message.NewViewNumber % eligibleResponders;
+                        var chosenIndex = (payload.ValidatorIndex + i + message.NewViewNumber) % eligibleResponders;
                         if (chosenIndex >= payload.ValidatorIndex) chosenIndex++;
                         if (chosenIndex != context.MyIndex) continue;
                         shouldSendRecovery = true;
