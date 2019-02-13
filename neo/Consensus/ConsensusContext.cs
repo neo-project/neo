@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.EntityFrameworkCore.Storage.Internal;
 
 namespace Neo.Consensus
 {
@@ -137,7 +138,8 @@ namespace Neo.Consensus
             return MakeSignedPayload(new ChangeView
             {
                 NewViewNumber = newViewNumber,
-            }, TimeProvider.Current.UtcNow.ToTimestamp());;
+                Timestamp = TimeProvider.Current.UtcNow.ToTimestamp()
+            });
         }
 
         public ConsensusPayload MakeCommit()
@@ -171,7 +173,7 @@ namespace Neo.Consensus
             return _header;
         }
 
-        private ConsensusPayload MakeSignedPayload(ConsensusMessage message, uint overrideTimestamp=0)
+        private ConsensusPayload MakeSignedPayload(ConsensusMessage message)
         {
             message.ViewNumber = ViewNumber;
             ConsensusPayload payload = new ConsensusPayload
@@ -180,7 +182,6 @@ namespace Neo.Consensus
                 PrevHash = PrevHash,
                 BlockIndex = BlockIndex,
                 ValidatorIndex = (ushort)MyIndex,
-                Timestamp = (overrideTimestamp != 0) ? overrideTimestamp : Timestamp,
             };
             payload.SetMessage(message);
             SignPayload(payload);
@@ -188,7 +189,7 @@ namespace Neo.Consensus
         }
 
         public ConsensusPayload RegenerateSignedPayload(ConsensusMessage message, ushort validatorIndex,
-            byte[] witnessInvocationScript, uint timestamp)
+            byte[] witnessInvocationScript)
         {
             ConsensusPayload payload = new ConsensusPayload
             {
@@ -196,7 +197,6 @@ namespace Neo.Consensus
                 PrevHash = PrevHash,
                 BlockIndex = BlockIndex,
                 ValidatorIndex = validatorIndex,
-                Timestamp = timestamp,
                 Data = message.ToArray()
             };
             Witness[] witnesses = new Witness[1];
@@ -207,7 +207,6 @@ namespace Neo.Consensus
             };
             ((IVerifiable) payload).Witnesses = witnesses;
 
-            // need to put signature in the payload
             return payload;
         }
 
@@ -242,19 +241,27 @@ namespace Neo.Consensus
             var changeViewPayloads = TransactionHashes == null || PreparationPayloads.Count(p => p != null) < M
                 ? ChangeViewPayloads : null;
 
+            PrepareRequest prepareRequestMessage = null;
+            if (TransactionHashes != null)
+            {
+                prepareRequestMessage = new PrepareRequest
+                {
+                    TransactionHashes = TransactionHashes,
+                    Nonce = Nonce,
+                    NextConsensus = NextConsensus,
+                    MinerTransaction = (MinerTransaction) (TransactionHashes == null ? null : Transactions?[TransactionHashes[0]]),
+                    Timestamp = Timestamp
+                };
+            }
             return MakeSignedPayload(new RecoveryMessage()
             {
                 ChangeViewWitnessInvocationScripts = changeViewPayloads?.Select(p => p.Witness.InvocationScript).ToArray(),
-                ChangeViewTimestamps = changeViewPayloads?.Select(p => p.Timestamp).ToArray(),
+                ChangeViewTimestamps = changeViewPayloads?.Select(p => p.GetDeserializedMessage<ChangeView>().Timestamp).ToArray(),
                 OriginalChangeViewNumbers = changeViewPayloads?.Select(p => p.GetDeserializedMessage<ChangeView>().NewViewNumber).ToArray(),
-                TransactionHashes = TransactionHashes,
-                Nonce = Nonce,
-                NextConsensus = NextConsensus,
-                MinerTransaction = (MinerTransaction) (TransactionHashes == null ? null : Transactions?[TransactionHashes[0]]),
+                PrepareRequestMessage = prepareRequestMessage,
                 // We only need a PreparationHash set if we don't have the PrepareRequest information.
                 PreparationHash = TransactionHashes == null ? PreparationPayloads.Where(p => p != null).GroupBy(p => p.GetDeserializedMessage<PrepareResponse>().PreparationHash, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
                 PrepareWitnessInvocationScripts = PreparationPayloads.Select(p => p.Witness.InvocationScript).ToArray(),
-                PrepareTimestamps = PreparationPayloads.Select(p => p.Timestamp).ToArray(),
                 CommitSignatures = State.HasFlag(ConsensusState.CommitSent) ? Commits : null
             });
         }

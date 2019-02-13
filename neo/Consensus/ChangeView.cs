@@ -6,6 +6,7 @@ namespace Neo.Consensus
     internal class ChangeView : ConsensusMessage
     {
         public byte NewViewNumber;
+        public uint Timestamp;
 
         public override int Size => base.Size + sizeof(byte);
 
@@ -18,13 +19,14 @@ namespace Neo.Consensus
         {
             base.Deserialize(reader);
             NewViewNumber = reader.ReadByte();
-            if (NewViewNumber == 0) throw new FormatException();
+            Timestamp = reader.ReadUInt32();
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
             writer.Write(NewViewNumber);
+            writer.Write(Timestamp);
         }
     }
 }

@@ -16,7 +16,6 @@ namespace Neo.Network.P2P.Payloads
         public UInt256 PrevHash;
         public uint BlockIndex;
         public ushort ValidatorIndex;
-        public uint Timestamp;
         public byte[] Data;
         public Witness Witness;
 
@@ -77,7 +76,6 @@ namespace Neo.Network.P2P.Payloads
             PrevHash = reader.ReadSerializable<UInt256>();
             BlockIndex = reader.ReadUInt32();
             ValidatorIndex = reader.ReadUInt16();
-            Timestamp = reader.ReadUInt32();
             Data = reader.ReadVarBytes();
         }
 
@@ -106,7 +104,6 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(PrevHash);
             writer.Write(BlockIndex);
             writer.Write(ValidatorIndex);
-            writer.Write(Timestamp);
             writer.WriteVarBytes(Data);
         }
 

@@ -187,12 +187,12 @@ namespace Neo.Consensus
                     }
                 }
 
-                // We keep track of the payload hashes received in this block, and don't respond with
-                // recovery in response to the same payload that we already responded to previously.
-                // ChangeView messages always set their Timestamp to the time the change view is sent, thus
-                // if a node restarts and issues a change view for the same view, it will have a different hash
-                // and will correctly respond again; however replay attacks of the ChangeView message from arbitrary
-                // nodes will not trigger an additonal recovery message response.
+                // We keep track of the payload hashes received in this block, and don't respond with recovery
+                // in response to the same payload that we already responded to previously.
+                // ChangeView messages include a Timestamp when the change view is sent, thus if a node restarts
+                // and issues a change view for the same view, it will have a different hash and will correctly respond
+                // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
+                // additonal recovery message response.
                 if (!shouldSendRecovery || knownHashes.Contains(payload.Hash)) return;
                 knownHashes.Add(payload.Hash);
 
@@ -290,20 +290,12 @@ namespace Neo.Consensus
         private bool ReverifyPrepareRequest(ConsensusContext consensusContext, RecoveryMessage message, Snapshot snapshot,
             out ConsensusPayload prepareRequestPayload, out PrepareRequest prepareRequest)
         {
-            if (message.TransactionHashes != null)
+            if (message.PrepareRequestMessage != null)
             {
-                prepareRequest = new PrepareRequest
-                {
-                    ViewNumber = consensusContext.ViewNumber,
-                    Nonce = message.Nonce,
-                    NextConsensus = message.NextConsensus,
-                    TransactionHashes = message.TransactionHashes,
-                    MinerTransaction = message.MinerTransaction
-                };
-                var prepareRequestTimestamp = message.PrepareTimestamps[consensusContext.PrimaryIndex];
+                prepareRequest = message.PrepareRequestMessage;
                 prepareRequestPayload = consensusContext.RegenerateSignedPayload(
                     prepareRequest, (ushort) consensusContext.PrimaryIndex,
-                    message.PrepareWitnessInvocationScripts[consensusContext.PrimaryIndex], prepareRequestTimestamp);
+                    message.PrepareWitnessInvocationScripts[consensusContext.PrimaryIndex]);
 
                 if (prepareRequestPayload.Verify(snapshot) && PerformBasicConsensusPayloadPreChecks(prepareRequestPayload))
                     return true;
@@ -392,8 +384,7 @@ namespace Neo.Consensus
                     var prepareResponseMsg = new PrepareResponse {PreparationHash = preparationHash};
                     prepareResponseMsg.ViewNumber = context.ViewNumber;
                     var regeneratedPrepareResponse = ((ConsensusContext) context).RegenerateSignedPayload(
-                        prepareResponseMsg, (ushort) i, message.PrepareWitnessInvocationScripts[i],
-                        message.PrepareTimestamps[i]);
+                        prepareResponseMsg, (ushort) i, message.PrepareWitnessInvocationScripts[i]);
                     if (regeneratedPrepareResponse.Verify(snap) &&
                         PerformBasicConsensusPayloadPreChecks(regeneratedPrepareResponse))
                         OnPrepareResponseReceived(regeneratedPrepareResponse, prepareResponseMsg);
@@ -412,7 +403,6 @@ namespace Neo.Consensus
             Snapshot snap =  Blockchain.Singleton.GetSnapshot();
             if (payload.BlockIndex > snap.Height + 1) return;
             if (message.PrepareWitnessInvocationScripts.Length < context.Validators.Length) return;
-            if (message.PrepareTimestamps.Length < context.Validators.Length) return;
 
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
@@ -430,16 +420,17 @@ namespace Neo.Consensus
             // Have to Reset to 0 first to handle initializion of the context
             tempContext.Reset(0, snap);
             tempContext.Reset(message.ViewNumber, snap);
-            if (message.TransactionHashes != null)
+            if (message.PrepareRequestMessage != null)
             {
-                tempContext.Nonce = message.Nonce;
-                tempContext.TransactionHashes = message.TransactionHashes;
-                tempContext.NextConsensus = message.NextConsensus;
+                var prepareRequest = message.PrepareRequestMessage;
+                tempContext.Nonce = prepareRequest.Nonce;
+                tempContext.TransactionHashes = prepareRequest.TransactionHashes;
+                tempContext.NextConsensus = prepareRequest.NextConsensus;
                 tempContext.Transactions = new Dictionary<UInt256, Transaction>
                 {
-                    [message.TransactionHashes[0]] = message.MinerTransaction
+                    [prepareRequest.TransactionHashes[0]] = prepareRequest.MinerTransaction
                 };
-                tempContext.Timestamp = message.PrepareTimestamps[tempContext.PrimaryIndex];
+                tempContext.Timestamp = prepareRequest.Timestamp;
             }
 
             ConsensusPayload prepareRequestPayload = null;
@@ -467,7 +458,7 @@ namespace Neo.Consensus
                     if (message.PrepareWitnessInvocationScripts[i] == null) continue;
                     Log($" considering prepare request {i}");
                     var regeneratedPrepareResponse = tempContext.RegenerateSignedPayload(prepareResponseMsg, (ushort) i,
-                        message.PrepareWitnessInvocationScripts[i], message.PrepareTimestamps[i]);
+                        message.PrepareWitnessInvocationScripts[i]);
                     if (!regeneratedPrepareResponse.Verify(snap) ||
                         !PerformBasicConsensusPayloadPreChecks(regeneratedPrepareResponse)) continue;
                     prepareResponses.Add((regeneratedPrepareResponse, prepareResponseMsg));
@@ -496,9 +487,10 @@ namespace Neo.Consensus
                     if (message.ChangeViewWitnessInvocationScripts[i] == null) continue;
 
                     changeViewMsg.ViewNumber = message.OriginalChangeViewNumbers[i];
+                    changeViewMsg.Timestamp = message.ChangeViewTimestamps[i];
                     // Regenerate the ChangeView message
                     var regeneratedChangeView = tempContext.RegenerateSignedPayload(changeViewMsg, (ushort) i,
-                        message.ChangeViewWitnessInvocationScripts[i], message.ChangeViewTimestamps[i]);
+                        message.ChangeViewWitnessInvocationScripts[i]);
                     if (!regeneratedChangeView.Verify(snap) || !PerformBasicConsensusPayloadPreChecks(regeneratedChangeView)) continue;
                     verifiedChangeViewPayloads[i] = regeneratedChangeView;
                     validChangeViewCount++;
@@ -562,9 +554,9 @@ namespace Neo.Consensus
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (!context.State.HasFlag(ConsensusState.Backup)) return;
-            if (payload.Timestamp <= context.PrevHeader.Timestamp || payload.Timestamp > TimeProvider.Current.UtcNow.AddMinutes(10).ToTimestamp())
+            if (message.Timestamp <= context.PrevHeader.Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMinutes(10).ToTimestamp())
             {
-                Log($"Timestamp incorrect: {payload.Timestamp}", LogLevel.Warning);
+                Log($"Timestamp incorrect: {message.Timestamp}", LogLevel.Warning);
                 return;
             }
             if (message.TransactionHashes.Any(p => context.TransactionExists(p)))
@@ -573,7 +565,7 @@ namespace Neo.Consensus
                 return;
             }
             context.State |= ConsensusState.RequestReceived;
-            context.Timestamp = payload.Timestamp;
+            context.Timestamp = message.Timestamp;
             context.Nonce = message.Nonce;
             context.NextConsensus = message.NextConsensus;
             context.TransactionHashes = message.TransactionHashes;
