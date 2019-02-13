@@ -160,8 +160,7 @@ namespace Neo.IO
                 return output;
             }
 
-            if (!shouldReturnNullIfEmpty) return new byte[0][];
-            return null;
+            return shouldReturnNullIfEmpty ? null : new byte[0][];
         }
 
         public static ulong ReadVarInt(this BinaryReader reader, ulong max = ulong.MaxValue)
