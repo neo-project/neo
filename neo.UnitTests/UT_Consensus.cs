@@ -240,15 +240,6 @@ namespace Neo.UnitTests
                 consensusContext.Commits[6] = sha256.ComputeHash(testTx2.Hash.ToArray());
             }
 
-            consensusContext.ExpectedView = new byte[consensusContext.Validators.Length];
-            consensusContext.ExpectedView[0] = 2;
-            consensusContext.ExpectedView[1] = 2;
-            consensusContext.ExpectedView[2] = 1;
-            consensusContext.ExpectedView[3] = 2;
-            consensusContext.ExpectedView[4] = 1;
-            consensusContext.ExpectedView[5] = 1;
-            consensusContext.ExpectedView[6] = 2;
-
             consensusContext.Timestamp = TimeProvider.Current.UtcNow.ToTimestamp();
 
             consensusContext.ChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
@@ -277,7 +268,6 @@ namespace Neo.UnitTests
             copiedContext.Transactions.Values.ShouldAllBeEquivalentTo(consensusContext.Transactions.Values);
             copiedContext.PreparationPayloads.ShouldAllBeEquivalentTo(consensusContext.PreparationPayloads);
             copiedContext.Commits.ShouldAllBeEquivalentTo(consensusContext.Commits);
-            copiedContext.ExpectedView.ShouldAllBeEquivalentTo(consensusContext.ExpectedView);
             copiedContext.ChangeViewPayloads.ShouldAllBeEquivalentTo(consensusContext.ChangeViewPayloads);
         }
 
