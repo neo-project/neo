@@ -265,7 +265,7 @@ namespace Neo.IO
             writer.Write(value);
         }
 
-        public static void WriteArrayVarBytesArray(this BinaryWriter writer, byte[][] values)
+        public static void WriteVarBytesArray(this BinaryWriter writer, byte[][] values)
         {
             if (values == null)
                 writer.WriteVarInt(0);

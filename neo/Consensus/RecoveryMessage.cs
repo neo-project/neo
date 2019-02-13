@@ -74,7 +74,7 @@ namespace Neo.Consensus
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.WriteArrayVarBytesArray(ChangeViewWitnessInvocationScripts);
+            writer.WriteVarBytesArray(ChangeViewWitnessInvocationScripts);
             if (ChangeViewWitnessInvocationScripts != null)
             {
                 writer.Write(ChangeViewTimestamps);
@@ -96,9 +96,9 @@ namespace Neo.Consensus
                 writer.WriteVarInt(PreparationHash.Size);
                 writer.Write(PreparationHash);
             }
-            writer.WriteArrayVarBytesArray(PrepareWitnessInvocationScripts);
+            writer.WriteVarBytesArray(PrepareWitnessInvocationScripts);
             writer.Write(PrepareTimestamps);
-            writer.WriteArrayVarBytesArray(CommitSignatures);
+            writer.WriteVarBytesArray(CommitSignatures);
         }
     }
 }
