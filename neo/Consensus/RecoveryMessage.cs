@@ -38,9 +38,9 @@ namespace Neo.Consensus
             if (ChangeViewWitnessInvocationScripts != null)
             {
                 ChangeViewTimestamps = reader.ReadUIntArray(ChangeViewWitnessInvocationScripts.Length);
-                OriginalChangeViewNumbers = reader.ReadVarBytes(255);
+                OriginalChangeViewNumbers = reader.ReadVarBytes(ConsensusService.MaxValidatorsCount);
             }
-            var txHashCount = reader.ReadVarInt(ushort.MaxValue);
+            var txHashCount = reader.ReadVarInt(ConsensusService.MaxTransactionsPerBlock);
             if (txHashCount == 0)
             {
                 TransactionHashes = null;
@@ -66,9 +66,9 @@ namespace Neo.Consensus
                     throw new FormatException();
             }
             PreparationHash = reader.ReadVarInt(32) == 0 ? null : reader.ReadSerializable<UInt256>();
-            PrepareWitnessInvocationScripts = reader.ReadVarBytesArray();
+            PrepareWitnessInvocationScripts = reader.ReadVarBytesArray(ConsensusService.MaxValidatorsCount);
             PrepareTimestamps = reader.ReadUIntArray(PrepareWitnessInvocationScripts.Length);
-            CommitSignatures = reader.ReadVarBytesArray();
+            CommitSignatures = reader.ReadVarBytesArray(ConsensusService.MaxValidatorsCount);
         }
 
         public override void Serialize(BinaryWriter writer)

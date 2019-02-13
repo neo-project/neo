@@ -18,6 +18,8 @@ namespace Neo.Consensus
 {
     public sealed class ConsensusService : UntypedActor
     {
+        public const int MaxValidatorsCount = byte.MaxValue;
+        public const int MaxTransactionsPerBlock = ushort.MaxValue;
         public class Start { }
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }

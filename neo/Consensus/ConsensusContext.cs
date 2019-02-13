@@ -73,10 +73,10 @@ namespace Neo.Consensus
             PrevHash = reader.ReadSerializable<UInt256>();
             BlockIndex = reader.ReadUInt32();
             ViewNumber = reader.ReadByte();
-            Validators = reader.ReadSerializableArray<ECPoint>(byte.MaxValue);
+            Validators = reader.ReadSerializableArray<ECPoint>(ConsensusService.MaxValidatorsCount);
             MyIndex = reader.ReadInt32();
             PrimaryIndex = reader.ReadUInt32();
-            var numChangeViews = reader.ReadVarInt(byte.MaxValue);
+            var numChangeViews = reader.ReadVarInt(ConsensusService.MaxValidatorsCount);
             if (numChangeViews > 0)
             {
                 ChangeViewPayloads = new ConsensusPayload[numChangeViews];
@@ -91,7 +91,7 @@ namespace Neo.Consensus
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
             if (TransactionHashes.Length == 0)
                 TransactionHashes = null;
-            Transaction[] transactions = new Transaction[reader.ReadVarInt(ushort.MaxValue)];
+            Transaction[] transactions = new Transaction[reader.ReadVarInt(ConsensusService.MaxTransactionsPerBlock)];
             if (transactions.Length == 0)
             {
                 Transactions = null;
@@ -102,14 +102,14 @@ namespace Neo.Consensus
                     transactions[i] = Transaction.DeserializeFrom(reader);
                 Transactions = transactions.ToDictionary(p => p.Hash);
             }
-            var numPreparationPayloads = reader.ReadVarInt(byte.MaxValue);
+            var numPreparationPayloads = reader.ReadVarInt(ConsensusService.MaxValidatorsCount);
             if (numPreparationPayloads > 0)
             {
                 PreparationPayloads = new ConsensusPayload[numPreparationPayloads];
                 for (int i = 0; i < ChangeViewPayloads.Length; i++)
                     PreparationPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
             }
-            Commits = new byte[reader.ReadVarInt(byte.MaxValue)][];
+            Commits = new byte[reader.ReadVarInt(ConsensusService.MaxValidatorsCount)][];
             for (int i = 0; i < Commits.Length; i++)
             {
                 Commits[i] = reader.ReadVarBytes();
