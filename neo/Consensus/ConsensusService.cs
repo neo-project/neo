@@ -113,13 +113,11 @@ namespace Neo.Consensus
             }
         }
 
-        private void CheckExpectedView(byte view_number)
+        private void CheckExpectedView(byte viewNumber)
         {
-            if (context.ViewNumber == view_number) return;
-            if (context.ExpectedView.Count(p => p == view_number) >= context.M)
-            {
-                InitializeConsensus(view_number);
-            }
+            if (context.ViewNumber == viewNumber) return;
+            if (context.ChangeViewPayloads.Count(p => p.GetDeserializedMessage<ChangeView>().NewViewNumber == viewNumber) >= context.M)
+                InitializeConsensus(viewNumber);
         }
 
         private void CheckPreparations()
@@ -200,11 +198,12 @@ namespace Neo.Consensus
                 localNode.Tell(new LocalNode.SendDirectly {Inventory = context.MakeRecoveryMessage()});
                 return;
             }
-            if (message.NewViewNumber <= context.ExpectedView[payload.ValidatorIndex])
+
+            var expectedView = GetLastExpectedView(payload.ValidatorIndex);
+            if (message.NewViewNumber <= expectedView)
                 return;
 
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
-            context.ExpectedView[payload.ValidatorIndex] = message.NewViewNumber;
             context.ChangeViewPayloads[payload.ValidatorIndex] = payload;
             CheckExpectedView(message.NewViewNumber);
         }
@@ -367,7 +366,6 @@ namespace Neo.Consensus
                             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ViewNumber + 1)));
                         }
                         OnPrepareRequestReceived(prepareRequestPayload, prepareRequest);
-
                         preparationHash = prepareRequestPayload.Hash;
                     }
                     else
@@ -535,13 +533,8 @@ namespace Neo.Consensus
             }
 
             for (int i = 0; i < context.Validators.Length; i++)
-            {
                 if (verifiedChangeViewPayloads[i] != null)
-                {
                     context.ChangeViewPayloads[i] = verifiedChangeViewPayloads[i];
-                    context.ExpectedView[i] = message.ViewNumber;
-                }
-            }
 
             if (prepareRequestPayload != null)
             {
@@ -687,7 +680,7 @@ namespace Neo.Consensus
                 InitializeConsensus(0);
                 // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
                 if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
-                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
+                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(0) });
             }
         }
 
@@ -751,16 +744,26 @@ namespace Neo.Consensus
             return Akka.Actor.Props.Create(() => new ConsensusService(localNode, taskManager, store, wallet)).WithMailbox("consensus-service-mailbox");
         }
 
+        private byte GetLastExpectedView(int validatorIndex)
+        {
+            var lastPreparationPayload = context.PreparationPayloads[validatorIndex];
+            if (lastPreparationPayload != null)
+                return lastPreparationPayload.GetDeserializedMessage<ConsensusMessage>().ViewNumber;
+
+            return context.ChangeViewPayloads[validatorIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber ?? (byte) 0;
+        }
+
         private void RequestChangeView()
         {
             context.State |= ConsensusState.ViewChanging;
-            context.ExpectedView[context.MyIndex]++;
-            Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={context.ExpectedView[context.MyIndex]} state={context.State}");
-            ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ExpectedView[context.MyIndex] + 1)));
-            var changeViewPayload = context.MakeChangeView();
+            byte expectedView = GetLastExpectedView(context.MyIndex);
+            expectedView++;
+            Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView} state={context.State}");
+            ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (expectedView + 1)));
+            var changeViewPayload = context.MakeChangeView(expectedView);
             context.ChangeViewPayloads[context.MyIndex] = changeViewPayload;
             localNode.Tell(new LocalNode.SendDirectly { Inventory = changeViewPayload });
-            CheckExpectedView(context.ExpectedView[context.MyIndex]);
+            CheckExpectedView(expectedView);
         }
     }
 

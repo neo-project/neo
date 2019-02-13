@@ -32,7 +32,6 @@ namespace Neo.Consensus
         public Dictionary<UInt256, Transaction> Transactions { get; set; }
         public ConsensusPayload[] PreparationPayloads { get; set; }
         public byte[][] Commits { get; set; }
-        public byte[] ExpectedView { get; set; }
         private Snapshot snapshot;
         private KeyPair keyPair;
         private readonly Wallet wallet;
@@ -117,7 +116,6 @@ namespace Neo.Consensus
                 if (Commits[i].Length == 0)
                     Commits[i] = null;
             }
-            ExpectedView = reader.ReadVarBytes();
         }
 
         public void Dispose()
@@ -131,14 +129,14 @@ namespace Neo.Consensus
             return p >= 0 ? (uint)p : (uint)(p + Validators.Length);
         }
 
-        public ConsensusPayload MakeChangeView()
+        public ConsensusPayload MakeChangeView(byte newViewNumber)
         {
             // Change view messages use the current time as their timestamp. This allows receiving nodes to ensure
             // they only respond once to a specific ChangeView request (it thus prevents other nodes repeatedly
             // broadcasting the ChangeView message to cause CN nodes to repeatedly send recovery messages).
             return MakeSignedPayload(new ChangeView
             {
-                NewViewNumber = ExpectedView[MyIndex]
+                NewViewNumber = newViewNumber,
             }, TimeProvider.Current.UtcNow.ToTimestamp());;
         }
 
@@ -279,7 +277,6 @@ namespace Neo.Consensus
                 BlockIndex = snapshot.Height + 1;
                 Validators = snapshot.GetValidators();
                 MyIndex = -1;
-                ExpectedView = new byte[Validators.Length];
                 ChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 keyPair = null;
                 for (int i = 0; i < Validators.Length; i++)
@@ -300,8 +297,6 @@ namespace Neo.Consensus
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
             Commits = new byte[Validators.Length][];
-            if (MyIndex >= 0)
-                ExpectedView[MyIndex] = viewNumber;
             _header = null;
         }
 
@@ -352,7 +347,6 @@ namespace Neo.Consensus
                     writer.WriteVarInt(0);
                 else
                     writer.WriteVarBytes(commit);
-            writer.WriteVarBytes(ExpectedView);
         }
 
         public void Fill()
