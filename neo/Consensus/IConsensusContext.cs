@@ -22,7 +22,6 @@ namespace Neo.Consensus
         UInt160 NextConsensus { get; set; }
         UInt256[] TransactionHashes { get; set; }
         Dictionary<UInt256, Transaction> Transactions { get; set; }
-        UInt256[] Preparations { get; set; }
         ConsensusPayload[] PreparationPayloads { get; set; }
         byte[][] Commits { get; set; }
         byte[] ExpectedView { get; set; }

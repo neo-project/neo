@@ -30,7 +30,6 @@ namespace Neo.Consensus
         public UInt160 NextConsensus { get; set; }
         public UInt256[] TransactionHashes { get; set; }
         public Dictionary<UInt256, Transaction> Transactions { get; set; }
-        public UInt256[] Preparations { get; set; }
         public ConsensusPayload[] PreparationPayloads { get; set; }
         public byte[][] Commits { get; set; }
         public byte[] ExpectedView { get; set; }
@@ -104,10 +103,6 @@ namespace Neo.Consensus
                     transactions[i] = Transaction.DeserializeFrom(reader);
                 Transactions = transactions.ToDictionary(p => p.Hash);
             }
-            Preparations = reader.ReadSerializableArray<UInt256>(byte.MaxValue);
-            for (int i = 0; i < Preparations.Length; i++)
-                if (Preparations[i].Equals(UInt256.Zero))
-                    Preparations[i] = null;
             var numPreparationPayloads = reader.ReadVarInt(byte.MaxValue);
             if (numPreparationPayloads > 0)
             {
@@ -246,7 +241,7 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeRecoveryMessage()
         {
-            var changeViewPayloads = TransactionHashes == null || Preparations.Count(p => p != null) < M
+            var changeViewPayloads = TransactionHashes == null || PreparationPayloads.Count(p => p != null) < M
                 ? ChangeViewPayloads : null;
 
             return MakeSignedPayload(new RecoveryMessage()
@@ -259,9 +254,9 @@ namespace Neo.Consensus
                 NextConsensus = NextConsensus,
                 MinerTransaction = (MinerTransaction) (TransactionHashes == null ? null : Transactions?[TransactionHashes[0]]),
                 // We only need a PreparationHash set if we don't have the PrepareRequest information.
-                PreparationHash = TransactionHashes == null ? Preparations.Where(p => p != null).GroupBy(p => p, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
-                PrepareWitnessInvocationScripts = PreparationPayloads?.Select(p => p.Witness.InvocationScript).ToArray(),
-                PrepareTimestamps = PreparationPayloads?.Select(p => p.Timestamp).ToArray(),
+                PreparationHash = TransactionHashes == null ? PreparationPayloads.Where(p => p != null).GroupBy(p => p.Hash, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
+                PrepareWitnessInvocationScripts = PreparationPayloads.Select(p => p.Witness.InvocationScript).ToArray(),
+                PrepareTimestamps = PreparationPayloads.Select(p => p.Timestamp).ToArray(),
                 CommitSignatures = State.HasFlag(ConsensusState.CommitSent) ? Commits : null
             });
         }
@@ -303,7 +298,6 @@ namespace Neo.Consensus
             PrimaryIndex = GetPrimaryIndex(viewNumber);
             Timestamp = 0;
             TransactionHashes = null;
-            Preparations = new UInt256[Validators.Length];
             PreparationPayloads = new ConsensusPayload[Validators.Length];
             Commits = new byte[Validators.Length][];
             if (MyIndex >= 0)
@@ -339,12 +333,6 @@ namespace Neo.Consensus
             writer.Write(NextConsensus ?? UInt160.Zero);
             writer.Write(TransactionHashes ?? new UInt256[0]);
             writer.Write(Transactions?.Values.ToArray() ?? new Transaction[0]);
-            writer.WriteVarInt(Preparations.Length);
-            foreach (UInt256 hash in Preparations)
-                if (hash is null)
-                    writer.Write(UInt256.Zero);
-                else
-                    writer.Write(hash);
             if (PreparationPayloads == null)
                 writer.WriteVarInt(0);
             else

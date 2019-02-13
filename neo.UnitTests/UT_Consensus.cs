@@ -218,7 +218,6 @@ namespace Neo.UnitTests
             // consensusContext.TransactionHashes = new UInt256[2] {testTx1.Hash, testTx2.Hash};
             consensusContext.Transactions = txs.ToDictionary(p => p.Hash);
 
-            consensusContext.Preparations = new [] { null, null, null, consensusContext.PrevHash, null, null, null };
             consensusContext.PreparationPayloads = new ConsensusPayload[consensusContext.Validators.Length];
             var prepareRequestMessage = new PrepareRequest{
                 Nonce = consensusContext.Nonce,
@@ -277,7 +276,6 @@ namespace Neo.UnitTests
             copiedContext.Transactions.ShouldAllBeEquivalentTo(consensusContext.Transactions);
             copiedContext.Transactions.Values.ShouldAllBeEquivalentTo(consensusContext.Transactions.Values);
             copiedContext.PreparationPayloads.ShouldAllBeEquivalentTo(consensusContext.PreparationPayloads);
-            copiedContext.Preparations.ShouldAllBeEquivalentTo(consensusContext.Preparations);
             copiedContext.Commits.ShouldAllBeEquivalentTo(consensusContext.Commits);
             copiedContext.ExpectedView.ShouldAllBeEquivalentTo(consensusContext.ExpectedView);
             copiedContext.ChangeViewPayloads.ShouldAllBeEquivalentTo(consensusContext.ChangeViewPayloads);
