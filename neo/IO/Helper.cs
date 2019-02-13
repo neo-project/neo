@@ -141,7 +141,8 @@ namespace Neo.IO
             return reader.ReadBytes((int)reader.ReadVarInt((ulong)max));
         }
 
-        public static byte[][] ReadVarBytesArray(this BinaryReader reader, int maxItems=255, int maxItemLen = 1024)
+        public static byte[][] ReadVarBytesArray(this BinaryReader reader, int maxItems=255, int maxItemLen = 1024,
+            bool shouldReturnNullIfEmpty=true)
         {
             byte items = (byte) reader.ReadVarInt((ulong)maxItems);
             if (items > 0)
@@ -159,6 +160,7 @@ namespace Neo.IO
                 return output;
             }
 
+            if (!shouldReturnNullIfEmpty) return new byte[0][];
             return null;
         }
 
