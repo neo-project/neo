@@ -144,7 +144,7 @@ namespace Neo.IO
         public static byte[][] ReadVarBytesArray(this BinaryReader reader, int maxItems=255, int maxItemLen = 1024,
             bool shouldReturnNullIfEmpty=true)
         {
-            byte items = (byte) reader.ReadVarInt((ulong)maxItems);
+            int items = (int) reader.ReadVarInt((ulong)maxItems);
             if (items > 0)
             {
                 byte[][] output = new byte[items][];
