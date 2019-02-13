@@ -598,7 +598,6 @@ namespace Neo.Consensus
                 }
                 else
                 {
-
                     if (Blockchain.Singleton.MemPool.TryGetValue(hash, out tx))
                         unverified.Add(tx);
                 }

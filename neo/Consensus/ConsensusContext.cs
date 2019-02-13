@@ -252,7 +252,7 @@ namespace Neo.Consensus
                 NextConsensus = NextConsensus,
                 MinerTransaction = (MinerTransaction) (TransactionHashes == null ? null : Transactions?[TransactionHashes[0]]),
                 // We only need a PreparationHash set if we don't have the PrepareRequest information.
-                PreparationHash = TransactionHashes == null ? PreparationPayloads.Where(p => p != null).GroupBy(p => p.Hash, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
+                PreparationHash = TransactionHashes == null ? PreparationPayloads.Where(p => p != null).GroupBy(p => p.GetDeserializedMessage<PrepareResponse>().PreparationHash, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
                 PrepareWitnessInvocationScripts = PreparationPayloads.Select(p => p.Witness.InvocationScript).ToArray(),
                 PrepareTimestamps = PreparationPayloads.Select(p => p.Timestamp).ToArray(),
                 CommitSignatures = State.HasFlag(ConsensusState.CommitSent) ? Commits : null
