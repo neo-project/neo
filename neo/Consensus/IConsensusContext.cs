@@ -24,7 +24,6 @@ namespace Neo.Consensus
         Dictionary<UInt256, Transaction> Transactions { get; set; }
         ConsensusPayload[] PreparationPayloads { get; set; }
         byte[][] Commits { get; set; }
-        // byte[] ExpectedView { get; set; }
         ConsensusPayload[] ChangeViewPayloads { get; set; }
 
         int F { get; }
