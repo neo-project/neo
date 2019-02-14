@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 
 namespace Neo.Consensus
 {
@@ -8,7 +7,9 @@ namespace Neo.Consensus
         public byte NewViewNumber;
         public uint Timestamp;
 
-        public override int Size => base.Size + sizeof(byte);
+        public override int Size => base.Size
+            + sizeof(byte)  //NewViewNumber
+            + sizeof(uint); //Timestamp
 
         public ChangeView()
             : base(ConsensusMessageType.ChangeView)
