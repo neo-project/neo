@@ -387,7 +387,7 @@ namespace Neo.Consensus
         private void OnRecoveryMessageReceived(ConsensusPayload payload, RecoveryMessage message)
         {
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
-
+            Snapshot snap =  Blockchain.Singleton.GetSnapshot();
             if (context.ViewNumber == message.ViewNumber)
             {
                 HandleRecoveryInCurrentView(message, snap);
