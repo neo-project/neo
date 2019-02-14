@@ -64,7 +64,13 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public int Size => sizeof(uint) + PrevHash.Size + sizeof(uint) + sizeof(ushort) + sizeof(uint) + Data.GetVarSize() + 1 + Witness.Size;
+        public int Size =>
+            sizeof(uint) +      //Version
+            PrevHash.Size +     //PrevHash
+            sizeof(uint) +      //BlockIndex
+            sizeof(ushort) +    //ValidatorIndex
+            Data.GetVarSize() + //Data
+            1 + Witness.Size;   //Witness
 
         internal T GetDeserializedMessage<T>() where T : ConsensusMessage
         {
