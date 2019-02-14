@@ -472,7 +472,7 @@ namespace Neo.Consensus
                     changeViewMsg.ViewNumber = message.ChangeViewMessages[i].OriginalViewNumber;
                     changeViewMsg.Timestamp = message.ChangeViewMessages[i].Timestamp;
                     // Regenerate the ChangeView message
-                    var regeneratedChangeView = tempContext.RegenerateSignedPayload(changeViewMsg, (ushort) i,
+                    var regeneratedChangeView = tempContext.RegenerateSignedPayload(changeViewMsg, i,
                         message.ChangeViewMessages[i].InvocationScript);
                     if (!regeneratedChangeView.Verify(snap) || !PerformBasicConsensusPayloadPreChecks(regeneratedChangeView)) continue;
                     verifiedChangeViewPayloads[i] = regeneratedChangeView;
