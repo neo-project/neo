@@ -22,7 +22,6 @@ namespace Neo.Consensus
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
-        internal const int MaxTransactionsPerBlock = ushort.MaxValue;
         private const byte ContextSerializationPrefix = 0xf4;
 
         private readonly IConsensusContext context;

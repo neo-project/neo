@@ -32,7 +32,7 @@ namespace Neo.Consensus
             Timestamp = reader.ReadUInt32();
             Nonce = reader.ReadUInt64();
             NextConsensus = reader.ReadSerializable<UInt160>();
-            TransactionHashes = reader.ReadSerializableArray<UInt256>(ConsensusService.MaxTransactionsPerBlock);
+            TransactionHashes = reader.ReadSerializableArray<UInt256>(Block.MaxTransactionsPerBlock);
             if (TransactionHashes.Distinct().Count() != TransactionHashes.Length)
                 throw new FormatException();
             MinerTransaction = reader.ReadSerializable<MinerTransaction>();

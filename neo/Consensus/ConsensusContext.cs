@@ -91,7 +91,7 @@ namespace Neo.Consensus
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
             if (TransactionHashes.Length == 0)
                 TransactionHashes = null;
-            Transaction[] transactions = new Transaction[reader.ReadVarInt(ConsensusService.MaxTransactionsPerBlock)];
+            Transaction[] transactions = new Transaction[reader.ReadVarInt()];
             if (transactions.Length == 0)
             {
                 Transactions = null;
