@@ -275,7 +275,7 @@ namespace Neo.UnitTests
         {
             var msg = new RecoveryMessage
             {
-                ChangeViewMessages = new Dictionary<ushort, RecoveryMessage.ChangeViewPayloadCompact>()
+                ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>()
                 {
                     {
                         0,
@@ -319,7 +319,7 @@ namespace Neo.UnitTests
                     }
                 },
                 PreparationHash = new UInt256(Crypto.Default.Hash256(new[] { (byte)'a' })),
-                PreparationMessages = new Dictionary<ushort, RecoveryMessage.PreparationPayloadCompact>()
+                PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
                     {
                         0,
@@ -346,7 +346,7 @@ namespace Neo.UnitTests
                         }
                     }
                 },
-                CommitMessages = new Dictionary<ushort, RecoveryMessage.CommitPayloadCompact>()
+                CommitMessages = new Dictionary<int, RecoveryMessage.CommitPayloadCompact>()
             };
 
             // msg.TransactionHashes = null;
@@ -372,7 +372,7 @@ namespace Neo.UnitTests
                 txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
             var msg = new RecoveryMessage
             {
-                ChangeViewMessages = new Dictionary<ushort, RecoveryMessage.ChangeViewPayloadCompact>()
+                ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>()
                 {
                     {
                         0,
@@ -423,7 +423,7 @@ namespace Neo.UnitTests
                     MinerTransaction = (MinerTransaction)txs[0]
                 },
                 PreparationHash = new UInt256(Crypto.Default.Hash256(new[] { (byte)'a' })),
-                PreparationMessages = new Dictionary<ushort, RecoveryMessage.PreparationPayloadCompact>()
+                PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
                     {
                         0,
@@ -450,7 +450,7 @@ namespace Neo.UnitTests
                         }
                     }
                 },
-                CommitMessages = new Dictionary<ushort, RecoveryMessage.CommitPayloadCompact>()
+                CommitMessages = new Dictionary<int, RecoveryMessage.CommitPayloadCompact>()
             };
 
             var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage());;
@@ -471,7 +471,7 @@ namespace Neo.UnitTests
                 txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
             var msg = new RecoveryMessage
             {
-                ChangeViewMessages = new Dictionary<ushort, RecoveryMessage.ChangeViewPayloadCompact>(),
+                ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
                 PrepareRequestMessage = new PrepareRequest
                 {
                     TransactionHashes = txs.Select(p => p.Hash).ToArray(),
@@ -479,7 +479,7 @@ namespace Neo.UnitTests
                     NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
                     MinerTransaction = (MinerTransaction)txs[0]
                 },
-                PreparationMessages = new Dictionary<ushort, RecoveryMessage.PreparationPayloadCompact>()
+                PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
                     {
                         0,
@@ -514,7 +514,7 @@ namespace Neo.UnitTests
                         }
                     }
                 },
-                CommitMessages = new Dictionary<ushort, RecoveryMessage.CommitPayloadCompact>()
+                CommitMessages = new Dictionary<int, RecoveryMessage.CommitPayloadCompact>()
             };
 
             var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage());;
@@ -535,7 +535,7 @@ namespace Neo.UnitTests
                 txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
             var msg = new RecoveryMessage
             {
-                ChangeViewMessages = new Dictionary<ushort, RecoveryMessage.ChangeViewPayloadCompact>(),
+                ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
                 PrepareRequestMessage = new PrepareRequest
                 {
                     TransactionHashes = txs.Select(p => p.Hash).ToArray(),
@@ -543,7 +543,7 @@ namespace Neo.UnitTests
                     NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
                     MinerTransaction = (MinerTransaction)txs[0]
                 },
-                PreparationMessages = new Dictionary<ushort, RecoveryMessage.PreparationPayloadCompact>()
+                PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
                     {
                         0,
@@ -578,7 +578,7 @@ namespace Neo.UnitTests
                         }
                     }
                 },
-                CommitMessages = new Dictionary<ushort, RecoveryMessage.CommitPayloadCompact>
+                CommitMessages = new Dictionary<int, RecoveryMessage.CommitPayloadCompact>
                 {
                     {
                         1,

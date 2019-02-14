@@ -8,13 +8,13 @@ namespace Neo.Consensus
 {
     internal partial class RecoveryMessage : ConsensusMessage
     {
-        public Dictionary<ushort, ChangeViewPayloadCompact> ChangeViewMessages;
+        public Dictionary<int, ChangeViewPayloadCompact> ChangeViewMessages;
         public PrepareRequest PrepareRequestMessage;
         /// The PreparationHash in case the PrepareRequest hasn't been received yet.
         /// This can be null if the PrepareRequest information is present, since it can be derived in that case.
         public UInt256 PreparationHash;
-        public Dictionary<ushort, PreparationPayloadCompact> PreparationMessages;
-        public Dictionary<ushort, CommitPayloadCompact> CommitMessages;
+        public Dictionary<int, PreparationPayloadCompact> PreparationMessages;
+        public Dictionary<int, CommitPayloadCompact> CommitMessages;
 
         public RecoveryMessage() : base(ConsensusMessageType.RecoveryMessage)
         {
@@ -23,13 +23,13 @@ namespace Neo.Consensus
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            ChangeViewMessages = reader.ReadSerializableArray<ChangeViewPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => p.ValidatorIndex);
+            ChangeViewMessages = reader.ReadSerializableArray<ChangeViewPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
             if (reader.ReadBoolean())
                 PrepareRequestMessage = reader.ReadSerializable<PrepareRequest>();
             else
                 PreparationHash = reader.ReadSerializable<UInt256>();
-            PreparationMessages = reader.ReadSerializableArray<PreparationPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => p.ValidatorIndex);
-            CommitMessages = reader.ReadSerializableArray<CommitPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => p.ValidatorIndex);
+            PreparationMessages = reader.ReadSerializableArray<PreparationPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
+            CommitMessages = reader.ReadSerializableArray<CommitPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
         }
 
         public override void Serialize(BinaryWriter writer)
