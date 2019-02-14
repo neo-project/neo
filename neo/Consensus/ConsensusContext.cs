@@ -32,17 +32,17 @@ namespace Neo.Consensus
         public Dictionary<UInt256, Transaction> Transactions { get; set; }
         public ConsensusPayload[] PreparationPayloads { get; set; }
         public byte[][] Commits { get; set; }
-        private Snapshot snapshot;
+        public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
         private readonly Wallet wallet;
 
         public int F => (Validators.Length - 1) / 3;
         public int M => Validators.Length - F;
-        public Header PrevHeader => snapshot.GetHeader(PrevHash);
+        public Header PrevHeader => Snapshot.GetHeader(PrevHash);
         public int Size => throw new NotImplementedException();
 
-        public bool TransactionExists(UInt256 hash) => snapshot.ContainsTransaction(hash);
-        public bool VerifyTransaction(Transaction tx) => tx.Verify(snapshot, Transactions.Values);
+        public bool TransactionExists(UInt256 hash) => Snapshot.ContainsTransaction(hash);
+        public bool VerifyTransaction(Transaction tx) => tx.Verify(Snapshot, Transactions.Values);
 
         public ConsensusContext(Wallet wallet)
         {
@@ -120,7 +120,7 @@ namespace Neo.Consensus
 
         public void Dispose()
         {
-            snapshot?.Dispose();
+            Snapshot?.Dispose();
         }
 
         public uint GetPrimaryIndex(byte viewNumber)
@@ -277,11 +277,11 @@ namespace Neo.Consensus
         {
             if (viewNumber == 0)
             {
-                snapshot?.Dispose();
-                snapshot = newSnapshot ?? Blockchain.Singleton.GetSnapshot();
-                PrevHash = snapshot.CurrentBlockHash;
-                BlockIndex = snapshot.Height + 1;
-                Validators = snapshot.GetValidators();
+                Snapshot?.Dispose();
+                Snapshot = newSnapshot ?? Blockchain.Singleton.GetSnapshot();
+                PrevHash = Snapshot.CurrentBlockHash;
+                BlockIndex = Snapshot.Height + 1;
+                Validators = Snapshot.GetValidators();
                 MyIndex = -1;
                 ChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 keyPair = null;
@@ -379,7 +379,7 @@ namespace Neo.Consensus
                     Outputs = outputs,
                     Witnesses = new Witness[0]
                 };
-                if (!snapshot.ContainsTransaction(tx.Hash))
+                if (!Snapshot.ContainsTransaction(tx.Hash))
                 {
                     Nonce = nonce;
                     transactions.Insert(0, tx);
@@ -388,7 +388,7 @@ namespace Neo.Consensus
             }
             TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             Transactions = transactions.ToDictionary(p => p.Hash);
-            NextConsensus = Blockchain.GetConsensusAddress(snapshot.GetValidators(transactions).ToArray());
+            NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators(transactions).ToArray());
             Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), PrevHeader.Timestamp + 1);
         }
 
@@ -404,7 +404,7 @@ namespace Neo.Consensus
         {
             if (!State.HasFlag(ConsensusState.RequestReceived))
                 return false;
-            if (!Blockchain.GetConsensusAddress(snapshot.GetValidators(Transactions.Values).ToArray()).Equals(NextConsensus))
+            if (!Blockchain.GetConsensusAddress(Snapshot.GetValidators(Transactions.Values).ToArray()).Equals(NextConsensus))
                 return false;
             Transaction tx_gen = Transactions.Values.FirstOrDefault(p => p.Type == TransactionType.MinerTransaction);
             Fixed8 amount_netfee = Block.CalculateNetFee(Transactions.Values);

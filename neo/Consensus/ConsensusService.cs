@@ -277,7 +277,7 @@ namespace Neo.Consensus
             InitializeConsensus(0);
         }
 
-        private bool ReverifyPrepareRequest(ConsensusContext consensusContext, RecoveryMessage message, Snapshot snapshot,
+        private bool ReverifyPrepareRequest(ConsensusContext consensusContext, RecoveryMessage message,
             out ConsensusPayload prepareRequestPayload, out PrepareRequest prepareRequest)
         {
             if (message.PrepareRequestMessage != null)
@@ -287,7 +287,7 @@ namespace Neo.Consensus
                     prepareRequest, (ushort) consensusContext.PrimaryIndex,
                     message.PreparationMessages[(ushort)consensusContext.PrimaryIndex].InvocationScript);
 
-                if (prepareRequestPayload.Verify(snapshot) && PerformBasicConsensusPayloadPreChecks(prepareRequestPayload))
+                if (prepareRequestPayload.Verify(context.Snapshot) && PerformBasicConsensusPayloadPreChecks(prepareRequestPayload))
                     return true;
             }
 
@@ -314,7 +314,7 @@ namespace Neo.Consensus
             if (addedCommits) CheckCommits();
         }
 
-        private void HandleRecoveryInCurrentView(RecoveryMessage message, Snapshot snap)
+        private void HandleRecoveryInCurrentView(RecoveryMessage message)
         {
             // If we are already on the right view number we want to accept more preparation messages and also accept
             // any commit signatures in the payload.
@@ -333,7 +333,7 @@ namespace Neo.Consensus
 
                 if (preparationHash == null)
                 {
-                    if (recoveryHasPrepareRequest && ReverifyPrepareRequest((ConsensusContext) context, message, snap,
+                    if (recoveryHasPrepareRequest && ReverifyPrepareRequest((ConsensusContext) context, message,
                             out var prepareRequestPayload, out var prepareRequest))
                     {
                         if (myIndexIsPrimary)
@@ -373,7 +373,7 @@ namespace Neo.Consensus
                     prepareResponseMsg.ViewNumber = context.ViewNumber;
                     var regeneratedPrepareResponse = ((ConsensusContext) context).RegenerateSignedPayload(
                         prepareResponseMsg, i, message.PreparationMessages[i].InvocationScript);
-                    if (regeneratedPrepareResponse.Verify(snap) &&
+                    if (regeneratedPrepareResponse.Verify(context.Snapshot) &&
                         PerformBasicConsensusPayloadPreChecks(regeneratedPrepareResponse))
                         OnPrepareResponseReceived(regeneratedPrepareResponse, prepareResponseMsg);
                 }
@@ -387,10 +387,9 @@ namespace Neo.Consensus
         private void OnRecoveryMessageReceived(ConsensusPayload payload, RecoveryMessage message)
         {
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
-            Snapshot snap =  Blockchain.Singleton.GetSnapshot();
             if (context.ViewNumber == message.ViewNumber)
             {
-                HandleRecoveryInCurrentView(message, snap);
+                HandleRecoveryInCurrentView(message);
                 return;
             }
 
@@ -400,8 +399,8 @@ namespace Neo.Consensus
 
             var tempContext = new ConsensusContext(wallet);
             // Have to Reset to 0 first to handle initializion of the context
-            tempContext.Reset(0, snap);
-            tempContext.Reset(message.ViewNumber, snap);
+            tempContext.Reset(0, context.Snapshot);
+            tempContext.Reset(message.ViewNumber, context.Snapshot);
             if (message.PrepareRequestMessage != null)
             {
                 var prepareRequest = message.PrepareRequestMessage;
@@ -420,7 +419,7 @@ namespace Neo.Consensus
 
             UInt256 preparationHash;
             if (message.PreparationMessages.ContainsKey((int)tempContext.PrimaryIndex)
-                && ReverifyPrepareRequest(tempContext, message, snap, out prepareRequestPayload, out prepareRequestMessage))
+                && ReverifyPrepareRequest(tempContext, message, out prepareRequestPayload, out prepareRequestMessage))
                 preparationHash = prepareRequestPayload.Hash;
             else
                 preparationHash = message.PreparationHash;
@@ -441,7 +440,7 @@ namespace Neo.Consensus
                     Log($" considering prepare request {i}");
                     var regeneratedPrepareResponse = tempContext.RegenerateSignedPayload(prepareResponseMsg, i,
                         message.PreparationMessages[i].InvocationScript);
-                    if (!regeneratedPrepareResponse.Verify(snap) ||
+                    if (!regeneratedPrepareResponse.Verify(context.Snapshot) ||
                         !PerformBasicConsensusPayloadPreChecks(regeneratedPrepareResponse)) continue;
                     prepareResponses.Add((regeneratedPrepareResponse, prepareResponseMsg));
                     Log($" verified prepare {i}");
@@ -469,7 +468,7 @@ namespace Neo.Consensus
                     // Regenerate the ChangeView message
                     var regeneratedChangeView = tempContext.RegenerateSignedPayload(changeViewMsg, i,
                         message.ChangeViewMessages[i].InvocationScript);
-                    if (!regeneratedChangeView.Verify(snap) || !PerformBasicConsensusPayloadPreChecks(regeneratedChangeView)) continue;
+                    if (!regeneratedChangeView.Verify(context.Snapshot) || !PerformBasicConsensusPayloadPreChecks(regeneratedChangeView)) continue;
                     verifiedChangeViewPayloads[i] = regeneratedChangeView;
                     validChangeViewCount++;
                     if (validChangeViewCount < context.M) continue;
