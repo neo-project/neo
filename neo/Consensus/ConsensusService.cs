@@ -424,7 +424,7 @@ namespace Neo.Consensus
             PrepareRequest prepareRequestMessage = null;
 
             UInt256 preparationHash;
-            if (message.PreparationMessages.ContainsKey((ushort)tempContext.PrimaryIndex)
+            if (message.PreparationMessages.ContainsKey((int)tempContext.PrimaryIndex)
                 && ReverifyPrepareRequest(tempContext, message, snap, out prepareRequestPayload, out prepareRequestMessage))
                 preparationHash = prepareRequestPayload.Hash;
             else
