@@ -73,10 +73,10 @@ namespace Neo.Consensus
             PrevHash = reader.ReadSerializable<UInt256>();
             BlockIndex = reader.ReadUInt32();
             ViewNumber = reader.ReadByte();
-            Validators = reader.ReadSerializableArray<ECPoint>(ConsensusService.MaxValidatorsCount);
+            Validators = reader.ReadSerializableArray<ECPoint>();
             MyIndex = reader.ReadInt32();
             PrimaryIndex = reader.ReadUInt32();
-            var numChangeViews = reader.ReadVarInt(ConsensusService.MaxValidatorsCount);
+            var numChangeViews = reader.ReadVarInt();
             if (numChangeViews > 0)
             {
                 ChangeViewPayloads = new ConsensusPayload[numChangeViews];
@@ -102,14 +102,14 @@ namespace Neo.Consensus
                     transactions[i] = Transaction.DeserializeFrom(reader);
                 Transactions = transactions.ToDictionary(p => p.Hash);
             }
-            var numPreparationPayloads = reader.ReadVarInt(ConsensusService.MaxValidatorsCount);
+            var numPreparationPayloads = reader.ReadVarInt();
             if (numPreparationPayloads > 0)
             {
                 PreparationPayloads = new ConsensusPayload[numPreparationPayloads];
                 for (int i = 0; i < ChangeViewPayloads.Length; i++)
                     PreparationPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
             }
-            Commits = new byte[reader.ReadVarInt(ConsensusService.MaxValidatorsCount)][];
+            Commits = new byte[reader.ReadVarInt()][];
             for (int i = 0; i < Commits.Length; i++)
             {
                 Commits[i] = reader.ReadVarBytes();
@@ -254,14 +254,14 @@ namespace Neo.Consensus
             }
             return MakeSignedPayload(new RecoveryMessage()
             {
-                ChangeViewWitnessInvocationScripts = changeViewPayloads?.Select(p => p.Witness.InvocationScript).ToArray(),
-                ChangeViewTimestamps = changeViewPayloads?.Select(p => p.GetDeserializedMessage<ChangeView>().Timestamp).ToArray(),
-                OriginalChangeViewNumbers = changeViewPayloads?.Select(p => p.GetDeserializedMessage<ChangeView>().NewViewNumber).ToArray(),
+                ChangeViewMessages = (changeViewPayloads ?? new ConsensusPayload[0]).Where(p => p != null).Select(p => RecoveryMessage.ChangeViewPayloadCompact.FromPayload(p)).ToDictionary(p => p.ValidatorIndex),
                 PrepareRequestMessage = prepareRequestMessage,
                 // We only need a PreparationHash set if we don't have the PrepareRequest information.
                 PreparationHash = TransactionHashes == null ? PreparationPayloads.Where(p => p != null).GroupBy(p => p.GetDeserializedMessage<PrepareResponse>().PreparationHash, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
-                PrepareWitnessInvocationScripts = PreparationPayloads.Select(p => p.Witness.InvocationScript).ToArray(),
-                CommitSignatures = State.HasFlag(ConsensusState.CommitSent) ? Commits : null
+                PreparationMessages = PreparationPayloads.Where(p => p != null).Select(p => RecoveryMessage.PreparationPayloadCompact.FromPayload(p)).ToDictionary(p => p.ValidatorIndex),
+                CommitMessages = State.HasFlag(ConsensusState.CommitSent)
+                    ? Commits.Select((s, i) => new RecoveryMessage.CommitPayloadCompact { Signature = s, ValidatorIndex = (ushort)i }).Where(p => p.Signature != null).ToDictionary(p => p.ValidatorIndex)
+                    : null
             });
         }
 

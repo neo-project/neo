@@ -129,38 +129,9 @@ namespace Neo.IO
             return array;
         }
 
-        public static uint[] ReadUIntArray(this BinaryReader reader, int max = 0x1000000)
-        {
-            uint[] array = new uint[reader.ReadVarInt((ulong) max)];
-            for (int i = 0; i < array.Length; i++) array[i] = reader.ReadUInt32();
-            return array;
-        }
-
         public static byte[] ReadVarBytes(this BinaryReader reader, int max = 0x1000000)
         {
             return reader.ReadBytes((int)reader.ReadVarInt((ulong)max));
-        }
-
-        public static byte[][] ReadVarBytesArray(this BinaryReader reader, int maxItems=255, int maxItemLen = 1024,
-            bool shouldReturnNullIfEmpty=true)
-        {
-            int items = (int) reader.ReadVarInt((ulong)maxItems);
-            if (items > 0)
-            {
-                byte[][] output = new byte[items][];
-                for (int i = 0; i < items; i++)
-                {
-                    int bytes = (int) reader.ReadVarInt((ulong)maxItemLen);
-                    if (bytes == 0)
-                        output[i] = null;
-                    else
-                        output[i] = reader.ReadBytes(bytes);
-                }
-
-                return output;
-            }
-
-            return shouldReturnNullIfEmpty ? null : new byte[0][];
         }
 
         public static ulong ReadVarInt(this BinaryReader reader, ulong max = ulong.MaxValue)
@@ -211,12 +182,6 @@ namespace Neo.IO
             value.Serialize(writer);
         }
 
-        public static void Write(this BinaryWriter writer, uint[] values)
-        {
-            writer.WriteVarInt(values.Length);
-            foreach (var val in values) writer.Write(val);
-        }
-
         public static void Write<T>(this BinaryWriter writer, T[] value) where T : ISerializable
         {
             writer.WriteVarInt(value.Length);
@@ -264,23 +229,6 @@ namespace Neo.IO
         {
             writer.WriteVarInt(value.Length);
             writer.Write(value);
-        }
-
-        public static void WriteVarBytesArray(this BinaryWriter writer, byte[][] values)
-        {
-            if (values == null)
-                writer.WriteVarInt(0);
-            else
-            {
-                writer.WriteVarInt(values.Length);
-                foreach (var value in values)
-                {
-                    if (value == null)
-                        writer.WriteVarInt(0);
-                    else
-                        writer.WriteVarBytes(value);
-                }
-            }
         }
 
         public static void WriteVarInt(this BinaryWriter writer, long value)
