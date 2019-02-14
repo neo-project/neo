@@ -181,8 +181,8 @@ namespace Neo.Consensus
                 PrevHash = PrevHash,
                 BlockIndex = BlockIndex,
                 ValidatorIndex = (ushort)MyIndex,
+                ConsensusMessage = message
             };
-            payload.SetMessage(message);
             SignPayload(payload);
             return payload;
         }
@@ -196,7 +196,7 @@ namespace Neo.Consensus
                 PrevHash = PrevHash,
                 BlockIndex = BlockIndex,
                 ValidatorIndex = validatorIndex,
-                Data = message.ToArray()
+                ConsensusMessage = message
             };
             Witness[] witnesses = new Witness[1];
             witnesses[0] = new Witness

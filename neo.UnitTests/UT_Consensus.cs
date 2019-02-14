@@ -116,16 +116,13 @@ namespace Neo.UnitTests
                 MinerTransaction = minerTx //(MinerTransaction)Transactions[TransactionHashes[0]],
             };
 
-            ConsensusMessage mprep = prep;
-            byte[] prepData = mprep.ToArray();
-
             ConsensusPayload prepPayload = new ConsensusPayload
             {
                 Version = 0,
                 PrevHash = mockConsensusContext.Object.PrevHash,
                 BlockIndex = mockConsensusContext.Object.BlockIndex,
                 ValidatorIndex = (ushort)mockConsensusContext.Object.MyIndex,
-                Data = prepData
+                ConsensusMessage = prep
             };
 
             mockConsensusContext.Setup(mr => mr.MakePrepareRequest()).Returns(prepPayload);

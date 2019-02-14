@@ -19,6 +19,23 @@ namespace Neo.Network.P2P.Payloads
         public byte[] Data;
         public Witness Witness;
 
+        private ConsensusMessage _deserializedMessage = null;
+        internal ConsensusMessage ConsensusMessage
+        {
+            get
+            {
+                return _deserializedMessage;
+            }
+            set
+            {
+                if (!ReferenceEquals(_deserializedMessage, value))
+                {
+                    _deserializedMessage = value;
+                    Data = value?.ToArray();
+                }
+            }
+        }
+
         private UInt256 _hash = null;
         public UInt256 Hash
         {
@@ -49,18 +66,9 @@ namespace Neo.Network.P2P.Payloads
 
         public int Size => sizeof(uint) + PrevHash.Size + sizeof(uint) + sizeof(ushort) + sizeof(uint) + Data.GetVarSize() + 1 + Witness.Size;
 
-        private ConsensusMessage _deserializedMessage = null;
         internal T GetDeserializedMessage<T>() where T : ConsensusMessage
         {
-            if (_deserializedMessage is null)
-                _deserializedMessage = ConsensusMessage.DeserializeFrom(Data);
-            return (T)_deserializedMessage;
-        }
-
-        internal void SetMessage(ConsensusMessage message)
-        {
-            Data = message.ToArray();
-            _deserializedMessage = message;
+            return (T)ConsensusMessage;
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
@@ -77,6 +85,7 @@ namespace Neo.Network.P2P.Payloads
             BlockIndex = reader.ReadUInt32();
             ValidatorIndex = reader.ReadUInt16();
             Data = reader.ReadVarBytes();
+            _deserializedMessage = ConsensusMessage.DeserializeFrom(Data);
         }
 
         byte[] IScriptContainer.GetMessage()

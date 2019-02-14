@@ -246,15 +246,7 @@ namespace Neo.Consensus
                 return;
             if (payload.ValidatorIndex == context.MyIndex) return;
             if (!PerformBasicConsensusPayloadPreChecks(payload)) return;
-            ConsensusMessage message;
-            try
-            {
-                message = ConsensusMessage.DeserializeFrom(payload.Data);
-            }
-            catch
-            {
-                return;
-            }
+            ConsensusMessage message = payload.ConsensusMessage;
             if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView &&
                                                             message.Type != ConsensusMessageType.RecoveryMessage)
                 return;
