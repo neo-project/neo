@@ -18,12 +18,11 @@ namespace Neo.Consensus
 {
     public sealed class ConsensusService : UntypedActor
     {
-        public const int MaxValidatorsCount = byte.MaxValue;
-        public const int MaxTransactionsPerBlock = ushort.MaxValue;
         public class Start { }
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
+        internal const int MaxTransactionsPerBlock = ushort.MaxValue;
         private const byte ContextSerializationPrefix = 0xf4;
 
         private readonly IConsensusContext context;
@@ -295,7 +294,7 @@ namespace Neo.Consensus
                 prepareRequest = message.PrepareRequestMessage;
                 prepareRequestPayload = consensusContext.RegenerateSignedPayload(
                     prepareRequest, (ushort) consensusContext.PrimaryIndex,
-                    message.PrepareWitnessInvocationScripts[consensusContext.PrimaryIndex]);
+                    message.PreparationMessages[(ushort)consensusContext.PrimaryIndex].InvocationScript);
 
                 if (prepareRequestPayload.Verify(snapshot) && PerformBasicConsensusPayloadPreChecks(prepareRequestPayload))
                     return true;
@@ -308,15 +307,13 @@ namespace Neo.Consensus
 
         private void RestoreCommits(RecoveryMessage message)
         {
-            if (message.CommitSignatures == null) return;
             bool addedCommits = false;
-            if (message.CommitSignatures.Length < context.Validators.Length) return;
             var header = context.MakeHeader();
-            for (int i = 0; i < context.Validators.Length; i++)
+            for (ushort i = 0; i < context.Validators.Length; i++)
             {
                 if (context.Commits[i] != null) continue;
-                if (message.CommitSignatures[i] == null) continue;
-                var signature = message.CommitSignatures[i];
+                if (!message.CommitMessages.ContainsKey(i)) continue;
+                var signature = message.CommitMessages[i].Signature;
                 if (!Crypto.Default.VerifySignature(header.GetHashData(), signature,
                     context.Validators[i].EncodePoint(false)))
                     continue;
@@ -331,7 +328,7 @@ namespace Neo.Consensus
             // If we are already on the right view number we want to accept more preparation messages and also accept
             // any commit signatures in the payload.
 
-            bool recoveryHasPrepareRequest = message.PrepareWitnessInvocationScripts[context.PrimaryIndex] != null;
+            bool recoveryHasPrepareRequest = message.PrepareRequestMessage != null && message.PreparationMessages.ContainsKey((ushort)context.PrimaryIndex);
 
             if (!context.State.HasFlag(ConsensusState.CommitSent))
             {
@@ -374,17 +371,17 @@ namespace Neo.Consensus
                     }
                 }
 
-                for (int i = 0; i < context.Validators.Length; i++)
+                for (ushort i = 0; i < context.Validators.Length; i++)
                 {
                     // If we are missing this preparation.
                     if (context.PreparationPayloads[i] != null) continue;
                     if (i == context.PrimaryIndex) continue;
                     // If the recovery message has this preparations
-                    if (message.PrepareWitnessInvocationScripts[i] == null) continue;
+                    if (!message.PreparationMessages.ContainsKey(i)) continue;
                     var prepareResponseMsg = new PrepareResponse {PreparationHash = preparationHash};
                     prepareResponseMsg.ViewNumber = context.ViewNumber;
                     var regeneratedPrepareResponse = ((ConsensusContext) context).RegenerateSignedPayload(
-                        prepareResponseMsg, (ushort) i, message.PrepareWitnessInvocationScripts[i]);
+                        prepareResponseMsg, i, message.PreparationMessages[i].InvocationScript);
                     if (regeneratedPrepareResponse.Verify(snap) &&
                         PerformBasicConsensusPayloadPreChecks(regeneratedPrepareResponse))
                         OnPrepareResponseReceived(regeneratedPrepareResponse, prepareResponseMsg);
@@ -402,7 +399,6 @@ namespace Neo.Consensus
             if (context.State.HasFlag(ConsensusState.BlockSent)) return;
             Snapshot snap =  Blockchain.Singleton.GetSnapshot();
             if (payload.BlockIndex > snap.Height + 1) return;
-            if (message.PrepareWitnessInvocationScripts.Length < context.Validators.Length) return;
 
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
@@ -437,7 +433,7 @@ namespace Neo.Consensus
             PrepareRequest prepareRequestMessage = null;
 
             UInt256 preparationHash;
-            if (message.PrepareWitnessInvocationScripts[tempContext.PrimaryIndex] != null
+            if (message.PreparationMessages.ContainsKey((ushort)tempContext.PrimaryIndex)
                 && ReverifyPrepareRequest(tempContext, message, snap, out prepareRequestPayload, out prepareRequestMessage))
                 preparationHash = prepareRequestPayload.Hash;
             else
@@ -452,13 +448,13 @@ namespace Neo.Consensus
             bool canRestoreView = false;
             if (preparationHash != null)
             {
-                for (int i = 0; i < context.Validators.Length; i++)
+                for (ushort i = 0; i < context.Validators.Length; i++)
                 {
                     if (i == tempContext.PrimaryIndex) continue;
-                    if (message.PrepareWitnessInvocationScripts[i] == null) continue;
+                    if (!message.PreparationMessages.ContainsKey(i)) continue;
                     Log($" considering prepare request {i}");
-                    var regeneratedPrepareResponse = tempContext.RegenerateSignedPayload(prepareResponseMsg, (ushort) i,
-                        message.PrepareWitnessInvocationScripts[i]);
+                    var regeneratedPrepareResponse = tempContext.RegenerateSignedPayload(prepareResponseMsg, i,
+                        message.PreparationMessages[i].InvocationScript);
                     if (!regeneratedPrepareResponse.Verify(snap) ||
                         !PerformBasicConsensusPayloadPreChecks(regeneratedPrepareResponse)) continue;
                     prepareResponses.Add((regeneratedPrepareResponse, prepareResponseMsg));
@@ -474,23 +470,19 @@ namespace Neo.Consensus
             if (message.ViewNumber < context.ViewNumber && !canRestoreView) return;
 
             var verifiedChangeViewPayloads = new ConsensusPayload[context.Validators.Length];
-            if (!canRestoreView && message.ChangeViewWitnessInvocationScripts != null)
+            if (!canRestoreView && message.ChangeViewMessages.Count >= context.M)
             {
-                if (message.ChangeViewWitnessInvocationScripts.Length < context.Validators.Length) return;
-                if (message.ChangeViewTimestamps.Length < context.Validators.Length) return;
-                if (message.OriginalChangeViewNumbers.Length < context.Validators.Length) return;
-
                 var changeViewMsg = new ChangeView { NewViewNumber = message.ViewNumber };
                 int validChangeViewCount = 0;
-                for (int i = 0; i < context.Validators.Length; i++)
+                for (ushort i = 0; i < context.Validators.Length; i++)
                 {
-                    if (message.ChangeViewWitnessInvocationScripts[i] == null) continue;
+                    if (!message.ChangeViewMessages.ContainsKey(i)) continue;
 
-                    changeViewMsg.ViewNumber = message.OriginalChangeViewNumbers[i];
-                    changeViewMsg.Timestamp = message.ChangeViewTimestamps[i];
+                    changeViewMsg.ViewNumber = message.ChangeViewMessages[i].OriginalViewNumber;
+                    changeViewMsg.Timestamp = message.ChangeViewMessages[i].Timestamp;
                     // Regenerate the ChangeView message
                     var regeneratedChangeView = tempContext.RegenerateSignedPayload(changeViewMsg, (ushort) i,
-                        message.ChangeViewWitnessInvocationScripts[i]);
+                        message.ChangeViewMessages[i].InvocationScript);
                     if (!regeneratedChangeView.Verify(snap) || !PerformBasicConsensusPayloadPreChecks(regeneratedChangeView)) continue;
                     verifiedChangeViewPayloads[i] = regeneratedChangeView;
                     validChangeViewCount++;

@@ -4,18 +4,17 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Consensus;
+using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
-using Neo.Cryptography;
-using Neo.Persistence;
-using Remotion.Linq.Clauses;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.UnitTests
@@ -274,197 +273,339 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestSerializeAndDeserializeRecoveryMessageWithChangeViewsAndNoPrepareRequest()
         {
-            var msg = new RecoveryMessage();
-            msg.ChangeViewWitnessInvocationScripts = new byte[7][];
-            msg.ChangeViewWitnessInvocationScripts[0] = new [] {(byte) 'A'};
-            msg.ChangeViewWitnessInvocationScripts[1] = new [] {(byte) 'B'};
-            msg.ChangeViewWitnessInvocationScripts[2] = null;
-            msg.ChangeViewWitnessInvocationScripts[3] = new [] {(byte) 'C'};
-            msg.ChangeViewWitnessInvocationScripts[4] = null;
-            msg.ChangeViewWitnessInvocationScripts[5] = null;
-            msg.ChangeViewWitnessInvocationScripts[6] = new [] {(byte) 'D'};
-            msg.ChangeViewTimestamps = new uint[7];
-            msg.ChangeViewTimestamps[0] = 6;
-            msg.ChangeViewTimestamps[1] = 5;
-            msg.ChangeViewTimestamps[2] = 4;
-            msg.ChangeViewTimestamps[3] = 3;
-            msg.ChangeViewTimestamps[4] = uint.MaxValue;
-            msg.ChangeViewTimestamps[5] = 2;
-            msg.ChangeViewTimestamps[6] = 1;
-            msg.OriginalChangeViewNumbers = new byte[7];
-            msg.OriginalChangeViewNumbers[0] = 9;
-            msg.OriginalChangeViewNumbers[1] = 7;
-            msg.OriginalChangeViewNumbers[2] = 6;
-            msg.OriginalChangeViewNumbers[3] = 5;
-            msg.OriginalChangeViewNumbers[4] = 4;
-            msg.OriginalChangeViewNumbers[5] = 3;
-            msg.OriginalChangeViewNumbers[6] = 2;
+            var msg = new RecoveryMessage
+            {
+                ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>()
+                {
+                    {
+                        0,
+                        new RecoveryMessage.ChangeViewPayloadCompact
+                        {
+                            ValidatorIndex = 0,
+                            OriginalViewNumber = 9,
+                            Timestamp = 6,
+                            InvocationScript = new[] { (byte)'A' }
+                        }
+                    },
+                    {
+                        1,
+                        new RecoveryMessage.ChangeViewPayloadCompact
+                        {
+                            ValidatorIndex = 1,
+                            OriginalViewNumber = 7,
+                            Timestamp = 5,
+                            InvocationScript = new[] { (byte)'B' }
+                        }
+                    },
+                    {
+                        3,
+                        new RecoveryMessage.ChangeViewPayloadCompact
+                        {
+                            ValidatorIndex = 3,
+                            OriginalViewNumber = 5,
+                            Timestamp = 3,
+                            InvocationScript = new[] { (byte)'C' }
+                        }
+                    },
+                    {
+                        6,
+                        new RecoveryMessage.ChangeViewPayloadCompact
+                        {
+                            ValidatorIndex = 6,
+                            OriginalViewNumber = 2,
+                            Timestamp = 1,
+                            InvocationScript = new[] { (byte)'D' }
+                        }
+                    }
+                },
+                PreparationHash = new UInt256(Crypto.Default.Hash256(new[] { (byte)'a' })),
+                PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
+                {
+                    {
+                        0,
+                        new RecoveryMessage.PreparationPayloadCompact
+                        {
+                            ValidatorIndex = 0,
+                            InvocationScript = new[] { (byte)'t', (byte)'e' }
+                        }
+                    },
+                    {
+                        3,
+                        new RecoveryMessage.PreparationPayloadCompact
+                        {
+                            ValidatorIndex = 3,
+                            InvocationScript = new[] { (byte)'1', (byte)'2' }
+                        }
+                    },
+                    {
+                        6,
+                        new RecoveryMessage.PreparationPayloadCompact
+                        {
+                            ValidatorIndex = 6,
+                            InvocationScript = new[] { (byte)'3', (byte)'!' }
+                        }
+                    }
+                },
+                CommitMessages = new Dictionary<int, RecoveryMessage.CommitPayloadCompact>()
+            };
 
             // msg.TransactionHashes = null;
             // msg.Nonce = 0;
             // msg.NextConsensus = null;
             // msg.MinerTransaction = (MinerTransaction) null;
             msg.PrepareRequestMessage.Should().Be(null);
-            msg.PreparationHash = new UInt256(Crypto.Default.Hash256(new [] {(byte) 'a'}));
-            msg.PrepareWitnessInvocationScripts = new byte[7][];
-            msg.PrepareWitnessInvocationScripts[0] = new [] {(byte)'t', (byte)'e'};
-            msg.PrepareWitnessInvocationScripts[1] = null;
-            msg.PrepareWitnessInvocationScripts[2] = null;
-            msg.PrepareWitnessInvocationScripts[3] = new [] {(byte)'1', (byte)'2'};
-            msg.PrepareWitnessInvocationScripts[4] = null;
-            msg.PrepareWitnessInvocationScripts[5] = null;
-            msg.PrepareWitnessInvocationScripts[6] = new [] {(byte)'3', (byte)'!'};
 
             var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage());;
 
-            copiedMsg.ChangeViewWitnessInvocationScripts.ShouldAllBeEquivalentTo(msg.ChangeViewWitnessInvocationScripts);
-            copiedMsg.ChangeViewTimestamps.ShouldAllBeEquivalentTo(msg.ChangeViewTimestamps);
-            copiedMsg.OriginalChangeViewNumbers.ShouldAllBeEquivalentTo(msg.OriginalChangeViewNumbers);
+            copiedMsg.ChangeViewMessages.ShouldAllBeEquivalentTo(msg.ChangeViewMessages);
             copiedMsg.PreparationHash.Should().Be(msg.PreparationHash);
-            copiedMsg.PrepareWitnessInvocationScripts.ShouldAllBeEquivalentTo(msg.PrepareWitnessInvocationScripts);
-            (copiedMsg.CommitSignatures == null).Should().Be(true);
+            copiedMsg.PreparationMessages.ShouldAllBeEquivalentTo(msg.PreparationMessages);
+            copiedMsg.CommitMessages.Count.Should().Be(0);
         }
 
         [TestMethod]
         public void TestSerializeAndDeserializeRecoveryMessageWithChangeViewsAndPrepareRequest()
         {
-            var msg = new RecoveryMessage();
-            msg.ChangeViewWitnessInvocationScripts = new byte[7][];
-            msg.ChangeViewWitnessInvocationScripts[0] = new [] {(byte) 'A'};
-            msg.ChangeViewWitnessInvocationScripts[1] = new [] {(byte) 'B'};
-            msg.ChangeViewWitnessInvocationScripts[2] = null;
-            msg.ChangeViewWitnessInvocationScripts[3] = new [] {(byte) 'C'};
-            msg.ChangeViewWitnessInvocationScripts[4] = null;
-            msg.ChangeViewWitnessInvocationScripts[5] = null;
-            msg.ChangeViewWitnessInvocationScripts[6] = new [] {(byte) 'D'};
-            msg.ChangeViewTimestamps = new uint[7];
-            msg.ChangeViewTimestamps[0] = 6;
-            msg.ChangeViewTimestamps[1] = 5;
-            msg.ChangeViewTimestamps[2] = 4;
-            msg.ChangeViewTimestamps[3] = 3;
-            msg.ChangeViewTimestamps[4] = uint.MaxValue;
-            msg.ChangeViewTimestamps[5] = 2;
-            msg.ChangeViewTimestamps[6] = 1;
-            msg.OriginalChangeViewNumbers = new byte[7];
-            msg.OriginalChangeViewNumbers[0] = 9;
-            msg.OriginalChangeViewNumbers[1] = 7;
-            msg.OriginalChangeViewNumbers[2] = 6;
-            msg.OriginalChangeViewNumbers[3] = 5;
-            msg.OriginalChangeViewNumbers[4] = 4;
-            msg.OriginalChangeViewNumbers[5] = 3;
-            msg.OriginalChangeViewNumbers[6] = 2;
-            int txCountToInlcude = 5;
-            var prepareRequest = new PrepareRequest();
-            prepareRequest.TransactionHashes = new UInt256[txCountToInlcude];
-            Transaction[] txs = new Transaction[txCountToInlcude];
+            Transaction[] txs = new Transaction[5];
             txs[0] = TestUtils.CreateRandomMockMinerTransaction().Object;
-            prepareRequest.TransactionHashes[0] = txs[0].Hash;
-            for (int i = 1; i < txCountToInlcude; i++)
-            {
+            for (int i = 1; i < txs.Length; i++)
                 txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
-                prepareRequest.TransactionHashes[i] = txs[i].Hash;
-            }
-            prepareRequest.Nonce = UInt64.MaxValue;
-            prepareRequest.NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA");
-            prepareRequest.MinerTransaction = (MinerTransaction) txs[0];
-            msg.PrepareRequestMessage = prepareRequest;
-            msg.PrepareWitnessInvocationScripts = new byte[7][];
-            msg.PrepareWitnessInvocationScripts[0] = new [] {(byte)'t', (byte)'e'};
-            msg.PrepareWitnessInvocationScripts[1] = new [] {(byte)'s', (byte)'t'};
-            msg.PrepareWitnessInvocationScripts[2] = null;
-            msg.PrepareWitnessInvocationScripts[3] = new [] {(byte)'1', (byte)'2'};
-            msg.PrepareWitnessInvocationScripts[4] = null;
-            msg.PrepareWitnessInvocationScripts[5] = null;
-            msg.PrepareWitnessInvocationScripts[6] = null;
+            var msg = new RecoveryMessage
+            {
+                ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>()
+                {
+                    {
+                        0,
+                        new RecoveryMessage.ChangeViewPayloadCompact
+                        {
+                            ValidatorIndex = 0,
+                            OriginalViewNumber = 9,
+                            Timestamp = 6,
+                            InvocationScript = new[] { (byte)'A' }
+                        }
+                    },
+                    {
+                        1,
+                        new RecoveryMessage.ChangeViewPayloadCompact
+                        {
+                            ValidatorIndex = 1,
+                            OriginalViewNumber = 7,
+                            Timestamp = 5,
+                            InvocationScript = new[] { (byte)'B' }
+                        }
+                    },
+                    {
+                        3,
+                        new RecoveryMessage.ChangeViewPayloadCompact
+                        {
+                            ValidatorIndex = 3,
+                            OriginalViewNumber = 5,
+                            Timestamp = 3,
+                            InvocationScript = new[] { (byte)'C' }
+                        }
+                    },
+                    {
+                        6,
+                        new RecoveryMessage.ChangeViewPayloadCompact
+                        {
+                            ValidatorIndex = 6,
+                            OriginalViewNumber = 2,
+                            Timestamp = 1,
+                            InvocationScript = new[] { (byte)'D' }
+                        }
+                    }
+                },
+                PrepareRequestMessage = new PrepareRequest
+                {
+                    TransactionHashes = txs.Select(p => p.Hash).ToArray(),
+                    Nonce = ulong.MaxValue,
+                    NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
+                    MinerTransaction = (MinerTransaction)txs[0]
+                },
+                PreparationHash = new UInt256(Crypto.Default.Hash256(new[] { (byte)'a' })),
+                PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
+                {
+                    {
+                        0,
+                        new RecoveryMessage.PreparationPayloadCompact
+                        {
+                            ValidatorIndex = 0,
+                            InvocationScript = new[] { (byte)'t', (byte)'e' }
+                        }
+                    },
+                    {
+                        1,
+                        new RecoveryMessage.PreparationPayloadCompact
+                        {
+                            ValidatorIndex = 1,
+                            InvocationScript = new[] { (byte)'s', (byte)'t' }
+                        }
+                    },
+                    {
+                        3,
+                        new RecoveryMessage.PreparationPayloadCompact
+                        {
+                            ValidatorIndex = 3,
+                            InvocationScript = new[] { (byte)'1', (byte)'2' }
+                        }
+                    }
+                },
+                CommitMessages = new Dictionary<int, RecoveryMessage.CommitPayloadCompact>()
+            };
 
             var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage());;
 
-            copiedMsg.ChangeViewWitnessInvocationScripts.ShouldAllBeEquivalentTo(msg.ChangeViewWitnessInvocationScripts);
-            copiedMsg.ChangeViewTimestamps.ShouldAllBeEquivalentTo(msg.ChangeViewTimestamps);
+            copiedMsg.ChangeViewMessages.ShouldAllBeEquivalentTo(msg.ChangeViewMessages);
             copiedMsg.PrepareRequestMessage.ShouldBeEquivalentTo(msg.PrepareRequestMessage);
             copiedMsg.PreparationHash.Should().Be(null);
-            copiedMsg.PrepareWitnessInvocationScripts.ShouldAllBeEquivalentTo(msg.PrepareWitnessInvocationScripts);
-            (copiedMsg.CommitSignatures == null).Should().Be(true);
+            copiedMsg.PreparationMessages.ShouldAllBeEquivalentTo(msg.PreparationMessages);
+            copiedMsg.CommitMessages.Count.Should().Be(0);
         }
 
         [TestMethod]
         public void TestSerializeAndDeserializeRecoveryMessageWithoutChangeViewsWithoutCommits()
         {
-            var msg = new RecoveryMessage();
-            int txCountToInlcude = 5;
-            var prepareRequest = new PrepareRequest();
-            prepareRequest.TransactionHashes = new UInt256[txCountToInlcude];
-            Transaction[] txs = new Transaction[txCountToInlcude];
+            Transaction[] txs = new Transaction[5];
             txs[0] = TestUtils.CreateRandomMockMinerTransaction().Object;
-            prepareRequest.TransactionHashes[0] = txs[0].Hash;
-            for (int i = 1; i < txCountToInlcude; i++)
-            {
+            for (int i = 1; i < txs.Length; i++)
                 txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
-                prepareRequest.TransactionHashes[i] = txs[i].Hash;
-            }
-            prepareRequest.Nonce = UInt64.MaxValue;
-            prepareRequest.NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA");
-            prepareRequest.MinerTransaction = (MinerTransaction) txs[0];
-            msg.PrepareRequestMessage = prepareRequest;
-            msg.PrepareWitnessInvocationScripts = new byte[7][];
-            msg.PrepareWitnessInvocationScripts[0] = new [] {(byte)'t', (byte)'e'};
-            msg.PrepareWitnessInvocationScripts[1] = new [] {(byte)'s', (byte)'t'};
-            msg.PrepareWitnessInvocationScripts[2] = null;
-            msg.PrepareWitnessInvocationScripts[3] = new [] {(byte)'1', (byte)'2'};
-            msg.PrepareWitnessInvocationScripts[4] = null;
-            msg.PrepareWitnessInvocationScripts[5] = null;
-            msg.PrepareWitnessInvocationScripts[6] = new [] {(byte)'3', (byte)'!'};
+            var msg = new RecoveryMessage
+            {
+                ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
+                PrepareRequestMessage = new PrepareRequest
+                {
+                    TransactionHashes = txs.Select(p => p.Hash).ToArray(),
+                    Nonce = ulong.MaxValue,
+                    NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
+                    MinerTransaction = (MinerTransaction)txs[0]
+                },
+                PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
+                {
+                    {
+                        0,
+                        new RecoveryMessage.PreparationPayloadCompact
+                        {
+                            ValidatorIndex = 0,
+                            InvocationScript = new[] { (byte)'t', (byte)'e' }
+                        }
+                    },
+                    {
+                        1,
+                        new RecoveryMessage.PreparationPayloadCompact
+                        {
+                            ValidatorIndex = 1,
+                            InvocationScript = new[] { (byte)'s', (byte)'t' }
+                        }
+                    },
+                    {
+                        3,
+                        new RecoveryMessage.PreparationPayloadCompact
+                        {
+                            ValidatorIndex = 3,
+                            InvocationScript = new[] { (byte)'1', (byte)'2' }
+                        }
+                    },
+                    {
+                        6,
+                        new RecoveryMessage.PreparationPayloadCompact
+                        {
+                            ValidatorIndex = 6,
+                            InvocationScript = new[] { (byte)'3', (byte)'!' }
+                        }
+                    }
+                },
+                CommitMessages = new Dictionary<int, RecoveryMessage.CommitPayloadCompact>()
+            };
 
             var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage());;
 
-            copiedMsg.ChangeViewWitnessInvocationScripts.ShouldAllBeEquivalentTo(null);
-            copiedMsg.ChangeViewTimestamps.ShouldAllBeEquivalentTo(null);
+            copiedMsg.ChangeViewMessages.Count.Should().Be(0);
             copiedMsg.PrepareRequestMessage.ShouldBeEquivalentTo(msg.PrepareRequestMessage);
             copiedMsg.PreparationHash.Should().Be(null);
-            copiedMsg.PrepareWitnessInvocationScripts.ShouldAllBeEquivalentTo(msg.PrepareWitnessInvocationScripts);
-            (copiedMsg.CommitSignatures == null).Should().Be(true);
+            copiedMsg.PreparationMessages.ShouldAllBeEquivalentTo(msg.PreparationMessages);
+            copiedMsg.CommitMessages.Count.Should().Be(0);
         }
 
         [TestMethod]
         public void TestSerializeAndDeserializeRecoveryMessageWithoutChangeViewsWithCommits()
         {
-            var msg = new RecoveryMessage();
-            int txCountToInlcude = 5;
-            var prepareRequest = new PrepareRequest();
-            prepareRequest.TransactionHashes = new UInt256[txCountToInlcude];
-            Transaction[] txs = new Transaction[txCountToInlcude];
+            Transaction[] txs = new Transaction[5];
             txs[0] = TestUtils.CreateRandomMockMinerTransaction().Object;
-            prepareRequest.TransactionHashes[0] = txs[0].Hash;
-            for (int i = 1; i < txCountToInlcude; i++)
-            {
+            for (int i = 1; i < txs.Length; i++)
                 txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
-                prepareRequest.TransactionHashes[i] = txs[i].Hash;
-            }
-            prepareRequest.Nonce = UInt64.MaxValue;
-            prepareRequest.NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA");
-            prepareRequest.MinerTransaction = (MinerTransaction) txs[0];
-            msg.PrepareRequestMessage = prepareRequest;
-            msg.PrepareWitnessInvocationScripts = new byte[7][];
-            msg.PrepareWitnessInvocationScripts[0] = new [] {(byte)'t', (byte)'e'};
-            msg.PrepareWitnessInvocationScripts[1] = new [] {(byte)'s', (byte)'t'};
-            msg.PrepareWitnessInvocationScripts[2] = null;
-            msg.PrepareWitnessInvocationScripts[3] = new [] {(byte)'1', (byte)'2'};
-            msg.PrepareWitnessInvocationScripts[4] = null;
-            msg.PrepareWitnessInvocationScripts[5] = null;
-            msg.PrepareWitnessInvocationScripts[6] = new [] {(byte)'3', (byte)'!'};
-            msg.CommitSignatures = new byte[7][];
-            msg.CommitSignatures[0] = null;
-            msg.CommitSignatures[1] = new [] {(byte)'1', (byte)'2'};
-            msg.CommitSignatures[6] = new [] {(byte)'3', (byte)'D', (byte)'R', (byte)'I', (byte)'N', (byte)'K'};
+            var msg = new RecoveryMessage
+            {
+                ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
+                PrepareRequestMessage = new PrepareRequest
+                {
+                    TransactionHashes = txs.Select(p => p.Hash).ToArray(),
+                    Nonce = ulong.MaxValue,
+                    NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
+                    MinerTransaction = (MinerTransaction)txs[0]
+                },
+                PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
+                {
+                    {
+                        0,
+                        new RecoveryMessage.PreparationPayloadCompact
+                        {
+                            ValidatorIndex = 0,
+                            InvocationScript = new[] { (byte)'t', (byte)'e' }
+                        }
+                    },
+                    {
+                        1,
+                        new RecoveryMessage.PreparationPayloadCompact
+                        {
+                            ValidatorIndex = 1,
+                            InvocationScript = new[] { (byte)'s', (byte)'t' }
+                        }
+                    },
+                    {
+                        3,
+                        new RecoveryMessage.PreparationPayloadCompact
+                        {
+                            ValidatorIndex = 3,
+                            InvocationScript = new[] { (byte)'1', (byte)'2' }
+                        }
+                    },
+                    {
+                        6,
+                        new RecoveryMessage.PreparationPayloadCompact
+                        {
+                            ValidatorIndex = 6,
+                            InvocationScript = new[] { (byte)'3', (byte)'!' }
+                        }
+                    }
+                },
+                CommitMessages = new Dictionary<int, RecoveryMessage.CommitPayloadCompact>
+                {
+                    {
+                        1,
+                        new RecoveryMessage.CommitPayloadCompact
+                        {
+                            ValidatorIndex = 1,
+                            Signature = new byte[64] { (byte)'1', (byte)'2', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+                        }
+                    },
+                    {
+                        6,
+                        new RecoveryMessage.CommitPayloadCompact
+                        {
+                            ValidatorIndex = 6,
+                            Signature = new byte[64] { (byte)'3', (byte)'D', (byte)'R', (byte)'I', (byte)'N', (byte)'K', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+                        }
+                    }
+                }
+            };
 
             var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage());;
 
-            copiedMsg.ChangeViewWitnessInvocationScripts.ShouldAllBeEquivalentTo(null);
-            copiedMsg.ChangeViewTimestamps.ShouldAllBeEquivalentTo(null);
+            copiedMsg.ChangeViewMessages.Count.Should().Be(0);
             copiedMsg.PrepareRequestMessage.ShouldBeEquivalentTo(msg.PrepareRequestMessage);
             copiedMsg.PreparationHash.Should().Be(null);
-            copiedMsg.PrepareWitnessInvocationScripts.ShouldAllBeEquivalentTo(msg.PrepareWitnessInvocationScripts);
-            copiedMsg.CommitSignatures.ShouldAllBeEquivalentTo(msg.CommitSignatures);
+            copiedMsg.PreparationMessages.ShouldAllBeEquivalentTo(msg.PreparationMessages);
+            copiedMsg.CommitMessages.ShouldAllBeEquivalentTo(msg.CommitMessages);
         }
     }
 }
