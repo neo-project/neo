@@ -386,11 +386,6 @@ namespace Neo.Consensus
 
         private void OnRecoveryMessageReceived(ConsensusPayload payload, RecoveryMessage message)
         {
-            if (context.BlockIndex > payload.BlockIndex) return;
-            if (context.State.HasFlag(ConsensusState.BlockSent)) return;
-            Snapshot snap =  Blockchain.Singleton.GetSnapshot();
-            if (payload.BlockIndex > snap.Height + 1) return;
-
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
 
             if (context.ViewNumber == message.ViewNumber)
