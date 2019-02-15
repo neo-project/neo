@@ -32,7 +32,7 @@ namespace Neo.Consensus
         public ConsensusPayload[] PreparationPayloads { get; set; }
         public ConsensusPayload[] CommitPayloads { get; set; }
         public ConsensusPayload[] ChangeViewPayloads { get; set; }
-        private ConsensusPayload[] LastChangeViewPayloads { get; set; }
+        public ConsensusPayload[] LastChangeViewPayloads { get; set; }
         public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
         private readonly Wallet wallet;
