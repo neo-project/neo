@@ -401,7 +401,8 @@ namespace Neo.Consensus
             var tempContext = new ConsensusContext(wallet);
             // Have to Reset to 0 first to handle initializion of the context
             tempContext.Reset(0, context.Snapshot);
-            tempContext.Reset(message.ViewNumber, context.Snapshot);
+            if (message.ViewNumber != 0)
+                tempContext.Reset(message.ViewNumber);
             if (message.PrepareRequestMessage != null)
             {
                 var prepareRequest = message.PrepareRequestMessage;
