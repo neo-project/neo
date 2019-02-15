@@ -10,16 +10,18 @@ namespace Neo.Consensus
         {
             public ushort ValidatorIndex;
             public byte[] Signature;
-            //public byte[] InvocationScript;
+            public byte[] InvocationScript;
 
             int ISerializable.Size =>
-                sizeof(ushort) +    //ValidatorIndex
-                Signature.Length;   //Signature
+                sizeof(ushort) +                //ValidatorIndex
+                Signature.Length +              //Signature
+                InvocationScript.GetVarSize();  //InvocationScript
 
             void ISerializable.Deserialize(BinaryReader reader)
             {
                 ValidatorIndex = reader.ReadUInt16();
                 Signature = reader.ReadBytes(64);
+                InvocationScript = reader.ReadVarBytes(1024);
             }
 
             public static CommitPayloadCompact FromPayload(ConsensusPayload payload)
@@ -29,6 +31,7 @@ namespace Neo.Consensus
                 {
                     ValidatorIndex = payload.ValidatorIndex,
                     Signature = message.Signature,
+                    InvocationScript = payload.Witness.InvocationScript
                 };
             }
 
@@ -36,6 +39,7 @@ namespace Neo.Consensus
             {
                 writer.Write(ValidatorIndex);
                 writer.Write(Signature);
+                writer.WriteVarBytes(InvocationScript);
             }
         }
     }
