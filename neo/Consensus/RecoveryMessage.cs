@@ -27,7 +27,12 @@ namespace Neo.Consensus
             if (reader.ReadBoolean())
                 PrepareRequestMessage = reader.ReadSerializable<PrepareRequest>();
             else
-                PreparationHash = reader.ReadSerializable<UInt256>();
+            {
+                int preparationHashSize = UInt256.Zero.Size;
+                if (preparationHashSize == (int)reader.ReadVarInt((ulong) preparationHashSize))
+                    PreparationHash = new UInt256(reader.ReadBytes(preparationHashSize));
+            }
+
             PreparationMessages = reader.ReadSerializableArray<PreparationPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
             CommitMessages = reader.ReadSerializableArray<CommitPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
         }
@@ -41,7 +46,13 @@ namespace Neo.Consensus
             if (hasPrepareRequestMessage)
                 writer.Write(PrepareRequestMessage);
             else
-                writer.Write(PreparationHash);
+            {
+                if (PreparationHash == null)
+                    writer.WriteVarInt(0);
+                else
+                    writer.WriteVarBytes(PreparationHash.ToArray());
+            }
+
             writer.Write(PreparationMessages.Values.ToArray());
             writer.Write(CommitMessages.Values.ToArray());
         }
