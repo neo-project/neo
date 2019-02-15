@@ -386,8 +386,8 @@ namespace Neo.Consensus
 
         private void OnRecoveryMessageReceived(ConsensusPayload payload, RecoveryMessage message)
         {
-            Log(
-                $"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+            if (message.ViewNumber < context.ViewNumber) return;
+            Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             if (context.ViewNumber == message.ViewNumber)
             {
                 HandleRecoveryInCurrentView(message);
@@ -452,7 +452,6 @@ namespace Neo.Consensus
                     break;
                 }
             }
-
 
             /*
             // dBFT Does not study or propose a situation to allow the view to move backward. The following mechanism
