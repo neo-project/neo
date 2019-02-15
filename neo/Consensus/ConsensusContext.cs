@@ -199,6 +199,7 @@ namespace Neo.Consensus
         {
             return MakeSignedPayload(new PrepareRequest
             {
+                Timestamp = Timestamp,
                 Nonce = Nonce,
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
