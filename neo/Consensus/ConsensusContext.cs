@@ -24,14 +24,15 @@ namespace Neo.Consensus
         public ECPoint[] Validators { get; set; }
         public int MyIndex { get; set; }
         public uint PrimaryIndex { get; set; }
-        public ConsensusPayload[] ChangeViewPayloads { get; set; }
         public uint Timestamp { get; set; }
         public ulong Nonce { get; set; }
         public UInt160 NextConsensus { get; set; }
         public UInt256[] TransactionHashes { get; set; }
         public Dictionary<UInt256, Transaction> Transactions { get; set; }
         public ConsensusPayload[] PreparationPayloads { get; set; }
-        public byte[][] Commits { get; set; }
+        public ConsensusPayload[] CommitPayloads { get; set; }
+        public ConsensusPayload[] ChangeViewPayloads { get; set; }
+        private ConsensusPayload[] LastChangeViewPayloads { get; set; }
         public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
         private readonly Wallet wallet;
@@ -53,9 +54,9 @@ namespace Neo.Consensus
             Contract contract = Contract.CreateMultiSigContract(M, Validators);
             ContractParametersContext sc = new ContractParametersContext(block);
             for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
-                if (Commits[i] != null)
+                if (CommitPayloads[i] != null)
                 {
-                    sc.AddSignature(contract, Validators[i], Commits[i]);
+                    sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
                     j++;
                 }
             sc.Verifiable.Witnesses = sc.GetWitnesses();
@@ -73,13 +74,6 @@ namespace Neo.Consensus
             Validators = reader.ReadSerializableArray<ECPoint>();
             MyIndex = reader.ReadInt32();
             PrimaryIndex = reader.ReadUInt32();
-            var numChangeViews = reader.ReadVarInt();
-            if (numChangeViews > 0)
-            {
-                ChangeViewPayloads = new ConsensusPayload[numChangeViews];
-                for (int i = 0; i < ChangeViewPayloads.Length; i++)
-                    ChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
-            }
             Timestamp = reader.ReadUInt32();
             Nonce = reader.ReadUInt64();
             NextConsensus = reader.ReadSerializable<UInt160>();
@@ -103,16 +97,18 @@ namespace Neo.Consensus
             if (numPreparationPayloads > 0)
             {
                 PreparationPayloads = new ConsensusPayload[numPreparationPayloads];
-                for (int i = 0; i < ChangeViewPayloads.Length; i++)
+                for (int i = 0; i < PreparationPayloads.Length; i++)
                     PreparationPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
             }
-            Commits = new byte[reader.ReadVarInt()][];
-            for (int i = 0; i < Commits.Length; i++)
-            {
-                Commits[i] = reader.ReadVarBytes();
-                if (Commits[i].Length == 0)
-                    Commits[i] = null;
-            }
+            CommitPayloads = new ConsensusPayload[reader.ReadVarInt()];
+            for (int i = 0; i < CommitPayloads.Length; i++)
+                CommitPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
+            ChangeViewPayloads = new ConsensusPayload[reader.ReadVarInt()];
+            for (int i = 0; i < ChangeViewPayloads.Length; i++)
+                ChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
+            LastChangeViewPayloads = new ConsensusPayload[reader.ReadVarInt()];
+            for (int i = 0; i < LastChangeViewPayloads.Length; i++)
+                LastChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
         }
 
         public void Dispose()
@@ -140,12 +136,12 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeCommit()
         {
-            if (Commits[MyIndex] == null)
-                Commits[MyIndex] = MakeHeader()?.Sign(keyPair);
-            return MakeSignedPayload(new Commit
-            {
-                Signature = Commits[MyIndex]
-            });
+            if (CommitPayloads[MyIndex] == null)
+                CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
+                {
+                    Signature = MakeHeader()?.Sign(keyPair)
+                });
+            return CommitPayloads[MyIndex];
         }
 
         private Block _header = null;
@@ -184,28 +180,6 @@ namespace Neo.Consensus
             return payload;
         }
 
-        public ConsensusPayload RegenerateSignedPayload(ConsensusMessage message, ushort validatorIndex,
-            byte[] witnessInvocationScript)
-        {
-            ConsensusPayload payload = new ConsensusPayload
-            {
-                Version = Version,
-                PrevHash = PrevHash,
-                BlockIndex = BlockIndex,
-                ValidatorIndex = validatorIndex,
-                ConsensusMessage = message
-            };
-            Witness[] witnesses = new Witness[1];
-            witnesses[0] = new Witness
-            {
-                InvocationScript = witnessInvocationScript,
-                VerificationScript = Contract.CreateSignatureRedeemScript(Validators[validatorIndex])
-            };
-            ((IVerifiable) payload).Witnesses = witnesses;
-
-            return payload;
-        }
-
         private void SignPayload(ConsensusPayload payload)
         {
             ContractParametersContext sc;
@@ -234,9 +208,6 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeRecoveryMessage()
         {
-            var changeViewPayloads = TransactionHashes == null || PreparationPayloads.Count(p => p != null) < M
-                ? ChangeViewPayloads : null;
-
             PrepareRequest prepareRequestMessage = null;
             if (TransactionHashes != null)
             {
@@ -245,19 +216,19 @@ namespace Neo.Consensus
                     TransactionHashes = TransactionHashes,
                     Nonce = Nonce,
                     NextConsensus = NextConsensus,
-                    MinerTransaction = (MinerTransaction) (TransactionHashes == null ? null : Transactions?[TransactionHashes[0]]),
+                    MinerTransaction = (MinerTransaction)(TransactionHashes == null ? null : Transactions?[TransactionHashes[0]]),
                     Timestamp = Timestamp
                 };
             }
             return MakeSignedPayload(new RecoveryMessage()
             {
-                ChangeViewMessages = (changeViewPayloads ?? new ConsensusPayload[0]).Where(p => p != null).Select(p => RecoveryMessage.ChangeViewPayloadCompact.FromPayload(p)).ToDictionary(p => (int)p.ValidatorIndex),
+                ChangeViewMessages = LastChangeViewPayloads.Where(p => p != null).Select(p => RecoveryMessage.ChangeViewPayloadCompact.FromPayload(p)).ToDictionary(p => (int)p.ValidatorIndex),
                 PrepareRequestMessage = prepareRequestMessage,
                 // We only need a PreparationHash set if we don't have the PrepareRequest information.
                 PreparationHash = TransactionHashes == null ? PreparationPayloads.Where(p => p != null).GroupBy(p => p.GetDeserializedMessage<PrepareResponse>().PreparationHash, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
                 PreparationMessages = PreparationPayloads.Where(p => p != null).Select(p => RecoveryMessage.PreparationPayloadCompact.FromPayload(p)).ToDictionary(p => (int)p.ValidatorIndex),
                 CommitMessages = State.HasFlag(ConsensusState.CommitSent)
-                    ? Commits.Select((s, i) => new RecoveryMessage.CommitPayloadCompact { Signature = s, ValidatorIndex = (ushort)i }).Where(p => p.Signature != null).ToDictionary(p => (int)p.ValidatorIndex)
+                    ? CommitPayloads.Where(p => p != null).Select(p => RecoveryMessage.CommitPayloadCompact.FromPayload(p)).ToDictionary(p => (int)p.ValidatorIndex)
                     : null
             });
         }
@@ -270,17 +241,18 @@ namespace Neo.Consensus
             });
         }
 
-        public void Reset(byte viewNumber, Snapshot newSnapshot=null)
+        public void Reset(byte viewNumber)
         {
             if (viewNumber == 0)
             {
                 Snapshot?.Dispose();
-                Snapshot = newSnapshot ?? Blockchain.Singleton.GetSnapshot();
+                Snapshot = Blockchain.Singleton.GetSnapshot();
                 PrevHash = Snapshot.CurrentBlockHash;
                 BlockIndex = Snapshot.Height + 1;
                 Validators = Snapshot.GetValidators();
                 MyIndex = -1;
                 ChangeViewPayloads = new ConsensusPayload[Validators.Length];
+                LastChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 keyPair = null;
                 for (int i = 0; i < Validators.Length; i++)
                 {
@@ -293,13 +265,21 @@ namespace Neo.Consensus
                     }
                 }
             }
+            else
+            {
+                for (int i = 0; i < LastChangeViewPayloads.Length; i++)
+                    if (ChangeViewPayloads[i]?.GetDeserializedMessage<ChangeView>().NewViewNumber == viewNumber)
+                        LastChangeViewPayloads[i] = ChangeViewPayloads[i];
+                    else
+                        LastChangeViewPayloads[i] = null;
+            }
             State = ConsensusState.Initial;
             ViewNumber = viewNumber;
             PrimaryIndex = GetPrimaryIndex(viewNumber);
             Timestamp = 0;
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
-            Commits = new byte[Validators.Length][];
+            CommitPayloads = new ConsensusPayload[Validators.Length];
             _header = null;
         }
 
@@ -313,19 +293,6 @@ namespace Neo.Consensus
             writer.Write(Validators);
             writer.Write(MyIndex);
             writer.Write(PrimaryIndex);
-            if (ChangeViewPayloads == null)
-                writer.WriteVarInt(0);
-            else
-            {
-                writer.WriteVarInt(ChangeViewPayloads.Length);
-                foreach (var payload in ChangeViewPayloads)
-                {
-                    bool hasPayload = !(payload is null);
-                    writer.Write(hasPayload);
-                    if (!hasPayload) continue;
-                    writer.Write(payload);
-                }
-            }
             writer.Write(Timestamp);
             writer.Write(Nonce);
             writer.Write(NextConsensus ?? UInt160.Zero);
@@ -344,12 +311,30 @@ namespace Neo.Consensus
                     writer.Write(payload);
                 }
             }
-            writer.WriteVarInt(Commits.Length);
-            foreach (byte[] commit in Commits)
-                if (commit is null)
-                    writer.WriteVarInt(0);
-                else
-                    writer.WriteVarBytes(commit);
+            writer.WriteVarInt(CommitPayloads.Length);
+            foreach (var payload in CommitPayloads)
+            {
+                bool hasPayload = !(payload is null);
+                writer.Write(hasPayload);
+                if (!hasPayload) continue;
+                writer.Write(payload);
+            }
+            writer.WriteVarInt(ChangeViewPayloads.Length);
+            foreach (var payload in ChangeViewPayloads)
+            {
+                bool hasPayload = !(payload is null);
+                writer.Write(hasPayload);
+                if (!hasPayload) continue;
+                writer.Write(payload);
+            }
+            writer.WriteVarInt(LastChangeViewPayloads.Length);
+            foreach (var payload in LastChangeViewPayloads)
+            {
+                bool hasPayload = !(payload is null);
+                writer.Write(hasPayload);
+                if (!hasPayload) continue;
+                writer.Write(payload);
+            }
         }
 
         public void Fill()

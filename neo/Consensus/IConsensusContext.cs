@@ -24,7 +24,7 @@ namespace Neo.Consensus
         UInt256[] TransactionHashes { get; set; }
         Dictionary<UInt256, Transaction> Transactions { get; set; }
         ConsensusPayload[] PreparationPayloads { get; set; }
-        byte[][] Commits { get; set; }
+        ConsensusPayload[] CommitPayloads { get; set; }
         Snapshot Snapshot { get; }
 
         int F { get; }
@@ -50,7 +50,7 @@ namespace Neo.Consensus
 
         ConsensusPayload MakePrepareResponse(UInt256 preparation);
 
-        void Reset(byte viewNumber, Snapshot newSnapshot=null);
+        void Reset(byte viewNumber);
 
         void Fill();
 
