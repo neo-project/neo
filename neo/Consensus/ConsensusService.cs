@@ -453,36 +453,6 @@ namespace Neo.Consensus
                 }
             }
 
-            /*
-            // dBFT Does not study or propose a situation to allow the view to move backward. The following mechanism
-            // is believed to be safe by some developers; however, it will not be implemented for now. The code below
-            // is being left commented for further analysis and formal proof before it can be accepted. Along with this
-            // there is a commented section at the end of this method as well that goes along with this.
-            byte[][] commitSignaturesIfMovingToLowerView = null;
-            // Only accept recovery from lower views if there were at least M valid prepare requests
-            if (message.ViewNumber < context.ViewNumber)
-            {
-                if (!canRestoreView) return;
-
-                int commitCount = 0;
-                commitSignaturesIfMovingToLowerView = new byte[context.Validators.Length][];
-                var header = context.MakeHeader();
-                for (ushort i = 0; i < context.Validators.Length; i++)
-                {
-                    if (!message.CommitMessages.ContainsKey(i)) continue;
-                    var signature = message.CommitMessages[i].Signature;
-                    if (!Crypto.Default.VerifySignature(header.GetHashData(), signature,
-                        context.Validators[i].EncodePoint(false)))
-                        continue;
-                    commitCount++;
-                    commitSignaturesIfMovingToLowerView[i] = signature;
-                }
-
-                if (commitCount < context.M) return;
-            }
-            */
-
-
             var verifiedChangeViewPayloads = new ConsensusPayload[context.Validators.Length];
             if (!canRestoreView && message.ChangeViewMessages.Count >= context.M)
             {
@@ -553,19 +523,6 @@ namespace Neo.Consensus
                     if (prepareRespPayload.ValidatorIndex != context.MyIndex)
                         OnPrepareResponseReceived(prepareRespPayload, prepareResp);
             }
-
-            /*
-            // If allowing the view to move backward to join an earlier commit, this code is also needed. See the
-            // commented seciton in the middle of this method.
-            if (commitSignaturesIfMovingToLowerView != null)
-            {
-                // Restore commits from moving to a lower view
-                for (int i = 0; i < context.Validators.Length; i++)
-                    context.Commits[i] = commitSignaturesIfMovingToLowerView[i];
-                CheckCommits();
-                return;
-            }
-            */
 
             RestoreCommits(message);
         }
