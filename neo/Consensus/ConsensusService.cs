@@ -453,6 +453,12 @@ namespace Neo.Consensus
                 }
             }
 
+
+            /*
+            // dBFT Does not study or propose a situation to allow the view to move backward. The following mechanism
+            // is believed to be safe by some developers; however, it will not be implemented for now. The code below
+            // is being left commented for further analysis and formal proof before it can be accepted. Along with this
+            // there is a commented section at the end of this method as well that goes along with this.
             byte[][] commitSignaturesIfMovingToLowerView = null;
             // Only accept recovery from lower views if there were at least M valid prepare requests
             if (message.ViewNumber < context.ViewNumber)
@@ -475,6 +481,7 @@ namespace Neo.Consensus
 
                 if (commitCount < context.M) return;
             }
+            */
 
 
             var verifiedChangeViewPayloads = new ConsensusPayload[context.Validators.Length];
@@ -548,16 +555,20 @@ namespace Neo.Consensus
                         OnPrepareResponseReceived(prepareRespPayload, prepareResp);
             }
 
-            if (commitSignaturesIfMovingToLowerView is null)
+            /*
+            // If allowing the view to move backward to join an earlier commit, this code is also needed. See the
+            // commented seciton in the middle of this method.
+            if (commitSignaturesIfMovingToLowerView != null)
             {
-                RestoreCommits(message);
+                // Restore commits from moving to a lower view
+                for (int i = 0; i < context.Validators.Length; i++)
+                    context.Commits[i] = commitSignaturesIfMovingToLowerView[i];
+                CheckCommits();
                 return;
             }
+            */
 
-            // Restore commits from moving to a lower view
-            for (int i = 0; i < context.Validators.Length; i++)
-                context.Commits[i] = commitSignaturesIfMovingToLowerView[i];
-            CheckCommits();
+            RestoreCommits(message);
         }
 
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
