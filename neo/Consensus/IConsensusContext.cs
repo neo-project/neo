@@ -32,8 +32,6 @@ namespace Neo.Consensus
 
         Header PrevHeader { get; }
 
-        bool VerifyTransaction(Transaction tx);
-
         Block CreateBlock();
 
         //void Dispose();
