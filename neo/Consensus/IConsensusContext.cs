@@ -32,7 +32,6 @@ namespace Neo.Consensus
 
         Header PrevHeader { get; }
 
-        bool TransactionExists(UInt256 hash);
         bool VerifyTransaction(Transaction tx);
 
         Block CreateBlock();

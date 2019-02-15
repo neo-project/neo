@@ -41,7 +41,6 @@ namespace Neo.Consensus
         public Header PrevHeader => Snapshot.GetHeader(PrevHash);
         public int Size => throw new NotImplementedException();
 
-        public bool TransactionExists(UInt256 hash) => Snapshot.ContainsTransaction(hash);
         public bool VerifyTransaction(Transaction tx) => tx.Verify(Snapshot, Transactions.Values);
 
         public ConsensusContext(Wallet wallet)
