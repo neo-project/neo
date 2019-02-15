@@ -210,7 +210,7 @@ namespace Neo.Consensus
 
         private static ConsensusPayload[] GetPrepareResponsePayloadsFromRecoveryMessage(IConsensusContext context, ConsensusPayload payload, RecoveryMessage message, ConsensusPayload prepareRequestPayload = null)
         {
-            UInt256 preparationHash = message.PreparationHash ?? prepareRequestPayload.Hash;
+            UInt256 preparationHash = message.PreparationHash ?? prepareRequestPayload?.Hash;
             return message.PreparationMessages.Values.Where(p => p.ValidatorIndex != context.PrimaryIndex).Select(p => new ConsensusPayload
             {
                 Version = payload.Version,
