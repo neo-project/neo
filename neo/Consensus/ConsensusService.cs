@@ -386,7 +386,8 @@ namespace Neo.Consensus
 
         private void OnRecoveryMessageReceived(ConsensusPayload payload, RecoveryMessage message)
         {
-            Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+            Log(
+                $"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             if (context.ViewNumber == message.ViewNumber)
             {
                 HandleRecoveryInCurrentView(message);
@@ -418,7 +419,7 @@ namespace Neo.Consensus
             PrepareRequest prepareRequestMessage = null;
 
             UInt256 preparationHash;
-            if (message.PreparationMessages.ContainsKey((int)tempContext.PrimaryIndex)
+            if (message.PreparationMessages.ContainsKey((int) tempContext.PrimaryIndex)
                 && ReverifyPrepareRequest(tempContext, message, out prepareRequestPayload, out prepareRequestMessage))
                 preparationHash = prepareRequestPayload.Hash;
             else
@@ -451,13 +452,34 @@ namespace Neo.Consensus
                 }
             }
 
+            byte[][] commitSignaturesIfMovingToLowerView = null;
             // Only accept recovery from lower views if there were at least M valid prepare requests
-            if (message.ViewNumber < context.ViewNumber && !canRestoreView) return;
+            if (message.ViewNumber < context.ViewNumber)
+            {
+                if (!canRestoreView) return;
+
+                int commitCount = 0;
+                commitSignaturesIfMovingToLowerView = new byte[context.Validators.Length][];
+                var header = context.MakeHeader();
+                for (ushort i = 0; i < context.Validators.Length; i++)
+                {
+                    if (!message.CommitMessages.ContainsKey(i)) continue;
+                    var signature = message.CommitMessages[i].Signature;
+                    if (!Crypto.Default.VerifySignature(header.GetHashData(), signature,
+                        context.Validators[i].EncodePoint(false)))
+                        continue;
+                    commitCount++;
+                    commitSignaturesIfMovingToLowerView[i] = signature;
+                }
+
+                if (commitCount < context.M) return;
+            }
+
 
             var verifiedChangeViewPayloads = new ConsensusPayload[context.Validators.Length];
             if (!canRestoreView && message.ChangeViewMessages.Count >= context.M)
             {
-                var changeViewMsg = new ChangeView { NewViewNumber = message.ViewNumber };
+                var changeViewMsg = new ChangeView {NewViewNumber = message.ViewNumber};
                 int validChangeViewCount = 0;
                 for (ushort i = 0; i < context.Validators.Length; i++)
                 {
@@ -468,7 +490,8 @@ namespace Neo.Consensus
                     // Regenerate the ChangeView message
                     var regeneratedChangeView = tempContext.RegenerateSignedPayload(changeViewMsg, i,
                         message.ChangeViewMessages[i].InvocationScript);
-                    if (!regeneratedChangeView.Verify(context.Snapshot) || !PerformBasicConsensusPayloadPreChecks(regeneratedChangeView)) continue;
+                    if (!regeneratedChangeView.Verify(context.Snapshot) ||
+                        !PerformBasicConsensusPayloadPreChecks(regeneratedChangeView)) continue;
                     verifiedChangeViewPayloads[i] = regeneratedChangeView;
                     validChangeViewCount++;
                     if (validChangeViewCount < context.M) continue;
@@ -490,7 +513,8 @@ namespace Neo.Consensus
                 // index; we set the backup state so we can call OnPrepareRequestReceived below.
                 context.State |= ConsensusState.Primary | ConsensusState.RequestSent | ConsensusState.Backup;
                 // We set the timer in the same way a Backup sets their timer in this case.
-                Log($"initialize: height={context.BlockIndex} view={message.ViewNumber} index={context.MyIndex} role={ConsensusState.Primary}");
+                Log(
+                    $"initialize: height={context.BlockIndex} view={message.ViewNumber} index={context.MyIndex} role={ConsensusState.Primary}");
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (message.ViewNumber + 1)));
             }
             else
@@ -500,6 +524,7 @@ namespace Neo.Consensus
                     block_received_time = TimeProvider.Current.UtcNow - TimeSpan.FromSeconds(
                                               Blockchain.TimePerBlock.TotalSeconds * Math.Pow(2, message.ViewNumber));
                 }
+
                 InitializeConsensus(message.ViewNumber);
             }
 
@@ -522,7 +547,16 @@ namespace Neo.Consensus
                         OnPrepareResponseReceived(prepareRespPayload, prepareResp);
             }
 
-            RestoreCommits(message);
+            if (commitSignaturesIfMovingToLowerView is null)
+            {
+                RestoreCommits(message);
+                return;
+            }
+
+            // Restore commits from moving to a lower view
+            for (int i = 0; i < context.Validators.Length; i++)
+                context.Commits[i] = commitSignaturesIfMovingToLowerView[i];
+            CheckCommits();
         }
 
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
