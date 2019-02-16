@@ -594,7 +594,6 @@ namespace Neo.Consensus
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView} state={context.State}");
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (expectedView + 1)));
             var changeViewPayload = context.MakeChangeView(expectedView);
-            context.ChangeViewPayloads[context.MyIndex] = changeViewPayload;
             localNode.Tell(new LocalNode.SendDirectly { Inventory = changeViewPayload });
             CheckExpectedView(expectedView);
         }

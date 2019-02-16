@@ -120,7 +120,7 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeChangeView(byte newViewNumber)
         {
-            return MakeSignedPayload(new ChangeView
+            return ChangeViewPayloads[MyIndex] = MakeSignedPayload(new ChangeView
             {
                 NewViewNumber = newViewNumber,
                 Timestamp = TimeProvider.Current.UtcNow.ToTimestamp()
