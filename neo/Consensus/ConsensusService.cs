@@ -32,7 +32,6 @@ namespace Neo.Consensus
         private ICancelable timer_token;
         private DateTime block_received_time;
         private bool started = false;
-        private readonly Wallet wallet;
         /// <summary>
         /// This will be cleared every block (so it will not grow out of control, but is used to prevent repeatedly
         /// responding to the same message.
@@ -42,7 +41,6 @@ namespace Neo.Consensus
         public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
             : this(localNode, taskManager, store, new ConsensusContext(wallet))
         {
-            this.wallet = wallet;
         }
 
         public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, IConsensusContext context)
