@@ -1,10 +1,12 @@
-﻿using Neo.Cryptography.ECC;
+﻿using Moq;
+using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
-using Moq;
-using Neo.Persistence;
+using System.IO;
 
 namespace Neo.UnitTests
 {
@@ -118,6 +120,32 @@ namespace Neo.UnitTests
             tx.Witnesses = new Witness[0];
 
             return mockTx;
+        }
+
+        public static Mock<MinerTransaction> CreateRandomMockMinerTransaction()
+        {
+            var mockTx = new Mock<MinerTransaction>
+            {
+                CallBase = true
+            };
+            var tx = mockTx.Object;
+            tx.Attributes = new TransactionAttribute[0];
+            tx.Inputs = new CoinReference[0];
+            tx.Outputs = new TransactionOutput[0];
+            tx.Witnesses = new Witness[0];
+            tx.Nonce = (uint)TestRandom.Next();
+            return mockTx;
+        }
+
+        public static T CopyMsgBySerialization<T>(T serializableObj, T newObj) where T : ISerializable
+        {
+            using (MemoryStream ms = new MemoryStream(serializableObj.ToArray(), false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                newObj.Deserialize(reader);
+            }
+
+            return newObj;
         }
     }
 }

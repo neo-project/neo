@@ -8,12 +8,18 @@ namespace Neo.Consensus
 {
     internal class PrepareRequest : ConsensusMessage
     {
+        public uint Timestamp;
         public ulong Nonce;
         public UInt160 NextConsensus;
         public UInt256[] TransactionHashes;
         public MinerTransaction MinerTransaction;
 
-        public override int Size => base.Size + sizeof(ulong) + NextConsensus.Size + TransactionHashes.GetVarSize() + MinerTransaction.Size;
+        public override int Size => base.Size
+            + sizeof(uint)                      //Timestamp
+            + sizeof(ulong)                     //Nonce
+            + NextConsensus.Size                //NextConsensus
+            + TransactionHashes.GetVarSize()    //TransactionHashes
+            + MinerTransaction.Size;            //MinerTransaction
 
         public PrepareRequest()
             : base(ConsensusMessageType.PrepareRequest)
@@ -23,9 +29,10 @@ namespace Neo.Consensus
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
+            Timestamp = reader.ReadUInt32();
             Nonce = reader.ReadUInt64();
             NextConsensus = reader.ReadSerializable<UInt160>();
-            TransactionHashes = reader.ReadSerializableArray<UInt256>();
+            TransactionHashes = reader.ReadSerializableArray<UInt256>(Block.MaxTransactionsPerBlock);
             if (TransactionHashes.Distinct().Count() != TransactionHashes.Length)
                 throw new FormatException();
             MinerTransaction = reader.ReadSerializable<MinerTransaction>();
@@ -36,6 +43,7 @@ namespace Neo.Consensus
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
+            writer.Write(Timestamp);
             writer.Write(Nonce);
             writer.Write(NextConsensus);
             writer.Write(TransactionHashes);
