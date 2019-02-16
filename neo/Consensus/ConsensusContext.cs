@@ -228,7 +228,7 @@ namespace Neo.Consensus
                 PreparationMessages = PreparationPayloads.Where(p => p != null).Select(p => RecoveryMessage.PreparationPayloadCompact.FromPayload(p)).ToDictionary(p => (int)p.ValidatorIndex),
                 CommitMessages = State.HasFlag(ConsensusState.CommitSent)
                     ? CommitPayloads.Where(p => p != null).Select(p => RecoveryMessage.CommitPayloadCompact.FromPayload(p)).ToDictionary(p => (int)p.ValidatorIndex)
-                    : null
+                    : new Dictionary<int, RecoveryMessage.CommitPayloadCompact>()
             });
         }
 
