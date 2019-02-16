@@ -341,15 +341,15 @@ namespace Neo.Consensus
 
         public void Fill()
         {
-            IEnumerable<Transaction> mem_pool = Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions();
+            IEnumerable<Transaction> memoryPoolTransactions = Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions();
             foreach (IPolicyPlugin plugin in Plugin.Policies)
-                mem_pool = plugin.FilterForBlock(mem_pool);
-            List<Transaction> transactions = mem_pool.ToList();
-            Fixed8 amount_netfee = Block.CalculateNetFee(transactions);
-            TransactionOutput[] outputs = amount_netfee == Fixed8.Zero ? new TransactionOutput[0] : new[] { new TransactionOutput
+                memoryPoolTransactions = plugin.FilterForBlock(memoryPoolTransactions);
+            List<Transaction> transactions = memoryPoolTransactions.ToList();
+            Fixed8 amountNetFee = Block.CalculateNetFee(transactions);
+            TransactionOutput[] outputs = amountNetFee == Fixed8.Zero ? new TransactionOutput[0] : new[] { new TransactionOutput
             {
                 AssetId = Blockchain.UtilityToken.Hash,
-                Value = amount_netfee,
+                Value = amountNetFee,
                 ScriptHash = wallet.GetChangeAddress()
             } };
             while (true)
@@ -390,9 +390,9 @@ namespace Neo.Consensus
                 return false;
             if (!Blockchain.GetConsensusAddress(Snapshot.GetValidators(Transactions.Values).ToArray()).Equals(NextConsensus))
                 return false;
-            Transaction tx_gen = Transactions.Values.FirstOrDefault(p => p.Type == TransactionType.MinerTransaction);
-            Fixed8 amount_netfee = Block.CalculateNetFee(Transactions.Values);
-            if (tx_gen?.Outputs.Sum(p => p.Value) != amount_netfee) return false;
+            Transaction minerTx = Transactions.Values.FirstOrDefault(p => p.Type == TransactionType.MinerTransaction);
+            Fixed8 amountNetFee = Block.CalculateNetFee(Transactions.Values);
+            if (minerTx?.Outputs.Sum(p => p.Value) != amountNetFee) return false;
             return true;
         }
     }
