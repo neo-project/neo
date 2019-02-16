@@ -17,7 +17,6 @@ namespace Neo.Consensus
         ECPoint[] Validators { get; }
         int MyIndex { get; }
         uint PrimaryIndex { get; }
-        ConsensusPayload[] ChangeViewPayloads { get; set; }
         uint Timestamp { get; set; }
         ulong Nonce { get; set; }
         UInt160 NextConsensus { get; set; }
@@ -25,6 +24,7 @@ namespace Neo.Consensus
         Dictionary<UInt256, Transaction> Transactions { get; set; }
         ConsensusPayload[] PreparationPayloads { get; set; }
         ConsensusPayload[] CommitPayloads { get; set; }
+        ConsensusPayload[] ChangeViewPayloads { get; set; }
         Snapshot Snapshot { get; }
 
         int F { get; }
