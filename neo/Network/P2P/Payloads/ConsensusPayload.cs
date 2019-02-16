@@ -1,4 +1,5 @@
-﻿using Neo.Cryptography;
+﻿using Neo.Consensus;
+using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Persistence;
@@ -15,9 +16,25 @@ namespace Neo.Network.P2P.Payloads
         public UInt256 PrevHash;
         public uint BlockIndex;
         public ushort ValidatorIndex;
-        public uint Timestamp;
         public byte[] Data;
         public Witness Witness;
+
+        private ConsensusMessage _deserializedMessage = null;
+        internal ConsensusMessage ConsensusMessage
+        {
+            get
+            {
+                return _deserializedMessage;
+            }
+            set
+            {
+                if (!ReferenceEquals(_deserializedMessage, value))
+                {
+                    _deserializedMessage = value;
+                    Data = value?.ToArray();
+                }
+            }
+        }
 
         private UInt256 _hash = null;
         public UInt256 Hash
@@ -47,7 +64,18 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public int Size => sizeof(uint) + PrevHash.Size + sizeof(uint) + sizeof(ushort) + sizeof(uint) + Data.GetVarSize() + 1 + Witness.Size;
+        public int Size =>
+            sizeof(uint) +      //Version
+            PrevHash.Size +     //PrevHash
+            sizeof(uint) +      //BlockIndex
+            sizeof(ushort) +    //ValidatorIndex
+            Data.GetVarSize() + //Data
+            1 + Witness.Size;   //Witness
+
+        internal T GetDeserializedMessage<T>() where T : ConsensusMessage
+        {
+            return (T)ConsensusMessage;
+        }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
@@ -62,8 +90,8 @@ namespace Neo.Network.P2P.Payloads
             PrevHash = reader.ReadSerializable<UInt256>();
             BlockIndex = reader.ReadUInt32();
             ValidatorIndex = reader.ReadUInt16();
-            Timestamp = reader.ReadUInt32();
             Data = reader.ReadVarBytes();
+            _deserializedMessage = ConsensusMessage.DeserializeFrom(Data);
         }
 
         byte[] IScriptContainer.GetMessage()
@@ -91,7 +119,6 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(PrevHash);
             writer.Write(BlockIndex);
             writer.Write(ValidatorIndex);
-            writer.Write(Timestamp);
             writer.WriteVarBytes(Data);
         }
 

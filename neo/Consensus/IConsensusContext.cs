@@ -1,6 +1,7 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 
@@ -21,24 +22,23 @@ namespace Neo.Consensus
         UInt160 NextConsensus { get; set; }
         UInt256[] TransactionHashes { get; set; }
         Dictionary<UInt256, Transaction> Transactions { get; set; }
-        UInt256[] Preparations { get; set; }
-        byte[][] Commits { get; set; }
-        byte[] ExpectedView { get; set; }
+        ConsensusPayload[] PreparationPayloads { get; set; }
+        ConsensusPayload[] CommitPayloads { get; set; }
+        ConsensusPayload[] ChangeViewPayloads { get; set; }
+        Snapshot Snapshot { get; }
 
+        int F { get; }
         int M { get; }
 
         Header PrevHeader { get; }
-
-        bool TransactionExists(UInt256 hash);
-        bool VerifyTransaction(Transaction tx);
 
         Block CreateBlock();
 
         //void Dispose();
 
-        uint GetPrimaryIndex(byte view_number);
+        uint GetPrimaryIndex(byte viewNumber);
 
-        ConsensusPayload MakeChangeView();
+        ConsensusPayload MakeChangeView(byte newViewNumber);
 
         ConsensusPayload MakeCommit();
 
@@ -46,9 +46,11 @@ namespace Neo.Consensus
 
         ConsensusPayload MakePrepareRequest();
 
-        ConsensusPayload MakePrepareResponse(UInt256 preparation);
+        ConsensusPayload MakeRecoveryMessage();
 
-        void Reset(byte view_number);
+        ConsensusPayload MakePrepareResponse();
+
+        void Reset(byte viewNumber);
 
         void Fill();
 
