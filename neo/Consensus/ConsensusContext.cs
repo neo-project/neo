@@ -207,7 +207,7 @@ namespace Neo.Consensus
             });
         }
 
-        public ConsensusPayload MakeRecoveryMessage(byte requestedViewNumber)
+        public ConsensusPayload MakeRecoveryMessage()
         {
             PrepareRequest prepareRequestMessage = null;
             if (TransactionHashes != null)
@@ -224,16 +224,14 @@ namespace Neo.Consensus
             }
             return MakeSignedPayload(new RecoveryMessage()
             {
-                ChangeViewMessages = requestedViewNumber == ViewNumber
-                    ? new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>()
-                    : LastChangeViewPayloads.Where(p => p != null).Select(p => RecoveryMessage.ChangeViewPayloadCompact.FromPayload(p)).ToDictionary(p => (int)p.ValidatorIndex),
+                ChangeViewMessages = LastChangeViewPayloads.Where(p => p != null).Select(p => RecoveryMessage.ChangeViewPayloadCompact.FromPayload(p)).ToDictionary(p => (int)p.ValidatorIndex),
                 PrepareRequestMessage = prepareRequestMessage,
                 // We only need a PreparationHash set if we don't have the PrepareRequest information.
                 PreparationHash = TransactionHashes == null ? PreparationPayloads.Where(p => p != null).GroupBy(p => p.GetDeserializedMessage<PrepareResponse>().PreparationHash, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
                 PreparationMessages = PreparationPayloads.Where(p => p != null).Select(p => RecoveryMessage.PreparationPayloadCompact.FromPayload(p)).ToDictionary(p => (int)p.ValidatorIndex),
                 CommitMessages = State.HasFlag(ConsensusState.CommitSent)
                     ? CommitPayloads.Where(p => p != null).Select(p => RecoveryMessage.CommitPayloadCompact.FromPayload(p)).ToDictionary(p => (int)p.ValidatorIndex)
-                    : new Dictionary<int, RecoveryMessage.CommitPayloadCompact>()
+                    : null
             });
         }
 
