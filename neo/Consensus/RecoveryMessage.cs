@@ -13,7 +13,7 @@ namespace Neo.Consensus
         /// The PreparationHash in case the PrepareRequest hasn't been received yet.
         /// This can be null if the PrepareRequest information is present, since it can be derived in that case.
         public UInt256 PreparationHash;
-        public Dictionary<int, PreparationPayloadWitness> PreparationWitnesses;
+        public Dictionary<int, PreparationPayloadCompact> PreparationMessages;
         public Dictionary<int, CommitPayloadCompact> CommitMessages;
 
         public RecoveryMessage() : base(ConsensusMessageType.RecoveryMessage)
@@ -33,7 +33,7 @@ namespace Neo.Consensus
                     PreparationHash = new UInt256(reader.ReadBytes(preparationHashSize));
             }
 
-            PreparationWitnesses = reader.ReadSerializableArray<PreparationPayloadWitness>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
+            PreparationMessages = reader.ReadSerializableArray<PreparationPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
             CommitMessages = reader.ReadSerializableArray<CommitPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
         }
 
@@ -53,7 +53,7 @@ namespace Neo.Consensus
                     writer.WriteVarBytes(PreparationHash.ToArray());
             }
 
-            writer.Write(PreparationWitnesses.Values.ToArray());
+            writer.Write(PreparationMessages.Values.ToArray());
             if (CommitMessages == null)
                 writer.WriteVarInt(0);
             else

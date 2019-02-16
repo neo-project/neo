@@ -320,11 +320,11 @@ namespace Neo.UnitTests
                     }
                 },
                 PreparationHash = new UInt256(Crypto.Default.Hash256(new[] { (byte)'a' })),
-                PreparationWitnesses = new Dictionary<int, RecoveryMessage.PreparationPayloadWitness>()
+                PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
                     {
                         0,
-                        new RecoveryMessage.PreparationPayloadWitness
+                        new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 0,
                             InvocationScript = new[] { (byte)'t', (byte)'e' }
@@ -332,7 +332,7 @@ namespace Neo.UnitTests
                     },
                     {
                         3,
-                        new RecoveryMessage.PreparationPayloadWitness
+                        new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 3,
                             InvocationScript = new[] { (byte)'1', (byte)'2' }
@@ -340,7 +340,7 @@ namespace Neo.UnitTests
                     },
                     {
                         6,
-                        new RecoveryMessage.PreparationPayloadWitness
+                        new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 6,
                             InvocationScript = new[] { (byte)'3', (byte)'!' }
@@ -360,7 +360,7 @@ namespace Neo.UnitTests
 
             copiedMsg.ChangeViewMessages.ShouldAllBeEquivalentTo(msg.ChangeViewMessages);
             copiedMsg.PreparationHash.Should().Be(msg.PreparationHash);
-            copiedMsg.PreparationWitnesses.ShouldAllBeEquivalentTo(msg.PreparationWitnesses);
+            copiedMsg.PreparationMessages.ShouldAllBeEquivalentTo(msg.PreparationMessages);
             copiedMsg.CommitMessages.Count.Should().Be(0);
         }
 
@@ -424,11 +424,11 @@ namespace Neo.UnitTests
                     MinerTransaction = (MinerTransaction)txs[0]
                 },
                 PreparationHash = new UInt256(Crypto.Default.Hash256(new[] { (byte)'a' })),
-                PreparationWitnesses = new Dictionary<int, RecoveryMessage.PreparationPayloadWitness>()
+                PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
                     {
                         0,
-                        new RecoveryMessage.PreparationPayloadWitness
+                        new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 0,
                             InvocationScript = new[] { (byte)'t', (byte)'e' }
@@ -436,7 +436,7 @@ namespace Neo.UnitTests
                     },
                     {
                         1,
-                        new RecoveryMessage.PreparationPayloadWitness
+                        new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 1,
                             InvocationScript = new[] { (byte)'s', (byte)'t' }
@@ -444,7 +444,7 @@ namespace Neo.UnitTests
                     },
                     {
                         3,
-                        new RecoveryMessage.PreparationPayloadWitness
+                        new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 3,
                             InvocationScript = new[] { (byte)'1', (byte)'2' }
@@ -459,7 +459,7 @@ namespace Neo.UnitTests
             copiedMsg.ChangeViewMessages.ShouldAllBeEquivalentTo(msg.ChangeViewMessages);
             copiedMsg.PrepareRequestMessage.ShouldBeEquivalentTo(msg.PrepareRequestMessage);
             copiedMsg.PreparationHash.Should().Be(null);
-            copiedMsg.PreparationWitnesses.ShouldAllBeEquivalentTo(msg.PreparationWitnesses);
+            copiedMsg.PreparationMessages.ShouldAllBeEquivalentTo(msg.PreparationMessages);
             copiedMsg.CommitMessages.Count.Should().Be(0);
         }
 
@@ -480,11 +480,11 @@ namespace Neo.UnitTests
                     NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
                     MinerTransaction = (MinerTransaction)txs[0]
                 },
-                PreparationWitnesses = new Dictionary<int, RecoveryMessage.PreparationPayloadWitness>()
+                PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
                     {
                         0,
-                        new RecoveryMessage.PreparationPayloadWitness
+                        new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 0,
                             InvocationScript = new[] { (byte)'t', (byte)'e' }
@@ -492,7 +492,7 @@ namespace Neo.UnitTests
                     },
                     {
                         1,
-                        new RecoveryMessage.PreparationPayloadWitness
+                        new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 1,
                             InvocationScript = new[] { (byte)'s', (byte)'t' }
@@ -500,7 +500,7 @@ namespace Neo.UnitTests
                     },
                     {
                         3,
-                        new RecoveryMessage.PreparationPayloadWitness
+                        new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 3,
                             InvocationScript = new[] { (byte)'1', (byte)'2' }
@@ -508,7 +508,7 @@ namespace Neo.UnitTests
                     },
                     {
                         6,
-                        new RecoveryMessage.PreparationPayloadWitness
+                        new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 6,
                             InvocationScript = new[] { (byte)'3', (byte)'!' }
@@ -523,7 +523,7 @@ namespace Neo.UnitTests
             copiedMsg.ChangeViewMessages.Count.Should().Be(0);
             copiedMsg.PrepareRequestMessage.ShouldBeEquivalentTo(msg.PrepareRequestMessage);
             copiedMsg.PreparationHash.Should().Be(null);
-            copiedMsg.PreparationWitnesses.ShouldAllBeEquivalentTo(msg.PreparationWitnesses);
+            copiedMsg.PreparationMessages.ShouldAllBeEquivalentTo(msg.PreparationMessages);
             copiedMsg.CommitMessages.Count.Should().Be(0);
         }
 
@@ -544,11 +544,11 @@ namespace Neo.UnitTests
                     NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
                     MinerTransaction = (MinerTransaction)txs[0]
                 },
-                PreparationWitnesses = new Dictionary<int, RecoveryMessage.PreparationPayloadWitness>()
+                PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
                     {
                         0,
-                        new RecoveryMessage.PreparationPayloadWitness
+                        new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 0,
                             InvocationScript = new[] { (byte)'t', (byte)'e' }
@@ -556,7 +556,7 @@ namespace Neo.UnitTests
                     },
                     {
                         1,
-                        new RecoveryMessage.PreparationPayloadWitness
+                        new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 1,
                             InvocationScript = new[] { (byte)'s', (byte)'t' }
@@ -564,7 +564,7 @@ namespace Neo.UnitTests
                     },
                     {
                         3,
-                        new RecoveryMessage.PreparationPayloadWitness
+                        new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 3,
                             InvocationScript = new[] { (byte)'1', (byte)'2' }
@@ -572,7 +572,7 @@ namespace Neo.UnitTests
                     },
                     {
                         6,
-                        new RecoveryMessage.PreparationPayloadWitness
+                        new RecoveryMessage.PreparationPayloadCompact
                         {
                             ValidatorIndex = 6,
                             InvocationScript = new[] { (byte)'3', (byte)'!' }
@@ -607,7 +607,7 @@ namespace Neo.UnitTests
             copiedMsg.ChangeViewMessages.Count.Should().Be(0);
             copiedMsg.PrepareRequestMessage.ShouldBeEquivalentTo(msg.PrepareRequestMessage);
             copiedMsg.PreparationHash.Should().Be(null);
-            copiedMsg.PreparationWitnesses.ShouldAllBeEquivalentTo(msg.PreparationWitnesses);
+            copiedMsg.PreparationMessages.ShouldAllBeEquivalentTo(msg.PreparationMessages);
             copiedMsg.CommitMessages.ShouldAllBeEquivalentTo(msg.CommitMessages);
         }
 
