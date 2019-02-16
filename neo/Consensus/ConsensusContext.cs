@@ -211,7 +211,7 @@ namespace Neo.Consensus
                     TransactionHashes = TransactionHashes,
                     Nonce = Nonce,
                     NextConsensus = NextConsensus,
-                    MinerTransaction = (MinerTransaction)(TransactionHashes == null ? null : Transactions?[TransactionHashes[0]]),
+                    MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
                     Timestamp = Timestamp
                 };
             }
