@@ -93,13 +93,9 @@ namespace Neo.Consensus
                     transactions[i] = Transaction.DeserializeFrom(reader);
                 Transactions = transactions.ToDictionary(p => p.Hash);
             }
-            var numPreparationPayloads = reader.ReadVarInt();
-            if (numPreparationPayloads > 0)
-            {
-                PreparationPayloads = new ConsensusPayload[numPreparationPayloads];
-                for (int i = 0; i < PreparationPayloads.Length; i++)
-                    PreparationPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
-            }
+            PreparationPayloads = new ConsensusPayload[reader.ReadVarInt()];
+            for (int i = 0; i < PreparationPayloads.Length; i++)
+                PreparationPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
             CommitPayloads = new ConsensusPayload[reader.ReadVarInt()];
             for (int i = 0; i < CommitPayloads.Length; i++)
                 CommitPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
@@ -295,18 +291,13 @@ namespace Neo.Consensus
             writer.Write(NextConsensus ?? UInt160.Zero);
             writer.Write(TransactionHashes ?? new UInt256[0]);
             writer.Write(Transactions?.Values.ToArray() ?? new Transaction[0]);
-            if (PreparationPayloads == null)
-                writer.WriteVarInt(0);
-            else
+            writer.WriteVarInt(PreparationPayloads.Length);
+            foreach (var payload in PreparationPayloads)
             {
-                writer.WriteVarInt(PreparationPayloads.Length);
-                foreach (var payload in PreparationPayloads)
-                {
-                    bool hasPayload = !(payload is null);
-                    writer.Write(hasPayload);
-                    if (!hasPayload) continue;
-                    writer.Write(payload);
-                }
+                bool hasPayload = !(payload is null);
+                writer.Write(hasPayload);
+                if (!hasPayload) continue;
+                writer.Write(payload);
             }
             writer.WriteVarInt(CommitPayloads.Length);
             foreach (var payload in CommitPayloads)
