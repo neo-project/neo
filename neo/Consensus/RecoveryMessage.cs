@@ -3,6 +3,8 @@ using Neo.Ledger;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
 
 namespace Neo.Consensus
 {
@@ -18,6 +20,71 @@ namespace Neo.Consensus
 
         public RecoveryMessage() : base(ConsensusMessageType.RecoveryMessage)
         {
+        }
+
+        internal ConsensusPayload[] GetChangeViewPayloads(IConsensusContext context, ConsensusPayload payload)
+        {
+            return ChangeViewMessages.Values.Select(p => new ConsensusPayload
+            {
+                Version = payload.Version,
+                PrevHash = payload.PrevHash,
+                BlockIndex = payload.BlockIndex,
+                ValidatorIndex = p.ValidatorIndex,
+                ConsensusMessage = new ChangeView
+                {
+                    ViewNumber = p.OriginalViewNumber,
+                    NewViewNumber = ViewNumber,
+                    Timestamp = p.Timestamp
+                },
+                Witness = new Witness
+                {
+                    InvocationScript = p.InvocationScript,
+                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[p.ValidatorIndex])
+                }
+            }).ToArray();
+        }
+
+        internal ConsensusPayload GetPrepareRequestPayload(IConsensusContext context, ConsensusPayload payload)
+        {
+            if (PrepareRequestMessage == null) return null;
+            if (!PreparationMessages.TryGetValue((int)context.PrimaryIndex, out RecoveryMessage.PreparationPayloadCompact compact))
+                return null;
+            return new ConsensusPayload
+            {
+                Version = payload.Version,
+                PrevHash = payload.PrevHash,
+                BlockIndex = payload.BlockIndex,
+                ValidatorIndex = (ushort)context.PrimaryIndex,
+                ConsensusMessage = PrepareRequestMessage,
+                Witness = new Witness
+                {
+                    InvocationScript = compact.InvocationScript,
+                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[context.PrimaryIndex])
+                }
+            };
+        }
+
+        internal ConsensusPayload[] GetPrepareResponsePayloads(IConsensusContext context, ConsensusPayload payload, ConsensusPayload prepareRequestPayload = null)
+        {
+            UInt256 preparationHash = PreparationHash ?? prepareRequestPayload?.Hash;
+            if (preparationHash is null) return new ConsensusPayload[0];
+            return PreparationMessages.Values.Where(p => p.ValidatorIndex != context.PrimaryIndex).Select(p => new ConsensusPayload
+            {
+                Version = payload.Version,
+                PrevHash = payload.PrevHash,
+                BlockIndex = payload.BlockIndex,
+                ValidatorIndex = p.ValidatorIndex,
+                ConsensusMessage = new PrepareResponse
+                {
+                    ViewNumber = ViewNumber,
+                    PreparationHash = preparationHash
+                },
+                Witness = new Witness
+                {
+                    InvocationScript = p.InvocationScript,
+                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[p.ValidatorIndex])
+                }
+            }).ToArray();
         }
 
         public override void Deserialize(BinaryReader reader)

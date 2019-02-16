@@ -131,28 +131,6 @@ namespace Neo.Consensus
             }
         }
 
-        private static ConsensusPayload[] GetChangeViewPayloadsFromRecoveryMessage(IConsensusContext context, ConsensusPayload payload, RecoveryMessage message)
-        {
-            return message.ChangeViewMessages.Values.Select(p => new ConsensusPayload
-            {
-                Version = payload.Version,
-                PrevHash = payload.PrevHash,
-                BlockIndex = payload.BlockIndex,
-                ValidatorIndex = p.ValidatorIndex,
-                ConsensusMessage = new ChangeView
-                {
-                    ViewNumber = p.OriginalViewNumber,
-                    NewViewNumber = message.ViewNumber,
-                    Timestamp = p.Timestamp
-                },
-                Witness = new Witness
-                {
-                    InvocationScript = p.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[p.ValidatorIndex])
-                }
-            }).ToArray();
-        }
-
         private static ConsensusPayload[] GetCommitPayloadsFromRecoveryMessage(IConsensusContext context, ConsensusPayload payload, RecoveryMessage message)
         {
             return message.CommitMessages.Values.Select(p => new ConsensusPayload
@@ -181,49 +159,6 @@ namespace Neo.Consensus
                 return lastPreparationPayload.GetDeserializedMessage<ConsensusMessage>().ViewNumber;
 
             return context.ChangeViewPayloads[validatorIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber ?? (byte)0;
-        }
-
-        private static ConsensusPayload GetPrepareRequestPayloadFromRecoveryMessage(IConsensusContext context, ConsensusPayload payload, RecoveryMessage message)
-        {
-            if (message.PrepareRequestMessage == null) return null;
-            if (!message.PreparationMessages.TryGetValue((int)context.PrimaryIndex, out RecoveryMessage.PreparationPayloadCompact compact))
-                return null;
-            return new ConsensusPayload
-            {
-                Version = payload.Version,
-                PrevHash = payload.PrevHash,
-                BlockIndex = payload.BlockIndex,
-                ValidatorIndex = (ushort)context.PrimaryIndex,
-                ConsensusMessage = message.PrepareRequestMessage,
-                Witness = new Witness
-                {
-                    InvocationScript = compact.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[context.PrimaryIndex])
-                }
-            };
-        }
-
-        private static ConsensusPayload[] GetPrepareResponsePayloadsFromRecoveryMessage(IConsensusContext context, ConsensusPayload payload, RecoveryMessage message, ConsensusPayload prepareRequestPayload = null)
-        {
-            UInt256 preparationHash = message.PreparationHash ?? prepareRequestPayload?.Hash;
-            if (preparationHash is null) return new ConsensusPayload[0];
-            return message.PreparationMessages.Values.Where(p => p.ValidatorIndex != context.PrimaryIndex).Select(p => new ConsensusPayload
-            {
-                Version = payload.Version,
-                PrevHash = payload.PrevHash,
-                BlockIndex = payload.BlockIndex,
-                ValidatorIndex = p.ValidatorIndex,
-                ConsensusMessage = new PrepareResponse
-                {
-                    ViewNumber = message.ViewNumber,
-                    PreparationHash = preparationHash
-                },
-                Witness = new Witness
-                {
-                    InvocationScript = p.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[p.ValidatorIndex])
-                }
-            }).ToArray();
         }
 
         private void InitializeConsensus(byte viewNumber)
@@ -367,17 +302,17 @@ namespace Neo.Consensus
             {
                 if (context.State.HasFlag(ConsensusState.CommitSent))
                     return;
-                ConsensusPayload[] changeViewPayloads = GetChangeViewPayloadsFromRecoveryMessage(context, payload, message);
+                ConsensusPayload[] changeViewPayloads = message.GetChangeViewPayloads(context, payload);
                 foreach (ConsensusPayload changeViewPayload in changeViewPayloads)
                     ReverifyAndProcessPayload(changeViewPayload);
             }
             if (message.ViewNumber != context.ViewNumber) return;
             if (!context.State.HasFlag(ConsensusState.CommitSent))
             {
-                ConsensusPayload prepareRequestPayload = GetPrepareRequestPayloadFromRecoveryMessage(context, payload, message);
+                ConsensusPayload prepareRequestPayload = message.GetPrepareRequestPayload(context, payload);
                 if (prepareRequestPayload != null && !context.State.HasFlag(ConsensusState.RequestSent) && !context.State.HasFlag(ConsensusState.RequestReceived))
                     ReverifyAndProcessPayload(prepareRequestPayload);
-                ConsensusPayload[] prepareResponsePayloads = GetPrepareResponsePayloadsFromRecoveryMessage(context, payload, message, prepareRequestPayload);
+                ConsensusPayload[] prepareResponsePayloads = message.GetPrepareResponsePayloads(context, payload, prepareRequestPayload);
                 foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
                     ReverifyAndProcessPayload(prepareResponsePayload);
             }
