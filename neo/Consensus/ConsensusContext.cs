@@ -124,9 +124,6 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeChangeView(byte newViewNumber)
         {
-            // Change view messages use the current time as their timestamp. This allows receiving nodes to ensure
-            // they only respond once to a specific ChangeView request (it thus prevents other nodes repeatedly
-            // broadcasting the ChangeView message to cause CN nodes to repeatedly send recovery messages).
             return MakeSignedPayload(new ChangeView
             {
                 NewViewNumber = newViewNumber,
