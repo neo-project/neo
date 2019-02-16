@@ -211,6 +211,7 @@ namespace Neo.Consensus
         private static ConsensusPayload[] GetPrepareResponsePayloadsFromRecoveryMessage(IConsensusContext context, ConsensusPayload payload, RecoveryMessage message, ConsensusPayload prepareRequestPayload = null)
         {
             UInt256 preparationHash = message.PreparationHash ?? prepareRequestPayload?.Hash;
+            if (preparationHash is null) return new ConsensusPayload[0];
             return message.PreparationMessages.Values.Where(p => p.ValidatorIndex != context.PrimaryIndex).Select(p => new ConsensusPayload
             {
                 Version = payload.Version,
@@ -290,7 +291,7 @@ namespace Neo.Consensus
                 knownHashes.Add(payload.Hash);
 
                 Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber}");
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage(message.ViewNumber) });
                 return;
             }
 
@@ -551,7 +552,7 @@ namespace Neo.Consensus
                 {
                     // Re-send commit periodically by sending recover message in case of a network issue.
                     Log($"send recovery to resend commit");
-                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
+                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage(0) });
                     ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << 1));
                 }
                 else
