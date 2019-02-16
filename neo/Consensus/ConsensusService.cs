@@ -269,38 +269,6 @@ namespace Neo.Consensus
             InitializeConsensus(0);
         }
 
-        private void ObtainTransactionsForConsensus()
-        {
-            Dictionary<UInt256, Transaction> mempoolVerified =
-                Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
-            List<Transaction> unverified = new List<Transaction>();
-            foreach (UInt256 hash in context.TransactionHashes.Skip(1))
-            {
-                if (mempoolVerified.TryGetValue(hash, out Transaction tx))
-                {
-                    if (!AddTransaction(tx, false))
-                        return;
-                }
-                else
-                {
-                    if (Blockchain.Singleton.MemPool.TryGetValue(hash, out tx))
-                        unverified.Add(tx);
-                }
-            }
-
-            foreach (Transaction tx in unverified)
-                if (!AddTransaction(tx, true))
-                    return;
-            if (context.Transactions.Count < context.TransactionHashes.Length)
-            {
-                UInt256[] hashes = context.TransactionHashes.Where(i => !context.Transactions.ContainsKey(i)).ToArray();
-                taskManager.Tell(new TaskManager.RestartTasks
-                {
-                    Payload = InvPayload.Create(InventoryType.TX, hashes)
-                });
-            }
-        }
-
         private void OnRecoveryMessageReceived(ConsensusPayload payload, RecoveryMessage message)
         {
             if (message.ViewNumber < context.ViewNumber) return;
@@ -363,10 +331,34 @@ namespace Neo.Consensus
                 if (context.CommitPayloads[i] != null)
                     if (!Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
                         context.CommitPayloads[i] = null;
+            Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
 
+            List<Transaction> unverified = new List<Transaction>();
+            foreach (UInt256 hash in context.TransactionHashes.Skip(1))
+            {
+                if (mempoolVerified.TryGetValue(hash, out Transaction tx))
+                {
+                    if (!AddTransaction(tx, false))
+                        return;
+                }
+                else
+                {
+                    if (Blockchain.Singleton.MemPool.TryGetValue(hash, out tx))
+                        unverified.Add(tx);
+                }
+            }
+            foreach (Transaction tx in unverified)
+                if (!AddTransaction(tx, true))
+                    return;
             if (!AddTransaction(message.MinerTransaction, true)) return;
-
-            ObtainTransactionsForConsensus();
+            if (context.Transactions.Count < context.TransactionHashes.Length)
+            {
+                UInt256[] hashes = context.TransactionHashes.Where(i => !context.Transactions.ContainsKey(i)).ToArray();
+                taskManager.Tell(new TaskManager.RestartTasks
+                {
+                    Payload = InvPayload.Create(InventoryType.TX, hashes)
+                });
+            }
         }
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
