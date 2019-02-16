@@ -260,8 +260,7 @@ namespace Neo.Consensus
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
-            // Node in commit receiving ChangeView should always send the recovery message, to restore
-            // nodes that may have counted their view number past the view that has commit set.
+            // Node in commit receiving ChangeView should always send the recovery message.
             bool shouldSendRecovery = context.State.HasFlag(ConsensusState.CommitSent);
             if (shouldSendRecovery || message.NewViewNumber < context.ViewNumber)
             {
