@@ -46,7 +46,7 @@ namespace Neo.Consensus
 
         ConsensusPayload MakePrepareRequest();
 
-        ConsensusPayload MakeRecoveryMessage();
+        ConsensusPayload MakeRecoveryMessage(byte requestedViewNumber);
 
         ConsensusPayload MakePrepareResponse(UInt256 preparation);
 

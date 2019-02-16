@@ -54,10 +54,7 @@ namespace Neo.Consensus
             }
 
             writer.Write(PreparationMessages.Values.ToArray());
-            if (CommitMessages == null)
-                writer.WriteVarInt(0);
-            else
-                writer.Write(CommitMessages.Values.ToArray());
+            writer.Write(CommitMessages.Values.ToArray());
         }
     }
 }
