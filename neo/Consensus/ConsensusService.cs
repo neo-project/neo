@@ -566,6 +566,10 @@ namespace Neo.Consensus
             if (transaction.Type == TransactionType.MinerTransaction) return;
             if (!context.State.HasFlag(ConsensusState.Backup) || !context.State.HasFlag(ConsensusState.RequestReceived) || context.State.HasFlag(ConsensusState.ResponseSent) || context.State.HasFlag(ConsensusState.ViewChanging) || context.State.HasFlag(ConsensusState.BlockSent))
                 return;
+            // If we are changing view but we already have enough preparation payloads to commit in the current view,
+            // we must keep on accepting transactions in the current view to be able to create the block.
+            if (context.State.HasFlag(ConsensusState.ViewChanging) &&
+                context.PreparationPayloads.Count(p => p != null) < context.M) return;
             if (context.Transactions.ContainsKey(transaction.Hash)) return;
             if (!context.TransactionHashes.Contains(transaction.Hash)) return;
             AddTransaction(transaction, true);
