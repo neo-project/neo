@@ -200,7 +200,6 @@ namespace Neo.Consensus
                 BlockIndex = payload.BlockIndex,
                 ValidatorIndex = (ushort)context.PrimaryIndex,
                 ConsensusMessage = message.PrepareRequestMessage,
-                Data = message.PrepareRequestMessage.ToArray(),
                 Witness = new Witness
                 {
                     InvocationScript = compact.InvocationScript,
