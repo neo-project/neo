@@ -4,6 +4,7 @@ using Neo.IO.Wrappers;
 using Neo.Ledger;
 using Neo.Persistence;
 using System;
+using Neo.Persistence.LevelDB;
 
 namespace Neo.UnitTests
 {
@@ -32,6 +33,7 @@ namespace Neo.UnitTests
                 mockSnapshot.SetupGet(p => p.HeaderHashIndex).Returns(new TestMetaDataCache<HashIndexState>());
 
                 var mockStore = new Mock<Store>();
+                mockStore.Setup(p => p.Get(Prefixes.CN_Context, It.IsAny<byte[]>())).Returns((byte[]) null);
 
                 var defaultTx = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
                 mockStore.Setup(p => p.GetBlocks()).Returns(new TestDataCache<UInt256, BlockState>());

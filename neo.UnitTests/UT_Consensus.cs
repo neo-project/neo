@@ -43,7 +43,6 @@ namespace Neo.UnitTests
 
             var mockConsensusContext = new Mock<IConsensusContext>();
             var mockStore = new Mock<Store>();
-            mockStore.Setup(p => p.Get(Prefixes.CN_Context, It.IsAny<byte[]>())).Returns((byte[]) null);
 
             // context.Reset(): do nothing
             //mockConsensusContext.Setup(mr => mr.Reset()).Verifiable(); // void
