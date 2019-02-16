@@ -70,13 +70,12 @@ namespace Neo.Consensus
             {
                 if (context.VerifyRequest())
                 {
-                    context.State |= ConsensusState.ResponseSent;
-
                     // if we are the primary for this view, but acting as a backup because we recovered our own
                     // previously sent prepare request, then we don't want to send a prepare response.
                     if (context.MyIndex == context.PrimaryIndex) return true;
 
                     Log($"send prepare response");
+                    context.State |= ConsensusState.ResponseSent;
                     var payload = context.MakePrepareResponse(context.PreparationPayloads[context.PrimaryIndex].Hash);
                     context.PreparationPayloads[context.MyIndex] = payload;
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
