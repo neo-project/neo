@@ -228,11 +228,11 @@ namespace Neo.Consensus
             });
         }
 
-        public ConsensusPayload MakePrepareResponse(UInt256 preparation)
+        public ConsensusPayload MakePrepareResponse()
         {
-            return MakeSignedPayload(new PrepareResponse
+            return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareResponse
             {
-                PreparationHash = preparation
+                PreparationHash = PreparationPayloads[PrimaryIndex].Hash
             });
         }
 

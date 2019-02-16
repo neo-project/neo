@@ -76,9 +76,7 @@ namespace Neo.Consensus
 
                     Log($"send prepare response");
                     context.State |= ConsensusState.ResponseSent;
-                    var payload = context.MakePrepareResponse(context.PreparationPayloads[context.PrimaryIndex].Hash);
-                    context.PreparationPayloads[context.MyIndex] = payload;
-                    localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
+                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
                     CheckPreparations();
                 }
                 else
