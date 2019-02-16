@@ -1,4 +1,5 @@
-﻿using Neo.Cryptography;
+﻿using Neo.Consensus;
+using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Persistence;
@@ -6,7 +7,6 @@ using Neo.SmartContract;
 using Neo.VM;
 using System;
 using System.IO;
-using Neo.Consensus;
 
 namespace Neo.Network.P2P.Payloads
 {

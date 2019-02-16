@@ -1,12 +1,12 @@
-﻿using Neo.Cryptography.ECC;
+﻿using Moq;
+using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Moq;
-using Neo.IO;
-using Neo.Persistence;
 
 namespace Neo.UnitTests
 {
@@ -133,7 +133,7 @@ namespace Neo.UnitTests
             tx.Inputs = new CoinReference[0];
             tx.Outputs = new TransactionOutput[0];
             tx.Witnesses = new Witness[0];
-            tx.Nonce = (uint) TestRandom.Next();
+            tx.Nonce = (uint)TestRandom.Next();
             return mockTx;
         }
 

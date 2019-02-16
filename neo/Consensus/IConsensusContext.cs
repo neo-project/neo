@@ -1,9 +1,9 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using System;
 using System.Collections.Generic;
-using Neo.Persistence;
 
 namespace Neo.Consensus
 {

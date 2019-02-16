@@ -1,14 +1,10 @@
-﻿using System;
+﻿using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using Neo.Ledger;
-using FluentAssertions;
-using Neo.Cryptography.ECC;
-using Neo.IO.Wrappers;
-using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 
 namespace Neo.UnitTests
 {
@@ -41,7 +37,7 @@ namespace Neo.UnitTests
         long LongRandom(long min, long max, Random rand)
         {
             // Only returns positive random long values.
-            long longRand = (long) rand.NextBigInteger(63);
+            long longRand = (long)rand.NextBigInteger(63);
             return longRand % (max - min) + min;
         }
 
@@ -75,11 +71,11 @@ namespace Neo.UnitTests
             return CreateMockTransactionWithFee(rNetFee);
         }
 
-        private  void AddTransactions(int count, bool isHighPriority=false)
+        private void AddTransactions(int count, bool isHighPriority = false)
         {
             for (int i = 0; i < count; i++)
             {
-                var txToAdd = isHighPriority ? CreateMockHighPriorityTransaction(): CreateMockLowPriorityTransaction();
+                var txToAdd = isHighPriority ? CreateMockHighPriorityTransaction() : CreateMockLowPriorityTransaction();
                 Console.WriteLine($"created tx: {txToAdd.Hash}");
                 _unit.TryAdd(txToAdd.Hash, txToAdd);
             }
@@ -278,7 +274,7 @@ namespace Neo.UnitTests
                 verifiedTxs.Length.ShouldBeEquivalentTo(2);
                 verifiedTxs[0].ShouldBeEquivalentTo(maxHighPriorityTransaction);
                 verifiedTxs[1].ShouldBeEquivalentTo(maxLowPriorityTransaction);
-                var blockWith2Tx = new Block { Transactions = new Transaction[2] { maxHighPriorityTransaction, maxLowPriorityTransaction }};
+                var blockWith2Tx = new Block { Transactions = new Transaction[2] { maxHighPriorityTransaction, maxLowPriorityTransaction } };
                 // verify and remove the 2 transactions from the verified pool
                 _unit.UpdatePoolForBlockPersisted(blockWith2Tx, Blockchain.Singleton.GetSnapshot());
                 _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(0);

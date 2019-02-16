@@ -8,7 +8,6 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
-using Neo.SmartContract;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -129,27 +128,6 @@ namespace Neo.Consensus
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock));
                 CheckCommits();
             }
-        }
-
-        private static ConsensusPayload[] GetCommitPayloadsFromRecoveryMessage(IConsensusContext context, ConsensusPayload payload, RecoveryMessage message)
-        {
-            return message.CommitMessages.Values.Select(p => new ConsensusPayload
-            {
-                Version = payload.Version,
-                PrevHash = payload.PrevHash,
-                BlockIndex = payload.BlockIndex,
-                ValidatorIndex = p.ValidatorIndex,
-                ConsensusMessage = new Commit
-                {
-                    ViewNumber = message.ViewNumber,
-                    Signature = p.Signature
-                },
-                Witness = new Witness
-                {
-                    InvocationScript = p.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[p.ValidatorIndex])
-                }
-            }).ToArray();
         }
 
         private byte GetLastExpectedView(int validatorIndex)
@@ -316,7 +294,7 @@ namespace Neo.Consensus
                 foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
                     ReverifyAndProcessPayload(prepareResponsePayload);
             }
-            ConsensusPayload[] commitPayloads = GetCommitPayloadsFromRecoveryMessage(context, payload, message);
+            ConsensusPayload[] commitPayloads = message.GetCommitPayloadsFromRecoveryMessage(context, payload);
             foreach (ConsensusPayload commitPayload in commitPayloads)
                 ReverifyAndProcessPayload(commitPayload);
         }
@@ -525,8 +503,7 @@ namespace Neo.Consensus
             expectedView++;
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView} state={context.State}");
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (expectedView + 1)));
-            var changeViewPayload = context.MakeChangeView(expectedView);
-            localNode.Tell(new LocalNode.SendDirectly { Inventory = changeViewPayload });
+            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(expectedView) });
             CheckExpectedView(expectedView);
         }
 
