@@ -214,6 +214,7 @@ namespace Neo.Consensus
             {
                 prepareRequestMessage = new PrepareRequest
                 {
+                    ViewNumber = ViewNumber,
                     TransactionHashes = TransactionHashes,
                     Nonce = Nonce,
                     NextConsensus = NextConsensus,
