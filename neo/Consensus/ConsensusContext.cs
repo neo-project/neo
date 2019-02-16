@@ -54,11 +54,11 @@ namespace Neo.Consensus
             Contract contract = Contract.CreateMultiSigContract(M, Validators);
             ContractParametersContext sc = new ContractParametersContext(block);
             for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
-                if (CommitPayloads[i] != null)
-                {
-                    sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
-                    j++;
-                }
+            {
+                if (CommitPayloads[i] == null) continue;
+                sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
+                j++;
+            }
             sc.Verifiable.Witnesses = sc.GetWitnesses();
             block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
             return block;
@@ -256,12 +256,10 @@ namespace Neo.Consensus
                 for (int i = 0; i < Validators.Length; i++)
                 {
                     WalletAccount account = wallet.GetAccount(Validators[i]);
-                    if (account?.HasKey == true)
-                    {
-                        MyIndex = i;
-                        keyPair = account.GetKey();
-                        break;
-                    }
+                    if (account?.HasKey != true) continue;
+                    MyIndex = i;
+                    keyPair = account.GetKey();
+                    break;
                 }
             }
             else
