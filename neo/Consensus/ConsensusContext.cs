@@ -227,7 +227,7 @@ namespace Neo.Consensus
                 PrepareRequestMessage = prepareRequestMessage,
                 // We only need a PreparationHash set if we don't have the PrepareRequest information.
                 PreparationHash = TransactionHashes == null ? PreparationPayloads.Where(p => p != null).GroupBy(p => p.GetDeserializedMessage<PrepareResponse>().PreparationHash, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
-                PreparationMessages = PreparationPayloads.Where(p => p != null).Select(p => RecoveryMessage.PreparationPayloadCompact.FromPayload(p)).ToDictionary(p => (int)p.ValidatorIndex),
+                PreparationWitnesses = PreparationPayloads.Where(p => p != null).Select(p => RecoveryMessage.PreparationPayloadWitness.FromPayload(p)).ToDictionary(p => (int)p.ValidatorIndex),
                 CommitMessages = State.HasFlag(ConsensusState.CommitSent)
                     ? CommitPayloads.Where(p => p != null).Select(p => RecoveryMessage.CommitPayloadCompact.FromPayload(p)).ToDictionary(p => (int)p.ValidatorIndex)
                     : null

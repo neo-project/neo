@@ -6,7 +6,7 @@ namespace Neo.Consensus
 {
     partial class RecoveryMessage
     {
-        public class PreparationPayloadCompact : ISerializable
+        public class PreparationPayloadWitness : ISerializable
         {
             public ushort ValidatorIndex;
             public byte[] InvocationScript;
@@ -21,9 +21,9 @@ namespace Neo.Consensus
                 InvocationScript = reader.ReadVarBytes(1024);
             }
 
-            public static PreparationPayloadCompact FromPayload(ConsensusPayload payload)
+            public static PreparationPayloadWitness FromPayload(ConsensusPayload payload)
             {
-                return new PreparationPayloadCompact
+                return new PreparationPayloadWitness
                 {
                     ValidatorIndex = payload.ValidatorIndex,
                     InvocationScript = payload.Witness.InvocationScript

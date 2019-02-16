@@ -191,7 +191,7 @@ namespace Neo.Consensus
         private static ConsensusPayload GetPrepareRequestPayloadFromRecoveryMessage(IConsensusContext context, ConsensusPayload payload, RecoveryMessage message)
         {
             if (message.PrepareRequestMessage == null) return null;
-            if (!message.PreparationMessages.TryGetValue((int)context.PrimaryIndex, out RecoveryMessage.PreparationPayloadCompact compact))
+            if (!message.PreparationWitnesses.TryGetValue((int)context.PrimaryIndex, out RecoveryMessage.PreparationPayloadWitness compact))
                 return null;
             return new ConsensusPayload
             {
@@ -211,7 +211,7 @@ namespace Neo.Consensus
         private static ConsensusPayload[] GetPrepareResponsePayloadsFromRecoveryMessage(IConsensusContext context, ConsensusPayload payload, RecoveryMessage message, ConsensusPayload prepareRequestPayload = null)
         {
             UInt256 preparationHash = message.PreparationHash ?? prepareRequestPayload?.Hash;
-            return message.PreparationMessages.Values.Where(p => p.ValidatorIndex != context.PrimaryIndex).Select(p => new ConsensusPayload
+            return message.PreparationWitnesses.Values.Where(p => p.ValidatorIndex != context.PrimaryIndex).Select(p => new ConsensusPayload
             {
                 Version = payload.Version,
                 PrevHash = payload.PrevHash,
@@ -564,7 +564,7 @@ namespace Neo.Consensus
         private void OnTransaction(Transaction transaction)
         {
             if (transaction.Type == TransactionType.MinerTransaction) return;
-            if (!context.State.HasFlag(ConsensusState.Backup) || !context.State.HasFlag(ConsensusState.RequestReceived) || context.State.HasFlag(ConsensusState.ResponseSent) || context.State.HasFlag(ConsensusState.ViewChanging) || context.State.HasFlag(ConsensusState.BlockSent))
+            if (!context.State.HasFlag(ConsensusState.Backup) || !context.State.HasFlag(ConsensusState.RequestReceived) || context.State.HasFlag(ConsensusState.ResponseSent) || context.State.HasFlag(ConsensusState.BlockSent))
                 return;
             if (context.Transactions.ContainsKey(transaction.Hash)) return;
             if (!context.TransactionHashes.Contains(transaction.Hash)) return;
