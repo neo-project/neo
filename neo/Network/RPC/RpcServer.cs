@@ -671,6 +671,10 @@ namespace Neo.Network.RPC
             }
             catch (Exception ex)
             {
+                if (ex is FormatException || ex is IndexOutOfRangeException)
+                {
+                    return CreateErrorResponse(request["id"], -32602, "Wrong parameters");
+                }
 #if DEBUG
                 return CreateErrorResponse(request["id"], ex.HResult, ex.Message, ex.StackTrace);
 #else
