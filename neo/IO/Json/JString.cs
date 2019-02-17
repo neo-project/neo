@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
-using System.Reflection;
 using System.Text;
 using System.Text.Encodings.Web;
 
@@ -18,60 +17,18 @@ namespace Neo.IO.Json
 
         public override bool AsBoolean()
         {
-            switch (Value.ToLower())
-            {
-                case "0":
-                case "f":
-                case "false":
-                case "n":
-                case "no":
-                case "off":
-                    return false;
-                default:
-                    return true;
-            }
-        }
-
-        public override T AsEnum<T>(bool ignoreCase = false)
-        {
-            try
-            {
-                return (T)Enum.Parse(typeof(T), Value, ignoreCase);
-            }
-            catch
-            {
-                throw new InvalidCastException();
-            }
+            return !string.IsNullOrEmpty(Value);
         }
 
         public override double AsNumber()
         {
-            try
-            {
-                return double.Parse(Value);
-            }
-            catch
-            {
-                throw new InvalidCastException();
-            }
+            if (string.IsNullOrEmpty(Value)) return 0;
+            return double.TryParse(Value, out double result) ? result : double.NaN;
         }
 
         public override string AsString()
         {
             return Value;
-        }
-
-        public override bool CanConvertTo(Type type)
-        {
-            if (type == typeof(bool))
-                return true;
-            if (type.GetTypeInfo().IsEnum && Enum.IsDefined(type, Value))
-                return true;
-            if (type == typeof(double))
-                return true;
-            if (type == typeof(string))
-                return true;
-            return false;
         }
 
         internal static JString Parse(TextReader reader)
@@ -111,6 +68,18 @@ namespace Neo.IO.Json
         public override string ToString()
         {
             return $"\"{JavaScriptEncoder.Default.Encode(Value)}\"";
+        }
+
+        public override T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false)
+        {
+            try
+            {
+                return (T)Enum.Parse(typeof(T), Value, ignoreCase);
+            }
+            catch
+            {
+                return defaultValue;
+            }
         }
     }
 }
