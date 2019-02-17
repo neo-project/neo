@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Neo.IO.Json
@@ -50,6 +51,11 @@ namespace Neo.IO.Json
         public void Add(JObject item)
         {
             items.Add(item);
+        }
+
+        public override string AsString()
+        {
+            return string.Join(",", items.Select(p => p?.AsString()));
         }
 
         public void Clear()
