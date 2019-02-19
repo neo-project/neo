@@ -1,12 +1,9 @@
 ﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using Neo.IO;
 using Neo.IO.Data.LevelDB;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Persistence.LevelDB;
 
 namespace Neo.Consensus
 {
