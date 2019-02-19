@@ -112,7 +112,12 @@ namespace Neo.Consensus
         {
             if (context.ViewNumber == viewNumber) return;
             if (context.ChangeViewPayloads.Count(p => p != null && p.GetDeserializedMessage<ChangeView>().NewViewNumber == viewNumber) >= context.M)
+            {
+                ChangeView message = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
+                if (message is null || message.NewViewNumber < viewNumber)
+                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
                 InitializeConsensus(viewNumber);
+            }
         }
 
         private void CheckPreparations()
@@ -499,7 +504,8 @@ namespace Neo.Consensus
         private void RequestChangeView()
         {
             context.State |= ConsensusState.ViewChanging;
-            byte expectedView = GetLastExpectedView(context.MyIndex);
+            byte expectedView = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber ?? 0;
+            if (expectedView < context.ViewNumber) expectedView = context.ViewNumber;
             expectedView++;
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView} state={context.State}");
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (expectedView + 1)));
