@@ -77,8 +77,7 @@ namespace Neo
             };
             if (!suspend)
             {
-                var consensusTransactions = Neo.Consensus.Helper.RetreiveTransactionsFromSavedConsensusContext(
-                    Ledger.Blockchain.Singleton.MemPool, blockchainStore, consensusStore);
+                var consensusTransactions = Neo.Consensus.Helper.RetreiveTransactionsFromSavedConsensusContext(consensusStore);
                 foreach (var tx in consensusTransactions)
                     Blockchain.Tell(tx, ActorRefs.NoSender);
 

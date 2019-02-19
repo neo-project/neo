@@ -40,11 +40,11 @@ namespace Neo.Consensus
             return false;
         }
 
-        internal static IEnumerable<Transaction> RetreiveTransactionsFromSavedConsensusContext(MemoryPool memoryPool, Store store, Store consensusStore)
+        internal static IEnumerable<Transaction> RetreiveTransactionsFromSavedConsensusContext(Store consensusStore)
         {
             IConsensusContext context = new ConsensusContext(null);
             context.LoadContextFromStore(consensusStore, false);
-            return context.Transactions?.Values;
+            return context.Transactions?.Values ?? (IEnumerable<Transaction>) new Transaction[0];
         }
     }
 }
