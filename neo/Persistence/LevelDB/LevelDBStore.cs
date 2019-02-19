@@ -116,7 +116,7 @@ namespace Neo.Persistence.LevelDB
         {
             if (writeOptions == null)
                 writeOptions = WriteOptions.Default;
-            db.Put(WriteOptions.Default, SliceBuilder.Begin(prefix).Add(key), value);
+            db.Put(writeOptions, SliceBuilder.Begin(prefix).Add(key), value);
         }
     }
 }
