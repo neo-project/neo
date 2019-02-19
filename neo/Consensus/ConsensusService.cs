@@ -174,37 +174,32 @@ namespace Neo.Consensus
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
-            // Node in commit receiving ChangeView should always send the recovery message.
-            bool shouldSendRecovery = context.State.HasFlag(ConsensusState.CommitSent);
-            if (shouldSendRecovery || message.NewViewNumber < context.ViewNumber)
+            // We keep track of the payload hashes received in this block, and don't respond with recovery
+            // in response to the same payload that we already responded to previously.
+            // ChangeView messages include a Timestamp when the change view is sent, thus if a node restarts
+            // and issues a change view for the same view, it will have a different hash and will correctly respond
+            // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
+            // additonal recovery message response.
+            if (!knownHashes.Add(payload.Hash)) return;
+            if (message.NewViewNumber <= context.ViewNumber)
             {
-                if (!shouldSendRecovery)
+                bool shouldSendRecovery = false;
+                // Limit recovery to sending from `f` nodes when the request is from a lower view number.
+                int allowedRecoveryNodeCount = context.F;
+                for (int i = 0; i < allowedRecoveryNodeCount; i++)
                 {
-                    // Limit recovery to sending from `f` nodes when the request is from a lower view number.
-                    int allowedRecoveryNodeCount = context.F;
-                    for (int i = 0; i < allowedRecoveryNodeCount; i++)
-                    {
-                        var eligibleResponders = context.Validators.Length - 1;
-                        var chosenIndex = (payload.ValidatorIndex + i + message.NewViewNumber) % eligibleResponders;
-                        if (chosenIndex >= payload.ValidatorIndex) chosenIndex++;
-                        if (chosenIndex != context.MyIndex) continue;
-                        shouldSendRecovery = true;
-                        break;
-                    }
+                    var eligibleResponders = context.Validators.Length - 1;
+                    var chosenIndex = (payload.ValidatorIndex + i + message.NewViewNumber) % eligibleResponders;
+                    if (chosenIndex >= payload.ValidatorIndex) chosenIndex++;
+                    if (chosenIndex != context.MyIndex) continue;
+                    shouldSendRecovery = true;
+                    break;
                 }
 
-                // We keep track of the payload hashes received in this block, and don't respond with recovery
-                // in response to the same payload that we already responded to previously.
-                // ChangeView messages include a Timestamp when the change view is sent, thus if a node restarts
-                // and issues a change view for the same view, it will have a different hash and will correctly respond
-                // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
-                // additonal recovery message response.
-                if (!shouldSendRecovery || knownHashes.Contains(payload.Hash)) return;
-                knownHashes.Add(payload.Hash);
+                if (!shouldSendRecovery) return;
 
                 Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber}");
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
-                return;
             }
 
             var expectedView = GetLastExpectedView(payload.ValidatorIndex);
@@ -330,7 +325,7 @@ namespace Neo.Consensus
             context.Transactions = new Dictionary<UInt256, Transaction>();
             for (int i = 0; i < context.PreparationPayloads.Length; i++)
                 if (context.PreparationPayloads[i] != null)
-                    if (!context.PreparationPayloads[i].Hash.Equals(payload.Hash))
+                    if (!context.PreparationPayloads[i].GetDeserializedMessage<PrepareResponse>().PreparationHash.Equals(payload.Hash))
                         context.PreparationPayloads[i] = null;
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
             byte[] hashData = context.MakeHeader().GetHashData();
@@ -374,10 +369,10 @@ namespace Neo.Consensus
             if (context.PreparationPayloads[context.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.PrimaryIndex].Hash))
                 return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
-            if (context.State.HasFlag(ConsensusState.CommitSent)) return;
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
             if (payload.ValidatorIndex == context.MyIndex)
                 context.State |= ConsensusState.ResponseSent;
+            if (context.State.HasFlag(ConsensusState.CommitSent)) return;
             if (context.State.HasFlag(ConsensusState.RequestSent) || context.State.HasFlag(ConsensusState.RequestReceived))
                 CheckPreparations();
         }
