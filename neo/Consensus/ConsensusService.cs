@@ -325,7 +325,7 @@ namespace Neo.Consensus
             context.Transactions = new Dictionary<UInt256, Transaction>();
             for (int i = 0; i < context.PreparationPayloads.Length; i++)
                 if (context.PreparationPayloads[i] != null)
-                    if (!context.PreparationPayloads[i].Hash.Equals(payload.Hash))
+                    if (!context.PreparationPayloads[i].GetDeserializedMessage<PrepareResponse>().PreparationHash.Equals(payload.Hash))
                         context.PreparationPayloads[i] = null;
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
             byte[] hashData = context.MakeHeader().GetHashData();
@@ -369,10 +369,10 @@ namespace Neo.Consensus
             if (context.PreparationPayloads[context.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.PrimaryIndex].Hash))
                 return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
-            if (context.State.HasFlag(ConsensusState.CommitSent)) return;
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
             if (payload.ValidatorIndex == context.MyIndex)
                 context.State |= ConsensusState.ResponseSent;
+            if (context.State.HasFlag(ConsensusState.CommitSent)) return;
             if (context.State.HasFlag(ConsensusState.RequestSent) || context.State.HasFlag(ConsensusState.RequestReceived))
                 CheckPreparations();
         }
