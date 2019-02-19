@@ -1,7 +1,10 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
 using Neo.IO;
 using Neo.IO.Data.LevelDB;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Persistence.LevelDB;
 
@@ -37,16 +40,11 @@ namespace Neo.Consensus
             return false;
         }
 
-        internal static void LoadTransactionsToMemoryPoolFromSavedConsensusContext(MemoryPool memoryPool, Store store, Store consensusStore)
+        internal static IEnumerable<Transaction> RetreiveTransactionsFromSavedConsensusContext(MemoryPool memoryPool, Store store, Store consensusStore)
         {
             IConsensusContext context = new ConsensusContext(null);
             context.LoadContextFromStore(consensusStore, false);
-            if (context.Transactions == null) return;
-            foreach (var tx in context.Transactions.Values)
-            {
-                if (store.ContainsTransaction(tx.Hash)) continue;
-                memoryPool.TryAdd(tx.Hash, tx);
-            }
+            return context.Transactions?.Values;
         }
     }
 }

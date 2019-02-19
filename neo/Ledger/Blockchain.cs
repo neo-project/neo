@@ -145,12 +145,11 @@ namespace Neo.Ledger
             GenesisBlock.RebuildMerkleRoot();
         }
 
-        public Blockchain(NeoSystem system, Store store, Store consensusStore)
+        public Blockchain(NeoSystem system, Store store)
         {
             this.system = system;
             this.Store = store;
             this.MemPool = new MemoryPool(system, MemoryPoolMaxTransactions);
-            Consensus.Helper.LoadTransactionsToMemoryPoolFromSavedConsensusContext(MemPool, store, consensusStore);
 
             lock (lockObj)
             {
@@ -685,9 +684,9 @@ namespace Neo.Ledger
             }
         }
 
-        public static Props Props(NeoSystem system, Store store, Store consensusStore)
+        public static Props Props(NeoSystem system, Store store)
         {
-            return Akka.Actor.Props.Create(() => new Blockchain(system, store, consensusStore)).WithMailbox("blockchain-mailbox");
+            return Akka.Actor.Props.Create(() => new Blockchain(system, store)).WithMailbox("blockchain-mailbox");
         }
 
         private void SaveHeaderHashList(Snapshot snapshot = null)

@@ -8,6 +8,7 @@ using Neo.Plugins;
 using Neo.Wallets;
 using System;
 using System.Net;
+using Neo.Network.P2P.Payloads;
 
 namespace Neo
 {
@@ -26,14 +27,16 @@ namespace Neo
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
 
+        private readonly Store blockchainStore;
         private readonly Store consensusStore;
         private Peer.Start start_message = null;
         private bool suspend = false;
 
         public NeoSystem(Store store, Store consensusStore = null)
         {
+            this.blockchainStore = store;
             this.consensusStore = consensusStore ?? store;
-            this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store, this.consensusStore));
+            this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             Plugin.LoadPlugins(this);
@@ -74,6 +77,11 @@ namespace Neo
             };
             if (!suspend)
             {
+                var consensusTransactions = Neo.Consensus.Helper.RetreiveTransactionsFromSavedConsensusContext(
+                    Ledger.Blockchain.Singleton.MemPool, blockchainStore, consensusStore);
+                foreach (var tx in consensusTransactions)
+                    Blockchain.Tell(tx, ActorRefs.NoSender);
+
                 LocalNode.Tell(start_message);
                 start_message = null;
             }
