@@ -8,7 +8,6 @@ using Neo.Plugins;
 using Neo.Wallets;
 using System;
 using System.Net;
-using Neo.Network.P2P.Payloads;
 
 namespace Neo
 {
