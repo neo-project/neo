@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Neo.IO;
+using Neo.IO.Data.LevelDB;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.Persistence.LevelDB;
@@ -8,14 +9,21 @@ namespace Neo.Consensus
 {
     public static class Helper
     {
+        /// <summary>
+        /// Prefix for saving consensus state.
+        /// </summary>
+        public const byte CN_Context = 0xf4;
+
+        private static readonly WriteOptions SynchronousWriteOptions = new WriteOptions { Sync = true };
+
         internal static void WriteContextToStore(this IConsensusContext context, Store store)
         {
-            store.Put(Prefixes.CN_Context, new byte[0], context.ToArray());
+            store.Put(CN_Context, new byte[0], context.ToArray(), SynchronousWriteOptions);
         }
 
         internal static bool LoadContextFromStore(this IConsensusContext context, Store store, bool shouldReset=true)
         {
-            byte[] data = store.Get(Prefixes.CN_Context, new byte[0]);
+            byte[] data = store.Get(CN_Context, new byte[0]);
             if (data != null)
             {
                 if (shouldReset) context.Reset(0);

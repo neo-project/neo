@@ -19,6 +19,10 @@
         public const byte IX_CurrentHeader = 0xc1;
 
         public const byte SYS_Version = 0xf0;
-        public const byte CN_Context = 0xf4;
+
+        /* Prefixes 0xf1 to 0xff are reserved for external use.
+         *
+         * Note: The saved consensus state uses the Prefix 0xf4
+         */
     }
 }
