@@ -27,55 +27,17 @@ namespace Neo.IO.Json
 
         public virtual bool AsBoolean()
         {
-            throw new InvalidCastException();
-        }
-
-        public bool AsBooleanOrDefault(bool value = false)
-        {
-            if (!CanConvertTo(typeof(bool)))
-                return value;
-            return AsBoolean();
-        }
-
-        public virtual T AsEnum<T>(bool ignoreCase = false)
-        {
-            throw new InvalidCastException();
-        }
-
-        public T AsEnumOrDefault<T>(T value = default(T), bool ignoreCase = false)
-        {
-            if (!CanConvertTo(typeof(T)))
-                return value;
-            return AsEnum<T>(ignoreCase);
+            return true;
         }
 
         public virtual double AsNumber()
         {
-            throw new InvalidCastException();
-        }
-
-        public double AsNumberOrDefault(double value = 0)
-        {
-            if (!CanConvertTo(typeof(double)))
-                return value;
-            return AsNumber();
+            return double.NaN;
         }
 
         public virtual string AsString()
         {
-            throw new InvalidCastException();
-        }
-
-        public string AsStringOrDefault(string value = null)
-        {
-            if (!CanConvertTo(typeof(string)))
-                return value;
-            return AsString();
-        }
-
-        public virtual bool CanConvertTo(Type type)
-        {
-            return false;
+            return "[object Object]";
         }
 
         public bool ContainsProperty(string key)
@@ -187,6 +149,11 @@ namespace Neo.IO.Json
                 sb[sb.Length - 1] = '}';
             }
             return sb.ToString();
+        }
+
+        public virtual T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false) where T : Enum
+        {
+            return defaultValue;
         }
 
         public static implicit operator JObject(Enum value)
