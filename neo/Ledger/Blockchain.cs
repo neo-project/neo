@@ -14,8 +14,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
-using Akka;
 
 namespace Neo.Ledger
 {
@@ -131,8 +129,6 @@ namespace Neo.Ledger
         public uint HeaderHeight => (uint)header_index.Count - 1;
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
         public UInt256 CurrentHeaderHash => header_index[header_index.Count - 1];
-        private static readonly SemaphoreSlim WaitForStoppedSemaphore = new SemaphoreSlim(0);
-
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -183,12 +179,6 @@ namespace Neo.Ledger
                     UpdateCurrentSnapshot();
                 singleton = this;
             }
-        }
-
-        internal async Task<Done> WaitForStopped()
-        {
-            await WaitForStoppedSemaphore.WaitAsync();
-            return Done.Instance;
         }
 
         public bool ContainsBlock(UInt256 hash)
@@ -648,7 +638,6 @@ namespace Neo.Ledger
         {
             base.PostStop();
             currentSnapshot?.Dispose();
-            WaitForStoppedSemaphore.Release(short.MaxValue);
         }
 
         internal static void ProcessAccountStateDescriptor(StateDescriptor descriptor, Snapshot snapshot)
