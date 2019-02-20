@@ -56,7 +56,7 @@ namespace Neo
         public class ShutdownWatcher : UntypedActor
         {
             public class Watch { public IActorRef ActorRef; };
-            public Dictionary<IActorRef, SemaphoreSlim> ActorSemaphores;
+            public Dictionary<IActorRef, SemaphoreSlim> ActorSemaphores = new Dictionary<IActorRef, SemaphoreSlim>();
             private object lockObj = new object();
             private static ShutdownWatcher singleton;
             public static ShutdownWatcher Singleton
