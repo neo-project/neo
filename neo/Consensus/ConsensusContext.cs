@@ -34,6 +34,7 @@ namespace Neo.Consensus
         public ConsensusPayload[] ChangeViewPayloads { get; set; }
         public ConsensusPayload[] LastChangeViewPayloads { get; set; }
         public Snapshot Snapshot { get; private set; }
+        public bool RecoveringPrepareRequestFromSelf { get; set; }
         private KeyPair keyPair;
         private readonly Wallet wallet;
 

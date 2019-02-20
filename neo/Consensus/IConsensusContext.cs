@@ -26,6 +26,7 @@ namespace Neo.Consensus
         ConsensusPayload[] CommitPayloads { get; set; }
         ConsensusPayload[] ChangeViewPayloads { get; set; }
         Snapshot Snapshot { get; }
+        bool RecoveringPrepareRequestFromSelf { get; set; }
 
         int F { get; }
         int M { get; }

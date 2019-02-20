@@ -154,17 +154,19 @@ namespace Neo.Consensus
             if (context.MyIndex == context.PrimaryIndex)
             {
                 context.State |= ConsensusState.Primary;
-                TimeSpan span = TimeProvider.Current.UtcNow - block_received_time;
-                if (span >= Blockchain.TimePerBlock)
-                    ChangeTimer(TimeSpan.Zero);
-                else
-                    ChangeTimer(Blockchain.TimePerBlock - span);
+                if (!context.RecoveringPrepareRequestFromSelf)
+                {
+                    TimeSpan span = TimeProvider.Current.UtcNow - block_received_time;
+                    if (span >= Blockchain.TimePerBlock)
+                        ChangeTimer(TimeSpan.Zero);
+                    else
+                        ChangeTimer(Blockchain.TimePerBlock - span);
+                    return;
+                }
             }
             else
-            {
                 context.State = ConsensusState.Backup;
-                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (viewNumber + 1)));
-            }
+            ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (viewNumber + 1)));
         }
 
         private void Log(string message, LogLevel level = LogLevel.Info)
@@ -276,27 +278,48 @@ namespace Neo.Consensus
         {
             if (message.ViewNumber < context.ViewNumber) return;
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
-            if (message.ViewNumber > context.ViewNumber)
+            ConsensusPayload prepareRequestPayload = message.GetPrepareRequestPayload(context, payload);
+            bool commitSent = context.State.HasFlag(ConsensusState.CommitSent);
+
+            try
             {
-                if (context.State.HasFlag(ConsensusState.CommitSent))
-                    return;
-                ConsensusPayload[] changeViewPayloads = message.GetChangeViewPayloads(context, payload);
-                foreach (ConsensusPayload changeViewPayload in changeViewPayloads)
-                    ReverifyAndProcessPayload(changeViewPayload);
+                if (!commitSent && prepareRequestPayload != null)
+                {
+                    if (context.State.HasFlag(ConsensusState.RequestSent) ||
+                        context.State.HasFlag(ConsensusState.RequestReceived) || !payload.Verify(context.Snapshot))
+                        prepareRequestPayload = null;
+                    else
+                        context.RecoveringPrepareRequestFromSelf =
+                            context.GetPrimaryIndex(message.ViewNumber) == context.MyIndex;
+                }
+
+                if (message.ViewNumber > context.ViewNumber)
+                {
+                    if (commitSent) return;
+                    ConsensusPayload[] changeViewPayloads = message.GetChangeViewPayloads(context, payload);
+                    foreach (ConsensusPayload changeViewPayload in changeViewPayloads)
+                        ReverifyAndProcessPayload(changeViewPayload);
+                }
+
+                if (message.ViewNumber != context.ViewNumber) return;
+                if (!commitSent)
+                {
+                    if (prepareRequestPayload != null)
+                        OnConsensusPayload(prepareRequestPayload);
+                    ConsensusPayload[] prepareResponsePayloads =
+                        message.GetPrepareResponsePayloads(context, payload, prepareRequestPayload);
+                    foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
+                        ReverifyAndProcessPayload(prepareResponsePayload);
+                }
+
+                ConsensusPayload[] commitPayloads = message.GetCommitPayloadsFromRecoveryMessage(context, payload);
+                foreach (ConsensusPayload commitPayload in commitPayloads)
+                    ReverifyAndProcessPayload(commitPayload);
             }
-            if (message.ViewNumber != context.ViewNumber) return;
-            if (!context.State.HasFlag(ConsensusState.CommitSent))
+            finally
             {
-                ConsensusPayload prepareRequestPayload = message.GetPrepareRequestPayload(context, payload);
-                if (prepareRequestPayload != null && !context.State.HasFlag(ConsensusState.RequestSent) && !context.State.HasFlag(ConsensusState.RequestReceived))
-                    ReverifyAndProcessPayload(prepareRequestPayload);
-                ConsensusPayload[] prepareResponsePayloads = message.GetPrepareResponsePayloads(context, payload, prepareRequestPayload);
-                foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
-                    ReverifyAndProcessPayload(prepareResponsePayload);
+                context.RecoveringPrepareRequestFromSelf = false;
             }
-            ConsensusPayload[] commitPayloads = message.GetCommitPayloadsFromRecoveryMessage(context, payload);
-            foreach (ConsensusPayload commitPayload in commitPayloads)
-                ReverifyAndProcessPayload(commitPayload);
         }
 
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
