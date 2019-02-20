@@ -8,6 +8,7 @@ using Neo.Plugins;
 using Neo.Wallets;
 using System;
 using System.Net;
+using System.Threading;
 
 namespace Neo
 {
@@ -40,8 +41,16 @@ namespace Neo
         public void Dispose()
         {
             RpcServer?.Dispose();
-            ActorSystem.Stop(LocalNode);
+            EnsureStoped(LocalNode);
             ActorSystem.Dispose();
+        }
+
+        public void EnsureStoped(IActorRef actor)
+        {
+            Inbox inbox = Inbox.Create(ActorSystem);
+            inbox.Watch(actor);
+            ActorSystem.Stop(actor);
+            inbox.Receive(Timeout.InfiniteTimeSpan);
         }
 
         internal void ResumeNodeStartup()
