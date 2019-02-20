@@ -315,9 +315,15 @@ namespace Neo.Consensus
                 Log($"Invalid request: transaction already exists", LogLevel.Warning);
                 return;
             }
-            context.State |= context.State.HasFlag(ConsensusState.Primary)
-                ? ConsensusState.RequestSent
-                : ConsensusState.RequestReceived;
+
+            if (context.State.HasFlag(ConsensusState.Primary))
+            {
+                context.State |= ConsensusState.RequestSent;
+                // Receiving our own previously sent prepare-request. Adjust our timer appropriately.
+                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ViewNumber + 1)));
+            }
+            else
+                context.State |= ConsensusState.RequestReceived;
             context.Timestamp = message.Timestamp;
             context.Nonce = message.Nonce;
             context.NextConsensus = message.NextConsensus;
