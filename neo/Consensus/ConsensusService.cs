@@ -326,7 +326,6 @@ namespace Neo.Consensus
                         context.PreparationPayloads[i] = null;
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
             byte[] hashData = context.MakeHeader().GetHashData();
-
             for (int i = 0; i < context.CommitPayloads.Length; i++)
                 if (context.CommitPayloads[i] != null)
                     if (!Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
@@ -410,7 +409,7 @@ namespace Neo.Consensus
         {
             Log("OnStart");
             started = true;
-            bool loadedState = options.IgnoreRecoveryLogs ? false : context.LoadContextFromStore(store);
+            bool loadedState = !options.IgnoreRecoveryLogs && context.LoadContextFromStore(store);
             if (loadedState && context.State.HasFlag(ConsensusState.CommitSent) && Blockchain.Singleton.Height + 1 == context.BlockIndex)
             {
                 CheckPreparations();
