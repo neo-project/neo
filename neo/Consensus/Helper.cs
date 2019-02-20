@@ -1,27 +1,24 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using Neo.IO;
-using Neo.IO.Data.LevelDB;
+﻿using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Neo.Consensus
 {
-    public static class Helper
+    internal static class Helper
     {
         /// <summary>
         /// Prefix for saving consensus state.
         /// </summary>
         public const byte CN_Context = 0xf4;
 
-        private static readonly WriteOptions SynchronousWriteOptions = new WriteOptions { Sync = true };
-
-        internal static void WriteContextToStore(this IConsensusContext context, Store store)
+        public static void WriteContextToStore(this IConsensusContext context, Store store)
         {
-            store.Put(CN_Context, new byte[0], context.ToArray(), SynchronousWriteOptions);
+            store.PutSync(CN_Context, new byte[0], context.ToArray());
         }
 
-        internal static bool LoadContextFromStore(this IConsensusContext context, Store store, bool shouldReset=true)
+        public static bool LoadContextFromStore(this IConsensusContext context, Store store, bool shouldReset = true)
         {
             byte[] data = store.Get(CN_Context, new byte[0]);
             if (data != null)
@@ -37,11 +34,11 @@ namespace Neo.Consensus
             return false;
         }
 
-        internal static IEnumerable<Transaction> RetreiveTransactionsFromSavedConsensusContext(Store consensusStore)
+        public static IEnumerable<Transaction> RetreiveTransactionsFromSavedConsensusContext(Store consensusStore)
         {
             IConsensusContext context = new ConsensusContext(null);
             context.LoadContextFromStore(consensusStore, false);
-            return context.Transactions?.Values ?? (IEnumerable<Transaction>) new Transaction[0];
+            return context.Transactions?.Values ?? (IEnumerable<Transaction>)new Transaction[0];
         }
     }
 }

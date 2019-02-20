@@ -112,11 +112,14 @@ namespace Neo.Persistence.LevelDB
             return new DbMetaDataCache<HashIndexState>(db, null, null, Prefixes.IX_CurrentHeader);
         }
 
-        public override void Put(byte prefix, byte[] key, byte[] value, WriteOptions writeOptions = null)
+        public override void Put(byte prefix, byte[] key, byte[] value)
         {
-            if (writeOptions == null)
-                writeOptions = WriteOptions.Default;
-            db.Put(writeOptions, SliceBuilder.Begin(prefix).Add(key), value);
+            db.Put(WriteOptions.Default, SliceBuilder.Begin(prefix).Add(key), value);
+        }
+
+        public override void PutSync(byte prefix, byte[] key, byte[] value)
+        {
+            db.Put(new WriteOptions { Sync = true }, SliceBuilder.Begin(prefix).Add(key), value);
         }
     }
 }

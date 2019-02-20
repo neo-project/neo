@@ -1,6 +1,5 @@
 ﻿using Neo.Cryptography.ECC;
 using Neo.IO.Caching;
-using Neo.IO.Data.LevelDB;
 using Neo.IO.Wrappers;
 using Neo.Ledger;
 
@@ -36,7 +35,8 @@ namespace Neo.Persistence
         public abstract MetaDataCache<ValidatorsCountState> GetValidatorsCount();
         public abstract MetaDataCache<HashIndexState> GetBlockHashIndex();
         public abstract MetaDataCache<HashIndexState> GetHeaderHashIndex();
-        public abstract void Put(byte prefix, byte[] key, byte[] value, WriteOptions writeOptions = null);
+        public abstract void Put(byte prefix, byte[] key, byte[] value);
+        public abstract void PutSync(byte prefix, byte[] key, byte[] value);
 
         public abstract Snapshot GetSnapshot();
     }
