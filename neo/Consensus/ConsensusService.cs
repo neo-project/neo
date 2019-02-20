@@ -17,7 +17,7 @@ namespace Neo.Consensus
 {
     public sealed class ConsensusService : UntypedActor
     {
-        public class Start { }
+        public class Start { public bool IgnoreRecoveryLogs; }
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
@@ -377,10 +377,10 @@ namespace Neo.Consensus
 
         protected override void OnReceive(object message)
         {
-            if (message is Start)
+            if (message is Start options)
             {
                 if (started) return;
-                OnStart();
+                OnStart(options);
             }
             else
             {
@@ -406,11 +406,11 @@ namespace Neo.Consensus
             }
         }
 
-        private void OnStart()
+        private void OnStart(Start options)
         {
             Log("OnStart");
             started = true;
-            bool loadedState = context.LoadContextFromStore(store);
+            bool loadedState = options.IgnoreRecoveryLogs ? false : context.LoadContextFromStore(store);
             if (loadedState && context.State.HasFlag(ConsensusState.CommitSent) && Blockchain.Singleton.Height + 1 == context.BlockIndex)
             {
                 CheckPreparations();
