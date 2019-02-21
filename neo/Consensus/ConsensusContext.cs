@@ -17,9 +17,8 @@ namespace Neo.Consensus
     internal class ConsensusContext : IConsensusContext
     {
         public const uint Version = 0;
-        public ConsensusState State { get; set; }
-        public UInt256 PrevHash { get; set; }
         public uint BlockIndex { get; set; }
+        public UInt256 PrevHash { get; set; }
         public byte ViewNumber { get; set; }
         public ECPoint[] Validators { get; set; }
         public int MyIndex { get; set; }
@@ -33,6 +32,7 @@ namespace Neo.Consensus
         public ConsensusPayload[] CommitPayloads { get; set; }
         public ConsensusPayload[] ChangeViewPayloads { get; set; }
         public ConsensusPayload[] LastChangeViewPayloads { get; set; }
+        public ConsensusState State { get; set; }
         public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
         private readonly Wallet wallet;
@@ -66,13 +66,10 @@ namespace Neo.Consensus
 
         public void Deserialize(BinaryReader reader)
         {
-            if (reader.ReadUInt32() != Version) return;
-            State = (ConsensusState)reader.ReadByte();
-            PrevHash = reader.ReadSerializable<UInt256>();
-            BlockIndex = reader.ReadUInt32();
+            Reset(0);
+            if (reader.ReadUInt32() != Version) throw new FormatException();
+            if (reader.ReadUInt32() != BlockIndex) throw new InvalidOperationException();
             ViewNumber = reader.ReadByte();
-            Validators = reader.ReadSerializableArray<ECPoint>();
-            MyIndex = reader.ReadInt32();
             PrimaryIndex = reader.ReadUInt32();
             Timestamp = reader.ReadUInt32();
             Nonce = reader.ReadUInt64();
@@ -105,6 +102,7 @@ namespace Neo.Consensus
             LastChangeViewPayloads = new ConsensusPayload[reader.ReadVarInt()];
             for (int i = 0; i < LastChangeViewPayloads.Length; i++)
                 LastChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
+            State = (ConsensusState)reader.ReadByte();
         }
 
         public void Dispose()
@@ -251,7 +249,7 @@ namespace Neo.Consensus
                 keyPair = null;
                 for (int i = 0; i < Validators.Length; i++)
                 {
-                    WalletAccount account = wallet.GetAccount(Validators[i]);
+                    WalletAccount account = wallet?.GetAccount(Validators[i]);
                     if (account?.HasKey != true) continue;
                     MyIndex = i;
                     keyPair = account.GetKey();
@@ -279,12 +277,8 @@ namespace Neo.Consensus
         public void Serialize(BinaryWriter writer)
         {
             writer.Write(Version);
-            writer.Write((byte)State);
-            writer.Write(PrevHash);
             writer.Write(BlockIndex);
             writer.Write(ViewNumber);
-            writer.Write(Validators);
-            writer.Write(MyIndex);
             writer.Write(PrimaryIndex);
             writer.Write(Timestamp);
             writer.Write(Nonce);
@@ -323,6 +317,7 @@ namespace Neo.Consensus
                 if (!hasPayload) continue;
                 writer.Write(payload);
             }
+            writer.Write((byte)State);
         }
 
         public void Fill()

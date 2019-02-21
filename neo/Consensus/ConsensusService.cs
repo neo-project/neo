@@ -11,7 +11,6 @@ using Neo.Plugins;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace Neo.Consensus
@@ -21,8 +20,6 @@ namespace Neo.Consensus
         public class Start { public bool IgnoreRecoveryLogs; }
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
-
-        private const byte ContextSerializationPrefix = 0xf4;
 
         private readonly IConsensusContext context;
         private readonly IActorRef localNode;
@@ -128,7 +125,7 @@ namespace Neo.Consensus
                 ConsensusPayload payload = context.MakeCommit();
                 Log($"send commit");
                 context.State |= ConsensusState.CommitSent;
-                store.Put(ContextSerializationPrefix, new byte[0], context.ToArray());
+                context.Save(store);
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 // Set timer, so we will resend the commit in case of a networking issue
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock));
@@ -433,27 +430,17 @@ namespace Neo.Consensus
         {
             Log("OnStart");
             started = true;
-            if (!options.IgnoreRecoveryLogs)
+            bool loadedState = !options.IgnoreRecoveryLogs && context.Load(store);
+            if (loadedState && context.State.HasFlag(ConsensusState.CommitSent))
             {
-                byte[] data = store.Get(ContextSerializationPrefix, new byte[0]);
-                if (data != null)
-                {
-                    using (MemoryStream ms = new MemoryStream(data, false))
-                    using (BinaryReader reader = new BinaryReader(ms))
-                    {
-                        context.Deserialize(reader);
-                    }
-                }
-            }
-            if (context.State.HasFlag(ConsensusState.CommitSent) && context.BlockIndex == Blockchain.Singleton.Height + 1)
                 CheckPreparations();
-            else
-            {
-                InitializeConsensus(0);
-                // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
-                if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
-                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(0) });
+                return;
             }
+
+            InitializeConsensus(0);
+            // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
+            if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(0) });
         }
 
         private void OnTimer(Timer timer)

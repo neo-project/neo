@@ -116,5 +116,10 @@ namespace Neo.Persistence.LevelDB
         {
             db.Put(WriteOptions.Default, SliceBuilder.Begin(prefix).Add(key), value);
         }
+
+        public override void PutSync(byte prefix, byte[] key, byte[] value)
+        {
+            db.Put(new WriteOptions { Sync = true }, SliceBuilder.Begin(prefix).Add(key), value);
+        }
     }
 }
