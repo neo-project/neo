@@ -372,8 +372,6 @@ namespace Neo.Consensus
 
         public bool VerifyRequest()
         {
-            if (!State.HasFlag(ConsensusState.RequestReceived))
-                return false;
             if (!Blockchain.GetConsensusAddress(Snapshot.GetValidators(Transactions.Values).ToArray()).Equals(NextConsensus))
                 return false;
             Transaction minerTx = Transactions.Values.FirstOrDefault(p => p.Type == TransactionType.MinerTransaction);
