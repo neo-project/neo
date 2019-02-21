@@ -24,6 +24,8 @@ namespace Neo.Ledger
         public class PersistCompleted { public Block Block; }
         public class Import { public IEnumerable<Block> Blocks; }
         public class ImportCompleted { }
+        public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
+        public class FillCompleted { }
 
         public static readonly uint SecondsPerBlock = ProtocolSettings.Default.SecondsPerBlock;
         public const uint DecrementInterval = 2000000;
@@ -253,6 +255,15 @@ namespace Neo.Ledger
             blocks.AddLast(block);
         }
 
+        private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
+        {
+            //TODO: Fill the memory pool with the transactions from the consensus context
+            // Step 1: Remove all the transactions in the memory pool
+            // Step 2: Add the transactions from the consensus context to the memory pool
+            // Step 3: Add the original transactions to the memory pool
+            Sender.Tell(new FillCompleted());
+        }
+
         private RelayResultReason OnNewBlock(Block block)
         {
             if (block.Index <= Height)
@@ -405,6 +416,9 @@ namespace Neo.Ledger
                     break;
                 case Import import:
                     OnImport(import.Blocks);
+                    break;
+                case FillMemoryPool fill:
+                    OnFillMemoryPool(fill.Transactions);
                     break;
                 case Header[] headers:
                     OnNewHeaders(headers);

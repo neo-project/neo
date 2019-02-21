@@ -430,13 +430,21 @@ namespace Neo.Consensus
         {
             Log("OnStart");
             started = true;
-            bool loadedState = !options.IgnoreRecoveryLogs && context.Load(store);
-            if (loadedState && context.State.HasFlag(ConsensusState.CommitSent))
+            if (!options.IgnoreRecoveryLogs && context.Load(store))
             {
-                CheckPreparations();
-                return;
+                if (context.Transactions != null)
+                {
+                    Sender.Ask<Blockchain.FillCompleted>(new Blockchain.FillMemoryPool
+                    {
+                        Transactions = context.Transactions.Values
+                    }).Wait();
+                }
+                if (context.State.HasFlag(ConsensusState.CommitSent))
+                {
+                    CheckPreparations();
+                    return;
+                }
             }
-
             InitializeConsensus(0);
             // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
             if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
