@@ -27,14 +27,12 @@ namespace Neo
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
 
-        private readonly Store blockchainStore;
         private readonly Store consensusStore;
         private Peer.Start start_message = null;
         private bool suspend = false;
 
         public NeoSystem(Store store, Store consensusStore = null)
         {
-            this.blockchainStore = store;
             this.consensusStore = consensusStore ?? store;
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
