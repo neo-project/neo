@@ -18,26 +18,29 @@ namespace Neo.Consensus
             store.PutSync(CN_Context, new byte[0], context.ToArray());
         }
 
-        public static bool Load(this IConsensusContext context, Store store, bool shouldReset = true)
+        public static bool Load(this IConsensusContext context, Store store)
         {
             byte[] data = store.Get(CN_Context, new byte[0]);
-            if (data != null)
+            if (data is null) return false;
+            using (MemoryStream ms = new MemoryStream(data, false))
+            using (BinaryReader reader = new BinaryReader(ms))
             {
-                if (shouldReset) context.Reset(0);
-                using (MemoryStream ms = new MemoryStream(data, false))
-                using (BinaryReader reader = new BinaryReader(ms))
+                try
                 {
                     context.Deserialize(reader);
-                    return true;
                 }
+                catch
+                {
+                    return false;
+                }
+                return true;
             }
-            return false;
         }
 
         public static IEnumerable<Transaction> RetreiveTransactionsFromSavedConsensusContext(Store consensusStore)
         {
             IConsensusContext context = new ConsensusContext(null);
-            context.Load(consensusStore, false);
+            context.Load(consensusStore);
             return context.Transactions?.Values ?? (IEnumerable<Transaction>)new Transaction[0];
         }
     }

@@ -431,7 +431,7 @@ namespace Neo.Consensus
             Log("OnStart");
             started = true;
             bool loadedState = !options.IgnoreRecoveryLogs && context.Load(store);
-            if (loadedState && context.State.HasFlag(ConsensusState.CommitSent) && Blockchain.Singleton.Height + 1 == context.BlockIndex)
+            if (loadedState && context.State.HasFlag(ConsensusState.CommitSent))
             {
                 CheckPreparations();
                 return;

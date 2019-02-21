@@ -178,20 +178,20 @@ namespace Neo.UnitTests
         {
             var consensusContext = new ConsensusContext(null);
             consensusContext.State = ConsensusState.CommitSent;
-            consensusContext.PrevHash = UInt256.Parse("3333333377777777333333337777777733333333777777773333333377777777");
-            consensusContext.BlockIndex = 1337;
+            consensusContext.PrevHash = UInt256.Parse("0xd42561e3d30e15be6400b6df2f328e02d2bf6354c41dce433bc57687c82144bf");
+            consensusContext.BlockIndex = 1;
             consensusContext.ViewNumber = 2;
             consensusContext.Validators = new ECPoint[7]
             {
-                TestUtils.StandbyValidators[0],
-                ECPoint.Multiply(TestUtils.StandbyValidators[0], new BigInteger(2)),
-                ECPoint.Multiply(TestUtils.StandbyValidators[0], new BigInteger(3)),
-                ECPoint.Multiply(TestUtils.StandbyValidators[0], new BigInteger(4)),
-                ECPoint.Multiply(TestUtils.StandbyValidators[0], new BigInteger(5)),
-                ECPoint.Multiply(TestUtils.StandbyValidators[0], new BigInteger(6)),
-                ECPoint.Multiply(TestUtils.StandbyValidators[0], new BigInteger(7)),
+                ECPoint.Parse("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70", Cryptography.ECC.ECCurve.Secp256r1),
+                ECPoint.Parse("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d", Cryptography.ECC.ECCurve.Secp256r1),
+                ECPoint.Parse("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e", Cryptography.ECC.ECCurve.Secp256r1),
+                ECPoint.Parse("02ca0e27697b9c248f6f16e085fd0061e26f44da85b58ee835c110caa5ec3ba554", Cryptography.ECC.ECCurve.Secp256r1),
+                ECPoint.Parse("02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093", Cryptography.ECC.ECCurve.Secp256r1),
+                ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", Cryptography.ECC.ECCurve.Secp256r1),
+                ECPoint.Parse("03b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a", Cryptography.ECC.ECCurve.Secp256r1)
             };
-            consensusContext.MyIndex = 3;
+            consensusContext.MyIndex = -1;
             consensusContext.PrimaryIndex = 6;
             consensusContext.Timestamp = 4244941711;
             consensusContext.Nonce = UInt64.MaxValue;
