@@ -125,7 +125,7 @@ namespace Neo.Consensus
                 ConsensusPayload payload = context.MakeCommit();
                 Log($"send commit");
                 context.State |= ConsensusState.CommitSent;
-                context.WriteContextToStore(store);
+                context.Save(store);
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 // Set timer, so we will resend the commit in case of a networking issue
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock));
@@ -430,7 +430,7 @@ namespace Neo.Consensus
         {
             Log("OnStart");
             started = true;
-            bool loadedState = !options.IgnoreRecoveryLogs && context.LoadContextFromStore(store);
+            bool loadedState = !options.IgnoreRecoveryLogs && context.Load(store);
             if (loadedState && context.State.HasFlag(ConsensusState.CommitSent) && Blockchain.Singleton.Height + 1 == context.BlockIndex)
             {
                 CheckPreparations();

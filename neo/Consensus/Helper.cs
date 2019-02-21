@@ -13,12 +13,12 @@ namespace Neo.Consensus
         /// </summary>
         public const byte CN_Context = 0xf4;
 
-        public static void WriteContextToStore(this IConsensusContext context, Store store)
+        public static void Save(this IConsensusContext context, Store store)
         {
             store.PutSync(CN_Context, new byte[0], context.ToArray());
         }
 
-        public static bool LoadContextFromStore(this IConsensusContext context, Store store, bool shouldReset = true)
+        public static bool Load(this IConsensusContext context, Store store, bool shouldReset = true)
         {
             byte[] data = store.Get(CN_Context, new byte[0]);
             if (data != null)
@@ -37,7 +37,7 @@ namespace Neo.Consensus
         public static IEnumerable<Transaction> RetreiveTransactionsFromSavedConsensusContext(Store consensusStore)
         {
             IConsensusContext context = new ConsensusContext(null);
-            context.LoadContextFromStore(consensusStore, false);
+            context.Load(consensusStore, false);
             return context.Transactions?.Values ?? (IEnumerable<Transaction>)new Transaction[0];
         }
     }
