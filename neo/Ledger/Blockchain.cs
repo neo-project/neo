@@ -257,10 +257,22 @@ namespace Neo.Ledger
 
         private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
         {
-            //TODO: Fill the memory pool with the transactions from the consensus context
-            // Step 1: Remove all the transactions in the memory pool
-            // Step 2: Add the transactions from the consensus context to the memory pool
-            // Step 3: Add the original transactions to the memory pool
+            // Invalidate all the transactions in the memory pool, to avoid any failures when adding new transactions.
+            MemPool.InvalidateAllTransactions();
+
+            // Add the transactions to the memory pool
+            foreach (var tx in transactions)
+            {
+                // First remove the tx if it is unverified in the pool.
+                MemPool.TryRemoveUnVerified(tx.Hash, out _);
+                // Verify the the transaction
+                if (!tx.Verify(currentSnapshot, MemPool.GetVerifiedTransactions()))
+                    continue;
+                // Add to the memory pool
+                MemPool.TryAdd(tx.Hash, tx);
+            }
+            // Transactions originally in the pool will automatically be reverified based on their priority.
+
             Sender.Tell(new FillCompleted());
         }
 
