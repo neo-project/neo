@@ -36,6 +36,7 @@ namespace Neo.Consensus
         /// responding to the same message.
         /// </summary>
         private readonly HashSet<UInt256> knownHashes = new HashSet<UInt256>();
+        private bool isRecovering = false;
 
         public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
             : this(localNode, taskManager, store, new ConsensusContext(wallet))
@@ -154,11 +155,18 @@ namespace Neo.Consensus
             if (context.MyIndex == context.PrimaryIndex)
             {
                 context.State |= ConsensusState.Primary;
-                TimeSpan span = TimeProvider.Current.UtcNow - block_received_time;
-                if (span >= Blockchain.TimePerBlock)
-                    ChangeTimer(TimeSpan.Zero);
+                if (isRecovering)
+                {
+                    ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (viewNumber + 1)));
+                }
                 else
-                    ChangeTimer(Blockchain.TimePerBlock - span);
+                {
+                    TimeSpan span = TimeProvider.Current.UtcNow - block_received_time;
+                    if (span >= Blockchain.TimePerBlock)
+                        ChangeTimer(TimeSpan.Zero);
+                    else
+                        ChangeTimer(Blockchain.TimePerBlock - span);
+                }
             }
             else
             {
@@ -276,27 +284,40 @@ namespace Neo.Consensus
         {
             if (message.ViewNumber < context.ViewNumber) return;
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
-            if (message.ViewNumber > context.ViewNumber)
+            isRecovering = true;
+            try
             {
-                if (context.State.HasFlag(ConsensusState.CommitSent))
-                    return;
-                ConsensusPayload[] changeViewPayloads = message.GetChangeViewPayloads(context, payload);
-                foreach (ConsensusPayload changeViewPayload in changeViewPayloads)
-                    ReverifyAndProcessPayload(changeViewPayload);
+                if (message.ViewNumber > context.ViewNumber)
+                {
+                    if (context.State.HasFlag(ConsensusState.CommitSent))
+                        return;
+                    ConsensusPayload[] changeViewPayloads = message.GetChangeViewPayloads(context, payload);
+                    foreach (ConsensusPayload changeViewPayload in changeViewPayloads)
+                        ReverifyAndProcessPayload(changeViewPayload);
+                }
+                if (message.ViewNumber != context.ViewNumber) return;
+                if (!context.State.HasFlag(ConsensusState.CommitSent))
+                {
+                    if (!context.State.HasFlag(ConsensusState.RequestSent) && !context.State.HasFlag(ConsensusState.RequestReceived))
+                    {
+                        ConsensusPayload prepareRequestPayload = message.GetPrepareRequestPayload(context, payload);
+                        if (prepareRequestPayload != null)
+                            ReverifyAndProcessPayload(prepareRequestPayload);
+                        else if (context.State.HasFlag(ConsensusState.Primary))
+                            SendPrepareRequest();
+                    }
+                    ConsensusPayload[] prepareResponsePayloads = message.GetPrepareResponsePayloads(context, payload);
+                    foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
+                        ReverifyAndProcessPayload(prepareResponsePayload);
+                }
+                ConsensusPayload[] commitPayloads = message.GetCommitPayloadsFromRecoveryMessage(context, payload);
+                foreach (ConsensusPayload commitPayload in commitPayloads)
+                    ReverifyAndProcessPayload(commitPayload);
             }
-            if (message.ViewNumber != context.ViewNumber) return;
-            if (!context.State.HasFlag(ConsensusState.CommitSent))
+            finally
             {
-                ConsensusPayload prepareRequestPayload = message.GetPrepareRequestPayload(context, payload);
-                if (prepareRequestPayload != null && !context.State.HasFlag(ConsensusState.RequestSent) && !context.State.HasFlag(ConsensusState.RequestReceived))
-                    ReverifyAndProcessPayload(prepareRequestPayload);
-                ConsensusPayload[] prepareResponsePayloads = message.GetPrepareResponsePayloads(context, payload, prepareRequestPayload);
-                foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
-                    ReverifyAndProcessPayload(prepareResponsePayload);
+                isRecovering = false;
             }
-            ConsensusPayload[] commitPayloads = message.GetCommitPayloadsFromRecoveryMessage(context, payload);
-            foreach (ConsensusPayload commitPayload in commitPayloads)
-                ReverifyAndProcessPayload(commitPayload);
         }
 
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
@@ -442,19 +463,7 @@ namespace Neo.Consensus
             Log($"timeout: height={timer.Height} view={timer.ViewNumber} state={context.State}");
             if (context.State.HasFlag(ConsensusState.Primary) && !context.State.HasFlag(ConsensusState.RequestSent))
             {
-                Log($"send prepare request: height={timer.Height} view={timer.ViewNumber}");
-                context.Fill();
-                ConsensusPayload prepareRequestPayload = context.MakePrepareRequest();
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = prepareRequestPayload });
-                context.State |= ConsensusState.RequestSent;
-                context.PreparationPayloads[context.MyIndex] = prepareRequestPayload;
-
-                if (context.TransactionHashes.Length > 1)
-                {
-                    foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
-                        localNode.Tell(Message.Create("inv", payload));
-                }
-                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (timer.ViewNumber + 1)));
+                SendPrepareRequest();
             }
             else if ((context.State.HasFlag(ConsensusState.Primary) && context.State.HasFlag(ConsensusState.RequestSent)) || context.State.HasFlag(ConsensusState.Backup))
             {
@@ -515,6 +524,23 @@ namespace Neo.Consensus
         {
             if (!payload.Verify(context.Snapshot)) return;
             OnConsensusPayload(payload);
+        }
+
+        private void SendPrepareRequest()
+        {
+            Log($"send prepare request: height={context.BlockIndex} view={context.ViewNumber}");
+            context.Fill();
+            ConsensusPayload prepareRequestPayload = context.MakePrepareRequest();
+            localNode.Tell(new LocalNode.SendDirectly { Inventory = prepareRequestPayload });
+            context.State |= ConsensusState.RequestSent;
+            context.PreparationPayloads[context.MyIndex] = prepareRequestPayload;
+
+            if (context.TransactionHashes.Length > 1)
+            {
+                foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
+                    localNode.Tell(Message.Create("inv", payload));
+            }
+            ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ViewNumber + 1)));
         }
     }
 

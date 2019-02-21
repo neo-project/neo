@@ -102,9 +102,9 @@ namespace Neo.Consensus
             };
         }
 
-        internal ConsensusPayload[] GetPrepareResponsePayloads(IConsensusContext context, ConsensusPayload payload, ConsensusPayload prepareRequestPayload = null)
+        internal ConsensusPayload[] GetPrepareResponsePayloads(IConsensusContext context, ConsensusPayload payload)
         {
-            UInt256 preparationHash = PreparationHash ?? prepareRequestPayload?.Hash;
+            UInt256 preparationHash = PreparationHash ?? context.PreparationPayloads[context.PrimaryIndex]?.Hash;
             if (preparationHash is null) return new ConsensusPayload[0];
             return PreparationMessages.Values.Where(p => p.ValidatorIndex != context.PrimaryIndex).Select(p => new ConsensusPayload
             {
