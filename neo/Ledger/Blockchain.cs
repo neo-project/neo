@@ -263,6 +263,12 @@ namespace Neo.Ledger
             // Add the transactions to the memory pool
             foreach (var tx in transactions)
             {
+                if (tx.Type == TransactionType.MinerTransaction)
+                    continue;
+                if (Store.ContainsTransaction(tx.Hash))
+                    continue;
+                if (!Plugin.CheckPolicy(tx))
+                    continue;
                 // First remove the tx if it is unverified in the pool.
                 MemPool.TryRemoveUnVerified(tx.Hash, out _);
                 // Verify the the transaction
