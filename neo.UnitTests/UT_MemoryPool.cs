@@ -322,5 +322,21 @@ namespace Neo.UnitTests
             AddHighPriorityTransactions(1);
             _unit.CanTransactionFitInPool(CreateMockLowPriorityTransaction()).ShouldBeEquivalentTo(false);
         }
+
+        [TestMethod]
+        public void TestInvalidateAll()
+        {
+            AddHighPriorityTransactions(30);
+            AddLowPriorityTransactions(60);
+            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(0);
+            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(0);
+            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(30);
+            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(60);
+            _unit.InvalidateAllTransactions();
+            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(30);
+            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(60);
+            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(0);
+            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(0);
+        }
     }
 }
