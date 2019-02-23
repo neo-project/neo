@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
+using Neo.Ledger.MPT;
 
 namespace Neo.UnitTests.Ledger
 {

@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 
-namespace Neo.Ledger
+namespace Neo.Ledger.MPT
 {
     public class MPTKey : IEquatable<MPTKey>, ISerializable
     {

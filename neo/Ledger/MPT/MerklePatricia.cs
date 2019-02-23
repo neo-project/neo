@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using Neo.IO;
 
-namespace Neo.Ledger
+namespace Neo.Ledger.MPT
 {
     /// <summary>
     /// Modified Merkel Patricia Tree.

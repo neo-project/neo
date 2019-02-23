@@ -3,6 +3,7 @@ using Neo.IO.Caching;
 using Neo.IO.Data.LevelDB;
 using Neo.IO.Wrappers;
 using Neo.Ledger;
+using Neo.Ledger.MPT;
 using LSnapshot = Neo.IO.Data.LevelDB.Snapshot;
 
 namespace Neo.Persistence.LevelDB

@@ -5,8 +5,9 @@ using System.Linq;
 using System.Text;
 using Neo.IO;
 
-namespace Neo.Ledger
+namespace Neo.Ledger.MPT
 {
+    /// <inheritdoc />
     /// <summary>
     /// Modified Merkel Patricia Node.
     /// Note: It is not a thread safe implementation.
@@ -239,7 +240,7 @@ namespace Neo.Ledger
             {
                 if (i == 0 && !IsBranch)
                 {
-                    writer.WriteVarBytes(_hashes[i] != null ?_hashes[i].CompactEncode() : new byte[0]);
+                    writer.WriteVarBytes(_hashes[i] != null ? _hashes[i].CompactEncode() : new byte[0]);
                 }
                 else
                 {

@@ -5,6 +5,7 @@ using Neo.IO.Wrappers;
 using Neo.Ledger;
 using System;
 using System.Reflection;
+using Neo.Ledger.MPT;
 
 namespace Neo.Persistence.LevelDB
 {
