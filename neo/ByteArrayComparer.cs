@@ -7,7 +7,7 @@ namespace Neo
 {
     /// <inheritdoc />
     /// <summary>
-    /// Byte array comparer, usefull to have a byte array on a set or as key of a dictionary.
+    /// Byte array comparer, useful to have a byte array on a set or as key of a dictionary.
     /// </summary>
     public class ByteArrayComparer : IEqualityComparer<byte[]>
     {
