@@ -1,7 +1,7 @@
 ﻿using Neo.IO;
 using System.IO;
 
-namespace Neo.Ledger
+namespace Neo.Ledger.MPT
 {
     // Modified Merkle Patricia
     public class MPTItem : StateBase, ICloneable<MPTItem>

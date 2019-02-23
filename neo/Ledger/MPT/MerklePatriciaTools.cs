@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 
-namespace Neo.Ledger
+namespace Neo.Ledger.MPT
 {
     public static class MerklePatriciaTools
     {

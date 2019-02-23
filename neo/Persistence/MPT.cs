@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Ledger.MPT;
 
 namespace Neo.Persistence
 {

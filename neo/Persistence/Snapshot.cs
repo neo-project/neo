@@ -7,6 +7,7 @@ using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Neo.Ledger.MPT;
 
 namespace Neo.Persistence
 {

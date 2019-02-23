@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
+using Neo.Ledger.MPT;
 
 namespace Neo.UnitTests.Ledger
 {

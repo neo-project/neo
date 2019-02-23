@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Ledger;
+using Neo.Ledger.MPT;
 
 namespace Neo.UnitTests.Ledger
 {

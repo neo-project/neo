@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <Copyright>2015-2018 The Neo Project</Copyright>
     <AssemblyTitle>Neo</AssemblyTitle>
@@ -18,12 +17,10 @@
     <Description>Neo</Description>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <DebugType>none</DebugType>
     <DebugSymbols>False</DebugSymbols>
   </PropertyGroup>
-
   <ItemGroup>
     <None Update="protocol.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -31,7 +28,6 @@
       <Pack>true</Pack>
     </None>
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Akka" Version="1.3.11" />
     <PackageReference Include="Microsoft.AspNetCore.ResponseCompression" Version="2.2.0" />
@@ -43,9 +39,7 @@
     <PackageReference Include="Neo.VM" Version="2.3.3.1" />
     <PackageReference Include="System.Text.Encodings.Web" Version="4.5.0" />
   </ItemGroup>
-
   <ItemGroup Condition="'$(TargetFramework)' == 'net47'">
     <PackageReference Include="Replicon.Cryptography.SCrypt" Version="1.1.6.13" />
   </ItemGroup>
-
 </Project>
