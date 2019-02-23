@@ -168,29 +168,30 @@ namespace Neo.Ledger
             return hashNode;
         }
 
+        private readonly Action<Dictionary<byte[], MerklePatriciaNode>, MerklePatriciaNode, MerklePatriciaNode> _processOldExtension = (db, node, oldExtension) =>
+        {
+            if (oldExtension.Path.Length == 1)
+            {
+                node[oldExtension.Path[0]] = oldExtension.Next;
+            }
+            else
+            {
+                var position = oldExtension.Path[0];
+                oldExtension.Path = oldExtension.Path.Skip(1).ToArray();
+                node[position] = oldExtension.Hash();
+                db[node[position]] = oldExtension;
+            }
+        };
+
         private byte[] SetExtension(MerklePatriciaNode node, byte[] path, byte[] key, byte[] value)
         {
-            var processOld = new Action<MerklePatriciaNode, MerklePatriciaNode>((n, o) =>
-            {
-                if (o.Path.Length == 1)
-                {
-                    n[o.Path[0]] = o.Next;
-                }
-                else
-                {
-                    var position = o.Path[0];
-                    o.Path = o.Path.Skip(1).ToArray();
-                    n[position] = o.Hash();
-                    _db[n[position]] = o;
-                }
-            });
 
             if (path.Length == 0)
             {
                 var oldExtension = node;
                 _db.Remove(node.Hash());
                 node = MerklePatriciaNode.BranchNode();
-                processOld(node, oldExtension);
+                _processOldExtension(_db, node, oldExtension);
 
                 SetBranch(node, path, key, value);
             }
@@ -206,7 +207,7 @@ namespace Neo.Ledger
                 var oldExtension = node;
                 _db.Remove(node.Hash());
                 node = MerklePatriciaNode.BranchNode();
-                processOld(node, oldExtension);
+                _processOldExtension(_db, node, oldExtension);
 
                 SetBranch(node, path, key, value);
             }
