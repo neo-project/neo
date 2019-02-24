@@ -600,7 +600,7 @@ namespace Neo.SmartContract
                     Key = key
                 };
 //                Snapshot.Storages.TryGet(storageKey);
-                StorageItem item = MPT.GetFromStorage(Snapshot, context.ScriptHash, storageKey);
+                StorageItem item = Snapshot.GetFromMPTStorage(context.ScriptHash, storageKey);
                 engine.CurrentContext.EvaluationStack.Push(item?.Value ?? new byte[0]);
                 return true;
             }
@@ -670,7 +670,7 @@ namespace Neo.SmartContract
             if (item.IsConstant) return false;
             item.Value = value;
             item.IsConstant = flags.HasFlag(StorageFlags.Constant);
-            MPT.AddToStorage(Snapshot, context.ScriptHash, skey, item);
+            Snapshot.AddToMPTStorage(context.ScriptHash, skey, item);
             return true;
         }
 
@@ -711,7 +711,7 @@ namespace Neo.SmartContract
                 };
                 if (Snapshot.Storages.TryGet(key)?.IsConstant == true) return false;
                 Snapshot.Storages.Delete(key);
-                MPT.DeleteFromStorage(Snapshot, context.ScriptHash, key);
+                Snapshot.DeleteFromMPTStorage(context.ScriptHash, key);
                 return true;
             }
             return false;

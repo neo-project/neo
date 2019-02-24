@@ -749,7 +749,7 @@ namespace Neo.SmartContract
                             IsConstant = false
                         };
                         Snapshot.Storages.Add(sk, si);
-                        MPT.AddToStorage(Snapshot, hash, sk, si);
+                        Snapshot.AddToMPTStorage(hash, sk, si);
                     }
                 }
             }
