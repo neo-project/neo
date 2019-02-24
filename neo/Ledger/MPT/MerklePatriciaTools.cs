@@ -95,5 +95,17 @@ namespace Neo.Ledger.MPT
                 }
             }
         }
+        
+        public static byte[] ConvertToNibble(this byte[] key)
+        {
+            var resp = new byte[key.Length * 2];
+            for (var i = 0; i < key.Length; i++)
+            {
+                resp[2 * i] = (byte) (key[i] / 16);
+                resp[2 * i + 1] = (byte) (key[i] % 16);
+            }
+
+            return resp;
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,14 +13,22 @@ namespace Neo.Ledger.MPT
     /// Modified Merkel Patricia Node.
     /// Note: It is not a thread safe implementation.
     /// </summary>
-    public class MerklePatriciaNode : StateBase, ICloneable<MerklePatriciaNode>, IEquatable<MerklePatriciaNode>
+    public class MerklePatriciaNode : StateBase,
+        ICloneable<MerklePatriciaNode>,
+        IEquatable<MerklePatriciaNode>,
+        IEnumerable<byte[]>
     {
         private const int BranchSize = 18;
         private const int ExtensionSize = 2;
         private const int LeafSize = 3;
 
         private byte[][] _hashes;
-        private MerklePatriciaNode(int size = 0) => _hashes = new byte[size][];
+
+        public MerklePatriciaNode() : this(0)
+        {
+        }
+
+        public MerklePatriciaNode(int size) => _hashes = new byte[size][];
 
         /// <summary>
         /// Indicates if the node is a branch.
@@ -120,6 +129,36 @@ namespace Neo.Ledger.MPT
             }
 
             return resp.Append(IsBranch ? "}" : "]").ToString();
+        }
+        
+        /// <inheritdoc />
+        /// <summary>
+        /// Iterates only on the hashes.
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerator<byte[]> GetEnumerator()
+        {
+            if (IsLeaf)
+            {
+                yield break;
+            }
+            
+            if (IsExtension)
+            {
+                yield return Next;
+            }
+            else
+            {
+                for (var i = 0; i < Length - 2; ++i)
+                {
+                    yield return _hashes[i];
+                }
+            }
+        }
+        
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
 
         /// <summary>
@@ -247,6 +286,29 @@ namespace Neo.Ledger.MPT
                     writer.WriteVarBytes(_hashes[i] ?? new byte[0]);
                 }
             }
+        }
+
+        public (int, int) IndexAndCountNotNullHashes(int max = 2)
+        {
+            var i = 0;
+            var cont = 0;
+            var index = -1;
+            foreach (var it in this)
+            {
+                if (it != null)
+                {
+                    cont++;
+                    index = i;
+                }
+
+                ++i;
+                if (cont >= max)
+                {
+                    break;
+                }
+            }
+
+            return (index, cont);
         }
     }
 }
