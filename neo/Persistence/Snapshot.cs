@@ -23,7 +23,7 @@ namespace Neo.Persistence
         public abstract DataCache<UInt256, AssetState> Assets { get; }
         public abstract DataCache<UInt160, ContractState> Contracts { get; }
         public abstract DataCache<StorageKey, StorageItem> Storages { get; }
-        public abstract DataCache<MPTKey, MerklePatricia> MPTStorages { get; }
+        public abstract DataCache<MPTKey, MerklePatriciaNode> MPTStorages { get; }
         public abstract DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
         public abstract MetaDataCache<ValidatorsCountState> ValidatorsCount { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }

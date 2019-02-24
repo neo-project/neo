@@ -17,7 +17,7 @@ namespace Neo.Persistence
         public override DataCache<UInt256, AssetState> Assets { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
         public override DataCache<StorageKey, StorageItem> Storages { get; }
-        public override DataCache<MPTKey, MerklePatricia> MPTStorages { get; }
+        public override DataCache<MPTKey, MerklePatriciaNode> MPTStorages { get; }
         public override DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
         public override MetaDataCache<ValidatorsCountState> ValidatorsCount { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
