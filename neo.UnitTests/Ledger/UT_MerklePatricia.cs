@@ -12,14 +12,16 @@ namespace Neo.UnitTests.Ledger
     [TestClass]
     public class UT_MerklePatricia
     {
+        private static MerklePatriciaTree NewTree() => new MerklePatriciaTree();
+
         private static void EqualsAfterRemove(List<string> values, int selected = 0, int? max = null)
         {
             values = new List<string>(new HashSet<string>(values));
             for (max = max ?? 1 << values.Count; selected < max; selected++)
             {
-                var inserted = new MerklePatricia();
-                var insertedRemoved = new MerklePatricia();
-                var insertedRemovedBackwards = new MerklePatricia();
+                var inserted = NewTree();
+                var insertedRemoved = NewTree();
+                var insertedRemovedBackwards = NewTree();
 
                 for (var i = 0; i < values.Count; i++)
                 {
@@ -85,9 +87,9 @@ namespace Neo.UnitTests.Ledger
             EqualsAfterRemove(new List<string> {"a", "b", "aaaa", "baaa", "aaab", "baab"});
         }
 
-        private static void CheckCopy(MerklePatricia mp)
+        private static void CheckCopy(MerklePatriciaTree mp)
         {
-            var cloned = new MerklePatricia();
+            var cloned = NewTree();
             using (var ms = new MemoryStream())
             using (var bw = new BinaryWriter(ms))
             {
@@ -108,7 +110,7 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(cloned.Validate());
             Assert.AreEqual(mp, cloned);
 
-            cloned = new MerklePatricia();
+            cloned = NewTree();
             cloned.FromReplica(mp);
             Assert.IsTrue(mp.Validate());
             Assert.IsTrue(cloned.Validate());
@@ -118,7 +120,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void DistinctRoot()
         {
-            var mp = new MerklePatricia();
+            var mp = NewTree();
             Assert.IsFalse(mp == null);
             mp[new byte[] {0x0, 0x0, 0x1}] = new byte[] {0x0, 0x0, 0x1};
             Assert.IsTrue(new byte[] {0x0, 0x0, 0x1}.SequenceEqual(mp[new byte[] {0x0, 0x0, 0x1}]));
@@ -133,7 +135,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void SameRoot()
         {
-            var mp = new MerklePatricia();
+            var mp = NewTree();
             Assert.IsFalse(mp == null);
             mp[new byte[] {0x0, 0x0, 0x1}] = new byte[] {0x0, 0x0, 0x1};
             Assert.IsTrue(new byte[] {0x0, 0x0, 0x1}.SequenceEqual(mp[new byte[] {0x0, 0x0, 0x1}]));
@@ -147,7 +149,10 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void EndsOnExtension()
         {
-            var mp = new MerklePatricia {["bola"] = "bola", ["bolo"] = "bolo"};
+            var mp = NewTree();
+            mp["bola"] = "bola";
+            mp["bolo"] = "bolo";
+
             Assert.AreEqual("bola", mp["bola"]);
             Assert.AreEqual("bolo", mp["bolo"]);
             Assert.AreEqual(2, mp.Count());
@@ -175,11 +180,9 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void ColidKeys()
         {
-            var mp = new MerklePatricia
-            {
-                ["oi"] = "batata",
-                ["oi"] = "batatatinha"
-            };
+            var mp = NewTree();
+            mp["oi"] = "batata";
+            mp["oi"] = "batatatinha";
             Assert.IsTrue(mp.ContainsKey("oi"));
             Assert.AreEqual("batatatinha", mp["oi"]);
             Assert.IsTrue(mp.Validate());
@@ -211,7 +214,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void StepByStep()
         {
-            var mp = new MerklePatricia();
+            var mp = NewTree();
             Assert.AreEqual(0, mp.Count());
             var a0001 = new byte[] {0x0, 0x01};
             mp[a0001] = a0001;
@@ -228,7 +231,9 @@ namespace Neo.UnitTests.Ledger
             Assert.IsFalse(mp.ContainsKey(a0101));
             Assert.AreEqual(a0001, mp[a0001]);
 
-            Assert.AreEqual(new MerklePatricia {[a0001] = a0001}, mp);
+            var merklePatricia = NewTree();
+            merklePatricia[a0001] = a0001;
+            Assert.AreEqual(merklePatricia, mp);
 
             CheckCopy(mp);
         }
@@ -236,12 +241,10 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void ContainsValue()
         {
-            var mp = new MerklePatricia
-            {
-                ["aoi"] = "oi",
-                ["boi2"] = "oi2",
-                ["coi1"] = "oi3"
-            };
+            var mp = NewTree();
+            mp["aoi"] = "oi";
+            mp["boi2"] = "oi2";
+            mp["coi1"] = "oi3";
             Assert.IsTrue(mp.Validate());
             Assert.IsTrue(mp.ContainsValue("oi"));
             Assert.IsTrue(mp.ContainsValue("oi2"));
@@ -258,7 +261,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void PatriciaCount()
         {
-            var mp = new MerklePatricia();
+            var mp = NewTree();
             Assert.AreEqual(0, mp.Count());
             Assert.IsTrue(mp.Validate());
 
@@ -299,7 +302,7 @@ namespace Neo.UnitTests.Ledger
                 ["oi123"] = "bala123"
             };
 
-            var merklePatricia = new MerklePatricia();
+            var merklePatricia = NewTree();
             foreach (var keyValue in exemplo)
             {
                 merklePatricia[keyValue.Key] = keyValue.Value;
@@ -318,10 +321,10 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        public void Lista()
+        public void ListOfValues()
         {
             var lista = new[] {"oi", "oi1", "oi2", "oi12", "bola", "birosca123", "ca123", "oi123"};
-            var mp = new MerklePatricia();
+            var mp = NewTree();
             foreach (var it in lista)
             {
                 mp[it] = it;
@@ -336,7 +339,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void One()
         {
-            var merklePatricia = new MerklePatricia();
+            var merklePatricia = NewTree();
             Assert.IsTrue(merklePatricia.Validate());
 //            Assert.AreEqual(0, merklePatricia.Height());
 
@@ -370,7 +373,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Remove()
         {
-            var mp = new MerklePatricia();
+            var mp = NewTree();
             Assert.IsTrue(mp.Validate());
 
             void RemoverTestar(string x, string y)
@@ -406,7 +409,8 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(mp.ContainsKey("123"));
             Assert.IsTrue(mp.Validate());
 
-            var mp2 = new MerklePatricia {["123"] = "abc"};
+            var mp2 = NewTree();
+             mp2["123"] = "abc";
             Assert.AreEqual(mp2, mp);
             Assert.IsTrue(mp.Validate());
             Assert.IsTrue(mp2.Validate());
@@ -418,25 +422,23 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void EqualsThree()
         {
-            Assert.AreNotEqual(null, new MerklePatricia());
-            Assert.AreNotEqual(new MerklePatricia(), new MerklePatricia {["oi"] = "oi"});
+            Assert.AreNotEqual(null, NewTree());
+            var mpOi = NewTree();
+            mpOi["oi"] = "oi";
+            Assert.AreNotEqual(NewTree(), mpOi);
 
-            var mpA = new MerklePatricia
-            {
-                ["oi"] = "bola",
-                ["oi1"] = "1bola",
-                ["oi2"] = "b2ola",
-                ["oi1"] = "bola1"
-            };
+            var mpA = NewTree();
+            mpA["oi"] = "bola";
+            mpA["oi1"] = "1bola";
+            mpA["oi2"] = "b2ola";
+            mpA["oi1"] = "bola1";
             Assert.IsTrue(mpA.Validate());
 
-            var mpB = new MerklePatricia
-            {
-                ["oi"] = "bola",
-                ["oi1"] = "1bola",
-                ["oi2"] = "b2ola",
-                ["oi1"] = "bola1"
-            };
+            var mpB = NewTree();
+            mpB["oi"] = "bola";
+            mpB["oi1"] = "1bola";
+            mpB["oi2"] = "b2ola";
+            mpB["oi1"] = "bola1";
             Assert.IsTrue(mpB.Validate());
             Assert.AreEqual(mpA, mpB);
 
@@ -486,7 +488,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void ToStringTesting()
         {
-            var mp = new MerklePatricia();
+            var mp = NewTree();
             Assert.AreEqual("{}", mp.ToString());
             mp["a"] = "a";
             var converted = Encoding.UTF8.GetBytes("a").ByteToHexString();
@@ -498,7 +500,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Equals()
         {
-            var mpNode = new MerklePatricia();
+            var mpNode = NewTree();
             Assert.AreNotEqual(mpNode, null);
             Assert.IsFalse(mpNode == null);
             Assert.IsFalse(mpNode.Equals(null));
@@ -507,7 +509,8 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(mpNode == mpNode);
             Assert.IsTrue(mpNode.Equals(mpNode));
 
-            var mpA = new MerklePatricia {["a"] = "a"};
+            var mpA = NewTree();
+            mpA["a"] = "a";
             Assert.AreNotEqual(mpNode, mpA);
             Assert.IsFalse(mpNode == mpA);
             Assert.IsFalse(mpNode.Equals(mpA));

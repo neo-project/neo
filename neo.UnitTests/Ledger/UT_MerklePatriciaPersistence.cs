@@ -9,12 +9,15 @@ namespace Neo.UnitTests.Ledger
     [TestClass]
     public class UT_MerklePatriciaPersistence
     {
+        private static MerklePatriciaTree NewTree() => new MerklePatriciaTree();
+
         [TestMethod]
         public void Serialize()
         {
-            var mp = new MerklePatricia {["oi"] = "bola"};
+            var mp = NewTree();
+            mp["oi"] = "bola";
 
-            var cloned = new MerklePatricia();
+            var cloned = NewTree();
             using (var ms = new MemoryStream())
             using (var bw = new BinaryWriter(ms))
             {
@@ -38,9 +41,10 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void SerializeFakingData()
         {
-            var mp = new MerklePatricia {["oi"] = "bola"};
+            var mp = NewTree();
+            mp["oi"] = "bola";
 
-            var cloned = new MerklePatricia();
+            var cloned = NewTree();
             using (var ms = new MemoryStream())
             using (var bw = new BinaryWriter(ms))
             {
@@ -70,9 +74,11 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void SerializeFakingDataBranch()
         {
-            var mp = new MerklePatricia {["oi"] = "bola", ["ola"] = "ola"};
+            var mp = NewTree();
+            mp["oi"] = "bola";
+            mp["ola"] = "ola";
 
-            var cloned = new MerklePatricia();
+            var cloned = NewTree();
             using (var ms = new MemoryStream())
             using (var bw = new BinaryWriter(ms))
             {
@@ -99,7 +105,8 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Clone()
         {
-            var mp = new MerklePatricia {["oi"] = "bola"};
+            var mp = NewTree();
+            mp["oi"] = "bola";
 
             var cloned = mp.Clone();
 
@@ -115,9 +122,10 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void FromReplica()
         {
-            var mp = new MerklePatricia {["oi"] = "bola"};
+            var mp = NewTree();
+            mp["oi"] = "bola";
 
-            var cloned = new MerklePatricia();
+            var cloned = NewTree();
             cloned.FromReplica(mp);
 
             Assert.IsTrue(mp.Validate());
@@ -135,27 +143,31 @@ namespace Neo.UnitTests.Ledger
             var setObj = new HashSet<MerklePatricia>();
             Assert.AreEqual(0, setObj.Count);
 
-            var mpA = new MerklePatricia {["a"] = "a"};
+            var mpA = NewTree();
+            mpA["a"] = "a";
             setObj.Add(mpA);
             Assert.AreEqual(1, setObj.Count);
 
-            var mpB = new MerklePatricia {["b"] = "b"};
+            var mpB = NewTree();
+            mpB["b"] = "b";
             setObj.Add(mpB);
             Assert.AreEqual(2, setObj.Count);
 
-            var mpC = new MerklePatricia {["b"] = "b"};
+            var mpC = NewTree();
+            mpC["b"] = "b";
             setObj.Add(mpC);
             Assert.AreEqual(2, setObj.Count);
 
             Assert.IsTrue(setObj.Remove(mpA));
             Assert.AreEqual(1, setObj.Count);
 
-            var mpD = new MerklePatricia {["d"] = "d"};
+            var mpD = NewTree();
+            mpD["d"] = "d";
             Assert.IsFalse(setObj.Remove(mpD));
             setObj.Add(mpD);
             Assert.AreEqual(2, setObj.Count);
 
-            setObj.Add(new MerklePatricia());
+            setObj.Add(NewTree());
         }
     }
 }
