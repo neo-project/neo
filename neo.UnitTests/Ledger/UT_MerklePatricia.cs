@@ -410,7 +410,7 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(mp.Validate());
 
             var mp2 = NewTree();
-             mp2["123"] = "abc";
+            mp2["123"] = "abc";
             Assert.AreEqual(mp2, mp);
             Assert.IsTrue(mp.Validate());
             Assert.IsTrue(mp2.Validate());
