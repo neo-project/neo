@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
-using Neo.IO;
+using Neo.Cryptography;
 
 namespace Neo.Ledger.MPT
 {
@@ -157,8 +156,6 @@ namespace Neo.Ledger.MPT
                 return false;
             }
 
-            // Compares the size of _db to ensure there is no leaked entry
-            // || CountAllDb() != other.CountAllDb()
             if (!GetRoot().SequenceEqual(other.GetRoot()))
             {
                 return false;
@@ -186,27 +183,11 @@ namespace Neo.Ledger.MPT
                 }
             }
             
-            /*
-            foreach (var it in GetEnumeratorDb())
-            {
-                if (!other.ContainsKeyDb(it.Key))
-                {
-                    return false;
-                }
-
-                var otherV = other.GetDb(it.Key);
-                if (otherV == null || !otherV.Equals(it.Value))
-                {
-                    return false;
-                }
-            }
-            */
-
             return true;
         }
         
         /// <inheritdoc />
-        public override int GetHashCode() => GetRoot() != null ? GetRoot().Sum(x => x) : 0;
+        public override int GetHashCode() => GetRoot() != null ?  (int) GetRoot().Murmur32(0) : 0;
         
     }
 }
