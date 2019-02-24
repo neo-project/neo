@@ -105,7 +105,7 @@ namespace Neo.Ledger.MPT
         /// </summary>
         /// <param name="key">Key to be tested.</param>
         /// <returns>true in the case the tree contains the key.</returns>
-        public bool ContainsKey(byte[] key) => this[key] != null;
+        public bool ContainsKey(byte[] key) => ContainsKeyDb(key);
 
         public bool ContainsKey(string key) => ContainsKey(Encoding.UTF8.GetBytes(key));
 
