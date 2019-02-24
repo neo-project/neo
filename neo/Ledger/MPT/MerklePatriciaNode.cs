@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Neo.Cryptography;
 using Neo.IO;
 
 namespace Neo.Ledger.MPT
@@ -239,17 +240,7 @@ namespace Neo.Ledger.MPT
         }
 
         /// <inheritdoc />
-        public override int GetHashCode()
-        {
-            var resp = _hashes.Length;
-            for (var i = 0; i < _hashes.Length; i++)
-            {
-                if (_hashes[i] == null) continue;
-                resp += _hashes[i].Sum(b => i * _hashes.Length + b);
-            }
-
-            return resp;
-        }
+        public override int GetHashCode() => (int) Hash().Murmur32(0);
 
         /// <inheritdoc />
         public override void Deserialize(BinaryReader reader)
