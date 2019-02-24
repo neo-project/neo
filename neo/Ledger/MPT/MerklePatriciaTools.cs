@@ -95,7 +95,12 @@ namespace Neo.Ledger.MPT
                 }
             }
         }
-        
+
+        /// <summary>
+        /// Convert a byte array in a nibble representation.
+        /// </summary>
+        /// <param name="key">The byte array to be converted.</param>
+        /// <returns>The byte array with the nibbles.</returns>
         public static byte[] ConvertToNibble(this byte[] key)
         {
             var resp = new byte[key.Length * 2];

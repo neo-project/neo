@@ -131,7 +131,7 @@ namespace Neo.Ledger.MPT
 
             return resp.Append(IsBranch ? "}" : "]").ToString();
         }
-        
+
         /// <inheritdoc />
         /// <summary>
         /// Iterates only on the hashes.
@@ -143,7 +143,7 @@ namespace Neo.Ledger.MPT
             {
                 yield break;
             }
-            
+
             if (IsExtension)
             {
                 yield return Next;
@@ -156,7 +156,8 @@ namespace Neo.Ledger.MPT
                 }
             }
         }
-        
+
+        /// <inheritdoc />
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
@@ -279,6 +280,11 @@ namespace Neo.Ledger.MPT
             }
         }
 
+        /// <summary>
+        /// Returns the number of the first not null hash and the number of hashes.
+        /// </summary>
+        /// <param name="max">Max of hashes to check.</param>
+        /// <returns>The index and the number of not null hashes.</returns>
         public (int, int) IndexAndCountNotNullHashes(int max = 2)
         {
             var i = 0;
