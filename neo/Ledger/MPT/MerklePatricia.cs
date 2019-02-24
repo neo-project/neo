@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Neo.Cryptography;
+using Neo.Ledger.MPT.Operation;
 
 namespace Neo.Ledger.MPT
 {
@@ -18,11 +19,34 @@ namespace Neo.Ledger.MPT
         private readonly MPTRemove mptRemove;
         private readonly MPTValidate mptValidate;
 
+        /// <summary>
+        /// Get data from the database.
+        /// </summary>
         protected abstract MerklePatriciaNode GetDb(byte[] key);
+
+        /// <summary>
+        /// Removes data from the database.
+        /// </summary>
         protected abstract bool RemoveDb(byte[] key);
+
+        /// <summary>
+        /// Set data on the database.
+        /// </summary>
         protected abstract MerklePatriciaNode SetDb(byte[] kye, MerklePatriciaNode node);
+
+        /// <summary>
+        /// Check if the database contains the key.
+        /// </summary>
         protected abstract bool ContainsKeyDb(byte[] key);
+
+        /// <summary>
+        /// Get the root hash.
+        /// </summary>
         protected abstract byte[] GetRoot();
+
+        /// <summary>
+        /// Change the root hash.
+        /// </summary>
         protected abstract void SetRoot(byte[] root);
 
         internal MerklePatricia()
@@ -108,6 +132,7 @@ namespace Neo.Ledger.MPT
         /// <inheritdoc />
         public override string ToString() => GetRoot() == null ? "{}" : ToString(GetDb(GetRoot()));
 
+        /// <inheritdoc />
         private string ToString(MerklePatriciaNode node)
         {
             if (node.IsExtension)
@@ -161,11 +186,11 @@ namespace Neo.Ledger.MPT
                 return false;
             }
 
-            var values = new Stack<byte[]>();
-            values.Push(GetRoot());
-            while (values.Count > 0)
+            var hashesToCheck = new Stack<byte[]>();
+            hashesToCheck.Push(GetRoot());
+            while (hashesToCheck.Count > 0)
             {
-                var it = values.Pop();
+                var it = hashesToCheck.Pop();
                 if (it == null) continue;
                 var itNode = GetDb(it);
                 var otherNode = other.GetDb(it);
@@ -178,16 +203,15 @@ namespace Neo.Ledger.MPT
                 {
                     if (hash != null)
                     {
-                        values.Push(hash);
+                        hashesToCheck.Push(hash);
                     }
                 }
             }
-            
+
             return true;
         }
-        
+
         /// <inheritdoc />
-        public override int GetHashCode() => GetRoot() != null ?  (int) GetRoot().Murmur32(0) : 0;
-        
+        public override int GetHashCode() => GetRoot() != null ? (int) GetRoot().Murmur32(0) : 0;
     }
 }

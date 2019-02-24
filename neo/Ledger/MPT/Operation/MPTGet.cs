@@ -1,20 +1,40 @@
 ﻿using System;
 using System.Linq;
-using Neo.IO;
 
-namespace Neo.Ledger.MPT
+namespace Neo.Ledger.MPT.Operation
 {
-    public class MPTGet
+    /// <summary>
+    /// MPT get operation.
+    /// </summary>
+    internal class MPTGet
     {
+        /// <summary>
+        /// Delegate to get data from the database.
+        /// </summary>
         private readonly Func<byte[], MerklePatriciaNode> _getDb;
+
+        /// <summary>
+        /// Delegate to get the root hash.
+        /// </summary>
         private readonly Func<byte[]> _getRoot;
 
+        /// <summary>
+        /// MPT get operation.
+        /// </summary>
+        /// <param name="_getDb">Delegate to get data from the database.</param>
+        /// <param name="_getRoot">Delegate to get the root hash.</param>
         internal MPTGet(Func<byte[], MerklePatriciaNode> _getDb, Func<byte[]> _getRoot)
         {
             this._getDb = _getDb;
             this._getRoot = _getRoot;
         }
 
+        /// <summary>
+        /// Get a value from the database.
+        /// </summary>
+        /// <param name="key">Specific key.</param>
+        /// <returns>The value attached to the key.</returns>
+        /// <exception cref="ArgumentNullException">In the case a null key is received.</exception>
         public byte[] Get(byte[] key)
         {
             if (key == null)

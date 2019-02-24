@@ -1,16 +1,46 @@
 ﻿using System;
 using System.Linq;
 
-namespace Neo.Ledger.MPT
+namespace Neo.Ledger.MPT.Operation
 {
-    public class MPTRemove
+    /// <summary>
+    /// MPT remove operation.
+    /// </summary>
+    internal class MPTRemove
     {
+        /// <summary>
+        /// Delegate to get data from the database.
+        /// </summary>
         private readonly Func<byte[], MerklePatriciaNode> _getDb;
+
+        /// <summary>
+        /// Delegate to remove data from the database.
+        /// </summary>
         private readonly Func<byte[], bool> _removeDb;
+
+        /// <summary>
+        /// Delegate to set data on the database.
+        /// </summary>
         private readonly Func<byte[], MerklePatriciaNode, MerklePatriciaNode> _setDb;
+
+        /// <summary>
+        /// Delegate to get the root hash.
+        /// </summary>
         private readonly Func<byte[]> _getRoot;
+
+        /// <summary>
+        /// Delegate to change the root hash.
+        /// </summary>
         private readonly Action<byte[]> _setRoot;
 
+        /// <summary>
+        /// MPT remove operation.
+        /// </summary>
+        /// <param name="_getDb">Delegate to get data from the database.</param>
+        /// <param name="_removeDb">Delegate to remove data from the database.</param>
+        /// <param name="_setDb">Delegate to set data on the database.</param>
+        /// <param name="_getRoot">Delegate to get the root hash.</param>
+        /// <param name="_setRoot">Delegate to change the root hash.</param>
         internal MPTRemove(Func<byte[], MerklePatriciaNode> _getDb, Func<byte[], bool> _removeDb,
             Func<byte[], MerklePatriciaNode, MerklePatriciaNode> _setDb, Func<byte[]> _getRoot, Action<byte[]> _setRoot)
         {
@@ -21,6 +51,11 @@ namespace Neo.Ledger.MPT
             this._setRoot = _setRoot;
         }
 
+        /// <summary>
+        /// Removes the key-value pair from the database.
+        /// </summary>
+        /// <param name="key">The key to be removed.</param>
+        /// <returns>true in the case the value is found.</returns>
         public bool Remove(byte[] key)
         {
             var root = _getRoot();
@@ -94,18 +129,7 @@ namespace Neo.Ledger.MPT
                 }
                 else
                 {
-                    var cont = 0;
-                    var index = -1;
-                    // TODO FIXME Criar um iterator pra isso
-//                    for (var i = 0; i < nodeNext.Length - 2 && cont < 2; i++)
-//                    {
-//                        if (nodeNext[i] != null)
-//                        {
-//                            cont++;
-//                            index = i;
-//                        }
-//                    }
-                    (index, cont) = nodeNext.IndexAndCountNotNullHashes();
+                    var (index, cont) = nodeNext.IndexAndCountNotNullHashes();
 
                     if (cont == 1 && nodeNext.Value == null)
                     {
@@ -147,15 +171,7 @@ namespace Neo.Ledger.MPT
                 node[path[0]] = Remove(node[path[0]], path.Skip(1).ToArray());
             }
 
-            var contar = 0;
-            var indexInnerNode = 0;
-//            for (var i = 0; i < node.Length - 2; i++)
-//            {
-//                if (node[i] == null) continue;
-//                contar++;
-//                indexInnerNode = i;
-//            }
-            (indexInnerNode, contar) = node.IndexAndCountNotNullHashes();
+            var (indexInnerNode, contar) = node.IndexAndCountNotNullHashes();
 
             if (contar == 0)
             {

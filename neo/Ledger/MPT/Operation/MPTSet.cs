@@ -1,17 +1,46 @@
 ﻿using System;
 using System.Linq;
-using Neo.IO;
 
-namespace Neo.Ledger.MPT
+namespace Neo.Ledger.MPT.Operation
 {
-    public class MPTSet
+    /// <summary>
+    /// MPT set operation.
+    /// </summary>
+    internal class MPTSet
     {
+        /// <summary>
+        /// Delegate to get data from the database.
+        /// </summary>
         private readonly Func<byte[], MerklePatriciaNode> _getDb;
+
+        /// <summary>
+        /// Delegate to remove data from the database.
+        /// </summary>
         private readonly Func<byte[], bool> _removeDb;
+
+        /// <summary>
+        /// Delegate to set data on the database.
+        /// </summary>
         private readonly Func<byte[], MerklePatriciaNode, MerklePatriciaNode> _setDb;
+
+        /// <summary>
+        /// Delegate to get the root hash.
+        /// </summary>
         private readonly Func<byte[]> _getRoot;
+
+        /// <summary>
+        /// Delegate to change the root hash.
+        /// </summary>
         private readonly Action<byte[]> _setRoot;
 
+        /// <summary>
+        /// MPT set operation.
+        /// </summary>
+        /// <param name="_getDb">Delegate to get data from the database.</param>
+        /// <param name="_removeDb">Delegate to remove data from the database.</param>
+        /// <param name="_setDb">Delegate to set data on the database.</param>
+        /// <param name="_getRoot">Delegate to get the root hash.</param>
+        /// <param name="_setRoot">Delegate to change the root hash.</param>
         internal MPTSet(Func<byte[], MerklePatriciaNode> _getDb, Func<byte[], bool> _removeDb,
             Func<byte[], MerklePatriciaNode, MerklePatriciaNode> _setDb, Func<byte[]> _getRoot, Action<byte[]> _setRoot)
         {
@@ -22,6 +51,13 @@ namespace Neo.Ledger.MPT
             this._setRoot = _setRoot;
         }
 
+        /// <summary>
+        /// Set a key-value pair in the MPT.
+        /// </summary>
+        /// <param name="key">The key to be inserted.</param>
+        /// <param name="value">The value to be inserted.</param>
+        /// <returns>The last value.</returns>
+        /// <exception cref="ArgumentNullException">In the case that a null key is used.</exception>
         public byte[] Set(byte[] key, byte[] value)
         {
             if (key == null)
@@ -200,7 +236,8 @@ namespace Neo.Ledger.MPT
                         var oldExtension = node;
                         node = MerklePatriciaNode.ExtensionNode();
                         node.Path = oldExtension.Path.Take(pos + 1).ToArray();
-                        node.Next = SetBranch(MerklePatriciaNode.BranchNode(), path.Skip(pos + 1).ToArray(), key, value);
+                        node.Next = SetBranch(MerklePatriciaNode.BranchNode(), path.Skip(pos + 1).ToArray(), key,
+                            value);
 
                         var nodeNext = _getDb(node.Next);
                         _removeDb(node.Next);
