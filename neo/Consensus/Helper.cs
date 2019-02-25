@@ -2,6 +2,7 @@
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Consensus
 {
@@ -12,17 +13,28 @@ namespace Neo.Consensus
         /// </summary>
         public const byte CN_Context = 0xf4;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int F(this IConsensusContext context) => (context.Validators.Length - 1) / 3;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int M(this IConsensusContext context) => context.Validators.Length - context.F();
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsPrimary(this IConsensusContext context) => context.MyIndex == context.PrimaryIndex;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsBackup(this IConsensusContext context) => context.MyIndex >= 0 && context.MyIndex != context.PrimaryIndex;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Header PrevHeader(this IConsensusContext context) => context.Snapshot.GetHeader(context.PrevHash);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool RequestSentOrReceived(this IConsensusContext context) => context.PreparationPayloads[context.PrimaryIndex] != null;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ResponseSent(this IConsensusContext context) => context.PreparationPayloads[context.MyIndex] != null;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool CommitSent(this IConsensusContext context) => context.CommitPayloads[context.MyIndex] != null;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool BlockSent(this IConsensusContext context) => context.Block != null;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ViewChanging(this IConsensusContext context) => context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber > context.ViewNumber;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint GetPrimaryIndex(this IConsensusContext context, byte viewNumber)
         {
             int p = ((int)context.BlockIndex - viewNumber) % context.Validators.Length;
