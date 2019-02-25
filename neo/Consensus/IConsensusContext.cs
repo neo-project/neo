@@ -10,7 +10,6 @@ namespace Neo.Consensus
     public interface IConsensusContext : IDisposable, ISerializable
     {
         //public const uint Version = 0;
-        ConsensusState State { get; set; }
         UInt256 PrevHash { get; }
         uint BlockIndex { get; }
         byte ViewNumber { get; }
@@ -25,18 +24,12 @@ namespace Neo.Consensus
         ConsensusPayload[] PreparationPayloads { get; set; }
         ConsensusPayload[] CommitPayloads { get; set; }
         ConsensusPayload[] ChangeViewPayloads { get; set; }
+        Block Block { get; set; }
         Snapshot Snapshot { get; }
-
-        int F { get; }
-        int M { get; }
-
-        Header PrevHeader { get; }
 
         Block CreateBlock();
 
         //void Dispose();
-
-        uint GetPrimaryIndex(byte viewNumber);
 
         ConsensusPayload MakeChangeView(byte newViewNumber);
 
@@ -51,9 +44,5 @@ namespace Neo.Consensus
         ConsensusPayload MakePrepareResponse();
 
         void Reset(byte viewNumber);
-
-        void Fill();
-
-        bool VerifyRequest();
     }
 }
