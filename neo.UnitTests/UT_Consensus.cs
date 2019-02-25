@@ -52,9 +52,8 @@ namespace Neo.UnitTests
             mockConsensusContext.SetupProperty(mr => mr.Nonce);
             mockConsensusContext.SetupProperty(mr => mr.NextConsensus);
             mockConsensusContext.Object.NextConsensus = UInt160.Zero;
-            mockConsensusContext.Setup(mr => mr.GetPrimaryIndex(It.IsAny<byte>())).Returns(2);
-            mockConsensusContext.SetupProperty(mr => mr.State);  // allows get and set to update mock state on Initialize method
-            mockConsensusContext.Object.State = ConsensusState.Initial;
+            mockConsensusContext.SetupGet(mr => mr.PreparationPayloads).Returns(new ConsensusPayload[7]);
+            mockConsensusContext.SetupGet(mr => mr.CommitPayloads).Returns(new ConsensusPayload[7]);
 
             int timeIndex = 0;
             var timeValues = new[] {
@@ -177,7 +176,6 @@ namespace Neo.UnitTests
         public void TestSerializeAndDeserializeConsensusContext()
         {
             var consensusContext = new ConsensusContext(null);
-            consensusContext.State = ConsensusState.CommitSent;
             consensusContext.PrevHash = UInt256.Parse("0xd42561e3d30e15be6400b6df2f328e02d2bf6354c41dce433bc57687c82144bf");
             consensusContext.BlockIndex = 1;
             consensusContext.ViewNumber = 2;
@@ -252,7 +250,6 @@ namespace Neo.UnitTests
 
             var copiedContext = TestUtils.CopyMsgBySerialization(consensusContext, new ConsensusContext(null));
 
-            copiedContext.State.Should().Be(consensusContext.State);
             copiedContext.PrevHash.Should().Be(consensusContext.PrevHash);
             copiedContext.BlockIndex.Should().Be(consensusContext.BlockIndex);
             copiedContext.ViewNumber.Should().Be(consensusContext.ViewNumber);
