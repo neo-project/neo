@@ -36,10 +36,10 @@ namespace Neo.Network.RPC
         private IWebHost host;
         private Fixed8 maxGasInvoke;
         private readonly NeoSystem system;
-        
+
         public static int MAX_CLAIMS_AMOUNT = 50;
         public static uint DEFAULT_UNLOCK_TIME = 15;
-        
+
         public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8))
         {
             this.system = system;
