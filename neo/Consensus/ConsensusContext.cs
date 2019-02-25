@@ -232,6 +232,7 @@ namespace Neo.Consensus
         {
             if (viewNumber == 0)
             {
+                Block = null;
                 Snapshot?.Dispose();
                 Snapshot = Blockchain.Singleton.GetSnapshot();
                 PrevHash = Snapshot.CurrentBlockHash;
