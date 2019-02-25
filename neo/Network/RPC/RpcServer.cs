@@ -147,15 +147,15 @@ namespace Neo.Network.RPC
             switch (method)
             {
                 case "claimgas":
-                    if (wallet == null || WalletLocker.Locked())
+                    if (Wallet == null || WalletLocker.Locked())
                         throw new RpcException(-400, "Access denied.");
                     using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                     {
-                        if (snapshot.CalculateBonus(wallet.GetUnclaimedCoins().Select(p => p.Reference)) == Fixed8.Zero)
+                        if (snapshot.CalculateBonus(Wallet.GetUnclaimedCoins().Select(p => p.Reference)) == Fixed8.Zero)
                         {
                             throw new RpcException(-100, "No gas to claim");
                         }
-                        CoinReference[] claims = wallet.GetUnclaimedCoins().Select(p => p.Reference).ToArray();
+                        CoinReference[] claims = Wallet.GetUnclaimedCoins().Select(p => p.Reference).ToArray();
                         if (claims.Length == 0) throw new RpcException(-100, "No gas to claim");
 
                         ClaimTransaction tx = new ClaimTransaction
@@ -169,7 +169,7 @@ namespace Neo.Network.RPC
                                 {
                                     AssetId = Blockchain.UtilityToken.Hash,
                                     Value = snapshot.CalculateBonus(claims.Take(MAX_CLAIMS_AMOUNT)),
-                                    ScriptHash = _params.Count > 0 ? _params[0].AsString().ToScriptHash() : wallet.GetChangeAddress()
+                                    ScriptHash = _params.Count > 0 ? _params[0].AsString().ToScriptHash() : Wallet.GetChangeAddress()
                                 }
                             }
 
@@ -183,11 +183,11 @@ namespace Neo.Network.RPC
                         {
                             throw new RpcException(-400, "Access denied");
                         }
-                        wallet.Sign(context);
+                        Wallet.Sign(context);
                         if (context.Completed)
                         {
                             tx.Witnesses = context.GetWitnesses();
-                            wallet.ApplyTransaction(tx);
+                            Wallet.ApplyTransaction(tx);
                             system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
                             return tx.ToJson();
                         }
@@ -197,7 +197,7 @@ namespace Neo.Network.RPC
                         }
                     }
                 case "dumpprivkey":
-                    if (wallet == null || WalletLocker.Locked())
+                    if (Wallet == null || WalletLocker.Locked())
                         throw new RpcException(-400, "Access denied.");
                     else
                     {
@@ -323,7 +323,7 @@ namespace Neo.Network.RPC
                         return contract?.ToJson() ?? throw new RpcException(-100, "Unknown contract");
                     }
                 case "getnewaddress":
-                    if (wallet == null || WalletLocker.Locked())
+                    if (Wallet == null || WalletLocker.Locked())
                         throw new RpcException(-400, "Access denied.");
                     else
                     {
@@ -481,7 +481,7 @@ namespace Neo.Network.RPC
                             return account;
                         }).ToArray();
                 case "lockwallet":
-                    if (wallet == null)
+                    if (Wallet == null)
                         throw new RpcException(-400, "Access denied");
                     else
                     {
@@ -489,7 +489,7 @@ namespace Neo.Network.RPC
                         return true;
                     }
                 case "sendfrom":
-                    if (wallet == null || WalletLocker.Locked())
+                    if (Wallet == null || WalletLocker.Locked())
                         throw new RpcException(-400, "Access denied.");
                     else
                     {
@@ -530,7 +530,7 @@ namespace Neo.Network.RPC
                         }
                     }
                 case "sendmany":
-                    if (wallet == null || WalletLocker.Locked())
+                    if (Wallet == null || WalletLocker.Locked())
                         throw new RpcException(-400, "Access denied.");
                     else
                     {
@@ -579,7 +579,7 @@ namespace Neo.Network.RPC
                         return GetRelayResult(reason);
                     }
                 case "sendtoaddress":
-                    if (wallet == null || WalletLocker.Locked())
+                    if (Wallet == null || WalletLocker.Locked())
                         throw new RpcException(-400, "Access denied.");
                     else
                     {
@@ -626,7 +626,7 @@ namespace Neo.Network.RPC
 
                         try
                         {
-                            unavailable = snapshot.CalculateBonus(wallet.FindUnspentCoins().Where(p => p.Output.AssetId.Equals(Blockchain.GoverningToken.Hash)).Select(p => p.Reference), height);
+                            unavailable = snapshot.CalculateBonus(Wallet.FindUnspentCoins().Where(p => p.Output.AssetId.Equals(Blockchain.GoverningToken.Hash)).Select(p => p.Reference), height);
                         }
                         catch (Exception)
                         {
@@ -635,7 +635,7 @@ namespace Neo.Network.RPC
 
                         return new JObject
                         {
-                            ["available"] = snapshot.CalculateBonus(wallet.GetUnclaimedCoins().Select(p => p.Reference)).ToString(),
+                            ["available"] = snapshot.CalculateBonus(Wallet.GetUnclaimedCoins().Select(p => p.Reference)).ToString(),
                             ["unavailable"] = unavailable.ToString()
                         };
                     }
@@ -646,16 +646,16 @@ namespace Neo.Network.RPC
                         return GetRelayResult(reason);
                     }
                 case "unlockwallet":
-                    if (wallet == null)
+                    if (Wallet == null)
                         throw new RpcException(-400, "Access denied");
                     else
                     {
                         try
                         {
                             if (_params.Count > 1)
-                                WalletLocker.Unlock(wallet, _params[0].AsString(), uint.Parse(_params[1].AsString()));
+                                WalletLocker.Unlock(Wallet, _params[0].AsString(), uint.Parse(_params[1].AsString()));
                             else
-                                WalletLocker.Unlock(wallet, _params[0].AsString(), DEFAULT_UNLOCK_TIME);
+                                WalletLocker.Unlock(Wallet, _params[0].AsString(), DEFAULT_UNLOCK_TIME);
                         }
                         catch (FormatException)
                         {
