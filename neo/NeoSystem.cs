@@ -42,7 +42,9 @@ namespace Neo
         {
             RpcServer?.Dispose();
             EnsureStoped(LocalNode);
+            // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
+            ActorSystem.WhenTerminated.Wait();
         }
 
         public void EnsureStoped(IActorRef actor)
