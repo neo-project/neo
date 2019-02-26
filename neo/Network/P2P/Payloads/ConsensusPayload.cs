@@ -1,4 +1,5 @@
-﻿using Neo.Consensus;
+﻿#pragma warning disable CS0612
+using Neo.Consensus;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
@@ -16,8 +17,8 @@ namespace Neo.Network.P2P.Payloads
         public UInt256 PrevHash;
         public uint BlockIndex;
         public ushort ValidatorIndex;
-        //This field has been removed and serialized to 0 for compatibility.
-        //public uint Timestamp;
+        [Obsolete] //This field will be removed from future version and should not be used.
+        private uint Timestamp;
         public byte[] Data;
         public Witness Witness;
 
@@ -73,7 +74,7 @@ namespace Neo.Network.P2P.Payloads
             PrevHash.Size +     //PrevHash
             sizeof(uint) +      //BlockIndex
             sizeof(ushort) +    //ValidatorIndex
-            sizeof(uint) +      //Timestamp, serialized to 0
+            sizeof(uint) +      //Timestamp
             Data.GetVarSize() + //Data
             1 + Witness.Size;   //Witness
 
@@ -95,7 +96,7 @@ namespace Neo.Network.P2P.Payloads
             PrevHash = reader.ReadSerializable<UInt256>();
             BlockIndex = reader.ReadUInt32();
             ValidatorIndex = reader.ReadUInt16();
-            reader.ReadUInt32();
+            Timestamp = reader.ReadUInt32();
             Data = reader.ReadVarBytes();
         }
 
@@ -124,7 +125,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(PrevHash);
             writer.Write(BlockIndex);
             writer.Write(ValidatorIndex);
-            writer.Write(0);
+            writer.Write(Timestamp);
             writer.WriteVarBytes(Data);
         }
 
@@ -136,3 +137,4 @@ namespace Neo.Network.P2P.Payloads
         }
     }
 }
+#pragma warning restore CS0612
