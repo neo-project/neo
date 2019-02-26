@@ -16,6 +16,7 @@ namespace Neo.Network.P2P.Payloads
         public UInt256 PrevHash;
         public uint BlockIndex;
         public ushort ValidatorIndex;
+        public uint Timestamp;
         public byte[] Data;
         public Witness Witness;
 
@@ -69,8 +70,16 @@ namespace Neo.Network.P2P.Payloads
             PrevHash.Size +     //PrevHash
             sizeof(uint) +      //BlockIndex
             sizeof(ushort) +    //ValidatorIndex
+            (Version == 0       //Timestamp
+                ? sizeof(uint)
+                : 0) +
             Data.GetVarSize() + //Data
             1 + Witness.Size;   //Witness
+
+        public ConsensusPayload()
+        {
+            Version = 1;
+        }
 
         internal T GetDeserializedMessage<T>() where T : ConsensusMessage
         {
@@ -90,8 +99,9 @@ namespace Neo.Network.P2P.Payloads
             PrevHash = reader.ReadSerializable<UInt256>();
             BlockIndex = reader.ReadUInt32();
             ValidatorIndex = reader.ReadUInt16();
+            if (Version == 0) reader.ReadUInt32();
             Data = reader.ReadVarBytes();
-            _deserializedMessage = ConsensusMessage.DeserializeFrom(Data);
+            _deserializedMessage = (Version == 1) ? ConsensusMessage.DeserializeFrom(Data) : null;
         }
 
         byte[] IScriptContainer.GetMessage()
@@ -119,6 +129,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(PrevHash);
             writer.Write(BlockIndex);
             writer.Write(ValidatorIndex);
+            if (Version == 0) writer.Write(Timestamp);
             writer.WriteVarBytes(Data);
         }
 
