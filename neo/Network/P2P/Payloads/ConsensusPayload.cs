@@ -26,6 +26,8 @@ namespace Neo.Network.P2P.Payloads
         {
             get
             {
+                if (_deserializedMessage is null)
+                    _deserializedMessage = ConsensusMessage.DeserializeFrom(Data);
                 return _deserializedMessage;
             }
             set
@@ -95,7 +97,6 @@ namespace Neo.Network.P2P.Payloads
             ValidatorIndex = reader.ReadUInt16();
             reader.ReadUInt32();
             Data = reader.ReadVarBytes();
-            _deserializedMessage = ConsensusMessage.DeserializeFrom(Data);
         }
 
         byte[] IScriptContainer.GetMessage()
