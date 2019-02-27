@@ -310,8 +310,8 @@ namespace Neo.Network.RPC
                         Blockchain.Singleton.MemPool.GetVerifiedAndUnverifiedTransactions(
                             out IEnumerable<Transaction> verifiedTransactions,
                             out IEnumerable<Transaction> unverifiedTransactions);
-                        json["verified"] = new JArray(verifiedTransactions.Select(p => (JObject) p.Hash.ToString()));
-                        json["unverified"] = new JArray(unverifiedTransactions.Select(p => (JObject) p.Hash.ToString()));
+                        json["verified"] = new JArray(verifiedTransactions.Select(p => (JObject)p.Hash.ToString()));
+                        json["unverified"] = new JArray(unverifiedTransactions.Select(p => (JObject)p.Hash.ToString()));
                         return json;
                     }
                 case "getrawtransaction":
@@ -494,7 +494,8 @@ namespace Neo.Network.RPC
                         if (fee < Fixed8.Zero)
                             throw new RpcException(-32602, "Invalid params");
                         UInt160 change_address = _params.Count >= 3 ? _params[2].AsString().ToScriptHash() : null;
-                        Transaction tx = Wallet.MakeTransaction(null, outputs, change_address: change_address, fee: fee);
+                        UInt160 from = _params.Count >= 4 ? _params[3].AsString().ToScriptHash() : null;
+                        Transaction tx = Wallet.MakeTransaction(null, outputs, from: from, change_address: change_address, fee: fee);
                         if (tx == null)
                             throw new RpcException(-300, "Insufficient funds");
                         ContractParametersContext context = new ContractParametersContext(tx);
