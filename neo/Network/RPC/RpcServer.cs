@@ -36,6 +36,7 @@ namespace Neo.Network.RPC
         private IWebHost host;
         private Fixed8 maxGasInvoke;
         private readonly NeoSystem system;
+        public static int MAX_CLAIMS_AMOUNT = 50;
 
         public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8))
         {
@@ -143,6 +144,60 @@ namespace Neo.Network.RPC
         {
             switch (method)
             {
+                case "claimgasall":
+                    if (Wallet == null)
+                        throw new RpcException(-400, "Access denied.");
+                    using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                    {
+                        if (snapshot.CalculateBonus(Wallet.GetUnclaimedCoins().Select(p => p.Reference)) == Fixed8.Zero)
+                        {
+                            throw new RpcException(-100, "No gas to claim");
+                        }
+                        CoinReference[] claims = Wallet.GetUnclaimedCoins().Select(p => p.Reference).ToArray();
+                        if (claims.Length == 0) throw new RpcException(-100, "No gas to claim");
+                        JArray result = new JArray();
+                        for (int i = 0; i < claims.Length; i += MAX_CLAIMS_AMOUNT)
+                        {
+                            ClaimTransaction tx = new ClaimTransaction
+                            {
+                                Claims = claims.Skip(i).Take(MAX_CLAIMS_AMOUNT).ToArray(),
+                                Attributes = new TransactionAttribute[0],
+                                Inputs = new CoinReference[0],
+                                Outputs = new[]
+                                {
+                                    new TransactionOutput
+                                    {
+                                        AssetId = Blockchain.UtilityToken.Hash,
+                                        Value = snapshot.CalculateBonus(claims.Take(MAX_CLAIMS_AMOUNT)),
+                                        ScriptHash = _params.Count > 0 ? _params[0].AsString().ToScriptHash() : Wallet.GetChangeAddress()
+                                    }
+                                }
+
+                            };
+                            ContractParametersContext context;
+                            try
+                            {
+                                context = new ContractParametersContext(tx);
+                            }
+                            catch (InvalidOperationException)
+                            {
+                                throw new RpcException(-400, "Access denied");
+                            }
+                            Wallet.Sign(context);
+                            if (context.Completed)
+                            {
+                                tx.Witnesses = context.GetWitnesses();
+                                Wallet.ApplyTransaction(tx);
+                                system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
+                                result.Add(tx.ToJson());
+                            }
+                            else
+                            {
+                                result.Add(context.ToJson());
+                            }
+                        }
+                        return result;
+                    }
                 case "dumpprivkey":
                     if (Wallet == null)
                         throw new RpcException(-400, "Access denied");
@@ -414,6 +469,45 @@ namespace Neo.Network.RPC
                         byte[] script = _params[0].AsString().HexToBytes();
                         return GetInvokeResult(script);
                     }
+                case "import":
+                    if (Wallet == null) throw new RpcException(-400, "Access denied.");
+                    else
+                    {
+                        if (_params.Count == 0) throw new RpcException(-32602, "Invalid params");
+                        var result = new JArray();
+                        var successList = new JArray();
+                        var errorList = new JArray();
+                        foreach (var wifKey in _params.Select(p => p.AsString()))
+                        {
+                            try
+                            {
+                                byte[] prikey = Wallet.GetPrivateKeyFromWIF(wifKey);
+                                var account = Wallet.CreateAccount(prikey);
+                                successList.Add(new JObject()
+                                {
+                                    ["key"] = wifKey,
+                                    ["address"] = account.Address,
+                                    ["haskey"] = account.HasKey,
+                                    ["label"] = account.Label,
+                                    ["watchonly"] = account.WatchOnly,
+                                    ["pubkey"] = account.GetKey().PublicKey.EncodePoint(true).ToHexString(),
+                                });
+                            }
+                            catch (FormatException)
+                            {
+                                errorList.Add(new JObject()
+                                {
+                                    ["key"] = wifKey,
+                                });
+                            }
+                        }
+                        if (Wallet is NEP6Wallet wallet) wallet.Save();
+                        return new JObject()
+                        {
+                            ["accounts"] = successList,
+                            ["errors"] = errorList,
+                        };
+                    }
                 case "listaddress":
                     if (Wallet == null)
                         throw new RpcException(-400, "Access denied.");
@@ -451,7 +545,7 @@ namespace Neo.Network.RPC
                                 Value = value,
                                 ScriptHash = to
                             }
-                        }, from: from, change_address: change_address, fee: fee);
+                        }, @from: from, change_address: change_address, fee: fee);
                         if (tx == null)
                             throw new RpcException(-300, "Insufficient funds");
                         ContractParametersContext context = new ContractParametersContext(tx);
@@ -495,7 +589,7 @@ namespace Neo.Network.RPC
                             throw new RpcException(-32602, "Invalid params");
                         UInt160 change_address = _params.Count >= 3 ? _params[2].AsString().ToScriptHash() : null;
                         UInt160 from = _params.Count >= 4 ? _params[3].AsString().ToScriptHash() : null;
-                        Transaction tx = Wallet.MakeTransaction(null, outputs, from: from, change_address: change_address, fee: fee);
+                        Transaction tx = Wallet.MakeTransaction(null, outputs, @from: from, change_address: change_address, fee: fee);
                         if (tx == null)
                             throw new RpcException(-300, "Insufficient funds");
                         ContractParametersContext context = new ContractParametersContext(tx);
