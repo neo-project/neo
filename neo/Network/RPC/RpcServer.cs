@@ -144,65 +144,65 @@ namespace Neo.Network.RPC
         {
             switch (method)
             {
-                case "claimgasall":
-                    if (Wallet == null)
-                        throw new RpcException(-400, "Access denied.");
-                    using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
-                    {
-                        if (snapshot.CalculateBonus(Wallet.GetUnclaimedCoins().Select(p => p.Reference)) == Fixed8.Zero)
-                        {
-                            throw new RpcException(-100, "No gas to claim");
-                        }
-                        CoinReference[] claims = Wallet.GetUnclaimedCoins().Select(p => p.Reference).ToArray();
-                        if (claims.Length == 0) throw new RpcException(-100, "No gas to claim");
-                        JArray result = new JArray();
-                        for (int i = 0; i < claims.Length; i += MAX_CLAIMS_AMOUNT)
-                        {
-                            var currentClaims = claims.Skip(i).Take(MAX_CLAIMS_AMOUNT).ToArray();
-                            if (currentClaims.Length == 0)
-                            {
-                                break;
-                            }
-                            ClaimTransaction tx = new ClaimTransaction
-                            {
-                                Claims = currentClaims,
-                                Attributes = new TransactionAttribute[0],
-                                Inputs = new CoinReference[0],
-                                Outputs = new[]
-                                {
-                                    new TransactionOutput
-                                    {
-                                        AssetId = Blockchain.UtilityToken.Hash,
-                                        Value = snapshot.CalculateBonus(currentClaims),
-                                        ScriptHash = _params.Count > 0 ? _params[0].AsString().ToScriptHash() : Wallet.GetChangeAddress()
-                                    }
-                                }
+                //case "claimgasall":
+                //    if (Wallet == null)
+                //        throw new RpcException(-400, "Access denied.");
+                //    using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                //    {
+                //        if (snapshot.CalculateBonus(Wallet.GetUnclaimedCoins().Select(p => p.Reference)) == Fixed8.Zero)
+                //        {
+                //            throw new RpcException(-100, "No gas to claim");
+                //        }
+                //        CoinReference[] claims = Wallet.GetUnclaimedCoins().Select(p => p.Reference).ToArray();
+                //        if (claims.Length == 0) throw new RpcException(-100, "No gas to claim");
+                //        JArray result = new JArray();
+                //        for (int i = 0; i < claims.Length; i += MAX_CLAIMS_AMOUNT)
+                //        {
+                //            var currentClaims = claims.Skip(i).Take(MAX_CLAIMS_AMOUNT).ToArray();
+                //            if (currentClaims.Length == 0)
+                //            {
+                //                break;
+                //            }
+                //            ClaimTransaction tx = new ClaimTransaction
+                //            {
+                //                Claims = currentClaims,
+                //                Attributes = new TransactionAttribute[0],
+                //                Inputs = new CoinReference[0],
+                //                Outputs = new[]
+                //                {
+                //                    new TransactionOutput
+                //                    {
+                //                        AssetId = Blockchain.UtilityToken.Hash,
+                //                        Value = snapshot.CalculateBonus(currentClaims),
+                //                        ScriptHash = _params.Count > 0 ? _params[0].AsString().ToScriptHash() : Wallet.GetChangeAddress()
+                //                    }
+                //                }
 
-                            };
-                            ContractParametersContext context;
-                            try
-                            {
-                                context = new ContractParametersContext(tx);
-                            }
-                            catch (InvalidOperationException)
-                            {
-                                throw new RpcException(-400, "Access denied");
-                            }
-                            Wallet.Sign(context);
-                            if (context.Completed)
-                            {
-                                tx.Witnesses = context.GetWitnesses();
-                                Wallet.ApplyTransaction(tx);
-                                system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
-                                result.Add(tx.ToJson());
-                            }
-                            else
-                            {
-                                result.Add(context.ToJson());
-                            }
-                        }
-                        return result;
-                    }
+                //            };
+                //            ContractParametersContext context;
+                //            try
+                //            {
+                //                context = new ContractParametersContext(tx);
+                //            }
+                //            catch (InvalidOperationException)
+                //            {
+                //                throw new RpcException(-400, "Access denied");
+                //            }
+                //            Wallet.Sign(context);
+                //            if (context.Completed)
+                //            {
+                //                tx.Witnesses = context.GetWitnesses();
+                //                Wallet.ApplyTransaction(tx);
+                //                system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
+                //                result.Add(tx.ToJson());
+                //            }
+                //            else
+                //            {
+                //                result.Add(context.ToJson());
+                //            }
+                //        }
+                //        return result;
+                //    }
                 case "dumpprivkey":
                     if (Wallet == null)
                         throw new RpcException(-400, "Access denied");
@@ -446,40 +446,11 @@ namespace Neo.Network.RPC
                         throw new RpcException(-400, "Access denied.");
                     else
                         return (Wallet.WalletHeight > 0) ? Wallet.WalletHeight - 1 : 0;
-                case "invoke":
-                    {
-                        UInt160 script_hash = UInt160.Parse(_params[0].AsString());
-                        ContractParameter[] parameters = ((JArray)_params[1]).Select(p => ContractParameter.FromJson(p)).ToArray();
-                        byte[] script;
-                        using (ScriptBuilder sb = new ScriptBuilder())
-                        {
-                            script = sb.EmitAppCall(script_hash, parameters).ToArray();
-                        }
-                        return GetInvokeResult(script);
-                    }
-                case "invokefunction":
-                    {
-                        UInt160 script_hash = UInt160.Parse(_params[0].AsString());
-                        string operation = _params[1].AsString();
-                        ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson(p)).ToArray() : new ContractParameter[0];
-                        byte[] script;
-                        using (ScriptBuilder sb = new ScriptBuilder())
-                        {
-                            script = sb.EmitAppCall(script_hash, operation, args).ToArray();
-                        }
-                        return GetInvokeResult(script);
-                    }
-                case "invokescript":
-                    {
-                        byte[] script = _params[0].AsString().HexToBytes();
-                        return GetInvokeResult(script);
-                    }
-                case "import":
+                case "importkey":
                     if (Wallet == null) throw new RpcException(-400, "Access denied.");
                     else
                     {
                         if (_params.Count == 0) throw new RpcException(-32602, "Invalid params");
-                        var result = new JArray();
                         var successList = new JArray();
                         var errorList = new JArray();
                         foreach (var wifKey in _params.Select(p => p.AsString()))
@@ -512,6 +483,34 @@ namespace Neo.Network.RPC
                             ["accounts"] = successList,
                             ["errors"] = errorList,
                         };
+                    }
+                case "invoke":
+                    {
+                        UInt160 script_hash = UInt160.Parse(_params[0].AsString());
+                        ContractParameter[] parameters = ((JArray)_params[1]).Select(p => ContractParameter.FromJson(p)).ToArray();
+                        byte[] script;
+                        using (ScriptBuilder sb = new ScriptBuilder())
+                        {
+                            script = sb.EmitAppCall(script_hash, parameters).ToArray();
+                        }
+                        return GetInvokeResult(script);
+                    }
+                case "invokefunction":
+                    {
+                        UInt160 script_hash = UInt160.Parse(_params[0].AsString());
+                        string operation = _params[1].AsString();
+                        ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson(p)).ToArray() : new ContractParameter[0];
+                        byte[] script;
+                        using (ScriptBuilder sb = new ScriptBuilder())
+                        {
+                            script = sb.EmitAppCall(script_hash, operation, args).ToArray();
+                        }
+                        return GetInvokeResult(script);
+                    }
+                case "invokescript":
+                    {
+                        byte[] script = _params[0].AsString().HexToBytes();
+                        return GetInvokeResult(script);
                     }
                 case "listaddress":
                     if (Wallet == null)
