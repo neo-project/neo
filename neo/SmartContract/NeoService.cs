@@ -98,6 +98,7 @@ namespace Neo.SmartContract
             Register("Neo.Iterator.Key", Iterator_Key, 1);
             Register("Neo.Iterator.Keys", Iterator_Keys, 1);
             Register("Neo.Iterator.Values", Iterator_Values, 1);
+            Register("Neo.Iterator.Concat", Iterator_Concat, 1);
 
             #region Aliases
             Register("Neo.Iterator.Next", Enumerator_Next, 1);
@@ -902,6 +903,17 @@ namespace Neo.SmartContract
                 return true;
             }
             return false;
+        }
+
+        private bool Iterator_Concat(ExecutionEngine engine)
+        {
+            if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface1)) return false;
+            if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface2)) return false;
+            IIterator first = _interface1.GetInterface<IIterator>();
+            IIterator second = _interface2.GetInterface<IIterator>();
+            IIterator result = new ConcatenatedIterator(first, second);
+            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(result));
+            return true;
         }
     }
 }
