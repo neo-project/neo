@@ -9,26 +9,20 @@ namespace Neo.UnitTests.Ledger
     [TestClass]
     public class UT_MerklePatriciaDataCache
     {
-        private Random random;
+        private Random _random;
 
-        [TestInitialize]
-        public void StartUp()
-        {
-            random = new Random();
-        }
-
-        private byte[] randByteArray(uint size = 32)
+        private byte[] RandByteArray(uint size = 32)
         {
             var resp = new byte[size];
-            random.NextBytes(resp);
+            _random.NextBytes(resp);
             return resp;
         }
 
-        private StorageKey randStorageKey() =>
-            new StorageKey {Key = randByteArray(12), ScriptHash = new UInt160(randByteArray(20))};
+        private StorageKey RandStorageKey() =>
+            new StorageKey {Key = RandByteArray(12), ScriptHash = new UInt160(RandByteArray(20))};
 
-        private StorageItem randStorageItem() =>
-            new StorageItem {Value = randByteArray(64), IsConstant = random.Next() % 2 == 0};
+        private StorageItem RandStorageItem() =>
+            new StorageItem {Value = RandByteArray(64), IsConstant = _random.Next() % 2 == 0};
 
         private static void Add(MerklePatricia mp, StorageKey key, StorageItem item) =>
             mp[key.ToArray()] = item.ToArray();
@@ -42,13 +36,14 @@ namespace Neo.UnitTests.Ledger
         private static bool ContainsKey(MerklePatricia mp, StorageKey key) =>
             mp.ContainsKey(key.ToArray());
 
-        [TestMethod]
-        public void StorageKeyStorageItem()
+        private void StorageKeyStorageItem(int seed = 0)
         {
+            _random = new Random(seed);
+
             var mp = new[]
             {
-                new MerklePatriciaDataCache(new TestDataCache<MPTKey, MerklePatriciaNode>(), null),
-                new MerklePatriciaDataCache(new TestDataCache<MPTKey, MerklePatriciaNode>(), null)
+                new MerklePatriciaDataCache(new TestDataCacheWithInternal<MPTKey, MerklePatriciaNode>(), null),
+                new MerklePatriciaDataCache(new TestDataCacheWithInternal<MPTKey, MerklePatriciaNode>(), null)
             };
 
             const int size = 50;
@@ -56,8 +51,8 @@ namespace Neo.UnitTests.Ledger
             var item = new StorageItem[size];
             for (var i = 0; i < size; ++i)
             {
-                key[i] = randStorageKey();
-                item[i] = randStorageItem();
+                key[i] = RandStorageKey();
+                item[i] = RandStorageItem();
             }
 
             for (var i = 0; i < size; ++i)
@@ -77,7 +72,7 @@ namespace Neo.UnitTests.Ledger
             for (var i = 0; i < 2 * size; ++i)
             {
                 Assert.AreEqual(mp[0], mp[1]);
-                var index = random.Next() % size;
+                var index = _random.Next() % size;
                 if (!ContainsKey(mp[0], key[index])) continue;
                 Remove(mp[0], key[index]);
                 Assert.AreNotEqual(mp[0], mp[1]);
@@ -90,7 +85,36 @@ namespace Neo.UnitTests.Ledger
                 Add(mp[1], key[index], item[index]);
                 Assert.AreEqual(mp[0], mp[1]);
             }
+        }
 
+        [TestMethod]
+        public void Scenario0()
+        {
+            StorageKeyStorageItem(0);
+        }
+        
+        [TestMethod]
+        public void Scenario1()
+        {
+            StorageKeyStorageItem(1);
+        }
+        
+        [TestMethod]
+        public void Scenario2()
+        {
+            StorageKeyStorageItem(2);
+        }
+        
+        [TestMethod]
+        public void Scenario3()
+        {
+            StorageKeyStorageItem(3);
+        }
+        
+        [TestMethod]
+        public void Scenario4()
+        {
+            StorageKeyStorageItem(4);
         }
     }
 }
