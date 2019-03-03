@@ -7,6 +7,7 @@ using Neo.Ledger;
 using FluentAssertions;
 using Neo.Cryptography.ECC;
 using Neo.IO.Wrappers;
+using Neo.Ledger.MPT;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 
@@ -39,6 +40,7 @@ namespace Neo.UnitTests
                 mockSnapshot.SetupGet(p => p.Assets).Returns(new TestDataCache<UInt256, AssetState>());
                 mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>());
                 mockSnapshot.SetupGet(p => p.Storages).Returns(new TestDataCache<StorageKey, StorageItem>());
+                mockSnapshot.SetupGet(p => p.MPTStorages).Returns(new TestDataCache<MPTKey, MerklePatriciaNode>());
                 mockSnapshot.SetupGet(p => p.HeaderHashList)
                     .Returns(new TestDataCache<UInt32Wrapper, HeaderHashList>());
                 mockSnapshot.SetupGet(p => p.ValidatorsCount).Returns(new TestMetaDataCache<ValidatorsCountState>());
