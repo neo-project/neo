@@ -4,6 +4,7 @@ using System.IO;
 
 namespace Neo.Ledger.MPT
 {
+    /// <inheritdoc />
     /// <summary>
     /// MPTKey for the DataCache.
     /// </summary>
@@ -41,12 +42,15 @@ namespace Neo.Ledger.MPT
             writer.Write(ScriptHash);
             writer.Write(HashKey);
         }
-        
+
         /// <inheritdoc />
         void ISerializable.Deserialize(BinaryReader reader)
         {
             ScriptHash = reader.ReadSerializable<UInt160>();
             HashKey = reader.ReadSerializable<UInt256>();
         }
+
+        /// <inheritdoc />
+        public override string ToString() => $"{{'ScriptHash':{ScriptHash}, 'HashKey':{HashKey}}}";
     }
 }
