@@ -36,7 +36,10 @@ namespace Neo.Ledger.MPT
         /// <inheritdoc />
         protected override MerklePatriciaNode SetDb(byte[] hash, MerklePatriciaNode node)
         {
-            db.Add(hash.AsSerializable<MPTKey>(), node);
+            var hashAsSerializable = hash.AsSerializable<MPTKey>();
+            // This next line is necessary due to the caching mechanism
+            db.Delete(hashAsSerializable);
+            db.Add(hashAsSerializable, node);
             return node;
         }
 
