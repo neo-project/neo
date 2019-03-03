@@ -54,7 +54,7 @@ namespace Neo
             Inbox inbox = Inbox.Create(ActorSystem);
             inbox.Watch(actor);
             ActorSystem.Stop(actor);
-            inbox.Receive(Timeout.InfiniteTimeSpan);
+            inbox.Receive(TimeSpan.FromMinutes(5));
         }
 
         internal void ResumeNodeStartup()
