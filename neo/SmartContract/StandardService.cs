@@ -649,8 +649,16 @@ namespace Neo.SmartContract
             if (contract == null) return true;
             Snapshot.Contracts.Delete(hash);
             if (contract.HasStorage)
+            {
                 foreach (var pair in Snapshot.Storages.Find(hash.ToArray()))
+                {
                     Snapshot.Storages.Delete(pair.Key);
+                }
+                foreach (var pair in Snapshot.MPTStorages.Find(hash.ToArray()))
+                {
+                    Snapshot.MPTStorages.Delete(pair.Key);
+                }
+            }
             return true;
         }
 
