@@ -342,7 +342,7 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool TryRemoveUnVerified(UInt256 hash, out PoolItem item)
+        internal bool TryRemoveUnVerified(UInt256 hash, out PoolItem item)
         {
             if (!_unverifiedTransactions.TryGetValue(hash, out item))
                 return false;
@@ -352,6 +352,27 @@ namespace Neo.Ledger
                 ? _unverifiedSortedLowPriorityTransactions : _unverifiedSortedHighPriorityTransactions;
             pool.Remove(item);
             return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void InvalidateVerifiedTransactions()
+        {
+            foreach (PoolItem item in _sortedHighPrioTransactions)
+            {
+                if (_unverifiedTransactions.TryAdd(item.Tx.Hash, item))
+                    _unverifiedSortedHighPriorityTransactions.Add(item);
+            }
+
+            foreach (PoolItem item in _sortedLowPrioTransactions)
+            {
+                if (_unverifiedTransactions.TryAdd(item.Tx.Hash, item))
+                    _unverifiedSortedLowPriorityTransactions.Add(item);
+            }
+
+            // Clear the verified transactions now, since they all must be reverified.
+            _unsortedTransactions.Clear();
+            _sortedHighPrioTransactions.Clear();
+            _sortedLowPrioTransactions.Clear();
         }
 
         // Note: this must only be called from a single thread (the Blockchain actor)
@@ -368,22 +389,7 @@ namespace Neo.Ledger
                 }
 
                 // Add all the previously verified transactions back to the unverified transactions
-                foreach (PoolItem item in _sortedHighPrioTransactions)
-                {
-                    if (_unverifiedTransactions.TryAdd(item.Tx.Hash, item))
-                        _unverifiedSortedHighPriorityTransactions.Add(item);
-                }
-
-                foreach (PoolItem item in _sortedLowPrioTransactions)
-                {
-                    if (_unverifiedTransactions.TryAdd(item.Tx.Hash, item))
-                        _unverifiedSortedLowPriorityTransactions.Add(item);
-                }
-
-                // Clear the verified transactions now, since they all must be reverified.
-                _unsortedTransactions.Clear();
-                _sortedHighPrioTransactions.Clear();
-                _sortedLowPrioTransactions.Clear();
+                InvalidateVerifiedTransactions();
             }
             finally
             {
@@ -406,7 +412,19 @@ namespace Neo.Ledger
                 _maxLowPriorityTxPerBlock, MaxSecondsToReverifyLowPrioTx, snapshot);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void InvalidateAllTransactions()
+        {
+            _txRwLock.EnterWriteLock();
+            try
+            {
+                InvalidateVerifiedTransactions();
+            }
+            finally
+            {
+                _txRwLock.ExitWriteLock();
+            }
+        }
+
         private int ReverifyTransactions(SortedSet<PoolItem> verifiedSortedTxPool,
             SortedSet<PoolItem> unverifiedSortedTxPool, int count, double secondsTimeout, Snapshot snapshot)
         {
