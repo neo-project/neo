@@ -79,7 +79,7 @@ namespace Neo.Consensus
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
             if (TransactionHashes.Length == 0)
                 TransactionHashes = null;
-            Transaction[] transactions = new Transaction[reader.ReadVarInt()];
+            Transaction[] transactions = new Transaction[reader.ReadVarInt(Block.MaxTransactionsPerBlock)];
             if (transactions.Length == 0)
             {
                 Transactions = null;
@@ -90,16 +90,16 @@ namespace Neo.Consensus
                     transactions[i] = Transaction.DeserializeFrom(reader);
                 Transactions = transactions.ToDictionary(p => p.Hash);
             }
-            PreparationPayloads = new ConsensusPayload[reader.ReadVarInt()];
+            PreparationPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
             for (int i = 0; i < PreparationPayloads.Length; i++)
                 PreparationPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
-            CommitPayloads = new ConsensusPayload[reader.ReadVarInt()];
+            CommitPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
             for (int i = 0; i < CommitPayloads.Length; i++)
                 CommitPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
-            ChangeViewPayloads = new ConsensusPayload[reader.ReadVarInt()];
+            ChangeViewPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
             for (int i = 0; i < ChangeViewPayloads.Length; i++)
                 ChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
-            LastChangeViewPayloads = new ConsensusPayload[reader.ReadVarInt()];
+            LastChangeViewPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
             for (int i = 0; i < LastChangeViewPayloads.Length; i++)
                 LastChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
         }
