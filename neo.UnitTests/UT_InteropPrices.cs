@@ -106,6 +106,7 @@ namespace Neo.UnitTests
             uut.GetPrice("Neo.Iterator.Key".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Iterator.Keys".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Iterator.Values".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("Neo.Iterator.Concat".ToInteropMethodHash()).Should().Be(1);
 
             #region Aliases
             uut.GetPrice("Neo.Iterator.Next".ToInteropMethodHash()).Should().Be(1);
