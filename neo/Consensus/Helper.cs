@@ -49,7 +49,9 @@ namespace Neo.Consensus
         public static bool Load(this IConsensusContext context, Store store)
         {
             byte[] data = store.Get(CN_Context, new byte[0]);
-            if (data is null) return false;
+
+            if (data is null || data.Length == 0) return false;
+
             using (MemoryStream ms = new MemoryStream(data, false))
             using (BinaryReader reader = new BinaryReader(ms))
             {
