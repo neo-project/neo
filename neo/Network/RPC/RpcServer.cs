@@ -662,12 +662,16 @@ namespace Neo.Network.RPC
                 string method = request["method"].AsString();
                 JArray _params = (JArray)request["params"];
                 foreach (IRpcPlugin plugin in Plugin.RpcPlugins)
+                    plugin.PreProcess(context, method, _params);
+                foreach (IRpcPlugin plugin in Plugin.RpcPlugins)
                 {
                     result = plugin.OnProcess(context, method, _params);
                     if (result != null) break;
                 }
                 if (result == null)
                     result = Process(method, _params);
+                foreach (IRpcPlugin plugin in Plugin.RpcPlugins)
+                    plugin.PostProcess(context, method, _params, result);
             }
             catch (FormatException)
             {
