@@ -321,7 +321,7 @@ namespace Neo.Ledger
                     block_cache_unverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
 
-                    if (blocksPersisted++ < blocksToPersistList.Count - 2) continue;
+                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0,(15 - SecondsPerBlock))) continue;
                     // Relay most recent 2 blocks persisted
 
                     if (blockToPersist.Index + 100 >= header_index.Count)
