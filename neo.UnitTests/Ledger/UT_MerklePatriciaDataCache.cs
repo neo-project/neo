@@ -48,17 +48,18 @@ namespace Neo.UnitTests.Ledger
 
             const int size = 50;
             var key = new StorageKey[size];
+            var unusedKey = new StorageKey[size];
             var item = new StorageItem[size];
             for (var i = 0; i < size; ++i)
             {
                 key[i] = RandStorageKey();
+                unusedKey[i] = RandStorageKey();
                 item[i] = RandStorageItem();
             }
 
             for (var i = 0; i < size; ++i)
             {
                 Assert.AreEqual(mp[0], mp[1]);
-                if (ContainsKey(mp[0], key[i])) continue;
 
                 Add(mp[0], key[i], item[i]);
                 Assert.AreNotEqual(mp[0], mp[1]);
@@ -69,17 +70,28 @@ namespace Neo.UnitTests.Ledger
                 Assert.AreEqual(item[i], Get(mp[1], key[i]));
             }
 
+            for (var i = 0; i < size; ++i)
+            {
+                Assert.IsTrue(ContainsKey(mp[0], key[i]));
+                Assert.IsNotNull(mp[0][key[i].ToArray()]);
+                Assert.IsFalse(ContainsKey(mp[0], unusedKey[i]));
+                Assert.IsNull(mp[0][unusedKey[i].ToArray()]);
+                
+                Assert.IsTrue(ContainsKey(mp[1], key[i]));
+                Assert.IsNotNull(mp[1][key[i].ToArray()]);
+                Assert.IsFalse(ContainsKey(mp[1], unusedKey[i]));
+                Assert.IsNull(mp[1][unusedKey[i].ToArray()]);
+            }
+
             for (var i = 0; i < 2 * size; ++i)
             {
                 Assert.AreEqual(mp[0], mp[1]);
                 var index = _random.Next() % size;
-                if (!ContainsKey(mp[0], key[index])) continue;
                 Remove(mp[0], key[index]);
                 Assert.AreNotEqual(mp[0], mp[1]);
                 Remove(mp[1], key[index]);
                 Assert.AreEqual(mp[0], mp[1]);
 
-                if (ContainsKey(mp[0], key[index])) continue;
                 Add(mp[0], key[index], item[index]);
                 Assert.AreNotEqual(mp[0], mp[1]);
                 Add(mp[1], key[index], item[index]);
