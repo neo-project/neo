@@ -1,25 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Neo.Ledger;
-using FluentAssertions;
-using Neo.Cryptography.ECC;
-using Neo.IO.Wrappers;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.IO.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Neo.UnitTests
 {
     [TestClass]
     public class UT_MemoryPool
     {
-        private static NeoSystem TheNeoSystem;
-
-        private readonly Random _random = new Random(1337); // use fixed seed for guaranteed determinism
-
         private MemoryPool _unit;
 
         [TestInitialize]
@@ -28,59 +21,7 @@ namespace Neo.UnitTests
             // protect against external changes on TimeProvider
             TimeProvider.ResetToDefault();
 
-            if (TheNeoSystem == null)
-            {
-                var mockSnapshot = new Mock<Snapshot>();
-                mockSnapshot.SetupGet(p => p.Blocks).Returns(new TestDataCache<UInt256, BlockState>());
-                mockSnapshot.SetupGet(p => p.Transactions).Returns(new TestDataCache<UInt256, TransactionState>());
-                mockSnapshot.SetupGet(p => p.Accounts).Returns(new TestDataCache<UInt160, AccountState>());
-                mockSnapshot.SetupGet(p => p.UnspentCoins).Returns(new TestDataCache<UInt256, UnspentCoinState>());
-                mockSnapshot.SetupGet(p => p.SpentCoins).Returns(new TestDataCache<UInt256, SpentCoinState>());
-                mockSnapshot.SetupGet(p => p.Validators).Returns(new TestDataCache<ECPoint, ValidatorState>());
-                mockSnapshot.SetupGet(p => p.Assets).Returns(new TestDataCache<UInt256, AssetState>());
-                mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>());
-                mockSnapshot.SetupGet(p => p.Storages).Returns(new TestDataCache<StorageKey, StorageItem>());
-                mockSnapshot.SetupGet(p => p.HeaderHashList)
-                    .Returns(new TestDataCache<UInt32Wrapper, HeaderHashList>());
-                mockSnapshot.SetupGet(p => p.ValidatorsCount).Returns(new TestMetaDataCache<ValidatorsCountState>());
-                mockSnapshot.SetupGet(p => p.BlockHashIndex).Returns(new TestMetaDataCache<HashIndexState>());
-                mockSnapshot.SetupGet(p => p.HeaderHashIndex).Returns(new TestMetaDataCache<HashIndexState>());
-
-                var mockStore = new Mock<Store>();
-
-                var defaultTx = CreateRandomHashInvocationMockTransaction().Object;
-                defaultTx.Outputs = new TransactionOutput[1];
-                defaultTx.Outputs[0] = new TransactionOutput
-                {
-                    AssetId = Blockchain.UtilityToken.Hash,
-                    Value = new Fixed8(1000000),
-                    ScriptHash = UInt160.Zero // doesn't matter for our purposes.
-                };
-
-                mockStore.Setup(p => p.GetBlocks()).Returns(new TestDataCache<UInt256, BlockState>());
-                mockStore.Setup(p => p.GetTransactions()).Returns(new TestDataCache<UInt256, TransactionState>(
-                    new TransactionState
-                    {
-                        BlockIndex = 1,
-                        Transaction = defaultTx
-                    }));
-
-                mockStore.Setup(p => p.GetAccounts()).Returns(new TestDataCache<UInt160, AccountState>());
-                mockStore.Setup(p => p.GetUnspentCoins()).Returns(new TestDataCache<UInt256, UnspentCoinState>());
-                mockStore.Setup(p => p.GetSpentCoins()).Returns(new TestDataCache<UInt256, SpentCoinState>());
-                mockStore.Setup(p => p.GetValidators()).Returns(new TestDataCache<ECPoint, ValidatorState>());
-                mockStore.Setup(p => p.GetAssets()).Returns(new TestDataCache<UInt256, AssetState>());
-                mockStore.Setup(p => p.GetContracts()).Returns(new TestDataCache<UInt160, ContractState>());
-                mockStore.Setup(p => p.GetStorages()).Returns(new TestDataCache<StorageKey, StorageItem>());
-                mockStore.Setup(p => p.GetHeaderHashList()).Returns(new TestDataCache<UInt32Wrapper, HeaderHashList>());
-                mockStore.Setup(p => p.GetValidatorsCount()).Returns(new TestMetaDataCache<ValidatorsCountState>());
-                mockStore.Setup(p => p.GetBlockHashIndex()).Returns(new TestMetaDataCache<HashIndexState>());
-                mockStore.Setup(p => p.GetHeaderHashIndex()).Returns(new TestMetaDataCache<HashIndexState>());
-                mockStore.Setup(p => p.GetSnapshot()).Returns(mockSnapshot.Object);
-
-                Console.WriteLine("initialize NeoSystem");
-                TheNeoSystem = new NeoSystem(mockStore.Object); // new Mock<NeoSystem>(mockStore.Object);
-            }
+            NeoSystem TheNeoSystem = TestBlockchain.InitializeMockNeoSystem();
 
             // Create a MemoryPool with capacity of 100
             _unit = new MemoryPool(TheNeoSystem, 100);
@@ -93,33 +34,18 @@ namespace Neo.UnitTests
             _unit.Count.ShouldBeEquivalentTo(0);
         }
 
-        private Mock<InvocationTransaction> CreateRandomHashInvocationMockTransaction()
-        {
-            var mockTx = new Mock<InvocationTransaction>();
-            mockTx.CallBase = true;
-            mockTx.Setup(p => p.Verify(It.IsAny<Snapshot>(), It.IsAny<IEnumerable<Transaction>>())).Returns(true);
-            var tx = mockTx.Object;
-            var randomBytes = new byte[16];
-            _random.NextBytes(randomBytes);
-            tx.Script = randomBytes;
-            tx.Attributes = new TransactionAttribute[0];
-            tx.Inputs = new CoinReference[0];
-            tx.Outputs = new TransactionOutput[0];
-            tx.Witnesses = new Witness[0];
 
-            return mockTx;
-        }
 
         long LongRandom(long min, long max, Random rand)
         {
             // Only returns positive random long values.
-            long longRand = (long) rand.NextBigInteger(63);
+            long longRand = (long)rand.NextBigInteger(63);
             return longRand % (max - min) + min;
         }
 
         private Transaction CreateMockTransactionWithFee(long fee)
         {
-            var mockTx = CreateRandomHashInvocationMockTransaction();
+            var mockTx = TestUtils.CreateRandomHashInvocationMockTransaction();
             mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(fee));
             mockTx.SetupGet(mr => mr.Size).Returns(10);
             var tx = mockTx.Object;
@@ -138,14 +64,14 @@ namespace Neo.UnitTests
 
         private Transaction CreateMockHighPriorityTransaction(long fixedFee = -1)
         {
-            long rNetFee = LongRandom(100000, 100000000, _random); // [0.001,1]) GAS (enough to be a high priority TX)
+            long rNetFee = LongRandom(100000, 100000000, TestUtils.TestRandom); // [0.001,1]) GAS (enough to be a high priority TX)
             if (fixedFee != -1) rNetFee = fixedFee;
             return CreateMockTransactionWithFee(rNetFee);
         }
 
         private Transaction CreateMockLowPriorityTransaction(long fixedFee = -1)
         {
-            long rNetFee = LongRandom(0, 100000, _random);
+            long rNetFee = LongRandom(0, 100000, TestUtils.TestRandom);
             if (fixedFee != -1) rNetFee = fixedFee;
             // [0,0.001] GAS a fee lower than the threshold of 0.001 GAS (not enough to be a high priority TX)
             return CreateMockTransactionWithFee(rNetFee);
@@ -354,7 +280,7 @@ namespace Neo.UnitTests
                 verifiedTxs.Length.ShouldBeEquivalentTo(2);
                 verifiedTxs[0].ShouldBeEquivalentTo(maxHighPriorityTransaction);
                 verifiedTxs[1].ShouldBeEquivalentTo(maxLowPriorityTransaction);
-                var blockWith2Tx = new Block { Transactions = new Transaction[2] { maxHighPriorityTransaction, maxLowPriorityTransaction }};
+                var blockWith2Tx = new Block { Transactions = new Transaction[2] { maxHighPriorityTransaction, maxLowPriorityTransaction } };
                 // verify and remove the 2 transactions from the verified pool
                 _unit.UpdatePoolForBlockPersisted(blockWith2Tx, Blockchain.Singleton.GetSnapshot());
                 _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(0);
@@ -421,6 +347,21 @@ namespace Neo.UnitTests
             AddLowPriorityTransactions(10, 500);
             list = new List<Fixed8> { new Fixed8(150000), new Fixed8(275), new Fixed8(0), new Fixed8(0), new Fixed8(15000), new Fixed8(275/10), new Fixed8(0), new Fixed8(0) };
             _unit.GetStatisticsForNextBlock().ShouldBeEquivalentTo(list);
+        }
+        
+        public void TestInvalidateAll()
+        {
+            AddHighPriorityTransactions(30);
+            AddLowPriorityTransactions(60);
+            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(0);
+            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(0);
+            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(30);
+            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(60);
+            _unit.InvalidateAllTransactions();
+            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(30);
+            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(60);
+            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(0);
+            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(0);
         }
     }
 }

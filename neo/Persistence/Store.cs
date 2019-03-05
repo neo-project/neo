@@ -21,6 +21,7 @@ namespace Neo.Persistence
         MetaDataCache<HashIndexState> IPersistence.BlockHashIndex => GetBlockHashIndex();
         MetaDataCache<HashIndexState> IPersistence.HeaderHashIndex => GetHeaderHashIndex();
 
+        public abstract byte[] Get(byte prefix, byte[] key);
         public abstract DataCache<UInt256, BlockState> GetBlocks();
         public abstract DataCache<UInt256, TransactionState> GetTransactions();
         public abstract DataCache<UInt160, AccountState> GetAccounts();
@@ -34,6 +35,8 @@ namespace Neo.Persistence
         public abstract MetaDataCache<ValidatorsCountState> GetValidatorsCount();
         public abstract MetaDataCache<HashIndexState> GetBlockHashIndex();
         public abstract MetaDataCache<HashIndexState> GetHeaderHashIndex();
+        public abstract void Put(byte prefix, byte[] key, byte[] value);
+        public abstract void PutSync(byte prefix, byte[] key, byte[] value);
 
         public abstract Snapshot GetSnapshot();
     }
