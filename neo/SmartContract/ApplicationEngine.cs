@@ -1,9 +1,9 @@
-using System.Text;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
+using System.Text;
 
 namespace Neo.SmartContract
 {
@@ -15,9 +15,6 @@ namespace Neo.SmartContract
         private long gas_consumed = 0;
         private readonly bool testMode;
         private readonly Snapshot snapshot;
-
-        private int stackitem_count = 0;
-        private bool is_stackitem_count_strict = true;
 
         public Fixed8 GasConsumed => new Fixed8(gas_consumed);
         public new NeoService Service => (NeoService)base.Service;
