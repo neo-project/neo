@@ -167,7 +167,7 @@ namespace Neo.Network.RPC
                     {
                         return GetPeers();
                     }
-                case "getlastblockstime":
+                case "gettimestamplastblocks":
                     {
                         uint nBlocks = (uint)_params[0].AsNumber();
                         return GetBlocksTime(nBlocks);
