@@ -570,6 +570,7 @@ namespace Neo.Network.RPC
                 JObject json = new JObject();
                 Header header = Blockchain.Singleton.Store.GetHeader(i);
                 json["blocktime"] = header.Timestamp;
+                json["height"] = i;
                 array.Add(json);
             }
 
