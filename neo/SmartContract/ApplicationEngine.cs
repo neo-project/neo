@@ -123,7 +123,7 @@ namespace Neo.SmartContract
         {
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length - 3)
                 return 1;
-            byte length = CurrentContext.Script[CurrentContext.InstructionPointer + 1];
+            byte length = (byte)CurrentContext.Script[CurrentContext.InstructionPointer + 1];
             if (CurrentContext.InstructionPointer > CurrentContext.Script.Length - length - 2)
                 return 1;
             uint api_hash = length == 4
