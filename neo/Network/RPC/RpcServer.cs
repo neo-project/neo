@@ -167,6 +167,11 @@ namespace Neo.Network.RPC
                     {
                         return GetPeers();
                     }
+                case "getlastblockstime":
+                    {
+                        uint nBlocks = (uint)_params[0].AsNumber();
+                        return GetBlocksTime(nBlocks);
+                    }
                 case "getrawmempool":
                     {
                         bool shouldGetUnverified = _params.Count >= 1 && _params[0].AsBoolean();
@@ -535,6 +540,39 @@ namespace Neo.Network.RPC
             json["verified"] = new JArray(verifiedTransactions.Select(p => (JObject)p.Hash.ToString()));
             json["unverified"] = new JArray(unverifiedTransactions.Select(p => (JObject)p.Hash.ToString()));
             return json;
+        }
+
+        private JObject GetBlocksTime(uint nBlocks)
+        {           
+            uint maxNBlocksPerDay = 86400 / Blockchain.SecondsPerBlock;
+            if (nBlocks >= Blockchain.Singleton.Height || nBlocks > maxNBlocksPerDay)
+            {
+                JObject json = new JObject();
+                return json["error"] = "Requested number of blocks exceeds " + maxNBlocksPerDay;
+            }
+
+            if (nBlocks >= Blockchain.Singleton.Height)
+            {
+                JObject json = new JObject();
+                return json["error"] = "Requested number of blocks exceeds last known height " + Blockchain.Singleton.Height;
+            }
+
+            if (nBlocks <= 0)
+            {
+                JObject json = new JObject();
+                return json["error"] = "Requested number of block times can not be <= 0";
+            }
+
+            JArray array = new JArray();
+            for (uint i = Blockchain.Singleton.Height - nBlocks; i <= Blockchain.Singleton.HeaderHeight; i++)
+            {
+                JObject json = new JObject();
+                Header header = Blockchain.Singleton.Store.GetHeader(i);
+                json["blocktime"] = header.Timestamp;
+                array.Add(json);
+            }
+
+            return array;
         }
 
         private JObject GetRawTransaction(UInt256 hash, bool verbose)
