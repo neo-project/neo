@@ -544,17 +544,18 @@ namespace Neo.Network.RPC
 
         private JObject GetBlocksTime(uint nBlocks)
         {           
+            // It is currently limited to query blocks generated in the last 24hours (86400 seconds)
             uint maxNBlocksPerDay = 86400 / Blockchain.SecondsPerBlock;
             if (nBlocks >= Blockchain.Singleton.Height || nBlocks > maxNBlocksPerDay)
             {
                 JObject json = new JObject();
-                return json["error"] = "Requested number of blocks exceeds " + maxNBlocksPerDay;
+                return json["error"] = "Requested number of blocks timestamps exceeds " + maxNBlocksPerDay;
             }
 
             if (nBlocks >= Blockchain.Singleton.Height)
             {
                 JObject json = new JObject();
-                return json["error"] = "Requested number of blocks exceeds last known height " + Blockchain.Singleton.Height;
+                return json["error"] = "Requested number of blocks timestamps exceeds quantity of known blocks" + Blockchain.Singleton.Height;
             }
 
             if (nBlocks <= 0)
