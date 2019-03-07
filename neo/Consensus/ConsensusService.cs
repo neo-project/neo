@@ -520,7 +520,7 @@ namespace Neo.Consensus
                 foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
                     localNode.Tell(Message.Create("inv", payload));
             }
-            ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ViewNumber + 1)));
+            ChangeTimer(TimeSpan.FromSeconds((Blockchain.SecondsPerBlock << (context.ViewNumber + 1)) - Blockchain.SecondsPerBlock));
         }
 
         private bool VerifyRequest()
