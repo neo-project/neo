@@ -268,7 +268,6 @@ namespace Neo.Consensus
         private void OnPersistCompleted(Block block)
         {
             Log($"persist block: {block.Hash}");
-            block_received_time = TimeProvider.Current.UtcNow;
             reference_block_time = TimeProvider.Current.UtcNow;
             uint theoreticalDelay = reference_block_time.ToTimestamp() - block.Timestamp;
             // maximum expected delay is 5 seconds (this can be moved as a configuration parameter along with block time
