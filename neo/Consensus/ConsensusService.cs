@@ -26,7 +26,7 @@ namespace Neo.Consensus
         private readonly IActorRef taskManager;
         private readonly Store store;
         private ICancelable timer_token;
-        private DateTime block_received_time;
+        private DateTime reference_block_time;
         private bool started = false;
         /// <summary>
         /// This will be cleared every block (so it will not grow out of control, but is used to prevent repeatedly
@@ -155,7 +155,7 @@ namespace Neo.Consensus
                 }
                 else
                 {
-                    TimeSpan span = TimeProvider.Current.UtcNow - block_received_time;
+                    TimeSpan span = TimeProvider.Current.UtcNow - reference_block_time;
                     if (span >= Blockchain.TimePerBlock)
                         ChangeTimer(TimeSpan.Zero);
                     else
@@ -269,6 +269,16 @@ namespace Neo.Consensus
         {
             Log($"persist block: {block.Hash}");
             block_received_time = TimeProvider.Current.UtcNow;
+            reference_block_time = TimeProvider.Current.UtcNow;
+            uint theoreticalDelay = reference_block_time.ToTimestamp() - block.Timestamp;
+            // maximum expected delay is 5 seconds (this can be moved as a configuration parameter along with block time
+            uint maxDelayToAdvance = 5;
+            theoreticalDelay = theoreticalDelay > maxDelayToAdvance ? maxDelayToAdvance : theoreticalDelay;
+            // unsigned int does not need the need the next line, right? TODO
+            theoreticalDelay = theoreticalDelay < 0 ? 0 : theoreticalDelay;
+            Log($"(long)-theoreticalDelay:{(long)-theoreticalDelay}");
+            reference_block_time.AddSeconds((long)-theoreticalDelay);
+            
             knownHashes.Clear();
             InitializeConsensus(0);
         }
