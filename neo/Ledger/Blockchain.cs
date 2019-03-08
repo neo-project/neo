@@ -19,7 +19,6 @@ namespace Neo.Ledger
 {
     public sealed class Blockchain : UntypedActor
     {
-        public class Register { }
         public class ApplicationExecuted { public Transaction Transaction; public ApplicationExecutionResult[] ExecutionResults; }
         public class PersistCompleted { public Block Block; }
         public class Import { public IEnumerable<Block> Blocks; }
@@ -122,7 +121,6 @@ namespace Neo.Ledger
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
-        private readonly HashSet<IActorRef> subscribers = new HashSet<IActorRef>();
         private Snapshot currentSnapshot;
 
         public Store Store { get; }
@@ -193,12 +191,6 @@ namespace Neo.Ledger
         {
             if (MemPool.ContainsKey(hash)) return true;
             return Store.ContainsTransaction(hash);
-        }
-
-        private void Distribute(object message)
-        {
-            foreach (IActorRef subscriber in subscribers)
-                subscriber.Tell(message);
         }
 
         public Block GetBlock(UInt256 hash)
@@ -421,18 +413,13 @@ namespace Neo.Ledger
         {
             block_cache.Remove(block.Hash);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
-            PersistCompleted completed = new PersistCompleted { Block = block };
-            system.Consensus?.Tell(completed);
-            Distribute(completed);
+            Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
 
         protected override void OnReceive(object message)
         {
             switch (message)
             {
-                case Register _:
-                    OnRegister();
-                    break;
                 case Import import:
                     OnImport(import.Blocks);
                     break;
@@ -455,16 +442,7 @@ namespace Neo.Ledger
                     if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
                         Self.Tell(Idle.Instance, ActorRefs.NoSender);
                     break;
-                case Terminated terminated:
-                    subscribers.Remove(terminated.ActorRef);
-                    break;
             }
-        }
-
-        private void OnRegister()
-        {
-            subscribers.Add(Sender);
-            Context.Watch(Sender);
         }
 
         private void Persist(Block block)
@@ -666,7 +644,7 @@ namespace Neo.Ledger
                             Transaction = tx,
                             ExecutionResults = execution_results.ToArray()
                         };
-                        Distribute(application_executed);
+                        Context.System.EventStream.Publish(application_executed);
                         all_application_executed.Add(application_executed);
                     }
                 }
