@@ -46,6 +46,7 @@ namespace Neo.Consensus
             this.taskManager = taskManager;
             this.store = store;
             this.context = context;
+            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
         }
 
         private bool AddTransaction(Transaction tx, bool verify)
@@ -482,6 +483,7 @@ namespace Neo.Consensus
         {
             Log("OnStop");
             started = false;
+            Context.System.EventStream.Unsubscribe(Self);
             context.Dispose();
             base.PostStop();
         }
