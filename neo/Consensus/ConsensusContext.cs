@@ -46,7 +46,6 @@ namespace Neo.Consensus
             this.wallet = wallet;
             this.Store = store;
             this.Recovering = false;
-            this.KnownHashes = new HashSet<UInt256>();
         }
 
         public Block CreateBlock()
