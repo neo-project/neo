@@ -36,12 +36,14 @@ namespace Neo.Consensus
         public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
         private readonly Wallet wallet;
+        public Store Store { get; };
 
         public int Size => throw new NotImplementedException();
 
-        public ConsensusContext(Wallet wallet)
+        public ConsensusContext(Wallet wallet, Store store)
         {
             this.wallet = wallet;
+            this.Store = store;
         }
 
         public Block CreateBlock()

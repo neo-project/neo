@@ -41,14 +41,14 @@ namespace Neo.Consensus
             return p >= 0 ? (uint)p : (uint)(p + context.Validators.Length);
         }
 
-        public static void Save(this IConsensusContext context, Store store)
+        public static void Save(this IConsensusContext context)
         {
-            store.PutSync(CN_Context, new byte[0], context.ToArray());
+            context.Store.PutSync(CN_Context, new byte[0], context.ToArray());
         }
 
-        public static bool Load(this IConsensusContext context, Store store)
+        public static bool Load(this IConsensusContext context)
         {
-            byte[] data = store.Get(CN_Context, new byte[0]);
+            byte[] data = context.Store.Get(CN_Context, new byte[0]);
 
             if (data is null || data.Length == 0) return false;
 

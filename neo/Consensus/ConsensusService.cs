@@ -24,7 +24,6 @@ namespace Neo.Consensus
         private readonly IConsensusContext context;
         private readonly IActorRef localNode;
         private readonly IActorRef taskManager;
-        private readonly Store store;
         private ICancelable timer_token;
         private DateTime block_received_time;
         private bool started = false;
@@ -36,15 +35,14 @@ namespace Neo.Consensus
         private bool isRecovering = false;
 
         public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
-            : this(localNode, taskManager, store, new ConsensusContext(wallet))
+            : this(localNode, taskManager, new ConsensusContext(wallet, store))
         {
         }
 
-        public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, IConsensusContext context)
+        public ConsensusService(IActorRef localNode, IActorRef taskManager, IConsensusContext context)
         {
             this.localNode = localNode;
             this.taskManager = taskManager;
-            this.store = store;
             this.context = context;
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
         }
@@ -123,7 +121,7 @@ namespace Neo.Consensus
             {
                 ConsensusPayload payload = context.MakeCommit();
                 Log($"send commit");
-                context.Save(store);
+                context.Save();
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 // Set timer, so we will resend the commit in case of a networking issue
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock));
@@ -419,7 +417,7 @@ namespace Neo.Consensus
         {
             Log("OnStart");
             started = true;
-            if (!options.IgnoreRecoveryLogs && context.Load(store))
+            if (!options.IgnoreRecoveryLogs && context.Load())
             {
                 if (context.Transactions != null)
                 {

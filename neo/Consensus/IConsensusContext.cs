@@ -26,6 +26,7 @@ namespace Neo.Consensus
         ConsensusPayload[] ChangeViewPayloads { get; set; }
         Block Block { get; set; }
         Snapshot Snapshot { get; }
+        Store Store { get; }
 
         Block CreateBlock();
 
