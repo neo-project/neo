@@ -38,6 +38,7 @@ namespace Neo.Consensus
         private readonly Wallet wallet;
         public Store Store { get; };
         public bool IsRecovering { get; set; }
+        public HashSet<UInt256> KnownHashes { get; }
 
         public int Size => throw new NotImplementedException();
 
@@ -45,7 +46,8 @@ namespace Neo.Consensus
         {
             this.wallet = wallet;
             this.Store = store;
-            this.IsRecovering = false; 
+            this.IsRecovering = false;
+            this.KnownHashes = new HashSet<UInt256>();
         }
 
         public Block CreateBlock()
