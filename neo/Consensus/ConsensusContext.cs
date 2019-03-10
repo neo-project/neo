@@ -36,7 +36,7 @@ namespace Neo.Consensus
         public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
         private readonly Wallet wallet;
-        public Store Store { get; };
+        public Store Store { get; }
         public bool IsRecovering { get; set; }
         public HashSet<UInt256> KnownHashes { get; }
 
