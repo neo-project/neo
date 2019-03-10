@@ -29,12 +29,6 @@ namespace Neo.Consensus
         Store Store { get; }
         bool IsRecovering { get; set; }
 
-        /// <summary>
-        /// This will be cleared every block (so it will not grow out of control, but is used to prevent repeatedly
-        /// responding to the same message.
-        /// </summary>
-        HashSet<UInt256> KnownHashes { get; }
-
         Block CreateBlock();
 
         //void Dispose();

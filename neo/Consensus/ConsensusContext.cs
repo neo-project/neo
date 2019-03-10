@@ -38,7 +38,6 @@ namespace Neo.Consensus
         private readonly Wallet wallet;
         public Store Store { get; }
         public bool IsRecovering { get; set; }
-        public HashSet<UInt256> KnownHashes { get; }
 
         public int Size => throw new NotImplementedException();
 

@@ -28,6 +28,12 @@ namespace Neo.Consensus
         private DateTime block_received_time;
         private bool started = false;
 
+        /// <summary>
+        /// This will be cleared every block (so it will not grow out of control, but is used to prevent repeatedly
+        /// responding to the same message.
+        /// </summary>
+        private readonly HashSet<UInt256> knownHashes = new HashSet<UInt256>();
+
         public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
             : this(localNode, taskManager, new ConsensusContext(wallet, store))
         {
@@ -173,7 +179,7 @@ namespace Neo.Consensus
             // and issues a change view for the same view, it will have a different hash and will correctly respond
             // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
             // additonal recovery message response.
-            if (!context.KnownHashes.Add(payload.Hash)) return;
+            if (!knownHashes.Add(payload.Hash)) return;
             if (message.NewViewNumber <= context.ViewNumber)
             {
                 bool shouldSendRecovery = false;
@@ -261,7 +267,7 @@ namespace Neo.Consensus
         {
             Log($"persist block: {block.Hash}");
             block_received_time = TimeProvider.Current.UtcNow;
-            context.KnownHashes.Clear();
+            knownHashes.Clear();
             InitializeConsensus(0);
         }
 
