@@ -126,12 +126,14 @@ namespace Neo.UnitTests
 
             mockConsensusContext.Setup(mr => mr.MakePrepareRequest()).Returns(prepPayload);
 
+            mockConsensusContext.SetupGet(mr => mr.Store).Returns(mockStore.Object);
+
             // ============================================================================
             //                      creating ConsensusService actor
             // ============================================================================
 
             TestActorRef<ConsensusService> actorConsensus = ActorOfAsTestActorRef<ConsensusService>(
-                                     Akka.Actor.Props.Create(() => new ConsensusService(subscriber, subscriber, mockStore.Object, mockConsensusContext.Object))
+                                     Akka.Actor.Props.Create(() => new ConsensusService(subscriber, subscriber, mockConsensusContext.Object))
                                      );
 
             Console.WriteLine("will trigger OnPersistCompleted!");
@@ -175,7 +177,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestSerializeAndDeserializeConsensusContext()
         {
-            var consensusContext = new ConsensusContext(null);
+            var consensusContext = new ConsensusContext(null, null);
             consensusContext.PrevHash = UInt256.Parse("0xd42561e3d30e15be6400b6df2f328e02d2bf6354c41dce433bc57687c82144bf");
             consensusContext.BlockIndex = 1;
             consensusContext.ViewNumber = 2;
@@ -248,7 +250,7 @@ namespace Neo.UnitTests
 
             consensusContext.LastChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
 
-            var copiedContext = TestUtils.CopyMsgBySerialization(consensusContext, new ConsensusContext(null));
+            var copiedContext = TestUtils.CopyMsgBySerialization(consensusContext, new ConsensusContext(null, null));
 
             copiedContext.PrevHash.Should().Be(consensusContext.PrevHash);
             copiedContext.BlockIndex.Should().Be(consensusContext.BlockIndex);
