@@ -23,6 +23,8 @@ namespace Neo.Consensus
         public static bool IsBackup(this IConsensusContext context) => context.MyIndex >= 0 && context.MyIndex != context.PrimaryIndex;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Header PrevHeader(this IConsensusContext context) => context.Snapshot.GetHeader(context.PrevHash);
+
+        // Consensus States
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool RequestSentOrReceived(this IConsensusContext context) => context.PreparationPayloads[context.PrimaryIndex] != null;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -33,7 +35,8 @@ namespace Neo.Consensus
         public static bool BlockSent(this IConsensusContext context) => context.Block != null;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ViewChanging(this IConsensusContext context) => context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber > context.ViewNumber;
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsRecovering(this IConsensusContext context) => context.Recovering;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint GetPrimaryIndex(this IConsensusContext context, byte viewNumber)

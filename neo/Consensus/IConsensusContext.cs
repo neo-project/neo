@@ -27,7 +27,7 @@ namespace Neo.Consensus
         Block Block { get; set; }
         Snapshot Snapshot { get; }
         Store Store { get; }
-        bool IsRecovering { get; set; }
+        bool Recovering { get; set; }
 
         Block CreateBlock();
 

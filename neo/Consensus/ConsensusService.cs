@@ -147,7 +147,7 @@ namespace Neo.Consensus
             Log($"initialize: height={context.BlockIndex} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary() ? "Primary" : "Backup")}");
             if (context.IsPrimary())
             {
-                if (context.IsRecovering)
+                if (context.IsRecovering())
                 {
                     ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (viewNumber + 1)));
                 }
@@ -275,7 +275,7 @@ namespace Neo.Consensus
         {
             if (message.ViewNumber < context.ViewNumber) return;
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
-            context.IsRecovering = true;
+            context.Recovering = true;
             try
             {
                 if (message.ViewNumber > context.ViewNumber)
@@ -306,7 +306,7 @@ namespace Neo.Consensus
             }
             finally
             {
-                context.IsRecovering = false;
+                context.Recovering = false;
             }
         }
 
