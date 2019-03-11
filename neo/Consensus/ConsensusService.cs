@@ -27,6 +27,10 @@ namespace Neo.Consensus
         private readonly Store store;
         private ICancelable timer_token;
         private DateTime reference_block_time;
+        /// <summary>
+        /// Theoritical delay between local UTC time and timestamp of last block
+        /// </summary>
+        private uint theoreticalDelay;
         private bool started = false;
         /// <summary>
         /// This will be cleared every block (so it will not grow out of control, but is used to prevent repeatedly
@@ -269,7 +273,7 @@ namespace Neo.Consensus
         {
             Log($"persist block: {block.Hash}");
             reference_block_time = TimeProvider.Current.UtcNow;
-            uint theoreticalDelay = reference_block_time.ToTimestamp() - block.Timestamp;
+            theoreticalDelay = reference_block_time.ToTimestamp() - block.Timestamp;
             // maximum expected delay is 5 seconds (this can be moved as a configuration parameter along with block time
             uint maxDelayToAdvance = 5;
             theoreticalDelay = theoreticalDelay > maxDelayToAdvance ? maxDelayToAdvance : theoreticalDelay;
@@ -529,7 +533,7 @@ namespace Neo.Consensus
                 foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
                     localNode.Tell(Message.Create("inv", payload));
             }
-            ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ViewNumber + 1)));
+            ChangeTimer(TimeSpan.FromSeconds((Blockchain.SecondsPerBlock << (context.ViewNumber + 1)) - (context.ViewNumber == 0 ? (Blockchain.SecondsPerBlock-theoreticalDelay) : 0)));
         }
 
         private bool VerifyRequest()
