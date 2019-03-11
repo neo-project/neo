@@ -53,8 +53,6 @@ namespace Neo.Plugins
             if (this is IRpcPlugin rpc) RpcPlugins.Add(rpc);
             if (this is IPersistencePlugin persistence) PersistencePlugins.Add(persistence);
             if (this is IMemoryPoolTxObserverPlugin txObserver) TxObserverPlugins.Add(txObserver);
-
-            Configure();
         }
 
         public static bool CheckPolicy(Transaction tx)
@@ -66,6 +64,10 @@ namespace Neo.Plugins
         }
 
         public abstract void Configure();
+
+        public virtual void OnPluginsLoaded()
+        {
+        }
 
         private static void ConfigWatcher_Changed(object sender, FileSystemEventArgs e)
         {
@@ -108,6 +110,14 @@ namespace Neo.Plugins
                     }
                 }
             }
+        }
+
+        internal static void NotifyPluginsLoadedAfterSystemConstructed()
+        {
+            foreach (var plugin in Plugins)
+                plugin.Configure();
+            foreach (var plugin in Plugins)
+                plugin.OnPluginsLoaded();
         }
 
         protected void Log(string message, LogLevel level = LogLevel.Info)
