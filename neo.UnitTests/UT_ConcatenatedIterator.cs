@@ -21,6 +21,10 @@ namespace Neo.UnitTests
             uut.Key().Should().Be(MakeIntegerStackItem(0));
             uut.Value().Should().Be(array1[0]);
 
+            uut.Next().Should().Be(true);
+            uut.Key().Should().Be(MakeIntegerStackItem(0));
+            uut.Value().Should().Be(array1[0]);
+
             uut.Next().Should().Be(false);
         }
 
