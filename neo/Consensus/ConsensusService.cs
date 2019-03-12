@@ -284,7 +284,6 @@ namespace Neo.Consensus
                 {
                     if (message.ViewNumber > context.ViewNumber)
                     {
-                        if (context.CommitSent()) return;
                         ConsensusPayload[] changeViewPayloads = message.GetChangeViewPayloads(context, payload);
                         foreach (ConsensusPayload changeViewPayload in changeViewPayloads)
                             ReverifyAndProcessPayload(changeViewPayload);
