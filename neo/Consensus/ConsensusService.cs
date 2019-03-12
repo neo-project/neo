@@ -280,16 +280,17 @@ namespace Neo.Consensus
             isRecovering = true;
             try
             {
-                if (message.ViewNumber > context.ViewNumber)
-                {
-                    if (context.CommitSent()) return;
-                    ConsensusPayload[] changeViewPayloads = message.GetChangeViewPayloads(context, payload);
-                    foreach (ConsensusPayload changeViewPayload in changeViewPayloads)
-                        ReverifyAndProcessPayload(changeViewPayload);
-                }
-                if (message.ViewNumber != context.ViewNumber) return;
                 if (!context.CommitSent())
                 {
+                    if (message.ViewNumber > context.ViewNumber)
+                    {
+                        if (context.CommitSent()) return;
+                        ConsensusPayload[] changeViewPayloads = message.GetChangeViewPayloads(context, payload);
+                        foreach (ConsensusPayload changeViewPayload in changeViewPayloads)
+                            ReverifyAndProcessPayload(changeViewPayload);
+                    }
+                    if (message.ViewNumber != context.ViewNumber) return;
+
                     if (!context.RequestSentOrReceived())
                     {
                         ConsensusPayload prepareRequestPayload = message.GetPrepareRequestPayload(context, payload);
