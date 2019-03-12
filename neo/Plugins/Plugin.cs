@@ -67,10 +67,6 @@ namespace Neo.Plugins
 
         public abstract void Configure();
 
-        public virtual void OnNeoSystemInitialized()
-        {
-        }
-
         public virtual void OnPluginsLoaded()
         {
         }
@@ -120,8 +116,6 @@ namespace Neo.Plugins
 
         internal static void NotifyPluginsLoadedAfterSystemConstructed()
         {
-            foreach (var plugin in Plugins)
-                plugin.OnNeoSystemInitialized();
             foreach (var plugin in Plugins)
                 plugin.OnPluginsLoaded();
         }
