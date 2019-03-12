@@ -67,6 +67,10 @@ namespace Neo.Plugins
 
         public abstract void Configure();
 
+        protected virtual void OnPluginsLoaded()
+        {
+        }
+
         private static void ConfigWatcher_Changed(object sender, FileSystemEventArgs e)
         {
             foreach (var plugin in Plugins)
@@ -108,6 +112,12 @@ namespace Neo.Plugins
                     }
                 }
             }
+        }
+
+        internal static void NotifyPluginsLoadedAfterSystemConstructed()
+        {
+            foreach (var plugin in Plugins)
+                plugin.OnPluginsLoaded();
         }
 
         protected void Log(string message, LogLevel level = LogLevel.Info)
