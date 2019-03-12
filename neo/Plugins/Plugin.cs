@@ -67,7 +67,7 @@ namespace Neo.Plugins
 
         public abstract void Configure();
 
-        public virtual void OnPluginsLoaded()
+        protected virtual void OnPluginsLoaded()
         {
         }
 
