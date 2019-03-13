@@ -34,10 +34,11 @@ namespace Neo
         public NeoSystem(Store store)
         {
             this.store = store;
+            Plugin.LoadPlugins(this);
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
-            Plugin.LoadPlugins(this);
+            Plugin.NotifyPluginsLoadedAfterSystemConstructed();
         }
 
         public void Dispose()
