@@ -1,18 +1,11 @@
-﻿using Neo.IO;
-using Neo.Network.P2P.Payloads;
+﻿using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace Neo.Consensus
 {
     internal static class Helper
     {
-        /// <summary>
-        /// Prefix for saving consensus state.
-        /// </summary>
-        public const byte CN_Context = 0xf4;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int F(this IConsensusContext context) => (context.Validators.Length - 1) / 3;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -41,32 +34,6 @@ namespace Neo.Consensus
         {
             int p = ((int)context.BlockIndex - viewNumber) % context.Validators.Length;
             return p >= 0 ? (uint)p : (uint)(p + context.Validators.Length);
-        }
-
-        public static void Save(this IConsensusContext context)
-        {
-            context.Store.PutSync(CN_Context, new byte[0], context.ToArray());
-        }
-
-        public static bool Load(this IConsensusContext context)
-        {
-            byte[] data = context.Store.Get(CN_Context, new byte[0]);
-
-            if (data is null || data.Length == 0) return false;
-
-            using (MemoryStream ms = new MemoryStream(data, false))
-            using (BinaryReader reader = new BinaryReader(ms))
-            {
-                try
-                {
-                    context.Deserialize(reader);
-                }
-                catch
-                {
-                    return false;
-                }
-                return true;
-            }
         }
     }
 }

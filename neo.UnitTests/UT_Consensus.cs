@@ -126,8 +126,6 @@ namespace Neo.UnitTests
 
             mockConsensusContext.Setup(mr => mr.MakePrepareRequest()).Returns(prepPayload);
 
-            mockConsensusContext.SetupGet(mr => mr.Store).Returns(mockStore.Object);
-
             // ============================================================================
             //                      creating ConsensusService actor
             // ============================================================================

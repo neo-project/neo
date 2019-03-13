@@ -16,6 +16,11 @@ namespace Neo.Consensus
 {
     internal class ConsensusContext : IConsensusContext
     {
+        /// <summary>
+        /// Prefix for saving consensus state.
+        /// </summary>
+        public const byte CN_Context = 0xf4;
+
         public const uint Version = 0;
         public uint BlockIndex { get; set; }
         public UInt256 PrevHash { get; set; }
@@ -36,14 +41,14 @@ namespace Neo.Consensus
         public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
         private readonly Wallet wallet;
-        public Store Store { get; }
+        private readonly Store store;
 
         public int Size => throw new NotImplementedException();
 
         public ConsensusContext(Wallet wallet, Store store)
         {
             this.wallet = wallet;
-            this.Store = store;
+            this.store = store;
         }
 
         public Block CreateBlock()
@@ -109,6 +114,25 @@ namespace Neo.Consensus
         public void Dispose()
         {
             Snapshot?.Dispose();
+        }
+
+        public bool Load()
+        {
+            byte[] data = store.Get(CN_Context, new byte[0]);
+            if (data is null || data.Length == 0) return false;
+            using (MemoryStream ms = new MemoryStream(data, false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                try
+                {
+                    Deserialize(reader);
+                }
+                catch
+                {
+                    return false;
+                }
+                return true;
+            }
         }
 
         public ConsensusPayload MakeChangeView(byte newViewNumber)
@@ -268,6 +292,11 @@ namespace Neo.Consensus
             PreparationPayloads = new ConsensusPayload[Validators.Length];
             CommitPayloads = new ConsensusPayload[Validators.Length];
             _header = null;
+        }
+
+        public void Save()
+        {
+            store.PutSync(CN_Context, new byte[0], this.ToArray());
         }
 
         public void Serialize(BinaryWriter writer)

@@ -26,11 +26,10 @@ namespace Neo.Consensus
         ConsensusPayload[] ChangeViewPayloads { get; set; }
         Block Block { get; set; }
         Snapshot Snapshot { get; }
-        Store Store { get; }
 
         Block CreateBlock();
 
-        //void Dispose();
+        bool Load();
 
         ConsensusPayload MakeChangeView(byte newViewNumber);
 
@@ -45,5 +44,7 @@ namespace Neo.Consensus
         ConsensusPayload MakePrepareResponse();
 
         void Reset(byte viewNumber);
+
+        void Save();
     }
 }
