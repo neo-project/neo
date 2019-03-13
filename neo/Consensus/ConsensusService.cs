@@ -33,6 +33,10 @@ namespace Neo.Consensus
         /// responding to the same message.
         /// </summary>
         private readonly HashSet<UInt256> knownHashes = new HashSet<UInt256>();
+        /// <summary>
+        /// This variable is only true during OnRecoveryMessageReceived
+        /// </summary>
+        private bool isRecovering = false;
 
         public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
             : this(localNode, taskManager, new ConsensusContext(wallet, store))
@@ -147,7 +151,7 @@ namespace Neo.Consensus
             Log($"initialize: height={context.BlockIndex} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary() ? "Primary" : "Backup")}");
             if (context.IsPrimary())
             {
-                if (context.IsRecovering())
+                if (isRecovering)
                 {
                     ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (viewNumber + 1)));
                 }
@@ -275,7 +279,8 @@ namespace Neo.Consensus
         {
             if (message.ViewNumber < context.ViewNumber) return;
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
-            context.Recovering = true;
+            // isRecovering is always set to false again after OnRecoveryMessageReceived
+            isRecovering = true;
             try
             {
                 if (message.ViewNumber > context.ViewNumber)
@@ -306,7 +311,7 @@ namespace Neo.Consensus
             }
             finally
             {
-                context.Recovering = false;
+                isRecovering = false;
             }
         }
 

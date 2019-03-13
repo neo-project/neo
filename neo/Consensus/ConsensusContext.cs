@@ -37,7 +37,6 @@ namespace Neo.Consensus
         private KeyPair keyPair;
         private readonly Wallet wallet;
         public Store Store { get; }
-        public bool Recovering { get; set; }
 
         public int Size => throw new NotImplementedException();
 
@@ -45,7 +44,6 @@ namespace Neo.Consensus
         {
             this.wallet = wallet;
             this.Store = store;
-            this.Recovering = false;
         }
 
         public Block CreateBlock()

@@ -35,8 +35,6 @@ namespace Neo.Consensus
         public static bool BlockSent(this IConsensusContext context) => context.Block != null;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ViewChanging(this IConsensusContext context) => context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber > context.ViewNumber;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsRecovering(this IConsensusContext context) => context.Recovering;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint GetPrimaryIndex(this IConsensusContext context, byte viewNumber)
