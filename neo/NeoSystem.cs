@@ -75,14 +75,15 @@ namespace Neo
         }
 
         public void StartNode(int port = 0, int wsPort = 0, int minDesiredConnections = Peer.DefaultMinDesiredConnections,
-            int maxConnections = Peer.DefaultMaxConnections)
+            int maxConnections = Peer.DefaultMaxConnections, int maxConnectionsPerAddress = 3)
         {
             start_message = new Peer.Start
             {
                 Port = port,
                 WsPort = wsPort,
                 MinDesiredConnections = minDesiredConnections,
-                MaxConnections = maxConnections
+                MaxConnections = maxConnections,
+                MaxConnectionsPerAddress = maxConnectionsPerAddress
             };
             if (!suspend)
             {
