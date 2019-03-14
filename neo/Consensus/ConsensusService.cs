@@ -170,7 +170,7 @@ namespace Neo.Consensus
             }
             else
             {
-                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (viewNumber + 1)));
+                ChangeTimer(TimeSpan.FromSeconds((Blockchain.SecondsPerBlock << (viewNumber + 1)) -  theoreticalDelay));
             }
         }
 
