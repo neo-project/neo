@@ -276,8 +276,8 @@ namespace Neo.Consensus
             theoreticalDelay = reference_block_time.ToTimestamp() - block.Timestamp;
             Log($"current:{reference_block_time.ToTimestamp()} previous:{block.Timestamp}");
             Log($"diff:{reference_block_time.ToTimestamp()-block.Timestamp}");               
-            // maximum expected delay is 5 seconds (this can be moved as a configuration parameter along with block time
-            uint maxDelayToAdvance = 5;
+            // maximum expected delay 30% of block time - currently 
+            uint maxDelayToAdvance = 0.3 * Blockchain.SecondsPerBlock;
             theoreticalDelay = theoreticalDelay > maxDelayToAdvance ? maxDelayToAdvance : theoreticalDelay;
             // unsigned int does not need the need the next line, right? TODO
             theoreticalDelay = theoreticalDelay < 0 ? 0 : theoreticalDelay;
