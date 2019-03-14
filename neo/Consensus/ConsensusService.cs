@@ -274,7 +274,7 @@ namespace Neo.Consensus
             Log($"persist block: {block.Hash}");
             reference_block_time = TimeProvider.Current.UtcNow;        
             theoreticalDelay = calcNetworkDelayOrClockDriftWithLimits(reference_block_time.ToTimestamp(), block.Timestamp);
-            reference_block_time.AddSeconds((long)-theoreticalDelay);
+            reference_block_time.AddSeconds((double)-theoreticalDelay);
             knownHashes.Clear();
             InitializeConsensus(0);
         }
@@ -283,14 +283,14 @@ namespace Neo.Consensus
         {
             if (localClockTimestamp > lastBlockTimestamp)
             {
-                var currentClockDelay = localClockTimestamp - lastBlockTimestamp;
+                var currentTheoreticalDelay = localClockTimestamp - lastBlockTimestamp;
                 Log($"localClock:{localClockTimestamp}\nlastBlockTimestamp:{lastBlockTimestamp}");
                 Log($"diff:{localClockTimestamp - lastBlockTimestamp}");
                 // maximum expected delay 30% of block time - currently 4,5s
                 uint maxDelayToAdvance = Blockchain.SecondsPerBlock / 100 * 30;
-                currentClockDelay = currentClockDelay > maxDelayToAdvance ? maxDelayToAdvance : currentClockDelay;
-                Log($"-theoreticalDelay:{-currentClockDelay}");
-                return currentClockDelay;
+                currentTheoreticalDelay = currentTheoreticalDelay > maxDelayToAdvance ? maxDelayToAdvance : currentTheoreticalDelay;
+                Log($"-currentTheoreticalDelay:{-currentTheoreticalDelay}");
+                return currentTheoreticalDelay;
             }
             return 0;
         }
