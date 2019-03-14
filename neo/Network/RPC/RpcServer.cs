@@ -31,16 +31,16 @@ namespace Neo.Network.RPC
     public sealed class RpcServer : IDisposable
     {
         public Wallet Wallet { get; set; }
+        public Fixed8 MaxGasInvoke { get; }
 
         private IWebHost host;
-        private Fixed8 maxGasInvoke;
         private readonly NeoSystem system;
 
         public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8))
         {
             this.system = system;
             this.Wallet = wallet;
-            this.maxGasInvoke = maxGasInvoke;
+            this.MaxGasInvoke = maxGasInvoke;
         }
 
         private static JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
@@ -73,7 +73,7 @@ namespace Neo.Network.RPC
 
         private JObject GetInvokeResult(byte[] script)
         {
-            ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: maxGasInvoke);
+            ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: MaxGasInvoke);
             JObject json = new JObject();
             json["script"] = script.ToHexString();
             json["state"] = engine.State;
@@ -140,7 +140,7 @@ namespace Neo.Network.RPC
                     }
                 case "getblockhash":
                     {
-                        uint height = (uint)_params[0].AsNumber();
+                        uint height = uint.Parse(_params[0].AsString());
                         return GetBlockHash(height);
                     }
                 case "getblockheader":
@@ -151,7 +151,7 @@ namespace Neo.Network.RPC
                     }
                 case "getblocksysfee":
                     {
-                        uint height = (uint)_params[0].AsNumber();
+                        uint height = uint.Parse(_params[0].AsString());
                         return GetBlockSysFee(height);
                     }
                 case "getconnectioncount":
@@ -192,7 +192,7 @@ namespace Neo.Network.RPC
                 case "gettxout":
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
-                        ushort index = (ushort)_params[1].AsNumber();
+                        ushort index = ushort.Parse(_params[1].AsString());
                         return GetTxOut(hash, index);
                     }
                 case "getvalidators":
@@ -416,7 +416,7 @@ namespace Neo.Network.RPC
             Block block;
             if (key is JNumber)
             {
-                uint index = (uint)key.AsNumber();
+                uint index = uint.Parse(key.AsString());
                 block = Blockchain.Singleton.Store.GetBlock(index);
             }
             else
@@ -457,7 +457,7 @@ namespace Neo.Network.RPC
             Header header;
             if (key is JNumber)
             {
-                uint height = (uint)key.AsNumber();
+                uint height = uint.Parse(key.AsString());
                 header = Blockchain.Singleton.Store.GetHeader(height);
             }
             else
