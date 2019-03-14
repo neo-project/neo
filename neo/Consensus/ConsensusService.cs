@@ -273,19 +273,26 @@ namespace Neo.Consensus
         {
             Log($"persist block: {block.Hash}");
             reference_block_time = TimeProvider.Current.UtcNow;        
-            theoreticalDelay = reference_block_time.ToTimestamp() - block.Timestamp;
-            Log($"current:{reference_block_time.ToTimestamp()} previous:{block.Timestamp}");
-            Log($"diff:{reference_block_time.ToTimestamp()-block.Timestamp}");               
-            // maximum expected delay 30% of block time - currently 
-            uint maxDelayToAdvance = 0.3 * Blockchain.SecondsPerBlock;
-            theoreticalDelay = theoreticalDelay > maxDelayToAdvance ? maxDelayToAdvance : theoreticalDelay;
-            // unsigned int does not need the need the next line, right? TODO
-            theoreticalDelay = theoreticalDelay < 0 ? 0 : theoreticalDelay;
-            Log($"(long)-theoreticalDelay:{(long)-theoreticalDelay}");
+            theoreticalDelay = getNetworkDelayOrClockDrift(reference_block_time.ToTimestamp(), block.Timestamp);
             reference_block_time.AddSeconds((long)-theoreticalDelay);
-            
             knownHashes.Clear();
             InitializeConsensus(0);
+        }
+
+        private uint getNetworkDelayOrClockDrift(uint timestampReferenceBlock, uint timestampLastBlock)
+        {
+            if (timestampReferenceBlock > timestampLastBlock)
+            {
+                var currentClockDelay = timestampReferenceBlock - timestampLastBlock;
+                Log($"localClock:{reference_block_time.ToTimestamp()}\nlastBlockTimestamp:{timestampLastBlock}");
+                Log($"diff:{timestampReferenceBlock - timestampLastBlock}");
+                // maximum expected delay 30% of block time - currently 4,5s
+                uint maxDelayToAdvance = Blockchain.SecondsPerBlock / 100 * 30;
+                currentClockDelay = currentClockDelay > maxDelayToAdvance ? maxDelayToAdvance : currentClockDelay;
+                Log($"-theoreticalDelay:{-currentClockDelay}");
+                return currentClockDelay;
+            }
+            return 0;
         }
 
         private void OnRecoveryMessageReceived(ConsensusPayload payload, RecoveryMessage message)
