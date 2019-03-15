@@ -29,7 +29,7 @@ namespace Neo.Consensus
 
         Block CreateBlock();
 
-        //void Dispose();
+        bool Load();
 
         ConsensusPayload MakeChangeView(byte newViewNumber);
 
@@ -44,5 +44,7 @@ namespace Neo.Consensus
         ConsensusPayload MakePrepareResponse();
 
         void Reset(byte viewNumber);
+
+        void Save();
     }
 }
