@@ -24,28 +24,31 @@ namespace Neo.Consensus
         private readonly IConsensusContext context;
         private readonly IActorRef localNode;
         private readonly IActorRef taskManager;
-        private readonly Store store;
         private ICancelable timer_token;
         private DateTime block_received_time;
         private bool started = false;
+
         /// <summary>
         /// This will be cleared every block (so it will not grow out of control, but is used to prevent repeatedly
         /// responding to the same message.
         /// </summary>
         private readonly HashSet<UInt256> knownHashes = new HashSet<UInt256>();
+        /// <summary>
+        /// This variable is only true during OnRecoveryMessageReceived
+        /// </summary>
         private bool isRecovering = false;
 
         public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
-            : this(localNode, taskManager, store, new ConsensusContext(wallet))
+            : this(localNode, taskManager, new ConsensusContext(wallet, store))
         {
         }
 
-        public ConsensusService(IActorRef localNode, IActorRef taskManager, Store store, IConsensusContext context)
+        public ConsensusService(IActorRef localNode, IActorRef taskManager, IConsensusContext context)
         {
             this.localNode = localNode;
             this.taskManager = taskManager;
-            this.store = store;
             this.context = context;
+            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
         }
 
         private bool AddTransaction(Transaction tx, bool verify)
@@ -122,7 +125,7 @@ namespace Neo.Consensus
             {
                 ConsensusPayload payload = context.MakeCommit();
                 Log($"send commit");
-                context.Save(store);
+                context.Save();
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 // Set timer, so we will resend the commit in case of a networking issue
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock));
@@ -276,6 +279,7 @@ namespace Neo.Consensus
         {
             if (message.ViewNumber < context.ViewNumber) return;
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+            // isRecovering is always set to false again after OnRecoveryMessageReceived
             isRecovering = true;
             try
             {
@@ -418,7 +422,7 @@ namespace Neo.Consensus
         {
             Log("OnStart");
             started = true;
-            if (!options.IgnoreRecoveryLogs && context.Load(store))
+            if (!options.IgnoreRecoveryLogs && context.Load())
             {
                 if (context.Transactions != null)
                 {
@@ -482,6 +486,7 @@ namespace Neo.Consensus
         {
             Log("OnStop");
             started = false;
+            Context.System.EventStream.Unsubscribe(Self);
             context.Dispose();
             base.PostStop();
         }
@@ -518,7 +523,7 @@ namespace Neo.Consensus
                 foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
                     localNode.Tell(Message.Create("inv", payload));
             }
-            ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (context.ViewNumber + 1)));
+            ChangeTimer(TimeSpan.FromSeconds((Blockchain.SecondsPerBlock << (context.ViewNumber + 1)) - (context.ViewNumber == 0 ? Blockchain.SecondsPerBlock : 0)));
         }
 
         private bool VerifyRequest()
