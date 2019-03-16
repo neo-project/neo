@@ -178,6 +178,8 @@ namespace Neo.Ledger
                 else
                     UpdateCurrentSnapshot();
                 singleton = this;
+
+                RegNativeContract();
             }
         }
 
@@ -313,7 +315,7 @@ namespace Neo.Ledger
                     block_cache_unverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
 
-                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0,(15 - SecondsPerBlock)))) continue;
+                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, (15 - SecondsPerBlock)))) continue;
                     // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
                     // Increase in the rate of 1 block per second in configurations with faster blocks
 
@@ -727,6 +729,48 @@ namespace Neo.Ledger
         {
             Interlocked.Exchange(ref currentSnapshot, GetSnapshot())?.Dispose();
         }
+
+        //save Native Contract
+        void RegNativeContract()
+        {
+            using (Snapshot snapshot = GetSnapshot())
+            {
+                foreach(var c in SmartContract.NativeContract.NativeContractList.Contracts.Values)
+                {
+                    RegNativeContractWithDB(snapshot, c);
+                }
+                snapshot.Commit();
+            }
+        }
+        void RegNativeContractWithDB(Snapshot snapshot, SmartContract.NativeContract.INativeContract nativecontract)
+        {
+            byte[] script = null;
+            using (var sb = new ScriptBuilder())
+            {
+                sb.EmitSysCall("Neo.Native." + nativecontract.Name);
+                script = sb.ToArray();
+            }
+            UInt160 hash = script.ToScriptHash();
+
+
+            ContractState contract = snapshot.Contracts.TryGet(hash);
+            if (contract == null)
+            {
+                contract = new ContractState
+                {
+                    Script = script,
+                    ParameterList = nativecontract.Parameter_list,
+                    ReturnType = nativecontract.Return_type,
+                    ContractProperties = nativecontract.Contract_properties,
+                    Name = nativecontract.Name,
+                    CodeVersion = nativecontract.Version,
+                    Author = nativecontract.Author,
+                    Email = nativecontract.Email,
+                    Description = nativecontract.Description
+                };
+                snapshot.Contracts.Add(hash, contract);
+            }
+        }
     }
 
     internal class BlockchainMailbox : PriorityMailbox
@@ -749,5 +793,7 @@ namespace Neo.Ledger
                     return false;
             }
         }
+
+
     }
 }

@@ -163,6 +163,12 @@ namespace Neo.SmartContract
             Register("AntShares.Storage.Put", Storage_Put);
             Register("AntShares.Storage.Delete", Storage_Delete, 100);
             #endregion
+
+            //Regist NativeContract Handler
+            foreach (var n in NativeContract.NativeContractList.Contracts.Values)
+            {
+                Register("Neo.Native." + n.Name, n.Contract_Main, n.Price);
+            }
         }
 
         private bool Blockchain_GetAccount(ExecutionEngine engine)
