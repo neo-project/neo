@@ -14,7 +14,7 @@ namespace Neo.SmartContract
         private readonly long gas_amount;
         private long gas_consumed = 0;
         private readonly bool testMode;
-        private readonly Snapshot snapshot;
+        public readonly Snapshot snapshot;
 
         public Fixed8 GasConsumed => new Fixed8(gas_consumed);
         public new NeoService Service => (NeoService)base.Service;

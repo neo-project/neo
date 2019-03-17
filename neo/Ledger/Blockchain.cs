@@ -752,6 +752,7 @@ namespace Neo.Ledger
             }
             UInt160 hash = script.ToScriptHash();
 
+            Console.WriteLine("Reg a NativeContract Name=" + nativecontract.Name + " Hash=" + hash.ToString());
 
             ContractState contract = snapshot.Contracts.TryGet(hash);
             if (contract == null)

@@ -21,6 +21,24 @@ namespace Neo.SmartContract.NativeContract
             Contracts[contract.Name] = contract;
         }
     }
+    class NativeContractTool
+    {
+        public static StorageItem Storage_Get_Current(ExecutionEngine engine, byte[] key)
+        {
+            var app = engine as ApplicationEngine;
+            UInt160 ScriptHash = new UInt160(engine.CurrentContext.ScriptHash);
+            StorageItem item = app.snapshot.Storages.TryGet(new StorageKey() { ScriptHash = ScriptHash, Key = key });
+            return item;
+        }
+        public static void Storage_Put_Current(ExecutionEngine engine, byte[] key, byte[] value)
+        {
+            var app = engine as ApplicationEngine;
+            UInt160 ScriptHash = new UInt160(engine.CurrentContext.ScriptHash);
+            app.snapshot.Storages.Add(
+                new StorageKey() { ScriptHash = ScriptHash, Key = key },
+                new StorageItem() { Value = value });
+        }
+    }
     interface INativeContract
     {
         string Name
@@ -61,29 +79,5 @@ namespace Neo.SmartContract.NativeContract
         }
         bool Contract_Main(ExecutionEngine engine);
     }
-    class NativeContract_Nep5Neo : INativeContract
-    {
-        public string Name => throw new NotImplementedException();
-
-        public long Price => throw new NotImplementedException();
-
-        public ContractParameterType[] Parameter_list => throw new NotImplementedException();
-
-        public ContractParameterType Return_type => throw new NotImplementedException();
-
-        public ContractPropertyState Contract_properties => throw new NotImplementedException();
-
-        public string Version => throw new NotImplementedException();
-
-        public string Author => throw new NotImplementedException();
-
-        public string Email => throw new NotImplementedException();
-
-        public string Description => throw new NotImplementedException();
-
-        public bool Contract_Main(ExecutionEngine engine)
-        {
-            throw new NotImplementedException();
-        }
-    }
+  
 }

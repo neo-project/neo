@@ -21,7 +21,7 @@ namespace Neo.SmartContract
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
 
-        protected readonly TriggerType Trigger;
+        public readonly TriggerType Trigger;
         protected readonly Snapshot Snapshot;
         protected readonly List<IDisposable> Disposables = new List<IDisposable>();
         protected readonly Dictionary<UInt160, UInt160> ContractsCreated = new Dictionary<UInt160, UInt160>();
