@@ -1,21 +1,14 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
-using Neo.IO;
-using Neo.Ledger;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Diagnostics;
 using System;
-//using System.Runtime.CompilerServices.Unsafe;
+using System.Diagnostics;
 
 namespace Neo.UnitTests
 {
     [TestClass]
     public class UT_UIntBenchmarks
     {
-        int MAX_TESTS = 1000000; // 1 million
+        private const int MAX_TESTS = 1000;
 
         byte[][] base_32_1;
         byte[][] base_32_2;
@@ -35,7 +28,7 @@ namespace Neo.UnitTests
             base_20_1 = new byte[MAX_TESTS][];
             base_20_2 = new byte[MAX_TESTS][];
 
-            for(var i=0; i<MAX_TESTS; i++)
+            for (var i = 0; i < MAX_TESTS; i++)
             {
                 base_32_1[i] = RandomBytes(32);
                 base_20_1[i] = RandomBytes(20);
@@ -61,9 +54,9 @@ namespace Neo.UnitTests
             return randomBytes;
         }
 
-        public delegate Object BenchmarkMethod();
+        public delegate object BenchmarkMethod();
 
-        public (TimeSpan, Object) Benchmark(BenchmarkMethod method)
+        public (TimeSpan, object) Benchmark(BenchmarkMethod method)
         {
             Stopwatch sw0 = new Stopwatch();
             sw0.Start();
@@ -89,7 +82,7 @@ namespace Neo.UnitTests
             UInt256[] uut_32_1 = new UInt256[MAX_TESTS];
             UInt256[] uut_32_2 = new UInt256[MAX_TESTS];
 
-            for(var i=0; i<MAX_TESTS; i++)
+            for (var i = 0; i < MAX_TESTS; i++)
             {
                 uut_32_1[i] = new UInt256(base_32_1[i]);
                 uut_32_2[i] = new UInt256(base_32_2[i]);
@@ -98,7 +91,7 @@ namespace Neo.UnitTests
             var checksum0 = Benchmark(() =>
             {
                 var checksum = 0;
-                for(var i=0; i<MAX_TESTS; i++)
+                for (var i = 0; i < MAX_TESTS; i++)
                 {
                     checksum += uut_32_1[i].CompareTo(uut_32_2[i]);
                 }
@@ -109,7 +102,7 @@ namespace Neo.UnitTests
             var checksum1 = Benchmark(() =>
             {
                 var checksum = 0;
-                for(var i=0; i<MAX_TESTS; i++)
+                for (var i = 0; i < MAX_TESTS; i++)
                 {
                     checksum += code1_UInt256CompareTo(base_32_1[i], base_32_2[i]);
                 }
@@ -120,7 +113,7 @@ namespace Neo.UnitTests
             var checksum2 = Benchmark(() =>
             {
                 var checksum = 0;
-                for(var i=0; i<MAX_TESTS; i++)
+                for (var i = 0; i < MAX_TESTS; i++)
                 {
                     checksum += code2_UInt256CompareTo(base_32_1[i], base_32_2[i]);
                 }
@@ -131,7 +124,7 @@ namespace Neo.UnitTests
             var checksum3 = Benchmark(() =>
             {
                 var checksum = 0;
-                for(var i=0; i<MAX_TESTS; i++)
+                for (var i = 0; i < MAX_TESTS; i++)
                 {
                     checksum += code3_UInt256CompareTo(base_32_1[i], base_32_2[i]);
                 }
@@ -151,7 +144,7 @@ namespace Neo.UnitTests
             UInt160[] uut_20_1 = new UInt160[MAX_TESTS];
             UInt160[] uut_20_2 = new UInt160[MAX_TESTS];
 
-            for(var i=0; i<MAX_TESTS; i++)
+            for (var i = 0; i < MAX_TESTS; i++)
             {
                 uut_20_1[i] = new UInt160(base_20_1[i]);
                 uut_20_2[i] = new UInt160(base_20_2[i]);
@@ -160,7 +153,7 @@ namespace Neo.UnitTests
             var checksum0 = Benchmark(() =>
             {
                 var checksum = 0;
-                for(var i=0; i<MAX_TESTS; i++)
+                for (var i = 0; i < MAX_TESTS; i++)
                 {
                     checksum += uut_20_1[i].CompareTo(uut_20_2[i]);
                 }
@@ -171,7 +164,7 @@ namespace Neo.UnitTests
             var checksum1 = Benchmark(() =>
             {
                 var checksum = 0;
-                for(var i=0; i<MAX_TESTS; i++)
+                for (var i = 0; i < MAX_TESTS; i++)
                 {
                     checksum += code1_UInt160CompareTo(base_20_1[i], base_20_2[i]);
                 }
@@ -182,7 +175,7 @@ namespace Neo.UnitTests
             var checksum2 = Benchmark(() =>
             {
                 var checksum = 0;
-                for(var i=0; i<MAX_TESTS; i++)
+                for (var i = 0; i < MAX_TESTS; i++)
                 {
                     checksum += code2_UInt160CompareTo(base_20_1[i], base_20_2[i]);
                 }
@@ -193,7 +186,7 @@ namespace Neo.UnitTests
             var checksum3 = Benchmark(() =>
             {
                 var checksum = 0;
-                for(var i=0; i<MAX_TESTS; i++)
+                for (var i = 0; i < MAX_TESTS; i++)
                 {
                     checksum += code3_UInt160CompareTo(base_20_1[i], base_20_2[i]);
                 }
@@ -209,7 +202,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Benchmark_UInt_IsCorrect_Self_CompareTo()
         {
-            for(var i=0; i<MAX_TESTS; i++)
+            for (var i = 0; i < MAX_TESTS; i++)
             {
                 code1_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
                 code2_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
@@ -240,7 +233,7 @@ namespace Neo.UnitTests
             {
                 uint* lpx = (uint*)px;
                 uint* lpy = (uint*)py;
-                for (int i = 256/32-1; i >= 0; i--)
+                for (int i = 256 / 32 - 1; i >= 0; i--)
                 {
                     if (lpx[i] > lpy[i])
                         return 1;
@@ -257,7 +250,7 @@ namespace Neo.UnitTests
             {
                 ulong* lpx = (ulong*)px;
                 ulong* lpy = (ulong*)py;
-                for (int i = 256/64-1; i >= 0; i--)
+                for (int i = 256 / 64 - 1; i >= 0; i--)
                 {
                     if (lpx[i] > lpy[i])
                         return 1;
@@ -287,7 +280,7 @@ namespace Neo.UnitTests
             {
                 uint* lpx = (uint*)px;
                 uint* lpy = (uint*)py;
-                for (int i = 160/32-1; i >= 0; i--)
+                for (int i = 160 / 32 - 1; i >= 0; i--)
                 {
                     if (lpx[i] > lpy[i])
                         return 1;
