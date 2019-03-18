@@ -303,9 +303,7 @@ namespace Neo.Consensus
                         else if (context.IsPrimary())
                             SendPrepareRequest();
                     }
-
-                    ConsensusPayload[] prepareResponsePayloads =
-                        message.GetPrepareResponsePayloads(context, payload);
+                    ConsensusPayload[] prepareResponsePayloads = message.GetPrepareResponsePayloads(context, payload);
                     foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
                         ReverifyAndProcessPayload(prepareResponsePayload);
                 }
