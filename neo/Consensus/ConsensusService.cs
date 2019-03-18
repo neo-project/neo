@@ -293,24 +293,21 @@ namespace Neo.Consensus
                         ReverifyAndProcessPayload(changeViewPayload);
                 }
                 if (message.ViewNumber != context.ViewNumber) return;
-                if (!context.ViewChanging())
+                if (!context.ViewChanging() && !context.CommitSent())
                 {
-                    if (!context.CommitSent())
+                    if (!context.RequestSentOrReceived())
                     {
-                        if (!context.RequestSentOrReceived())
-                        {
-                            ConsensusPayload prepareRequestPayload = message.GetPrepareRequestPayload(context, payload);
-                            if (prepareRequestPayload != null)
-                                ReverifyAndProcessPayload(prepareRequestPayload);
-                            else if (context.IsPrimary())
-                                SendPrepareRequest();
-                        }
-
-                        ConsensusPayload[] prepareResponsePayloads =
-                            message.GetPrepareResponsePayloads(context, payload);
-                        foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
-                            ReverifyAndProcessPayload(prepareResponsePayload);
+                        ConsensusPayload prepareRequestPayload = message.GetPrepareRequestPayload(context, payload);
+                        if (prepareRequestPayload != null)
+                            ReverifyAndProcessPayload(prepareRequestPayload);
+                        else if (context.IsPrimary())
+                            SendPrepareRequest();
                     }
+
+                    ConsensusPayload[] prepareResponsePayloads =
+                        message.GetPrepareResponsePayloads(context, payload);
+                    foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
+                        ReverifyAndProcessPayload(prepareResponsePayload);
                 }
                 ConsensusPayload[] commitPayloads = message.GetCommitPayloadsFromRecoveryMessage(context, payload);
                 foreach (ConsensusPayload commitPayload in commitPayloads)
