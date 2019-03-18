@@ -323,7 +323,7 @@ namespace Neo.Consensus
             finally
             {
                 Log($"{nameof(OnRecoveryMessageReceived)}: finished (valid/total) " +
-                    $"ChVw: {validChangeViews}/{totalChangeViews} " +
+                    $"ChgView: {validChangeViews}/{totalChangeViews} " +
                     $"PrepReq: {validPrepReq}/{totalPrepReq} " +
                     $"PrepResp: {validPrepResponses}/{totalPrepResponses}" +
                     $"Commits: {validCommits}/{totalCommits}");
