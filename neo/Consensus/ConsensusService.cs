@@ -293,19 +293,24 @@ namespace Neo.Consensus
                         ReverifyAndProcessPayload(changeViewPayload);
                 }
                 if (message.ViewNumber != context.ViewNumber) return;
-                if (!context.CommitSent())
+                if (!context.ViewChanging())
                 {
-                    if (!context.RequestSentOrReceived())
+                    if (!context.CommitSent())
                     {
-                        ConsensusPayload prepareRequestPayload = message.GetPrepareRequestPayload(context, payload);
-                        if (prepareRequestPayload != null)
-                            ReverifyAndProcessPayload(prepareRequestPayload);
-                        else if (context.IsPrimary())
-                            SendPrepareRequest();
+                        if (!context.RequestSentOrReceived())
+                        {
+                            ConsensusPayload prepareRequestPayload = message.GetPrepareRequestPayload(context, payload);
+                            if (prepareRequestPayload != null)
+                                ReverifyAndProcessPayload(prepareRequestPayload);
+                            else if (context.IsPrimary())
+                                SendPrepareRequest();
+                        }
+
+                        ConsensusPayload[] prepareResponsePayloads =
+                            message.GetPrepareResponsePayloads(context, payload);
+                        foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
+                            ReverifyAndProcessPayload(prepareResponsePayload);
                     }
-                    ConsensusPayload[] prepareResponsePayloads = message.GetPrepareResponsePayloads(context, payload);
-                    foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
-                        ReverifyAndProcessPayload(prepareResponsePayload);
                 }
                 ConsensusPayload[] commitPayloads = message.GetCommitPayloadsFromRecoveryMessage(context, payload);
                 foreach (ConsensusPayload commitPayload in commitPayloads)
@@ -319,7 +324,7 @@ namespace Neo.Consensus
 
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
         {
-            if (context.RequestSentOrReceived()) return;
+            if (context.RequestSentOrReceived() || context.ViewChanging()) return;
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (message.Timestamp <= context.PrevHeader().Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMinutes(10).ToTimestamp())
@@ -379,7 +384,7 @@ namespace Neo.Consensus
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
-            if (context.PreparationPayloads[payload.ValidatorIndex] != null) return;
+            if (context.PreparationPayloads[payload.ValidatorIndex] != null || context.ViewChanging()) return;
             if (context.PreparationPayloads[context.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.PrimaryIndex].Hash))
                 return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
@@ -473,12 +478,8 @@ namespace Neo.Consensus
         private void OnTransaction(Transaction transaction)
         {
             if (transaction.Type == TransactionType.MinerTransaction) return;
-            if (!context.IsBackup() || !context.RequestSentOrReceived() || context.ResponseSent() || context.BlockSent())
+            if (!context.IsBackup() || context.ViewChanging() || !context.RequestSentOrReceived() || context.ResponseSent() || context.BlockSent())
                 return;
-            // If we are changing view but we already have enough preparation payloads to commit in the current view,
-            // we must keep on accepting transactions in the current view to be able to create the block.
-            if (context.ViewChanging() &&
-                context.PreparationPayloads.Count(p => p != null) < context.M()) return;
             if (context.Transactions.ContainsKey(transaction.Hash)) return;
             if (!context.TransactionHashes.Contains(transaction.Hash)) return;
             AddTransaction(transaction, true);
