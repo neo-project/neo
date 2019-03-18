@@ -291,7 +291,6 @@ namespace Neo.Consensus
                         ReverifyAndProcessPayload(changeViewPayload);                        
                     Log($"{nameof(OnRecoveryMessageReceived)}: changeViewPayloads were processed.");
                 }
-
                 if (message.ViewNumber != context.ViewNumber) return;
                 if (!context.CommitSent())
                 {
