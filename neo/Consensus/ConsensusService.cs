@@ -201,11 +201,11 @@ namespace Neo.Consensus
 
                 if (!shouldSendRecovery) return;
 
-                if (context.CommitSent()) return;
-
                 Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber}");
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
             }
+
+            if (context.CommitSent()) return;
 
             var expectedView = GetLastExpectedView(payload.ValidatorIndex);
             if (message.NewViewNumber <= expectedView)
