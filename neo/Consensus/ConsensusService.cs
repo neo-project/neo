@@ -288,8 +288,10 @@ namespace Neo.Consensus
                     if (context.CommitSent()) return;
                     ConsensusPayload[] changeViewPayloads = message.GetChangeViewPayloads(context, payload);
                     foreach (ConsensusPayload changeViewPayload in changeViewPayloads)
-                        ReverifyAndProcessPayload(changeViewPayload);
+                        ReverifyAndProcessPayload(changeViewPayload);                        
+                    Log($"{nameof(OnRecoveryMessageReceived)}: changeViewPayloads were processed.");
                 }
+
                 if (message.ViewNumber != context.ViewNumber) return;
                 if (!context.CommitSent())
                 {
@@ -304,10 +306,12 @@ namespace Neo.Consensus
                     ConsensusPayload[] prepareResponsePayloads = message.GetPrepareResponsePayloads(context, payload);
                     foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
                         ReverifyAndProcessPayload(prepareResponsePayload);
+                    Log($"{nameof(OnRecoveryMessageReceived)}: prepareResponsePayloads were processed.");
                 }
                 ConsensusPayload[] commitPayloads = message.GetCommitPayloadsFromRecoveryMessage(context, payload);
                 foreach (ConsensusPayload commitPayload in commitPayloads)
                     ReverifyAndProcessPayload(commitPayload);
+                Log($"{nameof(OnRecoveryMessageReceived)}: node should be recovered.");                    
             }
             finally
             {
