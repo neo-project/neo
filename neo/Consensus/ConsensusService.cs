@@ -116,6 +116,7 @@ namespace Neo.Consensus
                 if (message is null || message.NewViewNumber < viewNumber)
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
                 InitializeConsensus(viewNumber);
+                context.Save();
             }
         }
 
@@ -182,25 +183,27 @@ namespace Neo.Consensus
             // ChangeView messages include a Timestamp when the change view is sent, thus if a node restarts
             // and issues a change view for the same view, it will have a different hash and will correctly respond
             // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
-            // additonal recovery message response.
+            // additional recovery message response.
             if (!knownHashes.Add(payload.Hash)) return;
             if (message.NewViewNumber <= context.ViewNumber)
             {
-                bool shouldSendRecovery = false;
-                // Limit recovery to sending from `f` nodes when the request is from a lower view number.
-                int allowedRecoveryNodeCount = context.F();
-                for (int i = 0; i < allowedRecoveryNodeCount; i++)
+                if (!context.CommitSent())
                 {
-                    var eligibleResponders = context.Validators.Length - 1;
-                    var chosenIndex = (payload.ValidatorIndex + i + message.NewViewNumber) % eligibleResponders;
-                    if (chosenIndex >= payload.ValidatorIndex) chosenIndex++;
-                    if (chosenIndex != context.MyIndex) continue;
-                    shouldSendRecovery = true;
-                    break;
+                    bool shouldSendRecovery = false;
+                    // Limit recovery to sending from `f` nodes when the request is from a lower view number.
+                    int allowedRecoveryNodeCount = context.F();
+                    for (int i = 0; i < allowedRecoveryNodeCount; i++)
+                    {
+                        var eligibleResponders = context.Validators.Length - 1;
+                        var chosenIndex = (payload.ValidatorIndex + i + message.NewViewNumber) % eligibleResponders;
+                        if (chosenIndex >= payload.ValidatorIndex) chosenIndex++;
+                        if (chosenIndex != context.MyIndex) continue;
+                        shouldSendRecovery = true;
+                        break;
+                    }
+
+                    if (!shouldSendRecovery) return;
                 }
-
-                if (!shouldSendRecovery) return;
-
                 Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber}");
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
             }
@@ -438,11 +441,14 @@ namespace Neo.Consensus
                     CheckPreparations();
                     return;
                 }
+                InitializeConsensus(context.ViewNumber);
             }
-            InitializeConsensus(0);
+            else
+                InitializeConsensus(0);
+
             // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
             if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(0) });
+                localNode.Tell(new LocalNode.SendDirectly {Inventory = context.MakeChangeView(context.ViewNumber)});
         }
 
         private void OnTimer(Timer timer)
