@@ -1,4 +1,4 @@
-﻿using Akka.Actor;
+using Akka.Actor;
 using Akka.Configuration;
 using Neo.Cryptography;
 using Neo.IO;
@@ -75,7 +75,8 @@ namespace Neo.Consensus
                     if (context.MyIndex == context.PrimaryIndex) return true;
 
                     Log($"send prepare response");
-                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
+                    if (context.MyIndex != -1)
+                        localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
                     CheckPreparations();
                 }
                 else
@@ -123,12 +124,15 @@ namespace Neo.Consensus
         {
             if (context.PreparationPayloads.Count(p => p != null) >= context.M() && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
-                ConsensusPayload payload = context.MakeCommit();
                 Log($"send commit");
-                context.Save();
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
-                // Set timer, so we will resend the commit in case of a networking issue
-                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock));
+                if (context.MyIndex != -1)
+                {
+                    ConsensusPayload payload = context.MakeCommit();
+                    context.Save();
+                    localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
+                    // Set timer, so we will resend the commit in case of a networking issue
+                    ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock));
+                }
                 CheckCommits();
             }
         }
@@ -184,6 +188,9 @@ namespace Neo.Consensus
             // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
             // additonal recovery message response.
             if (!knownHashes.Add(payload.Hash)) return;
+            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
+            if (context.MyIndex == -1) return;
+
             if (message.NewViewNumber <= context.ViewNumber)
             {
                 bool shouldSendRecovery = false;
@@ -211,7 +218,6 @@ namespace Neo.Consensus
             if (message.NewViewNumber <= expectedView)
                 return;
 
-            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
             context.ChangeViewPayloads[payload.ValidatorIndex] = payload;
             CheckExpectedView(message.NewViewNumber);
         }
@@ -281,6 +287,7 @@ namespace Neo.Consensus
         {
             if (message.ViewNumber < context.ViewNumber) return;
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+            if (context.MyIndex == -1) return;
             // isRecovering is always set to false again after OnRecoveryMessageReceived
             isRecovering = true;
             int validChangeViews = 0, totalChangeViews = 0, validPrepReq=0, totalPrepReq = 0;
@@ -336,6 +343,7 @@ namespace Neo.Consensus
             if (context.RequestSentOrReceived()) return;
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
+
             if (message.Timestamp <= context.PrevHeader().Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMinutes(10).ToTimestamp())
             {
                 Log($"Timestamp incorrect: {message.Timestamp}", LogLevel.Warning);
@@ -398,6 +406,7 @@ namespace Neo.Consensus
                 return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
+            if (context.MyIndex == -1) return;
             if (context.CommitSent()) return;
             if (context.RequestSentOrReceived())
                 CheckPreparations();
@@ -455,7 +464,7 @@ namespace Neo.Consensus
             }
             InitializeConsensus(0);
             // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
-            if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
+            if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1 && context.MyIndex != -1)
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(0) });
         }
 
