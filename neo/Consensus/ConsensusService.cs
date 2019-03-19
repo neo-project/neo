@@ -152,10 +152,10 @@ namespace Neo.Consensus
         private void InitializeConsensus(byte viewNumber)
         {
             context.Reset(viewNumber);
-            if (context.MyIndex < 0) return;
             if (viewNumber > 0)
                 Log($"changeview: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
             Log($"initialize: height={context.BlockIndex} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary() ? "Primary" : "Backup")}");
+            if (context.MyIndex < 0) return;
             if (context.IsPrimary())
             {
                 if (isRecovering)
@@ -588,3 +588,4 @@ namespace Neo.Consensus
         }
     }
 }
+
