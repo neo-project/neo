@@ -1,4 +1,5 @@
-﻿using Neo.Network.P2P.Payloads;
+﻿using System.Linq;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System.Runtime.CompilerServices;
 
@@ -26,8 +27,11 @@ namespace Neo.Consensus
         public static bool CommitSent(this IConsensusContext context) => context.CommitPayloads[context.MyIndex] != null;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool BlockSent(this IConsensusContext context) => context.Block != null;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool ViewChanging(this IConsensusContext context) => context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber > context.ViewNumber;
+        public static bool ViewChanging(this IConsensusContext context) => context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber > context.ViewNumber && !context.FNodesValidCommitted();
+
+        public static bool FNodesValidCommitted(this IConsensusContext context) => context.CommitPayloads.Count(p => p != null) >= context.F();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint GetPrimaryIndex(this IConsensusContext context, byte viewNumber)
