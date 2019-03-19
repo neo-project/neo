@@ -325,7 +325,7 @@ namespace Neo.Consensus
                 Log($"{nameof(OnRecoveryMessageReceived)}: finished (valid/total) " +
                     $"ChgView: {validChangeViews}/{totalChangeViews} " +
                     $"PrepReq: {validPrepReq}/{totalPrepReq} " +
-                    $"PrepResp: {validPrepResponses}/{totalPrepResponses}" +
+                    $"PrepResp: {validPrepResponses}/{totalPrepResponses} " +
                     $"Commits: {validCommits}/{totalCommits}");
                 isRecovering = false;
             }
