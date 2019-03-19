@@ -116,7 +116,11 @@ namespace Neo.Consensus
                 if (message is null || message.NewViewNumber < viewNumber)
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
                 InitializeConsensus(viewNumber);
+                // Save View Change without Transactions for restoring after a restart.
+                var savedTransactions = context.Transactions;
+                context.Transactions = null;
                 context.Save();
+                context.Transactions = savedTransactions;
             }
         }
 
