@@ -304,7 +304,7 @@ namespace Neo.Consensus
                         ConsensusPayload prepareRequestPayload = message.GetPrepareRequestPayload(context, payload);
                         if (prepareRequestPayload != null)
                         {
-                            totalPrepReq++;
+                            totalPrepReq = 1;
                             if (ReverifyAndProcessPayload(prepareRequestPayload)) validPrepReq++;
                         }
                         else if (context.IsPrimary())
