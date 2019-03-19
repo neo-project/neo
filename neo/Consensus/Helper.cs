@@ -29,14 +29,14 @@ namespace Neo.Consensus
         public static bool BlockSent(this IConsensusContext context) => context.Block != null;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool ViewChanging(this IConsensusContext context) => context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber > context.ViewNumber && !context.FNodesValidCommitted();
+        public static bool ViewChanging(this IConsensusContext context) => context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber > context.ViewNumber && !context.FNodesCommitted();
 
         // A possible attack can happen if the last node to commit is malicious and either sends change view after his
         // commit to stall nodes in a higher view, or if he refuses to send recovery messages. In addition, if a node
         // asking change views loses network or crashes and comes back when nodes are committed in more than one higher
         // numbered view, it is possible for the node accepting recovery and commit in any of the higher views, thus
         // potentially splitting nodes among views and stalling the network.
-        public static bool FNodesValidCommitted(this IConsensusContext context) => context.CommitPayloads.Count(p => p != null) >= context.F();
+        public static bool FNodesCommitted(this IConsensusContext context) => context.CommitPayloads.Count(p => p != null) >= context.F();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint GetPrimaryIndex(this IConsensusContext context, byte viewNumber)
