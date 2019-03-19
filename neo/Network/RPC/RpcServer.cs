@@ -236,6 +236,20 @@ namespace Neo.Network.RPC
                         string address = _params[0].AsString();
                         return ValidateAddress(address);
                     }
+                case "plugins":
+                    {
+                        return new JArray(Plugin.Plugins
+                            .OrderBy(u => u.Name)
+                            .Select(u =>
+                            {
+                                var obj = new JObject();
+                                obj["name"] = u.Name;
+                                obj["version"] = u.Version.ToString();
+
+                                return obj;
+                            })
+                            .ToArray());
+                    }
                 default:
                     throw new RpcException(-32601, "Method not found");
             }
