@@ -10,6 +10,7 @@ using Neo.Persistence;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
 
@@ -21,9 +22,32 @@ namespace Neo.Network.P2P
         public class SetVerack { }
         public class SetFilter { public BloomFilter Filter; }
 
+        private class LimitedSet<T>
+        {
+            private int maxCapacity;
+            private OrderedDictionary orderedDictionary;
+
+            public LimitedSet(int maxCapacity = 100)
+            {
+                if (maxCapacity <= 0) throw new ArgumentOutOfRangeException(nameof(maxCapacity));
+
+                this.maxCapacity = maxCapacity;
+                this.orderedDictionary = new OrderedDictionary(maxCapacity);
+            }
+
+            public bool Add(T item)
+            {
+                if (orderedDictionary.Contains(item)) return false;
+                if (orderedDictionary.Count >= maxCapacity)
+                    orderedDictionary.RemoveAt(0);
+                orderedDictionary.Add(item, null);
+                return true;
+            }
+        }
+
         private readonly NeoSystem system;
-        private readonly HashSet<UInt256> knownHashes = new HashSet<UInt256>();
-        private readonly HashSet<UInt256> sentHashes = new HashSet<UInt256>();
+        private readonly LimitedSet<UInt256> knownHashes = new LimitedSet<UInt256>();
+        private readonly LimitedSet<UInt256> sentHashes = new LimitedSet<UInt256>();
         private VersionPayload version;
         private bool verack = false;
         private BloomFilter bloom_filter;
