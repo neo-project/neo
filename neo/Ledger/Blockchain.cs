@@ -19,15 +19,16 @@ namespace Neo.Ledger
 {
     public sealed class Blockchain : UntypedActor
     {
-        public class Register { }
         public class ApplicationExecuted { public Transaction Transaction; public ApplicationExecutionResult[] ExecutionResults; }
         public class PersistCompleted { public Block Block; }
         public class Import { public IEnumerable<Block> Blocks; }
         public class ImportCompleted { }
+        public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
+        public class FillCompleted { }
 
         public static readonly uint SecondsPerBlock = ProtocolSettings.Default.SecondsPerBlock;
         public const uint DecrementInterval = 2000000;
-        public const uint MaxValidators = 1024;
+        public const int MaxValidators = 1024;
         public static readonly uint[] GenerationAmount = { 8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromSeconds(SecondsPerBlock);
         public static readonly ECPoint[] StandbyValidators = ProtocolSettings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
@@ -120,7 +121,6 @@ namespace Neo.Ledger
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
-        private readonly HashSet<IActorRef> subscribers = new HashSet<IActorRef>();
         private Snapshot currentSnapshot;
 
         public Store Store { get; }
@@ -193,12 +193,6 @@ namespace Neo.Ledger
             return Store.ContainsTransaction(hash);
         }
 
-        private void Distribute(object message)
-        {
-            foreach (IActorRef subscriber in subscribers)
-                subscriber.Tell(message);
-        }
-
         public Block GetBlock(UInt256 hash)
         {
             if (block_cache.TryGetValue(hash, out Block block))
@@ -253,6 +247,33 @@ namespace Neo.Ledger
             blocks.AddLast(block);
         }
 
+        private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
+        {
+            // Invalidate all the transactions in the memory pool, to avoid any failures when adding new transactions.
+            MemPool.InvalidateAllTransactions();
+
+            // Add the transactions to the memory pool
+            foreach (var tx in transactions)
+            {
+                if (tx.Type == TransactionType.MinerTransaction)
+                    continue;
+                if (Store.ContainsTransaction(tx.Hash))
+                    continue;
+                if (!Plugin.CheckPolicy(tx))
+                    continue;
+                // First remove the tx if it is unverified in the pool.
+                MemPool.TryRemoveUnVerified(tx.Hash, out _);
+                // Verify the the transaction
+                if (!tx.Verify(currentSnapshot, MemPool.GetVerifiedTransactions()))
+                    continue;
+                // Add to the memory pool
+                MemPool.TryAdd(tx.Hash, tx);
+            }
+            // Transactions originally in the pool will automatically be reverified based on their priority.
+
+            Sender.Tell(new FillCompleted());
+        }
+
         private RelayResultReason OnNewBlock(Block block)
         {
             if (block.Index <= Height)
@@ -292,8 +313,9 @@ namespace Neo.Ledger
                     block_cache_unverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
 
-                    if (blocksPersisted++ < blocksToPersistList.Count - 2) continue;
-                    // Relay most recent 2 blocks persisted
+                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0,(15 - SecondsPerBlock)))) continue;
+                    // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
+                    // Increase in the rate of 1 block per second in configurations with faster blocks
 
                     if (blockToPersist.Index + 100 >= header_index.Count)
                         system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = blockToPersist });
@@ -391,20 +413,18 @@ namespace Neo.Ledger
         {
             block_cache.Remove(block.Hash);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
-            PersistCompleted completed = new PersistCompleted { Block = block };
-            system.Consensus?.Tell(completed);
-            Distribute(completed);
+            Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
 
         protected override void OnReceive(object message)
         {
             switch (message)
             {
-                case Register _:
-                    OnRegister();
-                    break;
                 case Import import:
                     OnImport(import.Blocks);
+                    break;
+                case FillMemoryPool fill:
+                    OnFillMemoryPool(fill.Transactions);
                     break;
                 case Header[] headers:
                     OnNewHeaders(headers);
@@ -422,16 +442,7 @@ namespace Neo.Ledger
                     if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
                         Self.Tell(Idle.Instance, ActorRefs.NoSender);
                     break;
-                case Terminated terminated:
-                    subscribers.Remove(terminated.ActorRef);
-                    break;
             }
-        }
-
-        private void OnRegister()
-        {
-            subscribers.Add(Sender);
-            Context.Watch(Sender);
         }
 
         private void Persist(Block block)
@@ -595,7 +606,7 @@ namespace Neo.Ledger
                             Transaction = tx,
                             ExecutionResults = execution_results.ToArray()
                         };
-                        Distribute(application_executed);
+                        Context.System.EventStream.Publish(application_executed);
                         all_application_executed.Add(application_executed);
                     }
                 }

@@ -98,6 +98,7 @@ namespace Neo.SmartContract
             Register("Neo.Iterator.Key", Iterator_Key, 1);
             Register("Neo.Iterator.Keys", Iterator_Keys, 1);
             Register("Neo.Iterator.Values", Iterator_Values, 1);
+            Register("Neo.Iterator.Concat", Iterator_Concat, 1);
 
             #region Aliases
             Register("Neo.Iterator.Next", Enumerator_Next, 1);
@@ -254,7 +255,7 @@ namespace Neo.SmartContract
             {
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
-                if (tx.Attributes.Length > ApplicationEngine.MaxArraySize)
+                if (tx.Attributes.Length > engine.MaxArraySize)
                     return false;
                 engine.CurrentContext.EvaluationStack.Push(tx.Attributes.Select(p => StackItem.FromInterface(p)).ToArray());
                 return true;
@@ -268,7 +269,7 @@ namespace Neo.SmartContract
             {
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
-                if (tx.Inputs.Length > ApplicationEngine.MaxArraySize)
+                if (tx.Inputs.Length > engine.MaxArraySize)
                     return false;
                 engine.CurrentContext.EvaluationStack.Push(tx.Inputs.Select(p => StackItem.FromInterface(p)).ToArray());
                 return true;
@@ -282,7 +283,7 @@ namespace Neo.SmartContract
             {
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
-                if (tx.Outputs.Length > ApplicationEngine.MaxArraySize)
+                if (tx.Outputs.Length > engine.MaxArraySize)
                     return false;
                 engine.CurrentContext.EvaluationStack.Push(tx.Outputs.Select(p => StackItem.FromInterface(p)).ToArray());
                 return true;
@@ -296,7 +297,7 @@ namespace Neo.SmartContract
             {
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
-                if (tx.Inputs.Length > ApplicationEngine.MaxArraySize)
+                if (tx.Inputs.Length > engine.MaxArraySize)
                     return false;
                 engine.CurrentContext.EvaluationStack.Push(tx.Inputs.Select(p => StackItem.FromInterface(tx.References[p])).ToArray());
                 return true;
@@ -311,7 +312,7 @@ namespace Neo.SmartContract
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
                 TransactionOutput[] outputs = Snapshot.GetUnspent(tx.Hash).ToArray();
-                if (outputs.Length > ApplicationEngine.MaxArraySize)
+                if (outputs.Length > engine.MaxArraySize)
                     return false;
                 engine.CurrentContext.EvaluationStack.Push(outputs.Select(p => StackItem.FromInterface(p)).ToArray());
                 return true;
@@ -325,7 +326,7 @@ namespace Neo.SmartContract
             {
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
-                if (tx.Witnesses.Length > ApplicationEngine.MaxArraySize)
+                if (tx.Witnesses.Length > engine.MaxArraySize)
                     return false;
                 engine.CurrentContext.EvaluationStack.Push(WitnessWrapper.Create(tx, Snapshot).Select(p => StackItem.FromInterface(p)).ToArray());
                 return true;
@@ -902,6 +903,17 @@ namespace Neo.SmartContract
                 return true;
             }
             return false;
+        }
+
+        private bool Iterator_Concat(ExecutionEngine engine)
+        {
+            if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface1)) return false;
+            if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface2)) return false;
+            IIterator first = _interface1.GetInterface<IIterator>();
+            IIterator second = _interface2.GetInterface<IIterator>();
+            IIterator result = new ConcatenatedIterator(first, second);
+            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(result));
+            return true;
         }
     }
 }

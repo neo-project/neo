@@ -11,6 +11,8 @@ namespace Neo.Network.P2P.Payloads
 {
     public class Block : BlockBase, IInventory, IEquatable<Block>
     {
+        public const int MaxTransactionsPerBlock = ushort.MaxValue;
+
         public Transaction[] Transactions;
 
         private Header _header = null;
@@ -51,7 +53,7 @@ namespace Neo.Network.P2P.Payloads
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Transactions = new Transaction[reader.ReadVarInt(0x10000)];
+            Transactions = new Transaction[reader.ReadVarInt(MaxTransactionsPerBlock)];
             if (Transactions.Length == 0) throw new FormatException();
             HashSet<UInt256> hashes = new HashSet<UInt256>();
             for (int i = 0; i < Transactions.Length; i++)
