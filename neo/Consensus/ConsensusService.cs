@@ -116,7 +116,6 @@ namespace Neo.Consensus
                 if (message is null || message.NewViewNumber < viewNumber)
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
                 InitializeConsensus(viewNumber);
-                context.Save();
             }
         }
 
@@ -441,14 +440,11 @@ namespace Neo.Consensus
                     CheckPreparations();
                     return;
                 }
-                InitializeConsensus(context.ViewNumber);
             }
-            else
-                InitializeConsensus(0);
-
+            InitializeConsensus(0);
             // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
             if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
-                localNode.Tell(new LocalNode.SendDirectly {Inventory = context.MakeChangeView(context.ViewNumber)});
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(0) });
         }
 
         private void OnTimer(Timer timer)
