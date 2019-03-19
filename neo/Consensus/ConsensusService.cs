@@ -445,10 +445,9 @@ namespace Neo.Consensus
                     CheckPreparations();
                     return;
                 }
-                InitializeConsensus(context.ViewNumber);
+
             }
-            else
-                InitializeConsensus(0);
+            InitializeConsensus(context.ViewNumber);
 
             // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
             if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
