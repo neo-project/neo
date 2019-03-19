@@ -33,9 +33,9 @@ namespace Neo.Consensus
 
         // A possible attack can happen if the last node to commit is malicious and either sends change view after his
         // commit to stall nodes in a higher view, or if he refuses to send recovery messages. In addition, if a node
-        // asking change views loses network or crashes and comes back when nodes are committed in more than one view,
-        // it is possible for that node to accept recovery from any committed node, thus potentially splitting nodes
-        // among views and stalling the network.
+        // asking change views loses network or crashes and comes back when nodes are committed in more than one higher
+        // numbered view, it is possible for the node accepting recovery and commit in any of the higher views, thus
+        // potentially splitting nodes among views and stalling the network.
         public static bool FNodesValidCommitted(this IConsensusContext context) => context.CommitPayloads.Count(p => p != null) >= context.F();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
