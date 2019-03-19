@@ -1,4 +1,4 @@
-﻿using Neo.Network.P2P.Payloads;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System.Runtime.CompilerServices;
 
@@ -23,7 +23,7 @@ namespace Neo.Consensus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ResponseSent(this IConsensusContext context) => context.PreparationPayloads[context.MyIndex] != null;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool CommitSent(this IConsensusContext context) => context.CommitPayloads[context.MyIndex] != null;
+        public static bool CommitSent(this IConsensusContext context) => !context.WatchOnly() && context.CommitPayloads[context.MyIndex] != null;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool BlockSent(this IConsensusContext context) => context.Block != null;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -35,5 +35,8 @@ namespace Neo.Consensus
             int p = ((int)context.BlockIndex - viewNumber) % context.Validators.Length;
             return p >= 0 ? (uint)p : (uint)(p + context.Validators.Length);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool WatchOnly(this IConsensusContext context) => context.MyIndex == -1;
     }
 }

@@ -75,7 +75,7 @@ namespace Neo.Consensus
                     if (context.MyIndex == context.PrimaryIndex) return true;
 
                     Log($"send prepare response");
-                    if (context.MyIndex != -1)
+                    if (!context.WatchOnly())
                         localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
                     CheckPreparations();
                 }
@@ -113,9 +113,12 @@ namespace Neo.Consensus
             if (context.ViewNumber == viewNumber) return;
             if (context.ChangeViewPayloads.Count(p => p != null && p.GetDeserializedMessage<ChangeView>().NewViewNumber == viewNumber) >= context.M())
             {
-                ChangeView message = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
-                if (message is null || message.NewViewNumber < viewNumber)
-                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
+                if (!context.WatchOnly())
+                {
+                    ChangeView message = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
+                    if ((message is null || message.NewViewNumber < viewNumber))
+                        localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
+                }
                 InitializeConsensus(viewNumber);
             }
         }
@@ -125,7 +128,7 @@ namespace Neo.Consensus
             if (context.PreparationPayloads.Count(p => p != null) >= context.M() && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 Log($"send commit");
-                if (context.MyIndex != -1)
+                if (!context.WatchOnly())
                 {
                     ConsensusPayload payload = context.MakeCommit();
                     context.Save();
@@ -189,30 +192,31 @@ namespace Neo.Consensus
             // additonal recovery message response.
             if (!knownHashes.Add(payload.Hash)) return;
             Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
-            if (context.MyIndex == -1) return;
-
-            if (message.NewViewNumber <= context.ViewNumber)
+            if (!context.WatchOnly())
             {
-                bool shouldSendRecovery = false;
-                // Limit recovery to sending from `f` nodes when the request is from a lower view number.
-                int allowedRecoveryNodeCount = context.F();
-                for (int i = 0; i < allowedRecoveryNodeCount; i++)
+                if (message.NewViewNumber <= context.ViewNumber)
                 {
-                    var eligibleResponders = context.Validators.Length - 1;
-                    var chosenIndex = (payload.ValidatorIndex + i + message.NewViewNumber) % eligibleResponders;
-                    if (chosenIndex >= payload.ValidatorIndex) chosenIndex++;
-                    if (chosenIndex != context.MyIndex) continue;
-                    shouldSendRecovery = true;
-                    break;
+                    bool shouldSendRecovery = false;
+                    // Limit recovery to sending from `f` nodes when the request is from a lower view number.
+                    int allowedRecoveryNodeCount = context.F();
+                    for (int i = 0; i < allowedRecoveryNodeCount; i++)
+                    {
+                        var eligibleResponders = context.Validators.Length - 1;
+                        var chosenIndex = (payload.ValidatorIndex + i + message.NewViewNumber) % eligibleResponders;
+                        if (chosenIndex >= payload.ValidatorIndex) chosenIndex++;
+                        if (chosenIndex != context.MyIndex) continue;
+                        shouldSendRecovery = true;
+                        break;
+                    }
+
+                    if (!shouldSendRecovery) return;
+
+                    Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber}");
+                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
                 }
 
-                if (!shouldSendRecovery) return;
-
-                Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber}");
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
+                if (context.CommitSent()) return;
             }
-
-            if (context.CommitSent()) return;
 
             var expectedView = GetLastExpectedView(payload.ValidatorIndex);
             if (message.NewViewNumber <= expectedView)
@@ -287,7 +291,6 @@ namespace Neo.Consensus
         {
             if (message.ViewNumber < context.ViewNumber) return;
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
-            if (context.MyIndex == -1) return;
             // isRecovering is always set to false again after OnRecoveryMessageReceived
             isRecovering = true;
             int validChangeViews = 0, totalChangeViews = 0, validPrepReq=0, totalPrepReq = 0;
@@ -406,7 +409,7 @@ namespace Neo.Consensus
                 return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
-            if (context.MyIndex == -1) return;
+            if (context.WatchOnly()) return;
             if (context.CommitSent()) return;
             if (context.RequestSentOrReceived())
                 CheckPreparations();
@@ -464,7 +467,7 @@ namespace Neo.Consensus
             }
             InitializeConsensus(0);
             // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
-            if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1 && context.MyIndex != -1)
+            if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1 && !context.WatchOnly())
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(0) });
         }
 
