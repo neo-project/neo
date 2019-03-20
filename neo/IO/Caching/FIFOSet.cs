@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Specialized;
+using System.Collections.Generic;
 
 namespace Neo.IO.Caching
 {
@@ -7,7 +7,7 @@ namespace Neo.IO.Caching
     {
         private int maxCapacity;
         private int removeCount;
-        private OrderedDictionary orderedDictionary;
+        private List<T> orderedList;
 
         public FIFOSet(int maxCapacity, decimal? batchSize = 0.1m)
         {
@@ -16,25 +16,25 @@ namespace Neo.IO.Caching
 
             this.maxCapacity = maxCapacity;
             this.removeCount = batchSize != null ? (int)(batchSize <= 1.0m ? maxCapacity * batchSize : maxCapacity) : 1;
-            this.orderedDictionary = new OrderedDictionary(maxCapacity);
+            this.orderedList = new List<T>(maxCapacity);
         }
 
         public bool Add(T item)
         {
-            if (orderedDictionary.Contains(item)) return false;
-            if (orderedDictionary.Count >= maxCapacity)
+            if (orderedList.Contains(item)) return false;
+            if (orderedList.Count >= maxCapacity)
             {
-                if (this.removeCount == this.maxCapacity)
+                if (removeCount == maxCapacity)
                 {
-                    orderedDictionary.Clear();
+                    orderedList.Clear();
                 }
                 else
                 {
-                    for (int i = 0; i < this.removeCount; i++)
-                        orderedDictionary.RemoveAt(0);
+                    for (int i = 0; i < removeCount; i++)
+                        orderedList.RemoveAt(0);
                 }
             }
-            orderedDictionary.Add(item, null);
+            orderedList.Add(item);
             return true;
         }
     }

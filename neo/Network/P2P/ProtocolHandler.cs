@@ -21,10 +21,9 @@ namespace Neo.Network.P2P
         public class SetVerack { }
         public class SetFilter { public BloomFilter Filter; }
 
-        private static readonly int hashCacheSize = ProtocolSettings.Default.HashCacheSize;
         private readonly NeoSystem system;
-        private readonly FIFOSet<UInt256> knownHashes = new FIFOSet<UInt256>(hashCacheSize);
-        private readonly FIFOSet<UInt256> sentHashes = new FIFOSet<UInt256>(hashCacheSize);
+        private readonly FIFOSet<UInt256> knownHashes = new FIFOSet<UInt256>(ProtocolSettings.Default.HashCacheSize);
+        private readonly FIFOSet<UInt256> sentHashes = new FIFOSet<UInt256>(ProtocolSettings.Default.HashCacheSize);
         private VersionPayload version;
         private bool verack = false;
         private BloomFilter bloom_filter;
