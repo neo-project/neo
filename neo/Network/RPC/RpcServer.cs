@@ -236,7 +236,7 @@ namespace Neo.Network.RPC
                         string address = _params[0].AsString();
                         return ValidateAddress(address);
                     }
-                case "plugins":
+                case "listplugins":
                     {
                         return new JArray(Plugin.Plugins
                             .OrderBy(u => u.Name)
