@@ -3,8 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <AssemblyName>Neo.UnitTests</AssemblyName>
-    <RootNamespace>Neo.UnitTests</RootNamespace>
+    <AssemblyName>Neo.UnitTests_fast</AssemblyName>
+    <RootNamespace>Neo.UnitTests_fast</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
