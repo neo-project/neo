@@ -17,3 +17,6 @@ before_install:
 script:
  - dotnet restore
  - dotnet test
+ - cd ../neo.UnitTests_fast
+ - dotnet restore
+ - dotnet test
