@@ -445,7 +445,6 @@ namespace Neo.Consensus
                     CheckPreparations();
                     return;
                 }
-
             }
             InitializeConsensus(context.ViewNumber);
 
