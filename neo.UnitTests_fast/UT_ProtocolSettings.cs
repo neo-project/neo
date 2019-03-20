@@ -5,7 +5,7 @@ using System.Diagnostics;
 //using Settings = Neo.Plugins.Settings;
 using ProtocolSettings = Neo.ProtocolSettings;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests_fast
 {
     [TestClass]
     public class UT_ProtocolSettings
@@ -18,7 +18,6 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Test_3_Seconds()
         {
-            ProtocolSettings.DefaultProtocolFile = "protocol-3s.json";
             ProtocolSettings.Default.SecondsPerBlock.Should().Be(3);
         }
     }
