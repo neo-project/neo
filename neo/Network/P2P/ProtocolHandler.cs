@@ -41,7 +41,7 @@ namespace Neo.Network.P2P
             {
                 if (msg.Command != "version")
                     throw new ProtocolViolationException();
-                OnVersionMessageReceived(msg.Payload.AsSerializable<VersionPayload>());
+                OnVersionMessageReceived(msg.GetPayload<VersionPayload>());
                 return;
             }
             if (!verack)
@@ -55,28 +55,28 @@ namespace Neo.Network.P2P
             {
                 case "addr":
                     {
-                        var payload = msg.Payload.AsSerializable<AddrPayload>();
+                        var payload = msg.GetPayload<AddrPayload>();
                         if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnAddrMessageReceived(payload);
                         break;
                     }
                 case "block":
                     {
-                        var payload = msg.Payload.AsSerializable<Block>();
+                        var payload = msg.GetPayload<Block>();
                         if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnInventoryReceived(payload);
                         break;
                     }
                 case "consensus":
                     {
-                        var payload = msg.Payload.AsSerializable<ConsensusPayload>();
+                        var payload = msg.GetPayload<ConsensusPayload>();
                         if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnInventoryReceived(payload);
                         break;
                     }
                 case "filteradd":
                     {
-                        var payload = msg.Payload.AsSerializable<FilterAddPayload>();
+                        var payload = msg.GetPayload<FilterAddPayload>();
                         if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnFilterAddMessageReceived(payload);
                         break;
@@ -89,7 +89,7 @@ namespace Neo.Network.P2P
                     }
                 case "filterload":
                     {
-                        var payload = msg.Payload.AsSerializable<FilterLoadPayload>();
+                        var payload = msg.GetPayload<FilterLoadPayload>();
                         if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnFilterLoadMessageReceived(payload);
                         break;
@@ -102,35 +102,35 @@ namespace Neo.Network.P2P
                     }
                 case "getblocks":
                     {
-                        var payload = msg.Payload.AsSerializable<GetBlocksPayload>();
+                        var payload = msg.GetPayload<GetBlocksPayload>();
                         if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnGetBlocksMessageReceived(payload);
                         break;
                     }
                 case "getdata":
                     {
-                        var payload = msg.Payload.AsSerializable<InvPayload>();
+                        var payload = msg.GetPayload<InvPayload>();
                         if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnGetDataMessageReceived(payload);
                         break;
                     }
                 case "getheaders":
                     {
-                        var payload = msg.Payload.AsSerializable<GetBlocksPayload>();
+                        var payload = msg.GetPayload<GetBlocksPayload>();
                         if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnGetHeadersMessageReceived(payload);
                         break;
                     }
                 case "headers":
                     {
-                        var payload = msg.Payload.AsSerializable<HeadersPayload>();
+                        var payload = msg.GetPayload<HeadersPayload>();
                         if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnHeadersMessageReceived(payload);
                         break;
                     }
                 case "inv":
                     {
-                        var payload = msg.Payload.AsSerializable<InvPayload>();
+                        var payload = msg.GetPayload<InvPayload>();
                         if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                         OnInvMessageReceived(payload);
                         break;
@@ -145,7 +145,7 @@ namespace Neo.Network.P2P
                     {
                         if (msg.Payload.Length <= Transaction.MaxTransactionSize)
                         {
-                            var payload = Transaction.DeserializeFrom(msg.Payload);
+                            var payload = msg.GetTransaction();
                             if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
                             OnInventoryReceived(payload);
                         }

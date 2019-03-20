@@ -1,5 +1,6 @@
 ﻿using Neo.Cryptography;
 using Neo.IO;
+using Neo.Network.P2P.Payloads;
 using System;
 using System.IO;
 
@@ -55,10 +56,15 @@ namespace Neo.Network.P2P
         public T GetPayload<T>() where T : ISerializable, new()
         {
             if (_payload_deserialized is null)
-            {
                 _payload_deserialized = Payload.AsSerializable<T>();
-            }
             return (T)_payload_deserialized;
+        }
+
+        public Transaction GetTransaction()
+        {
+            if (_payload_deserialized is null)
+                _payload_deserialized = Transaction.DeserializeFrom(Payload);
+            return (Transaction)_payload_deserialized;
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
