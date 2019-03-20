@@ -38,7 +38,6 @@ namespace Neo.Consensus
         // asking change views loses network or crashes and comes back when nodes are committed in more than one higher
         // numbered view, it is possible for the node accepting recovery and commit in any of the higher views, thus
         // potentially splitting nodes among views and stalling the network.
-        // TODO: Fix this to properly count all committed payloads including at lower view numbers.
         public static bool MoreThanFNodesCommitted(this IConsensusContext context) => context.CommitPayloads.Count(p => p != null) > context.F();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -71,7 +71,7 @@ namespace Neo.Consensus
                 ValidatorIndex = p.ValidatorIndex,
                 ConsensusMessage = new Commit
                 {
-                    ViewNumber = ViewNumber,
+                    ViewNumber = p.ViewNumber,
                     Signature = p.Signature
                 },
                 Witness = new Witness

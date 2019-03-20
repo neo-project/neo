@@ -8,17 +8,20 @@ namespace Neo.Consensus
     {
         public class CommitPayloadCompact : ISerializable
         {
+            public byte ViewNumber;
             public ushort ValidatorIndex;
             public byte[] Signature;
             public byte[] InvocationScript;
 
             int ISerializable.Size =>
+                sizeof(byte) +                  //ViewNumber
                 sizeof(ushort) +                //ValidatorIndex
                 Signature.Length +              //Signature
                 InvocationScript.GetVarSize();  //InvocationScript
 
             void ISerializable.Deserialize(BinaryReader reader)
             {
+                ViewNumber = reader.ReadByte();
                 ValidatorIndex = reader.ReadUInt16();
                 Signature = reader.ReadBytes(64);
                 InvocationScript = reader.ReadVarBytes(1024);
@@ -29,6 +32,7 @@ namespace Neo.Consensus
                 Commit message = payload.GetDeserializedMessage<Commit>();
                 return new CommitPayloadCompact
                 {
+                    ViewNumber = message.ViewNumber,
                     ValidatorIndex = payload.ValidatorIndex,
                     Signature = message.Signature,
                     InvocationScript = payload.Witness.InvocationScript
@@ -37,6 +41,7 @@ namespace Neo.Consensus
 
             void ISerializable.Serialize(BinaryWriter writer)
             {
+                writer.Write(ViewNumber);
                 writer.Write(ValidatorIndex);
                 writer.Write(Signature);
                 writer.WriteVarBytes(InvocationScript);
