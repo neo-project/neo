@@ -239,15 +239,9 @@ namespace Neo.Consensus
                 return;
             }
             // Receiving commit from another view
+            if (existingCommitPayload != null) return;
             Log($"{nameof(OnCommitReceived)}: record commit for different view={commit.ViewNumber} index={payload.ValidatorIndex} height={payload.BlockIndex}");
-            if (existingCommitPayload == null)
-                existingCommitPayload = payload;
-            else
-            {
-                var existingViewNumber = existingCommitPayload.ConsensusMessage.ViewNumber;
-                if (existingViewNumber == context.ViewNumber || commit.ViewNumber <= existingViewNumber) return;
-                existingCommitPayload = payload;
-            }
+            existingCommitPayload = payload;
         }
 
         private void OnConsensusPayload(ConsensusPayload payload)
