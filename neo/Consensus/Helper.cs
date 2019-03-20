@@ -31,7 +31,7 @@ namespace Neo.Consensus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ViewChanging(this IConsensusContext context) => context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber > context.ViewNumber;
 
-        public static bool ViewChangingIfAllowed(this IConsensusContext context) => context.ViewChanging() && !context.MoreThanFNodesCommitted();
+        public static bool NotAcceptingPayloadsDueToViewChanging(this IConsensusContext context) => context.ViewChanging() && !context.MoreThanFNodesCommitted();
 
         // A possible attack can happen if the last node to commit is malicious and either sends change view after his
         // commit to stall nodes in a higher view, or if he refuses to send recovery messages. In addition, if a node

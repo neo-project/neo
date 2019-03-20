@@ -324,7 +324,7 @@ namespace Neo.Consensus
                         if (ReverifyAndProcessPayload(changeViewPayload)) validChangeViews++;
                 }
                 if (message.ViewNumber != context.ViewNumber) return;
-                if (!context.ViewChangingIfAllowed() && !context.CommitSent())
+                if (!context.NotAcceptingPayloadsDueToViewChanging() && !context.CommitSent())
                 {
                     if (!context.RequestSentOrReceived())
                     {
@@ -360,7 +360,7 @@ namespace Neo.Consensus
 
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
         {
-            if (context.RequestSentOrReceived() || context.ViewChangingIfAllowed()) return;
+            if (context.RequestSentOrReceived() || context.NotAcceptingPayloadsDueToViewChanging()) return;
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (message.Timestamp <= context.PrevHeader().Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMinutes(10).ToTimestamp())
@@ -421,7 +421,7 @@ namespace Neo.Consensus
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
-            if (context.PreparationPayloads[payload.ValidatorIndex] != null || context.ViewChangingIfAllowed()) return;
+            if (context.PreparationPayloads[payload.ValidatorIndex] != null || context.NotAcceptingPayloadsDueToViewChanging()) return;
             if (context.PreparationPayloads[context.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.PrimaryIndex].Hash))
                 return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
@@ -515,7 +515,7 @@ namespace Neo.Consensus
         private void OnTransaction(Transaction transaction)
         {
             if (transaction.Type == TransactionType.MinerTransaction) return;
-            if (!context.IsBackup() || context.ViewChangingIfAllowed() || !context.RequestSentOrReceived() || context.ResponseSent() || context.BlockSent())
+            if (!context.IsBackup() || context.NotAcceptingPayloadsDueToViewChanging() || !context.RequestSentOrReceived() || context.ResponseSent() || context.BlockSent())
                 return;
             if (context.Transactions.ContainsKey(transaction.Hash)) return;
             if (!context.TransactionHashes.Contains(transaction.Hash)) return;
