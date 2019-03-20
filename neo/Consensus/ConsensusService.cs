@@ -72,7 +72,7 @@ namespace Neo.Consensus
                 {
                     // if we are the primary for this view, but acting as a backup because we recovered our own
                     // previously sent prepare request, then we don't want to send a prepare response.
-                    if (context.MyIndex == context.PrimaryIndex) return true;
+                    if (context.IsPrimary() || context.WatchOnly()) return true;
 
                     Log($"send prepare response");
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
@@ -224,7 +224,6 @@ namespace Neo.Consensus
         {
             if (context.CommitPayloads[payload.ValidatorIndex] != null) return;
             Log($"{nameof(OnCommitReceived)}: height={payload.BlockIndex} view={commit.ViewNumber} index={payload.ValidatorIndex}");
-            if (context.WatchOnly()) return;
             byte[] hashData = context.MakeHeader()?.GetHashData();
             if (hashData == null)
             {
@@ -367,7 +366,6 @@ namespace Neo.Consensus
                 if (context.CommitPayloads[i] != null)
                     if (!Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
                         context.CommitPayloads[i] = null;
-            if (context.WatchOnly()) return;
             Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
             foreach (UInt256 hash in context.TransactionHashes.Skip(1))
@@ -520,6 +518,7 @@ namespace Neo.Consensus
 
         private void RequestChangeView()
         {
+            if (context.WatchOnly()) return;
             byte expectedView = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber ?? 0;
             if (expectedView < context.ViewNumber) expectedView = context.ViewNumber;
             expectedView++;
