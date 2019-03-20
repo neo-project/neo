@@ -228,6 +228,7 @@ namespace Neo.Consensus
             ref ConsensusPayload existingCommitPayload = ref context.CommitPayloads[payload.ValidatorIndex];
             if (commit.ViewNumber == context.ViewNumber)
             {
+                if (existingCommitPayload != null && context.ViewNumber == existingCommitPayload.ConsensusMessage.ViewNumber) return;
                 Log($"{nameof(OnCommitReceived)}: height={payload.BlockIndex} view={commit.ViewNumber} index={payload.ValidatorIndex}");
 
                 byte[] hashData = context.MakeHeader()?.GetHashData();
