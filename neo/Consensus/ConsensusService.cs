@@ -290,14 +290,18 @@ namespace Neo.Consensus
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             // isRecovering is always set to false again after OnRecoveryMessageReceived
             isRecovering = true;
+            int validChangeViews = 0, totalChangeViews = 0, validPrepReq=0, totalPrepReq = 0;
+            int validPrepResponses = 0, totalPrepResponses = 0, validCommits = 0, totalCommits = 0;
+
             try
             {
                 if (message.ViewNumber > context.ViewNumber)
                 {
                     if (context.CommitSent()) return;
                     ConsensusPayload[] changeViewPayloads = message.GetChangeViewPayloads(context, payload);
+                    totalChangeViews = changeViewPayloads.Length;
                     foreach (ConsensusPayload changeViewPayload in changeViewPayloads)
-                        ReverifyAndProcessPayload(changeViewPayload);
+                        if (ReverifyAndProcessPayload(changeViewPayload)) validChangeViews++;
                 }
                 if (message.ViewNumber != context.ViewNumber) return;
                 if (!context.ViewChanging() && !context.CommitSent())
@@ -306,20 +310,30 @@ namespace Neo.Consensus
                     {
                         ConsensusPayload prepareRequestPayload = message.GetPrepareRequestPayload(context, payload);
                         if (prepareRequestPayload != null)
-                            ReverifyAndProcessPayload(prepareRequestPayload);
+                        {
+                            totalPrepReq = 1;
+                            if (ReverifyAndProcessPayload(prepareRequestPayload)) validPrepReq++;
+                        }
                         else if (context.IsPrimary())
                             SendPrepareRequest();
                     }
                     ConsensusPayload[] prepareResponsePayloads = message.GetPrepareResponsePayloads(context, payload);
+                    totalPrepResponses = prepareResponsePayloads.Length;
                     foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
-                        ReverifyAndProcessPayload(prepareResponsePayload);
+                        if (ReverifyAndProcessPayload(prepareResponsePayload)) validPrepResponses++;
                 }
                 ConsensusPayload[] commitPayloads = message.GetCommitPayloadsFromRecoveryMessage(context, payload);
+                totalCommits = commitPayloads.Length;
                 foreach (ConsensusPayload commitPayload in commitPayloads)
-                    ReverifyAndProcessPayload(commitPayload);
+                    if (ReverifyAndProcessPayload(commitPayload)) validCommits++;
             }
             finally
             {
+                Log($"{nameof(OnRecoveryMessageReceived)}: finished (valid/total) " +
+                    $"ChgView: {validChangeViews}/{totalChangeViews} " +
+                    $"PrepReq: {validPrepReq}/{totalPrepReq} " +
+                    $"PrepResp: {validPrepResponses}/{totalPrepResponses} " +
+                    $"Commits: {validCommits}/{totalCommits}");
                 isRecovering = false;
             }
         }
@@ -513,10 +527,11 @@ namespace Neo.Consensus
             CheckExpectedView(expectedView);
         }
 
-        private void ReverifyAndProcessPayload(ConsensusPayload payload)
+        private bool ReverifyAndProcessPayload(ConsensusPayload payload)
         {
-            if (!payload.Verify(context.Snapshot)) return;
+            if (!payload.Verify(context.Snapshot)) return false;
             OnConsensusPayload(payload);
+            return true;
         }
 
         private void SendPrepareRequest()
