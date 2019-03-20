@@ -249,7 +249,6 @@ namespace Neo.Consensus
             if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView &&
                                                             message.Type != ConsensusMessageType.RecoveryMessage)
                 return;
-
             switch (message)
             {
                 case ChangeView view:
