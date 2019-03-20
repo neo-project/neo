@@ -112,9 +112,12 @@ namespace Neo.Consensus
             if (context.ViewNumber == viewNumber) return;
             if (context.ChangeViewPayloads.Count(p => p != null && p.GetDeserializedMessage<ChangeView>().NewViewNumber == viewNumber) >= context.M())
             {
-                ChangeView message = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
-                if (message is null || message.NewViewNumber < viewNumber)
-                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
+                if (!context.WatchOnly())
+                {
+                    ChangeView message = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
+                    if (message is null || message.NewViewNumber < viewNumber)
+                        localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
+                }
                 InitializeConsensus(viewNumber);
             }
         }
@@ -184,13 +187,9 @@ namespace Neo.Consensus
             // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
             // additonal recovery message response.
             if (!knownHashes.Add(payload.Hash)) return;
-            if (context.WatchOnly())
-            {
-                Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
-                return;
-            }
             if (message.NewViewNumber <= context.ViewNumber)
             {
+                if (context.WatchOnly()) return;
                 bool shouldSendRecovery = false;
                 // Limit recovery to sending from `f` nodes when the request is from a lower view number.
                 int allowedRecoveryNodeCount = context.F();
