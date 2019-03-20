@@ -36,6 +36,12 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        public void Consensus_Test_2_Seconds()
+        {
+            ProtocolSettings.Default.SecondsPerBlock.Should().Be(2);
+        }
+
+        [TestMethod]
         public void ConsensusService_Primary_Sends_PrepareRequest_After_OnStart()
         {
             TestProbe subscriber = CreateTestProbe();
