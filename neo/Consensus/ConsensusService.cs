@@ -307,7 +307,7 @@ namespace Neo.Consensus
                 ConsensusPayload[] commitPayloads;
                 if (message.ViewNumber < context.ViewNumber)
                 {
-                    // Ensure we know about all commits form lower view numbers.
+                    // Ensure we know about all commits from lower view numbers.
                     commitPayloads = message.GetCommitPayloadsFromRecoveryMessage(context, payload);
                     totalCommits = commitPayloads.Length;
                     foreach (ConsensusPayload commitPayload in commitPayloads)
