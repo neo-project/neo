@@ -226,9 +226,15 @@ namespace Neo.Consensus
         private void OnCommitReceived(ConsensusPayload payload, Commit commit)
         {
             ref ConsensusPayload existingCommitPayload = ref context.CommitPayloads[payload.ValidatorIndex];
+            if (existingCommitPayload != null)
+            {
+                if (existingCommitPayload.Hash != payload.Hash)
+                    Log($"{nameof(OnCommitReceived)}: Warning, different commit from validator! height={payload.BlockIndex} index={payload.ValidatorIndex} view={commit.ViewNumber} existingView={existingCommitPayload.ConsensusMessage.ViewNumber}");
+                return;
+            }
+
             if (commit.ViewNumber == context.ViewNumber)
             {
-                if (existingCommitPayload != null && context.ViewNumber == existingCommitPayload.ConsensusMessage.ViewNumber) return;
                 Log($"{nameof(OnCommitReceived)}: height={payload.BlockIndex} view={commit.ViewNumber} index={payload.ValidatorIndex}");
 
                 byte[] hashData = context.MakeHeader()?.GetHashData();
@@ -245,7 +251,6 @@ namespace Neo.Consensus
                 return;
             }
             // Receiving commit from another view
-            if (existingCommitPayload != null) return;
             Log($"{nameof(OnCommitReceived)}: record commit for different view={commit.ViewNumber} index={payload.ValidatorIndex} height={payload.BlockIndex}");
             existingCommitPayload = payload;
         }
