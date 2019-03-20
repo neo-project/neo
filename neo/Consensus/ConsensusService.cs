@@ -451,7 +451,7 @@ namespace Neo.Consensus
 
             // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
             if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
-                localNode.Tell(new LocalNode.SendDirectly {Inventory = context.MakeChangeView(context.ViewNumber)});
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(context.ViewNumber) });
         }
 
         private void OnTimer(Timer timer)
