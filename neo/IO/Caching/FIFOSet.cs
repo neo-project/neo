@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Neo.IO.Caching
 {
-    internal class FIFOSet<T>
+    internal class FIFOSet<T> where T : IEquatable<T>
     {
         private int maxCapacity;
         private int removeCount;
