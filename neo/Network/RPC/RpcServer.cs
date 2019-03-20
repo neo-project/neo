@@ -245,6 +245,7 @@ namespace Neo.Network.RPC
                                 var obj = new JObject();
                                 obj["name"] = u.Name;
                                 obj["version"] = u.Version.ToString();
+                                obj["interfaces"] = new JArray(u.GetType().GetInterfaces().Select(p => p.Name).Where(p => p.EndsWith("Plugin")).Select(p => (JObject)p));
 
                                 return obj;
                             })
