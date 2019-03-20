@@ -72,7 +72,6 @@ namespace Neo.Plugins
             foreach (var plugin in P2PPlugins)
                 if (!plugin.IsAllowed(cmd, payload))
                     return false;
-
             return true;
         }
         
