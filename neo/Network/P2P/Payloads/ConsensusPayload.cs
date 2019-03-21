@@ -23,7 +23,7 @@ namespace Neo.Network.P2P.Payloads
         public Witness Witness;
 
         private ConsensusMessage _deserializedMessage = null;
-        internal ConsensusMessage ConsensusMessage
+        public ConsensusMessage ConsensusMessage
         {
             get
             {
@@ -31,7 +31,7 @@ namespace Neo.Network.P2P.Payloads
                     _deserializedMessage = ConsensusMessage.DeserializeFrom(Data);
                 return _deserializedMessage;
             }
-            set
+            internal set
             {
                 if (!ReferenceEquals(_deserializedMessage, value))
                 {
@@ -78,7 +78,7 @@ namespace Neo.Network.P2P.Payloads
             Data.GetVarSize() + //Data
             1 + Witness.Size;   //Witness
 
-        internal T GetDeserializedMessage<T>() where T : ConsensusMessage
+        public T GetDeserializedMessage<T>() where T : ConsensusMessage
         {
             return (T)ConsensusMessage;
         }
