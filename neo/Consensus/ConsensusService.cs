@@ -99,7 +99,7 @@ namespace Neo.Consensus
 
         private void CheckCommits()
         {
-            if (context.CommitPayloads.Count(p => p != null && p.ConsensusMessage.ViewNumber == context.ViewNumber) >= context.M() && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
+            if (context.CommitPayloads.Count(p => p?.ConsensusMessage.ViewNumber == context.ViewNumber) >= context.M() && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 Block block = context.CreateBlock();
                 Log($"relay block: {block.Hash}");
@@ -299,7 +299,7 @@ namespace Neo.Consensus
         {
             // isRecovering is always set to false again after OnRecoveryMessageReceived
             isRecovering = true;
-            int validChangeViews = 0, totalChangeViews = 0, validPrepReq=0, totalPrepReq = 0;
+            int validChangeViews = 0, totalChangeViews = 0, validPrepReq = 0, totalPrepReq = 0;
             int validPrepResponses = 0, totalPrepResponses = 0, validCommits = 0, totalCommits = 0;
 
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
