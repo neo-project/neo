@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace Neo.Consensus
 {
-    internal partial class RecoveryMessage : ConsensusMessage
+    public partial class RecoveryMessage : ConsensusMessage
     {
         public Dictionary<int, ChangeViewPayloadCompact> ChangeViewMessages;
         public PrepareRequest PrepareRequestMessage;
@@ -39,7 +39,7 @@ namespace Neo.Consensus
             CommitMessages = reader.ReadSerializableArray<CommitPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
         }
 
-        internal ConsensusPayload[] GetChangeViewPayloads(IConsensusContext context, ConsensusPayload payload)
+        public ConsensusPayload[] GetChangeViewPayloads(IConsensusContext context, ConsensusPayload payload)
         {
             return ChangeViewMessages.Values.Select(p => new ConsensusPayload
             {
@@ -61,7 +61,7 @@ namespace Neo.Consensus
             }).ToArray();
         }
 
-        internal ConsensusPayload[] GetCommitPayloadsFromRecoveryMessage(IConsensusContext context, ConsensusPayload payload)
+        public ConsensusPayload[] GetCommitPayloadsFromRecoveryMessage(IConsensusContext context, ConsensusPayload payload)
         {
             return CommitMessages.Values.Select(p => new ConsensusPayload
             {
@@ -82,7 +82,7 @@ namespace Neo.Consensus
             }).ToArray();
         }
 
-        internal ConsensusPayload GetPrepareRequestPayload(IConsensusContext context, ConsensusPayload payload)
+        public ConsensusPayload GetPrepareRequestPayload(IConsensusContext context, ConsensusPayload payload)
         {
             if (PrepareRequestMessage == null) return null;
             if (!PreparationMessages.TryGetValue((int)context.PrimaryIndex, out RecoveryMessage.PreparationPayloadCompact compact))
@@ -102,7 +102,7 @@ namespace Neo.Consensus
             };
         }
 
-        internal ConsensusPayload[] GetPrepareResponsePayloads(IConsensusContext context, ConsensusPayload payload)
+        public ConsensusPayload[] GetPrepareResponsePayloads(IConsensusContext context, ConsensusPayload payload)
         {
             UInt256 preparationHash = PreparationHash ?? context.PreparationPayloads[context.PrimaryIndex]?.Hash;
             if (preparationHash is null) return new ConsensusPayload[0];

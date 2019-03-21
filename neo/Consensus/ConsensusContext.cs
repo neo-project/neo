@@ -61,7 +61,7 @@ namespace Neo.Consensus
                 ContractParametersContext sc = new ContractParametersContext(Block);
                 for (int i = 0, j = 0; i < Validators.Length && j < this.M(); i++)
                 {
-                    if (CommitPayloads[i] == null || CommitPayloads[i].ConsensusMessage.ViewNumber != ViewNumber) continue;
+                    if (CommitPayloads[i]?.ConsensusMessage.ViewNumber != ViewNumber) continue;
                     sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
                     j++;
                 }
