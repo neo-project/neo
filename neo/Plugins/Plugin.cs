@@ -16,6 +16,7 @@ namespace Neo.Plugins
         internal static readonly List<IPolicyPlugin> Policies = new List<IPolicyPlugin>();
         internal static readonly List<IRpcPlugin> RpcPlugins = new List<IRpcPlugin>();
         internal static readonly List<IPersistencePlugin> PersistencePlugins = new List<IPersistencePlugin>();
+        internal static readonly List<IP2PPlugin> P2PPlugins = new List<IP2PPlugin>();
         internal static readonly List<IMemoryPoolTxObserverPlugin> TxObserverPlugins = new List<IMemoryPoolTxObserverPlugin>();
 
         private static readonly string pluginsPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
@@ -49,6 +50,7 @@ namespace Neo.Plugins
             Plugins.Add(this);
 
             if (this is ILogPlugin logger) Loggers.Add(logger);
+            if (this is IP2PPlugin p2p) P2PPlugins.Add(p2p);
             if (this is IPolicyPlugin policy) Policies.Add(policy);
             if (this is IRpcPlugin rpc) RpcPlugins.Add(rpc);
             if (this is IPersistencePlugin persistence) PersistencePlugins.Add(persistence);
