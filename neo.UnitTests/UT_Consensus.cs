@@ -36,12 +36,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void Consensus_Test_2_Seconds()
-        {
-            ProtocolSettings.Default.SecondsPerBlock.Should().Be(2);
-        }
-
-        [TestMethod]
         public void ConsensusService_Primary_Sends_PrepareRequest_After_OnStart()
         {
             TestProbe subscriber = CreateTestProbe();
@@ -65,7 +59,7 @@ namespace Neo.UnitTests
             var timeValues = new[] {
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For tests here
               new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc),  // For receiving block
-              new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For Initialize
+              new DateTime(1968, 06, 01, 0, 0, 2, DateTimeKind.Utc), // For Initialize
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // unused
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc)  // unused
           };
@@ -162,6 +156,7 @@ namespace Neo.UnitTests
 
             Console.WriteLine("OnTimer should expire!");
             Console.WriteLine("Waiting for subscriber message!");
+            // Timer should expire in one second (block_received_time at :01, initialized at :02)
 
             var answer = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             Console.WriteLine($"MESSAGE 1: {answer}");
