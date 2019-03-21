@@ -304,16 +304,6 @@ namespace Neo.Consensus
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             try
             {
-                ConsensusPayload[] commitPayloads;
-                if (message.ViewNumber < context.ViewNumber)
-                {
-                    // Ensure we know about all commits from lower view numbers.
-                    commitPayloads = message.GetCommitPayloadsFromRecoveryMessage(context, payload);
-                    totalCommits = commitPayloads.Length;
-                    foreach (ConsensusPayload commitPayload in commitPayloads)
-                        if (ReverifyAndProcessPayload(commitPayload)) validCommits++;
-                    return;
-                }
                 if (message.ViewNumber > context.ViewNumber)
                 {
                     if (context.CommitSent()) return;
@@ -322,8 +312,7 @@ namespace Neo.Consensus
                     foreach (ConsensusPayload changeViewPayload in changeViewPayloads)
                         if (ReverifyAndProcessPayload(changeViewPayload)) validChangeViews++;
                 }
-                if (message.ViewNumber != context.ViewNumber) return;
-                if (!context.NotAcceptingPayloadsDueToViewChanging() && !context.CommitSent())
+                if (message.ViewNumber == context.ViewNumber && !context.NotAcceptingPayloadsDueToViewChanging() && !context.CommitSent())
                 {
                     if (!context.RequestSentOrReceived())
                     {
@@ -341,10 +330,14 @@ namespace Neo.Consensus
                     foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
                         if (ReverifyAndProcessPayload(prepareResponsePayload)) validPrepResponses++;
                 }
-                commitPayloads = message.GetCommitPayloadsFromRecoveryMessage(context, payload);
-                totalCommits = commitPayloads.Length;
-                foreach (ConsensusPayload commitPayload in commitPayloads)
-                    if (ReverifyAndProcessPayload(commitPayload)) validCommits++;
+                if (message.ViewNumber <= context.ViewNumber)
+                {
+                    // Ensure we know about all commits from lower view numbers.
+                    ConsensusPayload[] commitPayloads = message.GetCommitPayloadsFromRecoveryMessage(context, payload);
+                    totalCommits = commitPayloads.Length;
+                    foreach (ConsensusPayload commitPayload in commitPayloads)
+                        if (ReverifyAndProcessPayload(commitPayload)) validCommits++;
+                }
             }
             finally
             {
