@@ -249,26 +249,24 @@ namespace Neo.Consensus
             if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView &&
                                                             message.Type != ConsensusMessageType.RecoveryMessage)
                 return;
+            foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
+                if (!plugin.OnConsensusMessage(payload))
+                    return;
             switch (message)
             {
                 case ChangeView view:
-                    if (!Plugin.ReceivedMessageAllowed("consensus-changeview", view)) return;
                     OnChangeViewReceived(payload, view);
                     break;
                 case PrepareRequest request:
-                    if (!Plugin.ReceivedMessageAllowed("consensus-preparerequest", request))  return;
                     OnPrepareRequestReceived(payload, request);
                     break;
                 case PrepareResponse response:
-                    if (!Plugin.ReceivedMessageAllowed("consensus-prepareresponse", response))  return;
                     OnPrepareResponseReceived(payload, response);
                     break;
                 case Commit commit:
-                    if (!Plugin.ReceivedMessageAllowed("consensus-commit", commit))  return;
                     OnCommitReceived(payload, commit);
                     break;
                 case RecoveryMessage recovery:
-                    if (!Plugin.ReceivedMessageAllowed("consensus-recovery", recovery))  return;
                     OnRecoveryMessageReceived(payload, recovery);
                     break;
             }
@@ -288,7 +286,7 @@ namespace Neo.Consensus
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             // isRecovering is always set to false again after OnRecoveryMessageReceived
             isRecovering = true;
-            int validChangeViews = 0, totalChangeViews = 0, validPrepReq=0, totalPrepReq = 0;
+            int validChangeViews = 0, totalChangeViews = 0, validPrepReq = 0, totalPrepReq = 0;
             int validPrepResponses = 0, totalPrepResponses = 0, validCommits = 0, totalCommits = 0;
 
             try

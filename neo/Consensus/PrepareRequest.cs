@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Neo.Consensus
 {
-    internal class PrepareRequest : ConsensusMessage
+    public class PrepareRequest : ConsensusMessage
     {
         public uint Timestamp;
         public ulong Nonce;

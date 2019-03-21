@@ -37,6 +37,9 @@ namespace Neo.Network.P2P
         protected override void OnReceive(object message)
         {
             if (!(message is Message msg)) return;
+            foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
+                if (!plugin.OnP2PMessage(msg))
+                    return;
             if (version == null)
             {
                 if (msg.Command != "version")
@@ -54,103 +57,48 @@ namespace Neo.Network.P2P
             switch (msg.Command)
             {
                 case "addr":
-                    {
-                        var payload = msg.GetPayload<AddrPayload>();
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
-                        OnAddrMessageReceived(payload);
-                        break;
-                    }
+                    OnAddrMessageReceived(msg.GetPayload<AddrPayload>());
+                    break;
                 case "block":
-                    {
-                        var payload = msg.GetPayload<Block>();
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
-                        OnInventoryReceived(payload);
-                        break;
-                    }
+                    OnInventoryReceived(msg.GetPayload<Block>());
+                    break;
                 case "consensus":
-                    {
-                        var payload = msg.GetPayload<ConsensusPayload>();
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
-                        OnInventoryReceived(payload);
-                        break;
-                    }
+                    OnInventoryReceived(msg.GetPayload<ConsensusPayload>());
+                    break;
                 case "filteradd":
-                    {
-                        var payload = msg.GetPayload<FilterAddPayload>();
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
-                        OnFilterAddMessageReceived(payload);
-                        break;
-                    }
+                    OnFilterAddMessageReceived(msg.GetPayload<FilterAddPayload>());
+                    break;
                 case "filterclear":
-                    {
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, null)) return;
-                        OnFilterClearMessageReceived();
-                        break;
-                    }
+                    OnFilterClearMessageReceived();
+                    break;
                 case "filterload":
-                    {
-                        var payload = msg.GetPayload<FilterLoadPayload>();
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
-                        OnFilterLoadMessageReceived(payload);
-                        break;
-                    }
+                    OnFilterLoadMessageReceived(msg.GetPayload<FilterLoadPayload>());
+                    break;
                 case "getaddr":
-                    {
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, null)) return;
-                        OnGetAddrMessageReceived();
-                        break;
-                    }
+                    OnGetAddrMessageReceived();
+                    break;
                 case "getblocks":
-                    {
-                        var payload = msg.GetPayload<GetBlocksPayload>();
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
-                        OnGetBlocksMessageReceived(payload);
-                        break;
-                    }
+                    OnGetBlocksMessageReceived(msg.GetPayload<GetBlocksPayload>());
+                    break;
                 case "getdata":
-                    {
-                        var payload = msg.GetPayload<InvPayload>();
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
-                        OnGetDataMessageReceived(payload);
-                        break;
-                    }
+                    OnGetDataMessageReceived(msg.GetPayload<InvPayload>());
+                    break;
                 case "getheaders":
-                    {
-                        var payload = msg.GetPayload<GetBlocksPayload>();
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
-                        OnGetHeadersMessageReceived(payload);
-                        break;
-                    }
+                    OnGetHeadersMessageReceived(msg.GetPayload<GetBlocksPayload>());
+                    break;
                 case "headers":
-                    {
-                        var payload = msg.GetPayload<HeadersPayload>();
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
-                        OnHeadersMessageReceived(payload);
-                        break;
-                    }
+                    OnHeadersMessageReceived(msg.GetPayload<HeadersPayload>());
+                    break;
                 case "inv":
-                    {
-                        var payload = msg.GetPayload<InvPayload>();
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
-                        OnInvMessageReceived(payload);
-                        break;
-                    }
+                    OnInvMessageReceived(msg.GetPayload<InvPayload>());
+                    break;
                 case "mempool":
-                    {
-                        if (!Plugin.ReceivedMessageAllowed(msg.Command, null)) return;
-                        OnMemPoolMessageReceived();
-                        break;
-                    }
+                    OnMemPoolMessageReceived();
+                    break;
                 case "tx":
-                    {
-                        if (msg.Payload.Length <= Transaction.MaxTransactionSize)
-                        {
-                            var payload = msg.GetTransaction();
-                            if (!Plugin.ReceivedMessageAllowed(msg.Command, payload)) return;
-                            OnInventoryReceived(payload);
-                        }
-                        break;
-                    }
+                    if (msg.Payload.Length <= Transaction.MaxTransactionSize)
+                        OnInventoryReceived(msg.GetTransaction());
+                    break;
                 case "verack":
                 case "version":
                     throw new ProtocolViolationException();

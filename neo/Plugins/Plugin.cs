@@ -67,14 +67,6 @@ namespace Neo.Plugins
             return true;
         }
 
-        public static bool ReceivedMessageAllowed(string cmd, object payload)
-        {
-            foreach (var plugin in P2PPlugins)
-                if (!plugin.IsAllowed(cmd, payload))
-                    return false;
-            return true;
-        }
-        
         public abstract void Configure();
 
         protected virtual void OnPluginsLoaded()
