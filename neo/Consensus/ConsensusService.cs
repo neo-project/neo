@@ -263,14 +263,10 @@ namespace Neo.Consensus
                 return;
             }
             if (payload.ValidatorIndex >= context.Validators.Length) return;
-            ConsensusMessage message = payload.ConsensusMessage;
-            if (message.ViewNumber != context.ViewNumber && (message.Type == ConsensusMessageType.PrepareRequest ||
-                                                             message.Type == ConsensusMessageType.PrepareResponse))
-                return;
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
                 if (!plugin.OnConsensusMessage(payload))
                     return;
-            switch (message)
+            switch (payload.ConsensusMessage)
             {
                 case ChangeView view:
                     OnChangeViewReceived(payload, view);
@@ -364,7 +360,7 @@ namespace Neo.Consensus
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
         {
             if (context.RequestSentOrReceived() || context.NotAcceptingPayloadsDueToViewChanging()) return;
-            if (payload.ValidatorIndex != context.PrimaryIndex) return;
+            if (payload.ValidatorIndex != context.PrimaryIndex || message.ViewNumber != context.ViewNumber) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (message.Timestamp <= context.PrevHeader().Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMinutes(10).ToTimestamp())
             {
@@ -424,6 +420,7 @@ namespace Neo.Consensus
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
+            if (message.ViewNumber != context.ViewNumber) return;
             if (context.PreparationPayloads[payload.ValidatorIndex] != null || context.NotAcceptingPayloadsDueToViewChanging()) return;
             if (context.PreparationPayloads[context.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.PrimaryIndex].Hash))
                 return;
