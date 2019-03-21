@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Neo.Consensus
 {
-    internal class PrepareResponse : ConsensusMessage
+    public class PrepareResponse : ConsensusMessage
     {
         public UInt256 PreparationHash;
 
