@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Diagnostics;
+using Neo.Ledger;
 //using Settings = Neo.Plugins.Settings;
 using ProtocolSettings = Neo.ProtocolSettings;
 
@@ -19,6 +20,7 @@ namespace Neo.UnitTests
         public void Test_BlockTime_Seconds()
         {
             ProtocolSettings.Default.SecondsPerBlock.Should().Be(TestBlockchain.BlockTime);
+            Blockchain.SecondsPerBlock.Should().Be(TestBlockchain.BlockTime);
         }
 
         [TestMethod]
