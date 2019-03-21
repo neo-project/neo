@@ -72,7 +72,7 @@ namespace Neo.Consensus
                 {
                     // if we are the primary for this view, but acting as a backup because we recovered our own
                     // previously sent prepare request, then we don't want to send a prepare response.
-                    if (context.MyIndex == context.PrimaryIndex) return true;
+                    if (context.IsPrimary() || context.WatchOnly()) return true;
 
                     Log($"send prepare response");
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
@@ -112,9 +112,12 @@ namespace Neo.Consensus
             if (context.ViewNumber == viewNumber) return;
             if (context.ChangeViewPayloads.Count(p => p != null && p.GetDeserializedMessage<ChangeView>().NewViewNumber == viewNumber) >= context.M())
             {
-                ChangeView message = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
-                if (message is null || message.NewViewNumber < viewNumber)
-                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
+                if (!context.WatchOnly())
+                {
+                    ChangeView message = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
+                    if (message is null || message.NewViewNumber < viewNumber)
+                        localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
+                }
                 InitializeConsensus(viewNumber);
             }
         }
@@ -145,10 +148,10 @@ namespace Neo.Consensus
         private void InitializeConsensus(byte viewNumber)
         {
             context.Reset(viewNumber);
-            if (context.MyIndex < 0) return;
             if (viewNumber > 0)
                 Log($"changeview: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
-            Log($"initialize: height={context.BlockIndex} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary() ? "Primary" : "Backup")}");
+            Log($"initialize: height={context.BlockIndex} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary() ? "Primary" : context.WatchOnly() ? "WatchOnly" : "Backup")}");
+            if (context.WatchOnly()) return;
             if (context.IsPrimary())
             {
                 if (isRecovering)
@@ -186,6 +189,7 @@ namespace Neo.Consensus
             if (!knownHashes.Add(payload.Hash)) return;
             if (message.NewViewNumber <= context.ViewNumber)
             {
+                if (context.WatchOnly()) return;
                 if (!context.CommitSent())
                 {
                     bool shouldSendRecovery = false;
@@ -381,7 +385,6 @@ namespace Neo.Consensus
                     if (!Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
                         context.CommitPayloads[i] = null;
             Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
-
             List<Transaction> unverified = new List<Transaction>();
             foreach (UInt256 hash in context.TransactionHashes.Skip(1))
             {
@@ -418,7 +421,7 @@ namespace Neo.Consensus
                 return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
-            if (context.CommitSent()) return;
+            if (context.WatchOnly() || context.CommitSent()) return;
             if (context.RequestSentOrReceived())
                 CheckPreparations();
         }
@@ -475,13 +478,13 @@ namespace Neo.Consensus
             }
             InitializeConsensus(0);
             // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
-            if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
+            if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1 && !context.WatchOnly())
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(0) });
         }
 
         private void OnTimer(Timer timer)
         {
-            if (context.BlockSent()) return;
+            if (context.WatchOnly() || context.BlockSent()) return;
             if (timer.Height != context.BlockIndex || timer.ViewNumber != context.ViewNumber) return;
             Log($"timeout: height={timer.Height} view={timer.ViewNumber}");
             if (context.IsPrimary() && !context.RequestSentOrReceived())
@@ -530,6 +533,7 @@ namespace Neo.Consensus
 
         private void RequestChangeView()
         {
+            if (context.WatchOnly()) return;
             byte expectedView = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber ?? 0;
             if (expectedView < context.ViewNumber) expectedView = context.ViewNumber;
             expectedView++;
