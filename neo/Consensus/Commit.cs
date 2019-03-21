@@ -2,7 +2,7 @@
 
 namespace Neo.Consensus
 {
-    internal class Commit : ConsensusMessage
+    public class Commit : ConsensusMessage
     {
         public byte[] Signature;
 
