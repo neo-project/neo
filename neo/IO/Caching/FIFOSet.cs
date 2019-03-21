@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Neo.IO.Caching
 {
@@ -7,7 +8,7 @@ namespace Neo.IO.Caching
     {
         private int maxCapacity;
         private int removeCount;
-        private List<T> orderedList;
+        private HashSet<T> orderedList;
 
         public FIFOSet(int maxCapacity, decimal? batchSize = 0.1m)
         {
@@ -16,7 +17,7 @@ namespace Neo.IO.Caching
 
             this.maxCapacity = maxCapacity;
             this.removeCount = batchSize != null ? (int)(batchSize <= 1.0m ? maxCapacity * batchSize : maxCapacity) : 1;
-            this.orderedList = new List<T>(maxCapacity);
+            this.orderedList = new HashSet<T>();
         }
 
         public bool Add(T item)
@@ -31,7 +32,7 @@ namespace Neo.IO.Caching
                 else
                 {
                     for (int i = 0; i < removeCount; i++)
-                        orderedList.RemoveAt(0);
+                        orderedList.Remove(orderedList.First());
                 }
             }
             orderedList.Add(item);
