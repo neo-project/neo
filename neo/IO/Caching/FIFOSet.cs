@@ -5,9 +5,9 @@ namespace Neo.IO.Caching
 {
     internal class FIFOSet<T> where T : IEquatable<T>, IComparable<T>
     {
-        private int maxCapacity;
-        private int removeCount;
-        private OrderedDictionary data;
+        private readonly int maxCapacity;
+        private readonly int removeCount;
+        private readonly OrderedDictionary data;
 
         public FIFOSet(int maxCapacity, decimal? batchSize = 0.1m)
         {
