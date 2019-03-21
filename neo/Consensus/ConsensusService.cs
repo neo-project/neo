@@ -253,6 +253,9 @@ namespace Neo.Consensus
             if (message.ViewNumber != context.ViewNumber && message.Type != ConsensusMessageType.ChangeView &&
                                                             message.Type != ConsensusMessageType.RecoveryMessage)
                 return;
+            foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
+                if (!plugin.OnConsensusMessage(payload))
+                    return;
             switch (message)
             {
                 case ChangeView view:
