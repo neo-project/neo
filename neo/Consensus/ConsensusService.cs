@@ -377,9 +377,8 @@ namespace Neo.Consensus
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
             byte[] hashData = context.MakeHeader().GetHashData();
             for (int i = 0; i < context.CommitPayloads.Length; i++)
-                if (context.CommitPayloads[i] != null)
-                    if (context.CommitPayloads[i].ConsensusMessage.ViewNumber == context.ViewNumber &&
-                        !Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
+                if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber == context.ViewNumber)
+                    if (!Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
                         context.CommitPayloads[i] = null;
             Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
 
