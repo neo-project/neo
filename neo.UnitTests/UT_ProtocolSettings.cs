@@ -11,6 +11,9 @@ namespace Neo.UnitTests
     [TestClass]
     public class UT_ProtocolSettings
     {
+        // standard time: 2 seconds
+        private uint BlockTime = 2;
+
         [TestInitialize]
         public void TestSetup()
         {
@@ -19,8 +22,8 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Test_BlockTime_Seconds()
         {
-            ProtocolSettings.Default.SecondsPerBlock.Should().Be(TestBlockchain.BlockTime);
-            Blockchain.SecondsPerBlock.Should().Be(TestBlockchain.BlockTime);
+            ProtocolSettings.Default.SecondsPerBlock.Should().Be(BlockTime);
+            Blockchain.SecondsPerBlock.Should().Be(BlockTime);
         }
 
         [TestMethod]

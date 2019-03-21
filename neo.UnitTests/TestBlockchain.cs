@@ -9,9 +9,6 @@ namespace Neo.UnitTests
 {
     public static class TestBlockchain
     {
-        // standard time: 2 seconds
-        public static uint BlockTime = 2;
-
         private static NeoSystem TheNeoSystem;
 
         public static NeoSystem InitializeMockNeoSystem()
