@@ -16,9 +16,9 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void Test_2_Seconds()
+        public void Test_BlockTime_Seconds()
         {
-            ProtocolSettings.Default.SecondsPerBlock.Should().Be(2);
+            ProtocolSettings.Default.SecondsPerBlock.Should().Be(TestBlockchain.BlockTime);
         }
 
         [TestMethod]
