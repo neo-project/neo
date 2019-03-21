@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Specialized;
 
 namespace Neo.IO.Caching
 {
-    internal class FIFOSet<T> where T : IEquatable<T>
+    internal class FIFOSet<T> where T : IEquatable<T>, IComparable<T>
     {
         private int maxCapacity;
         private int removeCount;
-        private HashSet<T> orderedList;
+        private OrderedDictionary data;
 
         public FIFOSet(int maxCapacity, decimal? batchSize = 0.1m)
         {
@@ -17,25 +16,25 @@ namespace Neo.IO.Caching
 
             this.maxCapacity = maxCapacity;
             this.removeCount = batchSize != null ? (int)(batchSize <= 1.0m ? maxCapacity * batchSize : maxCapacity) : 1;
-            this.orderedList = new HashSet<T>();
+            this.data = new OrderedDictionary(maxCapacity);
         }
 
         public bool Add(T item)
         {
-            if (orderedList.Contains(item)) return false;
-            if (orderedList.Count >= maxCapacity)
+            if (data.Contains(item)) return false;
+            if (data.Count >= maxCapacity)
             {
                 if (removeCount == maxCapacity)
                 {
-                    orderedList.Clear();
+                    data.Clear();
                 }
                 else
                 {
                     for (int i = 0; i < removeCount; i++)
-                        orderedList.Remove(orderedList.First());
+                        data.RemoveAt(0);
                 }
             }
-            orderedList.Add(item);
+            data.Add(item, null);
             return true;
         }
     }
