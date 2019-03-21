@@ -57,12 +57,13 @@ namespace Neo.UnitTests
 
             int timeIndex = 0;
             var timeValues = new[] {
-              new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For tests here
+              //new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For tests here
               new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc),  // For receiving block
-              new DateTime(1968, 06, 01, 0, 0, 2, DateTimeKind.Utc), // For Initialize
+              new DateTime(1968, 06, 01, 0, 0, (int)TestBlockchain.BlockTime, DateTimeKind.Utc), // For Initialize
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // unused
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc)  // unused
-          };
+            };
+            //TimeProvider.Current.UtcNow.ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
 
             Console.WriteLine($"time 0: {timeValues[0].ToString()} 1: {timeValues[1].ToString()} 2: {timeValues[2].ToString()} 3: {timeValues[3].ToString()}");
 
@@ -93,7 +94,6 @@ namespace Neo.UnitTests
             Console.WriteLine($"header {header} hash {header.Hash} timstamp {timestampVal}");
 
             timestampVal.Should().Be(4244941696); //1968-06-01 00:00:00
-            TimeProvider.Current.UtcNow.ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
                                                                                // check basic ConsensusContext
             mockConsensusContext.Object.MyIndex.Should().Be(2);
             //mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
