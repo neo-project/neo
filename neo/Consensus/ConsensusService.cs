@@ -208,17 +208,17 @@ namespace Neo.Consensus
             // additional recovery message response.
             if (!knownHashes.Add(payload.Hash)) return;
             bool inSameViewAndUnlocked = message.ViewNumber == context.ViewNumber && (!message.Locked || context.MoreThanFNodesPrepared());
-            bool shouldRecoverPrepareResponseInSameView = inSameViewAndUnlocked
+            bool shouldRecoverPreparationsInSameView = inSameViewAndUnlocked
                  && (context.ResponseSent() || context.IsPrimary()) && context.PreparationPayloads[payload.ValidatorIndex] == null;
-            bool shouldRecoverCommitInSameView = inSameViewAndUnlocked
+            bool shouldRecoverCommitsInSameView = inSameViewAndUnlocked
                 && context.CommitSent() && context.CommitPayloads[payload.ValidatorIndex] == null;
             if (message.NewViewNumber <= context.ViewNumber || message.ViewNumber < context.ViewNumber ||
-                shouldRecoverPrepareResponseInSameView || shouldRecoverCommitInSameView)
+                shouldRecoverPreparationsInSameView || shouldRecoverCommitsInSameView)
             {
                 if (context.WatchOnly()) return;
 
                 // Limit recovery to sending from `f` nodes when the request is from a lower view number.
-                if (!shouldRecoverCommitInSameView && !shouldRecoverPrepareResponseInSameView && !IsRecoveryAllowed(payload.ValidatorIndex, message.NewViewNumber, context.F())) return;
+                if (!shouldRecoverCommitsInSameView && !shouldRecoverPreparationsInSameView && !IsRecoveryAllowed(payload.ValidatorIndex, message.NewViewNumber, context.F())) return;
 
                 Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber} for index={payload.ValidatorIndex}");
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
