@@ -125,7 +125,7 @@ namespace Neo.Consensus
             if (!context.WatchOnly())
             {
                 ChangeView message = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
-                if (!context.CommitSent() && !context.ResponseSent() && !context.IsPrimary() && (message is null || message.NewViewNumber < viewNumber || !message.Locked))
+                if (!context.ResponseSent() && !context.IsPrimary() && (message is null || message.NewViewNumber < viewNumber || !message.Locked))
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
             }
 
