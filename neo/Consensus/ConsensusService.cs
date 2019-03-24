@@ -51,18 +51,27 @@ namespace Neo.Consensus
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
         }
 
+        private void RequestChangeViewDueToInvalidRequest()
+        {
+            byte expectedView = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber ?? 0;
+            // requesting view change due to an invalid request should only count the expected view once, additional
+            // increments of the expected view have to be by timeouts until the view actually changes.
+            if (context.ViewNumber < expectedView) return;
+            RequestChangeView();
+        }
+
         private bool AddTransaction(Transaction tx, bool verify)
         {
             if (verify && !tx.Verify(context.Snapshot, context.Transactions.Values))
             {
                 Log($"Invalid transaction: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
-                RequestChangeView();
+                RequestChangeViewDueToInvalidRequest();
                 return false;
             }
             if (!Plugin.CheckPolicy(tx))
             {
                 Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
-                RequestChangeView();
+                RequestChangeViewDueToInvalidRequest();
                 return false;
             }
             context.Transactions[tx.Hash] = tx;
@@ -70,6 +79,10 @@ namespace Neo.Consensus
             {
                 if (VerifyRequest())
                 {
+                    // If our view is already changing we cannot send a prepare response, since we can never send both
+                    // a change view and a commit message for the same view without potentially forking the network.
+                    if (context.ViewChanging()) return true;
+
                     // if we are the primary for this view, but acting as a backup because we recovered our own
                     // previously sent prepare request, then we don't want to send a prepare response.
                     if (context.IsPrimary() || context.WatchOnly()) return true;
@@ -80,7 +93,7 @@ namespace Neo.Consensus
                 }
                 else
                 {
-                    RequestChangeView();
+                    RequestChangeViewDueToInvalidRequest();
                     return false;
                 }
             }
@@ -99,27 +112,30 @@ namespace Neo.Consensus
 
         private void CheckCommits()
         {
-            if (context.CommitPayloads.Count(p => p != null) >= context.M() && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
-            {
-                Block block = context.CreateBlock();
-                Log($"relay block: {block.Hash}");
-                localNode.Tell(new LocalNode.Relay { Inventory = block });
-            }
+            if (context.CommitPayloads.Count(p => p != null) < context.M() || !context.TransactionHashes.All(p => context.Transactions.ContainsKey(p))) return;
+            Block block = context.CreateBlock();
+            Log($"relay block: {block.Hash}");
+            localNode.Tell(new LocalNode.Relay { Inventory = block });
         }
 
         private void CheckExpectedView(byte viewNumber)
         {
             if (context.ViewNumber == viewNumber) return;
-            if (context.ChangeViewPayloads.Count(p => p != null && p.GetDeserializedMessage<ChangeView>().NewViewNumber == viewNumber) >= context.M())
+            if (context.ChangeViewPayloads.Count(p => p != null && p.GetDeserializedMessage<ChangeView>().NewViewNumber == viewNumber) < context.M()) return;
+            if (!context.WatchOnly())
             {
-                if (!context.WatchOnly())
-                {
-                    ChangeView message = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
-                    if (message is null || message.NewViewNumber < viewNumber)
-                        localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
-                }
-                InitializeConsensus(viewNumber);
+                ChangeView message = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
+                if (!context.CommitSent() && (message is null || message.NewViewNumber < viewNumber || !message.Locked))
+                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
             }
+
+            if (context.ChangeViewPayloads
+                .Count(p =>
+                    {
+                        ChangeView message = p?.GetDeserializedMessage<ChangeView>();
+                        return message != null && message.NewViewNumber == viewNumber && message.Locked;
+                    }) >= context.M())
+                InitializeConsensus(viewNumber);
         }
 
         private void CheckPreparations()
@@ -134,15 +150,6 @@ namespace Neo.Consensus
                 ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock));
                 CheckCommits();
             }
-        }
-
-        private byte GetLastExpectedView(int validatorIndex)
-        {
-            var lastPreparationPayload = context.PreparationPayloads[validatorIndex];
-            if (lastPreparationPayload != null)
-                return lastPreparationPayload.GetDeserializedMessage<ConsensusMessage>().ViewNumber;
-
-            return context.ChangeViewPayloads[validatorIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber ?? (byte)0;
         }
 
         private void InitializeConsensus(byte viewNumber)
@@ -178,6 +185,19 @@ namespace Neo.Consensus
             Plugin.Log(nameof(ConsensusService), level, message);
         }
 
+        private bool IsRecoveryAllowed(ushort validatorIndex, byte startingValidatorOffset, int allowedRecoveryNodeCount)
+        {
+            for (int i = 0; i < allowedRecoveryNodeCount; i++)
+            {
+                var eligibleResponders = context.Validators.Length - 1;
+                var chosenIndex = (validatorIndex + i + startingValidatorOffset) % eligibleResponders;
+                if (chosenIndex >= validatorIndex) chosenIndex++;
+                if (chosenIndex != context.MyIndex) continue;
+                return true;
+            }
+            return false;
+        }
+
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
             // We keep track of the payload hashes received in this block, and don't respond with recovery
@@ -185,37 +205,36 @@ namespace Neo.Consensus
             // ChangeView messages include a Timestamp when the change view is sent, thus if a node restarts
             // and issues a change view for the same view, it will have a different hash and will correctly respond
             // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
-            // additonal recovery message response.
+            // additional recovery message response.
             if (!knownHashes.Add(payload.Hash)) return;
             if (message.NewViewNumber <= context.ViewNumber)
             {
                 if (context.WatchOnly()) return;
-                bool shouldSendRecovery = false;
-                // Limit recovery to sending from `f` nodes when the request is from a lower view number.
-                int allowedRecoveryNodeCount = context.F();
-                for (int i = 0; i < allowedRecoveryNodeCount; i++)
-                {
-                    var eligibleResponders = context.Validators.Length - 1;
-                    var chosenIndex = (payload.ValidatorIndex + i + message.NewViewNumber) % eligibleResponders;
-                    if (chosenIndex >= payload.ValidatorIndex) chosenIndex++;
-                    if (chosenIndex != context.MyIndex) continue;
-                    shouldSendRecovery = true;
-                    break;
-                }
 
-                if (!shouldSendRecovery) return;
+                // Limit recovery to sending from `f` nodes when the request is from a lower view number.
+                if (!IsRecoveryAllowed(payload.ValidatorIndex, message.NewViewNumber, context.F())) return;
 
                 Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber}");
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
             }
 
-            if (context.CommitSent()) return;
+            var lastChangeViewMessage = context.ChangeViewPayloads[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>();
+            // If we have had a change view message from this validator after our current view.
+            if (lastChangeViewMessage != null && lastChangeViewMessage.NewViewNumber > context.ViewNumber)
+            {
+                if (message.NewViewNumber < context.ViewNumber) return;
 
-            var expectedView = GetLastExpectedView(payload.ValidatorIndex);
-            if (message.NewViewNumber <= expectedView)
-                return;
+                if (lastChangeViewMessage.Locked && !message.Locked) return;
+                if (lastChangeViewMessage.Locked == message.Locked && message.NewViewNumber <= lastChangeViewMessage.NewViewNumber)
+                    return;
+            }
+            else
+            {
+                var expectedView = lastChangeViewMessage?.NewViewNumber ?? (byte)0;
+                if (message.NewViewNumber < expectedView) return;
+            }
 
-            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
+            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber} committed={message.Locked}");
             context.ChangeViewPayloads[payload.ValidatorIndex] = payload;
             CheckExpectedView(message.NewViewNumber);
         }
@@ -286,7 +305,17 @@ namespace Neo.Consensus
 
         private void OnRecoveryMessageReceived(ConsensusPayload payload, RecoveryMessage message)
         {
-            if (message.ViewNumber < context.ViewNumber) return;
+            if (message.ViewNumber < context.ViewNumber)
+            {
+                if (!knownHashes.Add(payload.Hash)) return;
+                // If we see a recovery message from a lower view we should recover them to our higher view; they may
+                // be stuck in commit.
+                if (!IsRecoveryAllowed(payload.ValidatorIndex, 1, context.F() + 1 ))
+                    return;
+                Log($"{nameof(OnRecoveryMessageReceived)} send recovery from view: {message.ViewNumber} to view: {context.ViewNumber}");
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
+                return;
+            }
             Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             // isRecovering is always set to false again after OnRecoveryMessageReceived
             isRecovering = true;
@@ -297,14 +326,13 @@ namespace Neo.Consensus
             {
                 if (message.ViewNumber > context.ViewNumber)
                 {
-                    if (context.CommitSent()) return;
                     ConsensusPayload[] changeViewPayloads = message.GetChangeViewPayloads(context, payload);
                     totalChangeViews = changeViewPayloads.Length;
                     foreach (ConsensusPayload changeViewPayload in changeViewPayloads)
                         if (ReverifyAndProcessPayload(changeViewPayload)) validChangeViews++;
                 }
                 if (message.ViewNumber != context.ViewNumber) return;
-                if (!context.CommitSent())
+                if (!context.ViewChanging() && !context.CommitSent())
                 {
                     if (!context.RequestSentOrReceived())
                     {
@@ -340,7 +368,7 @@ namespace Neo.Consensus
 
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
         {
-            if (context.RequestSentOrReceived()) return;
+            if (context.RequestSentOrReceived() || context.ViewChanging()) return;
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (message.Timestamp <= context.PrevHeader().Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMinutes(10).ToTimestamp())
@@ -399,7 +427,7 @@ namespace Neo.Consensus
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
-            if (context.PreparationPayloads[payload.ValidatorIndex] != null) return;
+            if (context.PreparationPayloads[payload.ValidatorIndex] != null || context.ViewChanging()) return;
             if (context.PreparationPayloads[context.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.PrimaryIndex].Hash))
                 return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
@@ -495,10 +523,6 @@ namespace Neo.Consensus
             if (transaction.Type == TransactionType.MinerTransaction) return;
             if (!context.IsBackup() || !context.RequestSentOrReceived() || context.ResponseSent() || context.BlockSent())
                 return;
-            // If we are changing view but we already have enough preparation payloads to commit in the current view,
-            // we must keep on accepting transactions in the current view to be able to create the block.
-            if (context.ViewChanging() &&
-                context.PreparationPayloads.Count(p => p != null) < context.M()) return;
             if (context.Transactions.ContainsKey(transaction.Hash)) return;
             if (!context.TransactionHashes.Contains(transaction.Hash)) return;
             AddTransaction(transaction, true);

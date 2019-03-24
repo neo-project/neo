@@ -17,14 +17,28 @@ namespace Neo.Consensus
         public UInt256 PreparationHash;
         public Dictionary<int, PreparationPayloadCompact> PreparationMessages;
         public Dictionary<int, CommitPayloadCompact> CommitMessages;
+        /// <summary>
+        /// Timestamp of when the Recovery message was created. This allows receiving nodes to ensure
+        /// they only respond once to a specific RecoveryMessage request from a lower view.
+        /// </summary>
+        public uint Timestamp;
 
         public RecoveryMessage() : base(ConsensusMessageType.RecoveryMessage)
         {
         }
 
+        public override int Size => base.Size
+            + /* Timestamp */ sizeof(uint)
+            + /* ChangeViewMessages */ IO.Helper.GetVarSize(ChangeViewMessages?.Count ?? 0) + ChangeViewMessages?.Values.Sum(p => ((ISerializable)p).Size) ?? 0
+            + /* PrepareRequestMessage */ 1 + ((ISerializable) PrepareRequestMessage)?.Size ?? 0
+            + /* PreparationHash */ PreparationHash?.Size ?? 0
+            + /* PreparationMessages */IO.Helper.GetVarSize(PreparationMessages?.Count ?? 0) + PreparationMessages?.Values.Sum(p => ((ISerializable)p).Size) ?? 0
+            + /* CommitMessages */IO.Helper.GetVarSize(CommitMessages?.Count ?? 0) + CommitMessages?.Values.Sum(p => ((ISerializable)p).Size) ?? 0;
+
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
+            Timestamp = reader.ReadUInt32();
             ChangeViewMessages = reader.ReadSerializableArray<ChangeViewPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
             if (reader.ReadBoolean())
                 PrepareRequestMessage = reader.ReadSerializable<PrepareRequest>();
@@ -51,7 +65,8 @@ namespace Neo.Consensus
                 {
                     ViewNumber = p.OriginalViewNumber,
                     NewViewNumber = ViewNumber,
-                    Timestamp = p.Timestamp
+                    Timestamp = p.Timestamp,
+                    Locked = true
                 },
                 Witness = new Witness
                 {
@@ -128,6 +143,7 @@ namespace Neo.Consensus
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
+            writer.Write(Timestamp);
             writer.Write(ChangeViewMessages.Values.ToArray());
             bool hasPrepareRequestMessage = PrepareRequestMessage != null;
             writer.Write(hasPrepareRequestMessage);
@@ -140,7 +156,6 @@ namespace Neo.Consensus
                 else
                     writer.WriteVarBytes(PreparationHash.ToArray());
             }
-
             writer.Write(PreparationMessages.Values.ToArray());
             writer.Write(CommitMessages.Values.ToArray());
         }

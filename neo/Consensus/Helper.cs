@@ -1,3 +1,4 @@
+using System.Linq;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System.Runtime.CompilerServices;
@@ -29,7 +30,22 @@ namespace Neo.Consensus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool BlockSent(this IConsensusContext context) => context.Block != null;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool ViewChanging(this IConsensusContext context) => !context.WatchOnly() && context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber > context.ViewNumber;
+        public static bool ViewChanging(this IConsensusContext context)
+        {
+            if (context.WatchOnly() || context.MoreThanFNodesCommitted()) return false;
+            var myChangeViewMessage = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
+            if (myChangeViewMessage == null) return false;
+
+            return myChangeViewMessage.Locked && myChangeViewMessage.NewViewNumber > context.ViewNumber;
+        }
+
+        /// <summary>
+        /// More than F nodes committed in current view.
+        /// </summary>
+        /// <param name="context">consensus context</param>
+        /// <returns>true if more than F nodes have committed in the current view.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool MoreThanFNodesCommitted(this IConsensusContext context) => context.CommitPayloads.Count(p => p != null) > context.F();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint GetPrimaryIndex(this IConsensusContext context, byte viewNumber)

@@ -137,21 +137,23 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeChangeView(byte newViewNumber)
         {
+            var changeViewLockedCount = ChangeViewPayloads.Count(p => p != null && p.GetDeserializedMessage<ChangeView>().NewViewNumber > ViewNumber);
+            if (ChangeViewPayloads[MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber <= ViewNumber && newViewNumber > ViewNumber)
+                changeViewLockedCount++;
             return ChangeViewPayloads[MyIndex] = MakeSignedPayload(new ChangeView
             {
                 NewViewNumber = newViewNumber,
-                Timestamp = TimeProvider.Current.UtcNow.ToTimestamp()
+                Timestamp = TimeProvider.Current.UtcNow.ToTimestamp(),
+                Locked = changeViewLockedCount >= this.M()
             });
         }
 
         public ConsensusPayload MakeCommit()
         {
-            if (CommitPayloads[MyIndex] == null)
-                CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
-                {
-                    Signature = MakeHeader()?.Sign(keyPair)
-                });
-            return CommitPayloads[MyIndex];
+            return CommitPayloads[MyIndex] ?? (CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
+            {
+                Signature = MakeHeader()?.Sign(keyPair)
+            }));
         }
 
         private Block _header = null;
@@ -235,6 +237,7 @@ namespace Neo.Consensus
             }
             return MakeSignedPayload(new RecoveryMessage()
             {
+                Timestamp = TimeProvider.Current.UtcNow.ToTimestamp(),
                 ChangeViewMessages = LastChangeViewPayloads.Where(p => p != null).Select(p => RecoveryMessage.ChangeViewPayloadCompact.FromPayload(p)).Take(this.M()).ToDictionary(p => (int)p.ValidatorIndex),
                 PrepareRequestMessage = prepareRequestMessage,
                 // We only need a PreparationHash set if we don't have the PrepareRequest information.
@@ -280,10 +283,14 @@ namespace Neo.Consensus
             else
             {
                 for (int i = 0; i < LastChangeViewPayloads.Length; i++)
-                    if (ChangeViewPayloads[i]?.GetDeserializedMessage<ChangeView>().NewViewNumber == viewNumber)
+                {
+                    var changeViewMessage = ChangeViewPayloads[i]?.GetDeserializedMessage<ChangeView>();
+                    if (changeViewMessage?.NewViewNumber == viewNumber && changeViewMessage.Locked)
                         LastChangeViewPayloads[i] = ChangeViewPayloads[i];
                     else
                         LastChangeViewPayloads[i] = null;
+                }
+
             }
             ViewNumber = viewNumber;
             PrimaryIndex = this.GetPrimaryIndex(viewNumber);
