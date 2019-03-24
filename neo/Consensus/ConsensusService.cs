@@ -205,11 +205,10 @@ namespace Neo.Consensus
                                                        && (context.ResponseSent() || context.IsPrimary()) && context.PreparationPayloads[payload.ValidatorIndex] == null;
             bool shouldRecoverCommitsInSameView = inSameViewAndUnlocked
                                                   && context.CommitSent() && context.CommitPayloads[payload.ValidatorIndex] == null;
-            if (message.NewViewNumber <= context.ViewNumber || message.ViewNumber < context.ViewNumber ||
-                shouldRecoverPreparationsInSameView || shouldRecoverCommitsInSameView)
+            bool requestingFromLowerView = message.ViewNumber < context.ViewNumber;
+            bool requestingTheCurrentView = message.NewViewNumber == context.ViewNumber;
+            if ( requestingFromLowerView || requestingTheCurrentView || shouldRecoverPreparationsInSameView || shouldRecoverCommitsInSameView)
             {
-                if (context.WatchOnly()) return;
-
                 // Limit recovery to sending from `f` nodes when the request is from a lower view number.
                 if (!shouldRecoverCommitsInSameView && !shouldRecoverPreparationsInSameView && !IsRecoveryAllowed(payload.ValidatorIndex, message.NewViewNumber, context.F())) return;
 
@@ -227,7 +226,8 @@ namespace Neo.Consensus
             // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
             // additional recovery message response.
             if (!knownHashes.Add(payload.Hash)) return;
-            SendRecoveryIfNecessary(payload, message);
+            if (!context.WatchOnly())
+                SendRecoveryIfNecessary(payload, message);
 
             var lastChangeViewMessage = context.ChangeViewPayloads[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>();
             // If we have had a change view message from this validator after our current view.
