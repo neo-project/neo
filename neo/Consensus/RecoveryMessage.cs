@@ -100,7 +100,7 @@ namespace Neo.Consensus
         public ConsensusPayload GetPrepareRequestPayload(IConsensusContext context, ConsensusPayload payload)
         {
             if (PrepareRequestMessage == null) return null;
-            if (!PreparationMessages.TryGetValue((int)context.PrimaryIndex, out RecoveryMessage.PreparationPayloadCompact compact))
+            if (!PreparationMessages.TryGetValue((int)context.PrimaryIndex, out PreparationPayloadCompact compact))
                 return null;
             return new ConsensusPayload
             {

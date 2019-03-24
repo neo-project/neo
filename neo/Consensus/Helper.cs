@@ -47,6 +47,8 @@ namespace Neo.Consensus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool MoreThanFNodesCommitted(this IConsensusContext context) => context.CommitPayloads.Count(p => p != null) > context.F();
 
+        public static bool MoreThanFNodesPrepared(this IConsensusContext context) => context.PreparationPayloads.Count(p => p != null) > context.F();
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint GetPrimaryIndex(this IConsensusContext context, byte viewNumber)
         {

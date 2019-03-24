@@ -207,7 +207,7 @@ namespace Neo.Consensus
             // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
             // additional recovery message response.
             if (!knownHashes.Add(payload.Hash)) return;
-            bool inSameViewAndUnlocked = message.ViewNumber == context.ViewNumber && !message.Locked;
+            bool inSameViewAndUnlocked = message.ViewNumber == context.ViewNumber && (!message.Locked || context.MoreThanFNodesPrepared());
             bool shouldRecoverPrepareResponseInSameView = inSameViewAndUnlocked
                  && (context.ResponseSent() || context.IsPrimary()) && context.PreparationPayloads[payload.ValidatorIndex] == null;
             bool shouldRecoverCommitInSameView = inSameViewAndUnlocked
