@@ -60,7 +60,7 @@ namespace Neo.UnitTests
             byte[] val = TestUtils.GetByteArray(32, 0x42);
             uut.Script = val;
 
-            //SIZE: SIZE_TX + Script.GetVarSize() + Version >= 1 ? Gas.Size : 0
+            //SIZE: SIZE_TX + Script.GetVarSize() + (Version >= 1 ? Gas.Size : 0)
             //SIZE_TX: sizeof(TransactionType) + sizeof(byte) + Attributes.GetVarSize() + Inputs.GetVarSize() + Outputs.GetVarSize() + Witnesses.GetVarSize();
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
