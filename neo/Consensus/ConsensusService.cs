@@ -207,13 +207,15 @@ namespace Neo.Consensus
             // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
             // additional recovery message response.
             if (!knownHashes.Add(payload.Hash)) return;
+            bool shouldRecoverPrepareResponseInSameView = message.ViewNumber == context.ViewNumber
+                && (context.ResponseSent() || context.IsPrimary()) && !message.Locked && context.PreparationPayloads[payload.ValidatorIndex] == null;
             if (message.NewViewNumber <= context.ViewNumber || message.ViewNumber < context.ViewNumber ||
-                (message.ViewNumber == context.ViewNumber && (context.ResponseSent() || context.IsPrimary()) && !message.Locked && context.PreparationPayloads[payload.ValidatorIndex] == null))
+                shouldRecoverPrepareResponseInSameView)
             {
                 if (context.WatchOnly()) return;
 
                 // Limit recovery to sending from `f` nodes when the request is from a lower view number.
-                if (!IsRecoveryAllowed(payload.ValidatorIndex, message.NewViewNumber, context.F())) return;
+                if (!(context.IsPrimary() && shouldRecoverPrepareResponseInSameView) && !IsRecoveryAllowed(payload.ValidatorIndex, message.NewViewNumber, context.F())) return;
 
                 Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber}");
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
