@@ -1,8 +1,7 @@
 <p align="center">
 <img
     src="https://neo-cdn.azureedge.net/images/neo_logo.svg"
-    width="250px"
-  >
+    width="250px">
 </p>
 
 <p align="center">      
