@@ -125,7 +125,7 @@ namespace Neo.Consensus
             if (!context.WatchOnly())
             {
                 ChangeView message = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
-                if (!context.CommitSent() && (message is null || message.NewViewNumber < viewNumber || !message.Locked))
+                if (!context.CommitSent() && !context.ResponseSent() && !context.IsPrimary() && (message is null || message.NewViewNumber < viewNumber || !message.Locked))
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
             }
 
@@ -220,7 +220,7 @@ namespace Neo.Consensus
                 // Limit recovery to sending from `f` nodes when the request is from a lower view number.
                 if (!shouldRecoverCommitInSameView && !(context.IsPrimary() && shouldRecoverPrepareResponseInSameView) && !IsRecoveryAllowed(payload.ValidatorIndex, message.NewViewNumber, context.F())) return;
 
-                Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber}");
+                Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber} for index={payload.ValidatorIndex}");
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
             }
 

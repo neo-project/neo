@@ -32,20 +32,12 @@ namespace Neo.Consensus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ViewChanging(this IConsensusContext context)
         {
-            if (context.WatchOnly() || context.MoreThanFNodesCommitted()) return false;
+            if (context.WatchOnly() || context.MoreThanFNodesPrepared()) return false;
             var myChangeViewMessage = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
             if (myChangeViewMessage == null) return false;
 
             return myChangeViewMessage.Locked && myChangeViewMessage.NewViewNumber > context.ViewNumber;
         }
-
-        /// <summary>
-        /// More than F nodes committed in current view.
-        /// </summary>
-        /// <param name="context">consensus context</param>
-        /// <returns>true if more than F nodes have committed in the current view.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool MoreThanFNodesCommitted(this IConsensusContext context) => context.CommitPayloads.Count(p => p != null) > context.F();
 
         public static bool MoreThanFNodesPrepared(this IConsensusContext context) => context.PreparationPayloads.Count(p => p != null) > context.F();
 
