@@ -14,7 +14,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override int Size => base.Size
             + Script.GetVarSize()           //Script
-            + Version >= 1 ? Gas.Size : 0;  //Gas
+            + (Version >= 1 ? Gas.Size : 0);  //Gas
 
         public override Fixed8 SystemFee => Gas;
 
