@@ -218,7 +218,7 @@ namespace Neo.Consensus
                 if (context.WatchOnly()) return;
 
                 // Limit recovery to sending from `f` nodes when the request is from a lower view number.
-                if (!shouldRecoverCommitInSameView && !(context.IsPrimary() && shouldRecoverPrepareResponseInSameView) && !IsRecoveryAllowed(payload.ValidatorIndex, message.NewViewNumber, context.F())) return;
+                if (!shouldRecoverCommitInSameView && !shouldRecoverPrepareResponseInSameView && !IsRecoveryAllowed(payload.ValidatorIndex, message.NewViewNumber, context.F())) return;
 
                 Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber} for index={payload.ValidatorIndex}");
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
