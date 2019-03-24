@@ -144,7 +144,7 @@ namespace Neo.Consensus
             {
                 NewViewNumber = newViewNumber,
                 Timestamp = TimeProvider.Current.UtcNow.ToTimestamp(),
-                Locked = changeViewLockedCount >= this.M() && !this.ResponseSent() && !(this.IsPrimary() && this.RequestSentOrReceived())
+                Locked = changeViewLockedCount >= this.M() && !(this.ResponseSent() || this.IsPrimary())
             });
         }
 
