@@ -198,20 +198,13 @@ namespace Neo.Consensus
             return false;
         }
 
-        private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
+        private void SendRecoveryIfNecessary(ConsensusPayload payload, ChangeView message)
         {
-            // We keep track of the payload hashes received in this block, and don't respond with recovery
-            // in response to the same payload that we already responded to previously.
-            // ChangeView messages include a Timestamp when the change view is sent, thus if a node restarts
-            // and issues a change view for the same view, it will have a different hash and will correctly respond
-            // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
-            // additional recovery message response.
-            if (!knownHashes.Add(payload.Hash)) return;
             bool inSameViewAndUnlocked = message.ViewNumber == context.ViewNumber && (!message.Locked || context.MoreThanFNodesPrepared());
             bool shouldRecoverPreparationsInSameView = inSameViewAndUnlocked
-                 && (context.ResponseSent() || context.IsPrimary()) && context.PreparationPayloads[payload.ValidatorIndex] == null;
+                                                       && (context.ResponseSent() || context.IsPrimary()) && context.PreparationPayloads[payload.ValidatorIndex] == null;
             bool shouldRecoverCommitsInSameView = inSameViewAndUnlocked
-                && context.CommitSent() && context.CommitPayloads[payload.ValidatorIndex] == null;
+                                                  && context.CommitSent() && context.CommitPayloads[payload.ValidatorIndex] == null;
             if (message.NewViewNumber <= context.ViewNumber || message.ViewNumber < context.ViewNumber ||
                 shouldRecoverPreparationsInSameView || shouldRecoverCommitsInSameView)
             {
@@ -223,6 +216,18 @@ namespace Neo.Consensus
                 Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber} for index={payload.ValidatorIndex}");
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
             }
+        }
+
+        private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
+        {
+            // We keep track of the payload hashes received in this block, and don't respond with recovery
+            // in response to the same payload that we already responded to previously.
+            // ChangeView messages include a Timestamp when the change view is sent, thus if a node restarts
+            // and issues a change view for the same view, it will have a different hash and will correctly respond
+            // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
+            // additional recovery message response.
+            if (!knownHashes.Add(payload.Hash)) return;
+            SendRecoveryIfNecessary(payload, message);
 
             var lastChangeViewMessage = context.ChangeViewPayloads[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>();
             // If we have had a change view message from this validator after our current view.
