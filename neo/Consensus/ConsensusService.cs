@@ -81,7 +81,9 @@ namespace Neo.Consensus
                 {
                     // If our view is already changing we cannot send a prepare response, since we can never send both
                     // a change view and a commit message for the same view without potentially forking the network.
-                    if (context.ViewChanging()) return true;
+                    // When recovering though, in the case we have a block containing only the miner transaction,
+                    // this check is made during the recovery code that handles receiving the prepare request.
+                    if (context.ViewChanging() && !isRecovering) return true;
 
                     // if we are the primary for this view, but acting as a backup because we recovered our own
                     // previously sent prepare request, then we don't want to send a prepare response.
@@ -364,7 +366,7 @@ namespace Neo.Consensus
                             validPreparations++;
                     }
 
-                    if (validPreparations >= context.F())
+                    if (validPreparations > context.F())
                         overrideViewChangingCheckDueToMoreThanFNodesPrepared = true;
                 }
                 if (!context.CommitSent() && (overrideViewChangingCheckDueToMoreThanFNodesPrepared || !context.ViewChanging()) )
