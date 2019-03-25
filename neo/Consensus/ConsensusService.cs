@@ -343,7 +343,31 @@ namespace Neo.Consensus
                         if (ReverifyAndProcessPayload(changeViewPayload)) validChangeViews++;
                 }
                 if (message.ViewNumber != context.ViewNumber) return;
-                if (!context.ViewChanging() && !context.CommitSent())
+
+                bool overrideViewChangingCheckDueToMoreThanFNodesPrepared = false;
+                if (context.ViewChanging() && !context.CommitSent())
+                {
+                    int validPreparations = context.PreparationPayloads.Count(p => p != null);
+                    // If we don't already have the prepare request, we need to potentially accept it
+                    if (!context.RequestSentOrReceived())
+                    {
+                        ConsensusPayload prepareRequestPayload = message.GetPrepareRequestPayload(context, payload);
+                        if (prepareRequestPayload != null && prepareRequestPayload.Verify(context.Snapshot))
+                            validPreparations++; // NOTE: may want to add more validation that PrepReq here is valid.
+                    }
+                    ConsensusPayload[] prepareResponsePayloads = message.GetPrepareResponsePayloads(context, payload);
+                    totalPrepResponses = prepareResponsePayloads.Length;
+                    foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
+                    {
+                        if (context.PreparationPayloads[prepareResponsePayload.ValidatorIndex] != null) continue;
+                        if (prepareResponsePayload.Verify(context.Snapshot))
+                            validPreparations++;
+                    }
+
+                    if (validPreparations >= context.F())
+                        overrideViewChangingCheckDueToMoreThanFNodesPrepared = true;
+                }
+                if (!context.CommitSent() && (overrideViewChangingCheckDueToMoreThanFNodesPrepared || !context.ViewChanging()) )
                 {
                     if (!context.RequestSentOrReceived())
                     {
@@ -379,7 +403,7 @@ namespace Neo.Consensus
 
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
         {
-            if (context.RequestSentOrReceived() || context.ViewChanging()) return;
+            if (context.RequestSentOrReceived() || (!isRecovering && context.ViewChanging())) return;
             if (payload.ValidatorIndex != context.PrimaryIndex) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (message.Timestamp <= context.PrevHeader().Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMinutes(10).ToTimestamp())
@@ -438,7 +462,7 @@ namespace Neo.Consensus
 
         private void OnPrepareResponseReceived(ConsensusPayload payload, PrepareResponse message)
         {
-            if (context.PreparationPayloads[payload.ValidatorIndex] != null || context.ViewChanging()) return;
+            if (context.PreparationPayloads[payload.ValidatorIndex] != null || (!isRecovering && context.ViewChanging())) return;
             if (context.PreparationPayloads[context.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.PrimaryIndex].Hash))
                 return;
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
