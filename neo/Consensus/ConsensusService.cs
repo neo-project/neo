@@ -593,7 +593,8 @@ namespace Neo.Consensus
             expectedView++;
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView}");
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (expectedView + 1)));
-            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(expectedView) });
+            if (!context.IsPrimary())
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(expectedView) });
             CheckExpectedView(expectedView);
         }
 
