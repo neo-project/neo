@@ -131,6 +131,8 @@ namespace Neo.Consensus
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
             }
 
+            // We need, at least, M locked nodes for changing view
+            // Primary and all the have `ResponseSent` will not contribute
             if (context.ChangeViewPayloads
                 .Count(p =>
                     {
@@ -202,12 +204,16 @@ namespace Neo.Consensus
 
         private void SendRecoveryIfNecessary(ConsensusPayload payload, ChangeView message)
         {
+            // Primary is always unlocked, as well as those who agreed with Primary PrepReq
+            // A node can be locked, but if it sees that, at least, `F+1` nodes are Prepared, it will accept the possibility of entering commit phase
             bool inSameViewAndUnlocked = message.ViewNumber == context.ViewNumber && (!message.Locked || context.MoreThanFNodesPrepared());
             bool shouldRecoverPreparationsInSameView = inSameViewAndUnlocked
                                                        && (context.ResponseSent() || context.IsPrimary()) && context.PreparationPayloads[payload.ValidatorIndex] == null;
             bool shouldRecoverCommitsInSameView = inSameViewAndUnlocked
                                                   && context.CommitSent() && context.CommitPayloads[payload.ValidatorIndex] == null;
+            // The node is asking to move to a view that we are already known
             bool requestingFromLowerView = message.ViewNumber < context.ViewNumber;
+            // Node is requesting from a lower view that you already have conditions to proof why you are in
             bool requestingTheCurrentView = message.NewViewNumber == context.ViewNumber;
             if ( requestingFromLowerView || requestingTheCurrentView || shouldRecoverPreparationsInSameView || shouldRecoverCommitsInSameView)
             {
@@ -238,6 +244,7 @@ namespace Neo.Consensus
                 if (message.NewViewNumber < context.ViewNumber) return;
 
                 if (lastChangeViewMessage.Locked && !message.Locked) return;
+                // If both are locked, you just accept the other that moves you to a higher view
                 if (lastChangeViewMessage.Locked == message.Locked && message.NewViewNumber <= lastChangeViewMessage.NewViewNumber)
                     return;
             }
@@ -593,6 +600,8 @@ namespace Neo.Consensus
             expectedView++;
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView}");
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (expectedView + 1)));
+            // Primary will not contribute to changeview, but just accept a viewchanging conditions
+            // NOTE: This may reduce liveness of dBFT, because the remainder will be responsible for changing view by themselves
             if (!context.IsPrimary())
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(expectedView) });
             CheckExpectedView(expectedView);
