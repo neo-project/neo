@@ -94,7 +94,7 @@ namespace Neo.UnitTests
             Console.WriteLine($"header {header} hash {header.Hash} timstamp {timestampVal}");
 
             timestampVal.Should().Be(4244941696); //1968-06-01 00:00:00
-                                                                               // check basic ConsensusContext
+                                                  // check basic ConsensusContext
             mockConsensusContext.Object.MyIndex.Should().Be(2);
             //mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
 
