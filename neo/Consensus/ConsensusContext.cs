@@ -145,7 +145,6 @@ namespace Neo.Consensus
                 NewViewNumber = newViewNumber,
                 Timestamp = TimeProvider.Current.UtcNow.ToTimestamp(),
                 // Primary will just change view after seing M guys locked to change view, as well as those who agreed with the current PrepReq
-                // NOTE: This may reduce liveness of dBFT, because the remainder locked nodes will be responsible for changing view by themselves
                 Locked = changeViewLockedCount >= this.M() && !(this.ResponseSent() || this.IsPrimary())
             });
         }
