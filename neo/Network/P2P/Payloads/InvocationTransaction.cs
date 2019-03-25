@@ -12,7 +12,9 @@ namespace Neo.Network.P2P.Payloads
         public byte[] Script;
         public Fixed8 Gas;
 
-        public override int Size => base.Size + Script.GetVarSize();
+        public override int Size => base.Size  // Transaction base size
+           + Script.GetVarSize()               // Script variable size
+           + (Version >= 1 ? Gas.Size : 0);    // Gas Fixed8 size (for version >= 1)
 
         public override Fixed8 SystemFee => Gas;
 
