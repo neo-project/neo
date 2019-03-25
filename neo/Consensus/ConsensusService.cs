@@ -355,8 +355,14 @@ namespace Neo.Consensus
                     {
                         ConsensusPayload prepareRequestPayload = message.GetPrepareRequestPayload(context, payload);
                         if (prepareRequestPayload != null && prepareRequestPayload.Verify(context.Snapshot))
+                        {
                             validPreparations++; // NOTE: may want to add more validation that PrepReq here is valid.
+                            // Must set the preparation hash to be able ot get the prepare response payloads, since we are
+                            // not actually processing the message here.
+                            message.PreparationHash = prepareRequestPayload.Hash;
+                        }
                     }
+
                     ConsensusPayload[] prepareResponsePayloads = message.GetPrepareResponsePayloads(context, payload);
                     totalPrepResponses = prepareResponsePayloads.Length;
                     foreach (ConsensusPayload prepareResponsePayload in prepareResponsePayloads)
