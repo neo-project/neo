@@ -15,7 +15,6 @@ namespace Neo
         public IReadOnlyDictionary<TransactionType, Fixed8> SystemFee { get; }
         public Fixed8 LowPriorityThreshold { get; }
         public uint SecondsPerBlock { get; }
-        public int HashCacheSize { get; }
 
         public static ProtocolSettings Default { get; }
 
@@ -34,7 +33,6 @@ namespace Neo
             this.SystemFee = section.GetSection("SystemFee").GetChildren().ToDictionary(p => (TransactionType)Enum.Parse(typeof(TransactionType), p.Key, true), p => Fixed8.Parse(p.Value));
             this.SecondsPerBlock = GetValueOrDefault(section.GetSection("SecondsPerBlock"), 15u, p => uint.Parse(p));
             this.LowPriorityThreshold = GetValueOrDefault(section.GetSection("LowPriorityThreshold"), Fixed8.FromDecimal(0.001m), p => Fixed8.Parse(p));
-            this.HashCacheSize = GetValueOrDefault(section.GetSection("HashCacheSize"), 32 * 1024, Int32.Parse);
         }
 
         internal T GetValueOrDefault<T>(IConfigurationSection section, T defaultValue, Func<string, T> selector)
