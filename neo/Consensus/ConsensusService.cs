@@ -115,6 +115,7 @@ namespace Neo.Consensus
                 if (!context.WatchOnly())
                 {
                     ChangeView message = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
+                    // Communicate the network about my agreement to move to `viewNumber`
                     if (message is null || message.NewViewNumber < viewNumber)
                         localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
                 }
@@ -535,8 +536,10 @@ namespace Neo.Consensus
         private void RequestChangeView()
         {
             if (context.WatchOnly()) return;
-            byte expectedView = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber ?? 0;
-            if (expectedView < context.ViewNumber) expectedView = context.ViewNumber;
+            // Next view is always one more than current context.ViewNumber
+            // Nodes will node contribute to view higher than (context.ViewNumber+1) until recovered
+            // Nodes in higher views with `M` proofs may recover
+            byte expectedView = context.ViewNumber;
             expectedView++;
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (expectedView + 1)));
             if ((context.CountCommitted() + context.CountFailed()) > context.F())
