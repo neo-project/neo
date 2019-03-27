@@ -266,8 +266,8 @@ namespace Neo.Consensus
                 }
                 return;
             }
-            context.LastSeenMessage[payload.ValidatorIndex] = payload.BlockIndex;
             if (payload.ValidatorIndex >= context.Validators.Length) return;
+            context.LastSeenMessage[payload.ValidatorIndex] = payload.BlockIndex;
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
                 if (!plugin.OnConsensusMessage(payload))
                     return;

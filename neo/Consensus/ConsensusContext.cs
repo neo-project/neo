@@ -296,6 +296,7 @@ namespace Neo.Consensus
             Timestamp = 0;
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
+            if(MyIndex!=-1) LastSeenMessage[MyIndex] = BlockIndex;
             _header = null;
         }
 
