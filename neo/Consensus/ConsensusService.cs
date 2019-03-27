@@ -541,7 +541,7 @@ namespace Neo.Consensus
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (expectedView + 1)));
             if ((context.CountCommitted() + context.CountFailed()) > context.F())
             {
-                Log($"Node will not request change view to nv={expectedView} because nc={context.CountCommitted()} nf={context.CountFailed()}");
+                Log($"Not requesting change view to nv={expectedView} because nc={context.CountCommitted()} nf={context.CountFailed()}");
                 // asking for recovery (ping)
                 if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1 && !context.WatchOnly())
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(0) });
