@@ -61,7 +61,7 @@ namespace Neo.Consensus
                 ContractParametersContext sc = new ContractParametersContext(Block);
                 for (int i = 0, j = 0; i < Validators.Length && j < this.M(); i++)
                 {
-                    if (CommitPayloads[i] == null) continue;
+                    if (CommitPayloads[i]?.ConsensusMessage.ViewNumber != ViewNumber) continue;
                     sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
                     j++;
                 }
@@ -146,12 +146,10 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeCommit()
         {
-            if (CommitPayloads[MyIndex] == null)
-                CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
-                {
-                    Signature = MakeHeader()?.Sign(keyPair)
-                });
-            return CommitPayloads[MyIndex];
+            return CommitPayloads[MyIndex] ?? (CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
+            {
+                Signature = MakeHeader()?.Sign(keyPair)
+            }));
         }
 
         private Block _header = null;
@@ -267,6 +265,7 @@ namespace Neo.Consensus
                 MyIndex = -1;
                 ChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 LastChangeViewPayloads = new ConsensusPayload[Validators.Length];
+                CommitPayloads = new ConsensusPayload[Validators.Length];
                 keyPair = null;
                 for (int i = 0; i < Validators.Length; i++)
                 {
@@ -290,7 +289,6 @@ namespace Neo.Consensus
             Timestamp = 0;
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
-            CommitPayloads = new ConsensusPayload[Validators.Length];
             _header = null;
         }
 
