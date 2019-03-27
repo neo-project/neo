@@ -541,9 +541,9 @@ namespace Neo.Consensus
         private void RequestChangeView()
         {
             if (context.WatchOnly()) return;
-            // Next view is always one more than current context.ViewNumber
-            // Nodes will node contribute to view higher than (context.ViewNumber+1) until recovered
-            // Nodes in higher views with `M` proofs may recover
+            // Request for next view is always one view more than the current context.ViewNumber
+            // Nodes will not contribute for changing to a view higher than (context.ViewNumber+1), unless they are recovered
+            // The latter may happen by nodes in higher views with, at least, `M` proofs
             byte expectedView = context.ViewNumber;
             expectedView++;
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (expectedView + 1)));
