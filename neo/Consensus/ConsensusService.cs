@@ -459,6 +459,12 @@ namespace Neo.Consensus
             }
         }
 
+        private void ConsensusNodePingForRecovery()
+        {
+            if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1 && !context.WatchOnly())
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(0) }); 
+        }
+
         private void OnStart(Start options)
         {
             Log("OnStart");
@@ -480,8 +486,7 @@ namespace Neo.Consensus
             }
             InitializeConsensus(0);
             // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
-            if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1 && !context.WatchOnly())
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(0) });
+            ConsensusNodePingForRecovery();
         }
 
         private void OnTimer(Timer timer)
@@ -546,8 +551,7 @@ namespace Neo.Consensus
             {
                 Log($"Not requesting change view to nv={expectedView} because nc={context.CountCommitted()} nf={context.CountFailed()}");
                 // asking for recovery (ping)
-                if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1 && !context.WatchOnly())
-                    localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(0) });
+                ConsensusNodePingForRecovery();
                 return;
             }
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted()} nf={context.CountFailed()}");
