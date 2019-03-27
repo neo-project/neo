@@ -37,6 +37,8 @@ namespace Neo.Consensus
         public ConsensusPayload[] CommitPayloads { get; set; }
         public ConsensusPayload[] ChangeViewPayloads { get; set; }
         public ConsensusPayload[] LastChangeViewPayloads { get; set; }
+        // LastSeenMessage array stores the height of the last seen message, for each validator.
+        // if this node never heard from validator i, LastSeenMessage[i] will be -1.
         public int[] LastSeenMessage { get; set; }
         public Block Block { get; set; }
         public Snapshot Snapshot { get; private set; }
