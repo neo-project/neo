@@ -114,9 +114,9 @@ namespace Neo.Consensus
             {
                 if (!context.WatchOnly())
                 {
-                    ChangeView message = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
+                    ChangeView myLastChangeViewMessage = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
                     // Communicate the network about my agreement to move to `viewNumber`
-                    if (message is null || message.NewViewNumber < viewNumber)
+                    if (myLastChangeViewMessage is null || myLastChangeViewMessage.NewViewNumber < viewNumber)
                         localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
                 }
                 InitializeConsensus(viewNumber);
