@@ -1,4 +1,9 @@
-﻿using Akka.Actor;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using Akka.Actor;
 using Akka.Configuration;
 using Neo.Cryptography;
 using Neo.IO;
@@ -8,11 +13,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 
 namespace Neo.Network.P2P
 {
@@ -23,8 +23,8 @@ namespace Neo.Network.P2P
         public class SetFilter { public BloomFilter Filter; }
 
         private readonly NeoSystem system;
-        private readonly FIFOSet<UInt256> knownHashes = new FIFOSet<UInt256>(ProtocolSettings.Default.HashCacheSize);
-        private readonly FIFOSet<UInt256> sentHashes = new FIFOSet<UInt256>(ProtocolSettings.Default.HashCacheSize);
+        private readonly FIFOSet<UInt256> sentHashes;
+        private readonly FIFOSet<UInt256> knownHashes;
         private VersionPayload version;
         private bool verack = false;
         private BloomFilter bloom_filter;
@@ -32,6 +32,8 @@ namespace Neo.Network.P2P
         public ProtocolHandler(NeoSystem system)
         {
             this.system = system;
+            this.sentHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
+            this.knownHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
         }
 
         protected override void OnReceive(object message)
