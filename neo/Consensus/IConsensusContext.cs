@@ -24,6 +24,7 @@ namespace Neo.Consensus
         ConsensusPayload[] PreparationPayloads { get; set; }
         ConsensusPayload[] CommitPayloads { get; set; }
         ConsensusPayload[] ChangeViewPayloads { get; set; }
+        uint[] LastSeenMessage { get; set; }
         Block Block { get; set; }
         Snapshot Snapshot { get; }
 

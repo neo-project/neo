@@ -19,6 +19,10 @@ namespace Neo.Consensus
         public static bool WatchOnly(this IConsensusContext context) => context.MyIndex < 0;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Header PrevHeader(this IConsensusContext context) => context.Snapshot.GetHeader(context.PrevHash);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int CountCommitted(this IConsensusContext context) => context.CommitPayloads.Count(p => p != null);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int CountFailed(this IConsensusContext context) => context.LastSeenMessage.Count(p => p < context.BlockIndex);
 
         // Consensus States
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -33,14 +37,14 @@ namespace Neo.Consensus
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ViewChanging(this IConsensusContext context) => !context.WatchOnly() && context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber > context.ViewNumber;
 
-        public static bool NotAcceptingPayloadsDueToViewChanging(this IConsensusContext context) => context.ViewChanging() && !context.MoreThanFNodesCommitted();
+        public static bool NotAcceptingPayloadsDueToViewChanging(this IConsensusContext context) => context.ViewChanging() && !context.MoreThanFNodesCommittedOrLost();
 
         // A possible attack can happen if the last node to commit is malicious and either sends change view after his
         // commit to stall nodes in a higher view, or if he refuses to send recovery messages. In addition, if a node
         // asking change views loses network or crashes and comes back when nodes are committed in more than one higher
         // numbered view, it is possible for the node accepting recovery and commit in any of the higher views, thus
         // potentially splitting nodes among views and stalling the network.
-        public static bool MoreThanFNodesCommitted(this IConsensusContext context) => context.CommitPayloads.Count(p => p != null) > context.F();
+        public static bool MoreThanFNodesCommittedOrLost(this IConsensusContext context) => (context.CountCommitted() + context.CountFailed()) > context.F();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint GetPrimaryIndex(this IConsensusContext context, byte viewNumber)

@@ -37,6 +37,7 @@ namespace Neo.Consensus
         public ConsensusPayload[] CommitPayloads { get; set; }
         public ConsensusPayload[] ChangeViewPayloads { get; set; }
         public ConsensusPayload[] LastChangeViewPayloads { get; set; }
+        public uint[] LastSeenMessage { get; set; }
         public Block Block { get; set; }
         public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
@@ -266,6 +267,12 @@ namespace Neo.Consensus
                 ChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 LastChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 CommitPayloads = new ConsensusPayload[Validators.Length];
+                if (LastSeenMessage == null)
+                {
+                    LastSeenMessage = new uint[Validators.Length];
+                    for (int i = 0; i < Validators.Length; i++)
+                        LastSeenMessage[i] = 0;
+                }
                 keyPair = null;
                 for (int i = 0; i < Validators.Length; i++)
                 {

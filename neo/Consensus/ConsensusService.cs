@@ -234,7 +234,7 @@ namespace Neo.Consensus
 
             if (commit.ViewNumber == context.ViewNumber)
             {
-                Log($"{nameof(OnCommitReceived)}: height={payload.BlockIndex} view={commit.ViewNumber} index={payload.ValidatorIndex}");
+                Log($"{nameof(OnCommitReceived)}: height={payload.BlockIndex} view={commit.ViewNumber} index={payload.ValidatorIndex} nc={context.CountCommitted()} nf={context.CountFailed()}");
 
                 byte[] hashData = context.MakeHeader()?.GetHashData();
                 if (hashData == null)
@@ -266,6 +266,7 @@ namespace Neo.Consensus
                 }
                 return;
             }
+            context.LastSeenMessage[payload.ValidatorIndex] = payload.BlockIndex;
             if (payload.ValidatorIndex >= context.Validators.Length) return;
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
                 if (!plugin.OnConsensusMessage(payload))
@@ -537,7 +538,7 @@ namespace Neo.Consensus
             byte expectedView = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber ?? 0;
             if (expectedView < context.ViewNumber) expectedView = context.ViewNumber;
             expectedView++;
-            Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView}");
+            Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted()} nf={context.CountFailed()}");
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (expectedView + 1)));
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(expectedView) });
             CheckExpectedView(expectedView);
