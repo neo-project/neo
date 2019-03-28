@@ -57,12 +57,13 @@ namespace Neo.UnitTests
 
             int timeIndex = 0;
             var timeValues = new[] {
-              new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For tests here
+              //new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For tests here
               new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc),  // For receiving block
-              new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For Initialize
+              new DateTime(1968, 06, 01, 0, 0, (int) Blockchain.SecondsPerBlock, DateTimeKind.Utc), // For Initialize
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // unused
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc)  // unused
-          };
+            };
+            //TimeProvider.Current.UtcNow.ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
 
             Console.WriteLine($"time 0: {timeValues[0].ToString()} 1: {timeValues[1].ToString()} 2: {timeValues[2].ToString()} 3: {timeValues[3].ToString()}");
 
@@ -93,8 +94,7 @@ namespace Neo.UnitTests
             Console.WriteLine($"header {header} hash {header.Hash} timstamp {timestampVal}");
 
             timestampVal.Should().Be(4244941696); //1968-06-01 00:00:00
-            TimeProvider.Current.UtcNow.ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
-                                                                               // check basic ConsensusContext
+                                                  // check basic ConsensusContext
             mockConsensusContext.Object.MyIndex.Should().Be(2);
             //mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
 
@@ -131,7 +131,7 @@ namespace Neo.UnitTests
             // ============================================================================
 
             TestActorRef<ConsensusService> actorConsensus = ActorOfAsTestActorRef<ConsensusService>(
-                                     Akka.Actor.Props.Create(() => new ConsensusService(subscriber, subscriber, mockStore.Object, mockConsensusContext.Object))
+                                     Akka.Actor.Props.Create(() => new ConsensusService(subscriber, subscriber, mockConsensusContext.Object))
                                      );
 
             Console.WriteLine("will trigger OnPersistCompleted!");
@@ -156,6 +156,7 @@ namespace Neo.UnitTests
 
             Console.WriteLine("OnTimer should expire!");
             Console.WriteLine("Waiting for subscriber message!");
+            // Timer should expire in one second (block_received_time at :01, initialized at :02)
 
             var answer = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             Console.WriteLine($"MESSAGE 1: {answer}");
@@ -175,7 +176,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestSerializeAndDeserializeConsensusContext()
         {
-            var consensusContext = new ConsensusContext(null);
+            var consensusContext = new ConsensusContext(null, null);
             consensusContext.PrevHash = UInt256.Parse("0xd42561e3d30e15be6400b6df2f328e02d2bf6354c41dce433bc57687c82144bf");
             consensusContext.BlockIndex = 1;
             consensusContext.ViewNumber = 2;
@@ -248,7 +249,7 @@ namespace Neo.UnitTests
 
             consensusContext.LastChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
 
-            var copiedContext = TestUtils.CopyMsgBySerialization(consensusContext, new ConsensusContext(null));
+            var copiedContext = TestUtils.CopyMsgBySerialization(consensusContext, new ConsensusContext(null, null));
 
             copiedContext.PrevHash.Should().Be(consensusContext.PrevHash);
             copiedContext.BlockIndex.Should().Be(consensusContext.BlockIndex);

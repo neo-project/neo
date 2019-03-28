@@ -34,10 +34,11 @@ namespace Neo
         public NeoSystem(Store store)
         {
             this.store = store;
+            Plugin.LoadPlugins(this);
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
-            Plugin.LoadPlugins(this);
+            Plugin.NotifyPluginsLoadedAfterSystemConstructed();
         }
 
         public void Dispose()
@@ -74,14 +75,15 @@ namespace Neo
         }
 
         public void StartNode(int port = 0, int wsPort = 0, int minDesiredConnections = Peer.DefaultMinDesiredConnections,
-            int maxConnections = Peer.DefaultMaxConnections)
+            int maxConnections = Peer.DefaultMaxConnections, int maxConnectionsPerAddress = 3)
         {
             start_message = new Peer.Start
             {
                 Port = port,
                 WsPort = wsPort,
                 MinDesiredConnections = minDesiredConnections,
-                MaxConnections = maxConnections
+                MaxConnections = maxConnections,
+                MaxConnectionsPerAddress = maxConnectionsPerAddress
             };
             if (!suspend)
             {

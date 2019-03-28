@@ -7,6 +7,7 @@ using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -36,11 +37,14 @@ namespace Neo.Network.P2P
         protected override void OnReceive(object message)
         {
             if (!(message is Message msg)) return;
+            foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
+                if (!plugin.OnP2PMessage(msg))
+                    return;
             if (version == null)
             {
                 if (msg.Command != "version")
                     throw new ProtocolViolationException();
-                OnVersionMessageReceived(msg.Payload.AsSerializable<VersionPayload>());
+                OnVersionMessageReceived(msg.GetPayload<VersionPayload>());
                 return;
             }
             if (!verack)
@@ -53,47 +57,47 @@ namespace Neo.Network.P2P
             switch (msg.Command)
             {
                 case "addr":
-                    OnAddrMessageReceived(msg.Payload.AsSerializable<AddrPayload>());
+                    OnAddrMessageReceived(msg.GetPayload<AddrPayload>());
                     break;
                 case "block":
-                    OnInventoryReceived(msg.Payload.AsSerializable<Block>());
+                    OnInventoryReceived(msg.GetPayload<Block>());
                     break;
                 case "consensus":
-                    OnInventoryReceived(msg.Payload.AsSerializable<ConsensusPayload>());
+                    OnInventoryReceived(msg.GetPayload<ConsensusPayload>());
                     break;
                 case "filteradd":
-                    OnFilterAddMessageReceived(msg.Payload.AsSerializable<FilterAddPayload>());
+                    OnFilterAddMessageReceived(msg.GetPayload<FilterAddPayload>());
                     break;
                 case "filterclear":
                     OnFilterClearMessageReceived();
                     break;
                 case "filterload":
-                    OnFilterLoadMessageReceived(msg.Payload.AsSerializable<FilterLoadPayload>());
+                    OnFilterLoadMessageReceived(msg.GetPayload<FilterLoadPayload>());
                     break;
                 case "getaddr":
                     OnGetAddrMessageReceived();
                     break;
                 case "getblocks":
-                    OnGetBlocksMessageReceived(msg.Payload.AsSerializable<GetBlocksPayload>());
+                    OnGetBlocksMessageReceived(msg.GetPayload<GetBlocksPayload>());
                     break;
                 case "getdata":
-                    OnGetDataMessageReceived(msg.Payload.AsSerializable<InvPayload>());
+                    OnGetDataMessageReceived(msg.GetPayload<InvPayload>());
                     break;
                 case "getheaders":
-                    OnGetHeadersMessageReceived(msg.Payload.AsSerializable<GetBlocksPayload>());
+                    OnGetHeadersMessageReceived(msg.GetPayload<GetBlocksPayload>());
                     break;
                 case "headers":
-                    OnHeadersMessageReceived(msg.Payload.AsSerializable<HeadersPayload>());
+                    OnHeadersMessageReceived(msg.GetPayload<HeadersPayload>());
                     break;
                 case "inv":
-                    OnInvMessageReceived(msg.Payload.AsSerializable<InvPayload>());
+                    OnInvMessageReceived(msg.GetPayload<InvPayload>());
                     break;
                 case "mempool":
                     OnMemPoolMessageReceived();
                     break;
                 case "tx":
                     if (msg.Payload.Length <= Transaction.MaxTransactionSize)
-                        OnInventoryReceived(Transaction.DeserializeFrom(msg.Payload));
+                        OnInventoryReceived(msg.GetTransaction());
                     break;
                 case "verack":
                 case "version":

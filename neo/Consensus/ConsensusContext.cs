@@ -16,6 +16,11 @@ namespace Neo.Consensus
 {
     internal class ConsensusContext : IConsensusContext
     {
+        /// <summary>
+        /// Prefix for saving consensus state.
+        /// </summary>
+        public const byte CN_Context = 0xf4;
+
         public const uint Version = 0;
         public uint BlockIndex { get; set; }
         public UInt256 PrevHash { get; set; }
@@ -36,12 +41,14 @@ namespace Neo.Consensus
         public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
         private readonly Wallet wallet;
+        private readonly Store store;
 
         public int Size => throw new NotImplementedException();
 
-        public ConsensusContext(Wallet wallet)
+        public ConsensusContext(Wallet wallet, Store store)
         {
             this.wallet = wallet;
+            this.store = store;
         }
 
         public Block CreateBlock()
@@ -54,7 +61,7 @@ namespace Neo.Consensus
                 ContractParametersContext sc = new ContractParametersContext(Block);
                 for (int i = 0, j = 0; i < Validators.Length && j < this.M(); i++)
                 {
-                    if (CommitPayloads[i] == null) continue;
+                    if (CommitPayloads[i]?.ConsensusMessage.ViewNumber != ViewNumber) continue;
                     sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
                     j++;
                 }
@@ -109,6 +116,25 @@ namespace Neo.Consensus
             Snapshot?.Dispose();
         }
 
+        public bool Load()
+        {
+            byte[] data = store.Get(CN_Context, new byte[0]);
+            if (data is null || data.Length == 0) return false;
+            using (MemoryStream ms = new MemoryStream(data, false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                try
+                {
+                    Deserialize(reader);
+                }
+                catch
+                {
+                    return false;
+                }
+                return true;
+            }
+        }
+
         public ConsensusPayload MakeChangeView(byte newViewNumber)
         {
             return ChangeViewPayloads[MyIndex] = MakeSignedPayload(new ChangeView
@@ -120,12 +146,10 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeCommit()
         {
-            if (CommitPayloads[MyIndex] == null)
-                CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
-                {
-                    Signature = MakeHeader()?.Sign(keyPair)
-                });
-            return CommitPayloads[MyIndex];
+            return CommitPayloads[MyIndex] ?? (CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
+            {
+                Signature = MakeHeader()?.Sign(keyPair)
+            }));
         }
 
         private Block _header = null;
@@ -241,6 +265,7 @@ namespace Neo.Consensus
                 MyIndex = -1;
                 ChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 LastChangeViewPayloads = new ConsensusPayload[Validators.Length];
+                CommitPayloads = new ConsensusPayload[Validators.Length];
                 keyPair = null;
                 for (int i = 0; i < Validators.Length; i++)
                 {
@@ -264,8 +289,12 @@ namespace Neo.Consensus
             Timestamp = 0;
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
-            CommitPayloads = new ConsensusPayload[Validators.Length];
             _header = null;
+        }
+
+        public void Save()
+        {
+            store.PutSync(CN_Context, new byte[0], this.ToArray());
         }
 
         public void Serialize(BinaryWriter writer)
