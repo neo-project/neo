@@ -115,7 +115,7 @@ namespace Neo.Consensus
                 if (!context.WatchOnly())
                 {
                     ChangeView message = context.ChangeViewPayloads[context.MyIndex]?.GetDeserializedMessage<ChangeView>();
-                    // Communicate the network about my agreement to move to `viewNumber` 
+                    // Communicate the network about my agreement to move to `viewNumber`
                     // if my last change view payload, `message`, has NewViewNumber lower than current view to change
                     if (message is null || message.NewViewNumber < viewNumber)
                         localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
@@ -460,10 +460,10 @@ namespace Neo.Consensus
             }
         }
 
-        private void ConsensusNodePingForRecovery()
+        private void SendChangeViewToRequestRecovery(byte viewNumber)
         {
-            if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1 && !context.WatchOnly())
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(0) }); 
+            if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
         }
 
         private void OnStart(Start options)
@@ -487,7 +487,8 @@ namespace Neo.Consensus
             }
             InitializeConsensus(0);
             // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
-            ConsensusNodePingForRecovery();
+            if (!context.WatchOnly())
+                SendChangeViewToRequestRecovery(0);
         }
 
         private void OnTimer(Timer timer)
@@ -550,9 +551,8 @@ namespace Neo.Consensus
             ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (expectedView + 1)));
             if ((context.CountCommitted() + context.CountFailed()) > context.F())
             {
-                Log($"Not requesting change view to nv={expectedView} because nc={context.CountCommitted()} nf={context.CountFailed()}");
-                // asking for recovery (ping)
-                ConsensusNodePingForRecovery();
+                Log($"Skip requesting change view to nv={expectedView} because nc={context.CountCommitted()} nf={context.CountFailed()}");
+                SendChangeViewToRequestRecovery(context.ViewNumber);
                 return;
             }
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted()} nf={context.CountFailed()}");
