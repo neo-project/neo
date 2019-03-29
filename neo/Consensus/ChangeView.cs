@@ -16,7 +16,6 @@ namespace Neo.Consensus
         public uint Timestamp;
 
         public override int Size => base.Size
-            + sizeof(byte)  //NewViewNumber
             + sizeof(uint); //Timestamp
 
         public ChangeView() : base(ConsensusMessageType.ChangeView) { }
