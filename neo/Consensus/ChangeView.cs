@@ -4,7 +4,10 @@ namespace Neo.Consensus
 {
     public class ChangeView : ConsensusMessage
     {
-        public byte NewViewNumber;
+        /// <summary>
+        /// NewViewNumber is always set to the current ViewNumber asking changeview + 1
+        /// </summary>
+        public byte NewViewNumber => ViewNumber++;
         /// <summary>
         /// Timestamp of when the ChangeView message was created. This allows receiving nodes to ensure
         /// they only respond once to a specific ChangeView request (it thus prevents replay of the ChangeView
@@ -24,14 +27,12 @@ namespace Neo.Consensus
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            NewViewNumber = reader.ReadByte();
             Timestamp = reader.ReadUInt32();
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(NewViewNumber);
             writer.Write(Timestamp);
         }
     }
