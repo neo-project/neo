@@ -187,9 +187,8 @@ namespace Neo.Consensus
                 if (!context.CommitSent())
                 {
                     bool shouldSendRecovery = false;
-                    // Limit recovery to be sent from, at least, `f+1` nodes when the request is from a lower view number.
-                    // However, `f+2` was chosen for ensuring a possible faster reply for those asking recovery
-                    int allowedRecoveryNodeCount = context.F() + 2;
+                    // Limit recovery to be sent from, at least, `f` nodes when the request is from a lower view number.
+                    int allowedRecoveryNodeCount = context.F();
                     for (int i = 0; i < allowedRecoveryNodeCount; i++)
                     {
                         var eligibleResponders = context.Validators.Length - 1;
