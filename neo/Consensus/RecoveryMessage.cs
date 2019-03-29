@@ -19,11 +19,11 @@ namespace Neo.Consensus
         public Dictionary<int, CommitPayloadCompact> CommitMessages;
 
         public override int Size => base.Size
-            + /* ChangeViewMessages */ ChangeViewMessages?.Values.ToArray().GetVarSize() ?? 0
+            + /* ChangeViewMessages */ ChangeViewMessages?.Values.GetVarSize() ?? 0
             + /* PrepareRequestMessage */ 1 + PrepareRequestMessage?.Size ?? 0
             + /* PreparationHash */ PreparationHash?.Size ?? 0
-            + /* PreparationMessages */ PreparationMessages?.Values.ToArray().GetVarSize() ?? 0
-            + /* CommitMessages */ CommitMessages?.Values.ToArray().GetVarSize() ?? 0;
+            + /* PreparationMessages */ PreparationMessages?.Values.GetVarSize() ?? 0
+            + /* CommitMessages */ CommitMessages?.Values.GetVarSize() ?? 0;
 
         public RecoveryMessage() : base(ConsensusMessageType.RecoveryMessage)
         {
