@@ -139,15 +139,6 @@ namespace Neo.Consensus
             }
         }
 
-        private byte GetLastExpectedView(int validatorIndex)
-        {
-            var lastPreparationPayload = context.PreparationPayloads[validatorIndex];
-            if (lastPreparationPayload != null)
-                return lastPreparationPayload.GetDeserializedMessage<ConsensusMessage>().ViewNumber;
-
-            return context.ChangeViewPayloads[validatorIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber ?? (byte)0;
-        }
-
         private void InitializeConsensus(byte viewNumber)
         {
             context.Reset(viewNumber);
@@ -217,7 +208,7 @@ namespace Neo.Consensus
 
             if (context.CommitSent()) return;
 
-            var expectedView = GetLastExpectedView(payload.ValidatorIndex);
+            var expectedView = context.ChangeViewPayloads[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber ?? (byte)0;
             if (message.NewViewNumber <= expectedView)
                 return;
 
