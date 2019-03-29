@@ -288,7 +288,7 @@ namespace Neo.Consensus
             else
             {
                 for (int i = 0; i < LastChangeViewPayloads.Length; i++)
-                    if (ChangeViewPayloads[i]?.GetDeserializedMessage<ChangeView>().NewViewNumber == viewNumber)
+                    if (ChangeViewPayloads[i]?.GetDeserializedMessage<ChangeView>().NewViewNumber >= viewNumber)
                         LastChangeViewPayloads[i] = ChangeViewPayloads[i];
                     else
                         LastChangeViewPayloads[i] = null;
