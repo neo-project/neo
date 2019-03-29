@@ -22,13 +22,6 @@ namespace Neo.Consensus
         {
         }
 
-        public override int Size => base.Size
-            + /* ChangeViewMessages */ IO.Helper.GetVarSize(ChangeViewMessages?.Count ?? 0) + ChangeViewMessages?.Values.Sum(p => ((ISerializable)p).Size) ?? 0
-            + /* PrepareRequestMessage */ 1 + ((ISerializable) PrepareRequestMessage)?.Size ?? 0
-            + /* PreparationHash */ PreparationHash?.Size ?? 0
-            + /* PreparationMessages */IO.Helper.GetVarSize(PreparationMessages?.Count ?? 0) + PreparationMessages?.Values.Sum(p => ((ISerializable)p).Size) ?? 0
-            + /* CommitMessages */IO.Helper.GetVarSize(CommitMessages?.Count ?? 0) + CommitMessages?.Values.Sum(p => ((ISerializable)p).Size) ?? 0;
-
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
