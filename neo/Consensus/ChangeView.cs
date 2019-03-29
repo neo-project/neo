@@ -7,7 +7,7 @@ namespace Neo.Consensus
         /// <summary>
         /// NewViewNumber is always set to the current ViewNumber asking changeview + 1
         /// </summary>
-        public byte NewViewNumber => ViewNumber++;
+        public byte NewViewNumber => ViewNumber + 1;
         /// <summary>
         /// Timestamp of when the ChangeView message was created. This allows receiving nodes to ensure
         /// they only respond once to a specific ChangeView request (it thus prevents replay of the ChangeView
