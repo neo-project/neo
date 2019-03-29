@@ -110,7 +110,8 @@ namespace Neo.Consensus
         private void CheckExpectedView(byte viewNumber)
         {
             if (context.ViewNumber == viewNumber) return;
-            if (context.ChangeViewPayloads.Count(p => p != null && p.GetDeserializedMessage<ChangeView>().NewViewNumber == viewNumber) >= context.M())
+            // if there are `M` change view payloads with NewViewNumber greater than viewNumber, then, it is safe to move
+            if (context.ChangeViewPayloads.Count(p => p != null && p.GetDeserializedMessage<ChangeView>().NewViewNumber >= viewNumber) >= context.M())
             {
                 if (!context.WatchOnly())
                 {
