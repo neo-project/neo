@@ -17,13 +17,13 @@ namespace Neo.Consensus
         public UInt256 PreparationHash;
         public Dictionary<int, PreparationPayloadCompact> PreparationMessages;
         public Dictionary<int, CommitPayloadCompact> CommitMessages;
-        
+
         public override int Size => base.Size
-            + /* ChangeViewMessages */ IO.Helper.GetVarSize(ChangeViewMessages?.Count ?? 0) + ChangeViewMessages?.Values.Sum(p => ((ISerializable)p).Size) ?? 0
-            + /* PrepareRequestMessage */ 1 + ((ISerializable) PrepareRequestMessage)?.Size ?? 0
+            + /* ChangeViewMessages */ ChangeViewMessages?.Values.ToArray().GetVarSize() ?? 0
+            + /* PrepareRequestMessage */ 1 + PrepareRequestMessage?.Size ?? 0
             + /* PreparationHash */ PreparationHash?.Size ?? 0
-            + /* PreparationMessages */IO.Helper.GetVarSize(PreparationMessages?.Count ?? 0) + PreparationMessages?.Values.Sum(p => ((ISerializable)p).Size) ?? 0
-            + /* CommitMessages */IO.Helper.GetVarSize(CommitMessages?.Count ?? 0) + CommitMessages?.Values.Sum(p => ((ISerializable)p).Size) ?? 0;
+            + /* PreparationMessages */ PreparationMessages?.Values.ToArray().GetVarSize() ?? 0
+            + /* CommitMessages */ CommitMessages?.Values.ToArray().GetVarSize() ?? 0;
 
         public RecoveryMessage() : base(ConsensusMessageType.RecoveryMessage)
         {
