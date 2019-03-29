@@ -50,7 +50,6 @@ namespace Neo.Consensus
                 ConsensusMessage = new ChangeView
                 {
                     ViewNumber = p.OriginalViewNumber,
-                    NewViewNumber = ViewNumber,
                     Timestamp = p.Timestamp
                 },
                 Witness = new Witness
