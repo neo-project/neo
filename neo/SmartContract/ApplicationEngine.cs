@@ -3,8 +3,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
-using System.Linq;
-using System.Text;
 
 namespace Neo.SmartContract
 {
@@ -35,7 +33,7 @@ namespace Neo.SmartContract
             {
                 case OpCode.APPCALL:
                 case OpCode.TAILCALL:
-                    if (instruction.Operand.Any(p => p != 0)) return true;
+                    if (instruction.Operand.NotZero()) return true;
                     // if we get this far it is a dynamic call
                     // now look at the current executing script
                     // to determine if it can do dynamic calls
@@ -95,8 +93,8 @@ namespace Neo.SmartContract
         {
             Instruction instruction = CurrentContext.CurrentInstruction;
             uint api_hash = instruction.Operand.Length == 4
-                ? System.BitConverter.ToUInt32(instruction.Operand, 0)
-                : Encoding.ASCII.GetString(instruction.Operand).ToInteropMethodHash();
+                ? instruction.TokenU32
+                : instruction.TokenString.ToInteropMethodHash();
             long price = Service.GetPrice(api_hash);
             if (price > 0) return price;
             if (api_hash == "Neo.Asset.Create".ToInteropMethodHash() ||
