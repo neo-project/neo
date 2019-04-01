@@ -29,6 +29,7 @@ namespace Neo.Network.P2P
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerPort);
         public override int ListenerPort => Version?.Port ?? 0;
         public VersionPayload Version { get; private set; }
+        public uint currentHeight;
 
         public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
             : base(connection, remote, local)
@@ -63,6 +64,7 @@ namespace Neo.Network.P2P
                 case "getblocks":
                 case "getheaders":
                 case "mempool":
+                case "pong":
                     is_single = true;
                     break;
             }
@@ -122,6 +124,9 @@ namespace Neo.Network.P2P
                     break;
                 case ProtocolHandler.SetFilter setFilter:
                     OnSetFilter(setFilter.Filter);
+                    break;
+                case ProtocolHandler.SetHeight setHeight:
+                    currentHeight = setHeight.height;
                     break;
             }
         }
