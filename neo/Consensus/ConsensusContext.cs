@@ -37,6 +37,9 @@ namespace Neo.Consensus
         public ConsensusPayload[] CommitPayloads { get; set; }
         public ConsensusPayload[] ChangeViewPayloads { get; set; }
         public ConsensusPayload[] LastChangeViewPayloads { get; set; }
+        // LastSeenMessage array stores the height of the last seen message, for each validator.
+        // if this node never heard from validator i, LastSeenMessage[i] will be -1.
+        public int[] LastSeenMessage { get; set; }
         public Block Block { get; set; }
         public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
@@ -139,7 +142,6 @@ namespace Neo.Consensus
         {
             return ChangeViewPayloads[MyIndex] = MakeSignedPayload(new ChangeView
             {
-                NewViewNumber = newViewNumber,
                 Timestamp = TimeProvider.Current.UtcNow.ToTimestamp()
             });
         }
@@ -266,6 +268,12 @@ namespace Neo.Consensus
                 ChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 LastChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 CommitPayloads = new ConsensusPayload[Validators.Length];
+                if (LastSeenMessage == null)
+                {
+                    LastSeenMessage = new int[Validators.Length];
+                    for (int i = 0; i < Validators.Length; i++)
+                        LastSeenMessage[i] = -1;
+                }
                 keyPair = null;
                 for (int i = 0; i < Validators.Length; i++)
                 {
@@ -279,7 +287,7 @@ namespace Neo.Consensus
             else
             {
                 for (int i = 0; i < LastChangeViewPayloads.Length; i++)
-                    if (ChangeViewPayloads[i]?.GetDeserializedMessage<ChangeView>().NewViewNumber == viewNumber)
+                    if (ChangeViewPayloads[i]?.GetDeserializedMessage<ChangeView>().NewViewNumber >= viewNumber)
                         LastChangeViewPayloads[i] = ChangeViewPayloads[i];
                     else
                         LastChangeViewPayloads[i] = null;
@@ -289,6 +297,7 @@ namespace Neo.Consensus
             Timestamp = 0;
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
+            if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int) BlockIndex;
             _header = null;
         }
 

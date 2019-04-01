@@ -18,6 +18,13 @@ namespace Neo.Consensus
         public Dictionary<int, PreparationPayloadCompact> PreparationMessages;
         public Dictionary<int, CommitPayloadCompact> CommitMessages;
 
+        public override int Size => base.Size
+            + /* ChangeViewMessages */ ChangeViewMessages?.Values.GetVarSize() ?? 0
+            + /* PrepareRequestMessage */ 1 + PrepareRequestMessage?.Size ?? 0
+            + /* PreparationHash */ PreparationHash?.Size ?? 0
+            + /* PreparationMessages */ PreparationMessages?.Values.GetVarSize() ?? 0
+            + /* CommitMessages */ CommitMessages?.Values.GetVarSize() ?? 0;
+
         public RecoveryMessage() : base(ConsensusMessageType.RecoveryMessage)
         {
         }
@@ -50,7 +57,6 @@ namespace Neo.Consensus
                 ConsensusMessage = new ChangeView
                 {
                     ViewNumber = p.OriginalViewNumber,
-                    NewViewNumber = ViewNumber,
                     Timestamp = p.Timestamp
                 },
                 Witness = new Witness
