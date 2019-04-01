@@ -21,7 +21,6 @@ namespace Neo.Network.P2P
         public class SetVersion { public VersionPayload Version; }
         public class SetVerack { }
         public class SetFilter { public BloomFilter Filter; }
-        public class SetHeight { public uint height; }
 
         private readonly NeoSystem system;
         private readonly HashSet<UInt256> knownHashes = new HashSet<UInt256>();
@@ -104,7 +103,7 @@ namespace Neo.Network.P2P
                 case "version":
                     throw new ProtocolViolationException();
                 case "ping":
-                    OnPingMessageReceived(msg.Payload.AsSerializable<PingPayload>());
+                    OnPingMessageReceived();
                     break;
                 case "alert":
                 case "merkleblock":
@@ -287,10 +286,9 @@ namespace Neo.Network.P2P
             Context.Parent.Tell(new SetVersion { Version = payload });
         }
 
-        private void OnPingMessageReceived(PingPayload payload)
+        private void OnPingMessageReceived()
         {
-            Context.Parent.Tell(new SetHeight { height = payload.currentHeight });
-            Context.Parent.Tell(Message.Create("pong", PingPayload.Create(Blockchain.Singleton.Height)));
+            Context.Parent.Tell(Message.Create("pong", PongPayload.Create(Blockchain.Singleton.Height)));
         }
 
         public static Props Props(NeoSystem system)
