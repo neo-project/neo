@@ -134,7 +134,8 @@ namespace Neo.Network.P2P
 
         private void OnPingPayload(PingPayload payload)
         {
-            LastBlockIndex = payload.LastBlockIndex;
+            if (payload.LastBlockIndex > LastBlockIndex)
+                LastBlockIndex = payload.LastBlockIndex;
         }
 
         private void OnRelay(IInventory inventory)
