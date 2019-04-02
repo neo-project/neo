@@ -19,12 +19,7 @@ namespace Neo.Network.P2P.Payloads
         public static PingPayload Create(uint height)
         {
             Random rand = new Random();
-            return new PingPayload
-            {
-                LastBlockIndex = height,
-                Timestamp = DateTime.UtcNow.ToTimestamp(),
-                Nonce = (uint)rand.Next()
-            };
+            return Create(height, (uint)rand.Next());
         }
 
         public static PingPayload Create(uint height, uint nonce)
