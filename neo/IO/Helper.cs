@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -52,7 +53,7 @@ namespace Neo.IO
                 return sizeof(byte) + sizeof(uint);
         }
 
-        public static int GetVarSize<T>(this T[] value)
+        public static int GetVarSize<T>(this IReadOnlyCollection<T> value)
         {
             int value_size;
             Type t = typeof(T);
@@ -72,13 +73,13 @@ namespace Neo.IO
                     element_size = 4;
                 else //if (u == typeof(long) || u == typeof(ulong))
                     element_size = 8;
-                value_size = value.Length * element_size;
+                value_size = value.Count * element_size;
             }
             else
             {
-                value_size = value.Length * Marshal.SizeOf<T>();
+                value_size = value.Count * Marshal.SizeOf<T>();
             }
-            return GetVarSize(value.Length) + value_size;
+            return GetVarSize(value.Count) + value_size;
         }
 
         public static int GetVarSize(this string value)

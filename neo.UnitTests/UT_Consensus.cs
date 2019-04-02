@@ -239,13 +239,13 @@ namespace Neo.UnitTests
             consensusContext.Timestamp = TimeProvider.Current.UtcNow.ToTimestamp();
 
             consensusContext.ChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
-            consensusContext.ChangeViewPayloads[0] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, NewViewNumber = 2, Timestamp = 6 }, 0, new[] { (byte)'A' });
-            consensusContext.ChangeViewPayloads[1] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, NewViewNumber = 2, Timestamp = 5 }, 1, new[] { (byte)'B' });
+            consensusContext.ChangeViewPayloads[0] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = 6 }, 0, new[] { (byte)'A' });
+            consensusContext.ChangeViewPayloads[1] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = 5 }, 1, new[] { (byte)'B' });
             consensusContext.ChangeViewPayloads[2] = null;
-            consensusContext.ChangeViewPayloads[3] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, NewViewNumber = 2, Timestamp = uint.MaxValue }, 3, new[] { (byte)'C' });
+            consensusContext.ChangeViewPayloads[3] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = uint.MaxValue }, 3, new[] { (byte)'C' });
             consensusContext.ChangeViewPayloads[4] = null;
             consensusContext.ChangeViewPayloads[5] = null;
-            consensusContext.ChangeViewPayloads[6] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, NewViewNumber = 2, Timestamp = 1 }, 6, new[] { (byte)'D' });
+            consensusContext.ChangeViewPayloads[6] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = 1 }, 6, new[] { (byte)'D' });
 
             consensusContext.LastChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
 
