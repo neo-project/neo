@@ -27,6 +27,16 @@ namespace Neo.Network.P2P.Payloads
             };
         }
 
+        public static PingPayload Create(uint height, uint nonce)
+        {
+            return new PingPayload
+            {
+                LastBlockIndex = height,
+                Timestamp = DateTime.UtcNow.ToTimestamp(),
+                Nonce = nonce
+            };
+        }
+
         void ISerializable.Deserialize(BinaryReader reader)
         {
             LastBlockIndex = reader.ReadUInt32();
