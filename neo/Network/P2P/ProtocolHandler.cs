@@ -18,8 +18,6 @@ namespace Neo.Network.P2P
 {
     internal class ProtocolHandler : UntypedActor
     {
-        public class SetVersion { public VersionPayload Version; }
-        public class SetVerack { }
         public class SetFilter { public BloomFilter Filter; }
 
         private readonly NeoSystem system;
@@ -95,6 +93,12 @@ namespace Neo.Network.P2P
                 case "mempool":
                     OnMemPoolMessageReceived();
                     break;
+                case "ping":
+                    OnPingMessageReceived(msg.GetPayload<PingPayload>());
+                    break;
+                case "pong":
+                    OnPongMessageReceived(msg.GetPayload<PingPayload>());
+                    break;
                 case "tx":
                     if (msg.Payload.Length <= Transaction.MaxTransactionSize)
                         OnInventoryReceived(msg.GetTransaction());
@@ -102,13 +106,9 @@ namespace Neo.Network.P2P
                 case "verack":
                 case "version":
                     throw new ProtocolViolationException();
-                case "ping":
-                    OnPingMessageReceived();
-                    break;
                 case "alert":
                 case "merkleblock":
                 case "notfound":
-                case "pong":
                 case "reject":
                 default:
                     //暂时忽略
@@ -274,21 +274,27 @@ namespace Neo.Network.P2P
                 Context.Parent.Tell(Message.Create("inv", payload));
         }
 
+        private void OnPingMessageReceived(PingPayload payload)
+        {
+            Context.Parent.Tell(payload);
+            Context.Parent.Tell(Message.Create("pong", PingPayload.Create(Blockchain.Singleton.Height)));
+        }
+
+        private void OnPongMessageReceived(PingPayload payload)
+        {
+            Context.Parent.Tell(payload);
+        }
+
         private void OnVerackMessageReceived()
         {
             verack = true;
-            Context.Parent.Tell(new SetVerack());
+            Context.Parent.Tell("verack");
         }
 
         private void OnVersionMessageReceived(VersionPayload payload)
         {
             version = payload;
-            Context.Parent.Tell(new SetVersion { Version = payload });
-        }
-
-        private void OnPingMessageReceived()
-        {
-            Context.Parent.Tell(Message.Create("pong", PongPayload.Create(Blockchain.Singleton.Height)));
+            Context.Parent.Tell(payload);
         }
 
         public static Props Props(NeoSystem system)
