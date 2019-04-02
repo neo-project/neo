@@ -132,6 +132,8 @@ namespace Neo.SmartContract
 
         protected override bool PreExecuteInstruction()
         {
+            if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
+                return true;
             gas_consumed = checked(gas_consumed + GetPrice() * ratio);
             if (!testMode && gas_consumed > gas_amount) return false;
             if (!CheckDynamicInvoke()) return false;
