@@ -68,7 +68,7 @@ namespace Neo.Consensus
                     sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
                     j++;
                 }
-                sc.Verifiable.Witnesses = sc.GetWitnesses();
+                Block.Witness = sc.GetWitnesses()[0];
                 Block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
             }
             return Block;
@@ -202,7 +202,7 @@ namespace Neo.Consensus
             {
                 return;
             }
-            sc.Verifiable.Witnesses = sc.GetWitnesses();
+            payload.Witness = sc.GetWitnesses()[0];
         }
 
         public ConsensusPayload MakePrepareRequest()

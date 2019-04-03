@@ -7,7 +7,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public interface IVerifiable : ISerializable, IScriptContainer
     {
-        Witness[] Witnesses { get; set; }
+        Witness[] Witnesses { get; }
 
         void DeserializeUnsigned(BinaryReader reader);
 
