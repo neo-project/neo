@@ -51,7 +51,7 @@ namespace Neo.Persistence.LevelDB
         public override void Commit()
         {
             base.Commit();
-            db.Write(WriteOptions.Default, batch);
+            db.Write(WriteOptions.DefaultSync, batch);
         }
 
         public override void Dispose()
