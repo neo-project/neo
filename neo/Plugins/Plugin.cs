@@ -91,28 +91,32 @@ namespace Neo.Plugins
             return new ConfigurationBuilder().AddJsonFile(ConfigFile, optional: true).Build().GetSection("PluginConfiguration");
         }
 
+        public static void LoadPlugin(Assembly assembly)
+        {
+            foreach (Type type in assembly.ExportedTypes)
+            {
+                if (!type.IsSubclassOf(typeof(Plugin))) continue;
+                if (type.IsAbstract) continue;
+
+                ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
+                try
+                {
+                    constructor?.Invoke(null);
+                }
+                catch (Exception ex)
+                {
+                    Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin: {ex.Message}");
+                }
+            }
+        }
+
         internal static void LoadPlugins(NeoSystem system)
         {
             System = system;
             if (!Directory.Exists(pluginsPath)) return;
             foreach (string filename in Directory.EnumerateFiles(pluginsPath, "*.dll", SearchOption.TopDirectoryOnly))
             {
-                Assembly assembly = Assembly.LoadFile(filename);
-                foreach (Type type in assembly.ExportedTypes)
-                {
-                    if (!type.IsSubclassOf(typeof(Plugin))) continue;
-                    if (type.IsAbstract) continue;
-
-                    ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
-                    try
-                    {
-                        constructor?.Invoke(null);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin: {ex.Message}");
-                    }
-                }
+                LoadPlugin(Assembly.LoadFile(filename));
             }
         }
 
