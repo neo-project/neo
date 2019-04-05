@@ -9,13 +9,13 @@ namespace Neo.IO.Caching
         private readonly int removeCount;
         private readonly OrderedDictionary data;
 
-        public FIFOSet(int maxCapacity, decimal? batchSize = 0.1m)
+        public FIFOSet(int maxCapacity, decimal batchSize = 0.1m)
         {
             if (maxCapacity <= 0) throw new ArgumentOutOfRangeException(nameof(maxCapacity));
             if (batchSize <= 0) throw new ArgumentOutOfRangeException(nameof(batchSize));
 
             this.maxCapacity = maxCapacity;
-            this.removeCount = batchSize != null ? (int)(batchSize <= 1.0m ? maxCapacity * batchSize : maxCapacity) : 1;
+            this.removeCount = (int)(batchSize <= 1.0m ? maxCapacity * batchSize : maxCapacity);
             this.data = new OrderedDictionary(maxCapacity);
         }
 
