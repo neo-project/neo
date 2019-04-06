@@ -23,8 +23,8 @@ namespace Neo.Network.P2P
         public class SetFilter { public BloomFilter Filter; }
 
         private readonly NeoSystem system;
-        private readonly FIFOSet<UInt256> sentHashes;
         private readonly FIFOSet<UInt256> knownHashes;
+        private readonly FIFOSet<UInt256> sentHashes;
         private VersionPayload version;
         private bool verack = false;
         private BloomFilter bloom_filter;
@@ -32,8 +32,8 @@ namespace Neo.Network.P2P
         public ProtocolHandler(NeoSystem system)
         {
             this.system = system;
-            this.sentHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
             this.knownHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
+            this.sentHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
         }
 
         protected override void OnReceive(object message)
