@@ -12,10 +12,10 @@ namespace Neo.IO.Caching
         public FIFOSet(int maxCapacity, decimal batchSize = 0.1m)
         {
             if (maxCapacity <= 0) throw new ArgumentOutOfRangeException(nameof(maxCapacity));
-            if (batchSize <= 0) throw new ArgumentOutOfRangeException(nameof(batchSize));
+            if (batchSize <= 0 || batchSize > 1) throw new ArgumentOutOfRangeException(nameof(batchSize));
 
             this.maxCapacity = maxCapacity;
-            this.removeCount = (int)(batchSize <= 1.0m ? maxCapacity * batchSize : maxCapacity);
+            this.removeCount = Math.Max((int)(maxCapacity * batchSize), 1);
             this.data = new OrderedDictionary(maxCapacity);
         }
 
