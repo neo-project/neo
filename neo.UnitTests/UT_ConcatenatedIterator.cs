@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Iterators;
 using Neo.VM.Types;
+using System;
 using System.Numerics;
 
 namespace Neo.UnitTests
@@ -11,21 +12,13 @@ namespace Neo.UnitTests
     public class UT_ConcatenatedIterator
     {
         [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
         public void ConcatenatedIteratedOverflowTest()
         {
             Integer[] array1 = { MakeIntegerStackItem(1) };
-            ArrayWrapper it1 = new ArrayWrapper(array1);
-            ConcatenatedIterator uut = new ConcatenatedIterator(it1, it1);
 
-            uut.Next().Should().Be(true);
-            uut.Key().Should().Be(MakeIntegerStackItem(0));
-            uut.Value().Should().Be(array1[0]);
-
-            uut.Next().Should().Be(true);
-            uut.Key().Should().Be(MakeIntegerStackItem(0));
-            uut.Value().Should().Be(array1[0]);
-
-            uut.Next().Should().Be(false);
+            var it1 = new ArrayWrapper(array1);
+            var iterator = new ConcatenatedIterator(it1, it1);
         }
 
         [TestMethod]

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 using Neo.VM;
 
 namespace Neo.SmartContract.Iterators
@@ -12,17 +12,7 @@ namespace Neo.SmartContract.Iterators
         {
             if (second == first)
             {
-                var list = new List<StackItem>();
-
-                while (first.Next())
-                {
-                    list.Add(first.Value());
-                }
-
-                var arr = list.ToArray();
-
-                second = new ArrayWrapper(arr);
-                first = new ArrayWrapper(arr);
+                throw new ArgumentException();
             }
 
             this.current = this.first = first;
@@ -39,7 +29,6 @@ namespace Neo.SmartContract.Iterators
             current = second;
             return current.Next();
         }
-
 
         public void Dispose()
         {

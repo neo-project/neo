@@ -58,7 +58,20 @@ namespace Neo.UnitTests
                             {
                                 c.TestInit.Invoke(instance, emtpyObjArray);
                             }
-                            m.Invoke(instance, emtpyObjArray);
+
+                            try
+                            {
+                                m.Invoke(instance, emtpyObjArray);
+                            }
+                            catch (Exception ex)
+                            {
+                                var expectedException = m.GetCustomAttribute<ExpectedExceptionAttribute>();
+                                if (expectedException == null || expectedException.ExceptionType != ex.InnerException.GetType())
+                                {
+                                    throw ex;
+                                }
+                            }
+
                             if (c.TestCleanup != null)
                             {
                                 c.TestCleanup.Invoke(instance, emtpyObjArray);
