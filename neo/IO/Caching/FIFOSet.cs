@@ -7,7 +7,7 @@ namespace Neo.IO.Caching
     {
         private readonly int maxCapacity;
         private readonly int removeCount;
-        private readonly OrderedDictionary data;
+        private readonly OrderedDictionary dictionary;
 
         public FIFOSet(int maxCapacity, decimal batchSize = 0.1m)
         {
@@ -16,25 +16,25 @@ namespace Neo.IO.Caching
 
             this.maxCapacity = maxCapacity;
             this.removeCount = Math.Max((int)(maxCapacity * batchSize), 1);
-            this.data = new OrderedDictionary(maxCapacity);
+            this.dictionary = new OrderedDictionary(maxCapacity);
         }
 
         public bool Add(T item)
         {
-            if (data.Contains(item)) return false;
-            if (data.Count >= maxCapacity)
+            if (dictionary.Contains(item)) return false;
+            if (dictionary.Count >= maxCapacity)
             {
                 if (removeCount == maxCapacity)
                 {
-                    data.Clear();
+                    dictionary.Clear();
                 }
                 else
                 {
                     for (int i = 0; i < removeCount; i++)
-                        data.RemoveAt(0);
+                        dictionary.RemoveAt(0);
                 }
             }
-            data.Add(item, null);
+            dictionary.Add(item, null);
             return true;
         }
     }
