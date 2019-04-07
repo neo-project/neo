@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Neo.VM;
 
 namespace Neo.SmartContract.Iterators
@@ -10,21 +9,6 @@ namespace Neo.SmartContract.Iterators
 
         public ConcatenatedIterator(IIterator first, IIterator second)
         {
-            if (second == first)
-            {
-                var list = new List<StackItem>();
-
-                while (first.Next())
-                {
-                    list.Add(first.Value());
-                }
-
-                var arr = list.ToArray();
-
-                second = new ArrayWrapper(arr);
-                first = new ArrayWrapper(arr);
-            }
-
             this.current = this.first = first;
             this.second = second;
         }
