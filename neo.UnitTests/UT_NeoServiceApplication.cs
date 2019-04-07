@@ -11,7 +11,6 @@ using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.UnitTests
 {
-
     [TestClass]
     public class NeoServiceApplication
     {
