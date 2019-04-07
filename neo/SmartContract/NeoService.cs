@@ -33,6 +33,7 @@ namespace Neo.SmartContract
             Register("Neo.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight, 100);
             Register("Neo.Blockchain.GetAccount", Blockchain_GetAccount, 100);
             Register("Neo.Blockchain.GetValidators", Blockchain_GetValidators, 200);
+            Register("Neo.Blockchain.GetValidatorsScript", Blockchain_GetValidatorsScript, 200);
             Register("Neo.Blockchain.GetAsset", Blockchain_GetAsset, 100);
             Register("Neo.Blockchain.GetContract", Blockchain_GetContract, 100);
             Register("Neo.Header.GetHash", Header_GetHash, 1);
@@ -173,10 +174,21 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private bool Blockchain_GetValidators(ExecutionEngine engine)
+        internal bool Blockchain_GetValidators(ExecutionEngine engine)
         {
             ECPoint[] validators = Snapshot.GetValidators();
             engine.CurrentContext.EvaluationStack.Push(validators.Select(p => (StackItem)p.EncodePoint(true)).ToArray());
+            return true;
+        }
+
+        internal bool Blockchain_GetValidatorsScript(ExecutionEngine engine)
+        {
+            // Note: this must be compatible with Consensus validation service
+            // In the future, we can put this in some core part shared among both components (NeoService/ConsensusService)
+            ECPoint[] validators = Snapshot.GetValidators();
+            int m = validators.Length - (validators.Length - 1) / 3;
+            Contract contract = Contract.CreateMultiSigContract(m, validators);
+            engine.CurrentContext.EvaluationStack.Push(contract.Script);
             return true;
         }
 

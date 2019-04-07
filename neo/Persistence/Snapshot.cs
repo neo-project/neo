@@ -179,7 +179,7 @@ namespace Neo.Persistence
             return _validators;
         }
 
-        public IEnumerable<ECPoint> GetValidators(IEnumerable<Transaction> others)
+        virtual internal IEnumerable<ECPoint> GetValidators(IEnumerable<Transaction> others)
         {
             Snapshot snapshot = Clone();
             foreach (Transaction tx in others)
