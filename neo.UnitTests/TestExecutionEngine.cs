@@ -10,7 +10,6 @@ namespace Neo.UnitTests
 {
     public static class TestExecutionEngine
     {
-
         public static ExecutionEngine CreateTestExecutionEngine()
         {
             var mockIScriptContainer = new Mock<IScriptContainer>();
@@ -20,6 +19,5 @@ namespace Neo.UnitTests
             engine.LoadScript(new byte[0]);
             return engine;
         }
-
     }
 }
