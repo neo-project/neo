@@ -259,9 +259,10 @@ namespace Neo.UnitTests
             byte[] SyscallAssetRenewHash = new byte[]{0x59, 0x59, 0x68, 0x04, 0x78, 0x84, 0x90, 0x71};
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
             {
+                Debugger debugger = new Debugger(ae);
                 ae.LoadScript(SyscallAssetRenewHash);
-                ae.StepInto(); // push 9
-                ae.StepInto(); // push 9
+                debugger.StepInto(); // push 9
+                debugger.StepInto(); // push 9
                 GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(9L * 5000L * 100000000L / 100000); // assuming private ae.ratio = 100000
             }
 
@@ -269,11 +270,12 @@ namespace Neo.UnitTests
             byte[] SyscallContractCreateHash00 = new byte[]{(byte)ContractPropertyState.NoProperty, 0x00, 0x00, 0x00, 0x68, 0x04, 0xf6, 0x6c, 0xa5, 0x6e};
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
             {
+                Debugger debugger = new Debugger(ae);
                 ae.LoadScript(SyscallContractCreateHash00);
-                ae.StepInto(); // push 0 - ContractPropertyState.NoProperty
-                ae.StepInto(); // push 0
-                ae.StepInto(); // push 0
-                ae.StepInto(); // push 0
+                debugger.StepInto(); // push 0 - ContractPropertyState.NoProperty
+                debugger.StepInto(); // push 0
+                debugger.StepInto(); // push 0
+                debugger.StepInto(); // push 0
                 GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(100L * 100000000L / 100000); // assuming private ae.ratio = 100000
             }
 
@@ -281,11 +283,12 @@ namespace Neo.UnitTests
             byte[] SyscallContractCreateHash01 = new byte[]{0x51, 0x00, 0x00, 0x00, 0x68, 0x04, 0xf6, 0x6c, 0xa5, 0x6e};
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
             {
+                Debugger debugger = new Debugger(ae);
                 ae.LoadScript(SyscallContractCreateHash01);
-                ae.StepInto(); // push 01 - ContractPropertyState.HasStorage
-                ae.StepInto(); // push 0
-                ae.StepInto(); // push 0
-                ae.StepInto(); // push 0
+                debugger.StepInto(); // push 01 - ContractPropertyState.HasStorage
+                debugger.StepInto(); // push 0
+                debugger.StepInto(); // push 0
+                debugger.StepInto(); // push 0
                 GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(500L * 100000000L / 100000); // assuming private ae.ratio = 100000
             }
 
@@ -293,11 +296,12 @@ namespace Neo.UnitTests
             byte[] SyscallContractCreateHash02 = new byte[]{0x52, 0x00, 0x00, 0x00, 0x68, 0x04, 0xf6, 0x6c, 0xa5, 0x6e};
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
             {
+                Debugger debugger = new Debugger(ae);
                 ae.LoadScript(SyscallContractCreateHash02);
-                ae.StepInto(); // push 02 - ContractPropertyState.HasDynamicInvoke
-                ae.StepInto(); // push 0
-                ae.StepInto(); // push 0
-                ae.StepInto(); // push 0
+                debugger.StepInto(); // push 02 - ContractPropertyState.HasDynamicInvoke
+                debugger.StepInto(); // push 0
+                debugger.StepInto(); // push 0
+                debugger.StepInto(); // push 0
                 GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(600L * 100000000L / 100000); // assuming private ae.ratio = 100000
             }
 
@@ -305,11 +309,12 @@ namespace Neo.UnitTests
             byte[] SyscallContractCreateHash03 = new byte[]{0x53, 0x00, 0x00, 0x00, 0x68, 0x04, 0xf6, 0x6c, 0xa5, 0x6e};
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
             {
+                Debugger debugger = new Debugger(ae);
                 ae.LoadScript(SyscallContractCreateHash03);
-                ae.StepInto(); // push 03 - HasStorage and HasDynamicInvoke
-                ae.StepInto(); // push 0
-                ae.StepInto(); // push 0
-                ae.StepInto(); // push 0
+                debugger.StepInto(); // push 03 - HasStorage and HasDynamicInvoke
+                debugger.StepInto(); // push 0
+                debugger.StepInto(); // push 0
+                debugger.StepInto(); // push 0
                 GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(1000L * 100000000L / 100000); // assuming private ae.ratio = 100000
             }
 
@@ -317,11 +322,12 @@ namespace Neo.UnitTests
             byte[] SyscallContractMigrateHash00 = new byte[]{(byte)ContractPropertyState.NoProperty, 0x00, 0x00, 0x00, 0x68, 0x04, 0x47, 0x1b, 0x62, 0x90};
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
             {
+                Debugger debugger = new Debugger(ae);
                 ae.LoadScript(SyscallContractMigrateHash00);
-                ae.StepInto(); // push 0 - ContractPropertyState.NoProperty
-                ae.StepInto(); // push 0
-                ae.StepInto(); // push 0
-                ae.StepInto(); // push 0
+                debugger.StepInto(); // push 0 - ContractPropertyState.NoProperty
+                debugger.StepInto(); // push 0
+                debugger.StepInto(); // push 0
+                debugger.StepInto(); // push 0
                 GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(100L * 100000000L / 100000); // assuming private ae.ratio = 100000
             }
 
@@ -329,10 +335,11 @@ namespace Neo.UnitTests
             byte[] SyscallStoragePutHash = new byte[]{0x53, 0x53, 0x00, 0x68, 0x04, 0xe6, 0x3f, 0x18, 0x84};
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
             {
+                Debugger debugger = new Debugger(ae);
                 ae.LoadScript(SyscallStoragePutHash);
-                ae.StepInto(); // push 03 (length 1)
-                ae.StepInto(); // push 03 (length 1)
-                ae.StepInto(); // push 00
+                debugger.StepInto(); // push 03 (length 1)
+                debugger.StepInto(); // push 03 (length 1)
+                debugger.StepInto(); // push 00
                 GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(1000L); //((1+1-1) / 1024 + 1) * 1000);
             }
 
@@ -340,10 +347,11 @@ namespace Neo.UnitTests
             byte[] SyscallStoragePutExHash = new byte[]{0x53, 0x53, 0x00, 0x68, 0x04, 0x73, 0xe1, 0x9b, 0x3a};
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
             {
+                Debugger debugger = new Debugger(ae);
                 ae.LoadScript(SyscallStoragePutExHash);
-                ae.StepInto(); // push 03 (length 1)
-                ae.StepInto(); // push 03 (length 1)
-                ae.StepInto(); // push 00
+                debugger.StepInto(); // push 03 (length 1)
+                debugger.StepInto(); // push 03 (length 1)
+                debugger.StepInto(); // push 00
                 GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(1000L); //((1+1-1) / 1024 + 1) * 1000);
             }
         }

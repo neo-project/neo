@@ -126,6 +126,31 @@ namespace Neo
             return new BigInteger(b);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        unsafe internal static bool NotZero(this byte[] x)
+        {
+            if (x is null)
+                throw new ArgumentNullException(nameof(x));
+            int len = x.Length;
+            if (len == 0) return false;
+            fixed (byte* xp = x)
+            {
+                long* xlp = (long*)xp;
+                for (; len >= 8; len -= 8)
+                {
+                    if (*xlp != 0) return true;
+                    xlp++;
+                }
+                byte* xbp = (byte*)xlp;
+                for (; len > 0; len--)
+                {
+                    if (*xbp != 0) return true;
+                    xbp++;
+                }
+            }
+            return false;
+        }
+
         public static Fixed8 Sum(this IEnumerable<Fixed8> source)
         {
             long sum = 0;

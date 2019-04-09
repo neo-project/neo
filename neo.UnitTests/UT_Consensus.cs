@@ -57,12 +57,13 @@ namespace Neo.UnitTests
 
             int timeIndex = 0;
             var timeValues = new[] {
-              new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For tests here
+              //new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For tests here
               new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc),  // For receiving block
-              new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For Initialize
+              new DateTime(1968, 06, 01, 0, 0, (int) Blockchain.SecondsPerBlock, DateTimeKind.Utc), // For Initialize
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // unused
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc)  // unused
-          };
+            };
+            //TimeProvider.Current.UtcNow.ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
 
             Console.WriteLine($"time 0: {timeValues[0].ToString()} 1: {timeValues[1].ToString()} 2: {timeValues[2].ToString()} 3: {timeValues[3].ToString()}");
 
@@ -93,8 +94,7 @@ namespace Neo.UnitTests
             Console.WriteLine($"header {header} hash {header.Hash} timstamp {timestampVal}");
 
             timestampVal.Should().Be(4244941696); //1968-06-01 00:00:00
-            TimeProvider.Current.UtcNow.ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
-                                                                               // check basic ConsensusContext
+                                                  // check basic ConsensusContext
             mockConsensusContext.Object.MyIndex.Should().Be(2);
             //mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
 
@@ -156,6 +156,7 @@ namespace Neo.UnitTests
 
             Console.WriteLine("OnTimer should expire!");
             Console.WriteLine("Waiting for subscriber message!");
+            // Timer should expire in one second (block_received_time at :01, initialized at :02)
 
             var answer = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             Console.WriteLine($"MESSAGE 1: {answer}");
@@ -238,13 +239,13 @@ namespace Neo.UnitTests
             consensusContext.Timestamp = TimeProvider.Current.UtcNow.ToTimestamp();
 
             consensusContext.ChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
-            consensusContext.ChangeViewPayloads[0] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, NewViewNumber = 2, Timestamp = 6 }, 0, new[] { (byte)'A' });
-            consensusContext.ChangeViewPayloads[1] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, NewViewNumber = 2, Timestamp = 5 }, 1, new[] { (byte)'B' });
+            consensusContext.ChangeViewPayloads[0] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = 6 }, 0, new[] { (byte)'A' });
+            consensusContext.ChangeViewPayloads[1] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = 5 }, 1, new[] { (byte)'B' });
             consensusContext.ChangeViewPayloads[2] = null;
-            consensusContext.ChangeViewPayloads[3] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, NewViewNumber = 2, Timestamp = uint.MaxValue }, 3, new[] { (byte)'C' });
+            consensusContext.ChangeViewPayloads[3] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = uint.MaxValue }, 3, new[] { (byte)'C' });
             consensusContext.ChangeViewPayloads[4] = null;
             consensusContext.ChangeViewPayloads[5] = null;
-            consensusContext.ChangeViewPayloads[6] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, NewViewNumber = 2, Timestamp = 1 }, 6, new[] { (byte)'D' });
+            consensusContext.ChangeViewPayloads[6] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = 1 }, 6, new[] { (byte)'D' });
 
             consensusContext.LastChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
 

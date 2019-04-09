@@ -15,7 +15,8 @@ namespace Neo.UnitTests
         {
             Integer[] array1 = { MakeIntegerStackItem(1) };
             ArrayWrapper it1 = new ArrayWrapper(array1);
-            ConcatenatedIterator uut = new ConcatenatedIterator(it1, it1);
+            ArrayWrapper it2 = new ArrayWrapper(array1);
+            ConcatenatedIterator uut = new ConcatenatedIterator(it1, it2);
 
             uut.Next().Should().Be(true);
             uut.Key().Should().Be(MakeIntegerStackItem(0));
