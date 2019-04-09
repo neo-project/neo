@@ -583,7 +583,18 @@ namespace Neo.Ledger
                             using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, snapshot.Clone(), tx_invocation.Gas))
                             {
                                 engine.LoadScript(tx_invocation.Script);
-                                engine.Execute();
+                                foreach (IDebuggerPlugin plugin in Plugin.DebuggerPlugins)
+                                {
+                                    if (plugin.DebuggerActive)
+                                    {
+                                        plugin.OnExecute(engine);
+                                        break;
+                                    }
+                                }
+                                if (engine.GasConsumed == Fixed8.Zero)
+                                {
+                                    engine.Execute();
+                                }
                                 if (!engine.State.HasFlag(VMState.FAULT))
                                 {
                                     engine.Service.Commit();

@@ -3,6 +3,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
+using Neo.Plugins;
 
 namespace Neo.SmartContract
 {
@@ -161,6 +162,14 @@ namespace Neo.SmartContract
             };
             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, extraGAS, testMode);
             engine.LoadScript(script);
+            foreach (IDebuggerPlugin plugin in Plugin.DebuggerPlugins)
+            {
+                if (plugin.DebuggerActive)
+                {
+                    plugin.OnExecute(engine);
+                    return engine;
+                }
+            }
             engine.Execute();
             return engine;
         }
