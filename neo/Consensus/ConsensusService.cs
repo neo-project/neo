@@ -11,6 +11,7 @@ using Neo.Plugins;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Neo.Consensus
@@ -261,11 +262,24 @@ namespace Neo.Consensus
                 return;
             }
             if (payload.ValidatorIndex >= context.Validators.Length) return;
+            ConsensusMessage message;
+            try
+            {
+                message = payload.ConsensusMessage;
+            }
+            catch (FormatException)
+            {
+                return;
+            }
+            catch (IOException)
+            {
+                return;
+            }
             context.LastSeenMessage[payload.ValidatorIndex] = (int) payload.BlockIndex;
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
                 if (!plugin.OnConsensusMessage(payload))
                     return;
-            switch (payload.ConsensusMessage)
+            switch (message)
             {
                 case ChangeView view:
                     OnChangeViewReceived(payload, view);
