@@ -30,6 +30,12 @@ namespace Neo.Consensus
         private bool started = false;
 
         /// <summary>
+        /// This will record the information from last scheduled timer
+        /// </summary>
+        private DateTime clock_started = TimeProvider.Current.UtcNow;
+        private TimeSpan expected_delay = TimeSpan.Zero; 
+
+        /// <summary>
         /// This will be cleared every block (so it will not grow out of control, but is used to prevent repeatedly
         /// responding to the same message.
         /// </summary>
@@ -90,6 +96,8 @@ namespace Neo.Consensus
 
         private void ChangeTimer(TimeSpan delay)
         {
+            clock_started = TimeProvider.Current.UtcNow;
+            expected_delay = delay;
             timer_token.CancelIfNotNull();
             timer_token = Context.System.Scheduler.ScheduleTellOnceCancelable(delay, Self, new Timer
             {
@@ -226,6 +234,10 @@ namespace Neo.Consensus
                     Log($"{nameof(OnCommitReceived)}: different commit from validator! height={payload.BlockIndex} index={payload.ValidatorIndex} view={commit.ViewNumber} existingView={existingCommitPayload.ConsensusMessage.ViewNumber}", LogLevel.Warning);
                 return;
             }
+
+            // Timeout bonification: commit has been received with sucess +30% of blocktime (in ms)
+            if(!context.ViewChanging() && !context.CommitSent())
+                ChangeTimer(expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(Blockchain.SecondsPerBlock * 1000 * 0.30));
 
             if (commit.ViewNumber == context.ViewNumber)
             {
@@ -378,6 +390,11 @@ namespace Neo.Consensus
                 Log($"Invalid request: transaction already exists", LogLevel.Warning);
                 return;
             }
+
+            // Timeout bonification: prepare request has been received with sucess +10% of blocktime (in ms)
+            if (!context.ViewChanging() && !context.CommitSent())
+                ChangeTimer(expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(Blockchain.SecondsPerBlock * 1000 * 0.1));
+
             context.Timestamp = message.Timestamp;
             context.Nonce = message.Nonce;
             context.NextConsensus = message.NextConsensus;
@@ -428,6 +445,11 @@ namespace Neo.Consensus
             if (context.PreparationPayloads[payload.ValidatorIndex] != null || context.NotAcceptingPayloadsDueToViewChanging()) return;
             if (context.PreparationPayloads[context.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.PrimaryIndex].Hash))
                 return;
+
+            // Timeout bonification: prepare response has been received with sucess +15% of blocktime (in ms)
+            if (!context.ViewChanging() && !context.CommitSent())
+                ChangeTimer(expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(Blockchain.SecondsPerBlock * 1000 * 0.15));
+
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
             if (context.WatchOnly() || context.CommitSent()) return;
