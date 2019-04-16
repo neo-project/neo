@@ -33,7 +33,7 @@ namespace Neo.Consensus
         /// This will record the information from last scheduled timer
         /// </summary>
         private DateTime clock_started = TimeProvider.Current.UtcNow;
-        private TimeSpan expected_delay = TimeSpan.Zero; 
+        private TimeSpan expected_delay = TimeSpan.Zero;
 
         /// <summary>
         /// This will be cleared every block (so it will not grow out of control, but is used to prevent repeatedly
@@ -96,6 +96,9 @@ namespace Neo.Consensus
 
         private void ChangeTimer(TimeSpan delay)
         {
+            // do not change timer if delay is negative or node is watch only
+            if(context.WatchOnly() || delay < 0)
+                return;
             clock_started = TimeProvider.Current.UtcNow;
             expected_delay = delay;
             timer_token.CancelIfNotNull();
