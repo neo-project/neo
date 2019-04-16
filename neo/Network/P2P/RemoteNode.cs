@@ -1,4 +1,8 @@
-﻿using Akka.Actor;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using Akka.Actor;
 using Akka.Configuration;
 using Akka.IO;
 using Neo.Cryptography;
@@ -6,10 +10,6 @@ using Neo.IO;
 using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 
 namespace Neo.Network.P2P
 {
@@ -22,9 +22,12 @@ namespace Neo.Network.P2P
         private readonly Queue<Message> message_queue_high = new Queue<Message>();
         private readonly Queue<Message> message_queue_low = new Queue<Message>();
         private ByteString msg_buffer = ByteString.Empty;
-        private bool ack = true;
         private BloomFilter bloom_filter;
+        private bool ack = true;
         private bool verack = false;
+        private bool _validateConnection = true;
+
+        public static readonly uint Magic = ProtocolSettings.Default.Magic;
 
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerPort);
         public override int ListenerPort => Version?.Port ?? 0;
@@ -37,7 +40,9 @@ namespace Neo.Network.P2P
             this.system = system;
             this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
-            SendMessage(Message.Create("version", VersionPayload.Create(LocalNode.Singleton.ListenerPort, LocalNode.Nonce, LocalNode.UserAgent, Blockchain.Singleton.Height)));
+
+            SendData(ByteString.FromBytes(BitConverter.GetBytes(Magic)));
+            SendMessage(Message.Create(MessageCommand.version, VersionPayload.Create(LocalNode.Singleton.ListenerPort, LocalNode.Nonce, LocalNode.UserAgent, Blockchain.Singleton.Height)));
         }
 
         private void CheckMessageQueue()
@@ -49,7 +54,7 @@ namespace Neo.Network.P2P
             SendMessage(queue.Dequeue());
         }
 
-        private void EnqueueMessage(string command, ISerializable payload = null)
+        private void EnqueueMessage(MessageCommand command, ISerializable payload = null)
         {
             EnqueueMessage(Message.Create(command, payload));
         }
@@ -59,26 +64,26 @@ namespace Neo.Network.P2P
             bool is_single = false;
             switch (message.Command)
             {
-                case "addr":
-                case "getaddr":
-                case "getblocks":
-                case "getheaders":
-                case "mempool":
-                case "ping":
-                case "pong":
+                case MessageCommand.addr:
+                case MessageCommand.getaddr:
+                case MessageCommand.getblocks:
+                case MessageCommand.getheaders:
+                case MessageCommand.mempool:
+                case MessageCommand.ping:
+                case MessageCommand.pong:
                     is_single = true;
                     break;
             }
             Queue<Message> message_queue;
             switch (message.Command)
             {
-                case "alert":
-                case "consensus":
-                case "filteradd":
-                case "filterclear":
-                case "filterload":
-                case "getaddr":
-                case "mempool":
+                case MessageCommand.alert:
+                case MessageCommand.consensus:
+                case MessageCommand.filteradd:
+                case MessageCommand.filterclear:
+                case MessageCommand.filterload:
+                case MessageCommand.getaddr:
+                case MessageCommand.mempool:
                     message_queue = message_queue_high;
                     break;
                 default:
@@ -99,6 +104,20 @@ namespace Neo.Network.P2P
         protected override void OnData(ByteString data)
         {
             msg_buffer = msg_buffer.Concat(data);
+
+            if (_validateConnection)
+            {
+                // We need to check the magic header
+
+                if (msg_buffer.Count < sizeof(uint)) return;
+
+                uint magic = msg_buffer.Slice(0, sizeof(uint)).ToArray().ToUInt32(0);
+                if (magic != Magic) throw new FormatException();
+
+                msg_buffer = msg_buffer.Slice(sizeof(uint)).Compact();
+                _validateConnection = false;
+            }
+
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
                 protocol.Tell(message);
         }
@@ -146,7 +165,7 @@ namespace Neo.Network.P2P
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                     return;
             }
-            EnqueueMessage("inv", InvPayload.Create(inventory.InventoryType, inventory.Hash));
+            EnqueueMessage(MessageCommand.inv, InvPayload.Create(inventory.InventoryType, inventory.Hash));
         }
 
         private void OnSend(IInventory inventory)
@@ -157,7 +176,7 @@ namespace Neo.Network.P2P
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                     return;
             }
-            EnqueueMessage(inventory.InventoryType.ToString().ToLower(), inventory);
+            EnqueueMessage((MessageCommand)inventory.InventoryType, inventory);
         }
 
         private void OnSetFilter(BloomFilter filter)
@@ -186,7 +205,7 @@ namespace Neo.Network.P2P
                 Disconnect(true);
                 return;
             }
-            SendMessage(Message.Create("verack"));
+            SendMessage(Message.Create(MessageCommand.verack));
         }
 
         protected override void PostStop()
@@ -217,19 +236,11 @@ namespace Neo.Network.P2P
 
         private Message TryParseMessage()
         {
-            if (msg_buffer.Count < sizeof(uint)) return null;
-            uint magic = msg_buffer.Slice(0, sizeof(uint)).ToArray().ToUInt32(0);
-            if (magic != Message.Magic)
-                throw new FormatException();
-            if (msg_buffer.Count < Message.HeaderSize) return null;
-            int length = msg_buffer.Slice(16, sizeof(int)).ToArray().ToInt32(0);
-            if (length > Message.PayloadMaxSize)
-                throw new FormatException();
-            length += Message.HeaderSize;
-            if (msg_buffer.Count < length) return null;
-            Message message = msg_buffer.Slice(0, length).ToArray().AsSerializable<Message>();
+            var length = Message.TryDeserialize(msg_buffer, out var msg);
+            if (length <= 0) return null;
+
             msg_buffer = msg_buffer.Slice(length).Compact();
-            return message;
+            return msg;
         }
     }
 
