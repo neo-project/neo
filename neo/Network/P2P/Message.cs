@@ -17,11 +17,16 @@ namespace Neo.Network.P2P
         public MessageCommand Command;
         public byte[] Payload;
 
+        private ISerializable _payload_deserialized = null;
+
         public int Size => 2 + IO.Helper.GetVarSize(Payload.Length) + Payload.Length;
 
         public static Message Create(MessageCommand command, ISerializable payload = null)
         {
-            return Create(command, payload == null ? new byte[0] : payload.ToArray());
+            var ret = Create(command, payload == null ? new byte[0] : payload.ToArray());
+            ret._payload_deserialized = payload;
+
+            return ret;
         }
 
         public static Message Create(MessageCommand command, byte[] payload)
@@ -47,6 +52,13 @@ namespace Neo.Network.P2P
                 Command = command,
                 Payload = payload
             };
+        }
+
+        void ISerializable.Serialize(BinaryWriter writer)
+        {
+            writer.Write((byte)Flags);
+            writer.Write((byte)Command);
+            writer.WriteVarBytes(Payload);
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
@@ -110,7 +122,6 @@ namespace Neo.Network.P2P
             return this.Payload;
         }
 
-        private ISerializable _payload_deserialized = null;
         public T GetPayload<T>() where T : ISerializable, new()
         {
             if (_payload_deserialized is null)
@@ -123,13 +134,6 @@ namespace Neo.Network.P2P
             if (_payload_deserialized is null)
                 _payload_deserialized = Transaction.DeserializeFrom(GetPayload());
             return (Transaction)_payload_deserialized;
-        }
-
-        void ISerializable.Serialize(BinaryWriter writer)
-        {
-            writer.Write((byte)Flags);
-            writer.Write((byte)Command);
-            writer.WriteVarBytes(Payload);
         }
     }
 }
