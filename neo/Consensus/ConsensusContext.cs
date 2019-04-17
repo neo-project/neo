@@ -142,9 +142,9 @@ namespace Neo.Consensus
         {
             ChangeViewPayloads[MyIndex] = MakeSignedPayload(new ChangeView
             {
-               Timestamp = TimeProvider.Current.UtcNow.ToTimestamp()
+               Timestamp = TimeProvider.Current.UtcNow.ToTimestamp(),
+               NewViewNumber = newViewNumber
             });
-            ChangeViewPayloads[MyIndex].ViewNumber = newViewNumber;
             return ChangeViewPayloads[MyIndex];
         }
 
