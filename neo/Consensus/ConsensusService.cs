@@ -558,7 +558,8 @@ namespace Neo.Consensus
             if ((context.CountCommitted() + context.CountFailed()) > context.F())
             {
                 Log($"Skip requesting change view to nv={expectedView} because nc={context.CountCommitted()} nf={context.CountFailed()}");
-                SendChangeViewToRequestRecovery(context.ViewNumber);
+                // Simple ping. Should not help anyone go up!
+                SendChangeViewToRequestRecovery(0);
                 return;
             }
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted()} nf={context.CountFailed()}");
