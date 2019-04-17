@@ -558,8 +558,8 @@ namespace Neo.Consensus
             if ((context.CountCommitted() + context.CountFailed()) > context.F())
             {
                 Log($"Skip requesting change view to nv={expectedView} because nc={context.CountCommitted()} nf={context.CountFailed()}");
-                // Simple ping. Should not help anyone go up!
-                SendChangeViewToRequestRecovery(0);
+                // this should work as a ping, so should not help anyone pass up to our view (the same value is fine)
+                SendChangeViewToRequestRecovery(context.ViewNumber);
                 return;
             }
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted()} nf={context.CountFailed()}");
@@ -581,7 +581,7 @@ namespace Neo.Consensus
 
             if (context.Validators.Length == 1)
                 CheckPreparations();
-                
+
             if (context.TransactionHashes.Length > 1)
             {
                 foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
