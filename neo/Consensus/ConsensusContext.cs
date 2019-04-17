@@ -146,7 +146,7 @@ namespace Neo.Consensus
             });
             ConsensusMessage msg = ChangeViewPayloads[MyIndex].ConsensusMessage;
             // update change view request according to newViewNumber
-            msg.ViewNumber = (byte) ((newViewNumber == 0) ? 255 : (newViewNumber - 1));
+            msg.ViewNumber = (byte) ((newViewNumber == 0) ? Byte.MaxValue : (newViewNumber - 1));
             return ChangeViewPayloads[MyIndex];
         }
 
