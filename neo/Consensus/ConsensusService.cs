@@ -611,6 +611,9 @@ namespace Neo.Consensus
             Log($"send prepare request: height={context.BlockIndex} view={context.ViewNumber}");
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
 
+            if (context.Validators.Length == 1)
+                CheckPreparations();
+                
             if (context.TransactionHashes.Length > 1)
             {
                 foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
