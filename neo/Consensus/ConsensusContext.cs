@@ -144,9 +144,8 @@ namespace Neo.Consensus
             {
                 Timestamp = TimeProvider.Current.UtcNow.ToTimestamp()
             });
-            ConsensusMessage msg = ChangeViewPayloads[MyIndex].ConsensusMessage;
             // update change view request according to newViewNumber
-            msg.ViewNumber = (byte) ((newViewNumber == 0) ? Byte.MaxValue : (newViewNumber - 1));
+            ChangeViewPayloads[MyIndex].ConsensusMessage.ViewNumber = (byte) ((newViewNumber == 0) ? Byte.MaxValue : (newViewNumber - 1));
             return ChangeViewPayloads[MyIndex];
         }
 
