@@ -40,6 +40,8 @@ namespace Neo.Consensus
 
         ConsensusPayload MakePrepareRequest();
 
+        ConsensusPayload MakeRecoveryRequest();
+
         ConsensusPayload MakeRecoveryMessage();
 
         ConsensusPayload MakePrepareResponse();

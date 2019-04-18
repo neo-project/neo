@@ -218,6 +218,11 @@ namespace Neo.Consensus
             });
         }
 
+        public ConsensusPayload MakeRecoveryRequest()
+        {
+            return MakeSignedPayload(new RecoveryRequest());
+        }
+
         public ConsensusPayload MakeRecoveryMessage()
         {
             PrepareRequest prepareRequestMessage = null;

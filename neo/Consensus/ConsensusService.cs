@@ -183,28 +183,7 @@ namespace Neo.Consensus
             // additional recovery message response.
             if (!knownHashes.Add(payload.Hash)) return;
             if (message.NewViewNumber <= context.ViewNumber)
-            {
-                if (context.WatchOnly()) return;
-                if (!context.CommitSent())
-                {
-                    bool shouldSendRecovery = false;
-                    // Limit recovery to be sent from, at least, `f` nodes when the request is from a lower view number.
-                    int allowedRecoveryNodeCount = context.F();
-                    for (int i = 0; i < allowedRecoveryNodeCount; i++)
-                    {
-                        var eligibleResponders = context.Validators.Length - 1;
-                        var chosenIndex = (payload.ValidatorIndex + i + message.NewViewNumber) % eligibleResponders;
-                        if (chosenIndex >= payload.ValidatorIndex) chosenIndex++;
-                        if (chosenIndex != context.MyIndex) continue;
-                        shouldSendRecovery = true;
-                        break;
-                    }
-
-                    if (!shouldSendRecovery) return;
-                }
-                Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber}");
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
-            }
+                OnRecoveryRequestReceived(payload);
 
             if (context.CommitSent()) return;
 
@@ -293,6 +272,9 @@ namespace Neo.Consensus
                 case Commit commit:
                     OnCommitReceived(payload, commit);
                     break;
+                case RecoveryRequest _:
+                    OnRecoveryRequestReceived(payload);
+                    break;
                 case RecoveryMessage recovery:
                     OnRecoveryMessageReceived(payload, recovery);
                     break;
@@ -361,6 +343,28 @@ namespace Neo.Consensus
                     $"Commits: {validCommits}/{totalCommits}");
                 isRecovering = false;
             }
+        }
+
+        private void OnRecoveryRequestReceived(ConsensusPayload payload)
+        {
+            if (context.WatchOnly()) return;
+            if (!context.CommitSent())
+            {
+                bool shouldSendRecovery = false;
+                // Limit recovery to be sent from, at least, `f` nodes when the request is from a lower view number.
+                int allowedRecoveryNodeCount = context.F();
+                for (int i = 1; i <= allowedRecoveryNodeCount; i++)
+                {
+                    var chosenIndex = (payload.ValidatorIndex + i) % context.Validators.Length;
+                    if (chosenIndex != context.MyIndex) continue;
+                    shouldSendRecovery = true;
+                    break;
+                }
+
+                if (!shouldSendRecovery) return;
+            }
+            Log($"send recovery: view={context.ViewNumber}");
+            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
         }
 
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
@@ -466,12 +470,6 @@ namespace Neo.Consensus
             }
         }
 
-        private void SendChangeViewToRequestRecovery(byte viewNumber)
-        {
-            if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
-        }
-
         private void OnStart(Start options)
         {
             Log("OnStart");
@@ -493,8 +491,8 @@ namespace Neo.Consensus
             }
             InitializeConsensus(0);
             // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
-            if (!context.WatchOnly())
-                SendChangeViewToRequestRecovery(0);
+            if (!context.WatchOnly() && context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryRequest() });
         }
 
         private void OnTimer(Timer timer)
@@ -558,7 +556,7 @@ namespace Neo.Consensus
             if ((context.CountCommitted() + context.CountFailed()) > context.F())
             {
                 Log($"Skip requesting change view to nv={expectedView} because nc={context.CountCommitted()} nf={context.CountFailed()}");
-                SendChangeViewToRequestRecovery(context.ViewNumber);
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(context.ViewNumber) });
                 return;
             }
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted()} nf={context.CountFailed()}");
@@ -580,7 +578,7 @@ namespace Neo.Consensus
 
             if (context.Validators.Length == 1)
                 CheckPreparations();
-                
+
             if (context.TransactionHashes.Length > 1)
             {
                 foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
