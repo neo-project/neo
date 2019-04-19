@@ -81,7 +81,7 @@ namespace Neo.Consensus
                     // previously sent prepare request, then we don't want to send a prepare response.
                     if (context.IsPrimary() || context.WatchOnly()) return true;
 
-                    // Timeout extension: prepare response has been sent with success
+                    // Timeout extension due to prepare response sent
                     // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
                     ExtendTimerByFactor(2);
 
