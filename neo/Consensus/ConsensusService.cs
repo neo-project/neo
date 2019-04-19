@@ -81,9 +81,9 @@ namespace Neo.Consensus
                     // previously sent prepare request, then we don't want to send a prepare response.
                     if (context.IsPrimary() || context.WatchOnly()) return true;
 
-                    // Timeout bonification: prepare response has been sent with sucess
+                    // Timeout extension: prepare response has been sent with success
                     // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
-                    IncreaseTimerWithBonification(2);
+                    ExtendTimerByFactor(2);
 
                     Log($"send prepare response");
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
@@ -239,9 +239,9 @@ namespace Neo.Consensus
                 return;
             }
 
-            // Timeout bonification: commit has been received with sucess
+            // Timeout extension: commit has been received with success
             // around 4*15s/M=60.0s/5=12.0s ~ 80% block time (for M=5)
-            IncreaseTimerWithBonification(4);
+            ExtendTimerByFactor(4);
 
             if (commit.ViewNumber == context.ViewNumber)
             {
@@ -266,7 +266,7 @@ namespace Neo.Consensus
         }
 
         // this function increases existing timer (never decreases) with a value proportional to `maxDelayInBlockTimes`*`Blockchain.SecondsPerBlock`
-        private void IncreaseTimerWithBonification(int maxDelayInBlockTimes)
+        private void ExtendTimerByFactor(int maxDelayInBlockTimes)
         {
            TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(maxDelayInBlockTimes*Blockchain.SecondsPerBlock * 1000.0 / context.M());
            if (!context.WatchOnly() && !context.ViewChanging() && !context.CommitSent() && (nextDelay > TimeSpan.Zero))
@@ -403,9 +403,9 @@ namespace Neo.Consensus
                 return;
             }
 
-            // Timeout bonification: prepare request has been received with sucess
+            // Timeout extension: prepare request has been received with success
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
-            IncreaseTimerWithBonification(2);
+            ExtendTimerByFactor(2);
 
             context.Timestamp = message.Timestamp;
             context.Nonce = message.Nonce;
@@ -458,9 +458,9 @@ namespace Neo.Consensus
             if (context.PreparationPayloads[context.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.PrimaryIndex].Hash))
                 return;
 
-            // Timeout bonification: prepare response has been received with sucess
+            // Timeout extension: prepare response has been received with success
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
-            IncreaseTimerWithBonification(2);
+            ExtendTimerByFactor(2);
 
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
