@@ -214,7 +214,11 @@ namespace Neo.Consensus
 
                     if (!shouldSendRecovery) return;
                 }
-                Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber}");
+                if (message.NewViewNumber == 0)
+                    Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber} due to RequestRecovery request");
+                else
+                    Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber}");
+                
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
             }
 
@@ -500,9 +504,10 @@ namespace Neo.Consensus
             }
         }
 
+        // RequestRecovery should work as a ping, so should not help anyone jump up to another view
+        // Thus, this is the only MakeChangeView call in which we force NewViewNumber to be 0
         private void RequestRecovery()
         {
-            // this is the MakeChangeView call in which we force NewViewNumber
             if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(0) });
         }
@@ -593,7 +598,6 @@ namespace Neo.Consensus
             if ((context.CountCommitted() + context.CountFailed()) > context.F())
             {
                 Log($"Skip requesting change view to nv={expectedView} because nc={context.CountCommitted()} nf={context.CountFailed()}");
-                // this should work as a ping, so should not help anyone pass up to our view (the same value is fine)
                 RequestRecovery();
                 return;
             }
