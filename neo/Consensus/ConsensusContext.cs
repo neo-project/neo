@@ -138,15 +138,12 @@ namespace Neo.Consensus
             }
         }
 
-        public ConsensusPayload MakeChangeView(byte newViewNumber)
+        public ConsensusPayload MakeChangeView(byte newViewNumber = Byte.MaxValue)
         {
-            ChangeViewPayloads[MyIndex] = MakeSignedPayload(new ChangeView
+            return ChangeViewPayloads[MyIndex] = MakeSignedPayload(new ChangeView
             {
                 Timestamp = TimeProvider.Current.UtcNow.ToTimestamp()
-            });
-            // update change view request according to newViewNumber
-            ChangeViewPayloads[MyIndex].ConsensusMessage.ViewNumber = (byte) ((newViewNumber == 0) ? Byte.MaxValue : (newViewNumber - 1));
-            return ChangeViewPayloads[MyIndex];
+            }, newViewNumber);
         }
 
         public ConsensusPayload MakeCommit()
@@ -178,9 +175,11 @@ namespace Neo.Consensus
             return _header;
         }
 
-        private ConsensusPayload MakeSignedPayload(ConsensusMessage message)
+        private ConsensusPayload MakeSignedPayload(ConsensusMessage message, byte newViewNumber = Byte.MaxValue)
         {
-            message.ViewNumber = ViewNumber;
+            // update change view request according to newViewNumber
+            message.ViewNumber = (byte)((newViewNumber == 0) ? Byte.MaxValue : ViewNumber);
+            
             ConsensusPayload payload = new ConsensusPayload
             {
                 Version = Version,

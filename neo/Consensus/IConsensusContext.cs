@@ -32,7 +32,7 @@ namespace Neo.Consensus
 
         bool Load();
 
-        ConsensusPayload MakeChangeView(byte newViewNumber);
+        ConsensusPayload MakeChangeView(byte newViewNumber = Byte.MaxValue);
 
         ConsensusPayload MakeCommit();
 

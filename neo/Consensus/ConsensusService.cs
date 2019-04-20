@@ -120,7 +120,7 @@ namespace Neo.Consensus
                     // Communicate the network about my agreement to move to `viewNumber`
                     // if my last change view payload, `message`, has NewViewNumber lower than current view to change
                     if (message is null || message.NewViewNumber < viewNumber)
-                        localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
+                        localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
                 }
                 InitializeConsensus(viewNumber);
             }
@@ -466,10 +466,11 @@ namespace Neo.Consensus
             }
         }
 
-        private void SendChangeViewToRequestRecovery(byte viewNumber)
+        private void RequestRecovery()
         {
+            // this is the MakeChangeView call in which we force NewViewNumber
             if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(0) });
         }
 
         private void OnStart(Start options)
@@ -494,7 +495,7 @@ namespace Neo.Consensus
             InitializeConsensus(0);
             // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
             if (!context.WatchOnly())
-                SendChangeViewToRequestRecovery(0);
+                RequestRecovery();
         }
 
         private void OnTimer(Timer timer)
@@ -559,11 +560,11 @@ namespace Neo.Consensus
             {
                 Log($"Skip requesting change view to nv={expectedView} because nc={context.CountCommitted()} nf={context.CountFailed()}");
                 // this should work as a ping, so should not help anyone pass up to our view (the same value is fine)
-                SendChangeViewToRequestRecovery(context.ViewNumber);
+                RequestRecovery();
                 return;
             }
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted()} nf={context.CountFailed()}");
-            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(expectedView) });
+            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
             CheckExpectedView(expectedView);
         }
 
