@@ -380,8 +380,7 @@ namespace Neo.Consensus
             {
                 bool shouldSendRecovery = false;
                 // Limit recovery to be sent from, at least, `f` nodes when the request is from a lower view number.
-                int allowedRecoveryNodeCount = context.F();
-                for (int i = 1; i <= allowedRecoveryNodeCount; i++)
+                for (int i = 1; i <= context.F(); i++)
                 {
                     var chosenIndex = (payload.ValidatorIndex + i) % context.Validators.Length;
                     if (chosenIndex != context.MyIndex) continue;
