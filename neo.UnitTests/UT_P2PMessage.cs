@@ -1,4 +1,4 @@
-﻿using Akka.IO;
+using Akka.IO;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
@@ -56,7 +56,7 @@ namespace Neo.UnitTests
                 UserAgent = "".PadLeft(1024, '0'),
                 Nonce = 1,
                 Port = 2,
-                Services = 3,
+                Services = VersionServices.NodeNetwork,
                 StartHeight = 4,
                 Timestamp = 5,
                 Version = 6
