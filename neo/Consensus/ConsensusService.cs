@@ -195,7 +195,10 @@ namespace Neo.Consensus
             // additional recovery message response.
             if (!knownHashes.Add(payload.Hash)) return;
             if (message.NewViewNumber <= context.ViewNumber)
+            {
+                Log($"{nameof(OnChangeViewReceived)}: nv={message.NewViewNumber} - calling {nameof(OnRecoveryRequestReceived)}");
                 OnRecoveryRequestReceived(payload);
+            }
 
             if (context.CommitSent()) return;
 
@@ -371,6 +374,7 @@ namespace Neo.Consensus
 
         private void OnRecoveryRequestReceived(ConsensusPayload payload)
         {
+            Log($"{nameof(OnRecoveryRequestReceived)}: height={payload.BlockIndex} index={payload.ValidatorIndex}");
             if (context.WatchOnly()) return;
             if (!context.CommitSent())
             {
