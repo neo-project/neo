@@ -138,7 +138,7 @@ namespace Neo.Consensus
             }
         }
 
-        public ConsensusPayload MakeChangeView(byte newViewNumber)
+        public ConsensusPayload MakeChangeView()
         {
             return ChangeViewPayloads[MyIndex] = MakeSignedPayload(new ChangeView
             {

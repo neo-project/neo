@@ -132,7 +132,7 @@ namespace Neo.Consensus
                     // Communicate the network about my agreement to move to `viewNumber`
                     // if my last change view payload, `message`, has NewViewNumber lower than current view to change
                     if (message is null || message.NewViewNumber < viewNumber)
-                        localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
+                        localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
                 }
                 InitializeConsensus(viewNumber);
             }
@@ -600,7 +600,7 @@ namespace Neo.Consensus
                 return;
             }
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted()} nf={context.CountFailed()}");
-            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(expectedView) });
+            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
             CheckExpectedView(expectedView);
         }
 
