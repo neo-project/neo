@@ -70,7 +70,7 @@ namespace Neo.UnitTests
             var payloadCopy = copy.GetPayload<VersionPayload>();
 
             copy.Command.Should().Be(MessageCommand.version);
-            copy.Flags.Should().Be(MessageFlags.Compressed);
+            copy.Flags.Should().Be(MessageFlags.CompressedGzip);
 
             payloadCopy.Relay.Should().Be(payload.Relay);
             payloadCopy.UserAgent.Should().Be(payload.UserAgent);
