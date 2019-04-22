@@ -3,7 +3,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
-using System.Text;
 
 namespace Neo.SmartContract
 {
@@ -27,16 +26,14 @@ namespace Neo.SmartContract
             this.snapshot = snapshot;
         }
 
-        private bool CheckDynamicInvoke(OpCode nextInstruction)
+        private bool CheckDynamicInvoke()
         {
-            switch (nextInstruction)
+            Instruction instruction = CurrentContext.CurrentInstruction;
+            switch (instruction.OpCode)
             {
                 case OpCode.APPCALL:
                 case OpCode.TAILCALL:
-                    for (int i = CurrentContext.InstructionPointer + 1; i < CurrentContext.InstructionPointer + 21; i++)
-                    {
-                        if (CurrentContext.Script[i] != 0) return true;
-                    }
+                    if (instruction.Operand.NotZero()) return true;
                     // if we get this far it is a dynamic call
                     // now look at the current executing script
                     // to determine if it can do dynamic calls
@@ -55,35 +52,11 @@ namespace Neo.SmartContract
             Service.Dispose();
         }
 
-        public new bool Execute()
+        protected virtual long GetPrice()
         {
-            try
-            {
-                while (true)
-                {
-                    OpCode nextOpcode = CurrentContext.InstructionPointer >= CurrentContext.Script.Length ? OpCode.RET : CurrentContext.NextInstruction;
-                    if (!PreStepInto(nextOpcode))
-                    {
-                        State |= VMState.FAULT;
-                        return false;
-                    }
-                    StepInto();
-                    if (State.HasFlag(VMState.HALT) || State.HasFlag(VMState.FAULT))
-                        break;
-                }
-            }
-            catch
-            {
-                State |= VMState.FAULT;
-                return false;
-            }
-            return !State.HasFlag(VMState.FAULT);
-        }
-
-        protected virtual long GetPrice(OpCode nextInstruction)
-        {
-            if (nextInstruction <= OpCode.NOP) return 0;
-            switch (nextInstruction)
+            Instruction instruction = CurrentContext.CurrentInstruction;
+            if (instruction.OpCode <= OpCode.NOP) return 0;
+            switch (instruction.OpCode)
             {
                 case OpCode.APPCALL:
                 case OpCode.TAILCALL:
@@ -118,14 +91,10 @@ namespace Neo.SmartContract
 
         protected virtual long GetPriceForSysCall()
         {
-            if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length - 3)
-                return 1;
-            byte length = (byte)CurrentContext.Script[CurrentContext.InstructionPointer + 1];
-            if (CurrentContext.InstructionPointer > CurrentContext.Script.Length - length - 2)
-                return 1;
-            uint api_hash = length == 4
-                ? System.BitConverter.ToUInt32(CurrentContext.Script, CurrentContext.InstructionPointer + 2)
-                : Encoding.ASCII.GetString(CurrentContext.Script, CurrentContext.InstructionPointer + 2, length).ToInteropMethodHash();
+            Instruction instruction = CurrentContext.CurrentInstruction;
+            uint api_hash = instruction.Operand.Length == 4
+                ? instruction.TokenU32
+                : instruction.TokenString.ToInteropMethodHash();
             long price = Service.GetPrice(api_hash);
             if (price > 0) return price;
             if (api_hash == "Neo.Asset.Create".ToInteropMethodHash() ||
@@ -161,13 +130,13 @@ namespace Neo.SmartContract
             return 1;
         }
 
-        private bool PreStepInto(OpCode nextOpcode)
+        protected override bool PreExecuteInstruction()
         {
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
                 return true;
-            gas_consumed = checked(gas_consumed + GetPrice(nextOpcode) * ratio);
+            gas_consumed = checked(gas_consumed + GetPrice() * ratio);
             if (!testMode && gas_consumed > gas_amount) return false;
-            if (!CheckDynamicInvoke(nextOpcode)) return false;
+            if (!CheckDynamicInvoke()) return false;
             return true;
         }
 

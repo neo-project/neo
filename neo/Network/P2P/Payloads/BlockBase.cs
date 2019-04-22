@@ -1,7 +1,6 @@
 ﻿using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
-using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
@@ -40,11 +39,6 @@ namespace Neo.Network.P2P.Payloads
             get
             {
                 return new[] { Witness };
-            }
-            set
-            {
-                if (value.Length != 1) throw new ArgumentException();
-                Witness = value[0];
             }
         }
 

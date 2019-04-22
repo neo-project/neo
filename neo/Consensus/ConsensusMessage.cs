@@ -5,7 +5,7 @@ using System.IO;
 
 namespace Neo.Consensus
 {
-    internal abstract class ConsensusMessage : ISerializable
+    public abstract class ConsensusMessage : ISerializable
     {
         /// <summary>
         /// Reflection cache for ConsensusMessageType

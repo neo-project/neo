@@ -4,7 +4,7 @@ os:
  - linux
  - osx
 
-dist: trusty
+dist: bionic
 osx_image: xcode9.1
 
 mono: none

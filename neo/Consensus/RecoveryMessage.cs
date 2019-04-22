@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace Neo.Consensus
 {
-    internal partial class RecoveryMessage : ConsensusMessage
+    public partial class RecoveryMessage : ConsensusMessage
     {
         public Dictionary<int, ChangeViewPayloadCompact> ChangeViewMessages;
         public PrepareRequest PrepareRequestMessage;
@@ -17,6 +17,13 @@ namespace Neo.Consensus
         public UInt256 PreparationHash;
         public Dictionary<int, PreparationPayloadCompact> PreparationMessages;
         public Dictionary<int, CommitPayloadCompact> CommitMessages;
+
+        public override int Size => base.Size
+            + /* ChangeViewMessages */ ChangeViewMessages?.Values.GetVarSize() ?? 0
+            + /* PrepareRequestMessage */ 1 + PrepareRequestMessage?.Size ?? 0
+            + /* PreparationHash */ PreparationHash?.Size ?? 0
+            + /* PreparationMessages */ PreparationMessages?.Values.GetVarSize() ?? 0
+            + /* CommitMessages */ CommitMessages?.Values.GetVarSize() ?? 0;
 
         public RecoveryMessage() : base(ConsensusMessageType.RecoveryMessage)
         {
@@ -39,7 +46,7 @@ namespace Neo.Consensus
             CommitMessages = reader.ReadSerializableArray<CommitPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
         }
 
-        internal ConsensusPayload[] GetChangeViewPayloads(IConsensusContext context, ConsensusPayload payload)
+        public ConsensusPayload[] GetChangeViewPayloads(IConsensusContext context, ConsensusPayload payload)
         {
             return ChangeViewMessages.Values.Select(p => new ConsensusPayload
             {
@@ -50,7 +57,6 @@ namespace Neo.Consensus
                 ConsensusMessage = new ChangeView
                 {
                     ViewNumber = p.OriginalViewNumber,
-                    NewViewNumber = ViewNumber,
                     Timestamp = p.Timestamp
                 },
                 Witness = new Witness
@@ -61,7 +67,7 @@ namespace Neo.Consensus
             }).ToArray();
         }
 
-        internal ConsensusPayload[] GetCommitPayloadsFromRecoveryMessage(IConsensusContext context, ConsensusPayload payload)
+        public ConsensusPayload[] GetCommitPayloadsFromRecoveryMessage(IConsensusContext context, ConsensusPayload payload)
         {
             return CommitMessages.Values.Select(p => new ConsensusPayload
             {
@@ -71,7 +77,7 @@ namespace Neo.Consensus
                 ValidatorIndex = p.ValidatorIndex,
                 ConsensusMessage = new Commit
                 {
-                    ViewNumber = ViewNumber,
+                    ViewNumber = p.ViewNumber,
                     Signature = p.Signature
                 },
                 Witness = new Witness
@@ -82,7 +88,7 @@ namespace Neo.Consensus
             }).ToArray();
         }
 
-        internal ConsensusPayload GetPrepareRequestPayload(IConsensusContext context, ConsensusPayload payload)
+        public ConsensusPayload GetPrepareRequestPayload(IConsensusContext context, ConsensusPayload payload)
         {
             if (PrepareRequestMessage == null) return null;
             if (!PreparationMessages.TryGetValue((int)context.PrimaryIndex, out RecoveryMessage.PreparationPayloadCompact compact))
@@ -102,7 +108,7 @@ namespace Neo.Consensus
             };
         }
 
-        internal ConsensusPayload[] GetPrepareResponsePayloads(IConsensusContext context, ConsensusPayload payload)
+        public ConsensusPayload[] GetPrepareResponsePayloads(IConsensusContext context, ConsensusPayload payload)
         {
             UInt256 preparationHash = PreparationHash ?? context.PreparationPayloads[context.PrimaryIndex]?.Hash;
             if (preparationHash is null) return new ConsensusPayload[0];

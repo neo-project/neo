@@ -7,6 +7,7 @@ using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,13 +18,11 @@ namespace Neo.Network.P2P
 {
     internal class ProtocolHandler : UntypedActor
     {
-        public class SetVersion { public VersionPayload Version; }
-        public class SetVerack { }
         public class SetFilter { public BloomFilter Filter; }
 
         private readonly NeoSystem system;
-        private readonly HashSet<UInt256> knownHashes = new HashSet<UInt256>();
-        private readonly HashSet<UInt256> sentHashes = new HashSet<UInt256>();
+        private readonly FIFOSet<UInt256> knownHashes;
+        private readonly FIFOSet<UInt256> sentHashes;
         private VersionPayload version;
         private bool verack = false;
         private BloomFilter bloom_filter;
@@ -31,16 +30,21 @@ namespace Neo.Network.P2P
         public ProtocolHandler(NeoSystem system)
         {
             this.system = system;
+            this.knownHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
+            this.sentHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
         }
 
         protected override void OnReceive(object message)
         {
             if (!(message is Message msg)) return;
+            foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
+                if (!plugin.OnP2PMessage(msg))
+                    return;
             if (version == null)
             {
                 if (msg.Command != "version")
                     throw new ProtocolViolationException();
-                OnVersionMessageReceived(msg.Payload.AsSerializable<VersionPayload>());
+                OnVersionMessageReceived(msg.GetPayload<VersionPayload>());
                 return;
             }
             if (!verack)
@@ -53,47 +57,53 @@ namespace Neo.Network.P2P
             switch (msg.Command)
             {
                 case "addr":
-                    OnAddrMessageReceived(msg.Payload.AsSerializable<AddrPayload>());
+                    OnAddrMessageReceived(msg.GetPayload<AddrPayload>());
                     break;
                 case "block":
-                    OnInventoryReceived(msg.Payload.AsSerializable<Block>());
+                    OnInventoryReceived(msg.GetPayload<Block>());
                     break;
                 case "consensus":
-                    OnInventoryReceived(msg.Payload.AsSerializable<ConsensusPayload>());
+                    OnInventoryReceived(msg.GetPayload<ConsensusPayload>());
                     break;
                 case "filteradd":
-                    OnFilterAddMessageReceived(msg.Payload.AsSerializable<FilterAddPayload>());
+                    OnFilterAddMessageReceived(msg.GetPayload<FilterAddPayload>());
                     break;
                 case "filterclear":
                     OnFilterClearMessageReceived();
                     break;
                 case "filterload":
-                    OnFilterLoadMessageReceived(msg.Payload.AsSerializable<FilterLoadPayload>());
+                    OnFilterLoadMessageReceived(msg.GetPayload<FilterLoadPayload>());
                     break;
                 case "getaddr":
                     OnGetAddrMessageReceived();
                     break;
                 case "getblocks":
-                    OnGetBlocksMessageReceived(msg.Payload.AsSerializable<GetBlocksPayload>());
+                    OnGetBlocksMessageReceived(msg.GetPayload<GetBlocksPayload>());
                     break;
                 case "getdata":
-                    OnGetDataMessageReceived(msg.Payload.AsSerializable<InvPayload>());
+                    OnGetDataMessageReceived(msg.GetPayload<InvPayload>());
                     break;
                 case "getheaders":
-                    OnGetHeadersMessageReceived(msg.Payload.AsSerializable<GetBlocksPayload>());
+                    OnGetHeadersMessageReceived(msg.GetPayload<GetBlocksPayload>());
                     break;
                 case "headers":
-                    OnHeadersMessageReceived(msg.Payload.AsSerializable<HeadersPayload>());
+                    OnHeadersMessageReceived(msg.GetPayload<HeadersPayload>());
                     break;
                 case "inv":
-                    OnInvMessageReceived(msg.Payload.AsSerializable<InvPayload>());
+                    OnInvMessageReceived(msg.GetPayload<InvPayload>());
                     break;
                 case "mempool":
                     OnMemPoolMessageReceived();
                     break;
+                case "ping":
+                    OnPingMessageReceived(msg.GetPayload<PingPayload>());
+                    break;
+                case "pong":
+                    OnPongMessageReceived(msg.GetPayload<PingPayload>());
+                    break;
                 case "tx":
                     if (msg.Payload.Length <= Transaction.MaxTransactionSize)
-                        OnInventoryReceived(Transaction.DeserializeFrom(msg.Payload));
+                        OnInventoryReceived(msg.GetTransaction());
                     break;
                 case "verack":
                 case "version":
@@ -101,8 +111,6 @@ namespace Neo.Network.P2P
                 case "alert":
                 case "merkleblock":
                 case "notfound":
-                case "ping":
-                case "pong":
                 case "reject":
                 default:
                     //暂时忽略
@@ -268,16 +276,27 @@ namespace Neo.Network.P2P
                 Context.Parent.Tell(Message.Create("inv", payload));
         }
 
+        private void OnPingMessageReceived(PingPayload payload)
+        {
+            Context.Parent.Tell(payload);
+            Context.Parent.Tell(Message.Create("pong", PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
+        }
+
+        private void OnPongMessageReceived(PingPayload payload)
+        {
+            Context.Parent.Tell(payload);
+        }
+
         private void OnVerackMessageReceived()
         {
             verack = true;
-            Context.Parent.Tell(new SetVerack());
+            Context.Parent.Tell("verack");
         }
 
         private void OnVersionMessageReceived(VersionPayload payload)
         {
             version = payload;
-            Context.Parent.Tell(new SetVersion { Version = payload });
+            Context.Parent.Tell(payload);
         }
 
         public static Props Props(NeoSystem system)
