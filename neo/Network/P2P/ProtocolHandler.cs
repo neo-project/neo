@@ -289,7 +289,7 @@ namespace Neo.Network.P2P
         private void OnVerackMessageReceived()
         {
             verack = true;
-            Context.Parent.Tell("verack");
+            Context.Parent.Tell(MessageCommand.verack);
         }
 
         private void OnVersionMessageReceived(VersionPayload payload)

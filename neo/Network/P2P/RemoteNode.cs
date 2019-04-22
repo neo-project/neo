@@ -139,7 +139,7 @@ namespace Neo.Network.P2P
                 case VersionPayload payload:
                     OnVersionPayload(payload);
                     break;
-                case "verack":
+                case MessageCommand.verack:
                     OnVerack();
                     break;
                 case ProtocolHandler.SetFilter setFilter:
