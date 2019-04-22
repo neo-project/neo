@@ -6,7 +6,7 @@ namespace Neo.Network.P2P
 {
     public static class Helper
     {
-        public static byte[] Uncompress(this byte[] data)
+        public static byte[] UncompressGzip(this byte[] data)
         {
             using (var output = new MemoryStream())
             using (var input = new MemoryStream(data))
@@ -24,7 +24,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        public static byte[] Compress(this byte[] data)
+        public static byte[] CompressGzip(this byte[] data)
         {
             using (var stream = new MemoryStream())
             {

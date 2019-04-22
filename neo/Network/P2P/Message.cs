@@ -37,12 +37,12 @@ namespace Neo.Network.P2P
 
             if (payload.Length > CompressionMinSize)
             {
-                var compressed = payload.Compress();
+                var compressed = payload.CompressGzip();
 
                 if (compressed.Length < payload.Length - CompressionThreshold)
                 {
                     payload = compressed;
-                    flags |= MessageFlags.Compressed;
+                    flags |= MessageFlags.CompressedGzip;
                 }
             }
 
@@ -114,9 +114,9 @@ namespace Neo.Network.P2P
 
         public byte[] GetPayload()
         {
-            if (this.Flags.HasFlag(MessageFlags.Compressed))
+            if (this.Flags.HasFlag(MessageFlags.CompressedGzip))
             {
-                return this.Payload.Uncompress();
+                return this.Payload.UncompressGzip();
             }
 
             return this.Payload;
