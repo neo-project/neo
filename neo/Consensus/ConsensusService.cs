@@ -188,10 +188,7 @@ namespace Neo.Consensus
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
             if (message.NewViewNumber <= context.ViewNumber)
-            {
-                Log($"{nameof(OnChangeViewReceived)} -> calling {nameof(OnRecoveryRequestReceived)}: nv={message.NewViewNumber}");
-                OnRecoveryRequestReceived(payload);
-            }
+                OnRecoveryRequestReceived(payload, message.NewViewNumber);
 
             if (context.CommitSent()) return;
 
@@ -365,7 +362,7 @@ namespace Neo.Consensus
             }
         }
 
-        private void OnRecoveryRequestReceived(ConsensusPayload payload)
+        private void OnRecoveryRequestReceived(ConsensusPayload payload, byte newViewNumber = 0)
         {
             // We keep track of the payload hashes received in this block, and don't respond with recovery
             // in response to the same payload that we already responded to previously.
@@ -375,7 +372,7 @@ namespace Neo.Consensus
             // additional recovery message response.
             if (!knownHashes.Add(payload.Hash)) return;
 
-            Log($"{nameof(OnRecoveryRequestReceived)}: height={payload.BlockIndex} index={payload.ValidatorIndex}");
+            Log($"{nameof(OnRecoveryRequestReceived)}: height={payload.BlockIndex} index={payload.ValidatorIndex} nv={newViewNumber}");
             if (context.WatchOnly()) return;
             if (!context.CommitSent())
             {
