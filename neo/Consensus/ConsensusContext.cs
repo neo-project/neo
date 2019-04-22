@@ -220,7 +220,10 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakeRecoveryRequest()
         {
-            return MakeSignedPayload(new RecoveryRequest());
+            return MakeSignedPayload(new RecoveryRequest
+            {
+                Timestamp = TimeProvider.Current.UtcNow.ToTimestamp()
+            });
         }
 
         public ConsensusPayload MakeRecoveryMessage()
