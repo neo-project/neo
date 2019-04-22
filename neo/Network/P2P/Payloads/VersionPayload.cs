@@ -1,13 +1,13 @@
-﻿using Neo.IO;
-using System;
+﻿using System;
 using System.IO;
+using Neo.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
     public class VersionPayload : ISerializable
     {
         public uint Version;
-        public ulong Services;
+        public VersionServices Services;
         public uint Timestamp;
         public ushort Port;
         public uint Nonce;
@@ -22,7 +22,7 @@ namespace Neo.Network.P2P.Payloads
             return new VersionPayload
             {
                 Version = LocalNode.ProtocolVersion,
-                Services = NetworkAddressWithTime.NODE_NETWORK,
+                Services = VersionServices.NodeNetwork,
                 Timestamp = DateTime.Now.ToTimestamp(),
                 Port = (ushort)port,
                 Nonce = nonce,
@@ -35,7 +35,7 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Version = reader.ReadUInt32();
-            Services = reader.ReadUInt64();
+            Services = (VersionServices)reader.ReadUInt64();
             Timestamp = reader.ReadUInt32();
             Port = reader.ReadUInt16();
             Nonce = reader.ReadUInt32();
@@ -47,7 +47,7 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(Version);
-            writer.Write(Services);
+            writer.Write((ulong)Services);
             writer.Write(Timestamp);
             writer.Write(Port);
             writer.Write(Nonce);
