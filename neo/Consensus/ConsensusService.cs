@@ -189,7 +189,7 @@ namespace Neo.Consensus
         {
             if (message.NewViewNumber <= context.ViewNumber)
             {
-                Log($"{nameof(OnChangeViewReceived)}: nv={message.NewViewNumber} - calling {nameof(OnRecoveryRequestReceived)}");
+                Log($"{nameof(OnChangeViewReceived)} -> calling {nameof(OnRecoveryRequestReceived)}: nv={message.NewViewNumber}");
                 OnRecoveryRequestReceived(payload);
             }
 
