@@ -187,13 +187,6 @@ namespace Neo.Consensus
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
-            // We keep track of the payload hashes received in this block, and don't respond with recovery
-            // in response to the same payload that we already responded to previously.
-            // ChangeView messages include a Timestamp when the change view is sent, thus if a node restarts
-            // and issues a change view for the same view, it will have a different hash and will correctly respond
-            // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
-            // additional recovery message response.
-            if (!knownHashes.Add(payload.Hash)) return;
             if (message.NewViewNumber <= context.ViewNumber)
             {
                 Log($"{nameof(OnChangeViewReceived)}: nv={message.NewViewNumber} - calling {nameof(OnRecoveryRequestReceived)}");
@@ -374,6 +367,14 @@ namespace Neo.Consensus
 
         private void OnRecoveryRequestReceived(ConsensusPayload payload)
         {
+            // We keep track of the payload hashes received in this block, and don't respond with recovery
+            // in response to the same payload that we already responded to previously.
+            // ChangeView messages include a Timestamp when the change view is sent, thus if a node restarts
+            // and issues a change view for the same view, it will have a different hash and will correctly respond
+            // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
+            // additional recovery message response.
+            if (!knownHashes.Add(payload.Hash)) return;
+
             Log($"{nameof(OnRecoveryRequestReceived)}: height={payload.BlockIndex} index={payload.ValidatorIndex}");
             if (context.WatchOnly()) return;
             if (!context.CommitSent())
