@@ -379,7 +379,7 @@ namespace Neo.Consensus
             if (!context.CommitSent())
             {
                 bool shouldSendRecovery = false;
-                // Limit recovery to be sent from, at least, `f` nodes when the request is from a lower view number.
+                // Limit recoveries to be sent from an upper limit of `f` nodes
                 for (int i = 1; i <= context.F(); i++)
                 {
                     var chosenIndex = (payload.ValidatorIndex + i) % context.Validators.Length;
