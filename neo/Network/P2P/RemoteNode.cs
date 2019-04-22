@@ -49,8 +49,11 @@ namespace Neo.Network.P2P
         {
             if (!verack || !ack) return;
             Queue<Message> queue = message_queue_high;
-            if (queue.Count == 0) queue = message_queue_low;
-            if (queue.Count == 0) return;
+            if (queue.Count == 0)
+            {
+                queue = message_queue_low;
+                if (queue.Count == 0) return;
+            }
             SendMessage(queue.Dequeue());
         }
 
