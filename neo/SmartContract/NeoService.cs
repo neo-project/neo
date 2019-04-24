@@ -492,7 +492,6 @@ namespace Neo.SmartContract
 
         private bool Asset_Create(ExecutionEngine engine)
         {
-            if (Trigger != TriggerType.Application) return false;
             InvocationTransaction tx = (InvocationTransaction)engine.ScriptContainer;
             AssetType asset_type = (AssetType)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
             if (!Enum.IsDefined(typeof(AssetType), asset_type) || asset_type == AssetType.CreditFlag || asset_type == AssetType.DutyFlag || asset_type == AssetType.GoverningToken || asset_type == AssetType.UtilityToken)
@@ -537,7 +536,6 @@ namespace Neo.SmartContract
 
         private bool Asset_Renew(ExecutionEngine engine)
         {
-            if (Trigger != TriggerType.Application) return false;
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
                 AssetState asset = _interface.GetInterface<AssetState>();
@@ -658,7 +656,6 @@ namespace Neo.SmartContract
 
         private bool Contract_Create(ExecutionEngine engine)
         {
-            if (Trigger != TriggerType.Application) return false;
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
             ContractParameterType[] parameter_list = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Select(p => (ContractParameterType)p).ToArray();
@@ -700,7 +697,6 @@ namespace Neo.SmartContract
 
         private bool Contract_Migrate(ExecutionEngine engine)
         {
-            if (Trigger != TriggerType.Application) return false;
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
             ContractParameterType[] parameter_list = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Select(p => (ContractParameterType)p).ToArray();
