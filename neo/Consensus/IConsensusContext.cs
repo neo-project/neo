@@ -32,13 +32,15 @@ namespace Neo.Consensus
 
         bool Load();
 
-        ConsensusPayload MakeChangeView(byte newViewNumber);
+        ConsensusPayload MakeChangeView();
 
         ConsensusPayload MakeCommit();
 
         Block MakeHeader();
 
         ConsensusPayload MakePrepareRequest();
+
+        ConsensusPayload MakeRecoveryRequest();
 
         ConsensusPayload MakeRecoveryMessage();
 
