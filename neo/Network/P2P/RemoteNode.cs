@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Akka.Actor;
@@ -25,9 +24,6 @@ namespace Neo.Network.P2P
         private BloomFilter bloom_filter;
         private bool ack = true;
         private bool verack = false;
-        private bool _validateConnection = true;
-
-        public static readonly uint Magic = ProtocolSettings.Default.Magic;
 
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerPort);
         public override int ListenerPort => Version?.Port ?? 0;
@@ -41,7 +37,6 @@ namespace Neo.Network.P2P
             this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
 
-            SendData(ByteString.FromBytes(BitConverter.GetBytes(Magic)));
             SendMessage(Message.Create(MessageCommand.version, VersionPayload.Create(LocalNode.Singleton.ListenerPort, LocalNode.Nonce, LocalNode.UserAgent, Blockchain.Singleton.Height)));
         }
 
@@ -107,19 +102,6 @@ namespace Neo.Network.P2P
         protected override void OnData(ByteString data)
         {
             msg_buffer = msg_buffer.Concat(data);
-
-            if (_validateConnection)
-            {
-                // We need to check the magic header
-
-                if (msg_buffer.Count < sizeof(uint)) return;
-
-                uint magic = msg_buffer.Slice(0, sizeof(uint)).ToArray().ToUInt32(0);
-                if (magic != Magic) throw new FormatException();
-
-                msg_buffer = msg_buffer.Slice(sizeof(uint)).Compact();
-                _validateConnection = false;
-            }
 
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
                 protocol.Tell(message);
@@ -198,7 +180,7 @@ namespace Neo.Network.P2P
         {
             this.Version = version;
             this.LastBlockIndex = Version.StartHeight;
-            if (version.Nonce == LocalNode.Nonce)
+            if (version.Nonce == LocalNode.Nonce || version.Magic != ProtocolSettings.Default.Magic)
             {
                 Disconnect(true);
                 return;

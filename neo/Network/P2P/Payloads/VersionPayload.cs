@@ -6,6 +6,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public class VersionPayload : ISerializable
     {
+        public uint Magic;
         public uint Version;
         public VersionServices Services;
         public uint Timestamp;
@@ -15,12 +16,13 @@ namespace Neo.Network.P2P.Payloads
         public uint StartHeight;
         public bool Relay;
 
-        public int Size => sizeof(uint) + sizeof(ulong) + sizeof(uint) + sizeof(ushort) + sizeof(uint) + UserAgent.GetVarSize() + sizeof(uint) + sizeof(bool);
+        public int Size => (sizeof(uint) * 5) + sizeof(ulong) + sizeof(ushort) + UserAgent.GetVarSize() + sizeof(bool);
 
         public static VersionPayload Create(int port, uint nonce, string userAgent, uint startHeight)
         {
             return new VersionPayload
             {
+                Magic = ProtocolSettings.Default.Magic,
                 Version = LocalNode.ProtocolVersion,
                 Services = VersionServices.NodeNetwork,
                 Timestamp = DateTime.Now.ToTimestamp(),
@@ -34,6 +36,7 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
+            Magic = reader.ReadUInt32();
             Version = reader.ReadUInt32();
             Services = (VersionServices)reader.ReadUInt64();
             Timestamp = reader.ReadUInt32();
@@ -46,6 +49,7 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
+            writer.Write(Magic);
             writer.Write(Version);
             writer.Write((ulong)Services);
             writer.Write(Timestamp);
