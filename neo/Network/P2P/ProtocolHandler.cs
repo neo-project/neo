@@ -102,8 +102,8 @@ namespace Neo.Network.P2P
                     OnPongMessageReceived(msg.GetPayload<PingPayload>());
                     break;
                 case MessageCommand.tx:
-                    if (msg.Payload.Length > Transaction.MaxTransactionSize) return;
-                    OnInventoryReceived(msg.GetTransaction());
+                    if (msg.Payload.Length <= Transaction.MaxTransactionSize)
+                        OnInventoryReceived(msg.GetTransaction());
                     break;
                 case MessageCommand.verack:
                 case MessageCommand.version:
