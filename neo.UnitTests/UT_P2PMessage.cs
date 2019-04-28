@@ -14,12 +14,12 @@ namespace Neo.UnitTests
         public void Serialize_Deserialize()
         {
             var payload = PingPayload.Create(uint.MaxValue);
-            var msg = Message.Create(MessageCommand.ping, payload);
+            var msg = Message.Create(MessageCommand.Ping, payload);
             var buffer = msg.ToArray();
             var copy = buffer.AsSerializable<Message>();
             var payloadCopy = copy.GetPayload<PingPayload>();
 
-            copy.Command.Should().Be(MessageCommand.ping);
+            copy.Command.Should().Be(MessageCommand.Ping);
             copy.Flags.Should().Be(MessageFlags.None);
 
             payloadCopy.LastBlockIndex.Should().Be(payload.LastBlockIndex);
@@ -31,7 +31,7 @@ namespace Neo.UnitTests
         public void Serialize_Deserialize_ByteString()
         {
             var payload = PingPayload.Create(uint.MaxValue);
-            var msg = Message.Create(MessageCommand.ping, payload);
+            var msg = Message.Create(MessageCommand.Ping, payload);
             var buffer = ByteString.CopyFrom(msg.ToArray());
             var length = Message.TryDeserialize(buffer, out var copy);
 
@@ -39,7 +39,7 @@ namespace Neo.UnitTests
 
             var payloadCopy = copy.GetPayload<PingPayload>();
 
-            copy.Command.Should().Be(MessageCommand.ping);
+            copy.Command.Should().Be(MessageCommand.Ping);
             copy.Flags.Should().Be(MessageFlags.None);
 
             payloadCopy.LastBlockIndex.Should().Be(payload.LastBlockIndex);
@@ -61,7 +61,7 @@ namespace Neo.UnitTests
                 Timestamp = 5,
                 Version = 6
             };
-            var msg = Message.Create(MessageCommand.version, payload);
+            var msg = Message.Create(MessageCommand.Version, payload);
             var buffer = msg.ToArray();
 
             buffer.Length.Should().BeLessThan(80);
@@ -69,7 +69,7 @@ namespace Neo.UnitTests
             var copy = buffer.AsSerializable<Message>();
             var payloadCopy = copy.GetPayload<VersionPayload>();
 
-            copy.Command.Should().Be(MessageCommand.version);
+            copy.Command.Should().Be(MessageCommand.Version);
             copy.Flags.Should().Be(MessageFlags.CompressedGzip);
 
             payloadCopy.Relay.Should().Be(payload.Relay);

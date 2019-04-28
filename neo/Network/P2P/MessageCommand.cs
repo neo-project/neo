@@ -3,34 +3,34 @@
     public enum MessageCommand : byte
     {
         // Same value as InventoryType
-        tx = 0x01,
+        Tx = 0x01,
         // Same value as InventoryType
-        block = 0x02,
-        mempool = 0x03,
-        addr = 0x04,
-        inv = 0x05,
-        headers = 0x06,
-        merkleblock = 0x07,
-        version = 0x08,
-        verack = 0x09,
-        alert = 0x0A,
-        reject = 0x0B,
+        Block = 0x02,
+        Mempool = 0x03,
+        Addr = 0x04,
+        Inv = 0x05,
+        Headers = 0x06,
+        MerklebBock = 0x07,
+        Version = 0x08,
+        Verack = 0x09,
+        Alert = 0x0A,
+        Reject = 0x0B,
 
-        ping = 0x10,
-        pong = 0x11,
+        Ping = 0x10,
+        Pong = 0x11,
 
-        getaddr = 0x20,
-        getblocks = 0x21,
-        getdata = 0x22,
-        getheaders = 0x23,
+        GetAddr = 0x20,
+        GetBlocks = 0x21,
+        GetData = 0x22,
+        GetHeaders = 0x23,
 
-        filteradd = 0x30,
-        filterclear = 0x31,
-        filterload = 0x32,
+        FilterAdd = 0x30,
+        FilterClear = 0x31,
+        FilterLoad = 0x32,
 
         // Same value as InventoryType
-        consensus = 0xE0,
+        Consensus = 0xE0,
 
-        notfound = 0xFF,
+        NotFound = 0xFF,
     }
 }

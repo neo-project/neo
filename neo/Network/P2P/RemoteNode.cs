@@ -37,7 +37,7 @@ namespace Neo.Network.P2P
             this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
 
-            SendMessage(Message.Create(MessageCommand.version, VersionPayload.Create(LocalNode.Singleton.ListenerPort, LocalNode.Nonce, LocalNode.UserAgent, Blockchain.Singleton.Height)));
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Singleton.ListenerPort, LocalNode.Nonce, LocalNode.UserAgent, Blockchain.Singleton.Height)));
         }
 
         private void CheckMessageQueue()
@@ -62,26 +62,26 @@ namespace Neo.Network.P2P
             bool is_single = false;
             switch (message.Command)
             {
-                case MessageCommand.addr:
-                case MessageCommand.getaddr:
-                case MessageCommand.getblocks:
-                case MessageCommand.getheaders:
-                case MessageCommand.mempool:
-                case MessageCommand.ping:
-                case MessageCommand.pong:
+                case MessageCommand.Addr:
+                case MessageCommand.GetAddr:
+                case MessageCommand.GetBlocks:
+                case MessageCommand.GetHeaders:
+                case MessageCommand.Mempool:
+                case MessageCommand.Ping:
+                case MessageCommand.Pong:
                     is_single = true;
                     break;
             }
             Queue<Message> message_queue;
             switch (message.Command)
             {
-                case MessageCommand.alert:
-                case MessageCommand.consensus:
-                case MessageCommand.filteradd:
-                case MessageCommand.filterclear:
-                case MessageCommand.filterload:
-                case MessageCommand.getaddr:
-                case MessageCommand.mempool:
+                case MessageCommand.Alert:
+                case MessageCommand.Consensus:
+                case MessageCommand.FilterAdd:
+                case MessageCommand.FilterClear:
+                case MessageCommand.FilterLoad:
+                case MessageCommand.GetAddr:
+                case MessageCommand.Mempool:
                     message_queue = message_queue_high;
                     break;
                 default:
@@ -124,7 +124,7 @@ namespace Neo.Network.P2P
                 case VersionPayload payload:
                     OnVersionPayload(payload);
                     break;
-                case MessageCommand.verack:
+                case MessageCommand.Verack:
                     OnVerack();
                     break;
                 case ProtocolHandler.SetFilter setFilter:
@@ -150,7 +150,7 @@ namespace Neo.Network.P2P
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                     return;
             }
-            EnqueueMessage(MessageCommand.inv, InvPayload.Create(inventory.InventoryType, inventory.Hash));
+            EnqueueMessage(MessageCommand.Inv, InvPayload.Create(inventory.InventoryType, inventory.Hash));
         }
 
         private void OnSend(IInventory inventory)
@@ -190,7 +190,7 @@ namespace Neo.Network.P2P
                 Disconnect(true);
                 return;
             }
-            SendMessage(Message.Create(MessageCommand.verack));
+            SendMessage(Message.Create(MessageCommand.Verack));
         }
 
         protected override void PostStop()

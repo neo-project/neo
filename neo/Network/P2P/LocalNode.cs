@@ -126,7 +126,7 @@ namespace Neo.Network.P2P
             count = Math.Max(count, 5);
             if (ConnectedPeers.Count > 0)
             {
-                BroadcastMessage(MessageCommand.getaddr);
+                BroadcastMessage(MessageCommand.GetAddr);
             }
             else
             {

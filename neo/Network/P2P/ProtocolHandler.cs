@@ -42,76 +42,76 @@ namespace Neo.Network.P2P
                     return;
             if (version == null)
             {
-                if (msg.Command != MessageCommand.version)
+                if (msg.Command != MessageCommand.Version)
                     throw new ProtocolViolationException();
                 OnVersionMessageReceived(msg.GetPayload<VersionPayload>());
                 return;
             }
             if (!verack)
             {
-                if (msg.Command != MessageCommand.verack)
+                if (msg.Command != MessageCommand.Verack)
                     throw new ProtocolViolationException();
                 OnVerackMessageReceived();
                 return;
             }
             switch (msg.Command)
             {
-                case MessageCommand.addr:
+                case MessageCommand.Addr:
                     OnAddrMessageReceived(msg.GetPayload<AddrPayload>());
                     break;
-                case MessageCommand.block:
+                case MessageCommand.Block:
                     OnInventoryReceived(msg.GetPayload<Block>());
                     break;
-                case MessageCommand.consensus:
+                case MessageCommand.Consensus:
                     OnInventoryReceived(msg.GetPayload<ConsensusPayload>());
                     break;
-                case MessageCommand.filteradd:
+                case MessageCommand.FilterAdd:
                     OnFilterAddMessageReceived(msg.GetPayload<FilterAddPayload>());
                     break;
-                case MessageCommand.filterclear:
+                case MessageCommand.FilterClear:
                     OnFilterClearMessageReceived();
                     break;
-                case MessageCommand.filterload:
+                case MessageCommand.FilterLoad:
                     OnFilterLoadMessageReceived(msg.GetPayload<FilterLoadPayload>());
                     break;
-                case MessageCommand.getaddr:
+                case MessageCommand.GetAddr:
                     OnGetAddrMessageReceived();
                     break;
-                case MessageCommand.getblocks:
+                case MessageCommand.GetBlocks:
                     OnGetBlocksMessageReceived(msg.GetPayload<GetBlocksPayload>());
                     break;
-                case MessageCommand.getdata:
+                case MessageCommand.GetData:
                     OnGetDataMessageReceived(msg.GetPayload<InvPayload>());
                     break;
-                case MessageCommand.getheaders:
+                case MessageCommand.GetHeaders:
                     OnGetHeadersMessageReceived(msg.GetPayload<GetBlocksPayload>());
                     break;
-                case MessageCommand.headers:
+                case MessageCommand.Headers:
                     OnHeadersMessageReceived(msg.GetPayload<HeadersPayload>());
                     break;
-                case MessageCommand.inv:
+                case MessageCommand.Inv:
                     OnInvMessageReceived(msg.GetPayload<InvPayload>());
                     break;
-                case MessageCommand.mempool:
+                case MessageCommand.Mempool:
                     OnMemPoolMessageReceived();
                     break;
-                case MessageCommand.ping:
+                case MessageCommand.Ping:
                     OnPingMessageReceived(msg.GetPayload<PingPayload>());
                     break;
-                case MessageCommand.pong:
+                case MessageCommand.Pong:
                     OnPongMessageReceived(msg.GetPayload<PingPayload>());
                     break;
-                case MessageCommand.tx:
+                case MessageCommand.Tx:
                     if (msg.Payload.Length <= Transaction.MaxTransactionSize)
                         OnInventoryReceived(msg.GetTransaction());
                     break;
-                case MessageCommand.verack:
-                case MessageCommand.version:
+                case MessageCommand.Verack:
+                case MessageCommand.Version:
                     throw new ProtocolViolationException();
-                case MessageCommand.alert:
-                case MessageCommand.merkleblock:
-                case MessageCommand.notfound:
-                case MessageCommand.reject:
+                case MessageCommand.Alert:
+                case MessageCommand.MerklebBock:
+                case MessageCommand.NotFound:
+                case MessageCommand.Reject:
                 default: break;
             }
         }
@@ -152,7 +152,7 @@ namespace Neo.Network.P2P
                 .Take(AddrPayload.MaxCountToSend);
             NetworkAddressWithTime[] networkAddresses = peers.Select(p => NetworkAddressWithTime.Create(p.Listener, p.Version.Services, p.Version.Timestamp)).ToArray();
             if (networkAddresses.Length == 0) return;
-            Context.Parent.Tell(Message.Create(MessageCommand.addr, AddrPayload.Create(networkAddresses)));
+            Context.Parent.Tell(Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses)));
         }
 
         private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
@@ -173,7 +173,7 @@ namespace Neo.Network.P2P
                 hashes.Add(hash);
             }
             if (hashes.Count == 0) return;
-            Context.Parent.Tell(Message.Create(MessageCommand.inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
+            Context.Parent.Tell(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
         }
 
         private void OnGetDataMessageReceived(InvPayload payload)
@@ -188,7 +188,7 @@ namespace Neo.Network.P2P
                         if (inventory == null)
                             inventory = Blockchain.Singleton.GetTransaction(hash);
                         if (inventory is Transaction)
-                            Context.Parent.Tell(Message.Create(MessageCommand.tx, inventory));
+                            Context.Parent.Tell(Message.Create(MessageCommand.Tx, inventory));
                         break;
                     case InventoryType.Block:
                         if (inventory == null)
@@ -197,18 +197,18 @@ namespace Neo.Network.P2P
                         {
                             if (bloom_filter == null)
                             {
-                                Context.Parent.Tell(Message.Create(MessageCommand.block, inventory));
+                                Context.Parent.Tell(Message.Create(MessageCommand.Block, inventory));
                             }
                             else
                             {
                                 BitArray flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
-                                Context.Parent.Tell(Message.Create(MessageCommand.merkleblock, MerkleBlockPayload.Create(block, flags)));
+                                Context.Parent.Tell(Message.Create(MessageCommand.MerklebBock, MerkleBlockPayload.Create(block, flags)));
                             }
                         }
                         break;
                     case InventoryType.Consensus:
                         if (inventory != null)
-                            Context.Parent.Tell(Message.Create(MessageCommand.consensus, inventory));
+                            Context.Parent.Tell(Message.Create(MessageCommand.Consensus, inventory));
                         break;
                 }
             }
@@ -233,7 +233,7 @@ namespace Neo.Network.P2P
                 headers.Add(header);
             }
             if (headers.Count == 0) return;
-            Context.Parent.Tell(Message.Create(MessageCommand.headers, HeadersPayload.Create(headers)));
+            Context.Parent.Tell(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers)));
         }
 
         private void OnHeadersMessageReceived(HeadersPayload payload)
@@ -271,13 +271,13 @@ namespace Neo.Network.P2P
         private void OnMemPoolMessageReceived()
         {
             foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
-                Context.Parent.Tell(Message.Create(MessageCommand.inv, payload));
+                Context.Parent.Tell(Message.Create(MessageCommand.Inv, payload));
         }
 
         private void OnPingMessageReceived(PingPayload payload)
         {
             Context.Parent.Tell(payload);
-            Context.Parent.Tell(Message.Create(MessageCommand.pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
+            Context.Parent.Tell(Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
         }
 
         private void OnPongMessageReceived(PingPayload payload)
@@ -288,7 +288,7 @@ namespace Neo.Network.P2P
         private void OnVerackMessageReceived()
         {
             verack = true;
-            Context.Parent.Tell(MessageCommand.verack);
+            Context.Parent.Tell(MessageCommand.Verack);
         }
 
         private void OnVersionMessageReceived(VersionPayload payload)
@@ -315,13 +315,13 @@ namespace Neo.Network.P2P
             if (!(message is Message msg)) return true;
             switch (msg.Command)
             {
-                case MessageCommand.consensus:
-                case MessageCommand.filteradd:
-                case MessageCommand.filterclear:
-                case MessageCommand.filterload:
-                case MessageCommand.verack:
-                case MessageCommand.version:
-                case MessageCommand.alert:
+                case MessageCommand.Consensus:
+                case MessageCommand.FilterAdd:
+                case MessageCommand.FilterClear:
+                case MessageCommand.FilterLoad:
+                case MessageCommand.Verack:
+                case MessageCommand.Version:
+                case MessageCommand.Alert:
                     return true;
                 default:
                     return false;
@@ -333,11 +333,11 @@ namespace Neo.Network.P2P
             if (!(message is Message msg)) return false;
             switch (msg.Command)
             {
-                case MessageCommand.getaddr:
-                case MessageCommand.getblocks:
-                case MessageCommand.getdata:
-                case MessageCommand.getheaders:
-                case MessageCommand.mempool:
+                case MessageCommand.GetAddr:
+                case MessageCommand.GetBlocks:
+                case MessageCommand.GetData:
+                case MessageCommand.GetHeaders:
+                case MessageCommand.Mempool:
                     return queue.OfType<Message>().Any(p => p.Command == msg.Command);
                 default:
                     return false;
