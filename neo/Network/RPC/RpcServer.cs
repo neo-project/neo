@@ -310,7 +310,7 @@ namespace Neo.Network.RPC
             await context.Response.WriteAsync(response.ToString(), Encoding.UTF8);
         }
 
-        private JObject ProcessRequest(HttpContext context, JObject request)
+        public JObject ProcessRequest(HttpContext context, JObject request)
         {
             if (!request.ContainsProperty("id")) return null;
             if (!request.ContainsProperty("method") || !request.ContainsProperty("params") || !(request["params"] is JArray))
