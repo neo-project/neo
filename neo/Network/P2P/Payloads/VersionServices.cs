@@ -7,7 +7,7 @@ namespace Neo.Network.P2P.Payloads
     {
         None = 0,
         NodeNetwork = 1 << 0,
-        Relay = 1 << 1,
+        AcceptRelay = 1 << 1,
 
         FullNode = NodeNetwork | Relay
     }
