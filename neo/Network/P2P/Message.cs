@@ -52,11 +52,9 @@ namespace Neo.Network.P2P
                 Flags = flags,
                 Command = command,
                 Payload = payload,
-                CheckSum = checksum ? ComputeChecksum(payload) : (short)0
+                CheckSum = checksum ? payload.Checksum() : (short)0
             };
         }
-
-        public static short ComputeChecksum(byte[] data) => BitConverter.ToInt16(data.Sha256(), 0);
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
@@ -82,7 +80,7 @@ namespace Neo.Network.P2P
             if (Flags.HasFlag(MessageFlags.Checksum))
             {
                 CheckSum = reader.ReadInt16();
-                if (CheckSum != ComputeChecksum(Payload)) throw new FormatException();
+                if (CheckSum != Payload.Checksum()) throw new FormatException();
             }
         }
 
@@ -118,11 +116,13 @@ namespace Neo.Network.P2P
 
             short checksum = 0;
             var flags = (MessageFlags)header[0];
+            var ret = payloadIndex + (int)length;
 
             if (flags.HasFlag(MessageFlags.Checksum))
             {
                 if (data.Count < (int)length + payloadIndex + 2) return 0;
                 checksum = BitConverter.ToInt16(data.Slice(payloadIndex + (int)length, 2).ToArray(), 0);
+                ret += 2;
             }
             else
             {
@@ -137,7 +137,7 @@ namespace Neo.Network.P2P
                 CheckSum = checksum,
             };
 
-            return payloadIndex + (int)length;
+            return ret;
         }
 
         public byte[] GetPayload() => Flags.HasFlag(MessageFlags.CompressedGzip) ? Payload.UncompressGzip() : Payload;

@@ -1,6 +1,8 @@
-﻿using Neo.Network.P2P.Payloads;
+﻿using System;
 using System.IO;
 using System.IO.Compression;
+using Neo.Cryptography;
+using Neo.Network.P2P.Payloads;
 
 namespace Neo.Network.P2P
 {
@@ -23,6 +25,8 @@ namespace Neo.Network.P2P
                 return output.ToArray();
             }
         }
+
+        public static short Checksum(this byte[] data) => BitConverter.ToInt16(data.Sha256(), 0);
 
         public static byte[] CompressGzip(this byte[] data)
         {
