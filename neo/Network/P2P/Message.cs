@@ -82,7 +82,6 @@ namespace Neo.Network.P2P
             if (Flags.HasFlag(MessageFlags.Checksum))
             {
                 CheckSum = reader.ReadInt16();
-
                 if (CheckSum != ComputeChecksum(Payload)) throw new FormatException();
             }
         }
