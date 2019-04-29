@@ -16,22 +16,23 @@ namespace Neo.Network.P2P
         public MessageFlags Flags;
         public MessageCommand Command;
         public byte[] Payload;
+        public short CheckSum;
 
         private ISerializable _payload_deserialized = null;
 
-        public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + Payload.GetVarSize();
+        public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + Payload.GetVarSize() + (Flags.HasFlag(MessageFlags.Checksum) ? sizeof(short) : 0);
 
-        public static Message Create(MessageCommand command, ISerializable payload = null)
+        public static Message Create(MessageCommand command, ISerializable payload = null, bool checksum = true)
         {
-            var ret = Create(command, payload == null ? new byte[0] : payload.ToArray());
+            var ret = Create(command, payload == null ? new byte[0] : payload.ToArray(), checksum);
             ret._payload_deserialized = payload;
 
             return ret;
         }
 
-        public static Message Create(MessageCommand command, byte[] payload)
+        public static Message Create(MessageCommand command, byte[] payload, bool checksum = true)
         {
-            var flags = MessageFlags.None;
+            var flags = checksum ? MessageFlags.Checksum : MessageFlags.None;
 
             // Try compression
 
@@ -50,25 +51,40 @@ namespace Neo.Network.P2P
             {
                 Flags = flags,
                 Command = command,
-                Payload = payload
+                Payload = payload,
+                CheckSum = checksum ? ComputeChecksum(payload) : (short)0
             };
         }
+
+        public static short ComputeChecksum(byte[] data) => BitConverter.ToInt16(data.Sha256(), 0);
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Flags);
             writer.Write((byte)Command);
             writer.WriteVarBytes(Payload);
+
+            if (Flags.HasFlag(MessageFlags.Checksum))
+            {
+                writer.Write(CheckSum);
+            }
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            this.Flags = (MessageFlags)reader.ReadByte();
-            this.Command = (MessageCommand)reader.ReadByte();
+            Flags = (MessageFlags)reader.ReadByte();
+            Command = (MessageCommand)reader.ReadByte();
             var length = (int)reader.ReadVarInt(int.MaxValue);
 
             if (length > PayloadMaxSize) throw new FormatException();
-            this.Payload = reader.ReadBytes(length);
+            Payload = reader.ReadBytes(length);
+
+            if (Flags.HasFlag(MessageFlags.Checksum))
+            {
+                CheckSum = reader.ReadInt16();
+
+                if (CheckSum != ComputeChecksum(Payload)) throw new FormatException();
+            }
         }
 
         public static int TryDeserialize(ByteString data, out Message msg)
@@ -100,13 +116,27 @@ namespace Neo.Network.P2P
             }
 
             if (length > PayloadMaxSize) throw new FormatException();
-            if (data.Count < (int)length + payloadIndex) return 0;
+
+            short checksum = 0;
+            var flags = (MessageFlags)header[0];
+
+            if (flags.HasFlag(MessageFlags.Checksum))
+            {
+                if (data.Count < (int)length + payloadIndex + 2) return 0;
+
+                checksum = BitConverter.ToInt16(data.Slice(payloadIndex + (int)length, 2).ToArray(), 0);
+            }
+            else
+            {
+                if (data.Count < (int)length + payloadIndex) return 0;
+            }
 
             msg = new Message()
             {
-                Flags = (MessageFlags)header[0],
+                Flags = flags,
                 Command = (MessageCommand)header[1],
-                Payload = data.Slice(payloadIndex, (int)length).ToArray()
+                Payload = data.Slice(payloadIndex, (int)length).ToArray(),
+                CheckSum = checksum,
             };
 
             return payloadIndex + (int)length;

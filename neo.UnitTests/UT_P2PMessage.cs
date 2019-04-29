@@ -10,42 +10,79 @@ namespace Neo.UnitTests
     [TestClass]
     public class UT_P2PMessage
     {
-        [TestMethod]
-        public void Serialize_Deserialize()
+        public void Serialize_Deserialize(bool checksum)
         {
             var payload = PingPayload.Create(uint.MaxValue);
-            var msg = Message.Create(MessageCommand.Ping, payload);
+            var msg = Message.Create(MessageCommand.Ping, payload, checksum);
             var buffer = msg.ToArray();
             var copy = buffer.AsSerializable<Message>();
             var payloadCopy = copy.GetPayload<PingPayload>();
 
-            copy.Command.Should().Be(MessageCommand.Ping);
-            copy.Flags.Should().Be(MessageFlags.None);
+            copy.CheckSum.Should().Be(msg.CheckSum);
+            copy.Command.Should().Be(msg.Command);
+            copy.Flags.Should().Be(msg.Flags);
 
             payloadCopy.LastBlockIndex.Should().Be(payload.LastBlockIndex);
             payloadCopy.Nonce.Should().Be(payload.Nonce);
             payloadCopy.Timestamp.Should().Be(payload.Timestamp);
+
+            if (checksum)
+            {
+                copy.Flags.Should().HaveFlag(MessageFlags.Checksum);
+                copy.CheckSum.Should().BeGreaterThan(0);
+            }
+            else
+            {
+                copy.Flags.Should().NotHaveFlag(MessageFlags.Checksum);
+                copy.CheckSum.Should().Be(0);
+            }
         }
 
         [TestMethod]
-        public void Serialize_Deserialize_ByteString()
+        public void Serialize_Deserialize_Checksum() => Serialize_Deserialize(true);
+
+        [TestMethod]
+        public void Serialize_Deserialize_WithoutChecksum() => Serialize_Deserialize(false);
+
+        public void Serialize_Deserialize_ByteString(bool checksum)
         {
             var payload = PingPayload.Create(uint.MaxValue);
-            var msg = Message.Create(MessageCommand.Ping, payload);
+            var msg = Message.Create(MessageCommand.Ping, payload, checksum);
             var buffer = ByteString.CopyFrom(msg.ToArray());
             var length = Message.TryDeserialize(buffer, out var copy);
 
-            length.Should().Be(buffer.Count);
 
             var payloadCopy = copy.GetPayload<PingPayload>();
 
-            copy.Command.Should().Be(MessageCommand.Ping);
-            copy.Flags.Should().Be(MessageFlags.None);
+            copy.CheckSum.Should().Be(msg.CheckSum);
+            copy.Command.Should().Be(msg.Command);
+            copy.Flags.Should().Be(msg.Flags);
 
             payloadCopy.LastBlockIndex.Should().Be(payload.LastBlockIndex);
             payloadCopy.Nonce.Should().Be(payload.Nonce);
             payloadCopy.Timestamp.Should().Be(payload.Timestamp);
+
+            if (checksum)
+            {
+                buffer.Count.Should().Be(length + 2);
+
+                copy.Flags.Should().HaveFlag(MessageFlags.Checksum);
+                copy.CheckSum.Should().BeGreaterThan(0);
+            }
+            else
+            {
+                buffer.Count.Should().Be(length);
+
+                copy.Flags.Should().NotHaveFlag(MessageFlags.Checksum);
+                copy.CheckSum.Should().Be(0);
+            }
         }
+
+        [TestMethod]
+        public void Serialize_Deserialize_ByteString_Checksum() => Serialize_Deserialize_ByteString(true);
+
+        [TestMethod]
+        public void Serialize_Deserialize_ByteString_WithoutChecksum() => Serialize_Deserialize_ByteString(false);
 
         [TestMethod]
         public void Compression()
@@ -68,7 +105,8 @@ namespace Neo.UnitTests
             var copy = buffer.AsSerializable<Message>();
             var payloadCopy = copy.GetPayload<VersionPayload>();
 
-            copy.Command.Should().Be(MessageCommand.Version);
+            copy.CheckSum.Should().Be(msg.CheckSum);
+            copy.Command.Should().Be(msg.Command);
             copy.Flags.Should().Be(MessageFlags.CompressedGzip);
 
             payloadCopy.UserAgent.Should().Be(payload.UserAgent);
