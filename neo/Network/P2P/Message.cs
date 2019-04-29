@@ -19,7 +19,7 @@ namespace Neo.Network.P2P
 
         private ISerializable _payload_deserialized = null;
 
-        public int Size => 2 + IO.Helper.GetVarSize(Payload.Length) + Payload.Length;
+        public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + Payload.GetVarSize();
 
         public static Message Create(MessageCommand command, ISerializable payload = null)
         {
