@@ -29,7 +29,7 @@ namespace Neo.UnitTests
             if (checksum)
             {
                 copy.Flags.Should().HaveFlag(MessageFlags.Checksum);
-                copy.CheckSum.Should().BeGreaterThan(0);
+                copy.CheckSum.Should().NotBe(0);
             }
             else
             {
@@ -67,7 +67,7 @@ namespace Neo.UnitTests
                 buffer.Count.Should().Be(length + 2);
 
                 copy.Flags.Should().HaveFlag(MessageFlags.Checksum);
-                copy.CheckSum.Should().BeGreaterThan(0);
+                copy.CheckSum.Should().NotBe(0);
             }
             else
             {
@@ -107,7 +107,7 @@ namespace Neo.UnitTests
 
             copy.CheckSum.Should().Be(msg.CheckSum);
             copy.Command.Should().Be(msg.Command);
-            copy.Flags.Should().Be(MessageFlags.CompressedGzip);
+            copy.Flags.Should().HaveFlag(MessageFlags.CompressedGzip);
 
             payloadCopy.UserAgent.Should().Be(payload.UserAgent);
             payloadCopy.Nonce.Should().Be(payload.Nonce);
