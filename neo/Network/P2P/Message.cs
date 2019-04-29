@@ -122,7 +122,6 @@ namespace Neo.Network.P2P
             if (flags.HasFlag(MessageFlags.Checksum))
             {
                 if (data.Count < (int)length + payloadIndex + 2) return 0;
-
                 checksum = BitConverter.ToInt16(data.Slice(payloadIndex + (int)length, 2).ToArray(), 0);
             }
             else
@@ -141,15 +140,7 @@ namespace Neo.Network.P2P
             return payloadIndex + (int)length;
         }
 
-        public byte[] GetPayload()
-        {
-            if (this.Flags.HasFlag(MessageFlags.CompressedGzip))
-            {
-                return this.Payload.UncompressGzip();
-            }
-
-            return this.Payload;
-        }
+        public byte[] GetPayload() => Flags.HasFlag(MessageFlags.CompressedGzip) ? Payload.UncompressGzip() : Payload;
 
         public T GetPayload<T>() where T : ISerializable, new()
         {
