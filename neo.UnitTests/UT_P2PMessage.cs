@@ -52,11 +52,10 @@ namespace Neo.UnitTests
         {
             var payload = new VersionPayload()
             {
-                Relay = true,
                 UserAgent = "".PadLeft(1024, '0'),
                 Nonce = 1,
                 Port = 2,
-                Services = VersionServices.NodeNetwork,
+                Services = VersionServices.FullNode,
                 StartHeight = 4,
                 Timestamp = 5,
                 Version = 6
@@ -72,7 +71,6 @@ namespace Neo.UnitTests
             copy.Command.Should().Be(MessageCommand.Version);
             copy.Flags.Should().Be(MessageFlags.CompressedGzip);
 
-            payloadCopy.Relay.Should().Be(payload.Relay);
             payloadCopy.UserAgent.Should().Be(payload.UserAgent);
             payloadCopy.Nonce.Should().Be(payload.Nonce);
             payloadCopy.Port.Should().Be(payload.Port);

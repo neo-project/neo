@@ -14,9 +14,8 @@ namespace Neo.Network.P2P.Payloads
         public uint Nonce;
         public string UserAgent;
         public uint StartHeight;
-        public bool Relay;
 
-        public int Size => (sizeof(uint) * 5) + sizeof(ulong) + sizeof(ushort) + UserAgent.GetVarSize() + sizeof(bool);
+        public int Size => (sizeof(uint) * 5) + sizeof(ulong) + sizeof(ushort) + UserAgent.GetVarSize();
 
         public static VersionPayload Create(int port, uint nonce, string userAgent, uint startHeight)
         {
@@ -24,13 +23,12 @@ namespace Neo.Network.P2P.Payloads
             {
                 Magic = ProtocolSettings.Default.Magic,
                 Version = LocalNode.ProtocolVersion,
-                Services = VersionServices.NodeNetwork,
+                Services = VersionServices.FullNode,
                 Timestamp = DateTime.Now.ToTimestamp(),
                 Port = (ushort)port,
                 Nonce = nonce,
                 UserAgent = userAgent,
                 StartHeight = startHeight,
-                Relay = true
             };
         }
 
@@ -44,7 +42,6 @@ namespace Neo.Network.P2P.Payloads
             Nonce = reader.ReadUInt32();
             UserAgent = reader.ReadVarString(1024);
             StartHeight = reader.ReadUInt32();
-            Relay = reader.ReadBoolean();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -57,7 +54,6 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(Nonce);
             writer.WriteVarString(UserAgent);
             writer.Write(StartHeight);
-            writer.Write(Relay);
         }
     }
 }

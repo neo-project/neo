@@ -144,7 +144,7 @@ namespace Neo.Network.P2P
 
         private void OnRelay(IInventory inventory)
         {
-            if (Version?.Relay != true) return;
+            if (Version?.Services.HasFlag(VersionServices.Relay) != true) return;
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
@@ -155,7 +155,7 @@ namespace Neo.Network.P2P
 
         private void OnSend(IInventory inventory)
         {
-            if (Version?.Relay != true) return;
+            if (Version?.Services.HasFlag(VersionServices.Relay) != true) return;
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))

@@ -5,7 +5,10 @@ namespace Neo.Network.P2P.Payloads
     [Flags]
     public enum VersionServices : ulong
     {
-        None = 0x00,
-        NodeNetwork = 0x01,
+        None = 0,
+        NodeNetwork = 1 << 0,
+        Relay = 1 << 1,
+
+        FullNode = NodeNetwork | Relay
     }
 }
