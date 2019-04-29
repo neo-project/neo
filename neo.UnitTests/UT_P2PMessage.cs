@@ -51,7 +51,6 @@ namespace Neo.UnitTests
             var buffer = ByteString.CopyFrom(msg.ToArray());
             var length = Message.TryDeserialize(buffer, out var copy);
 
-
             var payloadCopy = copy.GetPayload<PingPayload>();
 
             copy.CheckSum.Should().Be(msg.CheckSum);
@@ -62,17 +61,15 @@ namespace Neo.UnitTests
             payloadCopy.Nonce.Should().Be(payload.Nonce);
             payloadCopy.Timestamp.Should().Be(payload.Timestamp);
 
+            buffer.Count.Should().Be(length);
+
             if (checksum)
             {
-                buffer.Count.Should().Be(length + 2);
-
                 copy.Flags.Should().HaveFlag(MessageFlags.Checksum);
                 copy.CheckSum.Should().NotBe(0);
             }
             else
             {
-                buffer.Count.Should().Be(length);
-
                 copy.Flags.Should().NotHaveFlag(MessageFlags.Checksum);
                 copy.CheckSum.Should().Be(0);
             }
