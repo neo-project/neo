@@ -9,6 +9,6 @@ namespace Neo.Network.P2P.Payloads
         NodeNetwork = 1 << 0,
         AcceptRelay = 1 << 1,
 
-        FullNode = NodeNetwork | Relay
+        FullNode = NodeNetwork | AcceptRelay
     }
 }

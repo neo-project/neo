@@ -100,7 +100,7 @@ namespace Neo.Network.P2P
             }
 
             if (length > PayloadMaxSize) throw new FormatException();
-            if (data.Count < (int)length) return 0;
+            if (data.Count < (int)length + payloadIndex) return 0;
 
             msg = new Message()
             {
