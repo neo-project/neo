@@ -15,12 +15,12 @@ namespace Neo.Network.P2P
 
         public MessageFlags Flags;
         public MessageCommand Command;
-        public byte[] Payload;
         public short CheckSum;
+        public byte[] Payload;
 
         private ISerializable _payload_deserialized = null;
 
-        public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + Payload.GetVarSize() + (Flags.HasFlag(MessageFlags.Checksum) ? sizeof(short) : 0);
+        public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + (Flags.HasFlag(MessageFlags.Checksum) ? sizeof(short) : 0) + Payload.GetVarSize();
 
         public static Message Create(MessageCommand command, ISerializable payload = null, bool checksum = true)
         {
@@ -60,12 +60,13 @@ namespace Neo.Network.P2P
         {
             writer.Write((byte)Flags);
             writer.Write((byte)Command);
-            writer.WriteVarBytes(Payload);
 
             if (Flags.HasFlag(MessageFlags.Checksum))
             {
                 writer.Write(CheckSum);
             }
+
+            writer.WriteVarBytes(Payload);
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
@@ -75,12 +76,17 @@ namespace Neo.Network.P2P
             var length = (int)reader.ReadVarInt(int.MaxValue);
 
             if (length > PayloadMaxSize) throw new FormatException();
-            Payload = reader.ReadBytes(length);
 
             if (Flags.HasFlag(MessageFlags.Checksum))
             {
                 CheckSum = reader.ReadInt16();
+                Payload = reader.ReadBytes(length);
+
                 if (CheckSum != Payload.Checksum()) throw new FormatException();
+            }
+            else
+            {
+                Payload = reader.ReadBytes(length);
             }
         }
 
@@ -116,13 +122,13 @@ namespace Neo.Network.P2P
 
             short checksum = 0;
             var flags = (MessageFlags)header[0];
-            var ret = payloadIndex + (int)length;
 
             if (flags.HasFlag(MessageFlags.Checksum))
             {
-                if (data.Count < (int)length + payloadIndex + 2) return 0;
-                checksum = BitConverter.ToInt16(data.Slice(payloadIndex + (int)length, 2).ToArray(), 0);
-                ret += 2;
+                payloadIndex += 2;
+                if (data.Count < (int)length + payloadIndex) return 0;
+
+                checksum = BitConverter.ToInt16(data.Slice(payloadIndex, 2).ToArray(), 0);
             }
             else
             {
@@ -137,7 +143,7 @@ namespace Neo.Network.P2P
                 CheckSum = checksum,
             };
 
-            return ret;
+            return payloadIndex + (int)length;
         }
 
         public byte[] GetPayload() => Flags.HasFlag(MessageFlags.CompressedGzip) ? Payload.UncompressGzip() : Payload;
