@@ -97,17 +97,24 @@ namespace Neo.Network.P2P
             msg = null;
             if (data.Count < 5) return 0;
 
-            short checksum = 0;
+            ulong length;
+            short checksum;
+            int payloadIndex;
             var header = data.Slice(0, 5).ToArray();
             var flags = (MessageFlags)header[0];
-
+            
             if (flags.HasFlag(MessageFlags.Checksum))
             {
                 checksum = BitConverter.ToInt16(header, 2);
+                length = header[4];
+                payloadIndex = 5;
             }
-
-            ulong length = header[4];
-            int payloadIndex = 5;
+            else
+            {
+                checksum = 0;
+                length = header[2];
+                payloadIndex = 3;
+            }
 
             if (length == 0xFD)
             {
