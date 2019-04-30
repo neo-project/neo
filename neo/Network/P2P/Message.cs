@@ -73,19 +73,21 @@ namespace Neo.Network.P2P
         {
             Flags = (MessageFlags)reader.ReadByte();
             Command = (MessageCommand)reader.ReadByte();
-            var length = (int)reader.ReadVarInt(int.MaxValue);
-
-            if (length > PayloadMaxSize) throw new FormatException();
 
             if (Flags.HasFlag(MessageFlags.Checksum))
             {
                 CheckSum = reader.ReadInt16();
+
+                var length = (int)reader.ReadVarInt(int.MaxValue);
+                if (length > PayloadMaxSize) throw new FormatException();
                 Payload = reader.ReadBytes(length);
 
                 if (CheckSum != Payload.Checksum()) throw new FormatException();
             }
             else
             {
+                var length = (int)reader.ReadVarInt(int.MaxValue);
+                if (length > PayloadMaxSize) throw new FormatException();
                 Payload = reader.ReadBytes(length);
             }
         }
@@ -93,11 +95,19 @@ namespace Neo.Network.P2P
         public static int TryDeserialize(ByteString data, out Message msg)
         {
             msg = null;
-            if (data.Count < 3) return 0;
+            if (data.Count < 5) return 0;
 
-            var header = data.Slice(0, 3).ToArray();
-            ulong length = header[2];
-            int payloadIndex = 3;
+            short checksum = 0;
+            var header = data.Slice(0, 5).ToArray();
+            var flags = (MessageFlags)header[0];
+
+            if (flags.HasFlag(MessageFlags.Checksum))
+            {
+                checksum = BitConverter.ToInt16(header, 2);
+            }
+
+            ulong length = header[4];
+            int payloadIndex = 5;
 
             if (length == 0xFD)
             {
@@ -120,20 +130,7 @@ namespace Neo.Network.P2P
 
             if (length > PayloadMaxSize) throw new FormatException();
 
-            short checksum = 0;
-            var flags = (MessageFlags)header[0];
-
-            if (flags.HasFlag(MessageFlags.Checksum))
-            {
-                payloadIndex += 2;
-                if (data.Count < (int)length + payloadIndex) return 0;
-
-                checksum = BitConverter.ToInt16(data.Slice(payloadIndex, 2).ToArray(), 0);
-            }
-            else
-            {
-                if (data.Count < (int)length + payloadIndex) return 0;
-            }
+            if (data.Count < (int)length + payloadIndex) return 0;
 
             msg = new Message()
             {
