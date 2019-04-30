@@ -74,7 +74,7 @@ namespace Neo.Network.P2P
         public static int TryDeserialize(ByteString data, out Message msg)
         {
             msg = null;
-            if (data.Count < 5) return 0;
+            if (data.Count < 3) return 0;
 
             var header = data.Slice(0, 5).ToArray();
             var flags = (MessageFlags)header[0];
