@@ -6,7 +6,6 @@ namespace Neo.Network.P2P
     public enum MessageFlags : byte
     {
         None = 0,
-        Checksum = 1 << 0,
-        CompressedGzip = 1 << 1
+        CompressedGzip = 1 << 0
     }
 }

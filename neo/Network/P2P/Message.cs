@@ -15,24 +15,23 @@ namespace Neo.Network.P2P
 
         public MessageFlags Flags;
         public MessageCommand Command;
-        public short CheckSum;
         public byte[] Payload;
 
         private ISerializable _payload_deserialized = null;
 
-        public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + (Flags.HasFlag(MessageFlags.Checksum) ? sizeof(short) : 0) + Payload.GetVarSize();
+        public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + Payload.GetVarSize();
 
-        public static Message Create(MessageCommand command, ISerializable payload = null, bool checksum = true)
+        public static Message Create(MessageCommand command, ISerializable payload = null)
         {
-            var ret = Create(command, payload == null ? new byte[0] : payload.ToArray(), checksum);
+            var ret = Create(command, payload == null ? new byte[0] : payload.ToArray());
             ret._payload_deserialized = payload;
 
             return ret;
         }
 
-        public static Message Create(MessageCommand command, byte[] payload, bool checksum = true)
+        public static Message Create(MessageCommand command, byte[] payload)
         {
-            var flags = checksum ? MessageFlags.Checksum : MessageFlags.None;
+            var flags = MessageFlags.None;
 
             // Try compression
 
@@ -51,8 +50,7 @@ namespace Neo.Network.P2P
             {
                 Flags = flags,
                 Command = command,
-                Payload = payload,
-                CheckSum = checksum ? payload.Checksum() : (short)0
+                Payload = payload
             };
         }
 
@@ -60,12 +58,6 @@ namespace Neo.Network.P2P
         {
             writer.Write((byte)Flags);
             writer.Write((byte)Command);
-
-            if (Flags.HasFlag(MessageFlags.Checksum))
-            {
-                writer.Write(CheckSum);
-            }
-
             writer.WriteVarBytes(Payload);
         }
 
@@ -74,22 +66,9 @@ namespace Neo.Network.P2P
             Flags = (MessageFlags)reader.ReadByte();
             Command = (MessageCommand)reader.ReadByte();
 
-            if (Flags.HasFlag(MessageFlags.Checksum))
-            {
-                CheckSum = reader.ReadInt16();
-
-                var length = (int)reader.ReadVarInt(int.MaxValue);
-                if (length > PayloadMaxSize) throw new FormatException();
-                Payload = reader.ReadBytes(length);
-
-                if (CheckSum != Payload.Checksum()) throw new FormatException();
-            }
-            else
-            {
-                var length = (int)reader.ReadVarInt(int.MaxValue);
-                if (length > PayloadMaxSize) throw new FormatException();
-                Payload = reader.ReadBytes(length);
-            }
+            var length = (int)reader.ReadVarInt(int.MaxValue);
+            if (length > PayloadMaxSize) throw new FormatException();
+            Payload = reader.ReadBytes(length);
         }
 
         public static int TryDeserialize(ByteString data, out Message msg)
@@ -97,24 +76,10 @@ namespace Neo.Network.P2P
             msg = null;
             if (data.Count < 5) return 0;
 
-            ulong length;
-            short checksum;
-            int payloadIndex;
             var header = data.Slice(0, 5).ToArray();
             var flags = (MessageFlags)header[0];
-            
-            if (flags.HasFlag(MessageFlags.Checksum))
-            {
-                checksum = BitConverter.ToInt16(header, 2);
-                length = header[4];
-                payloadIndex = 5;
-            }
-            else
-            {
-                checksum = 0;
-                length = header[2];
-                payloadIndex = 3;
-            }
+            ulong length = header[2];
+            var payloadIndex = 3;
 
             if (length == 0xFD)
             {
@@ -143,8 +108,7 @@ namespace Neo.Network.P2P
             {
                 Flags = flags,
                 Command = (MessageCommand)header[1],
-                Payload = data.Slice(payloadIndex, (int)length).ToArray(),
-                CheckSum = checksum,
+                Payload = data.Slice(payloadIndex, (int)length).ToArray()
             };
 
             return payloadIndex + (int)length;
