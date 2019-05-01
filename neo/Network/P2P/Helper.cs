@@ -53,10 +53,12 @@ namespace Neo.Network.P2P
         public static byte[] CompressLz4(this byte[] data)
         {
             using (var stream = new MemoryStream())
-            using (var encoder = LZ4Stream.Encode(stream, CompressSettings, true))
             {
-                encoder.Write(data, 0, data.Length);
-                encoder.Flush();
+                using (var encoder = LZ4Stream.Encode(stream, CompressSettings, true))
+                {
+                    encoder.Write(data, 0, data.Length);
+                }
+
                 return stream.ToArray();
             }
         }
@@ -68,7 +70,6 @@ namespace Neo.Network.P2P
                 using (var encoder = new GZipStream(stream, CompressionLevel.Optimal, true))
                 {
                     encoder.Write(data, 0, data.Length);
-                    encoder.Flush();
                 }
 
                 return stream.ToArray();
