@@ -1,31 +1,19 @@
-﻿using System;
-using System.IO;
-using K4os.Compression.LZ4;
-using K4os.Compression.LZ4.Streams;
+﻿using K4os.Compression.LZ4.Streams;
 using Neo.Network.P2P.Payloads;
+using System;
+using System.IO;
 
 namespace Neo.Network.P2P
 {
     public static class Helper
     {
-        private static readonly LZ4EncoderSettings CompressSettings = new LZ4EncoderSettings() { CompressionLevel = LZ4Level.L00_FAST };
-
-        private static readonly LZ4DecoderSettings DecompressSettings = new LZ4DecoderSettings() { };
-
         public static byte[] DecompressLz4(this byte[] data)
         {
+            using (var input = new MemoryStream(data, false))
+            using (var decoder = LZ4Stream.Decode(input, leaveOpen: true))
             using (var output = new MemoryStream())
-            using (var input = new MemoryStream(data))
-            using (var decoder = LZ4Stream.Decode(input, DecompressSettings, true))
             {
-                int nRead;
-                byte[] buffer = new byte[1024];
-
-                while ((nRead = decoder.Read(buffer, 0, buffer.Length)) > 0)
-                {
-                    output.Write(buffer, 0, nRead);
-                }
-
+                decoder.CopyTo(output);
                 return output.ToArray();
             }
         }
@@ -34,7 +22,7 @@ namespace Neo.Network.P2P
         {
             using (var stream = new MemoryStream())
             {
-                using (var encoder = LZ4Stream.Encode(stream, CompressSettings, true))
+                using (var encoder = LZ4Stream.Encode(stream, leaveOpen: true))
                 {
                     encoder.Write(data, 0, data.Length);
                 }
