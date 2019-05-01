@@ -1,21 +1,27 @@
 ﻿using System.IO;
 using System.IO.Compression;
+using K4os.Compression.LZ4;
+using K4os.Compression.LZ4.Streams;
 using Neo.Network.P2P.Payloads;
 
 namespace Neo.Network.P2P
 {
     public static class Helper
     {
-        public static byte[] UncompressGzip(this byte[] data)
+        private static readonly LZ4EncoderSettings CompressSettings = new LZ4EncoderSettings() { CompressionLevel = LZ4Level.L04_HC };
+
+        private static readonly LZ4DecoderSettings DecompressSettings = new LZ4DecoderSettings() { };
+
+        public static byte[] DecompressGzip(this byte[] data)
         {
             using (var output = new MemoryStream())
             using (var input = new MemoryStream(data))
-            using (var gzip = new GZipStream(input, CompressionMode.Decompress))
+            using (var decoder = new GZipStream(input, CompressionMode.Decompress))
             {
                 int nRead;
                 byte[] buffer = new byte[1024];
 
-                while ((nRead = gzip.Read(buffer, 0, buffer.Length)) > 0)
+                while ((nRead = decoder.Read(buffer, 0, buffer.Length)) > 0)
                 {
                     output.Write(buffer, 0, nRead);
                 }
@@ -24,14 +30,43 @@ namespace Neo.Network.P2P
             }
         }
 
+        public static byte[] DecompressLz4(this byte[] data)
+        {
+            using (var output = new MemoryStream())
+            using (var input = new MemoryStream(data))
+            using (var decoder = LZ4Stream.Decode(input, DecompressSettings, true))
+            {
+                int nRead;
+                byte[] buffer = new byte[1024];
+
+                while ((nRead = decoder.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    output.Write(buffer, 0, nRead);
+                }
+
+                return output.ToArray();
+            }
+        }
+
+        public static byte[] CompressLz4(this byte[] data)
+        {
+            using (var stream = new MemoryStream())
+            using (var encoder = LZ4Stream.Encode(stream, CompressSettings, true))
+            {
+                encoder.Write(data, 0, data.Length);
+                encoder.Flush();
+                return stream.ToArray();
+            }
+        }
+
         public static byte[] CompressGzip(this byte[] data)
         {
             using (var stream = new MemoryStream())
             {
-                using (var gzip = new GZipStream(stream, CompressionLevel.Optimal, true))
+                using (var encoder = new GZipStream(stream, CompressionLevel.Optimal, true))
                 {
-                    gzip.Write(data, 0, data.Length);
-                    gzip.Flush();
+                    encoder.Write(data, 0, data.Length);
+                    encoder.Flush();
                 }
 
                 return stream.ToArray();

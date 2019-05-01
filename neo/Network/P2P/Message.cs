@@ -10,8 +10,8 @@ namespace Neo.Network.P2P
     public class Message : ISerializable
     {
         public const int PayloadMaxSize = 0x02000000;
-        public const int CompressionMinSize = 180;
-        public const int CompressionThreshold = 100;
+        public const int CompressionMinSize = 128;
+        public const int CompressionThreshold = 64;
 
         public MessageFlags Flags;
         public MessageCommand Command;
@@ -37,12 +37,12 @@ namespace Neo.Network.P2P
 
             if (payload.Length > CompressionMinSize)
             {
-                var compressed = payload.CompressGzip();
+                var compressed = payload.CompressLz4();
 
                 if (compressed.Length < payload.Length - CompressionThreshold)
                 {
                     payload = compressed;
-                    flags |= MessageFlags.CompressedGzip;
+                    flags |= MessageFlags.Compressed;
                 }
             }
 
@@ -114,7 +114,7 @@ namespace Neo.Network.P2P
             return payloadIndex + (int)length;
         }
 
-        public byte[] GetPayload() => Flags.HasFlag(MessageFlags.CompressedGzip) ? Payload.UncompressGzip() : Payload;
+        public byte[] GetPayload() => Flags.HasFlag(MessageFlags.Compressed) ? Payload.DecompressLz4() : Payload;
 
         public T GetPayload<T>() where T : ISerializable, new()
         {
