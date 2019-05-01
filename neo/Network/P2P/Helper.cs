@@ -1,7 +1,5 @@
-﻿using Neo.Network.P2P.Payloads;
-using System;
+﻿using System;
 using System.IO;
-using System.IO.Compression;
 using K4os.Compression.LZ4;
 using K4os.Compression.LZ4.Streams;
 using Neo.Network.P2P.Payloads;
