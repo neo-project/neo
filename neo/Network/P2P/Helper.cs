@@ -55,7 +55,7 @@ namespace Neo.Network.P2P
             switch (inventoryType)
             {
                 case InventoryType.TX:
-                    return MessageCommand.Tx;
+                    return MessageCommand.Transaction;
                 case InventoryType.Block:
                     return MessageCommand.Block;
                 case InventoryType.Consensus:

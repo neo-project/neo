@@ -101,7 +101,7 @@ namespace Neo.Network.P2P
                 case MessageCommand.Pong:
                     OnPongMessageReceived(msg.GetPayload<PingPayload>());
                     break;
-                case MessageCommand.Tx:
+                case MessageCommand.Transaction:
                     if (msg.Payload.Length <= Transaction.MaxTransactionSize)
                         OnInventoryReceived(msg.GetTransaction());
                     break;
@@ -109,7 +109,7 @@ namespace Neo.Network.P2P
                 case MessageCommand.Version:
                     throw new ProtocolViolationException();
                 case MessageCommand.Alert:
-                case MessageCommand.MerklebBock:
+                case MessageCommand.MerkleBlock:
                 case MessageCommand.NotFound:
                 case MessageCommand.Reject:
                 default: break;
@@ -188,7 +188,7 @@ namespace Neo.Network.P2P
                         if (inventory == null)
                             inventory = Blockchain.Singleton.GetTransaction(hash);
                         if (inventory is Transaction)
-                            Context.Parent.Tell(Message.Create(MessageCommand.Tx, inventory));
+                            Context.Parent.Tell(Message.Create(MessageCommand.Transaction, inventory));
                         break;
                     case InventoryType.Block:
                         if (inventory == null)
@@ -202,7 +202,7 @@ namespace Neo.Network.P2P
                             else
                             {
                                 BitArray flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
-                                Context.Parent.Tell(Message.Create(MessageCommand.MerklebBock, MerkleBlockPayload.Create(block, flags)));
+                                Context.Parent.Tell(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
                             }
                         }
                         break;
