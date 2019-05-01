@@ -65,10 +65,7 @@ namespace Neo.Network.P2P
         {
             Flags = (MessageFlags)reader.ReadByte();
             Command = (MessageCommand)reader.ReadByte();
-
-            var length = (int)reader.ReadVarInt(int.MaxValue);
-            if (length > PayloadMaxSize) throw new FormatException();
-            Payload = reader.ReadBytes(length);
+            Payload = reader.ReadVarBytes(PayloadMaxSize);
         }
 
         public static int TryDeserialize(ByteString data, out Message msg)
