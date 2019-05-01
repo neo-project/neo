@@ -10,27 +10,9 @@ namespace Neo.Network.P2P
 {
     public static class Helper
     {
-        private static readonly LZ4EncoderSettings CompressSettings = new LZ4EncoderSettings() { CompressionLevel = LZ4Level.L04_HC };
+        private static readonly LZ4EncoderSettings CompressSettings = new LZ4EncoderSettings() { CompressionLevel = LZ4Level.L00_FAST };
 
         private static readonly LZ4DecoderSettings DecompressSettings = new LZ4DecoderSettings() { };
-
-        public static byte[] DecompressGzip(this byte[] data)
-        {
-            using (var output = new MemoryStream())
-            using (var input = new MemoryStream(data))
-            using (var decoder = new GZipStream(input, CompressionMode.Decompress))
-            {
-                int nRead;
-                byte[] buffer = new byte[1024];
-
-                while ((nRead = decoder.Read(buffer, 0, buffer.Length)) > 0)
-                {
-                    output.Write(buffer, 0, nRead);
-                }
-
-                return output.ToArray();
-            }
-        }
 
         public static byte[] DecompressLz4(this byte[] data)
         {
@@ -55,19 +37,6 @@ namespace Neo.Network.P2P
             using (var stream = new MemoryStream())
             {
                 using (var encoder = LZ4Stream.Encode(stream, CompressSettings, true))
-                {
-                    encoder.Write(data, 0, data.Length);
-                }
-
-                return stream.ToArray();
-            }
-        }
-
-        public static byte[] CompressGzip(this byte[] data)
-        {
-            using (var stream = new MemoryStream())
-            {
-                using (var encoder = new GZipStream(stream, CompressionLevel.Optimal, true))
                 {
                     encoder.Write(data, 0, data.Length);
                 }
