@@ -1,6 +1,7 @@
-﻿using System.IO;
+﻿using Neo.Network.P2P.Payloads;
+using System;
+using System.IO;
 using System.IO.Compression;
-using Neo.Network.P2P.Payloads;
 
 namespace Neo.Network.P2P
 {
@@ -46,6 +47,21 @@ namespace Neo.Network.P2P
                 verifiable.SerializeUnsigned(writer);
                 writer.Flush();
                 return ms.ToArray();
+            }
+        }
+
+        internal static MessageCommand ToMessageCommand(this InventoryType inventoryType)
+        {
+            switch (inventoryType)
+            {
+                case InventoryType.TX:
+                    return MessageCommand.Tx;
+                case InventoryType.Block:
+                    return MessageCommand.Block;
+                case InventoryType.Consensus:
+                    return MessageCommand.Consensus;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(inventoryType));
             }
         }
     }
