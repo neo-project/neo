@@ -7,13 +7,22 @@ namespace Neo.Network.P2P
 {
     public static class Helper
     {
-        public static byte[] DecompressLz4(this byte[] data)
+        public static byte[] DecompressLz4(this byte[] data, int maxOutput = int.MaxValue)
         {
             using (var input = new MemoryStream(data, false))
             using (var decoder = LZ4Stream.Decode(input, leaveOpen: true))
             using (var output = new MemoryStream())
             {
-                decoder.CopyTo(output);
+                int nRead;
+                byte[] buffer = new byte[1024];
+
+                while ((nRead = decoder.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    maxOutput -= nRead;
+                    if (maxOutput < 0) throw new FormatException();
+                    output.Write(buffer, 0, nRead);
+                }
+
                 return output.ToArray();
             }
         }

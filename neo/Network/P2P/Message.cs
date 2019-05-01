@@ -1,9 +1,9 @@
-﻿using System;
-using System.IO;
-using Akka.IO;
+﻿using Akka.IO;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using System;
+using System.IO;
 
 namespace Neo.Network.P2P
 {
@@ -15,57 +15,49 @@ namespace Neo.Network.P2P
 
         public MessageFlags Flags;
         public MessageCommand Command;
-        public byte[] Payload;
+        public ISerializable Payload;
 
-        private ISerializable _payload_deserialized = null;
+        private byte[] _payload_compressed;
 
-        public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + Payload.GetVarSize();
+        public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + _payload_compressed.GetVarSize();
 
         public static Message Create(MessageCommand command, ISerializable payload = null)
         {
-            var ret = Create(command, payload == null ? new byte[0] : payload.ToArray());
-            ret._payload_deserialized = payload;
-
-            return ret;
-        }
-
-        public static Message Create(MessageCommand command, byte[] payload)
-        {
-            var flags = MessageFlags.None;
+            Message message = new Message
+            {
+                Flags = MessageFlags.None,
+                Command = command,
+                Payload = payload,
+                _payload_compressed = payload?.ToArray() ?? new byte[0]
+            };
 
             // Try compression
-
-            if (payload.Length > CompressionMinSize)
+            if (message._payload_compressed.Length > CompressionMinSize)
             {
-                var compressed = payload.CompressLz4();
-
-                if (compressed.Length < payload.Length - CompressionThreshold)
+                var compressed = message._payload_compressed.CompressLz4();
+                if (compressed.Length < message._payload_compressed.Length - CompressionThreshold)
                 {
-                    payload = compressed;
-                    flags |= MessageFlags.Compressed;
+                    message._payload_compressed = compressed;
+                    message.Flags |= MessageFlags.Compressed;
                 }
             }
 
-            return new Message
-            {
-                Flags = flags,
-                Command = command,
-                Payload = payload
-            };
+            return message;
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Flags);
             writer.Write((byte)Command);
-            writer.WriteVarBytes(Payload);
+            writer.WriteVarBytes(_payload_compressed);
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Flags = (MessageFlags)reader.ReadByte();
             Command = (MessageCommand)reader.ReadByte();
-            Payload = reader.ReadVarBytes(PayloadMaxSize);
+            _payload_compressed = reader.ReadVarBytes(PayloadMaxSize);
+            SetPayload();
         }
 
         public static int TryDeserialize(ByteString data, out Message msg)
@@ -105,26 +97,61 @@ namespace Neo.Network.P2P
             {
                 Flags = flags,
                 Command = (MessageCommand)header[1],
-                Payload = data.Slice(payloadIndex, (int)length).ToArray()
+                _payload_compressed = data.Slice(payloadIndex, (int)length).ToArray()
             };
+            msg.SetPayload();
 
             return payloadIndex + (int)length;
         }
 
-        public byte[] GetPayload() => Flags.HasFlag(MessageFlags.Compressed) ? Payload.DecompressLz4() : Payload;
-
-        public T GetPayload<T>() where T : ISerializable, new()
+        private void SetPayload()
         {
-            if (_payload_deserialized is null)
-                _payload_deserialized = GetPayload().AsSerializable<T>();
-            return (T)_payload_deserialized;
-        }
-
-        public Transaction GetTransaction()
-        {
-            if (_payload_deserialized is null)
-                _payload_deserialized = Transaction.DeserializeFrom(GetPayload());
-            return (Transaction)_payload_deserialized;
+            if (_payload_compressed.Length == 0) return;
+            byte[] decompressed = Flags.HasFlag(MessageFlags.Compressed)
+                ? _payload_compressed.DecompressLz4(PayloadMaxSize)
+                : _payload_compressed;
+            switch (Command)
+            {
+                case MessageCommand.Version:
+                    Payload = decompressed.AsSerializable<VersionPayload>();
+                    break;
+                case MessageCommand.Addr:
+                    Payload = decompressed.AsSerializable<AddrPayload>();
+                    break;
+                case MessageCommand.Ping:
+                case MessageCommand.Pong:
+                    Payload = decompressed.AsSerializable<PingPayload>();
+                    break;
+                case MessageCommand.GetHeaders:
+                case MessageCommand.GetBlocks:
+                    Payload = decompressed.AsSerializable<GetBlocksPayload>();
+                    break;
+                case MessageCommand.Headers:
+                    Payload = decompressed.AsSerializable<HeadersPayload>();
+                    break;
+                case MessageCommand.Inv:
+                case MessageCommand.GetData:
+                    Payload = decompressed.AsSerializable<InvPayload>();
+                    break;
+                case MessageCommand.Transaction:
+                    Payload = Transaction.DeserializeFrom(decompressed);
+                    break;
+                case MessageCommand.Block:
+                    Payload = decompressed.AsSerializable<Block>();
+                    break;
+                case MessageCommand.Consensus:
+                    Payload = decompressed.AsSerializable<ConsensusPayload>();
+                    break;
+                case MessageCommand.FilterLoad:
+                    Payload = decompressed.AsSerializable<FilterLoadPayload>();
+                    break;
+                case MessageCommand.FilterAdd:
+                    Payload = decompressed.AsSerializable<FilterAddPayload>();
+                    break;
+                case MessageCommand.MerkleBlock:
+                    Payload = decompressed.AsSerializable<MerkleBlockPayload>();
+                    break;
+            }
         }
     }
 }

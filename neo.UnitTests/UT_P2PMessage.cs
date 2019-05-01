@@ -17,7 +17,7 @@ namespace Neo.UnitTests
             var msg = Message.Create(MessageCommand.Ping, payload);
             var buffer = msg.ToArray();
             var copy = buffer.AsSerializable<Message>();
-            var payloadCopy = copy.GetPayload<PingPayload>();
+            var payloadCopy = (PingPayload)copy.Payload;
 
             copy.Command.Should().Be(msg.Command);
             copy.Flags.Should().Be(msg.Flags);
@@ -35,7 +35,7 @@ namespace Neo.UnitTests
             var buffer = ByteString.CopyFrom(msg.ToArray());
             var length = Message.TryDeserialize(buffer, out var copy);
 
-            var payloadCopy = copy.GetPayload<PingPayload>();
+            var payloadCopy = (PingPayload)copy.Payload;
 
             copy.Command.Should().Be(msg.Command);
             copy.Flags.Should().Be(msg.Flags);
@@ -66,7 +66,7 @@ namespace Neo.UnitTests
             buffer.Length.Should().BeLessThan(80);
 
             var copy = buffer.AsSerializable<Message>();
-            var payloadCopy = copy.GetPayload<VersionPayload>();
+            var payloadCopy = (VersionPayload)copy.Payload;
 
             copy.Command.Should().Be(msg.Command);
             copy.Flags.Should().HaveFlag(MessageFlags.Compressed);
