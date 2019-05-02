@@ -1,43 +1,40 @@
-﻿using K4os.Compression.LZ4.Streams;
+﻿using K4os.Compression.LZ4;
 using Neo.Network.P2P.Payloads;
 using System;
+using System.Buffers;
 using System.IO;
 
 namespace Neo.Network.P2P
 {
     public static class Helper
     {
-        public static byte[] DecompressLz4(this byte[] data, int maxOutput = int.MaxValue)
+        public static byte[] DecompressLz4(this byte[] data, int maxOutput)
         {
-            using (var input = new MemoryStream(data, false))
-            using (var decoder = LZ4Stream.Decode(input, leaveOpen: true))
-            using (var output = new MemoryStream())
+            maxOutput = Math.Min(maxOutput, data.Length * 255);
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(maxOutput);
+            try
             {
-                int nRead;
-                byte[] buffer = new byte[1024];
-
-                while ((nRead = decoder.Read(buffer, 0, buffer.Length)) > 0)
-                {
-                    maxOutput -= nRead;
-                    if (maxOutput < 0) throw new FormatException();
-                    output.Write(buffer, 0, nRead);
-                }
-
-                return output.ToArray();
+                int length = LZ4Codec.Decode(data, 0, data.Length, buffer, 0, buffer.Length);
+                if (length < 0 || length > maxOutput) throw new FormatException();
+                data = new byte[length];
+                Buffer.BlockCopy(buffer, 0, data, 0, length);
+                return data;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
             }
         }
 
         public static byte[] CompressLz4(this byte[] data)
         {
-            using (var stream = new MemoryStream())
-            {
-                using (var encoder = LZ4Stream.Encode(stream, leaveOpen: true))
-                {
-                    encoder.Write(data, 0, data.Length);
-                }
-
-                return stream.ToArray();
-            }
+            int maxLength = LZ4Codec.MaximumOutputSize(data.Length);
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(maxLength);
+            int length = LZ4Codec.Encode(data, 0, data.Length, buffer, 0, buffer.Length);
+            data = new byte[length];
+            Buffer.BlockCopy(buffer, 0, data, 0, length);
+            ArrayPool<byte>.Shared.Return(buffer);
+            return data;
         }
 
         public static byte[] GetHashData(this IVerifiable verifiable)
