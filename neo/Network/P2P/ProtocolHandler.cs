@@ -44,7 +44,7 @@ namespace Neo.Network.P2P
             {
                 if (msg.Command != MessageCommand.Version)
                     throw new ProtocolViolationException();
-                OnVersionMessageReceived(msg.GetPayload<VersionPayload>());
+                OnVersionMessageReceived((VersionPayload)msg.Payload);
                 return;
             }
             if (!verack)
@@ -57,53 +57,53 @@ namespace Neo.Network.P2P
             switch (msg.Command)
             {
                 case MessageCommand.Addr:
-                    OnAddrMessageReceived(msg.GetPayload<AddrPayload>());
+                    OnAddrMessageReceived((AddrPayload)msg.Payload);
                     break;
                 case MessageCommand.Block:
-                    OnInventoryReceived(msg.GetPayload<Block>());
+                    OnInventoryReceived((Block)msg.Payload);
                     break;
                 case MessageCommand.Consensus:
-                    OnInventoryReceived(msg.GetPayload<ConsensusPayload>());
+                    OnInventoryReceived((ConsensusPayload)msg.Payload);
                     break;
                 case MessageCommand.FilterAdd:
-                    OnFilterAddMessageReceived(msg.GetPayload<FilterAddPayload>());
+                    OnFilterAddMessageReceived((FilterAddPayload)msg.Payload);
                     break;
                 case MessageCommand.FilterClear:
                     OnFilterClearMessageReceived();
                     break;
                 case MessageCommand.FilterLoad:
-                    OnFilterLoadMessageReceived(msg.GetPayload<FilterLoadPayload>());
+                    OnFilterLoadMessageReceived((FilterLoadPayload)msg.Payload);
                     break;
                 case MessageCommand.GetAddr:
                     OnGetAddrMessageReceived();
                     break;
                 case MessageCommand.GetBlocks:
-                    OnGetBlocksMessageReceived(msg.GetPayload<GetBlocksPayload>());
+                    OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload);
                     break;
                 case MessageCommand.GetData:
-                    OnGetDataMessageReceived(msg.GetPayload<InvPayload>());
+                    OnGetDataMessageReceived((InvPayload)msg.Payload);
                     break;
                 case MessageCommand.GetHeaders:
-                    OnGetHeadersMessageReceived(msg.GetPayload<GetBlocksPayload>());
+                    OnGetHeadersMessageReceived((GetBlocksPayload)msg.Payload);
                     break;
                 case MessageCommand.Headers:
-                    OnHeadersMessageReceived(msg.GetPayload<HeadersPayload>());
+                    OnHeadersMessageReceived((HeadersPayload)msg.Payload);
                     break;
                 case MessageCommand.Inv:
-                    OnInvMessageReceived(msg.GetPayload<InvPayload>());
+                    OnInvMessageReceived((InvPayload)msg.Payload);
                     break;
                 case MessageCommand.Mempool:
                     OnMemPoolMessageReceived();
                     break;
                 case MessageCommand.Ping:
-                    OnPingMessageReceived(msg.GetPayload<PingPayload>());
+                    OnPingMessageReceived((PingPayload)msg.Payload);
                     break;
                 case MessageCommand.Pong:
-                    OnPongMessageReceived(msg.GetPayload<PingPayload>());
+                    OnPongMessageReceived((PingPayload)msg.Payload);
                     break;
                 case MessageCommand.Transaction:
-                    if (msg.Payload.Length <= Transaction.MaxTransactionSize)
-                        OnInventoryReceived(msg.GetTransaction());
+                    if (msg.Payload.Size <= Transaction.MaxTransactionSize)
+                        OnInventoryReceived((Transaction)msg.Payload);
                     break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
