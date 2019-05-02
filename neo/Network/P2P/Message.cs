@@ -1,4 +1,4 @@
-﻿using Akka.IO;
+using Akka.IO;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
@@ -15,9 +15,17 @@ namespace Neo.Network.P2P
 
         public MessageFlags Flags;
         public MessageCommand Command;
-        public ISerializable Payload;
+        public ISerializable Payload
+        {
+            get
+            {
+                if (_payload == null) SetPayload();
+                return _payload;
+            }
+        }
 
         private byte[] _payload_compressed;
+        private ISerializable _payload;
 
         public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + _payload_compressed.GetVarSize();
 
@@ -27,7 +35,7 @@ namespace Neo.Network.P2P
             {
                 Flags = MessageFlags.None,
                 Command = command,
-                Payload = payload,
+                _payload = payload,
                 _payload_compressed = payload?.ToArray() ?? new byte[0]
             };
 
@@ -57,7 +65,6 @@ namespace Neo.Network.P2P
             Flags = (MessageFlags)reader.ReadByte();
             Command = (MessageCommand)reader.ReadByte();
             _payload_compressed = reader.ReadVarBytes(PayloadMaxSize);
-            SetPayload();
         }
 
         public static int TryDeserialize(ByteString data, out Message msg)
@@ -99,7 +106,6 @@ namespace Neo.Network.P2P
                 Command = (MessageCommand)header[1],
                 _payload_compressed = data.Slice(payloadIndex, (int)length).ToArray()
             };
-            msg.SetPayload();
 
             return payloadIndex + (int)length;
         }
@@ -113,43 +119,43 @@ namespace Neo.Network.P2P
             switch (Command)
             {
                 case MessageCommand.Version:
-                    Payload = decompressed.AsSerializable<VersionPayload>();
+                    _payload = decompressed.AsSerializable<VersionPayload>();
                     break;
                 case MessageCommand.Addr:
-                    Payload = decompressed.AsSerializable<AddrPayload>();
+                    _payload = decompressed.AsSerializable<AddrPayload>();
                     break;
                 case MessageCommand.Ping:
                 case MessageCommand.Pong:
-                    Payload = decompressed.AsSerializable<PingPayload>();
+                    _payload = decompressed.AsSerializable<PingPayload>();
                     break;
                 case MessageCommand.GetHeaders:
                 case MessageCommand.GetBlocks:
-                    Payload = decompressed.AsSerializable<GetBlocksPayload>();
+                    _payload = decompressed.AsSerializable<GetBlocksPayload>();
                     break;
                 case MessageCommand.Headers:
-                    Payload = decompressed.AsSerializable<HeadersPayload>();
+                    _payload = decompressed.AsSerializable<HeadersPayload>();
                     break;
                 case MessageCommand.Inv:
                 case MessageCommand.GetData:
-                    Payload = decompressed.AsSerializable<InvPayload>();
+                    _payload = decompressed.AsSerializable<InvPayload>();
                     break;
                 case MessageCommand.Transaction:
-                    Payload = Transaction.DeserializeFrom(decompressed);
+                    _payload = Transaction.DeserializeFrom(decompressed);
                     break;
                 case MessageCommand.Block:
-                    Payload = decompressed.AsSerializable<Block>();
+                    _payload = decompressed.AsSerializable<Block>();
                     break;
                 case MessageCommand.Consensus:
-                    Payload = decompressed.AsSerializable<ConsensusPayload>();
+                    _payload = decompressed.AsSerializable<ConsensusPayload>();
                     break;
                 case MessageCommand.FilterLoad:
-                    Payload = decompressed.AsSerializable<FilterLoadPayload>();
+                    _payload = decompressed.AsSerializable<FilterLoadPayload>();
                     break;
                 case MessageCommand.FilterAdd:
-                    Payload = decompressed.AsSerializable<FilterAddPayload>();
+                    _payload = decompressed.AsSerializable<FilterAddPayload>();
                     break;
                 case MessageCommand.MerkleBlock:
-                    Payload = decompressed.AsSerializable<MerkleBlockPayload>();
+                    _payload = decompressed.AsSerializable<MerkleBlockPayload>();
                     break;
             }
         }
