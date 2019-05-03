@@ -48,6 +48,33 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        public void Serialize_Deserialize_WithoutPayload()
+        {
+            var msg = Message.Create(MessageCommand.GetAddr);
+            var buffer = msg.ToArray();
+            var copy = buffer.AsSerializable<Message>();
+
+            copy.Command.Should().Be(msg.Command);
+            copy.Flags.Should().Be(msg.Flags);
+            copy.Payload.Should().Be(null);
+        }
+
+        [TestMethod]
+        public void Serialize_Deserialize_WithoutPayload_ByteString()
+        {
+            var msg = Message.Create(MessageCommand.GetAddr);
+            var buffer = ByteString.CopyFrom(msg.ToArray());
+            var length = Message.TryDeserialize(buffer, out var copy);
+
+            copy.Command.Should().Be(msg.Command);
+            copy.Flags.Should().Be(msg.Flags);
+            copy.Payload.Should().Be(null);
+
+            buffer.Count.Should().Be(length);
+        }
+
+
+        [TestMethod]
         public void Compression()
         {
             var payload = new VersionPayload()
