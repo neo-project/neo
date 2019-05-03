@@ -8,6 +8,17 @@ namespace Neo.Network.P2P
 {
     public static class Helper
     {
+        public static byte[] CompressLz4(this byte[] data)
+        {
+            int maxLength = LZ4Codec.MaximumOutputSize(data.Length);
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(maxLength);
+            int length = LZ4Codec.Encode(data, 0, data.Length, buffer, 0, buffer.Length);
+            data = new byte[length];
+            Buffer.BlockCopy(buffer, 0, data, 0, length);
+            ArrayPool<byte>.Shared.Return(buffer);
+            return data;
+        }
+
         public static byte[] DecompressLz4(this byte[] data, int maxOutput)
         {
             maxOutput = Math.Min(maxOutput, data.Length * 255);
@@ -24,17 +35,6 @@ namespace Neo.Network.P2P
             {
                 ArrayPool<byte>.Shared.Return(buffer);
             }
-        }
-
-        public static byte[] CompressLz4(this byte[] data)
-        {
-            int maxLength = LZ4Codec.MaximumOutputSize(data.Length);
-            byte[] buffer = ArrayPool<byte>.Shared.Rent(maxLength);
-            int length = LZ4Codec.Encode(data, 0, data.Length, buffer, 0, buffer.Length);
-            data = new byte[length];
-            Buffer.BlockCopy(buffer, 0, data, 0, length);
-            ArrayPool<byte>.Shared.Return(buffer);
-            return data;
         }
 
         public static byte[] GetHashData(this IVerifiable verifiable)

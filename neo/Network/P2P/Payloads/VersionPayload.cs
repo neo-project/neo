@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Neo.IO;
+using System;
 using System.IO;
-using Neo.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -15,7 +15,15 @@ namespace Neo.Network.P2P.Payloads
         public string UserAgent;
         public uint StartHeight;
 
-        public int Size => (sizeof(uint) * 5) + sizeof(ulong) + sizeof(ushort) + UserAgent.GetVarSize();
+        public int Size =>
+            sizeof(uint) +              //Magic
+            sizeof(uint) +              //Version
+            sizeof(VersionServices) +   //Services
+            sizeof(uint) +              //Timestamp
+            sizeof(ushort) +            //Port
+            sizeof(uint) +              //Nonce
+            UserAgent.GetVarSize() +    //UserAgent
+            sizeof(uint);               //StartHeight
 
         public static VersionPayload Create(int port, uint nonce, string userAgent, uint startHeight)
         {

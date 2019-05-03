@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using Akka.Actor;
+﻿using Akka.Actor;
 using Akka.Configuration;
 using Akka.IO;
 using Neo.Cryptography;
@@ -9,6 +6,9 @@ using Neo.IO;
 using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 
 namespace Neo.Network.P2P
 {

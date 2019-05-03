@@ -10,8 +10,8 @@ namespace Neo.Network.P2P
     public class Message : ISerializable
     {
         public const int PayloadMaxSize = 0x02000000;
-        public const int CompressionMinSize = 128;
-        public const int CompressionThreshold = 64;
+        private const int CompressionMinSize = 128;
+        private const int CompressionThreshold = 64;
 
         public MessageFlags Flags;
         public MessageCommand Command;
@@ -45,66 +45,7 @@ namespace Neo.Network.P2P
             return message;
         }
 
-        void ISerializable.Serialize(BinaryWriter writer)
-        {
-            writer.Write((byte)Flags);
-            writer.Write((byte)Command);
-            writer.WriteVarBytes(_payload_compressed);
-        }
-
-        void ISerializable.Deserialize(BinaryReader reader)
-        {
-            Flags = (MessageFlags)reader.ReadByte();
-            Command = (MessageCommand)reader.ReadByte();
-            _payload_compressed = reader.ReadVarBytes(PayloadMaxSize);
-            SetPayload();
-        }
-
-        public static int TryDeserialize(ByteString data, out Message msg)
-        {
-            msg = null;
-            if (data.Count < 3) return 0;
-
-            var header = data.Slice(0, 5).ToArray();
-            var flags = (MessageFlags)header[0];
-            ulong length = header[2];
-            var payloadIndex = 3;
-
-            if (length == 0xFD)
-            {
-                if (data.Count < 5) return 0;
-                length = data.Slice(payloadIndex, 2).ToArray().ToUInt16(0);
-                payloadIndex += 2;
-            }
-            else if (length == 0xFE)
-            {
-                if (data.Count < 7) return 0;
-                length = data.Slice(payloadIndex, 4).ToArray().ToUInt32(0);
-                payloadIndex += 4;
-            }
-            else if (length == 0xFF)
-            {
-                if (data.Count < 11) return 0;
-                length = data.Slice(payloadIndex, 8).ToArray().ToUInt64(0);
-                payloadIndex += 8;
-            }
-
-            if (length > PayloadMaxSize) throw new FormatException();
-
-            if (data.Count < (int)length + payloadIndex) return 0;
-
-            msg = new Message()
-            {
-                Flags = flags,
-                Command = (MessageCommand)header[1],
-                _payload_compressed = data.Slice(payloadIndex, (int)length).ToArray()
-            };
-            msg.SetPayload();
-
-            return payloadIndex + (int)length;
-        }
-
-        private void SetPayload()
+        private void DecompressPayload()
         {
             if (_payload_compressed.Length == 0) return;
             byte[] decompressed = Flags.HasFlag(MessageFlags.Compressed)
@@ -152,6 +93,65 @@ namespace Neo.Network.P2P
                     Payload = decompressed.AsSerializable<MerkleBlockPayload>();
                     break;
             }
+        }
+
+        void ISerializable.Deserialize(BinaryReader reader)
+        {
+            Flags = (MessageFlags)reader.ReadByte();
+            Command = (MessageCommand)reader.ReadByte();
+            _payload_compressed = reader.ReadVarBytes(PayloadMaxSize);
+            DecompressPayload();
+        }
+
+        void ISerializable.Serialize(BinaryWriter writer)
+        {
+            writer.Write((byte)Flags);
+            writer.Write((byte)Command);
+            writer.WriteVarBytes(_payload_compressed);
+        }
+
+        internal static int TryDeserialize(ByteString data, out Message msg)
+        {
+            msg = null;
+            if (data.Count < 3) return 0;
+
+            var header = data.Slice(0, 5).ToArray();
+            var flags = (MessageFlags)header[0];
+            ulong length = header[2];
+            var payloadIndex = 3;
+
+            if (length == 0xFD)
+            {
+                if (data.Count < 5) return 0;
+                length = data.Slice(payloadIndex, 2).ToArray().ToUInt16(0);
+                payloadIndex += 2;
+            }
+            else if (length == 0xFE)
+            {
+                if (data.Count < 7) return 0;
+                length = data.Slice(payloadIndex, 4).ToArray().ToUInt32(0);
+                payloadIndex += 4;
+            }
+            else if (length == 0xFF)
+            {
+                if (data.Count < 11) return 0;
+                length = data.Slice(payloadIndex, 8).ToArray().ToUInt64(0);
+                payloadIndex += 8;
+            }
+
+            if (length > PayloadMaxSize) throw new FormatException();
+
+            if (data.Count < (int)length + payloadIndex) return 0;
+
+            msg = new Message()
+            {
+                Flags = flags,
+                Command = (MessageCommand)header[1],
+                _payload_compressed = data.Slice(payloadIndex, (int)length).ToArray()
+            };
+            msg.DecompressPayload();
+
+            return payloadIndex + (int)length;
         }
     }
 }

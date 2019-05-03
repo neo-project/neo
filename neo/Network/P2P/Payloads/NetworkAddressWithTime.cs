@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Neo.IO;
+using System;
 using System.IO;
 using System.Linq;
 using System.Net;
-using Neo.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
