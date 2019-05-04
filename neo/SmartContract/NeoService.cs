@@ -20,6 +20,7 @@ namespace Neo.SmartContract
             : base(trigger, snapshot)
         {
             Register("Neo.Native.Tokens.NEO", NeoToken_Main);
+            Register("Neo.Native.Tokens.GAS", GasToken_Main);
             Register("Neo.Blockchain.GetAccount", Blockchain_GetAccount, 100);
             Register("Neo.Blockchain.GetValidators", Blockchain_GetValidators, 200);
             Register("Neo.Header.GetVersion", Header_GetVersion, 1);

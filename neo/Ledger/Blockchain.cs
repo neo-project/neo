@@ -34,6 +34,7 @@ namespace Neo.Ledger
         public static readonly ECPoint[] StandbyValidators = ProtocolSettings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
 
         public static readonly ContractState NeoToken = CreateNativeContract("Neo.Native.Tokens.NEO", ContractPropertyState.HasStorage);
+        public static readonly ContractState GasToken = CreateNativeContract("Neo.Native.Tokens.GAS", ContractPropertyState.HasStorage);
 
 #pragma warning disable CS0612
         public static readonly RegisterTransaction GoverningToken = new RegisterTransaction
