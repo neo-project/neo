@@ -1,4 +1,6 @@
-﻿using Neo.Ledger;
+﻿using Neo.Cryptography.ECC;
+using Neo.IO;
+using Neo.Ledger;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -120,19 +122,30 @@ namespace Neo.SmartContract
         private class NeoToken_AccountState
         {
             public BigInteger Balance;
-            //TODO: public ECPoint[] Votes;
+            public uint BalanceHeight;
+            public BigInteger GasAvailable;
+            public ECPoint[] Votes = new ECPoint[0];
 
             public static NeoToken_AccountState FromStruct(Struct @struct)
             {
                 return new NeoToken_AccountState
                 {
-                    Balance = @struct[0].GetBigInteger()
+                    Balance = @struct[0].GetBigInteger(),
+                    BalanceHeight = (uint)@struct[1].GetBigInteger(),
+                    GasAvailable = @struct[2].GetBigInteger(),
+                    Votes = @struct[3].GetByteArray().AsSerializableArray<ECPoint>()
                 };
             }
 
             public Struct ToStruct()
             {
-                return new Struct(new StackItem[] { Balance });
+                return new Struct(new StackItem[]
+                {
+                    Balance,
+                    BalanceHeight,
+                    GasAvailable,
+                    Votes.ToByteArray()
+                });
             }
         }
     }
