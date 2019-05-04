@@ -163,7 +163,7 @@ namespace Neo.SmartContract
                     Balance = @struct[0].GetBigInteger(),
                     BalanceHeight = (uint)@struct[1].GetBigInteger(),
                     GasAvailable = @struct[2].GetBigInteger(),
-                    Votes = @struct[3].GetByteArray().AsSerializableArray<ECPoint>()
+                    Votes = @struct[3].GetByteArray().AsSerializableArray<ECPoint>(Blockchain.MaxValidators)
                 };
             }
 
