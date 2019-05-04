@@ -30,6 +30,12 @@ namespace Neo.Consensus
         private bool started = false;
 
         /// <summary>
+        /// This will record the information from last scheduled timer
+        /// </summary>
+        private DateTime clock_started = TimeProvider.Current.UtcNow;
+        private TimeSpan expected_delay = TimeSpan.Zero;
+
+        /// <summary>
         /// This will be cleared every block (so it will not grow out of control, but is used to prevent repeatedly
         /// responding to the same message.
         /// </summary>
@@ -75,6 +81,10 @@ namespace Neo.Consensus
                     // previously sent prepare request, then we don't want to send a prepare response.
                     if (context.IsPrimary() || context.WatchOnly()) return true;
 
+                    // Timeout extension due to prepare response sent
+                    // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
+                    ExtendTimerByFactor(2);
+
                     Log($"send prepare response");
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareResponse() });
                     CheckPreparations();
@@ -90,6 +100,8 @@ namespace Neo.Consensus
 
         private void ChangeTimer(TimeSpan delay)
         {
+            clock_started = TimeProvider.Current.UtcNow;
+            expected_delay = delay;
             timer_token.CancelIfNotNull();
             timer_token = Context.System.Scheduler.ScheduleTellOnceCancelable(delay, Self, new Timer
             {
@@ -120,7 +132,7 @@ namespace Neo.Consensus
                     // Communicate the network about my agreement to move to `viewNumber`
                     // if my last change view payload, `message`, has NewViewNumber lower than current view to change
                     if (message is null || message.NewViewNumber < viewNumber)
-                        localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
+                        localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
                 }
                 InitializeConsensus(viewNumber);
             }
@@ -175,36 +187,8 @@ namespace Neo.Consensus
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
         {
-            // We keep track of the payload hashes received in this block, and don't respond with recovery
-            // in response to the same payload that we already responded to previously.
-            // ChangeView messages include a Timestamp when the change view is sent, thus if a node restarts
-            // and issues a change view for the same view, it will have a different hash and will correctly respond
-            // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
-            // additional recovery message response.
-            if (!knownHashes.Add(payload.Hash)) return;
             if (message.NewViewNumber <= context.ViewNumber)
-            {
-                if (context.WatchOnly()) return;
-                if (!context.CommitSent())
-                {
-                    bool shouldSendRecovery = false;
-                    // Limit recovery to be sent from, at least, `f` nodes when the request is from a lower view number.
-                    int allowedRecoveryNodeCount = context.F();
-                    for (int i = 0; i < allowedRecoveryNodeCount; i++)
-                    {
-                        var eligibleResponders = context.Validators.Length - 1;
-                        var chosenIndex = (payload.ValidatorIndex + i + message.NewViewNumber) % eligibleResponders;
-                        if (chosenIndex >= payload.ValidatorIndex) chosenIndex++;
-                        if (chosenIndex != context.MyIndex) continue;
-                        shouldSendRecovery = true;
-                        break;
-                    }
-
-                    if (!shouldSendRecovery) return;
-                }
-                Log($"send recovery from view: {message.ViewNumber} to view: {context.ViewNumber}");
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
-            }
+                OnRecoveryRequestReceived(payload);
 
             if (context.CommitSent()) return;
 
@@ -227,6 +211,10 @@ namespace Neo.Consensus
                 return;
             }
 
+            // Timeout extension: commit has been received with success
+            // around 4*15s/M=60.0s/5=12.0s ~ 80% block time (for M=5)
+            ExtendTimerByFactor(4);
+
             if (commit.ViewNumber == context.ViewNumber)
             {
                 Log($"{nameof(OnCommitReceived)}: height={payload.BlockIndex} view={commit.ViewNumber} index={payload.ValidatorIndex} nc={context.CountCommitted()} nf={context.CountFailed()}");
@@ -247,6 +235,14 @@ namespace Neo.Consensus
             // Receiving commit from another view
             Log($"{nameof(OnCommitReceived)}: record commit for different view={commit.ViewNumber} index={payload.ValidatorIndex} height={payload.BlockIndex}");
             existingCommitPayload = payload;
+        }
+
+        // this function increases existing timer (never decreases) with a value proportional to `maxDelayInBlockTimes`*`Blockchain.SecondsPerBlock`
+        private void ExtendTimerByFactor(int maxDelayInBlockTimes)
+        {
+           TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(maxDelayInBlockTimes*Blockchain.SecondsPerBlock * 1000.0 / context.M());
+           if (!context.WatchOnly() && !context.ViewChanging() && !context.CommitSent() && (nextDelay > TimeSpan.Zero))
+               ChangeTimer(nextDelay);
         }
 
         private void OnConsensusPayload(ConsensusPayload payload)
@@ -292,6 +288,9 @@ namespace Neo.Consensus
                     break;
                 case Commit commit:
                     OnCommitReceived(payload, commit);
+                    break;
+                case RecoveryRequest _:
+                    OnRecoveryRequestReceived(payload);
                     break;
                 case RecoveryMessage recovery:
                     OnRecoveryMessageReceived(payload, recovery);
@@ -363,6 +362,37 @@ namespace Neo.Consensus
             }
         }
 
+        private void OnRecoveryRequestReceived(ConsensusPayload payload)
+        {
+            // We keep track of the payload hashes received in this block, and don't respond with recovery
+            // in response to the same payload that we already responded to previously.
+            // ChangeView messages include a Timestamp when the change view is sent, thus if a node restarts
+            // and issues a change view for the same view, it will have a different hash and will correctly respond
+            // again; however replay attacks of the ChangeView message from arbitrary nodes will not trigger an
+            // additional recovery message response.
+            if (!knownHashes.Add(payload.Hash)) return;
+
+            Log($"On{payload.ConsensusMessage.GetType().Name}Received: height={payload.BlockIndex} index={payload.ValidatorIndex} view={payload.ConsensusMessage.ViewNumber}");
+            if (context.WatchOnly()) return;
+            if (!context.CommitSent())
+            {
+                bool shouldSendRecovery = false;
+                int allowedRecoveryNodeCount = context.F();
+                // Limit recoveries to be sent from an upper limit of `f` nodes
+                for (int i = 1; i <= allowedRecoveryNodeCount; i++)
+                {
+                    var chosenIndex = (payload.ValidatorIndex + i) % context.Validators.Length;
+                    if (chosenIndex != context.MyIndex) continue;
+                    shouldSendRecovery = true;
+                    break;
+                }
+
+                if (!shouldSendRecovery) return;
+            }
+            Log($"send recovery: view={context.ViewNumber}");
+            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
+        }
+
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
         {
             if (context.RequestSentOrReceived() || context.NotAcceptingPayloadsDueToViewChanging()) return;
@@ -378,6 +408,11 @@ namespace Neo.Consensus
                 Log($"Invalid request: transaction already exists", LogLevel.Warning);
                 return;
             }
+
+            // Timeout extension: prepare request has been received with success
+            // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
+            ExtendTimerByFactor(2);
+
             context.Timestamp = message.Timestamp;
             context.Nonce = message.Nonce;
             context.NextConsensus = message.NextConsensus;
@@ -428,6 +463,11 @@ namespace Neo.Consensus
             if (context.PreparationPayloads[payload.ValidatorIndex] != null || context.NotAcceptingPayloadsDueToViewChanging()) return;
             if (context.PreparationPayloads[context.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.PrimaryIndex].Hash))
                 return;
+
+            // Timeout extension: prepare response has been received with success
+            // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
+            ExtendTimerByFactor(2);
+
             Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
             if (context.WatchOnly() || context.CommitSent()) return;
@@ -466,10 +506,10 @@ namespace Neo.Consensus
             }
         }
 
-        private void SendChangeViewToRequestRecovery(byte viewNumber)
+        private void RequestRecovery()
         {
             if (context.BlockIndex == Blockchain.Singleton.HeaderHeight + 1)
-                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(viewNumber) });
+                localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryRequest() });
         }
 
         private void OnStart(Start options)
@@ -494,7 +534,7 @@ namespace Neo.Consensus
             InitializeConsensus(0);
             // Issue a ChangeView with NewViewNumber of 0 to request recovery messages on start-up.
             if (!context.WatchOnly())
-                SendChangeViewToRequestRecovery(0);
+                RequestRecovery();
         }
 
         private void OnTimer(Timer timer)
@@ -558,11 +598,11 @@ namespace Neo.Consensus
             if ((context.CountCommitted() + context.CountFailed()) > context.F())
             {
                 Log($"Skip requesting change view to nv={expectedView} because nc={context.CountCommitted()} nf={context.CountFailed()}");
-                SendChangeViewToRequestRecovery(context.ViewNumber);
+                RequestRecovery();
                 return;
             }
             Log($"request change view: height={context.BlockIndex} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted()} nf={context.CountFailed()}");
-            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(expectedView) });
+            localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView() });
             CheckExpectedView(expectedView);
         }
 
@@ -577,6 +617,9 @@ namespace Neo.Consensus
         {
             Log($"send prepare request: height={context.BlockIndex} view={context.ViewNumber}");
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
+
+            if (context.Validators.Length == 1)
+                CheckPreparations();
 
             if (context.TransactionHashes.Length > 1)
             {
