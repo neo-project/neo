@@ -130,17 +130,17 @@ namespace Neo.Wallets
         private (Transaction, UInt160[])[] ProcessBlock(Block block, HashSet<UInt160> accounts, WriteBatch batch)
         {
             var change_set = new List<(Transaction, UInt160[])>();
-            foreach (Transaction tx in block.Transactions)
+            foreach (var tx in block.Transactions)
             {
                 HashSet<UInt160> accounts_changed = new HashSet<UInt160>();
-                for (ushort index = 0; index < tx.Outputs.Length; index++)
+                for (ushort index = 0; index < tx.Transaction.Outputs.Length; index++)
                 {
-                    TransactionOutput output = tx.Outputs[index];
+                    TransactionOutput output = tx.Transaction.Outputs[index];
                     if (accounts_tracked.ContainsKey(output.ScriptHash))
                     {
                         CoinReference reference = new CoinReference
                         {
-                            PrevHash = tx.Hash,
+                            PrevHash = tx.Transaction.Hash,
                             PrevIndex = index
                         };
                         if (coins_tracked.TryGetValue(reference, out Coin coin))
@@ -161,7 +161,7 @@ namespace Neo.Wallets
                         accounts_changed.Add(output.ScriptHash);
                     }
                 }
-                foreach (CoinReference input in tx.Inputs)
+                foreach (CoinReference input in tx.Transaction.Inputs)
                 {
                     if (coins_tracked.TryGetValue(input, out Coin coin))
                     {
@@ -179,7 +179,7 @@ namespace Neo.Wallets
                         accounts_changed.Add(coin.Output.ScriptHash);
                     }
                 }
-                switch (tx)
+                switch (tx.Transaction)
                 {
                     case MinerTransaction _:
                     case ContractTransaction _:
@@ -188,7 +188,7 @@ namespace Neo.Wallets
 #pragma warning restore CS0612
                         break;
                     case ClaimTransaction tx_claim:
-                        foreach (CoinReference claim in tx_claim.Claims)
+                        foreach (var claim in tx_claim.Claims)
                         {
                             if (coins_tracked.TryGetValue(claim, out Coin coin))
                             {
@@ -210,16 +210,16 @@ namespace Neo.Wallets
                         break;
 #pragma warning restore CS0612
                     default:
-                        foreach (UInt160 hash in tx.Witnesses.Select(p => p.ScriptHash))
+                        foreach (var hash in tx.Transaction.Witnesses.Select(p => p.ScriptHash))
                             if (accounts_tracked.ContainsKey(hash))
                                 accounts_changed.Add(hash);
                         break;
                 }
                 if (accounts_changed.Count > 0)
                 {
-                    foreach (UInt160 account in accounts_changed)
-                        batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account).Add(tx.Hash), false);
-                    change_set.Add((tx, accounts_changed.ToArray()));
+                    foreach (var account in accounts_changed)
+                        batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account).Add(tx.Transaction.Hash), false);
+                    change_set.Add((tx.Transaction, accounts_changed.ToArray()));
                 }
             }
             return change_set.ToArray();

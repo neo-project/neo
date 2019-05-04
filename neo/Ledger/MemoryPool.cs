@@ -382,10 +382,10 @@ namespace Neo.Ledger
             try
             {
                 // First remove the transactions verified in the block.
-                foreach (Transaction tx in block.Transactions)
+                foreach (var tx in block.Transactions)
                 {
-                    if (TryRemoveVerified(tx.Hash, out _)) continue;
-                    TryRemoveUnVerified(tx.Hash, out _);
+                    if (TryRemoveVerified(tx.Transaction.Hash, out _)) continue;
+                    TryRemoveUnVerified(tx.Transaction.Hash, out _);
                 }
 
                 // Add all the previously verified transactions back to the unverified transactions

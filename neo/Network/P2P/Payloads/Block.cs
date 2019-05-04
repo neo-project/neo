@@ -1,11 +1,11 @@
-﻿using Neo.Cryptography;
-using Neo.IO;
-using Neo.IO.Json;
-using Neo.Ledger;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Neo.Cryptography;
+using Neo.IO;
+using Neo.IO.Json;
+using Neo.Ledger;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -13,7 +13,7 @@ namespace Neo.Network.P2P.Payloads
     {
         public const int MaxTransactionsPerBlock = ushort.MaxValue;
 
-        public Transaction[] Transactions;
+        public ExecutedTransaction[] Transactions;
 
         private Header _header = null;
         public Header Header
@@ -53,26 +53,26 @@ namespace Neo.Network.P2P.Payloads
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Transactions = new Transaction[reader.ReadVarInt(MaxTransactionsPerBlock)];
+            Transactions = new ExecutedTransaction[reader.ReadVarInt(MaxTransactionsPerBlock)];
             if (Transactions.Length == 0) throw new FormatException();
             HashSet<UInt256> hashes = new HashSet<UInt256>();
             for (int i = 0; i < Transactions.Length; i++)
             {
-                Transactions[i] = Transaction.DeserializeFrom(reader);
+                Transactions[i] = reader.ReadSerializable<ExecutedTransaction>();
                 if (i == 0)
                 {
-                    if (Transactions[0].Type != TransactionType.MinerTransaction)
+                    if (Transactions[0].Transaction.Type != TransactionType.MinerTransaction)
                         throw new FormatException();
                 }
                 else
                 {
-                    if (Transactions[i].Type == TransactionType.MinerTransaction)
+                    if (Transactions[i].Transaction.Type == TransactionType.MinerTransaction)
                         throw new FormatException();
                 }
-                if (!hashes.Add(Transactions[i].Hash))
+                if (!hashes.Add(Transactions[i].Transaction.Hash))
                     throw new FormatException();
             }
-            if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
+            if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Transaction.Hash).ToArray()) != MerkleRoot)
                 throw new FormatException();
         }
 
@@ -95,7 +95,7 @@ namespace Neo.Network.P2P.Payloads
 
         public void RebuildMerkleRoot()
         {
-            MerkleRoot = MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray());
+            MerkleRoot = MerkleTree.ComputeRoot(Transactions.Select(p => p.Transaction.Hash).ToArray());
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -107,7 +107,7 @@ namespace Neo.Network.P2P.Payloads
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
-            json["tx"] = Transactions.Select(p => p.ToJson()).ToArray();
+            json["tx"] = Transactions.Select(p => p.Transaction.ToJson()).ToArray();
             return json;
         }
 
@@ -123,7 +123,7 @@ namespace Neo.Network.P2P.Payloads
                 ConsensusData = ConsensusData,
                 NextConsensus = NextConsensus,
                 Witness = Witness,
-                Hashes = Transactions.Select(p => p.Hash).ToArray()
+                Hashes = Transactions.Select(p => p.Transaction.Hash).ToArray()
             };
         }
     }

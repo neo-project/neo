@@ -25,7 +25,12 @@ namespace Neo.Ledger
                 ConsensusData = ConsensusData,
                 NextConsensus = NextConsensus,
                 Witness = Witness,
-                Transactions = Hashes.Select(p => cache[p].Transaction).ToArray()
+                Transactions = Hashes.Select(p => new ExecutedTransaction()
+                {
+                    Transaction = cache[p].Transaction
+                    // TODO: Get state
+                })
+                .ToArray()
             };
         }
 

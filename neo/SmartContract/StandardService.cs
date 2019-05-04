@@ -549,7 +549,7 @@ namespace Neo.SmartContract
                 int index = (int)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
                 if (block == null) return false;
                 if (index < 0 || index >= block.Transactions.Length) return false;
-                Transaction tx = block.Transactions[index];
+                var tx = block.Transactions[index].Transaction;
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(tx));
                 return true;
             }

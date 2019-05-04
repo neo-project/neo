@@ -69,7 +69,12 @@ namespace Neo.Consensus
                     j++;
                 }
                 Block.Witness = sc.GetWitnesses()[0];
-                Block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
+                Block.Transactions = TransactionHashes.Select(p => new ExecutedTransaction()
+                {
+                    Transaction = Transactions[p]
+                    // TODO: Get result state
+                })
+                .ToArray();
             }
             return Block;
         }
@@ -169,7 +174,7 @@ namespace Neo.Consensus
                     Index = BlockIndex,
                     ConsensusData = Nonce,
                     NextConsensus = NextConsensus,
-                    Transactions = new Transaction[0]
+                    Transactions = new ExecutedTransaction[0]
                 };
             }
             return _header;
@@ -305,7 +310,7 @@ namespace Neo.Consensus
             Timestamp = 0;
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
-            if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int) BlockIndex;
+            if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int)BlockIndex;
             _header = null;
         }
 

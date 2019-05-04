@@ -75,39 +75,53 @@ namespace Neo.Ledger
                 InvocationScript = new byte[0],
                 VerificationScript = new[] { (byte)OpCode.PUSHT }
             },
-            Transactions = new Transaction[]
+            Transactions = new ExecutedTransaction[]
             {
-                new MinerTransaction
+                new ExecutedTransaction()
                 {
-                    Nonce = 2083236893,
-                    Attributes = new TransactionAttribute[0],
-                    Inputs = new CoinReference[0],
-                    Outputs = new TransactionOutput[0],
-                    Witnesses = new Witness[0]
-                },
-                GoverningToken,
-                UtilityToken,
-                new IssueTransaction
-                {
-                    Attributes = new TransactionAttribute[0],
-                    Inputs = new CoinReference[0],
-                    Outputs = new[]
+                    Transaction = new MinerTransaction
                     {
-                        new TransactionOutput
+                        Nonce = 2083236893,
+                        Attributes = new TransactionAttribute[0],
+                        Inputs = new CoinReference[0],
+                        Outputs = new TransactionOutput[0],
+                        Witnesses = new Witness[0]
+                    },
+                    State = VMState.HALT
+                },
+                new ExecutedTransaction()
+                {
+                    Transaction = GoverningToken, State= VMState.HALT
+                },
+                new ExecutedTransaction()
+                {
+                    Transaction = UtilityToken, State= VMState.HALT
+                },
+                new ExecutedTransaction()
+                {
+                    Transaction = new IssueTransaction
+                    {
+                        Attributes = new TransactionAttribute[0],
+                        Inputs = new CoinReference[0],
+                        Outputs = new[]
                         {
-                            AssetId = GoverningToken.Hash,
-                            Value = GoverningToken.Amount,
-                            ScriptHash = Contract.CreateMultiSigRedeemScript(StandbyValidators.Length / 2 + 1, StandbyValidators).ToScriptHash()
+                            new TransactionOutput
+                            {
+                                AssetId = GoverningToken.Hash,
+                                Value = GoverningToken.Amount,
+                                ScriptHash = Contract.CreateMultiSigRedeemScript(StandbyValidators.Length / 2 + 1, StandbyValidators).ToScriptHash()
+                            }
+                        },
+                        Witnesses = new[]
+                        {
+                            new Witness
+                            {
+                                InvocationScript = new byte[0],
+                                VerificationScript = new[] { (byte)OpCode.PUSHT }
+                            }
                         }
                     },
-                    Witnesses = new[]
-                    {
-                        new Witness
-                        {
-                            InvocationScript = new byte[0],
-                            VerificationScript = new[] { (byte)OpCode.PUSHT }
-                        }
-                    }
+                    State = VMState.HALT
                 }
             }
         };
@@ -313,7 +327,7 @@ namespace Neo.Ledger
                     block_cache_unverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
 
-                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0,(15 - SecondsPerBlock)))) continue;
+                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, (15 - SecondsPerBlock)))) continue;
                     // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
                     // Increase in the rate of 1 block per second in configurations with faster blocks
 
@@ -453,21 +467,21 @@ namespace Neo.Ledger
                 snapshot.PersistingBlock = block;
                 snapshot.Blocks.Add(block.Hash, new BlockState
                 {
-                    SystemFeeAmount = snapshot.GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.SystemFee),
+                    SystemFeeAmount = snapshot.GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.Transaction.SystemFee),
                     TrimmedBlock = block.Trim()
                 });
-                foreach (Transaction tx in block.Transactions)
+                foreach (var tx in block.Transactions)
                 {
-                    snapshot.Transactions.Add(tx.Hash, new TransactionState
+                    snapshot.Transactions.Add(tx.Transaction.Hash, new TransactionState
                     {
                         BlockIndex = block.Index,
-                        Transaction = tx
+                        Transaction = tx.Transaction
                     });
-                    snapshot.UnspentCoins.Add(tx.Hash, new UnspentCoinState
+                    snapshot.UnspentCoins.Add(tx.Transaction.Hash, new UnspentCoinState
                     {
-                        Items = Enumerable.Repeat(CoinState.Confirmed, tx.Outputs.Length).ToArray()
+                        Items = Enumerable.Repeat(CoinState.Confirmed, tx.Transaction.Outputs.Length).ToArray()
                     });
-                    foreach (TransactionOutput output in tx.Outputs)
+                    foreach (TransactionOutput output in tx.Transaction.Outputs)
                     {
                         AccountState account = snapshot.Accounts.GetAndChange(output.ScriptHash, () => new AccountState(output.ScriptHash));
                         if (account.Balances.ContainsKey(output.AssetId))
@@ -481,7 +495,7 @@ namespace Neo.Ledger
                             snapshot.ValidatorsCount.GetAndChange().Votes[account.Votes.Length - 1] += output.Value;
                         }
                     }
-                    foreach (var group in tx.Inputs.GroupBy(p => p.PrevHash))
+                    foreach (var group in tx.Transaction.Inputs.GroupBy(p => p.PrevHash))
                     {
                         TransactionState tx_prev = snapshot.Transactions[group.Key];
                         foreach (CoinReference input in group)
@@ -513,11 +527,11 @@ namespace Neo.Ledger
                         }
                     }
                     List<ApplicationExecutionResult> execution_results = new List<ApplicationExecutionResult>();
-                    switch (tx)
+                    switch (tx.Transaction)
                     {
 #pragma warning disable CS0612
                         case RegisterTransaction tx_register:
-                            snapshot.Assets.Add(tx.Hash, new AssetState
+                            snapshot.Assets.Add(tx.Transaction.Hash, new AssetState
                             {
                                 AssetId = tx_register.Hash,
                                 AssetType = tx_register.AssetType,
@@ -536,11 +550,11 @@ namespace Neo.Ledger
                             break;
 #pragma warning restore CS0612
                         case IssueTransaction _:
-                            foreach (TransactionResult result in tx.GetTransactionResults().Where(p => p.Amount < Fixed8.Zero))
+                            foreach (TransactionResult result in tx.Transaction.GetTransactionResults().Where(p => p.Amount < Fixed8.Zero))
                                 snapshot.Assets.GetAndChange(result.AssetId).Available -= result.Amount;
                             break;
                         case ClaimTransaction _:
-                            foreach (CoinReference input in ((ClaimTransaction)tx).Claims)
+                            foreach (CoinReference input in ((ClaimTransaction)tx.Transaction).Claims)
                             {
                                 if (snapshot.SpentCoins.TryGet(input.PrevHash)?.Items.Remove(input.PrevIndex) == true)
                                     snapshot.SpentCoins.GetAndChange(input.PrevHash);
@@ -602,9 +616,9 @@ namespace Neo.Ledger
                     }
                     if (execution_results.Count > 0)
                     {
-                        ApplicationExecuted application_executed = new ApplicationExecuted
+                        var application_executed = new ApplicationExecuted
                         {
-                            Transaction = tx,
+                            Transaction = tx.Transaction,
                             ExecutionResults = execution_results.ToArray()
                         };
                         Context.System.EventStream.Publish(application_executed);

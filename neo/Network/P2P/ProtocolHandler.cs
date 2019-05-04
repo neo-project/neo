@@ -203,7 +203,7 @@ namespace Neo.Network.P2P
                             }
                             else
                             {
-                                BitArray flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
+                                var flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p.Transaction)).ToArray());
                                 Context.Parent.Tell(Message.Create("merkleblock", MerkleBlockPayload.Create(block, flags)));
                             }
                         }
