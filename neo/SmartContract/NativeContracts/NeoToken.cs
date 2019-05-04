@@ -19,6 +19,8 @@ namespace Neo.SmartContract
 
         private bool NeoToken_Main(ExecutionEngine engine)
         {
+            if (!new UInt160(engine.CurrentContext.ScriptHash).Equals(Blockchain.NeoToken.ScriptHash))
+                return false;
             string operation = engine.CurrentContext.EvaluationStack.Pop().GetString();
             VMArray args = (VMArray)engine.CurrentContext.EvaluationStack.Pop();
             StackItem result;
