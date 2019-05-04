@@ -87,7 +87,7 @@ namespace Neo.SmartContract
             if (!hash_from.Equals(new UInt160(engine.CurrentContext.CallingScriptHash)) && !CheckWitness(engine, new UInt160(from)))
                 return false;
             ContractState contract_to = Snapshot.Contracts.TryGet(hash_to);
-            if (contract_to?.Payable != true) return false;
+            if (contract_to?.Payable == false) return false;
             if (amount.Sign > 0)
             {
                 StorageKey key_from = new StorageKey
