@@ -33,6 +33,8 @@ namespace Neo.Ledger
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromSeconds(SecondsPerBlock);
         public static readonly ECPoint[] StandbyValidators = ProtocolSettings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
 
+        public static readonly ContractState NeoToken;
+
 #pragma warning disable CS0612
         public static readonly RegisterTransaction GoverningToken = new RegisterTransaction
         {
@@ -142,6 +144,15 @@ namespace Neo.Ledger
 
         static Blockchain()
         {
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.EmitSysCall("Neo.Native.Tokens.NEO");
+                NeoToken = new ContractState
+                {
+                    Script = sb.ToArray(),
+                    ContractProperties = ContractPropertyState.HasStorage
+                };
+            }
             GenesisBlock.RebuildMerkleRoot();
         }
 

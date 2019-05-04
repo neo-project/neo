@@ -14,11 +14,12 @@ using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
 {
-    public class NeoService : StandardService
+    public partial class NeoService : StandardService
     {
         public NeoService(TriggerType trigger, Snapshot snapshot)
             : base(trigger, snapshot)
         {
+            Register("Neo.Native.Tokens.NEO", NeoToken_Main);
             Register("Neo.Blockchain.GetAccount", Blockchain_GetAccount, 100);
             Register("Neo.Blockchain.GetValidators", Blockchain_GetValidators, 200);
             Register("Neo.Header.GetVersion", Header_GetVersion, 1);

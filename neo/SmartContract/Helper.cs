@@ -1,10 +1,18 @@
 ﻿using Neo.Cryptography;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Numerics;
 using System.Text;
+using VMArray = Neo.VM.Types.Array;
+using VMBoolean = Neo.VM.Types.Boolean;
 
 namespace Neo.SmartContract
 {
@@ -12,6 +20,97 @@ namespace Neo.SmartContract
     {
         private static readonly ConcurrentDictionary<string, uint> MethodHashes
             = new ConcurrentDictionary<string, uint>();
+
+        public static StackItem DeserializeStackItem(this byte[] data, uint maxArraySize)
+        {
+            using (MemoryStream ms = new MemoryStream(data, false))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                return DeserializeStackItem(reader, maxArraySize);
+            }
+        }
+
+        private static StackItem DeserializeStackItem(BinaryReader reader, uint maxArraySize)
+        {
+            Stack<StackItem> deserialized = new Stack<StackItem>();
+            int undeserialized = 1;
+            while (undeserialized-- > 0)
+            {
+                StackItemType type = (StackItemType)reader.ReadByte();
+                switch (type)
+                {
+                    case StackItemType.ByteArray:
+                        deserialized.Push(new ByteArray(reader.ReadVarBytes()));
+                        break;
+                    case StackItemType.Boolean:
+                        deserialized.Push(new VMBoolean(reader.ReadBoolean()));
+                        break;
+                    case StackItemType.Integer:
+                        deserialized.Push(new Integer(new BigInteger(reader.ReadVarBytes())));
+                        break;
+                    case StackItemType.Array:
+                    case StackItemType.Struct:
+                        {
+                            int count = (int)reader.ReadVarInt(maxArraySize);
+                            deserialized.Push(new ContainerPlaceholder
+                            {
+                                Type = type,
+                                ElementCount = count
+                            });
+                            undeserialized += count;
+                        }
+                        break;
+                    case StackItemType.Map:
+                        {
+                            int count = (int)reader.ReadVarInt(maxArraySize);
+                            deserialized.Push(new ContainerPlaceholder
+                            {
+                                Type = type,
+                                ElementCount = count
+                            });
+                            undeserialized += count * 2;
+                        }
+                        break;
+                    default:
+                        throw new FormatException();
+                }
+            }
+            Stack<StackItem> stack_temp = new Stack<StackItem>();
+            while (deserialized.Count > 0)
+            {
+                StackItem item = deserialized.Pop();
+                if (item is ContainerPlaceholder placeholder)
+                {
+                    switch (placeholder.Type)
+                    {
+                        case StackItemType.Array:
+                            VMArray array = new VMArray();
+                            for (int i = 0; i < placeholder.ElementCount; i++)
+                                array.Add(stack_temp.Pop());
+                            item = array;
+                            break;
+                        case StackItemType.Struct:
+                            Struct @struct = new Struct();
+                            for (int i = 0; i < placeholder.ElementCount; i++)
+                                @struct.Add(stack_temp.Pop());
+                            item = @struct;
+                            break;
+                        case StackItemType.Map:
+                            Map map = new Map();
+                            for (int i = 0; i < placeholder.ElementCount; i++)
+                            {
+                                StackItem key = stack_temp.Pop();
+                                StackItem value = stack_temp.Pop();
+                                map.Add(key, value);
+                            }
+                            item = map;
+                            break;
+                    }
+                }
+                stack_temp.Push(item);
+            }
+            return stack_temp.Peek();
+        }
 
         public static bool IsMultiSigContract(this byte[] script)
         {
@@ -72,6 +171,69 @@ namespace Neo.SmartContract
         public static bool IsStandardContract(this byte[] script)
         {
             return script.IsSignatureContract() || script.IsMultiSigContract();
+        }
+
+        public static byte[] Serialize(this StackItem item)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms))
+            {
+                SerializeStackItem(item, writer);
+                writer.Flush();
+                return ms.ToArray();
+            }
+        }
+
+        private static void SerializeStackItem(StackItem item, BinaryWriter writer)
+        {
+            List<StackItem> serialized = new List<StackItem>();
+            Stack<StackItem> unserialized = new Stack<StackItem>();
+            unserialized.Push(item);
+            while (unserialized.Count > 0)
+            {
+                item = unserialized.Pop();
+                switch (item)
+                {
+                    case ByteArray _:
+                        writer.Write((byte)StackItemType.ByteArray);
+                        writer.WriteVarBytes(item.GetByteArray());
+                        break;
+                    case VMBoolean _:
+                        writer.Write((byte)StackItemType.Boolean);
+                        writer.Write(item.GetBoolean());
+                        break;
+                    case Integer _:
+                        writer.Write((byte)StackItemType.Integer);
+                        writer.WriteVarBytes(item.GetByteArray());
+                        break;
+                    case InteropInterface _:
+                        throw new NotSupportedException();
+                    case VMArray array:
+                        if (serialized.Any(p => ReferenceEquals(p, array)))
+                            throw new NotSupportedException();
+                        serialized.Add(array);
+                        if (array is Struct)
+                            writer.Write((byte)StackItemType.Struct);
+                        else
+                            writer.Write((byte)StackItemType.Array);
+                        writer.WriteVarInt(array.Count);
+                        for (int i = array.Count - 1; i >= 0; i--)
+                            unserialized.Push(array[i]);
+                        break;
+                    case Map map:
+                        if (serialized.Any(p => ReferenceEquals(p, map)))
+                            throw new NotSupportedException();
+                        serialized.Add(map);
+                        writer.Write((byte)StackItemType.Map);
+                        writer.WriteVarInt(map.Count);
+                        foreach (var pair in map.Reverse())
+                        {
+                            unserialized.Push(pair.Value);
+                            unserialized.Push(pair.Key);
+                        }
+                        break;
+                }
+            }
         }
 
         public static uint ToInteropMethodHash(this string method)
