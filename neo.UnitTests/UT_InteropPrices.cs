@@ -126,25 +126,6 @@ namespace Neo.UnitTests
             // ApplicationEngine.GetPriceForSysCall is protected, so we will access through reflection
             MethodInfo GetPriceForSysCall = typeof(ApplicationEngine).GetMethod("GetPriceForSysCall", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new Type[]{}, null);
 
-            // Neo.Asset.Create: 83c5c61f
-            byte[] SyscallAssetCreateHash = new byte[]{0x68, 0x04, 0x83, 0xc5, 0xc6, 0x1f};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
-            {
-                ae.LoadScript(SyscallAssetCreateHash);
-                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(5000L * 100000000L / 100000); // assuming private ae.ratio = 100000
-            }
-
-            // Neo.Asset.Renew: 78849071 (requires push 09 push 09 before)
-            byte[] SyscallAssetRenewHash = new byte[]{0x59, 0x59, 0x68, 0x04, 0x78, 0x84, 0x90, 0x71};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
-            {
-                Debugger debugger = new Debugger(ae);
-                ae.LoadScript(SyscallAssetRenewHash);
-                debugger.StepInto(); // push 9
-                debugger.StepInto(); // push 9
-                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(9L * 5000L * 100000000L / 100000); // assuming private ae.ratio = 100000
-            }
-
             // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
             byte[] SyscallContractCreateHash00 = new byte[]{(byte)ContractPropertyState.NoProperty, 0x00, 0x00, 0x00, 0x68, 0x04, 0xf6, 0x6c, 0xa5, 0x6e};
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
