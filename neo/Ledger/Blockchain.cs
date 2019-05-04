@@ -33,7 +33,7 @@ namespace Neo.Ledger
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromSeconds(SecondsPerBlock);
         public static readonly ECPoint[] StandbyValidators = ProtocolSettings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
 
-        public static readonly ContractState NeoToken;
+        public static readonly ContractState NeoToken = CreateNativeContract("Neo.Native.Tokens.NEO", ContractPropertyState.HasStorage);
 
 #pragma warning disable CS0612
         public static readonly RegisterTransaction GoverningToken = new RegisterTransaction
@@ -144,15 +144,6 @@ namespace Neo.Ledger
 
         static Blockchain()
         {
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.EmitSysCall("Neo.Native.Tokens.NEO");
-                NeoToken = new ContractState
-                {
-                    Script = sb.ToArray(),
-                    ContractProperties = ContractPropertyState.HasStorage
-                };
-            }
             GenesisBlock.RebuildMerkleRoot();
         }
 
@@ -709,6 +700,19 @@ namespace Neo.Ledger
         public static Props Props(NeoSystem system, Store store)
         {
             return Akka.Actor.Props.Create(() => new Blockchain(system, store)).WithMailbox("blockchain-mailbox");
+        }
+
+        private static ContractState CreateNativeContract(string name, ContractPropertyState properties)
+        {
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.EmitSysCall(name);
+                return new ContractState
+                {
+                    Script = sb.ToArray(),
+                    ContractProperties = properties
+                };
+            }
         }
 
         private void SaveHeaderHashList(Snapshot snapshot = null)
