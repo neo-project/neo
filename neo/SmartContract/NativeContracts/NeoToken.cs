@@ -6,6 +6,7 @@ using Neo.VM.Types;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -48,6 +49,9 @@ namespace Neo.SmartContract
                     break;
                 case "transfer":
                     result = NeoToken_Transfer(engine, args[0].GetByteArray(), args[1].GetByteArray(), args[2].GetBigInteger());
+                    break;
+                case "initialize":
+                    result = NeoToken_Initialize();
                     break;
                 default:
                     return false;
@@ -116,6 +120,32 @@ namespace Neo.SmartContract
                 }
             }
             SendNotification(engine, new StackItem[] { "Transfer", from, to, amount });
+            return true;
+        }
+
+        private bool NeoToken_Initialize()
+        {
+            StorageKey key = new StorageKey
+            {
+                ScriptHash = Blockchain.NeoToken.ScriptHash,
+                Key = Encoding.ASCII.GetBytes("initialized")
+            };
+            if (Snapshot.Storages.TryGet(key) != null) return false;
+            Snapshot.Storages.Add(key, new StorageItem
+            {
+                Value = new byte[] { 1 },
+                IsConstant = true
+            });
+            UInt160 account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1, Blockchain.StandbyValidators).ToScriptHash();
+            key = new StorageKey
+            {
+                ScriptHash = Blockchain.NeoToken.ScriptHash,
+                Key = account.ToArray()
+            };
+            Snapshot.Storages.Add(key, new StorageItem
+            {
+                Value = new NeoToken_AccountState { Balance = NeoToken_TotalAmount }.ToStruct().Serialize()
+            });
             return true;
         }
 
