@@ -101,11 +101,8 @@ namespace Neo.SmartContract
                 byte[] verification = verifiable.Witnesses[i].VerificationScript;
                 if (verification.Length == 0)
                 {
-                    using (ScriptBuilder sb = new ScriptBuilder())
-                    {
-                        sb.EmitAppCall(hashes[i].ToArray());
-                        verification = sb.ToArray();
-                    }
+                    verification = snapshot.Contracts.TryGet(hashes[i])?.Script;
+                    if (verification is null) return false;
                 }
                 else
                 {
