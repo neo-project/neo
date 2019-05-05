@@ -110,25 +110,18 @@ namespace Neo.Persistence
                         account.Balances[out_prev.AssetId] -= out_prev.Value;
                     }
                 }
-                switch (tx)
+                if (tx is StateTransaction tx_state)
                 {
-#pragma warning disable CS0612
-                    case EnrollmentTransaction tx_enrollment:
-                        snapshot.Validators.GetAndChange(tx_enrollment.PublicKey, () => new ValidatorState(tx_enrollment.PublicKey)).Registered = true;
-                        break;
-#pragma warning restore CS0612
-                    case StateTransaction tx_state:
-                        foreach (StateDescriptor descriptor in tx_state.Descriptors)
-                            switch (descriptor.Type)
-                            {
-                                case StateType.Account:
-                                    Blockchain.ProcessAccountStateDescriptor(descriptor, snapshot);
-                                    break;
-                                case StateType.Validator:
-                                    Blockchain.ProcessValidatorStateDescriptor(descriptor, snapshot);
-                                    break;
-                            }
-                        break;
+                    foreach (StateDescriptor descriptor in tx_state.Descriptors)
+                        switch (descriptor.Type)
+                        {
+                            case StateType.Account:
+                                Blockchain.ProcessAccountStateDescriptor(descriptor, snapshot);
+                                break;
+                            case StateType.Validator:
+                                Blockchain.ProcessValidatorStateDescriptor(descriptor, snapshot);
+                                break;
+                        }
                 }
             }
             int count = (int)snapshot.ValidatorsCount.Get().Votes.Select((p, i) => new

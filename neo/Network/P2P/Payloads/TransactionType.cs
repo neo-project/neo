@@ -10,8 +10,6 @@ namespace Neo.Network.P2P.Payloads
         MinerTransaction = 0x00,
         [ReflectionCache(typeof(IssueTransaction))]
         IssueTransaction = 0x01,
-        [ReflectionCache(typeof(EnrollmentTransaction))]
-        EnrollmentTransaction = 0x20,
         [ReflectionCache(typeof(RegisterTransaction))]
         RegisterTransaction = 0x40,
         [ReflectionCache(typeof(ContractTransaction))]
