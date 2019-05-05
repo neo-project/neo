@@ -57,7 +57,6 @@ namespace Neo
             Dictionary<TransactionType, Fixed8> sys_fee = new Dictionary<TransactionType, Fixed8>
             {
                 [TransactionType.IssueTransaction] = Fixed8.FromDecimal(500),
-                [TransactionType.PublishTransaction] = Fixed8.FromDecimal(500),
                 [TransactionType.RegisterTransaction] = Fixed8.FromDecimal(10000)
             };
             foreach (IConfigurationSection child in section.GetSection("SystemFee").GetChildren())
