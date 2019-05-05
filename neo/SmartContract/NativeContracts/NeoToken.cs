@@ -75,6 +75,7 @@ namespace Neo.SmartContract
 
         private bool NeoToken_Transfer(ExecutionEngine engine, byte[] from, byte[] to, BigInteger amount)
         {
+            if (Trigger != TriggerType.Application) throw new InvalidOperationException();
             UInt160 hash_from = new UInt160(from);
             UInt160 hash_to = new UInt160(to);
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
@@ -125,6 +126,7 @@ namespace Neo.SmartContract
 
         private bool NeoToken_Initialize()
         {
+            if (Trigger != TriggerType.Application) throw new InvalidOperationException();
             StorageKey key = new StorageKey
             {
                 ScriptHash = Blockchain.NeoToken.ScriptHash,
