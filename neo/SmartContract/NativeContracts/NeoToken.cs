@@ -5,6 +5,7 @@ using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -59,6 +60,9 @@ namespace Neo.SmartContract
                     break;
                 case "registerValidator":
                     result = NeoToken_RegisterValidator(args[0].GetByteArray());
+                    break;
+                case "vote":
+                    result = NeoToken_Vote(engine, args[0].GetByteArray(), ((VMArray)args[1]).Select(p => p.GetByteArray().AsSerializable<ECPoint>()).ToArray());
                     break;
                 default:
                     return false;
@@ -129,6 +133,28 @@ namespace Neo.SmartContract
                         storage_from = Snapshot.Storages.GetAndChange(key_from);
                         storage_from.Value = state_from.ToByteArray();
                     }
+                    if (state_from.Votes.Length > 0)
+                    {
+                        foreach (ECPoint pubkey in state_from.Votes)
+                        {
+                            StorageItem storage_validator = Snapshot.Storages.GetAndChange(new StorageKey
+                            {
+                                ScriptHash = Blockchain.NeoToken.ScriptHash,
+                                Key = pubkey.ToArray()
+                            });
+                            NeoToken_ValidatorState state_validator = NeoToken_ValidatorState.FromByteArray(storage_validator.Value);
+                            state_validator.Votes -= amount;
+                            storage_validator.Value = state_validator.ToByteArray();
+                        }
+                        StorageItem storage_count = Snapshot.Storages.GetAndChange(new StorageKey
+                        {
+                            ScriptHash = Blockchain.NeoToken.ScriptHash,
+                            Key = Encoding.ASCII.GetBytes("validatorsCount")
+                        });
+                        NeoToken_ValidatorsCountState state_count = NeoToken_ValidatorsCountState.FromByteArray(storage_count.Value);
+                        state_count.Votes[state_from.Votes.Length - 1] -= amount;
+                        storage_count.Value = state_count.ToByteArray();
+                    }
                     StorageKey key_to = new StorageKey
                     {
                         ScriptHash = Blockchain.NeoToken.ScriptHash,
@@ -142,6 +168,28 @@ namespace Neo.SmartContract
                     NeoToken_DistributeGas(engine, to, state_to);
                     state_to.Balance += amount;
                     storage_to.Value = state_to.ToByteArray();
+                    if (state_to.Votes.Length > 0)
+                    {
+                        foreach (ECPoint pubkey in state_to.Votes)
+                        {
+                            StorageItem storage_validator = Snapshot.Storages.GetAndChange(new StorageKey
+                            {
+                                ScriptHash = Blockchain.NeoToken.ScriptHash,
+                                Key = pubkey.ToArray()
+                            });
+                            NeoToken_ValidatorState state_validator = NeoToken_ValidatorState.FromByteArray(storage_validator.Value);
+                            state_validator.Votes += amount;
+                            storage_validator.Value = state_validator.ToByteArray();
+                        }
+                        StorageItem storage_count = Snapshot.Storages.GetAndChange(new StorageKey
+                        {
+                            ScriptHash = Blockchain.NeoToken.ScriptHash,
+                            Key = Encoding.ASCII.GetBytes("validatorsCount")
+                        });
+                        NeoToken_ValidatorsCountState state_count = NeoToken_ValidatorsCountState.FromByteArray(storage_count.Value);
+                        state_count.Votes[state_to.Votes.Length - 1] += amount;
+                        storage_count.Value = state_count.ToByteArray();
+                    }
                 }
             }
             SendNotification(engine, Blockchain.NeoToken.ScriptHash, new StackItem[] { "Transfer", from, to, amount });
@@ -248,6 +296,67 @@ namespace Neo.SmartContract
             return true;
         }
 
+        private bool NeoToken_Vote(ExecutionEngine engine, byte[] account, ECPoint[] pubkeys)
+        {
+            UInt160 hash_account = new UInt160(account);
+            if (!CheckWitness(engine, hash_account)) return false;
+            StorageKey key_account = new StorageKey
+            {
+                ScriptHash = Blockchain.NeoToken.ScriptHash,
+                Key = account
+            };
+            if (Snapshot.Storages.TryGet(key_account) is null) return false;
+            StorageItem storage_account = Snapshot.Storages.GetAndChange(key_account);
+            NeoToken_AccountState state_account = NeoToken_AccountState.FromByteArray(storage_account.Value);
+            foreach (ECPoint pubkey in state_account.Votes)
+            {
+                StorageItem storage_validator = Snapshot.Storages.GetAndChange(new StorageKey
+                {
+                    ScriptHash = Blockchain.NeoToken.ScriptHash,
+                    Key = pubkey.ToArray()
+                });
+                NeoToken_ValidatorState state_validator = NeoToken_ValidatorState.FromByteArray(storage_validator.Value);
+                state_validator.Votes -= state_account.Balance;
+                storage_validator.Value = state_validator.ToByteArray();
+            }
+            pubkeys = pubkeys.Distinct().Where(p => Snapshot.Storages.TryGet(new StorageKey
+            {
+                ScriptHash = Blockchain.NeoToken.ScriptHash,
+                Key = p.ToArray()
+            }) != null).ToArray();
+            if (pubkeys.Length != state_account.Votes.Length)
+            {
+                StorageItem storage_count = Snapshot.Storages.GetAndChange(new StorageKey
+                {
+                    ScriptHash = Blockchain.NeoToken.ScriptHash,
+                    Key = Encoding.ASCII.GetBytes("validatorsCount")
+                }, () => new StorageItem
+                {
+                    Value = new NeoToken_ValidatorsCountState().ToByteArray()
+                });
+                NeoToken_ValidatorsCountState state_count = NeoToken_ValidatorsCountState.FromByteArray(storage_count.Value);
+                if (state_account.Votes.Length > 0)
+                    state_count.Votes[state_account.Votes.Length - 1] -= state_account.Balance;
+                if (pubkeys.Length > 0)
+                    state_count.Votes[pubkeys.Length - 1] += state_account.Balance;
+                storage_count.Value = state_count.ToByteArray();
+            }
+            state_account.Votes = pubkeys;
+            storage_account.Value = state_account.ToByteArray();
+            foreach (ECPoint pubkey in state_account.Votes)
+            {
+                StorageItem storage_validator = Snapshot.Storages.GetAndChange(new StorageKey
+                {
+                    ScriptHash = Blockchain.NeoToken.ScriptHash,
+                    Key = pubkey.ToArray()
+                });
+                NeoToken_ValidatorState state_validator = NeoToken_ValidatorState.FromByteArray(storage_validator.Value);
+                state_validator.Votes += state_account.Balance;
+                storage_validator.Value = state_validator.ToByteArray();
+            }
+            return true;
+        }
+
         private class NeoToken_AccountState
         {
             public BigInteger Balance;
@@ -282,16 +391,48 @@ namespace Neo.SmartContract
 
             public static NeoToken_ValidatorState FromByteArray(byte[] data)
             {
-                Struct @struct = (Struct)data.DeserializeStackItem(1);
                 return new NeoToken_ValidatorState
                 {
-                    Votes = @struct[0].GetBigInteger()
+                    Votes = new BigInteger(data)
                 };
             }
 
             public byte[] ToByteArray()
             {
-                return new Struct(new StackItem[] { Votes }).Serialize();
+                return Votes.ToByteArray();
+            }
+        }
+
+        private class NeoToken_ValidatorsCountState
+        {
+            public BigInteger[] Votes = new BigInteger[Blockchain.MaxValidators];
+
+            public static NeoToken_ValidatorsCountState FromByteArray(byte[] data)
+            {
+                using (MemoryStream ms = new MemoryStream(data, false))
+                using (BinaryReader r = new BinaryReader(ms))
+                {
+                    BigInteger[] votes = new BigInteger[(int)r.ReadVarInt(Blockchain.MaxValidators)];
+                    for (int i = 0; i < votes.Length; i++)
+                        votes[i] = new BigInteger(r.ReadVarBytes());
+                    return new NeoToken_ValidatorsCountState
+                    {
+                        Votes = votes
+                    };
+                }
+            }
+
+            public byte[] ToByteArray()
+            {
+                using (MemoryStream ms = new MemoryStream())
+                using (BinaryWriter w = new BinaryWriter(ms))
+                {
+                    w.WriteVarInt(Votes.Length);
+                    foreach (BigInteger vote in Votes)
+                        w.WriteVarBytes(vote.ToByteArray());
+                    w.Flush();
+                    return ms.ToArray();
+                }
             }
         }
     }
