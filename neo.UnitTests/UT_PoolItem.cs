@@ -34,19 +34,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void PoolItem_CompareTo_ClaimTx()
-        {
-            var tx1 = GenerateClaimTx();
-            // Non-free low-priority transaction
-            var tx2 = MockGenerateInvocationTx(new Fixed8(99999), 50).Object;
-
-            var poolItem1 = new PoolItem(tx1);
-            var poolItem2 = new PoolItem(tx2);
-            poolItem1.CompareTo(poolItem2).Should().Be(1);
-            poolItem2.CompareTo(poolItem1).Should().Be(-1);
-        }
-
-        [TestMethod]
         public void PoolItem_CompareTo_Fee()
         {
             int size1 = 50;
@@ -133,20 +120,6 @@ namespace Neo.UnitTests
             } while (mockTx.Object.Hash <= new UInt256(TestUtils.GetByteArray(32, firstHashByte)));
 
             return mockTx;
-        }
-
-        public static Transaction GenerateClaimTx()
-        {
-            var mockTx = new Mock<ClaimTransaction>();
-            mockTx.CallBase = true;
-            mockTx.SetupGet(mr => mr.NetworkFee).Returns(Fixed8.Zero);
-            mockTx.SetupGet(mr => mr.Size).Returns(50);
-            var tx = mockTx.Object;
-            tx.Attributes = new TransactionAttribute[0];
-            tx.Inputs = new CoinReference[0];
-            tx.Outputs = new TransactionOutput[0];
-            tx.Witnesses = new Witness[0];
-            return mockTx.Object;
         }
 
         // Generate Mock InvocationTransaction with different sizes and prices

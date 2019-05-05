@@ -67,11 +67,6 @@ namespace Neo.Persistence.LevelDB
             return new DbSnapshot(db);
         }
 
-        public override DataCache<UInt256, SpentCoinState> GetSpentCoins()
-        {
-            return new DbCache<UInt256, SpentCoinState>(db, null, null, Prefixes.ST_SpentCoin);
-        }
-
         public override DataCache<StorageKey, StorageItem> GetStorages()
         {
             return new DbCache<StorageKey, StorageItem>(db, null, null, Prefixes.ST_Storage);

@@ -16,7 +16,6 @@ namespace Neo.Persistence
         public abstract DataCache<UInt256, TransactionState> Transactions { get; }
         public abstract DataCache<UInt160, AccountState> Accounts { get; }
         public abstract DataCache<UInt256, UnspentCoinState> UnspentCoins { get; }
-        public abstract DataCache<UInt256, SpentCoinState> SpentCoins { get; }
         public abstract DataCache<ECPoint, ValidatorState> Validators { get; }
         public abstract DataCache<UInt256, AssetState> Assets { get; }
         public abstract DataCache<UInt160, ContractState> Contracts { get; }
@@ -31,89 +30,6 @@ namespace Neo.Persistence
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
 
-        public Fixed8 CalculateBonus(IEnumerable<CoinReference> inputs, bool ignoreClaimed = true)
-        {
-            List<SpentCoin> unclaimed = new List<SpentCoin>();
-            foreach (var group in inputs.GroupBy(p => p.PrevHash))
-            {
-                Dictionary<ushort, SpentCoin> claimable = GetUnclaimed(group.Key);
-                if (claimable == null || claimable.Count == 0)
-                    if (ignoreClaimed)
-                        continue;
-                    else
-                        throw new ArgumentException();
-                foreach (CoinReference claim in group)
-                {
-                    if (!claimable.TryGetValue(claim.PrevIndex, out SpentCoin claimed))
-                        if (ignoreClaimed)
-                            continue;
-                        else
-                            throw new ArgumentException();
-                    unclaimed.Add(claimed);
-                }
-            }
-            return CalculateBonusInternal(unclaimed);
-        }
-
-        public Fixed8 CalculateBonus(IEnumerable<CoinReference> inputs, uint height_end)
-        {
-            List<SpentCoin> unclaimed = new List<SpentCoin>();
-            foreach (var group in inputs.GroupBy(p => p.PrevHash))
-            {
-                TransactionState tx_state = Transactions.TryGet(group.Key);
-                if (tx_state == null) throw new ArgumentException();
-                if (tx_state.BlockIndex == height_end) continue;
-                foreach (CoinReference claim in group)
-                {
-                    if (claim.PrevIndex >= tx_state.Transaction.Outputs.Length || !tx_state.Transaction.Outputs[claim.PrevIndex].AssetId.Equals(Blockchain.GoverningToken.Hash))
-                        throw new ArgumentException();
-                    unclaimed.Add(new SpentCoin
-                    {
-                        Output = tx_state.Transaction.Outputs[claim.PrevIndex],
-                        StartHeight = tx_state.BlockIndex,
-                        EndHeight = height_end
-                    });
-                }
-            }
-            return CalculateBonusInternal(unclaimed);
-        }
-
-        private Fixed8 CalculateBonusInternal(IEnumerable<SpentCoin> unclaimed)
-        {
-            Fixed8 amount_claimed = Fixed8.Zero;
-            foreach (var group in unclaimed.GroupBy(p => new { p.StartHeight, p.EndHeight }))
-            {
-                uint amount = 0;
-                uint ustart = group.Key.StartHeight / Blockchain.DecrementInterval;
-                if (ustart < Blockchain.GenerationAmount.Length)
-                {
-                    uint istart = group.Key.StartHeight % Blockchain.DecrementInterval;
-                    uint uend = group.Key.EndHeight / Blockchain.DecrementInterval;
-                    uint iend = group.Key.EndHeight % Blockchain.DecrementInterval;
-                    if (uend >= Blockchain.GenerationAmount.Length)
-                    {
-                        uend = (uint)Blockchain.GenerationAmount.Length;
-                        iend = 0;
-                    }
-                    if (iend == 0)
-                    {
-                        uend--;
-                        iend = Blockchain.DecrementInterval;
-                    }
-                    while (ustart < uend)
-                    {
-                        amount += (Blockchain.DecrementInterval - istart) * Blockchain.GenerationAmount[ustart];
-                        ustart++;
-                        istart = 0;
-                    }
-                    amount += (iend - istart) * Blockchain.GenerationAmount[ustart];
-                }
-                amount += (uint)(this.GetSysFeeAmount(group.Key.EndHeight - 1) - (group.Key.StartHeight == 0 ? 0 : this.GetSysFeeAmount(group.Key.StartHeight - 1)));
-                amount_claimed += group.Sum(p => p.Value) / 100000000 * amount;
-            }
-            return amount_claimed;
-        }
-
         public Snapshot Clone()
         {
             return new CloneSnapshot(this);
@@ -123,12 +39,10 @@ namespace Neo.Persistence
         {
             Accounts.DeleteWhere((k, v) => !v.IsFrozen && v.Votes.Length == 0 && v.Balances.All(p => p.Value <= Fixed8.Zero));
             UnspentCoins.DeleteWhere((k, v) => v.Items.All(p => p.HasFlag(CoinState.Spent)));
-            SpentCoins.DeleteWhere((k, v) => v.Items.Count == 0);
             Blocks.Commit();
             Transactions.Commit();
             Accounts.Commit();
             UnspentCoins.Commit();
-            SpentCoins.Commit();
             Validators.Commit();
             Assets.Commit();
             Contracts.Commit();
@@ -141,26 +55,6 @@ namespace Neo.Persistence
 
         public virtual void Dispose()
         {
-        }
-
-        public Dictionary<ushort, SpentCoin> GetUnclaimed(UInt256 hash)
-        {
-            TransactionState tx_state = Transactions.TryGet(hash);
-            if (tx_state == null) return null;
-            SpentCoinState coin_state = SpentCoins.TryGet(hash);
-            if (coin_state != null)
-            {
-                return coin_state.Items.ToDictionary(p => p.Key, p => new SpentCoin
-                {
-                    Output = tx_state.Transaction.Outputs[p.Key],
-                    StartHeight = tx_state.BlockIndex,
-                    EndHeight = p.Value
-                });
-            }
-            else
-            {
-                return new Dictionary<ushort, SpentCoin>();
-            }
         }
 
         private ECPoint[] _validators = null;
@@ -216,25 +110,18 @@ namespace Neo.Persistence
                         account.Balances[out_prev.AssetId] -= out_prev.Value;
                     }
                 }
-                switch (tx)
+                if (tx is StateTransaction tx_state)
                 {
-#pragma warning disable CS0612
-                    case EnrollmentTransaction tx_enrollment:
-                        snapshot.Validators.GetAndChange(tx_enrollment.PublicKey, () => new ValidatorState(tx_enrollment.PublicKey)).Registered = true;
-                        break;
-#pragma warning restore CS0612
-                    case StateTransaction tx_state:
-                        foreach (StateDescriptor descriptor in tx_state.Descriptors)
-                            switch (descriptor.Type)
-                            {
-                                case StateType.Account:
-                                    Blockchain.ProcessAccountStateDescriptor(descriptor, snapshot);
-                                    break;
-                                case StateType.Validator:
-                                    Blockchain.ProcessValidatorStateDescriptor(descriptor, snapshot);
-                                    break;
-                            }
-                        break;
+                    foreach (StateDescriptor descriptor in tx_state.Descriptors)
+                        switch (descriptor.Type)
+                        {
+                            case StateType.Account:
+                                Blockchain.ProcessAccountStateDescriptor(descriptor, snapshot);
+                                break;
+                            case StateType.Validator:
+                                Blockchain.ProcessValidatorStateDescriptor(descriptor, snapshot);
+                                break;
+                        }
                 }
             }
             int count = (int)snapshot.ValidatorsCount.Get().Votes.Select((p, i) => new

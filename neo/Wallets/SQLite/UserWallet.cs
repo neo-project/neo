@@ -336,12 +336,11 @@ namespace Neo.Wallets.SQLite
                 return GetCoinsInternal();
             IEnumerable<Coin> GetCoinsInternal()
             {
-                HashSet<CoinReference> inputs, claims;
+                HashSet<CoinReference> inputs;
                 Coin[] coins_unconfirmed;
                 lock (unconfirmed)
                 {
                     inputs = new HashSet<CoinReference>(unconfirmed.Values.SelectMany(p => p.Inputs));
-                    claims = new HashSet<CoinReference>(unconfirmed.Values.OfType<ClaimTransaction>().SelectMany(p => p.Claims));
                     coins_unconfirmed = unconfirmed.Values.Select(tx => tx.Outputs.Select((o, i) => new Coin
                     {
                         Reference = new CoinReference
@@ -364,10 +363,6 @@ namespace Neo.Wallets.SQLite
                                 Output = coin.Output,
                                 State = coin.State | CoinState.Spent
                             };
-                        continue;
-                    }
-                    else if (claims.Contains(coin.Reference))
-                    {
                         continue;
                     }
                     yield return coin;

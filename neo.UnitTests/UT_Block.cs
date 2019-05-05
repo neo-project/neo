@@ -115,48 +115,6 @@ namespace Neo.UnitTests
             };
         }
 
-        private ContractTransaction getContractTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
-        {
-
-            CoinReference[] inputsVal;
-            if (inputVal)
-            {
-                inputsVal = new[]
-                {
-                    TestUtils.GetCoinReference(null)
-                };
-            }
-            else
-            {
-                inputsVal = new CoinReference[0];
-            }
-
-            return new ContractTransaction
-            {
-                Attributes = new TransactionAttribute[0],
-                Inputs = inputsVal,
-                Outputs = new[]
-                {
-                    new TransactionOutput
-                    {
-                        AssetId = assetId,
-                        Value = Fixed8.FromDecimal(outputVal),
-                        ScriptHash = Contract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
-                    }
-                },
-                Witnesses = new[]
-                {
-                    new Witness
-                    {
-                        InvocationScript = new byte[0],
-                        VerificationScript = new[] { (byte)OpCode.PUSHT }
-                    }
-                }
-            };
-        }
-
-
-
         [TestMethod]
         public void Size_Get_1_Transaction()
         {
@@ -233,45 +191,6 @@ namespace Neo.UnitTests
             };
 
             Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.Zero);
-        }
-
-        [TestMethod]
-        public void CalculateNetFee_Ignores_ClaimTransactions()
-        {
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRootVal;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
-
-            uut.Transactions = new Transaction[1] {
-                TestUtils.GetClaimTransaction()
-            };
-
-            Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.Zero);
-        }
-
-
-        [TestMethod]
-        public void CalculateNetFee_Out()
-        {
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRootVal;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
-
-            uut.Transactions = new Transaction[1] {
-                getContractTransaction(false, 100, Blockchain.UtilityToken.Hash)
-            };
-
-            Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.FromDecimal(-100));
         }
 
         [TestMethod]
