@@ -101,11 +101,8 @@ namespace Neo.SmartContract
                 byte[] verification = verifiable.Witnesses[i].VerificationScript;
                 if (verification.Length == 0)
                 {
-                    using (ScriptBuilder sb = new ScriptBuilder())
-                    {
-                        sb.EmitAppCall(hashes[i].ToArray());
-                        verification = sb.ToArray();
-                    }
+                    verification = snapshot.Contracts.TryGet(hashes[i])?.Script;
+                    if (verification is null) return false;
                 }
                 else
                 {
@@ -115,7 +112,8 @@ namespace Neo.SmartContract
                 {
                     engine.LoadScript(verification);
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript);
-                    if (!engine.Execute()) return false;
+                    engine.Execute();
+                    if (engine.State.HasFlag(VMState.FAULT)) return false;
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
                 }
             }

@@ -68,7 +68,7 @@ namespace Neo.Consensus
                     sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
                     j++;
                 }
-                sc.Verifiable.Witnesses = sc.GetWitnesses();
+                Block.Witness = sc.GetWitnesses()[0];
                 Block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
             }
             return Block;
@@ -138,7 +138,7 @@ namespace Neo.Consensus
             }
         }
 
-        public ConsensusPayload MakeChangeView(byte newViewNumber)
+        public ConsensusPayload MakeChangeView()
         {
             return ChangeViewPayloads[MyIndex] = MakeSignedPayload(new ChangeView
             {
@@ -202,7 +202,7 @@ namespace Neo.Consensus
             {
                 return;
             }
-            sc.Verifiable.Witnesses = sc.GetWitnesses();
+            payload.Witness = sc.GetWitnesses()[0];
         }
 
         public ConsensusPayload MakePrepareRequest()
@@ -215,6 +215,14 @@ namespace Neo.Consensus
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes,
                 MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]]
+            });
+        }
+
+        public ConsensusPayload MakeRecoveryRequest()
+        {
+            return MakeSignedPayload(new RecoveryRequest
+            {
+                Timestamp = TimeProvider.Current.UtcNow.ToTimestamp()
             });
         }
 

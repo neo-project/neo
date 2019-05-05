@@ -3,7 +3,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
-using System.Text;
 
 namespace Neo.SmartContract
 {
@@ -14,39 +13,15 @@ namespace Neo.SmartContract
         private readonly long gas_amount;
         private long gas_consumed = 0;
         private readonly bool testMode;
-        private readonly Snapshot snapshot;
 
         public Fixed8 GasConsumed => new Fixed8(gas_consumed);
         public new NeoService Service => (NeoService)base.Service;
 
         public ApplicationEngine(TriggerType trigger, IScriptContainer container, Snapshot snapshot, Fixed8 gas, bool testMode = false)
-            : base(container, Cryptography.Crypto.Default, snapshot, new NeoService(trigger, snapshot))
+            : base(container, Cryptography.Crypto.Default, new NeoService(trigger, snapshot))
         {
             this.gas_amount = gas_free + gas.GetData();
             this.testMode = testMode;
-            this.snapshot = snapshot;
-        }
-
-        private bool CheckDynamicInvoke(OpCode nextInstruction)
-        {
-            switch (nextInstruction)
-            {
-                case OpCode.APPCALL:
-                case OpCode.TAILCALL:
-                    for (int i = CurrentContext.InstructionPointer + 1; i < CurrentContext.InstructionPointer + 21; i++)
-                    {
-                        if (CurrentContext.Script[i] != 0) return true;
-                    }
-                    // if we get this far it is a dynamic call
-                    // now look at the current executing script
-                    // to determine if it can do dynamic calls
-                    return snapshot.Contracts[new UInt160(CurrentContext.ScriptHash)].HasDynamicInvoke;
-                case OpCode.CALL_ED:
-                case OpCode.CALL_EDT:
-                    return snapshot.Contracts[new UInt160(CurrentContext.ScriptHash)].HasDynamicInvoke;
-                default:
-                    return true;
-            }
         }
 
         public override void Dispose()
@@ -55,39 +30,12 @@ namespace Neo.SmartContract
             Service.Dispose();
         }
 
-        public new bool Execute()
+        protected virtual long GetPrice()
         {
-            try
+            Instruction instruction = CurrentContext.CurrentInstruction;
+            if (instruction.OpCode <= OpCode.NOP) return 0;
+            switch (instruction.OpCode)
             {
-                while (true)
-                {
-                    OpCode nextOpcode = CurrentContext.InstructionPointer >= CurrentContext.Script.Length ? OpCode.RET : CurrentContext.NextInstruction;
-                    if (!PreStepInto(nextOpcode))
-                    {
-                        State |= VMState.FAULT;
-                        return false;
-                    }
-                    StepInto();
-                    if (State.HasFlag(VMState.HALT) || State.HasFlag(VMState.FAULT))
-                        break;
-                }
-            }
-            catch
-            {
-                State |= VMState.FAULT;
-                return false;
-            }
-            return !State.HasFlag(VMState.FAULT);
-        }
-
-        protected virtual long GetPrice(OpCode nextInstruction)
-        {
-            if (nextInstruction <= OpCode.NOP) return 0;
-            switch (nextInstruction)
-            {
-                case OpCode.APPCALL:
-                case OpCode.TAILCALL:
-                    return 10;
                 case OpCode.SYSCALL:
                     return GetPriceForSysCall();
                 case OpCode.SHA1:
@@ -118,26 +66,14 @@ namespace Neo.SmartContract
 
         protected virtual long GetPriceForSysCall()
         {
-            if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length - 3)
-                return 1;
-            byte length = (byte)CurrentContext.Script[CurrentContext.InstructionPointer + 1];
-            if (CurrentContext.InstructionPointer > CurrentContext.Script.Length - length - 2)
-                return 1;
-            uint api_hash = length == 4
-                ? System.BitConverter.ToUInt32(CurrentContext.Script, CurrentContext.InstructionPointer + 2)
-                : Encoding.ASCII.GetString(CurrentContext.Script, CurrentContext.InstructionPointer + 2, length).ToInteropMethodHash();
+            Instruction instruction = CurrentContext.CurrentInstruction;
+            uint api_hash = instruction.Operand.Length == 4
+                ? instruction.TokenU32
+                : instruction.TokenString.ToInteropMethodHash();
             long price = Service.GetPrice(api_hash);
             if (price > 0) return price;
-            if (api_hash == "Neo.Asset.Create".ToInteropMethodHash() ||
-               api_hash == "AntShares.Asset.Create".ToInteropMethodHash())
-                return 5000L * 100000000L / ratio;
-            if (api_hash == "Neo.Asset.Renew".ToInteropMethodHash() ||
-                api_hash == "AntShares.Asset.Renew".ToInteropMethodHash())
-                return (byte)CurrentContext.EvaluationStack.Peek(1).GetBigInteger() * 5000L * 100000000L / ratio;
             if (api_hash == "Neo.Contract.Create".ToInteropMethodHash() ||
-                api_hash == "Neo.Contract.Migrate".ToInteropMethodHash() ||
-                api_hash == "AntShares.Contract.Create".ToInteropMethodHash() ||
-                api_hash == "AntShares.Contract.Migrate".ToInteropMethodHash())
+                api_hash == "Neo.Contract.Migrate".ToInteropMethodHash())
             {
                 long fee = 100L;
 
@@ -154,20 +90,17 @@ namespace Neo.SmartContract
                 return fee * 100000000L / ratio;
             }
             if (api_hash == "System.Storage.Put".ToInteropMethodHash() ||
-                api_hash == "System.Storage.PutEx".ToInteropMethodHash() ||
-                api_hash == "Neo.Storage.Put".ToInteropMethodHash() ||
-                api_hash == "AntShares.Storage.Put".ToInteropMethodHash())
+                api_hash == "System.Storage.PutEx".ToInteropMethodHash())
                 return ((CurrentContext.EvaluationStack.Peek(1).GetByteArray().Length + CurrentContext.EvaluationStack.Peek(2).GetByteArray().Length - 1) / 1024 + 1) * 1000;
             return 1;
         }
 
-        private bool PreStepInto(OpCode nextOpcode)
+        protected override bool PreExecuteInstruction()
         {
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
                 return true;
-            gas_consumed = checked(gas_consumed + GetPrice(nextOpcode) * ratio);
+            gas_consumed = checked(gas_consumed + GetPrice() * ratio);
             if (!testMode && gas_consumed > gas_amount) return false;
-            if (!CheckDynamicInvoke(nextOpcode)) return false;
             return true;
         }
 
