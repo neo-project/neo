@@ -57,6 +57,9 @@ namespace Neo.SmartContract
                 case "unclaimedGas":
                     result = NeoToken_UnclaimedGas(engine, args[0].GetByteArray(), (uint)args[1].GetBigInteger());
                     break;
+                case "registerValidator":
+                    result = NeoToken_RegisterValidator(args[0].GetByteArray());
+                    break;
                 default:
                     return false;
             }
@@ -211,6 +214,8 @@ namespace Neo.SmartContract
                 Value = new NeoToken_AccountState { Balance = NeoToken_TotalAmount }.ToStruct().Serialize()
             });
             SendNotification(engine, Blockchain.NeoToken.ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account, NeoToken_TotalAmount });
+            foreach (ECPoint pubkey in Blockchain.StandbyValidators)
+                NeoToken_RegisterValidator(pubkey.EncodePoint(true));
             return true;
         }
 
@@ -224,6 +229,23 @@ namespace Neo.SmartContract
             if (storage is null) return BigInteger.Zero;
             NeoToken_AccountState state = NeoToken_AccountState.FromStruct((Struct)storage.Value.DeserializeStackItem(engine.MaxArraySize));
             return NeoToken_CalculateBonus(state.Balance, state.BalanceHeight, end);
+        }
+
+        private bool NeoToken_RegisterValidator(byte[] pubkey)
+        {
+            if (pubkey.Length != 33 || (pubkey[0] != 0x02 && pubkey[0] != 0x03))
+                throw new ArgumentException();
+            StorageKey key = new StorageKey
+            {
+                ScriptHash = Blockchain.NeoToken.ScriptHash,
+                Key = pubkey
+            };
+            if (Snapshot.Storages.TryGet(key) != null) return false;
+            Snapshot.Storages.Add(key, new StorageItem
+            {
+                Value = BigInteger.Zero.ToByteArray()
+            });
+            return true;
         }
 
         private class NeoToken_AccountState
