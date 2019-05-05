@@ -54,7 +54,7 @@ namespace Neo.SmartContract
                 case "initialize":
                     result = NeoToken_Initialize(engine);
                     break;
-                case "unclaimedgas":
+                case "unclaimedGas":
                     result = NeoToken_UnclaimedGas(engine, args[0].GetByteArray(), (uint)args[1].GetBigInteger());
                     break;
                 default:
