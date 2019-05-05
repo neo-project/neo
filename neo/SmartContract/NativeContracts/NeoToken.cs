@@ -241,6 +241,8 @@ namespace Neo.SmartContract
 
         private BigInteger NeoToken_UnclaimedGas(byte[] account, uint end)
         {
+            if (account.Length != 20) throw new ArgumentException();
+
             StorageItem storage = Snapshot.Storages.TryGet(CreateStorageKey(Blockchain.NeoToken.ScriptHash, NeoToken_Prefix_Account, account));
             if (storage is null) return BigInteger.Zero;
             NeoToken_AccountState state = NeoToken_AccountState.FromByteArray(storage.Value);
