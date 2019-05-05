@@ -182,7 +182,6 @@ namespace Neo.Wallets
                 switch (tx)
                 {
                     case MinerTransaction _:
-                    case ContractTransaction _:
                         break;
 #pragma warning disable CS0612
                     case RegisterTransaction tx_register:

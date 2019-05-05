@@ -293,74 +293,67 @@ namespace Neo.Wallets
             }).ToArray();
             Transaction tx;
             if (attributes == null) attributes = new List<TransactionAttribute>();
-            if (cOutputs.Length == 0)
+            UInt160[] accounts = from == null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { from };
+            HashSet<UInt160> sAttributes = new HashSet<UInt160>();
+            using (ScriptBuilder sb = new ScriptBuilder())
             {
-                tx = new ContractTransaction();
-            }
-            else
-            {
-                UInt160[] accounts = from == null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { from };
-                HashSet<UInt160> sAttributes = new HashSet<UInt160>();
-                using (ScriptBuilder sb = new ScriptBuilder())
+                foreach (var output in cOutputs)
                 {
-                    foreach (var output in cOutputs)
+                    var balances = new List<(UInt160 Account, BigInteger Value)>();
+                    foreach (UInt160 account in accounts)
                     {
-                        var balances = new List<(UInt160 Account, BigInteger Value)>();
-                        foreach (UInt160 account in accounts)
+                        byte[] script;
+                        using (ScriptBuilder sb2 = new ScriptBuilder())
                         {
-                            byte[] script;
-                            using (ScriptBuilder sb2 = new ScriptBuilder())
-                            {
-                                sb2.EmitAppCall(output.AssetId, "balanceOf", account);
-                                script = sb2.ToArray();
-                            }
-                            ApplicationEngine engine = ApplicationEngine.Run(script);
-                            if (engine.State.HasFlag(VMState.FAULT)) return null;
-                            balances.Add((account, engine.ResultStack.Pop().GetBigInteger()));
+                            sb2.EmitAppCall(output.AssetId, "balanceOf", account);
+                            script = sb2.ToArray();
                         }
-                        BigInteger sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
-                        if (sum < output.Value) return null;
-                        if (sum != output.Value)
-                        {
-                            balances = balances.OrderByDescending(p => p.Value).ToList();
-                            BigInteger amount = output.Value;
-                            int i = 0;
-                            while (balances[i].Value <= amount)
-                                amount -= balances[i++].Value;
-                            if (amount == BigInteger.Zero)
-                                balances = balances.Take(i).ToList();
-                            else
-                                balances = balances.Take(i).Concat(new[] { balances.Last(p => p.Value >= amount) }).ToList();
-                            sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
-                        }
-                        sAttributes.UnionWith(balances.Select(p => p.Account));
-                        for (int i = 0; i < balances.Count; i++)
-                        {
-                            BigInteger value = balances[i].Value;
-                            if (i == 0)
-                            {
-                                BigInteger change = sum - output.Value;
-                                if (change > 0) value -= change;
-                            }
-                            sb.EmitAppCall(output.AssetId, "transfer", balances[i].Account, output.Account, value);
-                            sb.Emit(OpCode.THROWIFNOT);
-                        }
+                        ApplicationEngine engine = ApplicationEngine.Run(script);
+                        if (engine.State.HasFlag(VMState.FAULT)) return null;
+                        balances.Add((account, engine.ResultStack.Pop().GetBigInteger()));
                     }
-                    byte[] nonce = new byte[8];
-                    rand.NextBytes(nonce);
-                    sb.Emit(OpCode.RET, nonce);
-                    tx = new InvocationTransaction
+                    BigInteger sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
+                    if (sum < output.Value) return null;
+                    if (sum != output.Value)
                     {
-                        Version = 1,
-                        Script = sb.ToArray()
-                    };
+                        balances = balances.OrderByDescending(p => p.Value).ToList();
+                        BigInteger amount = output.Value;
+                        int i = 0;
+                        while (balances[i].Value <= amount)
+                            amount -= balances[i++].Value;
+                        if (amount == BigInteger.Zero)
+                            balances = balances.Take(i).ToList();
+                        else
+                            balances = balances.Take(i).Concat(new[] { balances.Last(p => p.Value >= amount) }).ToList();
+                        sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
+                    }
+                    sAttributes.UnionWith(balances.Select(p => p.Account));
+                    for (int i = 0; i < balances.Count; i++)
+                    {
+                        BigInteger value = balances[i].Value;
+                        if (i == 0)
+                        {
+                            BigInteger change = sum - output.Value;
+                            if (change > 0) value -= change;
+                        }
+                        sb.EmitAppCall(output.AssetId, "transfer", balances[i].Account, output.Account, value);
+                        sb.Emit(OpCode.THROWIFNOT);
+                    }
                 }
-                attributes.AddRange(sAttributes.Select(p => new TransactionAttribute
+                byte[] nonce = new byte[8];
+                rand.NextBytes(nonce);
+                sb.Emit(OpCode.RET, nonce);
+                tx = new InvocationTransaction
                 {
-                    Usage = TransactionAttributeUsage.Script,
-                    Data = p.ToArray()
-                }));
+                    Version = 1,
+                    Script = sb.ToArray()
+                };
             }
+            attributes.AddRange(sAttributes.Select(p => new TransactionAttribute
+            {
+                Usage = TransactionAttributeUsage.Script,
+                Data = p.ToArray()
+            }));
             tx.Attributes = attributes.ToArray();
             tx.Inputs = new CoinReference[0];
             tx.Outputs = outputs.Where(p => p.IsGlobalAsset).Select(p => p.ToTxOutput()).ToArray();
