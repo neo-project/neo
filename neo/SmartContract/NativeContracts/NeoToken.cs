@@ -1,6 +1,7 @@
 ﻿using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -83,18 +84,34 @@ namespace Neo.SmartContract
                 return false;
             ContractState contract_to = Snapshot.Contracts.TryGet(hash_to);
             if (contract_to?.Payable == false) return false;
-            if (amount.Sign > 0)
+            StorageKey key_from = new StorageKey
             {
-                StorageKey key_from = new StorageKey
+                ScriptHash = Blockchain.NeoToken.ScriptHash,
+                Key = from
+            };
+            StorageItem storage_from = Snapshot.Storages.TryGet(key_from);
+            if (amount.IsZero)
+            {
+                if (storage_from != null)
                 {
-                    ScriptHash = Blockchain.NeoToken.ScriptHash,
-                    Key = from
-                };
-                StorageItem storage_from = Snapshot.Storages.TryGet(key_from);
+                    NeoToken_AccountState state_from = NeoToken_AccountState.FromStruct((Struct)storage_from.Value.DeserializeStackItem(engine.MaxArraySize));
+                    NeoToken_DistributeGas(engine, from, state_from);
+                    storage_from = Snapshot.Storages.GetAndChange(key_from);
+                    storage_from.Value = state_from.ToStruct().Serialize();
+                }
+            }
+            else
+            {
                 if (storage_from is null) return false;
                 NeoToken_AccountState state_from = NeoToken_AccountState.FromStruct((Struct)storage_from.Value.DeserializeStackItem(engine.MaxArraySize));
                 if (state_from.Balance < amount) return false;
-                if (!hash_from.Equals(hash_to))
+                NeoToken_DistributeGas(engine, from, state_from);
+                if (hash_from.Equals(hash_to))
+                {
+                    storage_from = Snapshot.Storages.GetAndChange(key_from);
+                    storage_from.Value = state_from.ToStruct().Serialize();
+                }
+                else
                 {
                     if (state_from.Balance == amount)
                     {
@@ -116,12 +133,54 @@ namespace Neo.SmartContract
                         Value = new NeoToken_AccountState().ToStruct().Serialize()
                     });
                     NeoToken_AccountState state_to = NeoToken_AccountState.FromStruct((Struct)storage_to.Value.DeserializeStackItem(engine.MaxArraySize));
+                    NeoToken_DistributeGas(engine, to, state_to);
                     state_to.Balance += amount;
                     storage_to.Value = state_to.ToStruct().Serialize();
                 }
             }
-            SendNotification(engine, new StackItem[] { "Transfer", from, to, amount });
+            SendNotification(engine, Blockchain.NeoToken.ScriptHash, new StackItem[] { "Transfer", from, to, amount });
             return true;
+        }
+
+        private void NeoToken_DistributeGas(ExecutionEngine engine, byte[] account, NeoToken_AccountState state)
+        {
+            BigInteger gas = NeoToken_CalculateBonus(state.Balance, state.BalanceHeight, Snapshot.PersistingBlock.Index);
+            state.BalanceHeight = Snapshot.PersistingBlock.Index;
+            GasToken_DistributeGas(engine, account, gas);
+        }
+
+        private BigInteger NeoToken_CalculateBonus(BigInteger value, uint start, uint end)
+        {
+            if (value.IsZero || start == end) return BigInteger.Zero;
+            if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
+            if (start > end) throw new ArgumentOutOfRangeException(nameof(start));
+            uint amount = 0;
+            uint ustart = start / Blockchain.DecrementInterval;
+            if (ustart < Blockchain.GenerationAmount.Length)
+            {
+                uint istart = start % Blockchain.DecrementInterval;
+                uint uend = end / Blockchain.DecrementInterval;
+                uint iend = end % Blockchain.DecrementInterval;
+                if (uend >= Blockchain.GenerationAmount.Length)
+                {
+                    uend = (uint)Blockchain.GenerationAmount.Length;
+                    iend = 0;
+                }
+                if (iend == 0)
+                {
+                    uend--;
+                    iend = Blockchain.DecrementInterval;
+                }
+                while (ustart < uend)
+                {
+                    amount += (Blockchain.DecrementInterval - istart) * Blockchain.GenerationAmount[ustart];
+                    ustart++;
+                    istart = 0;
+                }
+                amount += (iend - istart) * Blockchain.GenerationAmount[ustart];
+            }
+            amount += (uint)(Snapshot.GetSysFeeAmount(end - 1) - (start == 0 ? 0 : Snapshot.GetSysFeeAmount(start - 1)));
+            return value * amount * GasToken_DecimalsFactor / NeoToken_TotalAmount;
         }
 
         private bool NeoToken_Initialize()
@@ -155,7 +214,6 @@ namespace Neo.SmartContract
         {
             public BigInteger Balance;
             public uint BalanceHeight;
-            public BigInteger GasAvailable;
             public ECPoint[] Votes = new ECPoint[0];
 
             public static NeoToken_AccountState FromStruct(Struct @struct)
@@ -164,8 +222,7 @@ namespace Neo.SmartContract
                 {
                     Balance = @struct[0].GetBigInteger(),
                     BalanceHeight = (uint)@struct[1].GetBigInteger(),
-                    GasAvailable = @struct[2].GetBigInteger(),
-                    Votes = @struct[3].GetByteArray().AsSerializableArray<ECPoint>(Blockchain.MaxValidators)
+                    Votes = @struct[2].GetByteArray().AsSerializableArray<ECPoint>(Blockchain.MaxValidators)
                 };
             }
 
@@ -175,7 +232,6 @@ namespace Neo.SmartContract
                 {
                     Balance,
                     BalanceHeight,
-                    GasAvailable,
                     Votes.ToByteArray()
                 });
             }

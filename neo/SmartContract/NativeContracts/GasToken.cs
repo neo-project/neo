@@ -16,7 +16,6 @@ namespace Neo.SmartContract
         private const string GasToken_Symbol = "gas";
         private const int GasToken_Decimals = 8;
         private static readonly BigInteger GasToken_DecimalsFactor = BigInteger.Pow(10, GasToken_Decimals);
-        private static readonly BigInteger GasToken_TotalAmount = 100000000 * GasToken_DecimalsFactor;
 
         private bool GasToken_Main(ExecutionEngine engine)
         {
@@ -126,8 +125,27 @@ namespace Neo.SmartContract
                     storage_to.Value = state_to.ToStruct().Serialize();
                 }
             }
-            SendNotification(engine, new StackItem[] { "Transfer", from, to, amount });
+            SendNotification(engine, Blockchain.GasToken.ScriptHash, new StackItem[] { "Transfer", from, to, amount });
             return true;
+        }
+
+        private void GasToken_DistributeGas(ExecutionEngine engine, byte[] account, BigInteger amount)
+        {
+            if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (amount.IsZero) return;
+            StorageKey key = new StorageKey
+            {
+                ScriptHash = Blockchain.GasToken.ScriptHash,
+                Key = account
+            };
+            StorageItem storage = Snapshot.Storages.GetAndChange(key, () => new StorageItem
+            {
+                Value = new GasToken_AccountState().ToStruct().Serialize()
+            });
+            GasToken_AccountState state = GasToken_AccountState.FromStruct((Struct)storage.Value.DeserializeStackItem(engine.MaxArraySize));
+            state.Balance += amount;
+            storage.Value = state.ToStruct().Serialize();
+            SendNotification(engine, Blockchain.GasToken.ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account, amount });
         }
 
         private class GasToken_AccountState

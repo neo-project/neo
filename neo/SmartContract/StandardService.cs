@@ -179,16 +179,16 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected void SendNotification(ExecutionEngine engine, StackItem state)
+        protected void SendNotification(ExecutionEngine engine, UInt160 script_hash, StackItem state)
         {
-            NotifyEventArgs notification = new NotifyEventArgs(engine.ScriptContainer, new UInt160(engine.CurrentContext.ScriptHash), state);
+            NotifyEventArgs notification = new NotifyEventArgs(engine.ScriptContainer, script_hash, state);
             Notify?.Invoke(this, notification);
             notifications.Add(notification);
         }
 
         protected bool Runtime_Notify(ExecutionEngine engine)
         {
-            SendNotification(engine, engine.CurrentContext.EvaluationStack.Pop());
+            SendNotification(engine, new UInt160(engine.CurrentContext.ScriptHash), engine.CurrentContext.EvaluationStack.Pop());
             return true;
         }
 
