@@ -52,7 +52,7 @@ namespace Neo.SmartContract
                     result = NeoToken_Transfer(engine, args[0].GetByteArray(), args[1].GetByteArray(), args[2].GetBigInteger());
                     break;
                 case "initialize":
-                    result = NeoToken_Initialize();
+                    result = NeoToken_Initialize(engine);
                     break;
                 default:
                     return false;
@@ -183,7 +183,7 @@ namespace Neo.SmartContract
             return value * amount * GasToken_DecimalsFactor / NeoToken_TotalAmount;
         }
 
-        private bool NeoToken_Initialize()
+        private bool NeoToken_Initialize(ExecutionEngine engine)
         {
             if (Trigger != TriggerType.Application) throw new InvalidOperationException();
             StorageKey key = new StorageKey
@@ -197,16 +197,17 @@ namespace Neo.SmartContract
                 Value = new byte[] { 1 },
                 IsConstant = true
             });
-            UInt160 account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1, Blockchain.StandbyValidators).ToScriptHash();
+            byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1, Blockchain.StandbyValidators).ToScriptHash().ToArray();
             key = new StorageKey
             {
                 ScriptHash = Blockchain.NeoToken.ScriptHash,
-                Key = account.ToArray()
+                Key = account
             };
             Snapshot.Storages.Add(key, new StorageItem
             {
                 Value = new NeoToken_AccountState { Balance = NeoToken_TotalAmount }.ToStruct().Serialize()
             });
+            SendNotification(engine, Blockchain.NeoToken.ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account, NeoToken_TotalAmount });
             return true;
         }
 
