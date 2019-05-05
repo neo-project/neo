@@ -3,8 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.VM;
-using System.Text;
-using System.Numerics;
 using System.Reflection;
 using System;
 
@@ -22,82 +20,22 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void NeoServiceFixedPriceWithReflection()
-        {
-            // testing reflection with public methods too
-            MethodInfo GetPrice = typeof(NeoService).GetMethod("GetPrice", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new Type[] { typeof(uint) }, null);
-            GetPrice.Invoke(uut, new object[]{"Neo.Runtime.CheckWitness".ToInteropMethodHash()}).Should().Be(200L);
-        }
-
-        [TestMethod]
         public void NeoServiceFixedPrices()
         {
-            uut.GetPrice("Neo.Runtime.GetTrigger".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Runtime.CheckWitness".ToInteropMethodHash()).Should().Be(200);
-            uut.GetPrice("Neo.Runtime.Notify".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Runtime.Log".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Runtime.GetTime".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Runtime.Serialize".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Runtime.Deserialize".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Blockchain.GetHeight".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Blockchain.GetHeader".ToInteropMethodHash()).Should().Be(100);
-            uut.GetPrice("Neo.Blockchain.GetBlock".ToInteropMethodHash()).Should().Be(200);
-            uut.GetPrice("Neo.Blockchain.GetTransaction".ToInteropMethodHash()).Should().Be(100);
-            uut.GetPrice("Neo.Blockchain.GetTransactionHeight".ToInteropMethodHash()).Should().Be(100);
             uut.GetPrice("Neo.Blockchain.GetAccount".ToInteropMethodHash()).Should().Be(100);
             uut.GetPrice("Neo.Blockchain.GetValidators".ToInteropMethodHash()).Should().Be(200);
-            uut.GetPrice("Neo.Blockchain.GetAsset".ToInteropMethodHash()).Should().Be(100);
-            uut.GetPrice("Neo.Blockchain.GetContract".ToInteropMethodHash()).Should().Be(100);
-            uut.GetPrice("Neo.Header.GetHash".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Header.GetVersion".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Header.GetPrevHash".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Header.GetMerkleRoot".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Header.GetTimestamp".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Header.GetIndex".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Header.GetConsensusData".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Header.GetNextConsensus".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Block.GetTransactionCount".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Block.GetTransactions".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Block.GetTransaction".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Transaction.GetHash".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Transaction.GetType".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Transaction.GetAttributes".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Transaction.GetInputs".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Transaction.GetOutputs".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Transaction.GetReferences".ToInteropMethodHash()).Should().Be(200);
-            uut.GetPrice("Neo.Transaction.GetUnspentCoins".ToInteropMethodHash()).Should().Be(200);
             uut.GetPrice("Neo.Transaction.GetWitnesses".ToInteropMethodHash()).Should().Be(200);
             uut.GetPrice("Neo.InvocationTransaction.GetScript".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Witness.GetVerificationScript".ToInteropMethodHash()).Should().Be(100);
-            uut.GetPrice("Neo.Attribute.GetUsage".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Attribute.GetData".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Input.GetHash".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Input.GetIndex".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Output.GetAssetId".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Output.GetValue".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Output.GetScriptHash".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Account.GetScriptHash".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Account.GetVotes".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Account.GetBalance".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Account.IsStandard".ToInteropMethodHash()).Should().Be(100);
-            uut.GetPrice("Neo.Asset.GetAssetId".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Asset.GetAssetType".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Asset.GetAmount".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Asset.GetAvailable".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Asset.GetPrecision".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Asset.GetOwner".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Asset.GetAdmin".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Asset.GetIssuer".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Contract.Destroy".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Contract.GetScript".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Contract.IsPayable".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Contract.GetStorageContext".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Storage.GetContext".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Storage.GetReadOnlyContext".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Storage.Get".ToInteropMethodHash()).Should().Be(100);
-            uut.GetPrice("Neo.Storage.Delete".ToInteropMethodHash()).Should().Be(100);
             uut.GetPrice("Neo.Storage.Find".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.StorageContext.AsReadOnly".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Enumerator.Create".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Enumerator.Next".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Enumerator.Value".ToInteropMethodHash()).Should().Be(1);
@@ -107,65 +45,6 @@ namespace Neo.UnitTests
             uut.GetPrice("Neo.Iterator.Keys".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Iterator.Values".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Iterator.Concat".ToInteropMethodHash()).Should().Be(1);
-
-            #region Aliases
-            uut.GetPrice("Neo.Iterator.Next".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("Neo.Iterator.Value".ToInteropMethodHash()).Should().Be(1);
-            #endregion
-
-            #region Old APIs
-            uut.GetPrice("AntShares.Runtime.CheckWitness".ToInteropMethodHash()).Should().Be(200);
-            uut.GetPrice("AntShares.Runtime.Notify".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Runtime.Log".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Blockchain.GetHeight".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Blockchain.GetHeader".ToInteropMethodHash()).Should().Be(100);
-            uut.GetPrice("AntShares.Blockchain.GetBlock".ToInteropMethodHash()).Should().Be(200);
-            uut.GetPrice("AntShares.Blockchain.GetTransaction".ToInteropMethodHash()).Should().Be(100);
-            uut.GetPrice("AntShares.Blockchain.GetAccount".ToInteropMethodHash()).Should().Be(100);
-            uut.GetPrice("AntShares.Blockchain.GetValidators".ToInteropMethodHash()).Should().Be(200);
-            uut.GetPrice("AntShares.Blockchain.GetAsset".ToInteropMethodHash()).Should().Be(100);
-            uut.GetPrice("AntShares.Blockchain.GetContract".ToInteropMethodHash()).Should().Be(100);
-            uut.GetPrice("AntShares.Header.GetHash".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Header.GetVersion".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Header.GetPrevHash".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Header.GetMerkleRoot".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Header.GetTimestamp".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Header.GetConsensusData".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Header.GetNextConsensus".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Block.GetTransactionCount".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Block.GetTransactions".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Block.GetTransaction".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Transaction.GetHash".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Transaction.GetType".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Transaction.GetAttributes".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Transaction.GetInputs".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Transaction.GetOutputs".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Transaction.GetReferences".ToInteropMethodHash()).Should().Be(200);
-            uut.GetPrice("AntShares.Attribute.GetUsage".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Attribute.GetData".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Input.GetHash".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Input.GetIndex".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Output.GetAssetId".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Output.GetValue".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Output.GetScriptHash".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Account.GetScriptHash".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Account.GetVotes".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Account.GetBalance".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Asset.GetAssetId".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Asset.GetAssetType".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Asset.GetAmount".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Asset.GetAvailable".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Asset.GetPrecision".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Asset.GetOwner".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Asset.GetAdmin".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Asset.GetIssuer".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Contract.Destroy".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Contract.GetScript".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Contract.GetStorageContext".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Storage.GetContext".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("AntShares.Storage.Get".ToInteropMethodHash()).Should().Be(100);
-            uut.GetPrice("AntShares.Storage.Delete".ToInteropMethodHash()).Should().Be(100);
-            #endregion
         }
 
         [TestMethod]
@@ -246,25 +125,6 @@ namespace Neo.UnitTests
         {
             // ApplicationEngine.GetPriceForSysCall is protected, so we will access through reflection
             MethodInfo GetPriceForSysCall = typeof(ApplicationEngine).GetMethod("GetPriceForSysCall", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new Type[]{}, null);
-
-            // Neo.Asset.Create: 83c5c61f
-            byte[] SyscallAssetCreateHash = new byte[]{0x68, 0x04, 0x83, 0xc5, 0xc6, 0x1f};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
-            {
-                ae.LoadScript(SyscallAssetCreateHash);
-                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(5000L * 100000000L / 100000); // assuming private ae.ratio = 100000
-            }
-
-            // Neo.Asset.Renew: 78849071 (requires push 09 push 09 before)
-            byte[] SyscallAssetRenewHash = new byte[]{0x59, 0x59, 0x68, 0x04, 0x78, 0x84, 0x90, 0x71};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
-            {
-                Debugger debugger = new Debugger(ae);
-                ae.LoadScript(SyscallAssetRenewHash);
-                debugger.StepInto(); // push 9
-                debugger.StepInto(); // push 9
-                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(9L * 5000L * 100000000L / 100000); // assuming private ae.ratio = 100000
-            }
 
             // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
             byte[] SyscallContractCreateHash00 = new byte[]{(byte)ContractPropertyState.NoProperty, 0x00, 0x00, 0x00, 0x68, 0x04, 0xf6, 0x6c, 0xa5, 0x6e};
