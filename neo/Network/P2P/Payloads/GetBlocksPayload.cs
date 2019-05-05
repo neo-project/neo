@@ -1,34 +1,34 @@
-﻿using Neo.IO;
-using System.IO;
+﻿using System.IO;
+using Neo.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
     public class GetBlocksPayload : ISerializable
     {
-        public UInt256[] HashStart;
-        public UInt256 HashStop;
+        public UInt256 HashStart;
+        public int Count;
 
-        public int Size => HashStart.GetVarSize() + HashStop.Size;
+        public int Size => 32 + sizeof(int);
 
-        public static GetBlocksPayload Create(UInt256 hash_start, UInt256 hash_stop = null)
+        public static GetBlocksPayload Create(UInt256 hash_start, int count)
         {
             return new GetBlocksPayload
             {
-                HashStart = new[] { hash_start },
-                HashStop = hash_stop ?? UInt256.Zero
+                HashStart = hash_start,
+                Count = count
             };
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            HashStart = reader.ReadSerializableArray<UInt256>(16);
-            HashStop = reader.ReadSerializable<UInt256>();
+            HashStart = reader.ReadSerializable<UInt256>();
+            Count = reader.ReadInt16();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(HashStart);
-            writer.Write(HashStop);
+            writer.Write(Count);
         }
     }
 }

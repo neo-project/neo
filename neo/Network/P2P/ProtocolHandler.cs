@@ -157,19 +157,18 @@ namespace Neo.Network.P2P
 
         private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
         {
-            UInt256 hash = payload.HashStart[0];
-            if (hash == payload.HashStop) return;
+            UInt256 hash = payload.HashStart;
+            if (payload.Count <= 0) return;
             BlockState state = Blockchain.Singleton.Store.GetBlocks().TryGet(hash);
             if (state == null) return;
             List<UInt256> hashes = new List<UInt256>();
-            for (uint i = 1; i <= InvPayload.MaxHashesCount; i++)
+            for (uint i = 1; i <= InvPayload.MaxHashesCount && i <= payload.Count; i++)
             {
                 uint index = state.TrimmedBlock.Index + i;
                 if (index > Blockchain.Singleton.Height)
                     break;
                 hash = Blockchain.Singleton.GetBlockHash(index);
                 if (hash == null) break;
-                if (hash == payload.HashStop) break;
                 hashes.Add(hash);
             }
             if (hashes.Count == 0) return;
@@ -216,18 +215,17 @@ namespace Neo.Network.P2P
 
         private void OnGetHeadersMessageReceived(GetBlocksPayload payload)
         {
-            UInt256 hash = payload.HashStart[0];
-            if (hash == payload.HashStop) return;
+            UInt256 hash = payload.HashStart;
+            if (payload.Count <= 0) return;
             DataCache<UInt256, BlockState> cache = Blockchain.Singleton.Store.GetBlocks();
             BlockState state = cache.TryGet(hash);
             if (state == null) return;
             List<Header> headers = new List<Header>();
-            for (uint i = 1; i <= HeadersPayload.MaxHeadersCount; i++)
+            for (uint i = 1; i <= HeadersPayload.MaxHeadersCount && i <= payload.Count; i++)
             {
                 uint index = state.TrimmedBlock.Index + i;
                 hash = Blockchain.Singleton.GetBlockHash(index);
                 if (hash == null) break;
-                if (hash == payload.HashStop) break;
                 Header header = cache.TryGet(hash)?.TrimmedBlock.Header;
                 if (header == null) break;
                 headers.Add(header);
