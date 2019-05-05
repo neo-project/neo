@@ -54,6 +54,9 @@ namespace Neo.SmartContract
                 case "initialize":
                     result = NeoToken_Initialize(engine);
                     break;
+                case "unclaimedgas":
+                    result = NeoToken_UnclaimedGas(engine, args[0].GetByteArray(), (uint)args[1].GetBigInteger());
+                    break;
                 default:
                     return false;
             }
@@ -209,6 +212,18 @@ namespace Neo.SmartContract
             });
             SendNotification(engine, Blockchain.NeoToken.ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account, NeoToken_TotalAmount });
             return true;
+        }
+
+        private BigInteger NeoToken_UnclaimedGas(ExecutionEngine engine, byte[] account, uint end)
+        {
+            StorageItem storage = Snapshot.Storages.TryGet(new StorageKey
+            {
+                ScriptHash = Blockchain.NeoToken.ScriptHash,
+                Key = account
+            });
+            if (storage is null) return BigInteger.Zero;
+            NeoToken_AccountState state = NeoToken_AccountState.FromStruct((Struct)storage.Value.DeserializeStackItem(engine.MaxArraySize));
+            return NeoToken_CalculateBonus(state.Balance, state.BalanceHeight, end);
         }
 
         private class NeoToken_AccountState
