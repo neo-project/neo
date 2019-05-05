@@ -22,7 +22,7 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(BinaryReader reader)
         {
             HashStart = reader.ReadSerializable<UInt256>();
-            Count = reader.ReadInt16();
+            Count = reader.ReadInt32();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
