@@ -36,18 +36,6 @@ namespace Neo.Ledger
         public int CompareTo(Transaction otherTx)
         {
             if (otherTx == null) return 1;
-            if (Tx.IsLowPriority && otherTx.IsLowPriority)
-            {
-                bool thisIsClaimTx = Tx is ClaimTransaction;
-                bool otherIsClaimTx = otherTx is ClaimTransaction;
-                if (thisIsClaimTx != otherIsClaimTx)
-                {
-                    // This is a claim Tx and other isn't.
-                    if (thisIsClaimTx) return 1;
-                    // The other is claim Tx and this isn't.
-                    return -1;
-                }
-            }
             // Fees sorted ascending
             int ret = Tx.FeePerByte.CompareTo(otherTx.FeePerByte);
             if (ret != 0) return ret;

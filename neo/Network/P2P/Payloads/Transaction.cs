@@ -300,7 +300,6 @@ namespace Neo.Network.P2P.Payloads
             switch (Type)
             {
                 case TransactionType.MinerTransaction:
-                case TransactionType.ClaimTransaction:
                     if (results_issue.Any(p => p.AssetId != Blockchain.UtilityToken.Hash))
                         return false;
                     break;

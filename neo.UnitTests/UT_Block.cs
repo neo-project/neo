@@ -236,26 +236,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void CalculateNetFee_Ignores_ClaimTransactions()
-        {
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRootVal;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal, out transactionsVal, 0);
-
-            uut.Transactions = new Transaction[1] {
-                TestUtils.GetClaimTransaction()
-            };
-
-            Block.CalculateNetFee(uut.Transactions).Should().Be(Fixed8.Zero);
-        }
-
-
-        [TestMethod]
         public void CalculateNetFee_Out()
         {
             UInt256 val256 = UInt256.Zero;

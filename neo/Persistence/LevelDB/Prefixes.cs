@@ -7,7 +7,6 @@
 
         public const byte ST_Account = 0x40;
         public const byte ST_Coin = 0x44;
-        public const byte ST_SpentCoin = 0x45;
         public const byte ST_Validator = 0x48;
         public const byte ST_Asset = 0x4c;
         public const byte ST_Contract = 0x50;

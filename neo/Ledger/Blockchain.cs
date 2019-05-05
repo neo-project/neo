@@ -491,12 +491,6 @@ namespace Neo.Ledger
                             AccountState account = snapshot.Accounts.GetAndChange(out_prev.ScriptHash);
                             if (out_prev.AssetId.Equals(GoverningToken.Hash))
                             {
-                                snapshot.SpentCoins.GetAndChange(input.PrevHash, () => new SpentCoinState
-                                {
-                                    TransactionHash = input.PrevHash,
-                                    TransactionHeight = tx_prev.BlockIndex,
-                                    Items = new Dictionary<ushort, uint>()
-                                }).Items.Add(input.PrevIndex, block.Index);
                                 if (account.Votes.Length > 0)
                                 {
                                     foreach (ECPoint pubkey in account.Votes)
@@ -538,13 +532,6 @@ namespace Neo.Ledger
                         case IssueTransaction _:
                             foreach (TransactionResult result in tx.GetTransactionResults().Where(p => p.Amount < Fixed8.Zero))
                                 snapshot.Assets.GetAndChange(result.AssetId).Available -= result.Amount;
-                            break;
-                        case ClaimTransaction _:
-                            foreach (CoinReference input in ((ClaimTransaction)tx).Claims)
-                            {
-                                if (snapshot.SpentCoins.TryGet(input.PrevHash)?.Items.Remove(input.PrevIndex) == true)
-                                    snapshot.SpentCoins.GetAndChange(input.PrevHash);
-                            }
                             break;
 #pragma warning disable CS0612
                         case EnrollmentTransaction tx_enrollment:

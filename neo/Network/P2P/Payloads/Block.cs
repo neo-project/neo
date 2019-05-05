@@ -43,7 +43,7 @@ namespace Neo.Network.P2P.Payloads
 
         public static Fixed8 CalculateNetFee(IEnumerable<Transaction> transactions)
         {
-            Transaction[] ts = transactions.Where(p => p.Type != TransactionType.MinerTransaction && p.Type != TransactionType.ClaimTransaction).ToArray();
+            Transaction[] ts = transactions.Where(p => p.Type != TransactionType.MinerTransaction).ToArray();
             Fixed8 amount_in = ts.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
             Fixed8 amount_out = ts.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
             Fixed8 amount_sysfee = ts.Sum(p => p.SystemFee);

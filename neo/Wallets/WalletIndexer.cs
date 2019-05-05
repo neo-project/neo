@@ -187,18 +187,6 @@ namespace Neo.Wallets
                     case PublishTransaction _:
 #pragma warning restore CS0612
                         break;
-                    case ClaimTransaction tx_claim:
-                        foreach (CoinReference claim in tx_claim.Claims)
-                        {
-                            if (coins_tracked.TryGetValue(claim, out Coin coin))
-                            {
-                                accounts_tracked[coin.Output.ScriptHash].Remove(claim);
-                                coins_tracked.Remove(claim);
-                                batch.Delete(DataEntryPrefix.ST_Coin, claim);
-                                accounts_changed.Add(coin.Output.ScriptHash);
-                            }
-                        }
-                        break;
 #pragma warning disable CS0612
                     case EnrollmentTransaction tx_enrollment:
                         if (accounts_tracked.ContainsKey(tx_enrollment.ScriptHash))

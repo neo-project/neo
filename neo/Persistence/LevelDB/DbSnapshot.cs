@@ -17,7 +17,6 @@ namespace Neo.Persistence.LevelDB
         public override DataCache<UInt256, TransactionState> Transactions { get; }
         public override DataCache<UInt160, AccountState> Accounts { get; }
         public override DataCache<UInt256, UnspentCoinState> UnspentCoins { get; }
-        public override DataCache<UInt256, SpentCoinState> SpentCoins { get; }
         public override DataCache<ECPoint, ValidatorState> Validators { get; }
         public override DataCache<UInt256, AssetState> Assets { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
@@ -37,7 +36,6 @@ namespace Neo.Persistence.LevelDB
             Transactions = new DbCache<UInt256, TransactionState>(db, options, batch, Prefixes.DATA_Transaction);
             Accounts = new DbCache<UInt160, AccountState>(db, options, batch, Prefixes.ST_Account);
             UnspentCoins = new DbCache<UInt256, UnspentCoinState>(db, options, batch, Prefixes.ST_Coin);
-            SpentCoins = new DbCache<UInt256, SpentCoinState>(db, options, batch, Prefixes.ST_SpentCoin);
             Validators = new DbCache<ECPoint, ValidatorState>(db, options, batch, Prefixes.ST_Validator);
             Assets = new DbCache<UInt256, AssetState>(db, options, batch, Prefixes.ST_Asset);
             Contracts = new DbCache<UInt160, ContractState>(db, options, batch, Prefixes.ST_Contract);
