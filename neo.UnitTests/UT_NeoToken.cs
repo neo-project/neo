@@ -11,7 +11,7 @@ using Neo.VM;
 namespace Neo.UnitTests
 {
     [TestClass]
-    public class UT_GasToken
+    public class UT_NeoToken
     {
         NeoSystem System;
         Store Store;
@@ -36,7 +36,7 @@ namespace Neo.UnitTests
             var service = new NeoService(TriggerType.Application, Store.GetSnapshot());
             var engine = new ExecutionEngine(null, Crypto.Default, service);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.GAS"));
+            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -49,7 +49,7 @@ namespace Neo.UnitTests
 
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.ByteArray));
-            Encoding.ASCII.GetString((result as VM.Types.ByteArray).GetByteArray()).Should().Be("GAS");
+            Encoding.ASCII.GetString((result as VM.Types.ByteArray).GetByteArray()).Should().Be("NEO");
         }
 
         [TestMethod]
@@ -58,7 +58,7 @@ namespace Neo.UnitTests
             var service = new NeoService(TriggerType.Application, Store.GetSnapshot());
             var engine = new ExecutionEngine(null, Crypto.Default, service);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.GAS"));
+            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -71,7 +71,7 @@ namespace Neo.UnitTests
 
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.ByteArray));
-            Encoding.ASCII.GetString((result as VM.Types.ByteArray).GetByteArray()).Should().Be("gas");
+            Encoding.ASCII.GetString((result as VM.Types.ByteArray).GetByteArray()).Should().Be("neo");
         }
 
         [TestMethod]
@@ -80,7 +80,7 @@ namespace Neo.UnitTests
             var service = new NeoService(TriggerType.Application, Store.GetSnapshot());
             var engine = new ExecutionEngine(null, Crypto.Default, service);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.GAS"));
+            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -93,7 +93,7 @@ namespace Neo.UnitTests
 
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Integer));
-            (result as VM.Types.Integer).GetBigInteger().Should().Be(8);
+            (result as VM.Types.Integer).GetBigInteger().Should().Be(0);
         }
 
         [TestMethod]
@@ -102,7 +102,7 @@ namespace Neo.UnitTests
             var service = new NeoService(TriggerType.Application, Store.GetSnapshot());
             var engine = new ExecutionEngine(null, Crypto.Default, service);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.GAS"));
+            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -131,7 +131,7 @@ namespace Neo.UnitTests
             script.Emit(OpCode.NOP);
             engine.LoadScript(script.ToArray());
 
-            typeof(NeoService).GetMethod("GasToken_Main", BindingFlags.NonPublic | BindingFlags.Instance)
+            typeof(NeoService).GetMethod("NeoToken_Main", BindingFlags.NonPublic | BindingFlags.Instance)
                 .Invoke(service, new object[] { engine }).Should().Be(false);
         }
     }
