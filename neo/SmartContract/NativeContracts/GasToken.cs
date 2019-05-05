@@ -97,7 +97,7 @@ namespace Neo.SmartContract
                 };
                 StorageItem storage_from = Snapshot.Storages.TryGet(key_from);
                 if (storage_from is null) return false;
-                GasToken_AccountState state_from = GasToken_AccountState.FromStruct((Struct)storage_from.Value.DeserializeStackItem(engine.MaxArraySize));
+                GasToken_AccountState state_from = GasToken_AccountState.FromByteArray(storage_from.Value);
                 if (state_from.Balance < amount) return false;
                 if (!hash_from.Equals(hash_to))
                 {
@@ -109,7 +109,7 @@ namespace Neo.SmartContract
                     {
                         state_from.Balance -= amount;
                         storage_from = Snapshot.Storages.GetAndChange(key_from);
-                        storage_from.Value = state_from.ToStruct().Serialize();
+                        storage_from.Value = state_from.ToByteArray();
                     }
                     StorageKey key_to = new StorageKey
                     {
@@ -118,11 +118,11 @@ namespace Neo.SmartContract
                     };
                     StorageItem storage_to = Snapshot.Storages.GetAndChange(key_to, () => new StorageItem
                     {
-                        Value = new GasToken_AccountState().ToStruct().Serialize()
+                        Value = new GasToken_AccountState().ToByteArray()
                     });
-                    GasToken_AccountState state_to = GasToken_AccountState.FromStruct((Struct)storage_to.Value.DeserializeStackItem(engine.MaxArraySize));
+                    GasToken_AccountState state_to = GasToken_AccountState.FromByteArray(storage_to.Value);
                     state_to.Balance += amount;
-                    storage_to.Value = state_to.ToStruct().Serialize();
+                    storage_to.Value = state_to.ToByteArray();
                 }
             }
             SendNotification(engine, Blockchain.GasToken.ScriptHash, new StackItem[] { "Transfer", from, to, amount });
@@ -140,11 +140,11 @@ namespace Neo.SmartContract
             };
             StorageItem storage = Snapshot.Storages.GetAndChange(key, () => new StorageItem
             {
-                Value = new GasToken_AccountState().ToStruct().Serialize()
+                Value = new GasToken_AccountState().ToByteArray()
             });
-            GasToken_AccountState state = GasToken_AccountState.FromStruct((Struct)storage.Value.DeserializeStackItem(engine.MaxArraySize));
+            GasToken_AccountState state = GasToken_AccountState.FromByteArray(storage.Value);
             state.Balance += amount;
-            storage.Value = state.ToStruct().Serialize();
+            storage.Value = state.ToByteArray();
             SendNotification(engine, Blockchain.GasToken.ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account, amount });
         }
 
@@ -152,17 +152,18 @@ namespace Neo.SmartContract
         {
             public BigInteger Balance;
 
-            public static GasToken_AccountState FromStruct(Struct @struct)
+            public static GasToken_AccountState FromByteArray(byte[] data)
             {
+                Struct @struct = (Struct)data.DeserializeStackItem(1);
                 return new GasToken_AccountState
                 {
                     Balance = @struct[0].GetBigInteger()
                 };
             }
 
-            public Struct ToStruct()
+            public byte[] ToByteArray()
             {
-                return new Struct(new StackItem[] { Balance });
+                return new Struct(new StackItem[] { Balance }).Serialize();
             }
         }
     }

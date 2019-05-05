@@ -55,7 +55,7 @@ namespace Neo.SmartContract
                     result = NeoToken_Initialize(engine);
                     break;
                 case "unclaimedGas":
-                    result = NeoToken_UnclaimedGas(engine, args[0].GetByteArray(), (uint)args[1].GetBigInteger());
+                    result = NeoToken_UnclaimedGas(args[0].GetByteArray(), (uint)args[1].GetBigInteger());
                     break;
                 case "registerValidator":
                     result = NeoToken_RegisterValidator(args[0].GetByteArray());
@@ -100,22 +100,22 @@ namespace Neo.SmartContract
             {
                 if (storage_from != null)
                 {
-                    NeoToken_AccountState state_from = NeoToken_AccountState.FromStruct((Struct)storage_from.Value.DeserializeStackItem(engine.MaxArraySize));
+                    NeoToken_AccountState state_from = NeoToken_AccountState.FromByteArray(storage_from.Value);
                     NeoToken_DistributeGas(engine, from, state_from);
                     storage_from = Snapshot.Storages.GetAndChange(key_from);
-                    storage_from.Value = state_from.ToStruct().Serialize();
+                    storage_from.Value = state_from.ToByteArray();
                 }
             }
             else
             {
                 if (storage_from is null) return false;
-                NeoToken_AccountState state_from = NeoToken_AccountState.FromStruct((Struct)storage_from.Value.DeserializeStackItem(engine.MaxArraySize));
+                NeoToken_AccountState state_from = NeoToken_AccountState.FromByteArray(storage_from.Value);
                 if (state_from.Balance < amount) return false;
                 NeoToken_DistributeGas(engine, from, state_from);
                 if (hash_from.Equals(hash_to))
                 {
                     storage_from = Snapshot.Storages.GetAndChange(key_from);
-                    storage_from.Value = state_from.ToStruct().Serialize();
+                    storage_from.Value = state_from.ToByteArray();
                 }
                 else
                 {
@@ -127,7 +127,7 @@ namespace Neo.SmartContract
                     {
                         state_from.Balance -= amount;
                         storage_from = Snapshot.Storages.GetAndChange(key_from);
-                        storage_from.Value = state_from.ToStruct().Serialize();
+                        storage_from.Value = state_from.ToByteArray();
                     }
                     StorageKey key_to = new StorageKey
                     {
@@ -136,12 +136,12 @@ namespace Neo.SmartContract
                     };
                     StorageItem storage_to = Snapshot.Storages.GetAndChange(key_to, () => new StorageItem
                     {
-                        Value = new NeoToken_AccountState().ToStruct().Serialize()
+                        Value = new NeoToken_AccountState().ToByteArray()
                     });
-                    NeoToken_AccountState state_to = NeoToken_AccountState.FromStruct((Struct)storage_to.Value.DeserializeStackItem(engine.MaxArraySize));
+                    NeoToken_AccountState state_to = NeoToken_AccountState.FromByteArray(storage_to.Value);
                     NeoToken_DistributeGas(engine, to, state_to);
                     state_to.Balance += amount;
-                    storage_to.Value = state_to.ToStruct().Serialize();
+                    storage_to.Value = state_to.ToByteArray();
                 }
             }
             SendNotification(engine, Blockchain.NeoToken.ScriptHash, new StackItem[] { "Transfer", from, to, amount });
@@ -211,7 +211,7 @@ namespace Neo.SmartContract
             };
             Snapshot.Storages.Add(key, new StorageItem
             {
-                Value = new NeoToken_AccountState { Balance = NeoToken_TotalAmount }.ToStruct().Serialize()
+                Value = new NeoToken_AccountState { Balance = NeoToken_TotalAmount }.ToByteArray()
             });
             SendNotification(engine, Blockchain.NeoToken.ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account, NeoToken_TotalAmount });
             foreach (ECPoint pubkey in Blockchain.StandbyValidators)
@@ -219,7 +219,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private BigInteger NeoToken_UnclaimedGas(ExecutionEngine engine, byte[] account, uint end)
+        private BigInteger NeoToken_UnclaimedGas(byte[] account, uint end)
         {
             StorageItem storage = Snapshot.Storages.TryGet(new StorageKey
             {
@@ -227,7 +227,7 @@ namespace Neo.SmartContract
                 Key = account
             });
             if (storage is null) return BigInteger.Zero;
-            NeoToken_AccountState state = NeoToken_AccountState.FromStruct((Struct)storage.Value.DeserializeStackItem(engine.MaxArraySize));
+            NeoToken_AccountState state = NeoToken_AccountState.FromByteArray(storage.Value);
             return NeoToken_CalculateBonus(state.Balance, state.BalanceHeight, end);
         }
 
@@ -243,7 +243,7 @@ namespace Neo.SmartContract
             if (Snapshot.Storages.TryGet(key) != null) return false;
             Snapshot.Storages.Add(key, new StorageItem
             {
-                Value = BigInteger.Zero.ToByteArray()
+                Value = new NeoToken_ValidatorState().ToByteArray()
             });
             return true;
         }
@@ -254,8 +254,9 @@ namespace Neo.SmartContract
             public uint BalanceHeight;
             public ECPoint[] Votes = new ECPoint[0];
 
-            public static NeoToken_AccountState FromStruct(Struct @struct)
+            public static NeoToken_AccountState FromByteArray(byte[] data)
             {
+                Struct @struct = (Struct)data.DeserializeStackItem(3);
                 return new NeoToken_AccountState
                 {
                     Balance = @struct[0].GetBigInteger(),
@@ -264,14 +265,33 @@ namespace Neo.SmartContract
                 };
             }
 
-            public Struct ToStruct()
+            public byte[] ToByteArray()
             {
                 return new Struct(new StackItem[]
                 {
                     Balance,
                     BalanceHeight,
                     Votes.ToByteArray()
-                });
+                }).Serialize();
+            }
+        }
+
+        private class NeoToken_ValidatorState
+        {
+            public BigInteger Votes;
+
+            public static NeoToken_ValidatorState FromByteArray(byte[] data)
+            {
+                Struct @struct = (Struct)data.DeserializeStackItem(1);
+                return new NeoToken_ValidatorState
+                {
+                    Votes = @struct[0].GetBigInteger()
+                };
+            }
+
+            public byte[] ToByteArray()
+            {
+                return new Struct(new StackItem[] { Votes }).Serialize();
             }
         }
     }
