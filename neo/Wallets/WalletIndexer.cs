@@ -183,9 +183,6 @@ namespace Neo.Wallets
                 {
                     case MinerTransaction _:
                     case ContractTransaction _:
-#pragma warning disable CS0612
-                    case PublishTransaction _:
-#pragma warning restore CS0612
                         break;
 #pragma warning disable CS0612
                     case RegisterTransaction tx_register:
