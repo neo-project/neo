@@ -24,7 +24,7 @@ namespace Neo.UnitTests
     {
         private Store Store;
 
-        class CheckWitness : IScriptContainer, IVerifiable
+        internal class CheckWitness : IScriptContainer, IVerifiable
         {
             private readonly UInt160[] _hashForVerify;
 
