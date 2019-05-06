@@ -63,7 +63,7 @@ namespace Neo.UnitTests
             var script = new ScriptBuilder();
             script.EmitPush(0);
             script.Emit(OpCode.PACK);
-            script.EmitPush("name");
+            script.EmitPush("symbol");
             engine.LoadScript(script.ToArray());
 
             engine.Execute();
