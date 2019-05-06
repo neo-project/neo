@@ -1,4 +1,4 @@
-﻿using Neo.Cryptography.ECC;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
@@ -87,7 +87,7 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey storageKey = new StorageKey
             {
                 ScriptHash = script_hash,
-                Key = new byte[sizeof(byte) + key?.Length ?? 0]
+                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
             };
             storageKey.Key[0] = prefix;
             if (key != null)
