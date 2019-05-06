@@ -166,8 +166,6 @@ namespace Neo.UnitTests
             byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
                 Blockchain.StandbyValidators).ToScriptHash().ToArray();
 
-            // Balance
-
             CheckBalance(account, storages[1], 100000000, 0, new ECPoint[] { });
 
             // StandbyValidators
