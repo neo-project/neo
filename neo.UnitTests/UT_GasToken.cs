@@ -1,12 +1,12 @@
-﻿using System.Linq;
-using System.Reflection;
-using System.Text;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
+using System.Linq;
+using System.Reflection;
+using System.Text;
 
 namespace Neo.UnitTests
 {

@@ -1,9 +1,9 @@
-﻿using System;
-using Moq;
+﻿using Moq;
 using Neo.Cryptography.ECC;
 using Neo.IO.Wrappers;
 using Neo.Ledger;
 using Neo.Persistence;
+using System;
 
 namespace Neo.UnitTests
 {
