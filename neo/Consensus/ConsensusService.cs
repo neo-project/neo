@@ -624,7 +624,7 @@ namespace Neo.Consensus
             if (context.TransactionHashes.Length > 1)
             {
                 foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
-                    localNode.Tell(Message.Create("inv", payload));
+                    localNode.Tell(Message.Create(MessageCommand.Inv, payload));
             }
             ChangeTimer(TimeSpan.FromSeconds((Blockchain.SecondsPerBlock << (context.ViewNumber + 1)) - (context.ViewNumber == 0 ? Blockchain.SecondsPerBlock : 0)));
         }
