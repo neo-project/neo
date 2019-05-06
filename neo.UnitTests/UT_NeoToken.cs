@@ -127,7 +127,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void CheckScriptHash_Initialize()
         {
-            var snapshot = Store.GetSnapshot();
+            var snapshot = Store.GetSnapshot().Clone();
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
 
             engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
