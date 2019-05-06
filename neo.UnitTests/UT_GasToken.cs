@@ -14,21 +14,13 @@ namespace Neo.UnitTests
     [TestClass]
     public class UT_GasToken
     {
-        NeoSystem System;
         Store Store;
 
         [TestInitialize]
         public void TestSetup()
         {
-            System = TestBlockchain.InitializeMockNeoSystem();
+            TestBlockchain.InitializeMockNeoSystem();
             Store = TestBlockchain.GetStore();
-        }
-
-        public byte[] NativeContract(string contract)
-        {
-            var scriptSyscall = new ScriptBuilder();
-            scriptSyscall.EmitSysCall(contract);
-            return scriptSyscall.ToArray();
         }
 
         [TestMethod]
@@ -36,7 +28,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.GAS"));
+            engine.LoadScript(UT_NeoToken.NativeContract("Neo.Native.Tokens.GAS"));
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -57,7 +49,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.GAS"));
+            engine.LoadScript(UT_NeoToken.NativeContract("Neo.Native.Tokens.GAS"));
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -78,7 +70,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.GAS"));
+            engine.LoadScript(UT_NeoToken.NativeContract("Neo.Native.Tokens.GAS"));
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -99,7 +91,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.GAS"));
+            engine.LoadScript(UT_NeoToken.NativeContract("Neo.Native.Tokens.GAS"));
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
