@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native.Tokens;
@@ -116,6 +117,56 @@ namespace Neo.UnitTests
                 .Select(u => Encoding.ASCII.GetString(u.GetByteArray()))
                 .ToArray()
                 .Should().BeEquivalentTo(new string[] { "NEP-5", "NEP-10" });
+        }
+
+        [TestMethod]
+        public void CheckScriptHash_Initialize()
+        {
+            var snapshot = Store.GetSnapshot();
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
+
+            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+
+            var script = new ScriptBuilder();
+            script.EmitPush(0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("initialize");
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute();
+            engine.State.Should().Be(VMState.HALT);
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            (result as VM.Types.Boolean).GetBoolean().Should().Be(true);
+
+            var storages = snapshot.Storages.GetChangeSet().ToArray();
+
+            // Count
+
+            storages.Length.Should().Be(9);
+
+            // All hashes equal
+
+            foreach (var st in storages) st.Key.ScriptHash.Equals(NeoToken.ScriptHash);
+
+            // First key, the flag
+
+            storages[0].Item.Value.Should().BeEquivalentTo(new byte[] { 0x01 });
+            storages[0].Key.Key.Should().BeEquivalentTo(new byte[] { 11 });
+            storages[0].Item.IsConstant.Should().Be(true);
+
+            // Balance
+
+            byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
+                Blockchain.StandbyValidators).ToScriptHash().ToArray();
+
+            // TODO: Get Balances
+
+            //storages[1].Item.Value.Should().BeEquivalentTo(new byte[] { 0x01 });
+            storages[1].Key.Key.Should().BeEquivalentTo(new byte[] { 20 }.Concat(account));
+            storages[1].Item.IsConstant.Should().Be(false);
+
         }
 
         [TestMethod]
