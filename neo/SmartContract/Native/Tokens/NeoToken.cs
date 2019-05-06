@@ -340,7 +340,7 @@ namespace Neo.SmartContract.Native.Tokens
             }).Where(p => (p.Votes.Sign > 0) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).OrderBy(p => p).ToArray();
         }
 
-        private class AccountState
+        internal class AccountState
         {
             public BigInteger Balance;
             public uint BalanceHeight;
@@ -368,7 +368,7 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        private class ValidatorState
+        internal class ValidatorState
         {
             public BigInteger Votes;
 
@@ -386,7 +386,7 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        private class ValidatorsCountState
+        internal class ValidatorsCountState
         {
             public BigInteger[] Votes = new BigInteger[Blockchain.MaxValidators];
 

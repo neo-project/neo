@@ -151,7 +151,7 @@ namespace Neo.SmartContract.Native.Tokens
             engine.Service.SendNotification(engine, ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account, amount });
         }
 
-        private class AccountState
+        internal class AccountState
         {
             public BigInteger Balance;
 
