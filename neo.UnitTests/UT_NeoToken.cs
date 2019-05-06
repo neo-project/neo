@@ -264,6 +264,28 @@ namespace Neo.UnitTests
             return scriptSyscall.ToArray();
         }
 
+        internal static ECPoint[] Check_GetValidators(Snapshot snapshot)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
+
+            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+
+            var script = new ScriptBuilder();
+            script.EmitPush(0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("getValidators");
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute();
+
+            engine.State.Should().Be(VMState.HALT);
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Array));
+
+            return (result as VM.Types.Array).Select(u => u.GetByteArray().AsSerializable<ECPoint>()).ToArray();
+        }
+
         internal static (BigInteger, bool) Check_UnclaimedGas(Snapshot snapshot, byte[] address)
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
@@ -357,16 +379,19 @@ namespace Neo.UnitTests
 
             // Balance
 
-            byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
+            var account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
                 Blockchain.StandbyValidators).ToScriptHash().ToArray();
 
             CheckBalance(account, storages[1], 100_000_000, 0, new ECPoint[] { });
 
             // StandbyValidators
 
-            for (int x = 0; x < Blockchain.StandbyValidators.Length; x++)
+            var validators = Check_GetValidators(snapshot);
+
+            for (var x = 0; x < Blockchain.StandbyValidators.Length; x++)
             {
                 CheckValidator(Blockchain.StandbyValidators[x], storages[x + 2]);
+                validators[x].Equals(Blockchain.StandbyValidators[x]);
             }
 
             // Check double call
