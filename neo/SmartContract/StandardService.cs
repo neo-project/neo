@@ -26,7 +26,7 @@ namespace Neo.SmartContract
         protected readonly List<IDisposable> Disposables = new List<IDisposable>();
         protected readonly Dictionary<UInt160, UInt160> ContractsCreated = new Dictionary<UInt160, UInt160>();
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
-        private readonly Dictionary<uint, Func<ExecutionEngine, bool>> methods = new Dictionary<uint, Func<ExecutionEngine, bool>>();
+        private readonly Dictionary<uint, Func<ApplicationEngine, bool>> methods = new Dictionary<uint, Func<ApplicationEngine, bool>>();
         private readonly Dictionary<uint, long> prices = new Dictionary<uint, long>();
 
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
@@ -104,16 +104,16 @@ namespace Neo.SmartContract
             uint hash = method.Length == 4
                 ? BitConverter.ToUInt32(method, 0)
                 : Encoding.ASCII.GetString(method).ToInteropMethodHash();
-            if (!methods.TryGetValue(hash, out Func<ExecutionEngine, bool> func)) return false;
-            return func(engine);
+            if (!methods.TryGetValue(hash, out Func<ApplicationEngine, bool> func)) return false;
+            return func((ApplicationEngine)engine);
         }
 
-        protected void Register(string method, Func<ExecutionEngine, bool> handler)
+        protected void Register(string method, Func<ApplicationEngine, bool> handler)
         {
             methods.Add(method.ToInteropMethodHash(), handler);
         }
 
-        protected void Register(string method, Func<ExecutionEngine, bool> handler, long price)
+        protected void Register(string method, Func<ApplicationEngine, bool> handler, long price)
         {
             Register(method, handler);
             prices.Add(method.ToInteropMethodHash(), price);
