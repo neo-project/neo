@@ -1,16 +1,17 @@
-﻿using System.IO;
-using Neo.IO;
+﻿using Neo.IO;
+using System;
+using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
     public class GetBlocksPayload : ISerializable
     {
         public UInt256 HashStart;
-        public int Count;
+        public short Count;
 
-        public int Size => 32 + sizeof(int);
+        public int Size => sizeof(short) + HashStart.Size;
 
-        public static GetBlocksPayload Create(UInt256 hash_start, int count)
+        public static GetBlocksPayload Create(UInt256 hash_start, short count = -1)
         {
             return new GetBlocksPayload
             {
@@ -22,7 +23,8 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(BinaryReader reader)
         {
             HashStart = reader.ReadSerializable<UInt256>();
-            Count = reader.ReadInt32();
+            Count = reader.ReadInt16();
+            if (Count < -1 || Count == 0) throw new FormatException();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

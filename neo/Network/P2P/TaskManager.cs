@@ -223,7 +223,7 @@ namespace Neo.Network.P2P
             {
                 session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
-                session.RemoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlocksPayload.Create(Blockchain.Singleton.CurrentHeaderHash, HeadersPayload.MaxHeadersCount)));
+                session.RemoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlocksPayload.Create(Blockchain.Singleton.CurrentHeaderHash)));
             }
             else if (Blockchain.Singleton.Height < session.Version.StartHeight)
             {
@@ -237,7 +237,7 @@ namespace Neo.Network.P2P
                         break;
                     }
                 }
-                session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlocks, GetBlocksPayload.Create(hash, InvPayload.MaxHashesCount)));
+                session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlocks, GetBlocksPayload.Create(hash)));
             }
         }
     }
