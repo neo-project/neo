@@ -141,7 +141,9 @@ namespace Neo
 
         public static BigInteger Sum(this IEnumerable<BigInteger> source)
         {
-            return source.Aggregate(BigInteger.Zero, (x, y) => x + y);
+            var sum = BigInteger.Zero;
+            foreach (var bi in source) sum += bi;
+            return sum;
         }
 
         public static Fixed8 Sum<TSource>(this IEnumerable<TSource> source, Func<TSource, Fixed8> selector)
