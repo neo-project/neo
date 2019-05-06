@@ -169,6 +169,38 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        public void Check_RegisterValidator()
+        {
+            var snapshot = Store.GetSnapshot().Clone();
+            Check_Initialize(snapshot);
+
+            var ret = Check_RegisterValidator(snapshot, new byte[0]);
+            ret.Item1.Should().BeFalse();
+            ret.Item2.Should().BeFalse();
+
+            ret = Check_RegisterValidator(snapshot, new byte[33]);
+            ret.Item1.Should().BeFalse();
+            ret.Item2.Should().BeFalse();
+
+            var keyCount = snapshot.Storages.GetChangeSet().Count();
+            var point = Blockchain.StandbyValidators[0].EncodePoint(true);
+
+            ret = Check_RegisterValidator(snapshot, point); // Exists
+            ret.Item1.Should().BeTrue();
+            ret.Item2.Should().BeFalse();
+
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount); // No changes
+
+            point[20]++; // fake point
+            ret = Check_RegisterValidator(snapshot, point); // New
+
+            ret.Item1.Should().BeTrue();
+            ret.Item2.Should().BeTrue();
+
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 1); // New validator
+        }
+
+        [TestMethod]
         public void Check_Transfer()
         {
             var snapshot = Store.GetSnapshot().Clone();
@@ -191,6 +223,7 @@ namespace Neo.UnitTests
 
             // Transfer
 
+            Check_Transfer(snapshot, from, to, BigInteger.One, false).Should().BeFalse(); // Not signed
             Check_Transfer(snapshot, from, to, BigInteger.One, true).Should().BeTrue();
             Check_BalanceOf(snapshot, from).Should().Be(99_999_999);
             Check_BalanceOf(snapshot, to).Should().Be(1);
@@ -262,6 +295,32 @@ namespace Neo.UnitTests
             var scriptSyscall = new ScriptBuilder();
             scriptSyscall.EmitSysCall(contract);
             return scriptSyscall.ToArray();
+        }
+
+        internal static (bool, bool) Check_RegisterValidator(Snapshot snapshot, byte[] pubkey)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
+
+            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+
+            var script = new ScriptBuilder();
+            script.EmitPush(pubkey);
+            script.EmitPush(1);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("registerValidator");
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute();
+
+            if (engine.State == VMState.FAULT)
+            {
+                return (false, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return (true, (result as VM.Types.Boolean).GetBoolean());
         }
 
         internal static ECPoint[] Check_GetValidators(Snapshot snapshot)

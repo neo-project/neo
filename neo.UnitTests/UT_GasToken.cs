@@ -155,6 +155,7 @@ namespace Neo.UnitTests
 
             keyCount = snapshot.Storages.GetChangeSet().Count();
 
+            Check_Transfer(snapshot, from, to, 800000000000, false).Should().BeFalse(); // Not signed
             Check_Transfer(snapshot, from, to, 800000000001, true).Should().BeFalse(); // More than balance
             Check_Transfer(snapshot, from, to, 800000000000, true).Should().BeTrue(); // All balance
 
