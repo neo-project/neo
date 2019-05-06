@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using System.Linq;
 using System.Reflection;
@@ -33,8 +34,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void CheckScriptHash_Name()
         {
-            var service = new NeoService(TriggerType.Application, Store.GetSnapshot());
-            var engine = new ExecutionEngine(null, Crypto.Default, service);
+            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
             engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
 
@@ -55,8 +55,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void CheckScriptHash_Symbol()
         {
-            var service = new NeoService(TriggerType.Application, Store.GetSnapshot());
-            var engine = new ExecutionEngine(null, Crypto.Default, service);
+            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
             engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
 
@@ -77,8 +76,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void CheckScriptHash_Decimals()
         {
-            var service = new NeoService(TriggerType.Application, Store.GetSnapshot());
-            var engine = new ExecutionEngine(null, Crypto.Default, service);
+            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
             engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
 
@@ -99,8 +97,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void CheckScriptHash_SupportedStandards()
         {
-            var service = new NeoService(TriggerType.Application, Store.GetSnapshot());
-            var engine = new ExecutionEngine(null, Crypto.Default, service);
+            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
             engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
 
@@ -124,15 +121,14 @@ namespace Neo.UnitTests
         [TestMethod]
         public void CheckScriptHash_BadScript()
         {
-            var service = new NeoService(TriggerType.Application, Store.GetSnapshot());
-            var engine = new ExecutionEngine(null, Crypto.Default, service);
+            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
             var script = new ScriptBuilder();
             script.Emit(OpCode.NOP);
             engine.LoadScript(script.ToArray());
 
-            typeof(NeoService).GetMethod("NeoToken_Main", BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(service, new object[] { engine }).Should().Be(false);
+            typeof(NeoToken).GetMethod("Main", BindingFlags.NonPublic | BindingFlags.Static)
+                .Invoke(null, new object[] { engine }).Should().Be(false);
         }
     }
 }
