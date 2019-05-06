@@ -160,12 +160,44 @@ namespace Neo.UnitTests
             Check_Initialize(snapshot);
 
             var unclaim = Check_UnclaimedGas(snapshot, from);
-            unclaim.Item1.Should().Be(new BigInteger(800000000000));
-            unclaim.Item2.Should().BeTrue();
+            unclaim.Value.Should().Be(new BigInteger(800000000000));
+            unclaim.State.Should().BeTrue();
 
             unclaim = Check_UnclaimedGas(snapshot, new byte[19]);
-            unclaim.Item1.Should().Be(BigInteger.Zero);
-            unclaim.Item2.Should().BeFalse();
+            unclaim.Value.Should().Be(BigInteger.Zero);
+            unclaim.State.Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void Check_RegisterValidator()
+        {
+            var snapshot = Store.GetSnapshot().Clone();
+            Check_Initialize(snapshot);
+
+            var ret = Check_RegisterValidator(snapshot, new byte[0]);
+            ret.State.Should().BeFalse();
+            ret.Result.Should().BeFalse();
+
+            ret = Check_RegisterValidator(snapshot, new byte[33]);
+            ret.State.Should().BeFalse();
+            ret.Result.Should().BeFalse();
+
+            var keyCount = snapshot.Storages.GetChangeSet().Count();
+            var point = Blockchain.StandbyValidators[0].EncodePoint(true);
+
+            ret = Check_RegisterValidator(snapshot, point); // Exists
+            ret.State.Should().BeTrue();
+            ret.Result.Should().BeFalse();
+
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount); // No changes
+
+            point[20]++; // fake point
+            ret = Check_RegisterValidator(snapshot, point); // New
+
+            ret.State.Should().BeTrue();
+            ret.Result.Should().BeTrue();
+
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 1); // New validator
         }
 
         [TestMethod]
@@ -186,11 +218,12 @@ namespace Neo.UnitTests
             // Check unclaim
 
             var unclaim = Check_UnclaimedGas(snapshot, from);
-            unclaim.Item1.Should().Be(new BigInteger(800000000000));
-            unclaim.Item2.Should().BeTrue();
+            unclaim.Value.Should().Be(new BigInteger(800000000000));
+            unclaim.State.Should().BeTrue();
 
             // Transfer
 
+            Check_Transfer(snapshot, from, to, BigInteger.One, false).Should().BeFalse(); // Not signed
             Check_Transfer(snapshot, from, to, BigInteger.One, true).Should().BeTrue();
             Check_BalanceOf(snapshot, from).Should().Be(99_999_999);
             Check_BalanceOf(snapshot, to).Should().Be(1);
@@ -198,8 +231,8 @@ namespace Neo.UnitTests
             // Check unclaim
 
             unclaim = Check_UnclaimedGas(snapshot, from);
-            unclaim.Item1.Should().Be(new BigInteger(0));
-            unclaim.Item2.Should().BeTrue();
+            unclaim.Value.Should().Be(new BigInteger(0));
+            unclaim.State.Should().BeTrue();
 
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 2); // Gas + new balance
 
@@ -264,6 +297,32 @@ namespace Neo.UnitTests
             return scriptSyscall.ToArray();
         }
 
+        internal static (bool State, bool Result) Check_RegisterValidator(Snapshot snapshot, byte[] pubkey)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
+
+            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+
+            var script = new ScriptBuilder();
+            script.EmitPush(pubkey);
+            script.EmitPush(1);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("registerValidator");
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute();
+
+            if (engine.State == VMState.FAULT)
+            {
+                return (false, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return (true, (result as VM.Types.Boolean).GetBoolean());
+        }
+
         internal static ECPoint[] Check_GetValidators(Snapshot snapshot)
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
@@ -286,7 +345,7 @@ namespace Neo.UnitTests
             return (result as VM.Types.Array).Select(u => u.GetByteArray().AsSerializable<ECPoint>()).ToArray();
         }
 
-        internal static (BigInteger, bool) Check_UnclaimedGas(Snapshot snapshot, byte[] address)
+        internal static (BigInteger Value, bool State) Check_UnclaimedGas(Snapshot snapshot, byte[] address)
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
 

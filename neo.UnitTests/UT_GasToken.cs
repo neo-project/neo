@@ -131,8 +131,8 @@ namespace Neo.UnitTests
             // Check unclaim
 
             var unclaim = UT_NeoToken.Check_UnclaimedGas(snapshot, from);
-            unclaim.Item1.Should().Be(new BigInteger(800000000000));
-            unclaim.Item2.Should().BeTrue();
+            unclaim.Value.Should().Be(new BigInteger(800000000000));
+            unclaim.State.Should().BeTrue();
 
             // Transfer
 
@@ -146,8 +146,8 @@ namespace Neo.UnitTests
             // Check unclaim
 
             unclaim = UT_NeoToken.Check_UnclaimedGas(snapshot, from);
-            unclaim.Item1.Should().Be(new BigInteger(0));
-            unclaim.Item2.Should().BeTrue();
+            unclaim.Value.Should().Be(new BigInteger(0));
+            unclaim.State.Should().BeTrue();
 
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 1); // Gas
 
@@ -155,6 +155,7 @@ namespace Neo.UnitTests
 
             keyCount = snapshot.Storages.GetChangeSet().Count();
 
+            Check_Transfer(snapshot, from, to, 800000000000, false).Should().BeFalse(); // Not signed
             Check_Transfer(snapshot, from, to, 800000000001, true).Should().BeFalse(); // More than balance
             Check_Transfer(snapshot, from, to, 800000000000, true).Should().BeTrue(); // All balance
 
