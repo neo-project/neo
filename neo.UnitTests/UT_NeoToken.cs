@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -148,7 +149,7 @@ namespace Neo.UnitTests
 
             // Count
 
-            storages.Length.Should().Be(9);
+            storages.Length.Should().Be(Blockchain.StandbyValidators.Length + 2);
 
             // All hashes equal
 
@@ -169,7 +170,40 @@ namespace Neo.UnitTests
 
             CheckBalance(account, storages[1], 100000000, 0, new ECPoint[] { });
 
-            // TODO: StandbyValidators
+            // StandbyValidators
+
+            for (int x = 0; x < Blockchain.StandbyValidators.Length; x++)
+            {
+                CheckValidator(Blockchain.StandbyValidators[x], storages[x + 2]);
+            }
+
+            // Check double call
+
+            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
+
+            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+
+            script = new ScriptBuilder();
+            script.EmitPush(0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("initialize");
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute();
+            engine.State.Should().Be(VMState.HALT);
+
+            result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+            (result as VM.Types.Boolean).GetBoolean().Should().Be(false);
+        }
+
+        private void CheckValidator(ECPoint eCPoint, DataCache<StorageKey, StorageItem>.Trackable trackable)
+        {
+            var st = new BigInteger(trackable.Item.Value);
+            st.Should().Be(0);
+
+            trackable.Key.Key.Should().BeEquivalentTo(new byte[] { 33 }.Concat(eCPoint.EncodePoint(true)));
+            trackable.Item.IsConstant.Should().Be(false);
         }
 
         private void CheckBalance(byte[] account, IO.Caching.DataCache<StorageKey, StorageItem>.Trackable trackable, BigInteger balance, BigInteger height, ECPoint[] votes)
