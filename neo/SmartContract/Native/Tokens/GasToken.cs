@@ -7,19 +7,22 @@ using System.Numerics;
 using System.Text;
 using VMArray = Neo.VM.Types.Array;
 
-namespace Neo.SmartContract
+namespace Neo.SmartContract.Native.Tokens
 {
-    partial class NeoService
+    public class GasToken : NativeContractBase
     {
-        private static readonly string[] GasToken_SupportedStandards = { "NEP-5", "NEP-10" };
-        private const string GasToken_Name = "GAS";
-        private const string GasToken_Symbol = "gas";
-        private const int GasToken_Decimals = 8;
-        private static readonly BigInteger GasToken_DecimalsFactor = BigInteger.Pow(10, GasToken_Decimals);
+        public const string ServiceName = "Neo.Native.Tokens.GAS";
+        public static readonly byte[] Script = CreateNativeScript(ServiceName);
+        public static readonly UInt160 ScriptHash = Script.ToScriptHash();
+        public static readonly string[] SupportedStandards = { "NEP-5", "NEP-10" };
+        public const string Name = "GAS";
+        public const string Symbol = "gas";
+        public const int Decimals = 8;
+        public static readonly BigInteger DecimalsFactor = BigInteger.Pow(10, Decimals);
 
-        private bool GasToken_Main(ExecutionEngine engine)
+        internal static bool Main(ApplicationEngine engine)
         {
-            if (!new UInt160(engine.CurrentContext.ScriptHash).Equals(Blockchain.GasToken.ScriptHash))
+            if (!new UInt160(engine.CurrentContext.ScriptHash).Equals(ScriptHash))
                 return false;
             string operation = engine.CurrentContext.EvaluationStack.Pop().GetString();
             VMArray args = (VMArray)engine.CurrentContext.EvaluationStack.Pop();
@@ -27,25 +30,25 @@ namespace Neo.SmartContract
             switch (operation)
             {
                 case "supportedStandards":
-                    result = GasToken_SupportedStandards.Select(p => (StackItem)p).ToList();
+                    result = SupportedStandards.Select(p => (StackItem)p).ToList();
                     break;
                 case "name":
-                    result = GasToken_Name;
+                    result = Name;
                     break;
                 case "symbol":
-                    result = GasToken_Symbol;
+                    result = Symbol;
                     break;
                 case "decimals":
-                    result = GasToken_Decimals;
+                    result = Decimals;
                     break;
                 case "totalSupply":
-                    result = GasToken_TotalSupply();
+                    result = TotalSupply(engine);
                     break;
                 case "balanceOf":
-                    result = GasToken_BalanceOf(engine, args[0].GetByteArray());
+                    result = BalanceOf(engine, args[0].GetByteArray());
                     break;
                 case "transfer":
-                    result = GasToken_Transfer(engine, args[0].GetByteArray(), args[1].GetByteArray(), args[2].GetBigInteger());
+                    result = Transfer(engine, args[0].GetByteArray(), args[1].GetByteArray(), args[2].GetBigInteger());
                     break;
                 default:
                     return false;
@@ -54,23 +57,23 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private BigInteger GasToken_TotalSupply()
+        private static BigInteger TotalSupply(ApplicationEngine engine)
         {
-            StorageItem storage = Snapshot.Storages.TryGet(new StorageKey
+            StorageItem storage = engine.Service.Snapshot.Storages.TryGet(new StorageKey
             {
-                ScriptHash = Blockchain.GasToken.ScriptHash,
+                ScriptHash = ScriptHash,
                 Key = Encoding.ASCII.GetBytes("totalSupply")
             });
             if (storage is null) return BigInteger.Zero;
             return new BigInteger(storage.Value);
         }
 
-        private BigInteger GasToken_BalanceOf(ExecutionEngine engine, byte[] account)
+        private static BigInteger BalanceOf(ApplicationEngine engine, byte[] account)
         {
             if (account.Length != 20) throw new ArgumentException();
-            StorageItem storage = Snapshot.Storages.TryGet(new StorageKey
+            StorageItem storage = engine.Service.Snapshot.Storages.TryGet(new StorageKey
             {
-                ScriptHash = Blockchain.GasToken.ScriptHash,
+                ScriptHash = ScriptHash,
                 Key = account
             });
             if (storage is null) return BigInteger.Zero;
@@ -78,84 +81,84 @@ namespace Neo.SmartContract
             return state[0].GetBigInteger();
         }
 
-        private bool GasToken_Transfer(ExecutionEngine engine, byte[] from, byte[] to, BigInteger amount)
+        private static bool Transfer(ApplicationEngine engine, byte[] from, byte[] to, BigInteger amount)
         {
-            if (Trigger != TriggerType.Application) throw new InvalidOperationException();
+            if (engine.Service.Trigger != TriggerType.Application) throw new InvalidOperationException();
             UInt160 hash_from = new UInt160(from);
             UInt160 hash_to = new UInt160(to);
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
-            if (!hash_from.Equals(new UInt160(engine.CurrentContext.CallingScriptHash)) && !CheckWitness(engine, new UInt160(from)))
+            if (!hash_from.Equals(new UInt160(engine.CurrentContext.CallingScriptHash)) && !engine.Service.CheckWitness(engine, new UInt160(from)))
                 return false;
-            ContractState contract_to = Snapshot.Contracts.TryGet(hash_to);
+            ContractState contract_to = engine.Service.Snapshot.Contracts.TryGet(hash_to);
             if (contract_to?.Payable == false) return false;
             if (amount.Sign > 0)
             {
                 StorageKey key_from = new StorageKey
                 {
-                    ScriptHash = Blockchain.GasToken.ScriptHash,
+                    ScriptHash = ScriptHash,
                     Key = from
                 };
-                StorageItem storage_from = Snapshot.Storages.TryGet(key_from);
+                StorageItem storage_from = engine.Service.Snapshot.Storages.TryGet(key_from);
                 if (storage_from is null) return false;
-                GasToken_AccountState state_from = GasToken_AccountState.FromByteArray(storage_from.Value);
+                AccountState state_from = AccountState.FromByteArray(storage_from.Value);
                 if (state_from.Balance < amount) return false;
                 if (!hash_from.Equals(hash_to))
                 {
                     if (state_from.Balance == amount)
                     {
-                        Snapshot.Storages.Delete(key_from);
+                        engine.Service.Snapshot.Storages.Delete(key_from);
                     }
                     else
                     {
                         state_from.Balance -= amount;
-                        storage_from = Snapshot.Storages.GetAndChange(key_from);
+                        storage_from = engine.Service.Snapshot.Storages.GetAndChange(key_from);
                         storage_from.Value = state_from.ToByteArray();
                     }
                     StorageKey key_to = new StorageKey
                     {
-                        ScriptHash = Blockchain.GasToken.ScriptHash,
+                        ScriptHash = ScriptHash,
                         Key = to
                     };
-                    StorageItem storage_to = Snapshot.Storages.GetAndChange(key_to, () => new StorageItem
+                    StorageItem storage_to = engine.Service.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem
                     {
-                        Value = new GasToken_AccountState().ToByteArray()
+                        Value = new AccountState().ToByteArray()
                     });
-                    GasToken_AccountState state_to = GasToken_AccountState.FromByteArray(storage_to.Value);
+                    AccountState state_to = AccountState.FromByteArray(storage_to.Value);
                     state_to.Balance += amount;
                     storage_to.Value = state_to.ToByteArray();
                 }
             }
-            SendNotification(engine, Blockchain.GasToken.ScriptHash, new StackItem[] { "Transfer", from, to, amount });
+            engine.Service.SendNotification(engine, ScriptHash, new StackItem[] { "Transfer", from, to, amount });
             return true;
         }
 
-        private void GasToken_DistributeGas(ExecutionEngine engine, byte[] account, BigInteger amount)
+        internal static void DistributeGas(ApplicationEngine engine, byte[] account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
             StorageKey key = new StorageKey
             {
-                ScriptHash = Blockchain.GasToken.ScriptHash,
+                ScriptHash = ScriptHash,
                 Key = account
             };
-            StorageItem storage = Snapshot.Storages.GetAndChange(key, () => new StorageItem
+            StorageItem storage = engine.Service.Snapshot.Storages.GetAndChange(key, () => new StorageItem
             {
-                Value = new GasToken_AccountState().ToByteArray()
+                Value = new AccountState().ToByteArray()
             });
-            GasToken_AccountState state = GasToken_AccountState.FromByteArray(storage.Value);
+            AccountState state = AccountState.FromByteArray(storage.Value);
             state.Balance += amount;
             storage.Value = state.ToByteArray();
-            SendNotification(engine, Blockchain.GasToken.ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account, amount });
+            engine.Service.SendNotification(engine, ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account, amount });
         }
 
-        private class GasToken_AccountState
+        private class AccountState
         {
             public BigInteger Balance;
 
-            public static GasToken_AccountState FromByteArray(byte[] data)
+            public static AccountState FromByteArray(byte[] data)
             {
                 Struct @struct = (Struct)data.DeserializeStackItem(1);
-                return new GasToken_AccountState
+                return new AccountState
                 {
                     Balance = @struct[0].GetBigInteger()
                 };

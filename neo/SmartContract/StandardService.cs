@@ -19,8 +19,8 @@ namespace Neo.SmartContract
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
 
-        protected readonly TriggerType Trigger;
-        protected readonly Snapshot Snapshot;
+        public readonly TriggerType Trigger;
+        internal readonly Snapshot Snapshot;
         protected readonly List<IDisposable> Disposables = new List<IDisposable>();
         protected readonly Dictionary<UInt160, UInt160> ContractsCreated = new Dictionary<UInt160, UInt160>();
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
@@ -153,7 +153,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected bool CheckWitness(ExecutionEngine engine, UInt160 hash)
+        internal bool CheckWitness(ExecutionEngine engine, UInt160 hash)
         {
             IVerifiable container = (IVerifiable)engine.ScriptContainer;
             UInt160[] _hashes_for_verifying = container.GetScriptHashesForVerifying(Snapshot);
@@ -179,7 +179,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected void SendNotification(ExecutionEngine engine, UInt160 script_hash, StackItem state)
+        internal void SendNotification(ExecutionEngine engine, UInt160 script_hash, StackItem state)
         {
             NotifyEventArgs notification = new NotifyEventArgs(engine.ScriptContainer, script_hash, state);
             Notify?.Invoke(this, notification);
