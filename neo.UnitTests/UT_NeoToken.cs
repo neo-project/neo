@@ -1,9 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Numerics;
-using System.Reflection;
-using System.Text;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
@@ -14,6 +9,11 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
+using System;
+using System.Linq;
+using System.Numerics;
+using System.Reflection;
+using System.Text;
 
 namespace Neo.UnitTests
 {
