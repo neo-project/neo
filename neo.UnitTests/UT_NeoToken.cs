@@ -1,14 +1,18 @@
-﻿using FluentAssertions;
+﻿using System;
+using System.Linq;
+using System.Numerics;
+using System.Reflection;
+using System.Text;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 
 namespace Neo.UnitTests
 {
@@ -161,12 +165,26 @@ namespace Neo.UnitTests
             byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
                 Blockchain.StandbyValidators).ToScriptHash().ToArray();
 
-            // TODO: Get Balances
+            // Balance
 
-            //storages[1].Item.Value.Should().BeEquivalentTo(new byte[] { 0x01 });
-            storages[1].Key.Key.Should().BeEquivalentTo(new byte[] { 20 }.Concat(account));
-            storages[1].Item.IsConstant.Should().Be(false);
+            CheckBalance(account, storages[1], 100000000, 0, new ECPoint[] { });
 
+            // TODO: StandbyValidators
+        }
+
+        private void CheckBalance(byte[] account, IO.Caching.DataCache<StorageKey, StorageItem>.Trackable trackable, BigInteger balance, BigInteger height, ECPoint[] votes)
+        {
+            var st = (VM.Types.Struct)trackable.Item.Value.DeserializeStackItem(3);
+
+            st.Count.Should().Be(3);
+            st.Select(u => u.GetType()).ToArray().Should().BeEquivalentTo(new Type[] { typeof(VM.Types.Integer), typeof(VM.Types.Integer), typeof(VM.Types.ByteArray) }); // Balance
+
+            st[0].GetBigInteger().Should().Be(balance); // Balance
+            st[1].GetBigInteger().Should().Be(height);  // BalanceHeight
+            (st[2].GetByteArray().AsSerializableArray<ECPoint>(Blockchain.MaxValidators)).Should().BeEquivalentTo(votes);  // Votes
+
+            trackable.Key.Key.Should().BeEquivalentTo(new byte[] { 20 }.Concat(account));
+            trackable.Item.IsConstant.Should().Be(false);
         }
 
         [TestMethod]
