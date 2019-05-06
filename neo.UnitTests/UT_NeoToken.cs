@@ -38,7 +38,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void CheckScriptHash_Name()
+        public void Check_Name()
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
@@ -59,7 +59,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void CheckScriptHash_Symbol()
+        public void Check_Symbol()
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
@@ -80,7 +80,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void CheckScriptHash_Decimals()
+        public void Check_Decimals()
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
@@ -101,7 +101,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void CheckScriptHash_SupportedStandards()
+        public void Check_SupportedStandards()
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
@@ -125,9 +125,51 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void CheckScriptHash_Initialize()
+        public void Check_BalanceOf()
         {
             var snapshot = Store.GetSnapshot().Clone();
+            byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
+                Blockchain.StandbyValidators).ToScriptHash().ToArray();
+
+            Check_Initialize(snapshot);
+            Check_BalanceOf(snapshot, account).Should().Be(100_000_000);
+
+            account[5]++; // Without existing balance
+
+            Check_BalanceOf(snapshot, account).Should().Be(0);
+        }
+
+        public BigInteger Check_BalanceOf(Snapshot snapshot, byte[] account)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
+
+            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+
+            var script = new ScriptBuilder();
+            script.EmitPush(account);
+            script.EmitPush(1);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("balanceOf");
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute();
+            engine.State.Should().Be(VMState.HALT);
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Integer));
+
+            return (result as VM.Types.Integer).GetBigInteger();
+        }
+
+        [TestMethod]
+        public void Check_Initialize()
+        {
+            var snapshot = Store.GetSnapshot().Clone();
+            Check_Initialize(snapshot);
+        }
+
+        public void Check_Initialize(Snapshot snapshot)
+        {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
 
             engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
@@ -166,7 +208,7 @@ namespace Neo.UnitTests
             byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
                 Blockchain.StandbyValidators).ToScriptHash().ToArray();
 
-            CheckBalance(account, storages[1], 100000000, 0, new ECPoint[] { });
+            CheckBalance(account, storages[1], 100_000_000, 0, new ECPoint[] { });
 
             // StandbyValidators
 
@@ -220,7 +262,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void CheckScriptHash_BadScript()
+        public void Check_BadScript()
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
