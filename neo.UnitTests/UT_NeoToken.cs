@@ -159,20 +159,20 @@ namespace Neo.UnitTests
 
             Check_Initialize(snapshot);
 
-            var ret = Check_UnclaimedGas(snapshot, from);
-            ret.Item1.Should().Be(new BigInteger(800000000000));
-            ret.Item2.Should().BeTrue();
+            var unclaim = Check_UnclaimedGas(snapshot, from);
+            unclaim.Item1.Should().Be(new BigInteger(800000000000));
+            unclaim.Item2.Should().BeTrue();
 
-            ret = Check_UnclaimedGas(snapshot, new byte[19]);
-            ret.Item1.Should().Be(BigInteger.Zero);
-            ret.Item2.Should().BeFalse();
+            unclaim = Check_UnclaimedGas(snapshot, new byte[19]);
+            unclaim.Item1.Should().Be(BigInteger.Zero);
+            unclaim.Item2.Should().BeFalse();
         }
 
         [TestMethod]
         public void Check_Transfer()
         {
             var snapshot = Store.GetSnapshot().Clone();
-            snapshot.PersistingBlock = new Block() { Index = 1 };
+            snapshot.PersistingBlock = new Block() { Index = 1000 };
 
             byte[] from = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
                 Blockchain.StandbyValidators).ToScriptHash().ToArray();
@@ -183,9 +183,23 @@ namespace Neo.UnitTests
 
             var keyCount = snapshot.Storages.GetChangeSet().Count();
 
+            // Check unclaim
+
+            var unclaim = Check_UnclaimedGas(snapshot, from);
+            unclaim.Item1.Should().Be(new BigInteger(800000000000));
+            unclaim.Item2.Should().BeTrue();
+
+            // Transfer
+
             Check_Transfer(snapshot, from, to, BigInteger.One, true).Should().BeTrue();
             Check_BalanceOf(snapshot, from).Should().Be(99_999_999);
             Check_BalanceOf(snapshot, to).Should().Be(1);
+
+            // Check unclaim
+
+            unclaim = Check_UnclaimedGas(snapshot, from);
+            unclaim.Item1.Should().Be(new BigInteger(0));
+            unclaim.Item2.Should().BeTrue();
 
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 2); // Gas + new balance
 
