@@ -185,9 +185,8 @@ namespace Neo.SmartContract
 
         private BigInteger NeoToken_CalculateBonus(BigInteger value, uint start, uint end)
         {
-            if (value.IsZero || start == end) return BigInteger.Zero;
+            if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
-            if (start > end) throw new ArgumentOutOfRangeException(nameof(start));
             uint amount = 0;
             uint ustart = start / Blockchain.DecrementInterval;
             if (ustart < Blockchain.GenerationAmount.Length)
