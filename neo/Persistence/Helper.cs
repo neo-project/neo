@@ -63,7 +63,8 @@ namespace Neo.Persistence
 
         public static long GetSysFeeAmount(this IPersistence persistence, uint height)
         {
-            return persistence.GetSysFeeAmount(Blockchain.Singleton.GetBlockHash(height));
+            var hash = Blockchain.Singleton.GetBlockHash(height);
+            return hash == null ? 0 : persistence.GetSysFeeAmount(hash);
         }
 
         public static long GetSysFeeAmount(this IPersistence persistence, UInt256 hash)
