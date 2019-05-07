@@ -152,32 +152,6 @@ namespace Neo.UnitTests
                 GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(500L * 100000000L / 100000); // assuming private ae.ratio = 100000
             }
 
-            // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
-            byte[] SyscallContractCreateHash02 = new byte[]{0x52, 0x00, 0x00, 0x00, 0x68, 0x04, 0xf6, 0x6c, 0xa5, 0x6e};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
-            {
-                Debugger debugger = new Debugger(ae);
-                ae.LoadScript(SyscallContractCreateHash02);
-                debugger.StepInto(); // push 02 - ContractPropertyState.HasDynamicInvoke
-                debugger.StepInto(); // push 0
-                debugger.StepInto(); // push 0
-                debugger.StepInto(); // push 0
-                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(600L * 100000000L / 100000); // assuming private ae.ratio = 100000
-            }
-
-            // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
-            byte[] SyscallContractCreateHash03 = new byte[]{0x53, 0x00, 0x00, 0x00, 0x68, 0x04, 0xf6, 0x6c, 0xa5, 0x6e};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
-            {
-                Debugger debugger = new Debugger(ae);
-                ae.LoadScript(SyscallContractCreateHash03);
-                debugger.StepInto(); // push 03 - HasStorage and HasDynamicInvoke
-                debugger.StepInto(); // push 0
-                debugger.StepInto(); // push 0
-                debugger.StepInto(); // push 0
-                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(1000L * 100000000L / 100000); // assuming private ae.ratio = 100000
-            }
-
             // Neo.Contract.Migrate: 471b6290 (requires push properties on fourth position)
             byte[] SyscallContractMigrateHash00 = new byte[]{(byte)ContractPropertyState.NoProperty, 0x00, 0x00, 0x00, 0x68, 0x04, 0x47, 0x1b, 0x62, 0x90};
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
