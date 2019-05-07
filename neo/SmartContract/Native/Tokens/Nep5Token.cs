@@ -50,7 +50,7 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        internal void MintTokens(ApplicationEngine engine, UInt160 account, BigInteger amount)
+        internal protected virtual void MintTokens(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
