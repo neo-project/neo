@@ -16,6 +16,7 @@ namespace Neo.SmartContract.Native.Tokens
         public abstract int Decimals { get; }
         public BigInteger Factor { get; }
 
+        protected const byte Prefix_TotalSupply = 11;
         protected const byte Prefix_Account = 20;
 
         protected Nep5Token()
@@ -61,10 +62,22 @@ namespace Neo.SmartContract.Native.Tokens
             state.FromByteArray(storage.Value);
             state.Balance += amount;
             storage.Value = state.ToByteArray();
+            storage = engine.Service.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem
+            {
+                Value = BigInteger.Zero.ToByteArray()
+            });
+            BigInteger totalSupply = new BigInteger(storage.Value);
+            totalSupply += amount;
+            storage.Value = totalSupply.ToByteArray();
             engine.Service.SendNotification(engine, ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount });
         }
 
-        protected abstract BigInteger TotalSupply(ApplicationEngine engine);
+        protected virtual BigInteger TotalSupply(ApplicationEngine engine)
+        {
+            StorageItem storage = engine.Service.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
+            if (storage is null) return BigInteger.Zero;
+            return new BigInteger(storage.Value);
+        }
 
         protected virtual BigInteger BalanceOf(ApplicationEngine engine, UInt160 account)
         {

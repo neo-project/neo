@@ -150,7 +150,7 @@ namespace Neo.UnitTests
             unclaim.Value.Should().Be(new BigInteger(0));
             unclaim.State.Should().BeTrue();
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 1); // Gas
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 2); // Gas
 
             // Transfer
 

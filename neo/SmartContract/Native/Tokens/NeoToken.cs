@@ -21,7 +21,6 @@ namespace Neo.SmartContract.Native.Tokens
         public override int Decimals => 0;
         public BigInteger TotalAmount { get; }
 
-        private const byte Prefix_Initialized = 11;
         private const byte Prefix_Validator = 33;
         private const byte Prefix_ValidatorsCount = 15;
 
@@ -116,13 +115,7 @@ namespace Neo.SmartContract.Native.Tokens
         private bool Initialize(ApplicationEngine engine, UInt160 account)
         {
             if (engine.Service.Trigger != TriggerType.Application) throw new InvalidOperationException();
-            StorageKey key = CreateStorageKey(Prefix_Initialized);
-            if (engine.Service.Snapshot.Storages.TryGet(key) != null) return false;
-            engine.Service.Snapshot.Storages.Add(key, new StorageItem
-            {
-                Value = new byte[] { 1 },
-                IsConstant = true
-            });
+            if (base.TotalSupply(engine) != BigInteger.Zero) return false;
             MintTokens(engine, account, TotalAmount);
             foreach (ECPoint pubkey in Blockchain.StandbyValidators)
                 RegisterValidator(engine, pubkey.EncodePoint(true));

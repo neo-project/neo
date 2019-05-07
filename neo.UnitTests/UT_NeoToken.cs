@@ -238,7 +238,7 @@ namespace Neo.UnitTests
             unclaim.Value.Should().Be(new BigInteger(0));
             unclaim.State.Should().BeTrue();
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 2); // Gas + new balance
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 3); // Gas + new balance
 
             // Return balance
 
@@ -439,13 +439,14 @@ namespace Neo.UnitTests
 
             // First key, the flag
 
-            storages[0].Item.Value.Should().BeEquivalentTo(new byte[] { 0x01 });
-            storages[0].Key.Key.Should().BeEquivalentTo(new byte[] { 11 });
-            storages[0].Item.IsConstant.Should().Be(true);
+            var storage = storages.First(p => p.Key.Key[0] == 11);
+            storage.Item.Value.Should().BeEquivalentTo(new BigInteger(100000000).ToByteArray());
+            storage.Key.Key.Should().BeEquivalentTo(new byte[] { 11 });
 
             // Balance
 
-            CheckBalance(account, storages[1], 100_000_000, 0, new ECPoint[] { });
+            storage = storages.First(p => p.Key.Key[0] == 20);
+            CheckBalance(account, storage, 100_000_000, 0, new ECPoint[] { });
 
             // StandbyValidators
 
