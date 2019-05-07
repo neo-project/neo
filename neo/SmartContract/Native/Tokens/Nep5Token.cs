@@ -48,6 +48,20 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
+        internal void MintTokens(ApplicationEngine engine, UInt160 account, BigInteger amount)
+        {
+            if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (amount.IsZero) return;
+            StorageItem storage = engine.Service.Snapshot.Storages.GetAndChange(CreateAccountKey(account), () => new StorageItem
+            {
+                Value = new Nep5AccountState().ToByteArray()
+            });
+            Nep5AccountState state = new Nep5AccountState(storage.Value);
+            state.Balance += amount;
+            storage.Value = state.ToByteArray();
+            engine.Service.SendNotification(engine, ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount });
+        }
+
         protected abstract BigInteger TotalSupply(ApplicationEngine engine);
 
         protected virtual BigInteger BalanceOf(ApplicationEngine engine, UInt160 account)

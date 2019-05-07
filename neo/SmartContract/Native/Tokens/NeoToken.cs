@@ -76,7 +76,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             BigInteger gas = CalculateBonus(engine, state.Balance, state.BalanceHeight, engine.Service.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Service.Snapshot.PersistingBlock.Index;
-            GAS.DistributeGas(engine, account, gas);
+            GAS.MintTokens(engine, account, gas);
             engine.Service.Snapshot.Storages.GetAndChange(CreateAccountKey(account)).Value = state.ToByteArray();
         }
 
@@ -123,12 +123,7 @@ namespace Neo.SmartContract.Native.Tokens
                 Value = new byte[] { 1 },
                 IsConstant = true
             });
-            key = CreateAccountKey(account);
-            engine.Service.Snapshot.Storages.Add(key, new StorageItem
-            {
-                Value = new AccountState { Balance = TotalAmount }.ToByteArray()
-            });
-            engine.Service.SendNotification(engine, ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), TotalAmount });
+            MintTokens(engine, account, TotalAmount);
             foreach (ECPoint pubkey in Blockchain.StandbyValidators)
                 RegisterValidator(engine, pubkey.EncodePoint(true));
             return true;
