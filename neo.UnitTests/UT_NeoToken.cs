@@ -158,7 +158,7 @@ namespace Neo.UnitTests
             byte[] from = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
                 Blockchain.StandbyValidators).ToScriptHash().ToArray();
 
-            Check_Initialize(snapshot);
+            Check_Initialize(snapshot, from);
 
             var unclaim = Check_UnclaimedGas(snapshot, from);
             unclaim.Value.Should().Be(new BigInteger(800000000000));
@@ -173,7 +173,10 @@ namespace Neo.UnitTests
         public void Check_RegisterValidator()
         {
             var snapshot = Store.GetSnapshot().Clone();
-            Check_Initialize(snapshot);
+
+            byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
+                Blockchain.StandbyValidators).ToScriptHash().ToArray();
+            Check_Initialize(snapshot, account);
 
             var ret = Check_RegisterValidator(snapshot, new byte[0]);
             ret.State.Should().BeFalse();
@@ -212,7 +215,7 @@ namespace Neo.UnitTests
 
             byte[] to = new byte[20];
 
-            Check_Initialize(snapshot);
+            Check_Initialize(snapshot, from);
 
             var keyCount = snapshot.Storages.GetChangeSet().Count();
 
@@ -263,7 +266,7 @@ namespace Neo.UnitTests
             byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
                 Blockchain.StandbyValidators).ToScriptHash().ToArray();
 
-            Check_Initialize(snapshot);
+            Check_Initialize(snapshot, account);
             Check_BalanceOf(snapshot, account).Should().Be(100_000_000);
 
             account[5]++; // Without existing balance
@@ -275,7 +278,9 @@ namespace Neo.UnitTests
         public void Check_Initialize()
         {
             var snapshot = Store.GetSnapshot().Clone();
-            Check_Initialize(snapshot);
+            byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
+                Blockchain.StandbyValidators).ToScriptHash().ToArray();
+            Check_Initialize(snapshot, account);
         }
 
         [TestMethod]
@@ -402,14 +407,15 @@ namespace Neo.UnitTests
             return (result as VM.Types.Boolean).GetBoolean();
         }
 
-        internal static void Check_Initialize(Snapshot snapshot)
+        internal static void Check_Initialize(Snapshot snapshot, byte[] account)
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
 
             engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
 
             var script = new ScriptBuilder();
-            script.EmitPush(0);
+            script.EmitPush(account);
+            script.EmitPush(1);
             script.Emit(OpCode.PACK);
             script.EmitPush("initialize");
             engine.LoadScript(script.ToArray());
@@ -439,9 +445,6 @@ namespace Neo.UnitTests
 
             // Balance
 
-            var account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
-                Blockchain.StandbyValidators).ToScriptHash().ToArray();
-
             CheckBalance(account, storages[1], 100_000_000, 0, new ECPoint[] { });
 
             // StandbyValidators
@@ -461,7 +464,8 @@ namespace Neo.UnitTests
             engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
 
             script = new ScriptBuilder();
-            script.EmitPush(0);
+            script.EmitPush(account);
+            script.EmitPush(1);
             script.Emit(OpCode.PACK);
             script.EmitPush("initialize");
             engine.LoadScript(script.ToArray());

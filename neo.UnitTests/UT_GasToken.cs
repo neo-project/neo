@@ -125,7 +125,7 @@ namespace Neo.UnitTests
 
             byte[] to = new byte[20];
 
-            UT_NeoToken.Check_Initialize(snapshot);
+            UT_NeoToken.Check_Initialize(snapshot, from);
 
             var keyCount = snapshot.Storages.GetChangeSet().Count();
 
