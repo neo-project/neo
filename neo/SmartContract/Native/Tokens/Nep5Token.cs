@@ -1,12 +1,13 @@
 ﻿using Neo.Ledger;
 using Neo.VM;
-using Neo.VM.Types;
+using System;
 using System.Numerics;
+using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native.Tokens
 {
-    public abstract class Nep5Token<T> : NativeContractBase
-        where T : Nep5AccountState, new()
+    public abstract class Nep5Token<TState> : NativeContractBase
+        where TState : Nep5AccountState, new()
     {
         public override string[] SupportedStandards { get; } = { "NEP-5", "NEP-10" };
         public abstract string Name { get; }
@@ -21,7 +22,12 @@ namespace Neo.SmartContract.Native.Tokens
             this.Factor = BigInteger.Pow(10, Decimals);
         }
 
-        protected override StackItem Main(ApplicationEngine engine, string operation, Array args)
+        protected StorageKey CreateAccountKey(UInt160 account)
+        {
+            return CreateStorageKey(Prefix_Account, account);
+        }
+
+        protected override StackItem Main(ApplicationEngine engine, string operation, VMArray args)
         {
             switch (operation)
             {
@@ -46,12 +52,72 @@ namespace Neo.SmartContract.Native.Tokens
 
         protected virtual BigInteger BalanceOf(ApplicationEngine engine, UInt160 account)
         {
-            StorageItem storage = engine.Service.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account, account));
+            StorageItem storage = engine.Service.Snapshot.Storages.TryGet(CreateAccountKey(account));
             if (storage is null) return BigInteger.Zero;
             Nep5AccountState state = new Nep5AccountState(storage.Value);
             return state.Balance;
         }
 
-        protected abstract bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount);
+        protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
+        {
+            if (engine.Service.Trigger != TriggerType.Application) throw new InvalidOperationException();
+            if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (!from.Equals(new UInt160(engine.CurrentContext.CallingScriptHash)) && !engine.Service.CheckWitness(engine, from))
+                return false;
+            ContractState contract_to = engine.Service.Snapshot.Contracts.TryGet(to);
+            if (contract_to?.Payable == false) return false;
+            StorageKey key_from = CreateAccountKey(from);
+            StorageItem storage_from = engine.Service.Snapshot.Storages.TryGet(key_from);
+            if (amount.IsZero)
+            {
+                if (storage_from != null)
+                {
+                    TState state_from = new TState();
+                    state_from.FromByteArray(storage_from.Value);
+                    OnBalanceChanging(engine, from, state_from, amount);
+                }
+            }
+            else
+            {
+                if (storage_from is null) return false;
+                TState state_from = new TState();
+                state_from.FromByteArray(storage_from.Value);
+                if (state_from.Balance < amount) return false;
+                if (from.Equals(to))
+                {
+                    OnBalanceChanging(engine, from, state_from, BigInteger.Zero);
+                }
+                else
+                {
+                    OnBalanceChanging(engine, from, state_from, -amount);
+                    if (state_from.Balance == amount)
+                    {
+                        engine.Service.Snapshot.Storages.Delete(key_from);
+                    }
+                    else
+                    {
+                        state_from.Balance -= amount;
+                        storage_from = engine.Service.Snapshot.Storages.GetAndChange(key_from);
+                        storage_from.Value = state_from.ToByteArray();
+                    }
+                    StorageKey key_to = CreateAccountKey(to);
+                    StorageItem storage_to = engine.Service.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem
+                    {
+                        Value = new TState().ToByteArray()
+                    });
+                    TState state_to = new TState();
+                    state_to.FromByteArray(storage_to.Value);
+                    OnBalanceChanging(engine, to, state_to, amount);
+                    state_to.Balance += amount;
+                    storage_to.Value = state_to.ToByteArray();
+                }
+            }
+            engine.Service.SendNotification(engine, ScriptHash, new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount });
+            return true;
+        }
+
+        protected virtual void OnBalanceChanging(ApplicationEngine engine, UInt160 account, TState state, BigInteger amount)
+        {
+        }
     }
 }

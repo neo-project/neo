@@ -37,11 +37,11 @@ namespace Neo.SmartContract.Native.Tokens
                 case "initialize":
                     return Initialize(engine, new UInt160(args[0].GetByteArray()));
                 case "unclaimedGas":
-                    return UnclaimedGas(engine, args[0].GetByteArray(), (uint)args[1].GetBigInteger());
+                    return UnclaimedGas(engine, new UInt160(args[0].GetByteArray()), (uint)args[1].GetBigInteger());
                 case "registerValidator":
                     return RegisterValidator(engine, args[0].GetByteArray());
                 case "vote":
-                    return Vote(engine, args[0].GetByteArray(), ((VMArray)args[1]).Select(p => p.GetByteArray().AsSerializable<ECPoint>()).ToArray());
+                    return Vote(engine, new UInt160(args[0].GetByteArray()), ((VMArray)args[1]).Select(p => p.GetByteArray().AsSerializable<ECPoint>()).ToArray());
                 case "getValidators":
                     return GetValidators(engine).Select(p => (StackItem)p.ToArray()).ToArray();
                 default:
@@ -54,90 +54,22 @@ namespace Neo.SmartContract.Native.Tokens
             return TotalAmount;
         }
 
-        protected override bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
+        protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, AccountState state, BigInteger amount)
         {
-            if (engine.Service.Trigger != TriggerType.Application) throw new InvalidOperationException();
-            if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
-            if (!from.Equals(new UInt160(engine.CurrentContext.CallingScriptHash)) && !engine.Service.CheckWitness(engine, from))
-                return false;
-            ContractState contract_to = engine.Service.Snapshot.Contracts.TryGet(to);
-            if (contract_to?.Payable == false) return false;
-            StorageKey key_from = CreateStorageKey(Prefix_Account, from);
-            StorageItem storage_from = engine.Service.Snapshot.Storages.TryGet(key_from);
-            if (amount.IsZero)
+            DistributeGas(engine, account, state);
+            if (amount.IsZero) return;
+            if (state.Votes.Length == 0) return;
+            foreach (ECPoint pubkey in state.Votes)
             {
-                if (storage_from != null)
-                {
-                    AccountState state_from = new AccountState(storage_from.Value);
-                    DistributeGas(engine, from, state_from);
-                    storage_from = engine.Service.Snapshot.Storages.GetAndChange(key_from);
-                    storage_from.Value = state_from.ToByteArray();
-                }
+                StorageItem storage_validator = engine.Service.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Validator, pubkey.ToArray()));
+                ValidatorState state_validator = ValidatorState.FromByteArray(storage_validator.Value);
+                state_validator.Votes += amount;
+                storage_validator.Value = state_validator.ToByteArray();
             }
-            else
-            {
-                if (storage_from is null) return false;
-                AccountState state_from = new AccountState(storage_from.Value);
-                if (state_from.Balance < amount) return false;
-                DistributeGas(engine, from, state_from);
-                if (from.Equals(to))
-                {
-                    storage_from = engine.Service.Snapshot.Storages.GetAndChange(key_from);
-                    storage_from.Value = state_from.ToByteArray();
-                }
-                else
-                {
-                    if (state_from.Balance == amount)
-                    {
-                        engine.Service.Snapshot.Storages.Delete(key_from);
-                    }
-                    else
-                    {
-                        state_from.Balance -= amount;
-                        storage_from = engine.Service.Snapshot.Storages.GetAndChange(key_from);
-                        storage_from.Value = state_from.ToByteArray();
-                    }
-                    if (state_from.Votes.Length > 0)
-                    {
-                        foreach (ECPoint pubkey in state_from.Votes)
-                        {
-                            StorageItem storage_validator = engine.Service.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Validator, pubkey.ToArray()));
-                            ValidatorState state_validator = ValidatorState.FromByteArray(storage_validator.Value);
-                            state_validator.Votes -= amount;
-                            storage_validator.Value = state_validator.ToByteArray();
-                        }
-                        StorageItem storage_count = engine.Service.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ValidatorsCount));
-                        ValidatorsCountState state_count = ValidatorsCountState.FromByteArray(storage_count.Value);
-                        state_count.Votes[state_from.Votes.Length - 1] -= amount;
-                        storage_count.Value = state_count.ToByteArray();
-                    }
-                    StorageKey key_to = CreateStorageKey(Prefix_Account, to);
-                    StorageItem storage_to = engine.Service.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem
-                    {
-                        Value = new AccountState().ToByteArray()
-                    });
-                    AccountState state_to = new AccountState(storage_to.Value);
-                    DistributeGas(engine, to, state_to);
-                    state_to.Balance += amount;
-                    storage_to.Value = state_to.ToByteArray();
-                    if (state_to.Votes.Length > 0)
-                    {
-                        foreach (ECPoint pubkey in state_to.Votes)
-                        {
-                            StorageItem storage_validator = engine.Service.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Validator, pubkey.ToArray()));
-                            ValidatorState state_validator = ValidatorState.FromByteArray(storage_validator.Value);
-                            state_validator.Votes += amount;
-                            storage_validator.Value = state_validator.ToByteArray();
-                        }
-                        StorageItem storage_count = engine.Service.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ValidatorsCount));
-                        ValidatorsCountState state_count = ValidatorsCountState.FromByteArray(storage_count.Value);
-                        state_count.Votes[state_to.Votes.Length - 1] += amount;
-                        storage_count.Value = state_count.ToByteArray();
-                    }
-                }
-            }
-            engine.Service.SendNotification(engine, ScriptHash, new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount });
-            return true;
+            StorageItem storage_count = engine.Service.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ValidatorsCount));
+            ValidatorsCountState state_count = ValidatorsCountState.FromByteArray(storage_count.Value);
+            state_count.Votes[state.Votes.Length - 1] += amount;
+            storage_count.Value = state_count.ToByteArray();
         }
 
         private void DistributeGas(ApplicationEngine engine, UInt160 account, AccountState state)
@@ -145,6 +77,7 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger gas = CalculateBonus(engine, state.Balance, state.BalanceHeight, engine.Service.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Service.Snapshot.PersistingBlock.Index;
             GAS.DistributeGas(engine, account, gas);
+            engine.Service.Snapshot.Storages.GetAndChange(CreateAccountKey(account)).Value = state.ToByteArray();
         }
 
         private BigInteger CalculateBonus(ApplicationEngine engine, BigInteger value, uint start, uint end)
@@ -190,7 +123,7 @@ namespace Neo.SmartContract.Native.Tokens
                 Value = new byte[] { 1 },
                 IsConstant = true
             });
-            key = CreateStorageKey(Prefix_Account, account);
+            key = CreateAccountKey(account);
             engine.Service.Snapshot.Storages.Add(key, new StorageItem
             {
                 Value = new AccountState { Balance = TotalAmount }.ToByteArray()
@@ -201,10 +134,9 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        private BigInteger UnclaimedGas(ApplicationEngine engine, byte[] account, uint end)
+        private BigInteger UnclaimedGas(ApplicationEngine engine, UInt160 account, uint end)
         {
-            if (account.Length != 20) throw new ArgumentException();
-            StorageItem storage = engine.Service.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account, account));
+            StorageItem storage = engine.Service.Snapshot.Storages.TryGet(CreateAccountKey(account));
             if (storage is null) return BigInteger.Zero;
             AccountState state = new AccountState(storage.Value);
             return CalculateBonus(engine, state.Balance, state.BalanceHeight, end);
@@ -223,11 +155,10 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        private bool Vote(ApplicationEngine engine, byte[] account, ECPoint[] pubkeys)
+        private bool Vote(ApplicationEngine engine, UInt160 account, ECPoint[] pubkeys)
         {
-            UInt160 hash_account = new UInt160(account);
-            if (!engine.Service.CheckWitness(engine, hash_account)) return false;
-            StorageKey key_account = CreateStorageKey(Prefix_Account, account);
+            if (!engine.Service.CheckWitness(engine, account)) return false;
+            StorageKey key_account = CreateAccountKey(account);
             if (engine.Service.Snapshot.Storages.TryGet(key_account) is null) return false;
             StorageItem storage_account = engine.Service.Snapshot.Storages.GetAndChange(key_account);
             AccountState state_account = new AccountState(storage_account.Value);
