@@ -4,7 +4,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Iterators;
-using Neo.SmartContract.Native.Tokens;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -20,8 +20,8 @@ namespace Neo.SmartContract
         public NeoService(TriggerType trigger, Snapshot snapshot)
             : base(trigger, snapshot)
         {
-            Register(NeoToken.ServiceName, NeoToken.Main);
-            Register(GasToken.ServiceName, GasToken.Main);
+            foreach (NativeContractBase contract in NativeContractBase.Contracts.Values)
+                Register(contract.ServiceName, contract.Invoke);
             Register("Neo.Blockchain.GetAccount", Blockchain_GetAccount, 100);
             Register("Neo.Blockchain.GetValidators", Blockchain_GetValidators, 200);
             Register("Neo.Header.GetVersion", Header_GetVersion, 1);

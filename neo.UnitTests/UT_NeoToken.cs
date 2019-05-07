@@ -8,6 +8,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using System;
@@ -286,8 +287,8 @@ namespace Neo.UnitTests
             script.Emit(OpCode.NOP);
             engine.LoadScript(script.ToArray());
 
-            typeof(NeoToken).GetMethod("Main", BindingFlags.NonPublic | BindingFlags.Static)
-                .Invoke(null, new object[] { engine }).Should().Be(false);
+            typeof(NeoToken).GetMethod("Invoke", BindingFlags.NonPublic | BindingFlags.Instance)
+                .Invoke(NativeContractBase.NEO, new object[] { engine }).Should().Be(false);
         }
 
         public static byte[] NativeContract(string contract)
@@ -428,7 +429,7 @@ namespace Neo.UnitTests
 
             // All hashes equal
 
-            foreach (var st in storages) st.Key.ScriptHash.Equals(NeoToken.ScriptHash);
+            foreach (var st in storages) st.Key.ScriptHash.Should().Be(NativeContractBase.NEO.ScriptHash);
 
             // First key, the flag
 

@@ -5,6 +5,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using System.Linq;
@@ -182,8 +183,8 @@ namespace Neo.UnitTests
             script.Emit(OpCode.NOP);
             engine.LoadScript(script.ToArray());
 
-            typeof(GasToken).GetMethod("Main", BindingFlags.NonPublic | BindingFlags.Static)
-                .Invoke(null, new object[] { engine }).Should().Be(false);
+            typeof(GasToken).GetMethod("Invoke", BindingFlags.NonPublic | BindingFlags.Instance)
+                .Invoke(NativeContractBase.GAS, new object[] { engine }).Should().Be(false);
         }
 
         internal static bool Check_Transfer(Snapshot snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)
