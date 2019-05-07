@@ -23,7 +23,6 @@ namespace Neo.UnitTests
         public void NeoServiceFixedPrices()
         {
             uut.GetPrice("Neo.Blockchain.GetAccount".ToInteropMethodHash()).Should().Be(100);
-            uut.GetPrice("Neo.Blockchain.GetValidators".ToInteropMethodHash()).Should().Be(200);
             uut.GetPrice("Neo.Header.GetVersion".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Header.GetMerkleRoot".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Header.GetConsensusData".ToInteropMethodHash()).Should().Be(1);

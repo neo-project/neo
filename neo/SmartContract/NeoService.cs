@@ -1,5 +1,4 @@
-﻿using Neo.Cryptography.ECC;
-using Neo.Ledger;
+﻿using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Enumerators;
@@ -23,7 +22,6 @@ namespace Neo.SmartContract
                 Register(contract.ServiceName, contract.Invoke);
             Register("Neo.Native.Deploy", Native_Deploy, 0);
             Register("Neo.Blockchain.GetAccount", Blockchain_GetAccount, 100);
-            Register("Neo.Blockchain.GetValidators", Blockchain_GetValidators, 200);
             Register("Neo.Header.GetVersion", Header_GetVersion, 1);
             Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot, 1);
             Register("Neo.Header.GetConsensusData", Header_GetConsensusData, 1);
@@ -69,13 +67,6 @@ namespace Neo.SmartContract
             UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
             AccountState account = Snapshot.Accounts.GetOrAdd(hash, () => new AccountState(hash));
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(account));
-            return true;
-        }
-
-        private bool Blockchain_GetValidators(ExecutionEngine engine)
-        {
-            ECPoint[] validators = Snapshot.GetValidators();
-            engine.CurrentContext.EvaluationStack.Push(validators.Select(p => (StackItem)p.EncodePoint(true)).ToArray());
             return true;
         }
 
