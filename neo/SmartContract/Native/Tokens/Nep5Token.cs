@@ -54,9 +54,10 @@ namespace Neo.SmartContract.Native.Tokens
             if (amount.IsZero) return;
             StorageItem storage = engine.Service.Snapshot.Storages.GetAndChange(CreateAccountKey(account), () => new StorageItem
             {
-                Value = new Nep5AccountState().ToByteArray()
+                Value = new TState().ToByteArray()
             });
-            Nep5AccountState state = new Nep5AccountState(storage.Value);
+            TState state = new TState();
+            state.FromByteArray(storage.Value);
             state.Balance += amount;
             storage.Value = state.ToByteArray();
             engine.Service.SendNotification(engine, ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount });
