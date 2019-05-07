@@ -9,6 +9,7 @@ namespace Neo.SmartContract.Native.Tokens
     public abstract class Nep5Token<TState> : NativeContractBase
         where TState : Nep5AccountState, new()
     {
+        public override ContractPropertyState Properties => ContractPropertyState.HasStorage;
         public override string[] SupportedStandards { get; } = { "NEP-5", "NEP-10" };
         public abstract string Name { get; }
         public abstract string Symbol { get; }

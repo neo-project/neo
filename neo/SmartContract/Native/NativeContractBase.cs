@@ -18,6 +18,7 @@ namespace Neo.SmartContract.Native
         public abstract string ServiceName { get; }
         public byte[] Script { get; }
         public UInt160 ScriptHash { get; }
+        public virtual ContractPropertyState Properties => ContractPropertyState.NoProperty;
         public virtual string[] SupportedStandards { get; } = { "NEP-10" };
 
         static NativeContractBase()

@@ -21,6 +21,7 @@ namespace Neo.SmartContract
         {
             foreach (NativeContractBase contract in NativeContractBase.Contracts.Values)
                 Register(contract.ServiceName, contract.Invoke);
+            Register("Neo.Native.Deploy", Native_Deploy, 0);
             Register("Neo.Blockchain.GetAccount", Blockchain_GetAccount, 100);
             Register("Neo.Blockchain.GetValidators", Blockchain_GetValidators, 200);
             Register("Neo.Header.GetVersion", Header_GetVersion, 1);
@@ -46,6 +47,21 @@ namespace Neo.SmartContract
             Register("Neo.Iterator.Keys", Iterator_Keys, 1);
             Register("Neo.Iterator.Values", Iterator_Values, 1);
             Register("Neo.Iterator.Concat", Iterator_Concat, 1);
+        }
+
+        private bool Native_Deploy(ApplicationEngine engine)
+        {
+            if (Trigger != TriggerType.Application) return false;
+            if (Snapshot.PersistingBlock.Index != 0) return false;
+            foreach (NativeContractBase contract in NativeContractBase.Contracts.Values)
+            {
+                Snapshot.Contracts.Add(contract.ScriptHash, new ContractState
+                {
+                    Script = contract.Script,
+                    ContractProperties = contract.Properties
+                });
+            }
+            return true;
         }
 
         private bool Blockchain_GetAccount(ExecutionEngine engine)
