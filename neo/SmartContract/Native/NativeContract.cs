@@ -9,9 +9,9 @@ using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
 {
-    public abstract class NativeContractBase
+    public abstract class NativeContract
     {
-        public static IReadOnlyDictionary<string, NativeContractBase> Contracts { get; }
+        public static IReadOnlyDictionary<string, NativeContract> Contracts { get; }
         public static NeoToken NEO { get; }
         public static GasToken GAS { get; }
 
@@ -21,15 +21,15 @@ namespace Neo.SmartContract.Native
         public virtual ContractPropertyState Properties => ContractPropertyState.NoProperty;
         public virtual string[] SupportedStandards { get; } = { "NEP-10" };
 
-        static NativeContractBase()
+        static NativeContract()
         {
-            Type t = typeof(NativeContractBase);
-            Contracts = t.Assembly.GetTypes().Where(p => !p.IsAbstract && p.IsSubclassOf(t)).Select(p => (NativeContractBase)Activator.CreateInstance(p, true)).ToDictionary(p => p.ServiceName);
+            Type t = typeof(NativeContract);
+            Contracts = t.Assembly.GetTypes().Where(p => !p.IsAbstract && p.IsSubclassOf(t)).Select(p => (NativeContract)Activator.CreateInstance(p, true)).ToDictionary(p => p.ServiceName);
             NEO = (NeoToken)Contracts["Neo.Native.Tokens.NEO"];
             GAS = (GasToken)Contracts["Neo.Native.Tokens.GAS"];
         }
 
-        protected NativeContractBase()
+        protected NativeContract()
         {
             using (ScriptBuilder sb = new ScriptBuilder())
             {

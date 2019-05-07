@@ -6,7 +6,7 @@ using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native.Tokens
 {
-    public abstract class Nep5Token<TState> : NativeContractBase
+    public abstract class Nep5Token<TState> : NativeContract
         where TState : Nep5AccountState, new()
     {
         public override ContractPropertyState Properties => ContractPropertyState.HasStorage;

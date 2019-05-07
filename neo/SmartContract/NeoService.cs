@@ -18,7 +18,7 @@ namespace Neo.SmartContract
         public NeoService(TriggerType trigger, Snapshot snapshot)
             : base(trigger, snapshot)
         {
-            foreach (NativeContractBase contract in NativeContractBase.Contracts.Values)
+            foreach (NativeContract contract in NativeContract.Contracts.Values)
                 Register(contract.ServiceName, contract.Invoke);
             Register("Neo.Native.Deploy", Native_Deploy, 0);
             Register("Neo.Blockchain.GetAccount", Blockchain_GetAccount, 100);
@@ -51,7 +51,7 @@ namespace Neo.SmartContract
         {
             if (Trigger != TriggerType.Application) return false;
             if (Snapshot.PersistingBlock.Index != 0) return false;
-            foreach (NativeContractBase contract in NativeContractBase.Contracts.Values)
+            foreach (NativeContract contract in NativeContract.Contracts.Values)
             {
                 Snapshot.Contracts.Add(contract.ScriptHash, new ContractState
                 {

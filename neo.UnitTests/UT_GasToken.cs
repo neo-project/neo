@@ -32,7 +32,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
-            engine.LoadScript(UT_NeoToken.NativeContract("Neo.Native.Tokens.GAS"));
+            engine.LoadScript(NativeContract.GAS.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -53,7 +53,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
-            engine.LoadScript(UT_NeoToken.NativeContract("Neo.Native.Tokens.GAS"));
+            engine.LoadScript(NativeContract.GAS.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -74,7 +74,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
-            engine.LoadScript(UT_NeoToken.NativeContract("Neo.Native.Tokens.GAS"));
+            engine.LoadScript(NativeContract.GAS.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -95,7 +95,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
-            engine.LoadScript(UT_NeoToken.NativeContract("Neo.Native.Tokens.GAS"));
+            engine.LoadScript(NativeContract.GAS.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -184,7 +184,7 @@ namespace Neo.UnitTests
             engine.LoadScript(script.ToArray());
 
             typeof(GasToken).GetMethod("Invoke", BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(NativeContractBase.GAS, new object[] { engine }).Should().Be(false);
+                .Invoke(NativeContract.GAS, new object[] { engine }).Should().Be(false);
         }
 
         internal static bool Check_Transfer(Snapshot snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)
@@ -192,7 +192,7 @@ namespace Neo.UnitTests
             var engine = new ApplicationEngine(TriggerType.Application,
                 new UT_NeoToken.CheckWitness(signFrom ? new UInt160[] { new UInt160(from) } : null), snapshot, Fixed8.Zero, true);
 
-            engine.LoadScript(UT_NeoToken.NativeContract("Neo.Native.Tokens.GAS"));
+            engine.LoadScript(NativeContract.GAS.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(amount);
@@ -220,7 +220,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
 
-            engine.LoadScript(UT_NeoToken.NativeContract("Neo.Native.Tokens.GAS"));
+            engine.LoadScript(NativeContract.GAS.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(account);

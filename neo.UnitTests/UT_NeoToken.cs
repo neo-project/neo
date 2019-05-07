@@ -67,7 +67,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+            engine.LoadScript(NativeContract.NEO.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -88,7 +88,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+            engine.LoadScript(NativeContract.NEO.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -109,7 +109,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+            engine.LoadScript(NativeContract.NEO.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -130,7 +130,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+            engine.LoadScript(NativeContract.NEO.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -293,21 +293,14 @@ namespace Neo.UnitTests
             engine.LoadScript(script.ToArray());
 
             typeof(NeoToken).GetMethod("Invoke", BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(NativeContractBase.NEO, new object[] { engine }).Should().Be(false);
-        }
-
-        public static byte[] NativeContract(string contract)
-        {
-            var scriptSyscall = new ScriptBuilder();
-            scriptSyscall.EmitSysCall(contract);
-            return scriptSyscall.ToArray();
+                .Invoke(NativeContract.NEO, new object[] { engine }).Should().Be(false);
         }
 
         internal static (bool State, bool Result) Check_RegisterValidator(Snapshot snapshot, byte[] pubkey)
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+            engine.LoadScript(NativeContract.NEO.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(pubkey);
@@ -333,7 +326,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+            engine.LoadScript(NativeContract.NEO.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -355,7 +348,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+            engine.LoadScript(NativeContract.NEO.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(snapshot.PersistingBlock.Index);
@@ -383,7 +376,7 @@ namespace Neo.UnitTests
             var engine = new ApplicationEngine(TriggerType.Application,
                 new CheckWitness(signFrom ? new UInt160[] { new UInt160(from) } : null), snapshot, Fixed8.Zero, true);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+            engine.LoadScript(NativeContract.NEO.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(amount);
@@ -411,7 +404,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+            engine.LoadScript(NativeContract.NEO.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(account);
@@ -435,7 +428,7 @@ namespace Neo.UnitTests
 
             // All hashes equal
 
-            foreach (var st in storages) st.Key.ScriptHash.Should().Be(NativeContractBase.NEO.ScriptHash);
+            foreach (var st in storages) st.Key.ScriptHash.Should().Be(SmartContract.Native.NativeContract.NEO.ScriptHash);
 
             // First key, the flag
 
@@ -462,7 +455,7 @@ namespace Neo.UnitTests
 
             engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+            engine.LoadScript(NativeContract.NEO.Script);
 
             script = new ScriptBuilder();
             script.EmitPush(account);
@@ -507,7 +500,7 @@ namespace Neo.UnitTests
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
 
-            engine.LoadScript(NativeContract("Neo.Native.Tokens.NEO"));
+            engine.LoadScript(NativeContract.NEO.Script);
 
             var script = new ScriptBuilder();
             script.EmitPush(account);
