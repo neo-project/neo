@@ -13,7 +13,7 @@ using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native.Tokens
 {
-    public sealed class NeoToken : Nep5Token
+    public sealed class NeoToken : Nep5Token<NeoToken.AccountState>
     {
         public override string ServiceName => "Neo.Native.Tokens.NEO";
         public override string Name => "NEO";
@@ -68,7 +68,7 @@ namespace Neo.SmartContract.Native.Tokens
             {
                 if (storage_from != null)
                 {
-                    AccountState state_from = AccountState.FromByteArray(storage_from.Value);
+                    AccountState state_from = new AccountState(storage_from.Value);
                     DistributeGas(engine, from, state_from);
                     storage_from = engine.Service.Snapshot.Storages.GetAndChange(key_from);
                     storage_from.Value = state_from.ToByteArray();
@@ -77,7 +77,7 @@ namespace Neo.SmartContract.Native.Tokens
             else
             {
                 if (storage_from is null) return false;
-                AccountState state_from = AccountState.FromByteArray(storage_from.Value);
+                AccountState state_from = new AccountState(storage_from.Value);
                 if (state_from.Balance < amount) return false;
                 DistributeGas(engine, from, state_from);
                 if (from.Equals(to))
@@ -116,7 +116,7 @@ namespace Neo.SmartContract.Native.Tokens
                     {
                         Value = new AccountState().ToByteArray()
                     });
-                    AccountState state_to = AccountState.FromByteArray(storage_to.Value);
+                    AccountState state_to = new AccountState(storage_to.Value);
                     DistributeGas(engine, to, state_to);
                     state_to.Balance += amount;
                     storage_to.Value = state_to.ToByteArray();
@@ -206,7 +206,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (account.Length != 20) throw new ArgumentException();
             StorageItem storage = engine.Service.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account, account));
             if (storage is null) return BigInteger.Zero;
-            AccountState state = AccountState.FromByteArray(storage.Value);
+            AccountState state = new AccountState(storage.Value);
             return CalculateBonus(engine, state.Balance, state.BalanceHeight, end);
         }
 
@@ -230,7 +230,7 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey key_account = CreateStorageKey(Prefix_Account, account);
             if (engine.Service.Snapshot.Storages.TryGet(key_account) is null) return false;
             StorageItem storage_account = engine.Service.Snapshot.Storages.GetAndChange(key_account);
-            AccountState state_account = AccountState.FromByteArray(storage_account.Value);
+            AccountState state_account = new AccountState(storage_account.Value);
             foreach (ECPoint pubkey in state_account.Votes)
             {
                 StorageItem storage_validator = engine.Service.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Validator, pubkey.ToArray()));
@@ -287,31 +287,34 @@ namespace Neo.SmartContract.Native.Tokens
             }).Where(p => (p.Votes.Sign > 0) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).OrderBy(p => p).ToArray();
         }
 
-        internal class AccountState
+        public class AccountState : Nep5AccountState
         {
-            public BigInteger Balance;
             public uint BalanceHeight;
-            public ECPoint[] Votes = new ECPoint[0];
+            public ECPoint[] Votes;
 
-            public static AccountState FromByteArray(byte[] data)
+            public AccountState()
             {
-                Struct @struct = (Struct)data.DeserializeStackItem(3);
-                return new AccountState
-                {
-                    Balance = @struct[0].GetBigInteger(),
-                    BalanceHeight = (uint)@struct[1].GetBigInteger(),
-                    Votes = @struct[2].GetByteArray().AsSerializableArray<ECPoint>(Blockchain.MaxValidators)
-                };
+                this.Votes = new ECPoint[0];
             }
 
-            public byte[] ToByteArray()
+            public AccountState(byte[] data)
+                : base(data)
             {
-                return new Struct(new StackItem[]
-                {
-                    Balance,
-                    BalanceHeight,
-                    Votes.ToByteArray()
-                }).Serialize();
+            }
+
+            protected override void FromStruct(Struct @struct)
+            {
+                base.FromStruct(@struct);
+                BalanceHeight = (uint)@struct[1].GetBigInteger();
+                Votes = @struct[2].GetByteArray().AsSerializableArray<ECPoint>(Blockchain.MaxValidators);
+            }
+
+            protected override Struct ToStruct()
+            {
+                Struct @struct = base.ToStruct();
+                @struct.Add(BalanceHeight);
+                @struct.Add(Votes.ToByteArray());
+                return @struct;
             }
         }
 

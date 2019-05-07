@@ -5,7 +5,8 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native.Tokens
 {
-    public abstract class Nep5Token : NativeContractBase
+    public abstract class Nep5Token<T> : NativeContractBase
+        where T : Nep5AccountState, new()
     {
         public override string[] SupportedStandards { get; } = { "NEP-5", "NEP-10" };
         public abstract string Name { get; }
@@ -47,8 +48,8 @@ namespace Neo.SmartContract.Native.Tokens
         {
             StorageItem storage = engine.Service.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account, account));
             if (storage is null) return BigInteger.Zero;
-            Struct state = (Struct)storage.Value.DeserializeStackItem(engine.MaxArraySize);
-            return state[0].GetBigInteger();
+            Nep5AccountState state = new Nep5AccountState(storage.Value);
+            return state.Balance;
         }
 
         protected abstract bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount);

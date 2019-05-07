@@ -1,13 +1,12 @@
 ﻿using Neo.Ledger;
 using Neo.VM;
-using Neo.VM.Types;
 using System;
 using System.Numerics;
 using System.Text;
 
 namespace Neo.SmartContract.Native.Tokens
 {
-    public sealed class GasToken : Nep5Token
+    public sealed class GasToken : Nep5Token<Nep5AccountState>
     {
         public override string ServiceName => "Neo.Native.Tokens.GAS";
         public override string Name => "GAS";
@@ -42,7 +41,7 @@ namespace Neo.SmartContract.Native.Tokens
                 StorageKey key_from = CreateStorageKey(Prefix_Account, from);
                 StorageItem storage_from = engine.Service.Snapshot.Storages.TryGet(key_from);
                 if (storage_from is null) return false;
-                AccountState state_from = AccountState.FromByteArray(storage_from.Value);
+                Nep5AccountState state_from = new Nep5AccountState(storage_from.Value);
                 if (state_from.Balance < amount) return false;
                 if (!from.Equals(to))
                 {
@@ -59,9 +58,9 @@ namespace Neo.SmartContract.Native.Tokens
                     StorageKey key_to = CreateStorageKey(Prefix_Account, to);
                     StorageItem storage_to = engine.Service.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem
                     {
-                        Value = new AccountState().ToByteArray()
+                        Value = new Nep5AccountState().ToByteArray()
                     });
-                    AccountState state_to = AccountState.FromByteArray(storage_to.Value);
+                    Nep5AccountState state_to = new Nep5AccountState(storage_to.Value);
                     state_to.Balance += amount;
                     storage_to.Value = state_to.ToByteArray();
                 }
@@ -77,31 +76,12 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey key = CreateStorageKey(Prefix_Account, account);
             StorageItem storage = engine.Service.Snapshot.Storages.GetAndChange(key, () => new StorageItem
             {
-                Value = new AccountState().ToByteArray()
+                Value = new Nep5AccountState().ToByteArray()
             });
-            AccountState state = AccountState.FromByteArray(storage.Value);
+            Nep5AccountState state = new Nep5AccountState(storage.Value);
             state.Balance += amount;
             storage.Value = state.ToByteArray();
             engine.Service.SendNotification(engine, ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount });
-        }
-
-        internal class AccountState
-        {
-            public BigInteger Balance;
-
-            public static AccountState FromByteArray(byte[] data)
-            {
-                Struct @struct = (Struct)data.DeserializeStackItem(1);
-                return new AccountState
-                {
-                    Balance = @struct[0].GetBigInteger()
-                };
-            }
-
-            public byte[] ToByteArray()
-            {
-                return new Struct(new StackItem[] { Balance }).Serialize();
-            }
         }
     }
 }
