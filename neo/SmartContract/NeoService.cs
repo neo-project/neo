@@ -10,7 +10,6 @@ using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Linq;
-using System.Text;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -176,20 +175,7 @@ namespace Neo.SmartContract
             if (Trigger != TriggerType.Application) return false;
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
-            ContractParameterType[] parameter_list = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Select(p => (ContractParameterType)p).ToArray();
-            if (parameter_list.Length > 252) return false;
-            ContractParameterType return_type = (ContractParameterType)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
             ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
-            if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-            string name = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-            if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-            string version = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-            if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-            string author = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-            if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-            string email = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-            if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 65536) return false;
-            string description = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
             UInt160 hash = script.ToScriptHash();
             ContractState contract = Snapshot.Contracts.TryGet(hash);
             if (contract == null)
@@ -197,14 +183,7 @@ namespace Neo.SmartContract
                 contract = new ContractState
                 {
                     Script = script,
-                    ParameterList = parameter_list,
-                    ReturnType = return_type,
-                    ContractProperties = contract_properties,
-                    Name = name,
-                    CodeVersion = version,
-                    Author = author,
-                    Email = email,
-                    Description = description
+                    ContractProperties = contract_properties
                 };
                 Snapshot.Contracts.Add(hash, contract);
                 ContractsCreated.Add(hash, new UInt160(engine.CurrentContext.ScriptHash));
@@ -218,20 +197,7 @@ namespace Neo.SmartContract
             if (Trigger != TriggerType.Application) return false;
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
-            ContractParameterType[] parameter_list = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Select(p => (ContractParameterType)p).ToArray();
-            if (parameter_list.Length > 252) return false;
-            ContractParameterType return_type = (ContractParameterType)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
             ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
-            if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-            string name = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-            if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-            string version = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-            if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-            string author = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-            if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-            string email = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-            if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 65536) return false;
-            string description = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
             UInt160 hash = script.ToScriptHash();
             ContractState contract = Snapshot.Contracts.TryGet(hash);
             if (contract == null)
@@ -239,14 +205,7 @@ namespace Neo.SmartContract
                 contract = new ContractState
                 {
                     Script = script,
-                    ParameterList = parameter_list,
-                    ReturnType = return_type,
-                    ContractProperties = contract_properties,
-                    Name = name,
-                    CodeVersion = version,
-                    Author = author,
-                    Email = email,
-                    Description = description
+                    ContractProperties = contract_properties
                 };
                 Snapshot.Contracts.Add(hash, contract);
                 ContractsCreated.Add(hash, new UInt160(engine.CurrentContext.ScriptHash));
