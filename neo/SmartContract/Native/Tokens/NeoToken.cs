@@ -35,7 +35,7 @@ namespace Neo.SmartContract.Native.Tokens
             switch (operation)
             {
                 case "initialize":
-                    return Initialize(engine);
+                    return Initialize(engine, new UInt160(args[0].GetByteArray()));
                 case "unclaimedGas":
                     return UnclaimedGas(engine, args[0].GetByteArray(), (uint)args[1].GetBigInteger());
                 case "registerValidator":
@@ -180,7 +180,7 @@ namespace Neo.SmartContract.Native.Tokens
             return value * amount * GAS.Factor / TotalAmount;
         }
 
-        private bool Initialize(ApplicationEngine engine)
+        private bool Initialize(ApplicationEngine engine, UInt160 account)
         {
             if (engine.Service.Trigger != TriggerType.Application) throw new InvalidOperationException();
             StorageKey key = CreateStorageKey(Prefix_Initialized);
@@ -190,13 +190,12 @@ namespace Neo.SmartContract.Native.Tokens
                 Value = new byte[] { 1 },
                 IsConstant = true
             });
-            byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1, Blockchain.StandbyValidators).ToScriptHash().ToArray();
             key = CreateStorageKey(Prefix_Account, account);
             engine.Service.Snapshot.Storages.Add(key, new StorageItem
             {
                 Value = new AccountState { Balance = TotalAmount }.ToByteArray()
             });
-            engine.Service.SendNotification(engine, ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account, TotalAmount });
+            engine.Service.SendNotification(engine, ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), TotalAmount });
             foreach (ECPoint pubkey in Blockchain.StandbyValidators)
                 RegisterValidator(engine, pubkey.EncodePoint(true));
             return true;
