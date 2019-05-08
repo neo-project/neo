@@ -13,7 +13,7 @@ namespace Neo.UnitTests.Extensions
 {
     public static class Nep5NativeContractExtensions
     {
-        class CheckWitness : IScriptContainer, IVerifiable
+        internal class ManualWitness : IScriptContainer, IVerifiable
         {
             private readonly UInt160[] _hashForVerify;
 
@@ -21,9 +21,9 @@ namespace Neo.UnitTests.Extensions
 
             public int Size => 0;
 
-            public CheckWitness(UInt160[] hashForVerify)
+            public ManualWitness(UInt160[] hashForVerify)
             {
-                _hashForVerify = hashForVerify;
+                _hashForVerify = hashForVerify ?? new UInt160[0];
             }
 
             public void Deserialize(BinaryReader reader) { }
@@ -46,7 +46,7 @@ namespace Neo.UnitTests.Extensions
         public static bool Transfer(this NativeContract contract, Persistence.Snapshot snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)
         {
             var engine = new ApplicationEngine(TriggerType.Application,
-                new CheckWitness(signFrom ? new UInt160[] { new UInt160(from) } : null), snapshot, Fixed8.Zero, true);
+                new ManualWitness(signFrom ? new[] { new UInt160(from) } : null), snapshot, Fixed8.Zero, true);
 
             engine.LoadScript(contract.Script);
 

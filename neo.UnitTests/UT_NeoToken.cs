@@ -44,6 +44,48 @@ namespace Neo.UnitTests
         public void Check_SupportedStandards() => NativeContract.NEO.SupportedStandards().Should().BeEquivalentTo(new string[] { "NEP-5", "NEP-10" });
 
         [TestMethod]
+        public void Check_Vote()
+        {
+            var snapshot = Store.GetSnapshot().Clone();
+            snapshot.PersistingBlock = new Block() { Index = 1000 };
+
+            byte[] from = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
+                Blockchain.StandbyValidators).ToScriptHash().ToArray();
+
+            Check_Initialize(snapshot, from);
+
+            // No signature
+
+            var ret = Check_Vote(snapshot, from, new byte[][] { }, false);
+            ret.Result.Should().BeFalse();
+            ret.State.Should().BeTrue();
+
+            // Wrong address
+
+            ret = Check_Vote(snapshot, new byte[19], new byte[][] { }, false);
+            ret.Result.Should().BeFalse();
+            ret.State.Should().BeFalse();
+
+            // Wrong ec
+
+            ret = Check_Vote(snapshot, from, new byte[][] { new byte[19] }, true);
+            ret.Result.Should().BeFalse();
+            ret.State.Should().BeFalse();
+
+            // no registered
+
+            var fakeAddr = new byte[20];
+            fakeAddr[0] = 0x5F;
+            fakeAddr[5] = 0xFF;
+
+            ret = Check_Vote(snapshot, fakeAddr, new byte[][] { }, true);
+            ret.Result.Should().BeFalse();
+            ret.State.Should().BeTrue();
+
+            // TODO: More votes tests
+        }
+
+        [TestMethod]
         public void Check_UnclaimedGas()
         {
             var snapshot = Store.GetSnapshot().Clone();
@@ -189,6 +231,38 @@ namespace Neo.UnitTests
 
             typeof(NeoToken).GetMethod("Invoke", BindingFlags.NonPublic | BindingFlags.Instance)
                 .Invoke(NativeContract.NEO, new object[] { engine }).Should().Be(false);
+        }
+
+        internal static (bool State, bool Result) Check_Vote(Snapshot snapshot, byte[] account, byte[][] pubkeys, bool signAccount)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application,
+                new Nep5NativeContractExtensions.ManualWitness(signAccount ? new[] { new UInt160(account) } : null), snapshot, Fixed8.Zero, true);
+
+            engine.LoadScript(NativeContract.NEO.Script);
+
+            var script = new ScriptBuilder();
+
+            foreach (var ec in pubkeys) script.EmitPush(ec);
+            script.EmitPush(pubkeys.Length);
+            script.Emit(OpCode.PACK);
+
+            script.EmitPush(account.ToArray());
+            script.EmitPush(2);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("vote");
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute();
+
+            if (engine.State == VMState.FAULT)
+            {
+                return (false, false);
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return (true, (result as VM.Types.Boolean).GetBoolean());
         }
 
         internal static (bool State, bool Result) Check_RegisterValidator(Snapshot snapshot, byte[] pubkey)
