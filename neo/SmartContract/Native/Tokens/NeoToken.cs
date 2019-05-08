@@ -83,7 +83,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
-            uint amount = 0;
+            BigInteger amount = BigInteger.Zero;
             uint ustart = start / Blockchain.DecrementInterval;
             if (ustart < Blockchain.GenerationAmount.Length)
             {
@@ -108,7 +108,7 @@ namespace Neo.SmartContract.Native.Tokens
                 }
                 amount += (iend - istart) * Blockchain.GenerationAmount[ustart];
             }
-            amount += (uint)(engine.Service.Snapshot.GetSysFeeAmount(end - 1) - (start == 0 ? 0 : engine.Service.Snapshot.GetSysFeeAmount(start - 1)));
+            amount += (engine.Service.Snapshot.GetSysFeeAmount(end - 1) - (start == 0 ? 0 : engine.Service.Snapshot.GetSysFeeAmount(start - 1)));
             return value * amount * GAS.Factor / TotalAmount;
         }
 
