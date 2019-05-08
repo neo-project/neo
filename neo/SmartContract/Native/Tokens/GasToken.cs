@@ -7,7 +7,7 @@
         public override string Symbol => "gas";
         public override int Decimals => 8;
 
-        private GasToken()
+        internal GasToken()
         {
         }
     }

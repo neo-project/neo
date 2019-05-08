@@ -11,23 +11,17 @@ namespace Neo.SmartContract.Native
 {
     public abstract class NativeContract
     {
-        public static IReadOnlyDictionary<string, NativeContract> Contracts { get; }
-        public static NeoToken NEO { get; }
-        public static GasToken GAS { get; }
+        private static readonly List<NativeContract> contracts = new List<NativeContract>();
+
+        public static IReadOnlyCollection<NativeContract> Contracts { get; } = contracts;
+        public static NeoToken NEO { get; } = new NeoToken();
+        public static GasToken GAS { get; } = new GasToken();
 
         public abstract string ServiceName { get; }
         public byte[] Script { get; }
         public UInt160 ScriptHash { get; }
         public virtual ContractPropertyState Properties => ContractPropertyState.NoProperty;
         public virtual string[] SupportedStandards { get; } = { "NEP-10" };
-
-        static NativeContract()
-        {
-            Type t = typeof(NativeContract);
-            Contracts = t.Assembly.GetTypes().Where(p => !p.IsAbstract && p.IsSubclassOf(t)).Select(p => (NativeContract)Activator.CreateInstance(p, true)).ToDictionary(p => p.ServiceName);
-            NEO = (NeoToken)Contracts["Neo.Native.Tokens.NEO"];
-            GAS = (GasToken)Contracts["Neo.Native.Tokens.GAS"];
-        }
 
         protected NativeContract()
         {
@@ -37,6 +31,7 @@ namespace Neo.SmartContract.Native
                 this.Script = sb.ToArray();
             }
             this.ScriptHash = Script.ToScriptHash();
+            contracts.Add(this);
         }
 
         protected StorageKey CreateStorageKey(byte prefix, byte[] key = null)

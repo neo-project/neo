@@ -24,7 +24,7 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte Prefix_Validator = 33;
         private const byte Prefix_ValidatorsCount = 15;
 
-        private NeoToken()
+        internal NeoToken()
         {
             this.TotalAmount = 100000000 * Factor;
         }
