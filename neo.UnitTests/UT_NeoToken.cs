@@ -10,13 +10,12 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
+using Neo.UnitTests.Extensions;
 using Neo.VM;
 using System;
-using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
-using System.Text;
 
 namespace Neo.UnitTests
 {
@@ -24,36 +23,6 @@ namespace Neo.UnitTests
     public class UT_NeoToken
     {
         private Store Store;
-
-        internal class CheckWitness : IScriptContainer, IVerifiable
-        {
-            private readonly UInt160[] _hashForVerify;
-
-            public Witness[] Witnesses => throw new NotImplementedException();
-
-            public int Size => 0;
-
-            public CheckWitness(UInt160[] hashForVerify)
-            {
-                _hashForVerify = hashForVerify;
-            }
-
-            public void Deserialize(BinaryReader reader) { }
-
-            public void DeserializeUnsigned(BinaryReader reader) { }
-
-            public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
-            {
-                return _hashForVerify;
-            }
-
-            public void Serialize(BinaryWriter writer) { }
-
-            public void SerializeUnsigned(BinaryWriter writer) { }
-
-            byte[] IScriptContainer.GetMessage() => new byte[0];
-
-        }
 
         [TestInitialize]
         public void TestSetup()
@@ -63,91 +32,16 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void Check_Name()
-        {
-            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
-
-            engine.LoadScript(NativeContract.NEO.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(0);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("name");
-            engine.LoadScript(script.ToArray());
-
-            engine.Execute();
-            engine.State.Should().Be(VMState.HALT);
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteArray));
-            Encoding.ASCII.GetString((result as VM.Types.ByteArray).GetByteArray()).Should().Be("NEO");
-        }
+        public void Check_Name() => NativeContract.NEO.Name().Should().Be("NEO");
 
         [TestMethod]
-        public void Check_Symbol()
-        {
-            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
-
-            engine.LoadScript(NativeContract.NEO.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(0);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("symbol");
-            engine.LoadScript(script.ToArray());
-
-            engine.Execute();
-            engine.State.Should().Be(VMState.HALT);
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteArray));
-            Encoding.ASCII.GetString((result as VM.Types.ByteArray).GetByteArray()).Should().Be("neo");
-        }
+        public void Check_Symbol() => NativeContract.NEO.Symbol().Should().Be("neo");
 
         [TestMethod]
-        public void Check_Decimals()
-        {
-            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
-
-            engine.LoadScript(NativeContract.NEO.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(0);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("decimals");
-            engine.LoadScript(script.ToArray());
-
-            engine.Execute();
-            engine.State.Should().Be(VMState.HALT);
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Integer));
-            (result as VM.Types.Integer).GetBigInteger().Should().Be(0);
-        }
+        public void Check_Decimals() => NativeContract.NEO.Decimals().Should().Be(0);
 
         [TestMethod]
-        public void Check_SupportedStandards()
-        {
-            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
-
-            engine.LoadScript(NativeContract.NEO.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(0);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("supportedStandards");
-            engine.LoadScript(script.ToArray());
-
-            engine.Execute();
-            engine.State.Should().Be(VMState.HALT);
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Array));
-            (result as VM.Types.Array).ToArray()
-                .Select(u => Encoding.ASCII.GetString(u.GetByteArray()))
-                .ToArray()
-                .Should().BeEquivalentTo(new string[] { "NEP-5", "NEP-10" });
-        }
+        public void Check_SupportedStandards() => NativeContract.NEO.SupportedStandards().Should().BeEquivalentTo(new string[] { "NEP-5", "NEP-10" });
 
         [TestMethod]
         public void Check_UnclaimedGas()
@@ -227,10 +121,10 @@ namespace Neo.UnitTests
 
             // Transfer
 
-            Check_Transfer(snapshot, from, to, BigInteger.One, false).Should().BeFalse(); // Not signed
-            Check_Transfer(snapshot, from, to, BigInteger.One, true).Should().BeTrue();
-            Check_BalanceOf(snapshot, from).Should().Be(99_999_999);
-            Check_BalanceOf(snapshot, to).Should().Be(1);
+            NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.One, false).Should().BeFalse(); // Not signed
+            NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.One, true).Should().BeTrue();
+            NativeContract.NEO.BalanceOf(snapshot, from).Should().Be(99_999_999);
+            NativeContract.NEO.BalanceOf(snapshot, to).Should().Be(1);
 
             // Check unclaim
 
@@ -244,19 +138,19 @@ namespace Neo.UnitTests
 
             keyCount = snapshot.Storages.GetChangeSet().Count();
 
-            Check_Transfer(snapshot, to, from, BigInteger.One, true).Should().BeTrue();
-            Check_BalanceOf(snapshot, to).Should().Be(0);
+            NativeContract.NEO.Transfer(snapshot, to, from, BigInteger.One, true).Should().BeTrue();
+            NativeContract.NEO.BalanceOf(snapshot, to).Should().Be(0);
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount - 1);  // Remove neo balance from address two
 
             // Bad inputs
 
-            Check_Transfer(snapshot, from, to, BigInteger.MinusOne, true).Should().BeFalse();
-            Check_Transfer(snapshot, new byte[19], to, BigInteger.One, false).Should().BeFalse();
-            Check_Transfer(snapshot, from, new byte[19], BigInteger.One, false).Should().BeFalse();
+            NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.MinusOne, true).Should().BeFalse();
+            NativeContract.NEO.Transfer(snapshot, new byte[19], to, BigInteger.One, false).Should().BeFalse();
+            NativeContract.NEO.Transfer(snapshot, from, new byte[19], BigInteger.One, false).Should().BeFalse();
 
             // More than balance
 
-            Check_Transfer(snapshot, to, from, new BigInteger(2), true).Should().BeFalse();
+            NativeContract.NEO.Transfer(snapshot, to, from, new BigInteger(2), true).Should().BeFalse();
         }
 
         [TestMethod]
@@ -267,11 +161,11 @@ namespace Neo.UnitTests
                 Blockchain.StandbyValidators).ToScriptHash().ToArray();
 
             Check_Initialize(snapshot, account);
-            Check_BalanceOf(snapshot, account).Should().Be(100_000_000);
+            NativeContract.NEO.BalanceOf(snapshot, account).Should().Be(100_000_000);
 
             account[5]++; // Without existing balance
 
-            Check_BalanceOf(snapshot, account).Should().Be(0);
+            NativeContract.NEO.BalanceOf(snapshot, account).Should().Be(0);
         }
 
         [TestMethod]
@@ -280,6 +174,7 @@ namespace Neo.UnitTests
             var snapshot = Store.GetSnapshot().Clone();
             byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
                 Blockchain.StandbyValidators).ToScriptHash().ToArray();
+
             Check_Initialize(snapshot, account);
         }
 
@@ -371,35 +266,6 @@ namespace Neo.UnitTests
             return ((result as VM.Types.Integer).GetBigInteger(), true);
         }
 
-        internal static bool Check_Transfer(Snapshot snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)
-        {
-            var engine = new ApplicationEngine(TriggerType.Application,
-                new CheckWitness(signFrom ? new UInt160[] { new UInt160(from) } : null), snapshot, Fixed8.Zero, true);
-
-            engine.LoadScript(NativeContract.NEO.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(amount);
-            script.EmitPush(to);
-            script.EmitPush(from);
-            script.EmitPush(3);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("transfer");
-            engine.LoadScript(script.ToArray());
-
-            engine.Execute();
-
-            if (engine.State == VMState.FAULT)
-            {
-                return false;
-            }
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
-
-            return (result as VM.Types.Boolean).GetBoolean();
-        }
-
         internal static void Check_Initialize(Snapshot snapshot, byte[] account)
         {
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
@@ -428,7 +294,7 @@ namespace Neo.UnitTests
 
             // All hashes equal
 
-            foreach (var st in storages) st.Key.ScriptHash.Should().Be(SmartContract.Native.NativeContract.NEO.ScriptHash);
+            foreach (var st in storages) st.Key.ScriptHash.Should().Be(NativeContract.NEO.ScriptHash);
 
             // First key, the flag
 
@@ -494,28 +360,6 @@ namespace Neo.UnitTests
 
             trackable.Key.Key.Should().BeEquivalentTo(new byte[] { 20 }.Concat(account));
             trackable.Item.IsConstant.Should().Be(false);
-        }
-
-        internal static BigInteger Check_BalanceOf(Snapshot snapshot, byte[] account)
-        {
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
-
-            engine.LoadScript(NativeContract.NEO.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(account);
-            script.EmitPush(1);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("balanceOf");
-            engine.LoadScript(script.ToArray());
-
-            engine.Execute();
-            engine.State.Should().Be(VMState.HALT);
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Integer));
-
-            return (result as VM.Types.Integer).GetBigInteger();
         }
     }
 }

@@ -1,0 +1,204 @@
+﻿using FluentAssertions;
+using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using Neo.VM;
+using System;
+using System.IO;
+using System.Linq;
+using System.Numerics;
+using System.Text;
+
+namespace Neo.UnitTests.Extensions
+{
+    public static class Nep5NativeContractExtensions
+    {
+        class CheckWitness : IScriptContainer, IVerifiable
+        {
+            private readonly UInt160[] _hashForVerify;
+
+            public Witness[] Witnesses => throw new NotImplementedException();
+
+            public int Size => 0;
+
+            public CheckWitness(UInt160[] hashForVerify)
+            {
+                _hashForVerify = hashForVerify;
+            }
+
+            public void Deserialize(BinaryReader reader) { }
+
+            public void DeserializeUnsigned(BinaryReader reader) { }
+
+            public UInt160[] GetScriptHashesForVerifying(Persistence.Snapshot snapshot)
+            {
+                return _hashForVerify;
+            }
+
+            public void Serialize(BinaryWriter writer) { }
+
+            public void SerializeUnsigned(BinaryWriter writer) { }
+
+            byte[] IScriptContainer.GetMessage() => new byte[0];
+
+        }
+
+        public static bool Transfer(this NativeContract contract, Persistence.Snapshot snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application,
+                new CheckWitness(signFrom ? new UInt160[] { new UInt160(from) } : null), snapshot, Fixed8.Zero, true);
+
+            engine.LoadScript(contract.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(amount);
+            script.EmitPush(to);
+            script.EmitPush(from);
+            script.EmitPush(3);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("transfer");
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute();
+
+            if (engine.State == VMState.FAULT)
+            {
+                return false;
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return (result as VM.Types.Boolean).GetBoolean();
+        }
+
+        public static string[] SupportedStandards(this NativeContract contract)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero);
+
+            engine.LoadScript(contract.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("supportedStandards");
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute();
+            engine.State.Should().Be(VMState.HALT);
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Array));
+
+            return (result as VM.Types.Array).ToArray()
+                .Select(u => Encoding.ASCII.GetString(u.GetByteArray()))
+                .ToArray();
+        }
+
+        public static BigInteger TotalSupply(this NativeContract contract, Persistence.Snapshot snapshot)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
+
+            engine.LoadScript(contract.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("totalSupply");
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute();
+            engine.State.Should().Be(VMState.HALT);
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Integer));
+
+            return (result as VM.Types.Integer).GetBigInteger();
+        }
+
+        public static BigInteger BalanceOf(this NativeContract contract, Persistence.Snapshot snapshot, byte[] account)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
+
+            engine.LoadScript(contract.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(account);
+            script.EmitPush(1);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("balanceOf");
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute();
+            engine.State.Should().Be(VMState.HALT);
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Integer));
+
+            return (result as VM.Types.Integer).GetBigInteger();
+        }
+
+        public static BigInteger Decimals(this NativeContract contract)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero);
+
+            engine.LoadScript(contract.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("decimals");
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute();
+            engine.State.Should().Be(VMState.HALT);
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Integer));
+
+            return (result as VM.Types.Integer).GetBigInteger();
+        }
+
+        public static string Symbol(this NativeContract contract)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero);
+
+            engine.LoadScript(contract.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("symbol");
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute();
+            engine.State.Should().Be(VMState.HALT);
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.ByteArray));
+
+            return Encoding.UTF8.GetString((result as VM.Types.ByteArray).GetByteArray());
+        }
+
+        public static string Name(this NativeContract contract)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero);
+
+            engine.LoadScript(contract.Script);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(0);
+            script.Emit(OpCode.PACK);
+            script.EmitPush("name");
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute();
+            engine.State.Should().Be(VMState.HALT);
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.ByteArray));
+
+            return Encoding.UTF8.GetString((result as VM.Types.ByteArray).GetByteArray());
+        }
+    }
+}
