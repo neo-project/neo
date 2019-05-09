@@ -1,5 +1,4 @@
-﻿using Neo.Cryptography.ECC;
-using Neo.IO.Caching;
+﻿using Neo.IO.Caching;
 using Neo.IO.Data.LevelDB;
 using Neo.IO.Wrappers;
 using Neo.Ledger;
@@ -42,11 +41,6 @@ namespace Neo.Persistence.LevelDB
             return slice.ToArray();
         }
 
-        public override DataCache<UInt160, AccountState> GetAccounts()
-        {
-            return new DbCache<UInt160, AccountState>(db, null, null, Prefixes.ST_Account);
-        }
-
         public override DataCache<UInt256, AssetState> GetAssets()
         {
             return new DbCache<UInt256, AssetState>(db, null, null, Prefixes.ST_Asset);
@@ -82,19 +76,9 @@ namespace Neo.Persistence.LevelDB
             return new DbCache<UInt256, UnspentCoinState>(db, null, null, Prefixes.ST_Coin);
         }
 
-        public override DataCache<ECPoint, ValidatorState> GetValidators()
-        {
-            return new DbCache<ECPoint, ValidatorState>(db, null, null, Prefixes.ST_Validator);
-        }
-
         public override DataCache<UInt32Wrapper, HeaderHashList> GetHeaderHashList()
         {
             return new DbCache<UInt32Wrapper, HeaderHashList>(db, null, null, Prefixes.IX_HeaderHashList);
-        }
-
-        public override MetaDataCache<ValidatorsCountState> GetValidatorsCount()
-        {
-            return new DbMetaDataCache<ValidatorsCountState>(db, null, null, Prefixes.IX_ValidatorsCount);
         }
 
         public override MetaDataCache<NextValidatorsState> GetNextValidators()

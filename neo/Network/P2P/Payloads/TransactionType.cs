@@ -12,8 +12,6 @@ namespace Neo.Network.P2P.Payloads
         IssueTransaction = 0x01,
         [ReflectionCache(typeof(RegisterTransaction))]
         RegisterTransaction = 0x40,
-        [ReflectionCache(typeof(StateTransaction))]
-        StateTransaction = 0x90,
         [ReflectionCache(typeof(InvocationTransaction))]
         InvocationTransaction = 0xd1
     }

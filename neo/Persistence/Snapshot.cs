@@ -21,14 +21,11 @@ namespace Neo.Persistence
         public Block PersistingBlock { get; internal set; }
         public abstract DataCache<UInt256, BlockState> Blocks { get; }
         public abstract DataCache<UInt256, TransactionState> Transactions { get; }
-        public abstract DataCache<UInt160, AccountState> Accounts { get; }
         public abstract DataCache<UInt256, UnspentCoinState> UnspentCoins { get; }
-        public abstract DataCache<ECPoint, ValidatorState> Validators { get; }
         public abstract DataCache<UInt256, AssetState> Assets { get; }
         public abstract DataCache<UInt160, ContractState> Contracts { get; }
         public abstract DataCache<StorageKey, StorageItem> Storages { get; }
         public abstract DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
-        public abstract MetaDataCache<ValidatorsCountState> ValidatorsCount { get; }
         public abstract MetaDataCache<NextValidatorsState> NextValidators { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
@@ -45,18 +42,14 @@ namespace Neo.Persistence
 
         public virtual void Commit()
         {
-            Accounts.DeleteWhere((k, v) => !v.IsFrozen && v.Votes.Length == 0 && v.Balances.All(p => p.Value <= Fixed8.Zero));
             UnspentCoins.DeleteWhere((k, v) => v.Items.All(p => p.HasFlag(CoinState.Spent)));
             Blocks.Commit();
             Transactions.Commit();
-            Accounts.Commit();
             UnspentCoins.Commit();
-            Validators.Commit();
             Assets.Commit();
             Contracts.Commit();
             Storages.Commit();
             HeaderHashList.Commit();
-            ValidatorsCount.Commit();
             NextValidators.Commit();
             BlockHashIndex.Commit();
             HeaderHashIndex.Commit();

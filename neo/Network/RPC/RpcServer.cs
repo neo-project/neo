@@ -114,11 +114,6 @@ namespace Neo.Network.RPC
         {
             switch (method)
             {
-                case "getaccountstate":
-                    {
-                        UInt160 script_hash = _params[0].AsString().ToScriptHash();
-                        return GetAccountState(script_hash);
-                    }
                 case "getassetstate":
                     {
                         UInt256 asset_id = UInt256.Parse(_params[0].AsString());
@@ -390,12 +385,6 @@ namespace Neo.Network.RPC
             .Build();
 
             host.Start();
-        }
-
-        private JObject GetAccountState(UInt160 script_hash)
-        {
-            AccountState account = Blockchain.Singleton.Store.GetAccounts().TryGet(script_hash) ?? new AccountState(script_hash);
-            return account.ToJson();
         }
 
         private JObject GetAssetState(UInt256 asset_id)
