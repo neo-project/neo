@@ -1,9 +1,9 @@
-﻿using Neo.Cryptography.ECC;
-using Neo.Ledger;
+﻿using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -18,8 +18,10 @@ namespace Neo.SmartContract
         public NeoService(TriggerType trigger, Snapshot snapshot)
             : base(trigger, snapshot)
         {
+            foreach (NativeContract contract in NativeContract.Contracts)
+                Register(contract.ServiceName, contract.Invoke);
+            Register("Neo.Native.Deploy", Native_Deploy, 0);
             Register("Neo.Blockchain.GetAccount", Blockchain_GetAccount, 100);
-            Register("Neo.Blockchain.GetValidators", Blockchain_GetValidators, 200);
             Register("Neo.Header.GetVersion", Header_GetVersion, 1);
             Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot, 1);
             Register("Neo.Header.GetConsensusData", Header_GetConsensusData, 1);
@@ -45,18 +47,26 @@ namespace Neo.SmartContract
             Register("Neo.Iterator.Concat", Iterator_Concat, 1);
         }
 
+        private bool Native_Deploy(ApplicationEngine engine)
+        {
+            if (Trigger != TriggerType.Application) return false;
+            if (Snapshot.PersistingBlock.Index != 0) return false;
+            foreach (NativeContract contract in NativeContract.Contracts)
+            {
+                Snapshot.Contracts.Add(contract.ScriptHash, new ContractState
+                {
+                    Script = contract.Script,
+                    ContractProperties = contract.Properties
+                });
+            }
+            return true;
+        }
+
         private bool Blockchain_GetAccount(ExecutionEngine engine)
         {
             UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
             AccountState account = Snapshot.Accounts.GetOrAdd(hash, () => new AccountState(hash));
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(account));
-            return true;
-        }
-
-        private bool Blockchain_GetValidators(ExecutionEngine engine)
-        {
-            ECPoint[] validators = Snapshot.GetValidators();
-            engine.CurrentContext.EvaluationStack.Push(validators.Select(p => (StackItem)p.EncodePoint(true)).ToArray());
             return true;
         }
 

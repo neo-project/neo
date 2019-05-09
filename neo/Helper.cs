@@ -139,6 +139,13 @@ namespace Neo
             return new Fixed8(sum);
         }
 
+        public static BigInteger Sum(this IEnumerable<BigInteger> source)
+        {
+            var sum = BigInteger.Zero;
+            foreach (var bi in source) sum += bi;
+            return sum;
+        }
+
         public static Fixed8 Sum<TSource>(this IEnumerable<TSource> source, Func<TSource, Fixed8> selector)
         {
             return source.Select(selector).Sum();
@@ -245,6 +252,20 @@ namespace Neo
             return sum_value / sum_weight;
         }
 
+        internal static BigInteger WeightedAverage<T>(this IEnumerable<T> source, Func<T, BigInteger> valueSelector, Func<T, BigInteger> weightSelector)
+        {
+            BigInteger sum_weight = BigInteger.Zero;
+            BigInteger sum_value = BigInteger.Zero;
+            foreach (T item in source)
+            {
+                BigInteger weight = weightSelector(item);
+                sum_weight += weight;
+                sum_value += valueSelector(item) * weight;
+            }
+            if (sum_value == BigInteger.Zero) return BigInteger.Zero;
+            return sum_value / sum_weight;
+        }
+
         internal static IEnumerable<TResult> WeightedFilter<T, TResult>(this IList<T> source, double start, double end, Func<T, long> weightSelector, Func<T, long, TResult> resultSelector)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
@@ -263,6 +284,44 @@ namespace Neo
                 sum += weight;
                 double old = current;
                 current = sum / amount;
+                if (current <= start) continue;
+                if (old < start)
+                {
+                    if (current > end)
+                    {
+                        weight = (long)((end - start) * amount);
+                    }
+                    else
+                    {
+                        weight = (long)((current - start) * amount);
+                    }
+                }
+                else if (current > end)
+                {
+                    weight = (long)((end - old) * amount);
+                }
+                yield return resultSelector(item, weight);
+            }
+        }
+
+        internal static IEnumerable<TResult> WeightedFilter<T, TResult>(this IList<T> source, double start, double end, Func<T, BigInteger> weightSelector, Func<T, BigInteger, TResult> resultSelector)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (start < 0 || start > 1) throw new ArgumentOutOfRangeException(nameof(start));
+            if (end < start || start + end > 1) throw new ArgumentOutOfRangeException(nameof(end));
+            if (weightSelector == null) throw new ArgumentNullException(nameof(weightSelector));
+            if (resultSelector == null) throw new ArgumentNullException(nameof(resultSelector));
+            if (source.Count == 0 || start == end) yield break;
+            double amount = (double)source.Select(weightSelector).Sum();
+            BigInteger sum = 0;
+            double current = 0;
+            foreach (T item in source)
+            {
+                if (current >= end) break;
+                BigInteger weight = weightSelector(item);
+                sum += weight;
+                double old = current;
+                current = (double)sum / amount;
                 if (current <= start) continue;
                 if (old < start)
                 {

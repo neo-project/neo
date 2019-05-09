@@ -177,7 +177,7 @@ namespace Neo.UnitTests
         public void TestSerializeAndDeserializeConsensusContext()
         {
             var consensusContext = new ConsensusContext(null, null);
-            consensusContext.PrevHash = UInt256.Parse("0xd42561e3d30e15be6400b6df2f328e02d2bf6354c41dce433bc57687c82144bf");
+            consensusContext.PrevHash = Blockchain.GenesisBlock.Hash;
             consensusContext.BlockIndex = 1;
             consensusContext.ViewNumber = 2;
             consensusContext.Validators = new ECPoint[7]
