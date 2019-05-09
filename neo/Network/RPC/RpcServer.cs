@@ -583,7 +583,7 @@ namespace Neo.Network.RPC
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 var validators = snapshot.GetValidators();
-                return snapshot.GetEnrollments().Select(p =>
+                return snapshot.GetRegisteredValidators().Select(p =>
                 {
                     JObject validator = new JObject();
                     validator["publickey"] = p.PublicKey.ToString();

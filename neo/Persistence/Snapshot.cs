@@ -7,8 +7,11 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.Persistence
@@ -61,6 +64,24 @@ namespace Neo.Persistence
 
         public virtual void Dispose()
         {
+        }
+
+        public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators()
+        {
+            byte[] script;
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.EmitAppCall(NativeContract.NEO.ScriptHash, "getRegisteredValidators");
+                script = sb.ToArray();
+            }
+            using (ApplicationEngine engine = ApplicationEngine.Run(script, this, testMode: true))
+            {
+                return ((VMArray)engine.ResultStack.Peek()).Select(p =>
+                {
+                    Struct @struct = (Struct)p;
+                    return (@struct.GetByteArray().AsSerializable<ECPoint>(), @struct.GetBigInteger());
+                });
+            }
         }
 
         private ECPoint[] _validators = null;

@@ -41,6 +41,8 @@ namespace Neo.SmartContract.Native.Tokens
                     return RegisterValidator(engine, args[0].GetByteArray());
                 case "vote":
                     return Vote(engine, new UInt160(args[0].GetByteArray()), ((VMArray)args[1]).Select(p => p.GetByteArray().AsSerializable<ECPoint>()).ToArray());
+                case "getRegisteredValidators":
+                    return GetRegisteredValidators(engine).Select(p => new Struct(new StackItem[] { p.PublicKey.ToArray(), p.Votes })).ToArray();
                 case "getValidators":
                     return GetValidators(engine).Select(p => (StackItem)p.ToArray()).ToArray();
                 default:
@@ -183,6 +185,15 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
+        private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(ApplicationEngine engine)
+        {
+            return engine.Service.Snapshot.Storages.Find(new[] { Prefix_Validator }).Select(p =>
+            (
+                p.Key.Key.Skip(1).ToArray().AsSerializable<ECPoint>(),
+                ValidatorState.FromByteArray(p.Value.Value).Votes
+            ));
+        }
+
         private ECPoint[] GetValidators(ApplicationEngine engine)
         {
             StorageItem storage_count = engine.Service.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_ValidatorsCount));
@@ -199,11 +210,7 @@ namespace Neo.SmartContract.Native.Tokens
             }).WeightedAverage(p => p.Count, p => p.Weight);
             count = Math.Max(count, Blockchain.StandbyValidators.Length);
             HashSet<ECPoint> sv = new HashSet<ECPoint>(Blockchain.StandbyValidators);
-            return engine.Service.Snapshot.Storages.Find(new[] { Prefix_Validator }).Select(p => new
-            {
-                PublicKey = p.Key.Key.Skip(1).ToArray().AsSerializable<ECPoint>(),
-                ValidatorState.FromByteArray(p.Value.Value).Votes
-            }).Where(p => (p.Votes.Sign > 0) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).OrderBy(p => p).ToArray();
+            return GetRegisteredValidators(engine).Where(p => (p.Votes.Sign > 0) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).OrderBy(p => p).ToArray();
         }
 
         public class AccountState : Nep5AccountState
