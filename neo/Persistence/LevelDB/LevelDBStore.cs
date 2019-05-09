@@ -97,6 +97,11 @@ namespace Neo.Persistence.LevelDB
             return new DbMetaDataCache<ValidatorsCountState>(db, null, null, Prefixes.IX_ValidatorsCount);
         }
 
+        public override MetaDataCache<NextValidatorsState> GetNextValidators()
+        {
+            return new DbMetaDataCache<NextValidatorsState>(db, null, null, Prefixes.IX_NextValidators);
+        }
+
         public override MetaDataCache<HashIndexState> GetBlockHashIndex()
         {
             return new DbMetaDataCache<HashIndexState>(db, null, null, Prefixes.IX_CurrentBlock);

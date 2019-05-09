@@ -31,9 +31,9 @@ namespace Neo.UnitTests
                 mockSnapshot.SetupGet(p => p.Assets).Returns(new TestDataCache<UInt256, AssetState>());
                 mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>());
                 mockSnapshot.SetupGet(p => p.Storages).Returns(new TestDataCache<StorageKey, StorageItem>());
-                mockSnapshot.SetupGet(p => p.HeaderHashList)
-                    .Returns(new TestDataCache<UInt32Wrapper, HeaderHashList>());
+                mockSnapshot.SetupGet(p => p.HeaderHashList).Returns(new TestDataCache<UInt32Wrapper, HeaderHashList>());
                 mockSnapshot.SetupGet(p => p.ValidatorsCount).Returns(new TestMetaDataCache<ValidatorsCountState>());
+                mockSnapshot.SetupGet(p => p.NextValidators).Returns(new TestMetaDataCache<NextValidatorsState>());
                 mockSnapshot.SetupGet(p => p.BlockHashIndex).Returns(new TestMetaDataCache<HashIndexState>());
                 mockSnapshot.SetupGet(p => p.HeaderHashIndex).Returns(new TestMetaDataCache<HashIndexState>());
 
@@ -56,6 +56,7 @@ namespace Neo.UnitTests
                 _Store.Setup(p => p.GetStorages()).Returns(new TestDataCache<StorageKey, StorageItem>());
                 _Store.Setup(p => p.GetHeaderHashList()).Returns(new TestDataCache<UInt32Wrapper, HeaderHashList>());
                 _Store.Setup(p => p.GetValidatorsCount()).Returns(new TestMetaDataCache<ValidatorsCountState>());
+                _Store.Setup(p => p.GetNextValidators()).Returns(new TestMetaDataCache<NextValidatorsState>());
                 _Store.Setup(p => p.GetBlockHashIndex()).Returns(new TestMetaDataCache<HashIndexState>());
                 _Store.Setup(p => p.GetHeaderHashIndex()).Returns(new TestMetaDataCache<HashIndexState>());
                 _Store.Setup(p => p.GetSnapshot()).Returns(mockSnapshot.Object);

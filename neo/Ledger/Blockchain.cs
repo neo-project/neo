@@ -472,6 +472,8 @@ namespace Neo.Ledger
             {
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
+                if (block.Index > 0)
+                    snapshot.NextValidators.GetAndChange().Validators = snapshot.GetValidators();
                 snapshot.Blocks.Add(block.Hash, new BlockState
                 {
                     SystemFeeAmount = snapshot.GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.SystemFee),
