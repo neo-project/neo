@@ -508,9 +508,9 @@ namespace Neo.SmartContract
             else
                 contract = Snapshot.Contracts.TryGet(new UInt160(item0.GetByteArray()));
             if (contract is null) return false;
-            ExecutionContext context_new = engine.LoadScript(contract.Script, engine.CurrentContext.ScriptHash, 1);
             StackItem item1 = engine.CurrentContext.EvaluationStack.Pop();
             StackItem item2 = engine.CurrentContext.EvaluationStack.Pop();
+            ExecutionContext context_new = engine.LoadScript(contract.Script, engine.CurrentContext.ScriptHash, 1);
             context_new.EvaluationStack.Push(item2);
             context_new.EvaluationStack.Push(item1);
             return true;
