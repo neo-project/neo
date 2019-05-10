@@ -22,7 +22,7 @@ namespace Neo.Network.P2P.Capabilities
         /// <param name="value">Value</param>
         public StringCapability(string value)
         {
-            Value = value
+            Value = value;
         }
 
         public void Deserialize(BinaryReader reader)
