@@ -271,7 +271,7 @@ namespace Neo.Consensus
                 Snapshot = Blockchain.Singleton.GetSnapshot();
                 PrevHash = Snapshot.CurrentBlockHash;
                 BlockIndex = Snapshot.Height + 1;
-                Validators = Snapshot.GetValidators();
+                Validators = Snapshot.NextValidators.Get().Validators;
                 MyIndex = -1;
                 ChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 LastChangeViewPayloads = new ConsensusPayload[Validators.Length];
@@ -392,7 +392,7 @@ namespace Neo.Consensus
             }
             TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             Transactions = transactions.ToDictionary(p => p.Hash);
-            NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators(transactions).ToArray());
+            NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators().ToArray());
             Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), this.PrevHeader().Timestamp + 1);
         }
 

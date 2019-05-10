@@ -21,7 +21,6 @@ namespace Neo.SmartContract
             foreach (NativeContract contract in NativeContract.Contracts)
                 Register(contract.ServiceName, contract.Invoke);
             Register("Neo.Native.Deploy", Native_Deploy, 0);
-            Register("Neo.Blockchain.GetAccount", Blockchain_GetAccount, 100);
             Register("Neo.Header.GetVersion", Header_GetVersion, 1);
             Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot, 1);
             Register("Neo.Header.GetConsensusData", Header_GetConsensusData, 1);
@@ -29,7 +28,6 @@ namespace Neo.SmartContract
             Register("Neo.Transaction.GetWitnesses", Transaction_GetWitnesses, 200);
             Register("Neo.InvocationTransaction.GetScript", InvocationTransaction_GetScript, 1);
             Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript, 100);
-            Register("Neo.Account.GetScriptHash", Account_GetScriptHash, 1);
             Register("Neo.Account.IsStandard", Account_IsStandard, 100);
             Register("Neo.Contract.Create", Contract_Create);
             Register("Neo.Contract.Migrate", Contract_Migrate);
@@ -59,14 +57,6 @@ namespace Neo.SmartContract
                     ContractProperties = contract.Properties
                 });
             }
-            return true;
-        }
-
-        private bool Blockchain_GetAccount(ExecutionEngine engine)
-        {
-            UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-            AccountState account = Snapshot.Accounts.GetOrAdd(hash, () => new AccountState(hash));
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(account));
             return true;
         }
 
@@ -151,18 +141,6 @@ namespace Neo.SmartContract
                 WitnessWrapper witness = _interface.GetInterface<WitnessWrapper>();
                 if (witness == null) return false;
                 engine.CurrentContext.EvaluationStack.Push(witness.VerificationScript);
-                return true;
-            }
-            return false;
-        }
-
-        private bool Account_GetScriptHash(ExecutionEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                AccountState account = _interface.GetInterface<AccountState>();
-                if (account == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(account.ScriptHash.ToArray());
                 return true;
             }
             return false;

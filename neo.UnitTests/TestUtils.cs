@@ -1,5 +1,4 @@
 ﻿using Moq;
-using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -25,8 +24,6 @@ namespace Neo.UnitTests
             return array;
         }
 
-        public static readonly ECPoint[] StandbyValidators = new ECPoint[] { ECPoint.DecodePoint("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c".HexToBytes(), ECCurve.Secp256r1) };
-
         public static MinerTransaction GetMinerTransaction()
         {
             return new MinerTransaction
@@ -36,16 +33,6 @@ namespace Neo.UnitTests
                 Inputs = new CoinReference[0],
                 Outputs = new TransactionOutput[0],
                 Witnesses = new Witness[0]
-            };
-        }
-
-        public static CoinReference GetCoinReference(UInt256 prevHash)
-        {
-            if (prevHash == null) prevHash = UInt256.Zero;
-            return new CoinReference
-            {
-                PrevHash = prevHash,
-                PrevIndex = 0
             };
         }
 
