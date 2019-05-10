@@ -20,22 +20,10 @@ Coverage
 * Base
 	* Fixed8.cs
 * Core
-	* AccountState.cs
-	* AssetState.cs
 	* Block.cs - Some code coverage missing on the Verify() method.
-	* ClaimTransaction.cs	
-	* CoinReference.cs	
 	* Header.cs
 	* Helper.cs
-	* InvocationTransaction.cs
-	* MinerTransaction.cs
-	* SpentCoin.cs
-	* SpentCoinState.cs
 	* StorageItem.cs
 	* StorageKey.cs
-	* TransactionAttribute.cs
-	* TransactionOuput.cs
-	* TransactionResult.cs
-	* UnspentCoinState.cs
-	* ValidatorState.cs
+	* Transaction.cs
 	* Witness.cs
