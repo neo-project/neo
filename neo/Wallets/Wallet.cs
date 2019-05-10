@@ -146,7 +146,7 @@ namespace Neo.Wallets
             return account;
         }
 
-        public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null)
+        public Transaction MakeTransaction(IEnumerable<TransferOutput> outputs, UInt160 from = null)
         {
             var cOutputs = outputs.GroupBy(p => new
             {
@@ -159,9 +159,8 @@ namespace Neo.Wallets
                 k.Account
             }).ToArray();
             Transaction tx;
-            if (attributes == null) attributes = new List<TransactionAttribute>();
             UInt160[] accounts = from == null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { from };
-            HashSet<UInt160> sAttributes = new HashSet<UInt160>();
+            HashSet<UInt160> cosigners = new HashSet<UInt160>();
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 foreach (var output in cOutputs)
@@ -194,7 +193,7 @@ namespace Neo.Wallets
                             balances = balances.Take(i).Concat(new[] { balances.Last(p => p.Value >= amount) }).ToList();
                         sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
                     }
-                    sAttributes.UnionWith(balances.Select(p => p.Account));
+                    cosigners.UnionWith(balances.Select(p => p.Account));
                     for (int i = 0; i < balances.Count; i++)
                     {
                         BigInteger value = balances[i].Value;
@@ -216,12 +215,7 @@ namespace Neo.Wallets
                     Script = sb.ToArray()
                 };
             }
-            attributes.AddRange(sAttributes.Select(p => new TransactionAttribute
-            {
-                Usage = TransactionAttributeUsage.Script,
-                Data = p.ToArray()
-            }));
-            tx.Attributes = attributes.ToArray();
+            tx.Cosigners = cosigners.ToArray();
             tx.Witnesses = new Witness[0];
             if (tx is InvocationTransaction itx)
             {
@@ -232,7 +226,7 @@ namespace Neo.Wallets
                     Version = itx.Version,
                     Script = itx.Script,
                     Gas = InvocationTransaction.GetGas(engine.GasConsumed),
-                    Attributes = itx.Attributes
+                    Cosigners = itx.Cosigners
                 };
             }
             return tx;

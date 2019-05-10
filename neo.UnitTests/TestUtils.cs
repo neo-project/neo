@@ -31,7 +31,7 @@ namespace Neo.UnitTests
                 Version = 1,
                 Gas = Fixed8.Zero,
                 Script = new byte[1],
-                Attributes = new TransactionAttribute[0],
+                Cosigners = new UInt160[0],
                 Witnesses = new Witness[0]
             };
         }
@@ -89,7 +89,7 @@ namespace Neo.UnitTests
             var randomBytes = new byte[16];
             TestRandom.NextBytes(randomBytes);
             tx.Script = randomBytes;
-            tx.Attributes = new TransactionAttribute[0];
+            tx.Cosigners = new UInt160[0];
             tx.Witnesses = new Witness[0];
 
             return mockTx;

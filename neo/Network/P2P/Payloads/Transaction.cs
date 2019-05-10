@@ -4,6 +4,7 @@ using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,10 +19,10 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
-        private const int MaxTransactionAttributes = 16;
+        private const int MaxCosigners = 16;
 
         public byte Version;
-        public TransactionAttribute[] Attributes;
+        public UInt160[] Cosigners;
         public Witness[] Witnesses { get; set; }
 
         private Fixed8 _feePerByte = -Fixed8.Satoshi;
@@ -58,7 +59,7 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual Fixed8 NetworkFee => Fixed8.Zero;
 
-        public virtual int Size => sizeof(byte) + Attributes.GetVarSize() + Witnesses.GetVarSize();
+        public virtual int Size => sizeof(byte) + Cosigners.GetVarSize() + Witnesses.GetVarSize();
 
         public virtual Fixed8 SystemFee => Fixed8.Zero;
 
@@ -96,7 +97,9 @@ namespace Neo.Network.P2P.Payloads
         {
             Version = reader.ReadByte();
             DeserializeExclusiveData(reader);
-            Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
+            Cosigners = reader.ReadSerializableArray<UInt160>(MaxCosigners);
+            if (Cosigners.Distinct().Count() != Cosigners.Length)
+                throw new FormatException();
         }
 
         public bool Equals(Transaction other)
@@ -123,7 +126,7 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
         {
-            return Attributes.Where(p => p.Usage == TransactionAttributeUsage.Script).Select(p => new UInt160(p.Data)).OrderBy(p => p).ToArray();
+            return Cosigners.OrderBy(p => p).ToArray();
         }
 
         protected virtual void OnDeserialized()
@@ -144,7 +147,7 @@ namespace Neo.Network.P2P.Payloads
         {
             writer.Write(Version);
             SerializeExclusiveData(writer);
-            writer.Write(Attributes);
+            writer.Write(Cosigners);
         }
 
         public virtual JObject ToJson()
@@ -153,7 +156,7 @@ namespace Neo.Network.P2P.Payloads
             json["txid"] = Hash.ToString();
             json["size"] = Size;
             json["version"] = Version;
-            json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
+            json["cosigners"] = Cosigners.Select(p => (JObject)p.ToAddress()).ToArray();
             json["sys_fee"] = SystemFee.ToString();
             json["net_fee"] = NetworkFee.ToString();
             json["scripts"] = Witnesses.Select(p => p.ToJson()).ToArray();
@@ -168,36 +171,7 @@ namespace Neo.Network.P2P.Payloads
         public virtual bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
         {
             if (Size > MaxTransactionSize) return false;
-            if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
-                return false;
-            if (!VerifyReceivingScripts()) return false;
             return this.VerifyWitnesses(snapshot);
-        }
-
-        private bool VerifyReceivingScripts()
-        {
-            //TODO: run ApplicationEngine
-            //foreach (UInt160 hash in Outputs.Select(p => p.ScriptHash).Distinct())
-            //{
-            //    ContractState contract = Blockchain.Default.GetContract(hash);
-            //    if (contract == null) continue;
-            //    if (!contract.Payable) return false;
-            //    using (StateReader service = new StateReader())
-            //    {
-            //        ApplicationEngine engine = new ApplicationEngine(TriggerType.VerificationR, this, Blockchain.Default, service, Fixed8.Zero);
-            //        engine.LoadScript(contract.Script, false);
-            //        using (ScriptBuilder sb = new ScriptBuilder())
-            //        {
-            //            sb.EmitPush(0);
-            //            sb.Emit(OpCode.PACK);
-            //            sb.EmitPush("receiving");
-            //            engine.LoadScript(sb.ToArray(), false);
-            //        }
-            //        if (!engine.Execute()) return false;
-            //        if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
-            //    }
-            //}
-            return true;
         }
     }
 }

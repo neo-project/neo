@@ -288,7 +288,7 @@ namespace Neo.UnitTests
             txObj[0]["txid"].AsString().Should().Be("0xead450afc8a7db61d068703ae8664f931ce2954b0e1b5ec0ed8212052df14983");
             txObj[0]["size"].AsNumber().Should().Be(13);
             txObj[0]["version"].AsNumber().Should().Be(1);
-            ((JArray)txObj[0]["attributes"]).Count.Should().Be(0);
+            ((JArray)txObj[0]["cosigners"]).Count.Should().Be(0);
             txObj[0]["sys_fee"].AsString().Should().Be("0");
             txObj[0]["net_fee"].AsString().Should().Be("0");
             ((JArray)txObj[0]["scripts"]).Count.Should().Be(0);

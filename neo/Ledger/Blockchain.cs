@@ -142,7 +142,7 @@ namespace Neo.Ledger
                 Version = 1,
                 Script = script,
                 Gas = Fixed8.Zero,
-                Attributes = new TransactionAttribute[0],
+                Cosigners = new UInt160[0],
                 Witnesses = new Witness[0]
             };
         }

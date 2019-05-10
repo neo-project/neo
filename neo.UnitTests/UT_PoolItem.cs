@@ -141,7 +141,7 @@ namespace Neo.UnitTests
                 TestRandom.NextBytes(randomBytes);
             }
             tx.Script = randomBytes;
-            tx.Attributes = new TransactionAttribute[0];
+            tx.Cosigners = new UInt160[0];
             tx.Witnesses = new Witness[0];
             return mockTx;
         }
