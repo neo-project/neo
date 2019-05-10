@@ -277,7 +277,7 @@ namespace Neo.Network.P2P
             timer.CancelIfNotNull();
             ws_host?.Dispose();
             tcp_listener?.Tell(Tcp.Unbind.Instance);
-            udp_listener?.Tell(Tcp.Unbind.Instance);
+            udp_listener?.Tell(Udp.Unbind.Instance);
             base.PostStop();
         }
 
