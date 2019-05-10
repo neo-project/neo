@@ -531,8 +531,7 @@ namespace Neo.SmartContract
 
         private bool PutEx(StorageContext context, byte[] key, byte[] value, StorageFlags flags)
         {
-            if (Trigger != TriggerType.Application && Trigger != TriggerType.ApplicationR)
-                return false;
+            if (Trigger != TriggerType.Application) return false;
             if (key.Length > 1024) return false;
             if (context.IsReadOnly) return false;
             if (!CheckStorageContext(context)) return false;
@@ -571,8 +570,7 @@ namespace Neo.SmartContract
 
         protected bool Storage_Delete(ExecutionEngine engine)
         {
-            if (Trigger != TriggerType.Application && Trigger != TriggerType.ApplicationR)
-                return false;
+            if (Trigger != TriggerType.Application) return false;
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
                 StorageContext context = _interface.GetInterface<StorageContext>();
