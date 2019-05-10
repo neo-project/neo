@@ -151,7 +151,7 @@ namespace Neo.Network.P2P
         private void OnStart(IPEndPoint tcp, IPEndPoint udp, IPEndPoint ws, int minDesiredConnections, int maxConnections, int maxConnectionsPerAddress)
         {
             ListenerTcpPort = tcp == null ? 0 : tcp.Port;
-            ListenerTcpPort = udp == null ? 0 : udp.Port;
+            ListenerUdpPort = udp == null ? 0 : udp.Port;
             ListenerWsPort = ws == null ? 0 : ws.Port;
 
             MinDesiredConnections = minDesiredConnections;
