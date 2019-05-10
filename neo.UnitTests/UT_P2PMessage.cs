@@ -3,7 +3,9 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P;
+using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
+using System.Collections.Generic;
 
 namespace Neo.UnitTests
 {
@@ -81,12 +83,17 @@ namespace Neo.UnitTests
             {
                 UserAgent = "".PadLeft(1024, '0'),
                 Nonce = 1,
-                Port = 2,
+                Magic = 2,
                 Services = VersionServices.FullNode,
                 StartHeight = 4,
                 Timestamp = 5,
-                Version = 6
+                Version = 6,
+                Capabilities = new Dictionary<NodeCapabilities, INodeCapability>()
             };
+
+            payload.Capabilities.Add(NodeCapabilities.TcpPort, new UInt16Capability() { Value = 25 });
+            payload.Capabilities.Add(NodeCapabilities.RpcServerAddress, new StringCapability() { Value = "".PadLeft(32, 'Z') });
+
             var msg = Message.Create(MessageCommand.Version, payload);
             var buffer = msg.ToArray();
 
@@ -100,11 +107,16 @@ namespace Neo.UnitTests
 
             payloadCopy.UserAgent.Should().Be(payload.UserAgent);
             payloadCopy.Nonce.Should().Be(payload.Nonce);
-            payloadCopy.Port.Should().Be(payload.Port);
+            payloadCopy.Magic.Should().Be(payload.Magic);
             payloadCopy.Services.Should().Be(payload.Services);
             payloadCopy.StartHeight.Should().Be(payload.StartHeight);
             payloadCopy.Timestamp.Should().Be(payload.Timestamp);
             payloadCopy.Version.Should().Be(payload.Version);
+
+            payloadCopy.Capabilities.Count.Should().Be(2);
+            ((UInt16Capability)payloadCopy.Capabilities[NodeCapabilities.TcpPort]).Value.Should().Be(25);
+            ((StringCapability)payloadCopy.Capabilities[NodeCapabilities.RpcServerAddress]).Value.Should().Be("".PadLeft(32, 'Z'));
+
         }
     }
 }
