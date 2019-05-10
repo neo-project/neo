@@ -24,11 +24,13 @@ namespace Neo.UnitTests
             return array;
         }
 
-        public static MinerTransaction GetMinerTransaction()
+        public static Transaction GetTransaction()
         {
-            return new MinerTransaction
+            return new InvocationTransaction
             {
-                Nonce = 2083236893,
+                Version = 1,
+                Gas = Fixed8.Zero,
+                Script = new byte[1],
                 Attributes = new TransactionAttribute[0],
                 Inputs = new CoinReference[0],
                 Outputs = new TransactionOutput[0],
@@ -50,7 +52,7 @@ namespace Neo.UnitTests
             {
                 for (int i = 0; i < numberOfTransactions; i++)
                 {
-                    transactionsVal[i] = TestUtils.GetMinerTransaction();
+                    transactionsVal[i] = TestUtils.GetTransaction();
                 }
             }
 
@@ -60,7 +62,7 @@ namespace Neo.UnitTests
         private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal)
         {
             bb.PrevHash = val256;
-            merkRootVal = new UInt256(new byte[] { 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251 });
+            merkRootVal = new UInt256(new byte[] { 75, 117, 92, 47, 164, 55, 126, 125, 63, 48, 186, 222, 86, 67, 102, 213, 167, 79, 15, 219, 124, 200, 3, 131, 221, 130, 22, 211, 180, 184, 13, 47 });
             bb.MerkleRoot = merkRootVal;
             timestampVal = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp();
             bb.Timestamp = timestampVal;
@@ -94,21 +96,6 @@ namespace Neo.UnitTests
             tx.Outputs = new TransactionOutput[0];
             tx.Witnesses = new Witness[0];
 
-            return mockTx;
-        }
-
-        public static Mock<MinerTransaction> CreateRandomMockMinerTransaction()
-        {
-            var mockTx = new Mock<MinerTransaction>
-            {
-                CallBase = true
-            };
-            var tx = mockTx.Object;
-            tx.Attributes = new TransactionAttribute[0];
-            tx.Inputs = new CoinReference[0];
-            tx.Outputs = new TransactionOutput[0];
-            tx.Witnesses = new Witness[0];
-            tx.Nonce = (uint)TestRandom.Next();
             return mockTx;
         }
 

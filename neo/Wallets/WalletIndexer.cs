@@ -181,8 +181,6 @@ namespace Neo.Wallets
                 }
                 switch (tx)
                 {
-                    case MinerTransaction _:
-                        break;
 #pragma warning disable CS0612
                     case RegisterTransaction tx_register:
                         if (accounts_tracked.ContainsKey(tx_register.OwnerScriptHash))

@@ -98,21 +98,11 @@ namespace Neo.UnitTests
             mockConsensusContext.Object.MyIndex.Should().Be(2);
             //mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
 
-            MinerTransaction minerTx = new MinerTransaction
-            {
-                Attributes = new TransactionAttribute[0],
-                Inputs = new CoinReference[0],
-                Outputs = new TransactionOutput[0],
-                Witnesses = new Witness[0],
-                Nonce = 42
-            };
-
             PrepareRequest prep = new PrepareRequest
             {
                 Nonce = mockConsensusContext.Object.Nonce,
                 NextConsensus = mockConsensusContext.Object.NextConsensus,
-                TransactionHashes = new UInt256[0],
-                MinerTransaction = minerTx //(MinerTransaction)Transactions[TransactionHashes[0]],
+                TransactionHashes = new UInt256[0]
             };
 
             ConsensusPayload prepPayload = new ConsensusPayload
@@ -202,9 +192,7 @@ namespace Neo.UnitTests
             consensusContext.TransactionHashes = new UInt256[txCountToInlcude];
 
             Transaction[] txs = new Transaction[txCountToInlcude];
-            txs[0] = TestUtils.CreateRandomMockMinerTransaction().Object;
-            consensusContext.TransactionHashes[0] = txs[0].Hash;
-            for (int i = 1; i < txCountToInlcude; i++)
+            for (int i = 0; i < txCountToInlcude; i++)
             {
                 txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
                 consensusContext.TransactionHashes[i] = txs[i].Hash;
@@ -218,7 +206,6 @@ namespace Neo.UnitTests
                 Nonce = consensusContext.Nonce,
                 NextConsensus = consensusContext.NextConsensus,
                 TransactionHashes = consensusContext.TransactionHashes,
-                MinerTransaction = (MinerTransaction)consensusContext.Transactions[consensusContext.TransactionHashes[0]],
                 Timestamp = 23
             };
             consensusContext.PreparationPayloads[6] = MakeSignedPayload(consensusContext, prepareRequestMessage, 6, new[] { (byte)'3', (byte)'!' });
@@ -365,8 +352,7 @@ namespace Neo.UnitTests
         public void TestSerializeAndDeserializeRecoveryMessageWithChangeViewsAndPrepareRequest()
         {
             Transaction[] txs = new Transaction[5];
-            txs[0] = TestUtils.CreateRandomMockMinerTransaction().Object;
-            for (int i = 1; i < txs.Length; i++)
+            for (int i = 0; i < txs.Length; i++)
                 txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
             var msg = new RecoveryMessage
             {
@@ -417,8 +403,7 @@ namespace Neo.UnitTests
                 {
                     TransactionHashes = txs.Select(p => p.Hash).ToArray(),
                     Nonce = ulong.MaxValue,
-                    NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
-                    MinerTransaction = (MinerTransaction)txs[0]
+                    NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA")
                 },
                 PreparationHash = new UInt256(Crypto.Default.Hash256(new[] { (byte)'a' })),
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
@@ -464,8 +449,7 @@ namespace Neo.UnitTests
         public void TestSerializeAndDeserializeRecoveryMessageWithoutChangeViewsWithoutCommits()
         {
             Transaction[] txs = new Transaction[5];
-            txs[0] = TestUtils.CreateRandomMockMinerTransaction().Object;
-            for (int i = 1; i < txs.Length; i++)
+            for (int i = 0; i < txs.Length; i++)
                 txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
             var msg = new RecoveryMessage
             {
@@ -474,8 +458,7 @@ namespace Neo.UnitTests
                 {
                     TransactionHashes = txs.Select(p => p.Hash).ToArray(),
                     Nonce = ulong.MaxValue,
-                    NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
-                    MinerTransaction = (MinerTransaction)txs[0]
+                    NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA")
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
@@ -528,8 +511,7 @@ namespace Neo.UnitTests
         public void TestSerializeAndDeserializeRecoveryMessageWithoutChangeViewsWithCommits()
         {
             Transaction[] txs = new Transaction[5];
-            txs[0] = TestUtils.CreateRandomMockMinerTransaction().Object;
-            for (int i = 1; i < txs.Length; i++)
+            for (int i = 0; i < txs.Length; i++)
                 txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
             var msg = new RecoveryMessage
             {
@@ -538,8 +520,7 @@ namespace Neo.UnitTests
                 {
                     TransactionHashes = txs.Select(p => p.Hash).ToArray(),
                     Nonce = ulong.MaxValue,
-                    NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
-                    MinerTransaction = (MinerTransaction)txs[0]
+                    NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA")
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {

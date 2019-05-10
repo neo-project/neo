@@ -296,17 +296,8 @@ namespace Neo.Network.P2P.Payloads
                 return false;
             if (SystemFee > Fixed8.Zero && (results_destroy.Length == 0 || results_destroy[0].Amount < SystemFee))
                 return false;
-            TransactionResult[] results_issue = results.Where(p => p.Amount < Fixed8.Zero).ToArray();
-            if (Type == TransactionType.MinerTransaction)
-            {
-                if (results_issue.Any(p => p.AssetId != Blockchain.UtilityToken.Hash))
-                    return false;
-            }
-            else
-            {
-                if (results_issue.Length > 0)
-                    return false;
-            }
+            if (results.Count(p => p.Amount < Fixed8.Zero) > 0)
+                return false;
             if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
                 return false;
             if (!VerifyReceivingScripts()) return false;
