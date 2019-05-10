@@ -209,24 +209,21 @@ namespace Neo.Wallets
                 byte[] nonce = new byte[8];
                 rand.NextBytes(nonce);
                 sb.Emit(OpCode.RET, nonce);
-                tx = new InvocationTransaction
+                tx = new Transaction
                 {
-                    Version = 1,
                     Script = sb.ToArray()
                 };
             }
             tx.Cosigners = cosigners.ToArray();
             tx.Witnesses = new Witness[0];
-            if (tx is InvocationTransaction itx)
+            using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, tx))
             {
-                ApplicationEngine engine = ApplicationEngine.Run(itx.Script, itx);
                 if (engine.State.HasFlag(VMState.FAULT)) return null;
-                tx = new InvocationTransaction
+                tx = new Transaction
                 {
-                    Version = itx.Version,
-                    Script = itx.Script,
-                    Gas = InvocationTransaction.GetGas(engine.GasConsumed),
-                    Cosigners = itx.Cosigners
+                    Script = tx.Script,
+                    Gas = Transaction.GetGas(engine.GasConsumed),
+                    Cosigners = tx.Cosigners
                 };
             }
             return tx;

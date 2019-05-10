@@ -3,7 +3,6 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -44,15 +43,10 @@ namespace Neo.Network.P2P.Payloads
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Transactions = new Transaction[reader.ReadVarInt(MaxTransactionsPerBlock)];
+            Transactions = reader.ReadSerializableArray<Transaction>(MaxTransactionsPerBlock);
             if (Transactions.Length == 0) throw new FormatException();
-            HashSet<UInt256> hashes = new HashSet<UInt256>();
-            for (int i = 0; i < Transactions.Length; i++)
-            {
-                Transactions[i] = Transaction.DeserializeFrom(reader);
-                if (!hashes.Add(Transactions[i].Hash))
-                    throw new FormatException();
-            }
+            if (Transactions.Distinct().Count() != Transactions.Length)
+                throw new FormatException();
             if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
                 throw new FormatException();
         }

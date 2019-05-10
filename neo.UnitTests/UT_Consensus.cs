@@ -185,8 +185,8 @@ namespace Neo.UnitTests
             consensusContext.Timestamp = 4244941711;
             consensusContext.Nonce = UInt64.MaxValue;
             consensusContext.NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA");
-            var testTx1 = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
-            var testTx2 = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
+            var testTx1 = TestUtils.CreateRandomHashMockTransaction().Object;
+            var testTx2 = TestUtils.CreateRandomHashMockTransaction().Object;
 
             int txCountToInlcude = 256;
             consensusContext.TransactionHashes = new UInt256[txCountToInlcude];
@@ -194,7 +194,7 @@ namespace Neo.UnitTests
             Transaction[] txs = new Transaction[txCountToInlcude];
             for (int i = 0; i < txCountToInlcude; i++)
             {
-                txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
+                txs[i] = TestUtils.CreateRandomHashMockTransaction().Object;
                 consensusContext.TransactionHashes[i] = txs[i].Hash;
             }
             // consensusContext.TransactionHashes = new UInt256[2] {testTx1.Hash, testTx2.Hash};
@@ -353,7 +353,7 @@ namespace Neo.UnitTests
         {
             Transaction[] txs = new Transaction[5];
             for (int i = 0; i < txs.Length; i++)
-                txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
+                txs[i] = TestUtils.CreateRandomHashMockTransaction().Object;
             var msg = new RecoveryMessage
             {
                 ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>()
@@ -450,7 +450,7 @@ namespace Neo.UnitTests
         {
             Transaction[] txs = new Transaction[5];
             for (int i = 0; i < txs.Length; i++)
-                txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
+                txs[i] = TestUtils.CreateRandomHashMockTransaction().Object;
             var msg = new RecoveryMessage
             {
                 ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
@@ -512,7 +512,7 @@ namespace Neo.UnitTests
         {
             Transaction[] txs = new Transaction[5];
             for (int i = 0; i < txs.Length; i++)
-                txs[i] = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
+                txs[i] = TestUtils.CreateRandomHashMockTransaction().Object;
             var msg = new RecoveryMessage
             {
                 ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),

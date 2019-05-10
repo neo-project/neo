@@ -129,7 +129,7 @@ namespace Neo.Ledger
             return Store.ContainsTransaction(hash);
         }
 
-        private static InvocationTransaction DeployNativeContracts()
+        private static Transaction DeployNativeContracts()
         {
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
@@ -137,9 +137,9 @@ namespace Neo.Ledger
                 sb.EmitSysCall("Neo.Native.Deploy");
                 script = sb.ToArray();
             }
-            return new InvocationTransaction
+            return new Transaction
             {
-                Version = 1,
+                Version = 0,
                 Script = script,
                 Gas = Fixed8.Zero,
                 Cosigners = new UInt160[0],
@@ -405,7 +405,7 @@ namespace Neo.Ledger
                     snapshot.NextValidators.GetAndChange().Validators = snapshot.GetValidators();
                 snapshot.Blocks.Add(block.Hash, new BlockState
                 {
-                    SystemFeeAmount = snapshot.GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.SystemFee),
+                    SystemFeeAmount = snapshot.GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.Gas),
                     TrimmedBlock = block.Trim()
                 });
                 foreach (Transaction tx in block.Transactions)
@@ -416,28 +416,23 @@ namespace Neo.Ledger
                         Transaction = tx
                     });
                     List<ApplicationExecutionResult> execution_results = new List<ApplicationExecutionResult>();
-                    switch (tx)
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.Gas))
                     {
-                        case InvocationTransaction tx_invocation:
-                            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, snapshot.Clone(), tx_invocation.Gas))
-                            {
-                                engine.LoadScript(tx_invocation.Script);
-                                engine.Execute();
-                                if (!engine.State.HasFlag(VMState.FAULT))
-                                {
-                                    engine.Service.Commit();
-                                }
-                                execution_results.Add(new ApplicationExecutionResult
-                                {
-                                    Trigger = TriggerType.Application,
-                                    ScriptHash = tx_invocation.Script.ToScriptHash(),
-                                    VMState = engine.State,
-                                    GasConsumed = engine.GasConsumed,
-                                    Stack = engine.ResultStack.ToArray(),
-                                    Notifications = engine.Service.Notifications.ToArray()
-                                });
-                            }
-                            break;
+                        engine.LoadScript(tx.Script);
+                        engine.Execute();
+                        if (!engine.State.HasFlag(VMState.FAULT))
+                        {
+                            engine.Service.Commit();
+                        }
+                        execution_results.Add(new ApplicationExecutionResult
+                        {
+                            Trigger = TriggerType.Application,
+                            ScriptHash = tx.Script.ToScriptHash(),
+                            VMState = engine.State,
+                            GasConsumed = engine.GasConsumed,
+                            Stack = engine.ResultStack.ToArray(),
+                            Notifications = engine.Service.Notifications.ToArray()
+                        });
                     }
                     if (execution_results.Count > 0)
                     {

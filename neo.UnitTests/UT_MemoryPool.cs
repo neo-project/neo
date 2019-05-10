@@ -43,7 +43,7 @@ namespace Neo.UnitTests
 
         private Transaction CreateMockTransactionWithFee(long fee)
         {
-            var mockTx = TestUtils.CreateRandomHashInvocationMockTransaction();
+            var mockTx = TestUtils.CreateRandomHashMockTransaction();
             mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(fee));
             return mockTx.Object;
         }

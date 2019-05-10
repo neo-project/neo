@@ -205,7 +205,7 @@ namespace Neo.Network.RPC
                     }
                 case "sendrawtransaction":
                     {
-                        Transaction tx = Transaction.DeserializeFrom(_params[0].AsString().HexToBytes());
+                        Transaction tx = _params[0].AsString().HexToBytes().AsSerializable<Transaction>();
                         return SendRawTransaction(tx);
                     }
                 case "submitblock":

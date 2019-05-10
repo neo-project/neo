@@ -7,14 +7,14 @@ using Neo.Network.P2P.Payloads;
 namespace Neo.UnitTests
 {
     [TestClass]
-    public class UT_InvocationTransaction
+    public class UT_Transaction
     {
-        InvocationTransaction uut;
+        Transaction uut;
 
         [TestInitialize]
         public void TestSetup()
         {
-            uut = new InvocationTransaction();
+            uut = new Transaction();
         }
 
         [TestMethod]
@@ -58,34 +58,10 @@ namespace Neo.UnitTests
             byte[] val = TestUtils.GetByteArray(32, 0x42);
             uut.Script = val;
 
-            //SIZE: SIZE_TX + Script.GetVarSize() + (Version >= 1 ? Gas.Size : 0)
-            //SIZE_TX: sizeof(TransactionType) + sizeof(byte) + Attributes.GetVarSize() + Inputs.GetVarSize() + Outputs.GetVarSize() + Witnesses.GetVarSize();
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
             uut.Script.GetVarSize().Should().Be(33);
-            uut.Size.Should().Be(36); // 1, 1, 1, 1, 1, 1 + script 33
-        }
-
-        [TestMethod]
-        public void SystemFee_Get()
-        {
-            uut.SystemFee.Should().Be(Fixed8.Zero);
-        }
-
-        [TestMethod]
-        public void SystemFee_Get_FromGas()
-        {
-            Fixed8 val = Fixed8.FromDecimal(42);
-            uut.Gas = val;
-            uut.SystemFee.Should().Be(val);
-        }
-
-        [TestMethod]
-        public void SystemFee_Set()
-        {
-            Fixed8 val = Fixed8.FromDecimal(42);
-            uut.Gas = val;
-            uut.SystemFee.Should().Be(val);
+            uut.Size.Should().Be(44);
         }
 
         [TestMethod]
@@ -101,13 +77,12 @@ namespace Neo.UnitTests
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["txid"].AsString().Should().Be("0x207ab3347ab2d569b15bcd9e31986e9fc389a6c9d43d6c39df20330d116af8bb");
-            jObj["size"].AsNumber().Should().Be(36);
+            jObj["txid"].AsString().Should().Be("0x30ea0d48a186e1ca99d8f072cac8cb9905af4c1428b0904a2c516554ea9032cf");
+            jObj["size"].AsNumber().Should().Be(44);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["cosigners"]).Count.Should().Be(0);
-            jObj["sys_fee"].AsString().Should().Be("42");
             jObj["net_fee"].AsString().Should().Be("0");
-            ((JArray)jObj["scripts"]).Count.Should().Be(0);
+            ((JArray)jObj["witnesses"]).Count.Should().Be(0);
 
             jObj["script"].AsString().Should().Be("4220202020202020202020202020202020202020202020202020202020202020");
             jObj["gas"].AsNumber().Should().Be(42);

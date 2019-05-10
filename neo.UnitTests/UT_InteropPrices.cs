@@ -27,7 +27,7 @@ namespace Neo.UnitTests
             uut.GetPrice("Neo.Header.GetConsensusData".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Header.GetNextConsensus".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Transaction.GetWitnesses".ToInteropMethodHash()).Should().Be(200);
-            uut.GetPrice("Neo.InvocationTransaction.GetScript".ToInteropMethodHash()).Should().Be(1);
+            uut.GetPrice("Neo.Transaction.GetScript".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("Neo.Witness.GetVerificationScript".ToInteropMethodHash()).Should().Be(100);
             uut.GetPrice("Neo.Account.IsStandard".ToInteropMethodHash()).Should().Be(100);
             uut.GetPrice("Neo.Contract.GetScript".ToInteropMethodHash()).Should().Be(1);

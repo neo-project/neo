@@ -133,7 +133,7 @@ namespace Neo.UnitTests
                 }
             }
 
-            byte[] requiredData = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 131, 73, 241, 45, 5, 18, 130, 237, 192, 94, 27, 14, 75, 149, 226, 28, 147, 79, 102, 232, 58, 112, 104, 208, 97, 219, 167, 200, 175, 80, 212, 234, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            byte[] requiredData = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 160, 214, 120, 55, 32, 197, 172, 12, 66, 128, 70, 253, 223, 67, 28, 149, 204, 183, 151, 147, 119, 228, 130, 76, 223, 196, 14, 184, 197, 163, 28, 92, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
             data.Length.Should().Be(122);
             for (int i = 0; i < data.Length; i++)
@@ -156,7 +156,7 @@ namespace Neo.UnitTests
 
             uut.MerkleRoot = merkRoot; // need to set for deserialise to be valid
 
-            byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 131, 73, 241, 45, 5, 18, 130, 237, 192, 94, 27, 14, 75, 149, 226, 28, 147, 79, 102, 232, 58, 112, 104, 208, 97, 219, 167, 200, 175, 80, 212, 234, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 160, 214, 120, 55, 32, 197, 172, 12, 66, 128, 70, 253, 223, 67, 28, 149, 204, 183, 151, 147, 119, 228, 130, 76, 223, 196, 14, 184, 197, 163, 28, 92, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             int index = 0;
             using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
             {
@@ -269,11 +269,11 @@ namespace Neo.UnitTests
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["hash"].AsString().Should().Be("0x559fbb58366b3480d4493c9815857a0576be591ec7abb2110d7cb44c16c9abb3");
+            jObj["hash"].AsString().Should().Be("0x7ef79569177c0e3af9825a2e994ad5c6ffd3bbba7ec680e8e7d16ca2f051e139");
             jObj["size"].AsNumber().Should().Be(122);
             jObj["version"].AsNumber().Should().Be(0);
             jObj["previousblockhash"].AsString().Should().Be("0x0000000000000000000000000000000000000000000000000000000000000000");
-            jObj["merkleroot"].AsString().Should().Be("0xead450afc8a7db61d068703ae8664f931ce2954b0e1b5ec0ed8212052df14983");
+            jObj["merkleroot"].AsString().Should().Be("0x5c1ca3c5b80ec4df4c82e4779397b7cc951c43dffd4680420cacc5203778d6a0");
             jObj["time"].AsNumber().Should().Be(4244941696);
             jObj["index"].AsNumber().Should().Be(0);
             jObj["nonce"].AsString().Should().Be("000000000000001e");
@@ -285,13 +285,12 @@ namespace Neo.UnitTests
 
             jObj["tx"].Should().NotBeNull();
             JArray txObj = (JArray)jObj["tx"];
-            txObj[0]["txid"].AsString().Should().Be("0xead450afc8a7db61d068703ae8664f931ce2954b0e1b5ec0ed8212052df14983");
+            txObj[0]["txid"].AsString().Should().Be("0x5c1ca3c5b80ec4df4c82e4779397b7cc951c43dffd4680420cacc5203778d6a0");
             txObj[0]["size"].AsNumber().Should().Be(13);
-            txObj[0]["version"].AsNumber().Should().Be(1);
+            txObj[0]["version"].AsNumber().Should().Be(0);
             ((JArray)txObj[0]["cosigners"]).Count.Should().Be(0);
-            txObj[0]["sys_fee"].AsString().Should().Be("0");
             txObj[0]["net_fee"].AsString().Should().Be("0");
-            ((JArray)txObj[0]["scripts"]).Count.Should().Be(0);
+            ((JArray)txObj[0]["witnesses"]).Count.Should().Be(0);
         }
     }
 }

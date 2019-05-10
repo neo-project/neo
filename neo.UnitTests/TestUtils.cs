@@ -26,9 +26,8 @@ namespace Neo.UnitTests
 
         public static Transaction GetTransaction()
         {
-            return new InvocationTransaction
+            return new Transaction
             {
-                Version = 1,
                 Gas = Fixed8.Zero,
                 Script = new byte[1],
                 Cosigners = new UInt160[0],
@@ -60,7 +59,7 @@ namespace Neo.UnitTests
         private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal)
         {
             bb.PrevHash = val256;
-            merkRootVal = new UInt256(new byte[] { 131, 73, 241, 45, 5, 18, 130, 237, 192, 94, 27, 14, 75, 149, 226, 28, 147, 79, 102, 232, 58, 112, 104, 208, 97, 219, 167, 200, 175, 80, 212, 234 });
+            merkRootVal = new UInt256(new byte[] { 160, 214, 120, 55, 32, 197, 172, 12, 66, 128, 70, 253, 223, 67, 28, 149, 204, 183, 151, 147, 119, 228, 130, 76, 223, 196, 14, 184, 197, 163, 28, 92 });
             bb.MerkleRoot = merkRootVal;
             timestampVal = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp();
             bb.Timestamp = timestampVal;
@@ -78,9 +77,9 @@ namespace Neo.UnitTests
             bb.Witness = scriptVal;
         }
 
-        public static Mock<InvocationTransaction> CreateRandomHashInvocationMockTransaction()
+        public static Mock<Transaction> CreateRandomHashMockTransaction()
         {
-            var mockTx = new Mock<InvocationTransaction>
+            var mockTx = new Mock<Transaction>
             {
                 CallBase = true
             };

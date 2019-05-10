@@ -26,7 +26,7 @@ namespace Neo.SmartContract
             Register("Neo.Header.GetConsensusData", Header_GetConsensusData, 1);
             Register("Neo.Header.GetNextConsensus", Header_GetNextConsensus, 1);
             Register("Neo.Transaction.GetWitnesses", Transaction_GetWitnesses, 200);
-            Register("Neo.InvocationTransaction.GetScript", InvocationTransaction_GetScript, 1);
+            Register("Neo.Transaction.GetScript", Transaction_GetScript, 1);
             Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript, 100);
             Register("Neo.Account.IsStandard", Account_IsStandard, 100);
             Register("Neo.Contract.Create", Contract_Create);
@@ -122,11 +122,11 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool InvocationTransaction_GetScript(ExecutionEngine engine)
+        private bool Transaction_GetScript(ExecutionEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                InvocationTransaction tx = _interface.GetInterface<InvocationTransaction>();
+                Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
                 engine.CurrentContext.EvaluationStack.Push(tx.Script);
                 return true;

@@ -38,10 +38,10 @@ namespace Neo.UnitTests
         {
             int size1 = 50;
             int netFeeSatoshi1 = 1;
-            var tx1 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshi1), size1);
+            var tx1 = MockGenerateTx(new Fixed8(netFeeSatoshi1), size1);
             int size2 = 50;
             int netFeeSatoshi2 = 2;
-            var tx2 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshi2), size2);
+            var tx2 = MockGenerateTx(new Fixed8(netFeeSatoshi2), size2);
 
             PoolItem pitem1 = new PoolItem(tx1.Object);
             PoolItem pitem2 = new PoolItem(tx2.Object);
@@ -75,8 +75,8 @@ namespace Neo.UnitTests
             }
 
             // equal hashes should be equal
-            var tx3 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
-            var tx4 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
+            var tx3 = MockGenerateTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
+            var tx4 = MockGenerateTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
             PoolItem pitem3 = new PoolItem(tx3.Object);
             PoolItem pitem4 = new PoolItem(tx4.Object);
 
@@ -89,8 +89,8 @@ namespace Neo.UnitTests
         {
             int sizeFixed = 500;
             int netFeeSatoshiFixed = 10;
-            var tx1 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
-            var tx2 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
+            var tx1 = MockGenerateTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
+            var tx2 = MockGenerateTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
 
             PoolItem pitem1 = new PoolItem(tx1.Object);
             PoolItem pitem2 = new PoolItem(tx2.Object);
@@ -100,32 +100,32 @@ namespace Neo.UnitTests
             pitem2.CompareTo(pitem1).Should().Be(0);
         }
 
-        public Mock<InvocationTransaction> GenerateMockTxWithFirstByteOfHashGreaterThanOrEqualTo(byte firstHashByte, Fixed8 networkFee, int size)
+        public Mock<Transaction> GenerateMockTxWithFirstByteOfHashGreaterThanOrEqualTo(byte firstHashByte, Fixed8 networkFee, int size)
         {
-            Mock<InvocationTransaction> mockTx;
+            Mock<Transaction> mockTx;
             do
             {
-                mockTx = MockGenerateInvocationTx(networkFee, size);
+                mockTx = MockGenerateTx(networkFee, size);
             } while (mockTx.Object.Hash >= new UInt256(TestUtils.GetByteArray(32, firstHashByte)));
 
             return mockTx;
         }
 
-        public Mock<InvocationTransaction> GenerateMockTxWithFirstByteOfHashLessThanOrEqualTo(byte firstHashByte, Fixed8 networkFee, int size)
+        public Mock<Transaction> GenerateMockTxWithFirstByteOfHashLessThanOrEqualTo(byte firstHashByte, Fixed8 networkFee, int size)
         {
-            Mock<InvocationTransaction> mockTx;
+            Mock<Transaction> mockTx;
             do
             {
-                mockTx = MockGenerateInvocationTx(networkFee, size);
+                mockTx = MockGenerateTx(networkFee, size);
             } while (mockTx.Object.Hash <= new UInt256(TestUtils.GetByteArray(32, firstHashByte)));
 
             return mockTx;
         }
 
-        // Generate Mock InvocationTransaction with different sizes and prices
-        public static Mock<InvocationTransaction> MockGenerateInvocationTx(Fixed8 networkFee, int size, byte[] overrideScriptBytes=null)
+        // Generate Mock Transaction with different sizes and prices
+        public static Mock<Transaction> MockGenerateTx(Fixed8 networkFee, int size, byte[] overrideScriptBytes=null)
         {
-            var mockTx = new Mock<InvocationTransaction>();
+            var mockTx = new Mock<Transaction>();
             mockTx.CallBase = true;
             mockTx.SetupGet(mr => mr.NetworkFee).Returns(networkFee);
             mockTx.SetupGet(mr => mr.Size).Returns(size);

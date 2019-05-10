@@ -33,7 +33,7 @@ namespace Neo.UnitTests
 
                 _Store = new Mock<Store>();
 
-                var defaultTx = TestUtils.CreateRandomHashInvocationMockTransaction().Object;
+                var defaultTx = TestUtils.CreateRandomHashMockTransaction().Object;
                 _Store.Setup(p => p.GetBlocks()).Returns(new TestDataCache<UInt256, BlockState>());
                 _Store.Setup(p => p.GetTransactions()).Returns(new TestDataCache<UInt256, TransactionState>(
                     new TransactionState

@@ -9,11 +9,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public abstract class Transaction : IEquatable<Transaction>, IInventory
+    public class Transaction : IEquatable<Transaction>, IInventory
     {
         public const int MaxTransactionSize = 102400;
         /// <summary>
@@ -22,6 +21,8 @@ namespace Neo.Network.P2P.Payloads
         private const int MaxCosigners = 16;
 
         public byte Version;
+        public byte[] Script;
+        public Fixed8 Gas;
         public UInt160[] Cosigners;
         public Witness[] Witnesses { get; set; }
 
@@ -59,44 +60,27 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual Fixed8 NetworkFee => Fixed8.Zero;
 
-        public virtual int Size => sizeof(byte) + Cosigners.GetVarSize() + Witnesses.GetVarSize();
-
-        public virtual Fixed8 SystemFee => Fixed8.Zero;
+        public virtual int Size =>
+            sizeof(byte) +              //Version
+            Script.GetVarSize() +       //Script
+            Gas.Size +                  //Gas
+            Cosigners.GetVarSize() +    //Cosigners
+            Witnesses.GetVarSize();     //Witnesses
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
             ((IVerifiable)this).DeserializeUnsigned(reader);
             Witnesses = reader.ReadSerializableArray<Witness>();
-            OnDeserialized();
-        }
-
-        protected virtual void DeserializeExclusiveData(BinaryReader reader)
-        {
-        }
-
-        public static Transaction DeserializeFrom(byte[] value, int offset = 0)
-        {
-            using (MemoryStream ms = new MemoryStream(value, offset, value.Length - offset, false))
-            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
-            {
-                return DeserializeFrom(reader);
-            }
-        }
-
-        internal static Transaction DeserializeFrom(BinaryReader reader)
-        {
-            // Looking for type in reflection cache
-            Transaction transaction = new InvocationTransaction();
-            transaction.DeserializeUnsigned(reader);
-            transaction.Witnesses = reader.ReadSerializableArray<Witness>();
-            transaction.OnDeserialized();
-            return transaction;
         }
 
         public void DeserializeUnsigned(BinaryReader reader)
         {
             Version = reader.ReadByte();
-            DeserializeExclusiveData(reader);
+            if (Version > 0) throw new FormatException();
+            Script = reader.ReadVarBytes(65536);
+            if (Script.Length == 0) throw new FormatException();
+            Gas = reader.ReadSerializable<Fixed8>();
+            if (Gas < Fixed8.Zero) throw new FormatException();
             Cosigners = reader.ReadSerializableArray<UInt160>(MaxCosigners);
             if (Cosigners.Distinct().Count() != Cosigners.Length)
                 throw new FormatException();
@@ -114,6 +98,13 @@ namespace Neo.Network.P2P.Payloads
             return Equals(obj as Transaction);
         }
 
+        public static Fixed8 GetGas(Fixed8 consumed)
+        {
+            Fixed8 gas = consumed - Fixed8.FromDecimal(10);
+            if (gas <= Fixed8.Zero) return Fixed8.Zero;
+            return gas.Ceiling();
+        }
+
         public override int GetHashCode()
         {
             return Hash.GetHashCode();
@@ -129,24 +120,17 @@ namespace Neo.Network.P2P.Payloads
             return Cosigners.OrderBy(p => p).ToArray();
         }
 
-        protected virtual void OnDeserialized()
-        {
-        }
-
         void ISerializable.Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
             writer.Write(Witnesses);
         }
 
-        protected virtual void SerializeExclusiveData(BinaryWriter writer)
-        {
-        }
-
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
             writer.Write(Version);
-            SerializeExclusiveData(writer);
+            writer.WriteVarBytes(Script);
+            writer.Write(Gas);
             writer.Write(Cosigners);
         }
 
@@ -156,10 +140,11 @@ namespace Neo.Network.P2P.Payloads
             json["txid"] = Hash.ToString();
             json["size"] = Size;
             json["version"] = Version;
+            json["script"] = Script.ToHexString();
+            json["gas"] = Gas.ToString();
             json["cosigners"] = Cosigners.Select(p => (JObject)p.ToAddress()).ToArray();
-            json["sys_fee"] = SystemFee.ToString();
             json["net_fee"] = NetworkFee.ToString();
-            json["scripts"] = Witnesses.Select(p => p.ToJson()).ToArray();
+            json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;
         }
 
@@ -171,6 +156,7 @@ namespace Neo.Network.P2P.Payloads
         public virtual bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
         {
             if (Size > MaxTransactionSize) return false;
+            if (Gas.GetData() % 100000000 != 0) return false;
             return this.VerifyWitnesses(snapshot);
         }
     }
