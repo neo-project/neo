@@ -192,7 +192,7 @@ namespace Neo.Network.P2P
         {
             Random rand = new Random();
             IEnumerable<RemoteNode> peers = RemoteNodes.Values
-                .Where(p => p.ListenerPort > 0)
+                .Where(p => p.ListenerTcpPort > 0)
                 .GroupBy(p => p.Remote.Address, (k, g) => g.First())
                 .OrderBy(p => rand.Next())
                 .Take(AddrPayload.MaxCountToSend);

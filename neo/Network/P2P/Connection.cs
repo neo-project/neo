@@ -14,7 +14,7 @@ namespace Neo.Network.P2P
 
         public IPEndPoint Remote { get; }
         public IPEndPoint Local { get; }
-        public abstract int ListenerPort { get; }
+        public abstract int ListenerTcpPort { get; }
 
         private ICancelable timer;
         private readonly IActorRef tcp;

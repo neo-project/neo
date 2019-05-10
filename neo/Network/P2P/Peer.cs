@@ -43,7 +43,9 @@ namespace Neo.Network.P2P
         protected ImmutableHashSet<IPEndPoint> ConnectingPeers = ImmutableHashSet<IPEndPoint>.Empty;
         protected HashSet<IPAddress> TrustedIpAddresses { get; } = new HashSet<IPAddress>();
 
-        public int ListenerPort { get; private set; }
+        public int ListenerTcpPort { get; private set; }
+        public int ListenerUdpPort { get; private set; }
+        public int ListenerWsPort { get; private set; }
         public int MaxConnectionsPerAddress { get; private set; } = 3;
         public int MinDesiredConnections { get; private set; } = DefaultMinDesiredConnections;
         public int MaxConnections { get; private set; } = DefaultMaxConnections;
@@ -68,7 +70,7 @@ namespace Neo.Network.P2P
         {
             if (UnconnectedPeers.Count < UnconnectedMax)
             {
-                peers = peers.Where(p => p.Port != ListenerPort || !localAddresses.Contains(p.Address));
+                peers = peers.Where(p => p.Port != ListenerTcpPort || !localAddresses.Contains(p.Address));
                 ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Union(peers));
             }
         }
@@ -76,7 +78,7 @@ namespace Neo.Network.P2P
         protected void ConnectToPeer(IPEndPoint endPoint, bool isTrusted = false)
         {
             endPoint = endPoint.Unmap();
-            if (endPoint.Port == ListenerPort && localAddresses.Contains(endPoint.Address)) return;
+            if (endPoint.Port == ListenerTcpPort && localAddresses.Contains(endPoint.Address)) return;
 
             if (isTrusted) TrustedIpAddresses.Add(endPoint.Address);
             if (ConnectedAddresses.TryGetValue(endPoint.Address, out int count) && count >= MaxConnectionsPerAddress)
@@ -148,31 +150,34 @@ namespace Neo.Network.P2P
 
         private void OnStart(IPEndPoint tcp, IPEndPoint udp, IPEndPoint ws, int minDesiredConnections, int maxConnections, int maxConnectionsPerAddress)
         {
-            ListenerPort = tcp == null ? 0 : tcp.Port;
+            ListenerTcpPort = tcp == null ? 0 : tcp.Port;
+            ListenerTcpPort = udp == null ? 0 : udp.Port;
+            ListenerWsPort = ws == null ? 0 : ws.Port;
+
             MinDesiredConnections = minDesiredConnections;
             MaxConnections = maxConnections;
             MaxConnectionsPerAddress = maxConnectionsPerAddress;
 
             timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
-            if ((ListenerPort > 0 || (ws != null && ws.Port > 0))
+            if ((ListenerTcpPort > 0 || ListenerWsPort > 0)
                 && localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
                 && UPnP.Discover())
             {
                 try
                 {
                     localAddresses.Add(UPnP.GetExternalIP());
-                    if (ListenerPort > 0)
-                        UPnP.ForwardPort(ListenerPort, ProtocolType.Tcp, "NEO");
+                    if (ListenerTcpPort > 0)
+                        UPnP.ForwardPort(ListenerTcpPort, ProtocolType.Tcp, "NEO");
                     if (ws != null && ws.Port > 0)
                         UPnP.ForwardPort(ws.Port, ProtocolType.Tcp, "NEO WebSocket");
                 }
                 catch { }
             }
-            if (ListenerPort > 0)
+            if (ListenerTcpPort > 0)
             {
                 tcp_manager.Tell(new Tcp.Bind(Self, tcp, options: new[] { new Inet.SO.ReuseAddress(true) }));
             }
-            if (ws != null && ws.Port > 0)
+            if (ListenerWsPort > 0)
             {
                 var host = "*";
 
@@ -183,10 +188,10 @@ namespace Neo.Network.P2P
                     host = ws.Address.ToString();
                 }
 
-                ws_host = new WebHostBuilder().UseKestrel().UseUrls($"http://{host}:{ws.Port}").Configure(app => app.UseWebSockets().Run(ProcessWebSocketAsync)).Build();
+                ws_host = new WebHostBuilder().UseKestrel().UseUrls($"http://{host}:{ListenerWsPort}").Configure(app => app.UseWebSockets().Run(ProcessWebSocketAsync)).Build();
                 ws_host.Start();
             }
-            if (udp != null && udp.Port > 0)
+            if (ListenerUdpPort > 0)
             {
                 udp_manager.Tell(new Udp.Bind(Self, udp));
             }

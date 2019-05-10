@@ -5,6 +5,7 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Actors;
 using Neo.Ledger;
+using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,8 +26,12 @@ namespace Neo.Network.P2P
         private bool ack = true;
         private bool verack = false;
 
-        public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerPort);
-        public override int ListenerPort => Version?.Port ?? 0;
+        public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
+        public override int ListenerTcpPort => Version?.Capabilities
+            .Where(u => u.Key == NodeCapabilities.TcpPort)
+            .Select(u => u.Value)
+            .Cast<UInt16Capability>()
+            .First()?.Value ?? 0;
         public VersionPayload Version { get; private set; }
         public uint LastBlockIndex { get; private set; }
 
@@ -37,7 +42,14 @@ namespace Neo.Network.P2P
             this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
 
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Singleton.ListenerPort, LocalNode.Nonce, LocalNode.UserAgent, Blockchain.Singleton.Height)));
+            var capabilities = new Dictionary<NodeCapabilities, INodeCapability>();
+
+            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(NodeCapabilities.TcpPort, new UInt16Capability((ushort)LocalNode.Singleton.ListenerTcpPort));
+            if (LocalNode.Singleton.ListenerUdpPort > 0) capabilities.Add(NodeCapabilities.UdpPort, new UInt16Capability((ushort)LocalNode.Singleton.ListenerUdpPort));
+            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(NodeCapabilities.WebsocketPort, new UInt16Capability((ushort)LocalNode.Singleton.ListenerWsPort));
+
+            SendMessage(Message.Create(MessageCommand.Version,
+                VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, Blockchain.Singleton.Height, capabilities)));
         }
 
         private void CheckMessageQueue()

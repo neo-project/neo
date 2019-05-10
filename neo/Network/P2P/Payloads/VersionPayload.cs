@@ -1,31 +1,42 @@
 ﻿using Neo.IO;
+using Neo.IO.Caching;
+using Neo.Network.P2P.Capabilities;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
     public class VersionPayload : ISerializable
     {
+        /// <summary>
+        /// Reflection cache for ConsensusMessageType
+        /// </summary>
+        private static readonly ReflectionCache<byte> ReflectionCache = ReflectionCache<byte>.CreateFromEnum<NodeCapabilities>();
+
+        const int MaxCapabilities = 32;
+
         public uint Magic;
         public uint Version;
         public VersionServices Services;
         public uint Timestamp;
-        public ushort Port;
         public uint Nonce;
         public string UserAgent;
         public uint StartHeight;
+        public Dictionary<NodeCapabilities, INodeCapability> Capabilities;
 
         public int Size =>
             sizeof(uint) +              //Magic
             sizeof(uint) +              //Version
             sizeof(VersionServices) +   //Services
             sizeof(uint) +              //Timestamp
-            sizeof(ushort) +            //Port
             sizeof(uint) +              //Nonce
             UserAgent.GetVarSize() +    //UserAgent
-            sizeof(uint);               //StartHeight
+            sizeof(uint) +              //StartHeight
+            (IO.Helper.GetVarSize(Capabilities.Count) + Capabilities.Values.Sum(u => 1 /*key*/ + u.Size)); //Capabilities
 
-        public static VersionPayload Create(int port, uint nonce, string userAgent, uint startHeight)
+        public static VersionPayload Create(uint nonce, string userAgent, uint startHeight, Dictionary<NodeCapabilities, INodeCapability> capabilities)
         {
             return new VersionPayload
             {
@@ -33,10 +44,10 @@ namespace Neo.Network.P2P.Payloads
                 Version = LocalNode.ProtocolVersion,
                 Services = VersionServices.FullNode,
                 Timestamp = DateTime.Now.ToTimestamp(),
-                Port = (ushort)port,
                 Nonce = nonce,
                 UserAgent = userAgent,
                 StartHeight = startHeight,
+                Capabilities = capabilities,
             };
         }
 
@@ -46,10 +57,28 @@ namespace Neo.Network.P2P.Payloads
             Version = reader.ReadUInt32();
             Services = (VersionServices)reader.ReadUInt64();
             Timestamp = reader.ReadUInt32();
-            Port = reader.ReadUInt16();
             Nonce = reader.ReadUInt32();
             UserAgent = reader.ReadVarString(1024);
             StartHeight = reader.ReadUInt32();
+
+            // Capabilities
+
+            Capabilities = new Dictionary<NodeCapabilities, INodeCapability>();
+
+            for (var x = reader.ReadVarInt(MaxCapabilities); x > 0; x--)
+            {
+                var type = reader.ReadByte();
+
+                if (!ReflectionCache.TryGetValue(type, out var objType))
+                {
+                    throw new FormatException();
+                }
+
+                var value = (INodeCapability)Activator.CreateInstance(objType);
+                value.Deserialize(reader);
+
+                Capabilities.Add((NodeCapabilities)type, value);
+            }
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -58,10 +87,18 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(Version);
             writer.Write((ulong)Services);
             writer.Write(Timestamp);
-            writer.Write(Port);
             writer.Write(Nonce);
             writer.WriteVarString(UserAgent);
             writer.Write(StartHeight);
+
+            // Capabilities
+
+            writer.WriteVarInt(Capabilities.Count);
+            foreach (var keyValue in Capabilities)
+            {
+                writer.Write((byte)keyValue.Key);
+                keyValue.Value.Serialize(writer);
+            }
         }
     }
 }
