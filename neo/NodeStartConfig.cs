@@ -25,12 +25,12 @@ namespace Neo
         public int MinDesiredConnections { get; set; } = Peer.DefaultMinDesiredConnections;
 
         /// <summary>
-        /// Maxx allowed connections
+        /// Max allowed connections
         /// </summary>
         public int MaxConnections { get; set; } = Peer.DefaultMaxConnections;
 
         /// <summary>
-        /// Maxx allowed connections per address
+        /// Max allowed connections per address
         /// </summary>
         public int MaxConnectionsPerAddress { get; set; } = 3;
     }
