@@ -213,8 +213,7 @@ namespace Neo.Consensus
                 Timestamp = Timestamp,
                 Nonce = Nonce,
                 NextConsensus = NextConsensus,
-                TransactionHashes = TransactionHashes,
-                MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]]
+                TransactionHashes = TransactionHashes
             });
         }
 
@@ -237,7 +236,6 @@ namespace Neo.Consensus
                     TransactionHashes = TransactionHashes,
                     Nonce = Nonce,
                     NextConsensus = NextConsensus,
-                    MinerTransaction = (MinerTransaction)Transactions[TransactionHashes[0]],
                     Timestamp = Timestamp
                 };
             }
@@ -365,43 +363,10 @@ namespace Neo.Consensus
             foreach (IPolicyPlugin plugin in Plugin.Policies)
                 memoryPoolTransactions = plugin.FilterForBlock(memoryPoolTransactions);
             List<Transaction> transactions = memoryPoolTransactions.ToList();
-            Fixed8 amountNetFee = Block.CalculateNetFee(transactions);
-            TransactionOutput[] outputs = amountNetFee == Fixed8.Zero ? new TransactionOutput[0] : new[] { new TransactionOutput
-            {
-                AssetId = Blockchain.UtilityToken.Hash,
-                Value = amountNetFee,
-                ScriptHash = wallet.GetChangeAddress()
-            } };
-            while (true)
-            {
-                ulong nonce = GetNonce();
-                MinerTransaction tx = new MinerTransaction
-                {
-                    Nonce = (uint)(nonce % (uint.MaxValue + 1ul)),
-                    Attributes = new TransactionAttribute[0],
-                    Inputs = new CoinReference[0],
-                    Outputs = outputs,
-                    Witnesses = new Witness[0]
-                };
-                if (!Snapshot.ContainsTransaction(tx.Hash))
-                {
-                    Nonce = nonce;
-                    transactions.Insert(0, tx);
-                    break;
-                }
-            }
             TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             Transactions = transactions.ToDictionary(p => p.Hash);
             NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators().ToArray());
             Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), this.PrevHeader().Timestamp + 1);
-        }
-
-        private static ulong GetNonce()
-        {
-            byte[] nonce = new byte[sizeof(ulong)];
-            Random rand = new Random();
-            rand.NextBytes(nonce);
-            return nonce.ToUInt64(0);
         }
     }
 }

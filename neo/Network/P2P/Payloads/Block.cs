@@ -41,15 +41,6 @@ namespace Neo.Network.P2P.Payloads
 
         public override int Size => base.Size + Transactions.GetVarSize();
 
-        public static Fixed8 CalculateNetFee(IEnumerable<Transaction> transactions)
-        {
-            Transaction[] ts = transactions.Where(p => p.Type != TransactionType.MinerTransaction).ToArray();
-            Fixed8 amount_in = ts.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
-            Fixed8 amount_out = ts.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
-            Fixed8 amount_sysfee = ts.Sum(p => p.SystemFee);
-            return amount_in - amount_out - amount_sysfee;
-        }
-
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
@@ -59,16 +50,6 @@ namespace Neo.Network.P2P.Payloads
             for (int i = 0; i < Transactions.Length; i++)
             {
                 Transactions[i] = Transaction.DeserializeFrom(reader);
-                if (i == 0)
-                {
-                    if (Transactions[0].Type != TransactionType.MinerTransaction)
-                        throw new FormatException();
-                }
-                else
-                {
-                    if (Transactions[i].Type == TransactionType.MinerTransaction)
-                        throw new FormatException();
-                }
                 if (!hashes.Add(Transactions[i].Hash))
                     throw new FormatException();
             }

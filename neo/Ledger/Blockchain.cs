@@ -77,14 +77,6 @@ namespace Neo.Ledger
             },
             Transactions = new Transaction[]
             {
-                new MinerTransaction
-                {
-                    Nonce = 2083236893,
-                    Attributes = new TransactionAttribute[0],
-                    Inputs = new CoinReference[0],
-                    Outputs = new TransactionOutput[0],
-                    Witnesses = new Witness[0]
-                },
                 GoverningToken,
                 UtilityToken,
                 DeployNativeContracts()
@@ -254,8 +246,6 @@ namespace Neo.Ledger
             // Add the transactions to the memory pool
             foreach (var tx in transactions)
             {
-                if (tx.Type == TransactionType.MinerTransaction)
-                    continue;
                 if (Store.ContainsTransaction(tx.Hash))
                     continue;
                 if (!Plugin.CheckPolicy(tx))
@@ -390,8 +380,6 @@ namespace Neo.Ledger
 
         private RelayResultReason OnNewTransaction(Transaction transaction)
         {
-            if (transaction.Type == TransactionType.MinerTransaction)
-                return RelayResultReason.Invalid;
             if (ContainsTransaction(transaction.Hash))
                 return RelayResultReason.AlreadyExists;
             if (!MemPool.CanTransactionFitInPool(transaction))
