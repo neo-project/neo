@@ -87,28 +87,6 @@ namespace Neo.Ledger
                 },
                 GoverningToken,
                 UtilityToken,
-                new IssueTransaction
-                {
-                    Attributes = new TransactionAttribute[0],
-                    Inputs = new CoinReference[0],
-                    Outputs = new[]
-                    {
-                        new TransactionOutput
-                        {
-                            AssetId = GoverningToken.Hash,
-                            Value = GoverningToken.Amount,
-                            ScriptHash = Contract.CreateMultiSigRedeemScript(StandbyValidators.Length / 2 + 1, StandbyValidators).ToScriptHash()
-                        }
-                    },
-                    Witnesses = new[]
-                    {
-                        new Witness
-                        {
-                            InvocationScript = new byte[0],
-                            VerificationScript = new[] { (byte)OpCode.PUSHT }
-                        }
-                    }
-                },
                 DeployNativeContracts()
             }
         };
@@ -517,10 +495,6 @@ namespace Neo.Ledger
                             });
                             break;
 #pragma warning restore CS0612
-                        case IssueTransaction _:
-                            foreach (TransactionResult result in tx.GetTransactionResults().Where(p => p.Amount < Fixed8.Zero))
-                                snapshot.Assets.GetAndChange(result.AssetId).Available -= result.Amount;
-                            break;
                         case InvocationTransaction tx_invocation:
                             using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, snapshot.Clone(), tx_invocation.Gas))
                             {
