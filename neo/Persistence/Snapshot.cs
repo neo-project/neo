@@ -77,23 +77,18 @@ namespace Neo.Persistence
             }
         }
 
-        private ECPoint[] _validators = null;
         public ECPoint[] GetValidators()
         {
-            if (_validators == null)
+            byte[] script;
+            using (ScriptBuilder sb = new ScriptBuilder())
             {
-                byte[] script;
-                using (ScriptBuilder sb = new ScriptBuilder())
-                {
-                    sb.EmitAppCall(NativeContract.NEO.ScriptHash, "getValidators");
-                    script = sb.ToArray();
-                }
-                using (ApplicationEngine engine = ApplicationEngine.Run(script, this, testMode: true))
-                {
-                    _validators = ((VMArray)engine.ResultStack.Peek()).Select(p => p.GetByteArray().AsSerializable<ECPoint>()).ToArray();
-                }
+                sb.EmitAppCall(NativeContract.NEO.ScriptHash, "getValidators");
+                script = sb.ToArray();
             }
-            return _validators;
+            using (ApplicationEngine engine = ApplicationEngine.Run(script, this, testMode: true))
+            {
+                return ((VMArray)engine.ResultStack.Peek()).Select(p => p.GetByteArray().AsSerializable<ECPoint>()).ToArray();
+            }
         }
     }
 }
