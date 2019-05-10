@@ -1,11 +1,18 @@
 ﻿using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.IO.Caching;
 using Neo.IO.Wrappers;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.Persistence
 {
@@ -14,14 +21,12 @@ namespace Neo.Persistence
         public Block PersistingBlock { get; internal set; }
         public abstract DataCache<UInt256, BlockState> Blocks { get; }
         public abstract DataCache<UInt256, TransactionState> Transactions { get; }
-        public abstract DataCache<UInt160, AccountState> Accounts { get; }
         public abstract DataCache<UInt256, UnspentCoinState> UnspentCoins { get; }
-        public abstract DataCache<ECPoint, ValidatorState> Validators { get; }
         public abstract DataCache<UInt256, AssetState> Assets { get; }
         public abstract DataCache<UInt160, ContractState> Contracts { get; }
         public abstract DataCache<StorageKey, StorageItem> Storages { get; }
         public abstract DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
-        public abstract MetaDataCache<ValidatorsCountState> ValidatorsCount { get; }
+        public abstract MetaDataCache<NextValidatorsState> NextValidators { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
 
@@ -37,18 +42,15 @@ namespace Neo.Persistence
 
         public virtual void Commit()
         {
-            Accounts.DeleteWhere((k, v) => !v.IsFrozen && v.Votes.Length == 0 && v.Balances.All(p => p.Value <= Fixed8.Zero));
             UnspentCoins.DeleteWhere((k, v) => v.Items.All(p => p.HasFlag(CoinState.Spent)));
             Blocks.Commit();
             Transactions.Commit();
-            Accounts.Commit();
             UnspentCoins.Commit();
-            Validators.Commit();
             Assets.Commit();
             Contracts.Commit();
             Storages.Commit();
             HeaderHashList.Commit();
-            ValidatorsCount.Commit();
+            NextValidators.Commit();
             BlockHashIndex.Commit();
             HeaderHashIndex.Commit();
         }
@@ -57,98 +59,36 @@ namespace Neo.Persistence
         {
         }
 
-        private ECPoint[] _validators = null;
-        public ECPoint[] GetValidators()
+        public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators()
         {
-            if (_validators == null)
+            byte[] script;
+            using (ScriptBuilder sb = new ScriptBuilder())
             {
-                _validators = GetValidators(Enumerable.Empty<Transaction>()).ToArray();
+                sb.EmitAppCall(NativeContract.NEO.ScriptHash, "getRegisteredValidators");
+                script = sb.ToArray();
             }
-            return _validators;
+            using (ApplicationEngine engine = ApplicationEngine.Run(script, this, testMode: true))
+            {
+                return ((VMArray)engine.ResultStack.Peek()).Select(p =>
+                {
+                    Struct @struct = (Struct)p;
+                    return (@struct.GetByteArray().AsSerializable<ECPoint>(), @struct.GetBigInteger());
+                });
+            }
         }
 
-        public IEnumerable<ECPoint> GetValidators(IEnumerable<Transaction> others)
+        public ECPoint[] GetValidators()
         {
-            Snapshot snapshot = Clone();
-            foreach (Transaction tx in others)
+            byte[] script;
+            using (ScriptBuilder sb = new ScriptBuilder())
             {
-                foreach (TransactionOutput output in tx.Outputs)
-                {
-                    AccountState account = snapshot.Accounts.GetAndChange(output.ScriptHash, () => new AccountState(output.ScriptHash));
-                    if (account.Balances.ContainsKey(output.AssetId))
-                        account.Balances[output.AssetId] += output.Value;
-                    else
-                        account.Balances[output.AssetId] = output.Value;
-                    if (output.AssetId.Equals(Blockchain.GoverningToken.Hash) && account.Votes.Length > 0)
-                    {
-                        foreach (ECPoint pubkey in account.Votes)
-                            snapshot.Validators.GetAndChange(pubkey, () => new ValidatorState(pubkey)).Votes += output.Value;
-                        snapshot.ValidatorsCount.GetAndChange().Votes[account.Votes.Length - 1] += output.Value;
-                    }
-                }
-                foreach (var group in tx.Inputs.GroupBy(p => p.PrevHash))
-                {
-                    Transaction tx_prev = snapshot.GetTransaction(group.Key);
-                    foreach (CoinReference input in group)
-                    {
-                        TransactionOutput out_prev = tx_prev.Outputs[input.PrevIndex];
-                        AccountState account = snapshot.Accounts.GetAndChange(out_prev.ScriptHash);
-                        if (out_prev.AssetId.Equals(Blockchain.GoverningToken.Hash))
-                        {
-                            if (account.Votes.Length > 0)
-                            {
-                                foreach (ECPoint pubkey in account.Votes)
-                                {
-                                    ValidatorState validator = snapshot.Validators.GetAndChange(pubkey);
-                                    validator.Votes -= out_prev.Value;
-                                    if (!validator.Registered && validator.Votes.Equals(Fixed8.Zero))
-                                        snapshot.Validators.Delete(pubkey);
-                                }
-                                snapshot.ValidatorsCount.GetAndChange().Votes[account.Votes.Length - 1] -= out_prev.Value;
-                            }
-                        }
-                        account.Balances[out_prev.AssetId] -= out_prev.Value;
-                    }
-                }
-                if (tx is StateTransaction tx_state)
-                {
-                    foreach (StateDescriptor descriptor in tx_state.Descriptors)
-                        switch (descriptor.Type)
-                        {
-                            case StateType.Account:
-                                Blockchain.ProcessAccountStateDescriptor(descriptor, snapshot);
-                                break;
-                            case StateType.Validator:
-                                Blockchain.ProcessValidatorStateDescriptor(descriptor, snapshot);
-                                break;
-                        }
-                }
+                sb.EmitAppCall(NativeContract.NEO.ScriptHash, "getValidators");
+                script = sb.ToArray();
             }
-            int count = (int)snapshot.ValidatorsCount.Get().Votes.Select((p, i) => new
+            using (ApplicationEngine engine = ApplicationEngine.Run(script, this, testMode: true))
             {
-                Count = i,
-                Votes = p
-            }).Where(p => p.Votes > Fixed8.Zero).ToArray().WeightedFilter(0.25, 0.75, p => p.Votes.GetData(), (p, w) => new
-            {
-                p.Count,
-                Weight = w
-            }).WeightedAverage(p => p.Count, p => p.Weight);
-            count = Math.Max(count, Blockchain.StandbyValidators.Length);
-            HashSet<ECPoint> sv = new HashSet<ECPoint>(Blockchain.StandbyValidators);
-            ECPoint[] pubkeys = snapshot.Validators.Find().Select(p => p.Value).Where(p => (p.Registered && p.Votes > Fixed8.Zero) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).ToArray();
-            IEnumerable<ECPoint> result;
-            if (pubkeys.Length == count)
-            {
-                result = pubkeys;
+                return ((VMArray)engine.ResultStack.Peek()).Select(p => p.GetByteArray().AsSerializable<ECPoint>()).ToArray();
             }
-            else
-            {
-                HashSet<ECPoint> hashSet = new HashSet<ECPoint>(pubkeys);
-                for (int i = 0; i < Blockchain.StandbyValidators.Length && hashSet.Count < count; i++)
-                    hashSet.Add(Blockchain.StandbyValidators[i]);
-                result = hashSet;
-            }
-            return result.OrderBy(p => p);
         }
     }
 }

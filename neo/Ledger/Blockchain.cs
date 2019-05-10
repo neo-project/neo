@@ -472,6 +472,8 @@ namespace Neo.Ledger
             {
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
+                if (block.Index > 0)
+                    snapshot.NextValidators.GetAndChange().Validators = snapshot.GetValidators();
                 snapshot.Blocks.Add(block.Hash, new BlockState
                 {
                     SystemFeeAmount = snapshot.GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.SystemFee),
@@ -488,44 +490,9 @@ namespace Neo.Ledger
                     {
                         Items = Enumerable.Repeat(CoinState.Confirmed, tx.Outputs.Length).ToArray()
                     });
-                    foreach (TransactionOutput output in tx.Outputs)
+                    foreach (CoinReference input in tx.Inputs)
                     {
-                        AccountState account = snapshot.Accounts.GetAndChange(output.ScriptHash, () => new AccountState(output.ScriptHash));
-                        if (account.Balances.ContainsKey(output.AssetId))
-                            account.Balances[output.AssetId] += output.Value;
-                        else
-                            account.Balances[output.AssetId] = output.Value;
-                        if (output.AssetId.Equals(GoverningToken.Hash) && account.Votes.Length > 0)
-                        {
-                            foreach (ECPoint pubkey in account.Votes)
-                                snapshot.Validators.GetAndChange(pubkey, () => new ValidatorState(pubkey)).Votes += output.Value;
-                            snapshot.ValidatorsCount.GetAndChange().Votes[account.Votes.Length - 1] += output.Value;
-                        }
-                    }
-                    foreach (var group in tx.Inputs.GroupBy(p => p.PrevHash))
-                    {
-                        TransactionState tx_prev = snapshot.Transactions[group.Key];
-                        foreach (CoinReference input in group)
-                        {
-                            snapshot.UnspentCoins.GetAndChange(input.PrevHash).Items[input.PrevIndex] |= CoinState.Spent;
-                            TransactionOutput out_prev = tx_prev.Transaction.Outputs[input.PrevIndex];
-                            AccountState account = snapshot.Accounts.GetAndChange(out_prev.ScriptHash);
-                            if (out_prev.AssetId.Equals(GoverningToken.Hash))
-                            {
-                                if (account.Votes.Length > 0)
-                                {
-                                    foreach (ECPoint pubkey in account.Votes)
-                                    {
-                                        ValidatorState validator = snapshot.Validators.GetAndChange(pubkey);
-                                        validator.Votes -= out_prev.Value;
-                                        if (!validator.Registered && validator.Votes.Equals(Fixed8.Zero))
-                                            snapshot.Validators.Delete(pubkey);
-                                    }
-                                    snapshot.ValidatorsCount.GetAndChange().Votes[account.Votes.Length - 1] -= out_prev.Value;
-                                }
-                            }
-                            account.Balances[out_prev.AssetId] -= out_prev.Value;
-                        }
+                        snapshot.UnspentCoins.GetAndChange(input.PrevHash).Items[input.PrevIndex] |= CoinState.Spent;
                     }
                     List<ApplicationExecutionResult> execution_results = new List<ApplicationExecutionResult>();
                     switch (tx)
@@ -553,18 +520,6 @@ namespace Neo.Ledger
                         case IssueTransaction _:
                             foreach (TransactionResult result in tx.GetTransactionResults().Where(p => p.Amount < Fixed8.Zero))
                                 snapshot.Assets.GetAndChange(result.AssetId).Available -= result.Amount;
-                            break;
-                        case StateTransaction tx_state:
-                            foreach (StateDescriptor descriptor in tx_state.Descriptors)
-                                switch (descriptor.Type)
-                                {
-                                    case StateType.Account:
-                                        ProcessAccountStateDescriptor(descriptor, snapshot);
-                                        break;
-                                    case StateType.Validator:
-                                        ProcessValidatorStateDescriptor(descriptor, snapshot);
-                                        break;
-                                }
                             break;
                         case InvocationTransaction tx_invocation:
                             using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, snapshot.Clone(), tx_invocation.Gas))
@@ -637,49 +592,6 @@ namespace Neo.Ledger
         {
             base.PostStop();
             currentSnapshot?.Dispose();
-        }
-
-        internal static void ProcessAccountStateDescriptor(StateDescriptor descriptor, Snapshot snapshot)
-        {
-            UInt160 hash = new UInt160(descriptor.Key);
-            AccountState account = snapshot.Accounts.GetAndChange(hash, () => new AccountState(hash));
-            switch (descriptor.Field)
-            {
-                case "Votes":
-                    Fixed8 balance = account.GetBalance(GoverningToken.Hash);
-                    foreach (ECPoint pubkey in account.Votes)
-                    {
-                        ValidatorState validator = snapshot.Validators.GetAndChange(pubkey);
-                        validator.Votes -= balance;
-                        if (!validator.Registered && validator.Votes.Equals(Fixed8.Zero))
-                            snapshot.Validators.Delete(pubkey);
-                    }
-                    ECPoint[] votes = descriptor.Value.AsSerializableArray<ECPoint>().Distinct().ToArray();
-                    if (votes.Length != account.Votes.Length)
-                    {
-                        ValidatorsCountState count_state = snapshot.ValidatorsCount.GetAndChange();
-                        if (account.Votes.Length > 0)
-                            count_state.Votes[account.Votes.Length - 1] -= balance;
-                        if (votes.Length > 0)
-                            count_state.Votes[votes.Length - 1] += balance;
-                    }
-                    account.Votes = votes;
-                    foreach (ECPoint pubkey in account.Votes)
-                        snapshot.Validators.GetAndChange(pubkey, () => new ValidatorState(pubkey)).Votes += balance;
-                    break;
-            }
-        }
-
-        internal static void ProcessValidatorStateDescriptor(StateDescriptor descriptor, Snapshot snapshot)
-        {
-            ECPoint pubkey = ECPoint.DecodePoint(descriptor.Key, ECCurve.Secp256r1);
-            ValidatorState validator = snapshot.Validators.GetAndChange(pubkey, () => new ValidatorState(pubkey));
-            switch (descriptor.Field)
-            {
-                case "Registered":
-                    validator.Registered = BitConverter.ToBoolean(descriptor.Value, 0);
-                    break;
-            }
         }
 
         public static Props Props(NeoSystem system, Store store)
