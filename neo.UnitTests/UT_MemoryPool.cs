@@ -45,18 +45,7 @@ namespace Neo.UnitTests
         {
             var mockTx = TestUtils.CreateRandomHashInvocationMockTransaction();
             mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(fee));
-            var tx = mockTx.Object;
-            if (fee > 0)
-            {
-                tx.Inputs = new CoinReference[1];
-                // Any input will trigger reading the transaction output and get our mocked transaction output.
-                tx.Inputs[0] = new CoinReference
-                {
-                    PrevHash = UInt256.Zero,
-                    PrevIndex = 0
-                };
-            }
-            return tx;
+            return mockTx.Object;
         }
 
         private Transaction CreateMockHighPriorityTransaction()

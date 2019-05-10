@@ -24,8 +24,6 @@ namespace Neo.UnitTests
                 var mockSnapshot = new Mock<Snapshot>();
                 mockSnapshot.SetupGet(p => p.Blocks).Returns(new TestDataCache<UInt256, BlockState>());
                 mockSnapshot.SetupGet(p => p.Transactions).Returns(new TestDataCache<UInt256, TransactionState>());
-                mockSnapshot.SetupGet(p => p.UnspentCoins).Returns(new TestDataCache<UInt256, UnspentCoinState>());
-                mockSnapshot.SetupGet(p => p.Assets).Returns(new TestDataCache<UInt256, AssetState>());
                 mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>());
                 mockSnapshot.SetupGet(p => p.Storages).Returns(new TestDataCache<StorageKey, StorageItem>());
                 mockSnapshot.SetupGet(p => p.HeaderHashList).Returns(new TestDataCache<UInt32Wrapper, HeaderHashList>());
@@ -44,8 +42,6 @@ namespace Neo.UnitTests
                         Transaction = defaultTx
                     }));
 
-                _Store.Setup(p => p.GetUnspentCoins()).Returns(new TestDataCache<UInt256, UnspentCoinState>());
-                _Store.Setup(p => p.GetAssets()).Returns(new TestDataCache<UInt256, AssetState>());
                 _Store.Setup(p => p.GetContracts()).Returns(new TestDataCache<UInt160, ContractState>());
                 _Store.Setup(p => p.GetStorages()).Returns(new TestDataCache<StorageKey, StorageItem>());
                 _Store.Setup(p => p.GetHeaderHashList()).Returns(new TestDataCache<UInt32Wrapper, HeaderHashList>());

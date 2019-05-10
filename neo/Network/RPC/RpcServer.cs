@@ -114,11 +114,6 @@ namespace Neo.Network.RPC
         {
             switch (method)
             {
-                case "getassetstate":
-                    {
-                        UInt256 asset_id = UInt256.Parse(_params[0].AsString());
-                        return GetAssetState(asset_id);
-                    }
                 case "getbestblockhash":
                     {
                         return GetBestBlockHash();
@@ -183,12 +178,6 @@ namespace Neo.Network.RPC
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
                         return GetTransactionHeight(hash);
-                    }
-                case "gettxout":
-                    {
-                        UInt256 hash = UInt256.Parse(_params[0].AsString());
-                        ushort index = ushort.Parse(_params[1].AsString());
-                        return GetTxOut(hash, index);
                     }
                 case "getvalidators":
                     {
@@ -387,12 +376,6 @@ namespace Neo.Network.RPC
             host.Start();
         }
 
-        private JObject GetAssetState(UInt256 asset_id)
-        {
-            AssetState asset = Blockchain.Singleton.Store.GetAssets().TryGet(asset_id);
-            return asset?.ToJson() ?? throw new RpcException(-100, "Unknown asset");
-        }
-
         private JObject GetBestBlockHash()
         {
             return Blockchain.Singleton.CurrentBlockHash.ToString();
@@ -560,11 +543,6 @@ namespace Neo.Network.RPC
             uint? height = Blockchain.Singleton.Store.GetTransactions().TryGet(hash)?.BlockIndex;
             if (height.HasValue) return height.Value;
             throw new RpcException(-100, "Unknown transaction");
-        }
-
-        private JObject GetTxOut(UInt256 hash, ushort index)
-        {
-            return Blockchain.Singleton.Store.GetUnspent(hash, index)?.ToJson(index);
         }
 
         private JObject GetValidators()

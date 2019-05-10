@@ -33,36 +33,6 @@ namespace Neo.Ledger
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromSeconds(SecondsPerBlock);
         public static readonly ECPoint[] StandbyValidators = ProtocolSettings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
 
-#pragma warning disable CS0612
-        public static readonly RegisterTransaction GoverningToken = new RegisterTransaction
-        {
-            AssetType = AssetType.GoverningToken,
-            Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]",
-            Amount = Fixed8.FromDecimal(100000000),
-            Precision = 0,
-            Owner = ECCurve.Secp256r1.Infinity,
-            Admin = (new[] { (byte)OpCode.PUSHT }).ToScriptHash(),
-            Attributes = new TransactionAttribute[0],
-            Inputs = new CoinReference[0],
-            Outputs = new TransactionOutput[0],
-            Witnesses = new Witness[0]
-        };
-
-        public static readonly RegisterTransaction UtilityToken = new RegisterTransaction
-        {
-            AssetType = AssetType.UtilityToken,
-            Name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币\"},{\"lang\":\"en\",\"name\":\"AntCoin\"}]",
-            Amount = Fixed8.FromDecimal(GenerationAmount.Sum(p => p) * DecrementInterval),
-            Precision = 8,
-            Owner = ECCurve.Secp256r1.Infinity,
-            Admin = (new[] { (byte)OpCode.PUSHF }).ToScriptHash(),
-            Attributes = new TransactionAttribute[0],
-            Inputs = new CoinReference[0],
-            Outputs = new TransactionOutput[0],
-            Witnesses = new Witness[0]
-        };
-#pragma warning restore CS0612
-
         public static readonly Block GenesisBlock = new Block
         {
             PrevHash = UInt256.Zero,
@@ -75,12 +45,7 @@ namespace Neo.Ledger
                 InvocationScript = new byte[0],
                 VerificationScript = new[] { (byte)OpCode.PUSHT }
             },
-            Transactions = new Transaction[]
-            {
-                GoverningToken,
-                UtilityToken,
-                DeployNativeContracts()
-            }
+            Transactions = new[] { DeployNativeContracts() }
         };
 
         private const int MemoryPoolMaxTransactions = 50_000;
@@ -178,8 +143,6 @@ namespace Neo.Ledger
                 Script = script,
                 Gas = Fixed8.Zero,
                 Attributes = new TransactionAttribute[0],
-                Inputs = new CoinReference[0],
-                Outputs = new TransactionOutput[0],
                 Witnesses = new Witness[0]
             };
         }
@@ -452,37 +415,9 @@ namespace Neo.Ledger
                         BlockIndex = block.Index,
                         Transaction = tx
                     });
-                    snapshot.UnspentCoins.Add(tx.Hash, new UnspentCoinState
-                    {
-                        Items = Enumerable.Repeat(CoinState.Confirmed, tx.Outputs.Length).ToArray()
-                    });
-                    foreach (CoinReference input in tx.Inputs)
-                    {
-                        snapshot.UnspentCoins.GetAndChange(input.PrevHash).Items[input.PrevIndex] |= CoinState.Spent;
-                    }
                     List<ApplicationExecutionResult> execution_results = new List<ApplicationExecutionResult>();
                     switch (tx)
                     {
-#pragma warning disable CS0612
-                        case RegisterTransaction tx_register:
-                            snapshot.Assets.Add(tx.Hash, new AssetState
-                            {
-                                AssetId = tx_register.Hash,
-                                AssetType = tx_register.AssetType,
-                                Name = tx_register.Name,
-                                Amount = tx_register.Amount,
-                                Available = Fixed8.Zero,
-                                Precision = tx_register.Precision,
-                                Fee = Fixed8.Zero,
-                                FeeAddress = new UInt160(),
-                                Owner = tx_register.Owner,
-                                Admin = tx_register.Admin,
-                                Issuer = tx_register.Admin,
-                                Expiration = block.Index + 2 * 2000000,
-                                IsFrozen = false
-                            });
-                            break;
-#pragma warning restore CS0612
                         case InvocationTransaction tx_invocation:
                             using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, snapshot.Clone(), tx_invocation.Gas))
                             {

@@ -32,8 +32,6 @@ namespace Neo.UnitTests
                 Gas = Fixed8.Zero,
                 Script = new byte[1],
                 Attributes = new TransactionAttribute[0],
-                Inputs = new CoinReference[0],
-                Outputs = new TransactionOutput[0],
                 Witnesses = new Witness[0]
             };
         }
@@ -62,7 +60,7 @@ namespace Neo.UnitTests
         private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal)
         {
             bb.PrevHash = val256;
-            merkRootVal = new UInt256(new byte[] { 75, 117, 92, 47, 164, 55, 126, 125, 63, 48, 186, 222, 86, 67, 102, 213, 167, 79, 15, 219, 124, 200, 3, 131, 221, 130, 22, 211, 180, 184, 13, 47 });
+            merkRootVal = new UInt256(new byte[] { 131, 73, 241, 45, 5, 18, 130, 237, 192, 94, 27, 14, 75, 149, 226, 28, 147, 79, 102, 232, 58, 112, 104, 208, 97, 219, 167, 200, 175, 80, 212, 234 });
             bb.MerkleRoot = merkRootVal;
             timestampVal = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp();
             bb.Timestamp = timestampVal;
@@ -92,8 +90,6 @@ namespace Neo.UnitTests
             TestRandom.NextBytes(randomBytes);
             tx.Script = randomBytes;
             tx.Attributes = new TransactionAttribute[0];
-            tx.Inputs = new CoinReference[0];
-            tx.Outputs = new TransactionOutput[0];
             tx.Witnesses = new Witness[0];
 
             return mockTx;

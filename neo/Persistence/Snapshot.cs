@@ -21,8 +21,6 @@ namespace Neo.Persistence
         public Block PersistingBlock { get; internal set; }
         public abstract DataCache<UInt256, BlockState> Blocks { get; }
         public abstract DataCache<UInt256, TransactionState> Transactions { get; }
-        public abstract DataCache<UInt256, UnspentCoinState> UnspentCoins { get; }
-        public abstract DataCache<UInt256, AssetState> Assets { get; }
         public abstract DataCache<UInt160, ContractState> Contracts { get; }
         public abstract DataCache<StorageKey, StorageItem> Storages { get; }
         public abstract DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
@@ -42,11 +40,8 @@ namespace Neo.Persistence
 
         public virtual void Commit()
         {
-            UnspentCoins.DeleteWhere((k, v) => v.Items.All(p => p.HasFlag(CoinState.Spent)));
             Blocks.Commit();
             Transactions.Commit();
-            UnspentCoins.Commit();
-            Assets.Commit();
             Contracts.Commit();
             Storages.Commit();
             HeaderHashList.Commit();

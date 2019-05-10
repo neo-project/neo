@@ -142,8 +142,6 @@ namespace Neo.UnitTests
             }
             tx.Script = randomBytes;
             tx.Attributes = new TransactionAttribute[0];
-            tx.Inputs = new CoinReference[0];
-            tx.Outputs = new TransactionOutput[0];
             tx.Witnesses = new Witness[0];
             return mockTx;
         }

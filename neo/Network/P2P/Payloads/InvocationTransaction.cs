@@ -18,11 +18,6 @@ namespace Neo.Network.P2P.Payloads
 
         public override Fixed8 SystemFee => Gas;
 
-        public InvocationTransaction()
-            : base(TransactionType.InvocationTransaction)
-        {
-        }
-
         protected override void DeserializeExclusiveData(BinaryReader reader)
         {
             if (Version > 1) throw new FormatException();

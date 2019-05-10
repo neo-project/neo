@@ -53,8 +53,6 @@ namespace Neo.UnitTests
         public void Size_Get()
         {
             uut.Attributes = new TransactionAttribute[0];
-            uut.Inputs = new CoinReference[0];
-            uut.Outputs = new TransactionOutput[0];
             uut.Witnesses = new Witness[0];
 
             byte[] val = TestUtils.GetByteArray(32, 0x42);
@@ -65,7 +63,7 @@ namespace Neo.UnitTests
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
             uut.Script.GetVarSize().Should().Be(33);
-            uut.Size.Should().Be(39); // 1, 1, 1, 1, 1, 1 + script 33
+            uut.Size.Should().Be(36); // 1, 1, 1, 1, 1, 1 + script 33
         }
 
         [TestMethod]
@@ -99,21 +97,16 @@ namespace Neo.UnitTests
             uut.Gas = gasVal;
 
             uut.Attributes = new TransactionAttribute[0];
-            uut.Inputs = new CoinReference[0];
-            uut.Outputs = new TransactionOutput[0];
             uut.Witnesses = new Witness[0];
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["txid"].AsString().Should().Be("0x8258b950487299376f89ad2d09598b7acbc5cde89b161b3dd73c256f9e2a94b1");
-            jObj["size"].AsNumber().Should().Be(39);
-            jObj["type"].AsString().Should().Be("InvocationTransaction");
+            jObj["txid"].AsString().Should().Be("0x207ab3347ab2d569b15bcd9e31986e9fc389a6c9d43d6c39df20330d116af8bb");
+            jObj["size"].AsNumber().Should().Be(36);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
-            ((JArray)jObj["vin"]).Count.Should().Be(0);
-            ((JArray)jObj["vout"]).Count.Should().Be(0);
             jObj["sys_fee"].AsString().Should().Be("42");
-            jObj["net_fee"].AsString().Should().Be("-42");
+            jObj["net_fee"].AsString().Should().Be("0");
             ((JArray)jObj["scripts"]).Count.Should().Be(0);
 
             jObj["script"].AsString().Should().Be("4220202020202020202020202020202020202020202020202020202020202020");
