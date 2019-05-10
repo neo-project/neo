@@ -166,7 +166,7 @@ namespace Neo.Network.P2P
                 case MessageCommand.Transaction:
                     {
                         if (msg.Payload.Size <= Transaction.MaxTransactionSize)
-                            system.LocalNode.Tell(new LocalNode.Relay { Inventory = (Transaction)msg.Payload });
+                            system.LocalNode.Tell(new Relay { Inventory = (Transaction)msg.Payload });
 
                         break;
                     }
@@ -179,20 +179,25 @@ namespace Neo.Network.P2P
                     }
                 case MessageCommand.GetAddr:
                     {
-                        Random rand = new Random();
-                        IEnumerable<RemoteNode> peers = LocalNode.Singleton.RemoteNodes.Values
-                            .Where(p => p.ListenerPort > 0)
-                            .GroupBy(p => p.Remote.Address, (k, g) => g.First())
-                            .OrderBy(p => rand.Next())
-                            .Take(AddrPayload.MaxCountToSend);
-                        NetworkAddressWithTime[] networkAddresses = peers.Select(p => NetworkAddressWithTime.Create(p.Listener, p.Version.Services, p.Version.Timestamp)).ToArray();
+                        NetworkAddressWithTime[] networkAddresses = GetPeers();
                         if (networkAddresses.Length == 0) return;
-
                         msg = Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses));
                         SendUdp(remote, ByteString.FromBytes(msg.ToArray()));
                         break;
                     }
             }
+        }
+
+        public NetworkAddressWithTime[] GetPeers()
+        {
+            Random rand = new Random();
+            IEnumerable<RemoteNode> peers = RemoteNodes.Values
+                .Where(p => p.ListenerPort > 0)
+                .GroupBy(p => p.Remote.Address, (k, g) => g.First())
+                .OrderBy(p => rand.Next())
+                .Take(AddrPayload.MaxCountToSend);
+
+            return peers.Select(p => NetworkAddressWithTime.Create(p.Listener, p.Version.Services, p.Version.Timestamp)).ToArray();
         }
 
         private void OnRelay(IInventory inventory)

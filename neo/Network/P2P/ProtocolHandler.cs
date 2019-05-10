@@ -144,13 +144,7 @@ namespace Neo.Network.P2P
 
         private void OnGetAddrMessageReceived()
         {
-            Random rand = new Random();
-            IEnumerable<RemoteNode> peers = LocalNode.Singleton.RemoteNodes.Values
-                .Where(p => p.ListenerPort > 0)
-                .GroupBy(p => p.Remote.Address, (k, g) => g.First())
-                .OrderBy(p => rand.Next())
-                .Take(AddrPayload.MaxCountToSend);
-            NetworkAddressWithTime[] networkAddresses = peers.Select(p => NetworkAddressWithTime.Create(p.Listener, p.Version.Services, p.Version.Timestamp)).ToArray();
+            NetworkAddressWithTime[] networkAddresses = LocalNode.Singleton.GetPeers();
             if (networkAddresses.Length == 0) return;
             Context.Parent.Tell(Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses)));
         }
