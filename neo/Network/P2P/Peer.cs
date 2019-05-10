@@ -184,7 +184,6 @@ namespace Neo.Network.P2P
                 if (!ws.Address.GetAddressBytes().SequenceEqual(IPAddress.Any.GetAddressBytes()))
                 {
                     // Is not for all interfaces
-
                     host = ws.Address.ToString();
                 }
 
