@@ -168,7 +168,7 @@ namespace Neo.Network.P2P
                     localAddresses.Add(UPnP.GetExternalIP());
                     if (ListenerTcpPort > 0)
                         UPnP.ForwardPort(ListenerTcpPort, ProtocolType.Tcp, "NEO");
-                    if (ws != null && ws.Port > 0)
+                    if (ListenerWsPort > 0)
                         UPnP.ForwardPort(ws.Port, ProtocolType.Tcp, "NEO WebSocket");
                 }
                 catch { }
