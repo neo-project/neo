@@ -28,9 +28,8 @@ namespace Neo.Network.P2P
 
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
         public override int ListenerTcpPort => Version?.Capabilities
-            .Where(u => u.Key == NodeCapabilities.TcpPort)
-            .Select(u => u.Value)
-            .Cast<UInt16Capability>()
+            .Where(u => u.Type == NodeCapabilities.Server)
+            .Cast<ServerCapability>()
             .First()?.Value ?? 0;
         public VersionPayload Version { get; private set; }
         public uint LastBlockIndex { get; private set; }
@@ -42,11 +41,11 @@ namespace Neo.Network.P2P
             this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
 
-            var capabilities = new Dictionary<NodeCapabilities, INodeCapability>();
+            var capabilities = new List<INodeCapability>();
 
-            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(NodeCapabilities.TcpPort, new UInt16Capability((ushort)LocalNode.Singleton.ListenerTcpPort));
-            if (LocalNode.Singleton.ListenerUdpPort > 0) capabilities.Add(NodeCapabilities.UdpPort, new UInt16Capability((ushort)LocalNode.Singleton.ListenerUdpPort));
-            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(NodeCapabilities.WebsocketPort, new UInt16Capability((ushort)LocalNode.Singleton.ListenerWsPort));
+            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(ServerCapability.ChannelType.Tcp, (ushort)LocalNode.Singleton.ListenerTcpPort));
+            if (LocalNode.Singleton.ListenerUdpPort > 0) capabilities.Add(new ServerCapability(ServerCapability.ChannelType.Udp, (ushort)LocalNode.Singleton.ListenerUdpPort));
+            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(ServerCapability.ChannelType.Websocket, (ushort)LocalNode.Singleton.ListenerWsPort));
 
             SendMessage(Message.Create(MessageCommand.Version,
                 VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, Blockchain.Singleton.Height, capabilities)));

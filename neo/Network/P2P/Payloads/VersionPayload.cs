@@ -24,7 +24,7 @@ namespace Neo.Network.P2P.Payloads
         public uint Nonce;
         public string UserAgent;
         public uint StartHeight;
-        public Dictionary<NodeCapabilities, INodeCapability> Capabilities;
+        public List<INodeCapability> Capabilities;
 
         public int Size =>
             sizeof(uint) +              //Magic
@@ -34,9 +34,9 @@ namespace Neo.Network.P2P.Payloads
             sizeof(uint) +              //Nonce
             UserAgent.GetVarSize() +    //UserAgent
             sizeof(uint) +              //StartHeight
-            (IO.Helper.GetVarSize(Capabilities.Count) + Capabilities.Values.Sum(u => 1 /*key*/ + u.Size)); //Capabilities
+            (IO.Helper.GetVarSize(Capabilities.Count) + Capabilities.Sum(u => 1 /* Type */ + u.Size)); //Capabilities
 
-        public static VersionPayload Create(uint nonce, string userAgent, uint startHeight, Dictionary<NodeCapabilities, INodeCapability> capabilities)
+        public static VersionPayload Create(uint nonce, string userAgent, uint startHeight, List<INodeCapability> capabilities)
         {
             return new VersionPayload
             {
@@ -63,7 +63,7 @@ namespace Neo.Network.P2P.Payloads
 
             // Capabilities
 
-            Capabilities = new Dictionary<NodeCapabilities, INodeCapability>();
+            Capabilities = new List<INodeCapability>();
 
             for (var x = reader.ReadVarInt(MaxCapabilities); x > 0; x--)
             {
@@ -77,7 +77,7 @@ namespace Neo.Network.P2P.Payloads
                 var value = (INodeCapability)Activator.CreateInstance(objType);
                 value.Deserialize(reader);
 
-                Capabilities.Add((NodeCapabilities)type, value);
+                Capabilities.Add(value);
             }
         }
 
@@ -94,10 +94,10 @@ namespace Neo.Network.P2P.Payloads
             // Capabilities
 
             writer.WriteVarInt(Capabilities.Count);
-            foreach (var keyValue in Capabilities)
+            foreach (var value in Capabilities)
             {
-                writer.Write((byte)keyValue.Key);
-                keyValue.Value.Serialize(writer);
+                writer.Write((byte)value.Type);
+                value.Serialize(writer);
             }
         }
     }
