@@ -297,20 +297,15 @@ namespace Neo.Network.P2P.Payloads
             if (SystemFee > Fixed8.Zero && (results_destroy.Length == 0 || results_destroy[0].Amount < SystemFee))
                 return false;
             TransactionResult[] results_issue = results.Where(p => p.Amount < Fixed8.Zero).ToArray();
-            switch (Type)
+            if (Type == TransactionType.MinerTransaction)
             {
-                case TransactionType.MinerTransaction:
-                    if (results_issue.Any(p => p.AssetId != Blockchain.UtilityToken.Hash))
-                        return false;
-                    break;
-                case TransactionType.IssueTransaction:
-                    if (results_issue.Any(p => p.AssetId == Blockchain.UtilityToken.Hash))
-                        return false;
-                    break;
-                default:
-                    if (results_issue.Length > 0)
-                        return false;
-                    break;
+                if (results_issue.Any(p => p.AssetId != Blockchain.UtilityToken.Hash))
+                    return false;
+            }
+            else
+            {
+                if (results_issue.Length > 0)
+                    return false;
             }
             if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
                 return false;

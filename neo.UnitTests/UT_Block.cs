@@ -1,10 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract;
-using Neo.VM;
 using System.IO;
 using System.Text;
 
@@ -72,47 +69,6 @@ namespace Neo.UnitTests
             // blockbase 4 + 32 + 32 + 4 + 4 + 8 + 20 + 1 + 3
             // block 1
             uut.Size.Should().Be(109);
-        }
-
-        private IssueTransaction getIssueTransaction(bool inputVal, decimal outputVal, UInt256 assetId)
-        {
-
-            CoinReference[] inputsVal;
-            if (inputVal)
-            {
-                inputsVal = new[]
-                {
-                    TestUtils.GetCoinReference(null)
-                };
-            }
-            else
-            {
-                inputsVal = new CoinReference[0];
-            }
-
-
-            return new IssueTransaction
-            {
-                Attributes = new TransactionAttribute[0],
-                Inputs = inputsVal,
-                Outputs = new[]
-                {
-                    new TransactionOutput
-                    {
-                        AssetId = assetId,
-                        Value = Fixed8.FromDecimal(outputVal),
-                        ScriptHash = Contract.CreateMultiSigRedeemScript(1, TestUtils.StandbyValidators).ToScriptHash()
-                    }
-                },
-                Witnesses = new[]
-                {
-                    new Witness
-                    {
-                        InvocationScript = new byte[0],
-                        VerificationScript = new[] { (byte)OpCode.PUSHT }
-                    }
-                }
-            };
         }
 
         [TestMethod]
