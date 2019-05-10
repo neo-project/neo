@@ -1,4 +1,5 @@
 ﻿using Akka.Actor;
+using Akka.IO;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -30,13 +31,13 @@ namespace Neo.Network.P2P
         public static readonly uint Nonce;
         public static string UserAgent { get; set; }
 
-        private static LocalNode singleton { get; set; }
+        private static LocalNode _singleton;
         public static LocalNode Singleton
         {
             get
             {
-                while (singleton == null) Thread.Sleep(10);
-                return singleton;
+                while (_singleton == null) Thread.Sleep(10);
+                return _singleton;
             }
         }
 
@@ -51,10 +52,10 @@ namespace Neo.Network.P2P
         {
             lock (lockObj)
             {
-                if (singleton != null)
+                if (_singleton != null)
                     throw new InvalidOperationException();
                 this.system = system;
-                singleton = this;
+                _singleton = this;
             }
         }
 
@@ -75,7 +76,7 @@ namespace Neo.Network.P2P
             IPHostEntry entry;
             try
             {
-                entry = Dns.GetHostEntry(hostNameOrAddress);
+                entry = System.Net.Dns.GetHostEntry(hostNameOrAddress);
             }
             catch (SocketException)
             {
@@ -153,6 +154,44 @@ namespace Neo.Network.P2P
                     break;
                 case RelayResultReason _:
                     break;
+            }
+        }
+
+        protected override void OnUdpMessage(IPEndPoint remote, ByteString data)
+        {
+            if (Message.TryDeserialize(data, out var msg) != data.Count) return;
+
+            switch (msg.Command)
+            {
+                case MessageCommand.Transaction:
+                    {
+                        if (msg.Payload.Size <= Transaction.MaxTransactionSize)
+                            system.LocalNode.Tell(new LocalNode.Relay { Inventory = (Transaction)msg.Payload });
+
+                        break;
+                    }
+                case MessageCommand.Ping:
+                    {
+                        var payload = (PingPayload)msg.Payload;
+                        msg = Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce));
+                        SendUdp(remote, ByteString.FromBytes(msg.ToArray()));
+                        break;
+                    }
+                case MessageCommand.GetAddr:
+                    {
+                        Random rand = new Random();
+                        IEnumerable<RemoteNode> peers = LocalNode.Singleton.RemoteNodes.Values
+                            .Where(p => p.ListenerPort > 0)
+                            .GroupBy(p => p.Remote.Address, (k, g) => g.First())
+                            .OrderBy(p => rand.Next())
+                            .Take(AddrPayload.MaxCountToSend);
+                        NetworkAddressWithTime[] networkAddresses = peers.Select(p => NetworkAddressWithTime.Create(p.Listener, p.Version.Services, p.Version.Timestamp)).ToArray();
+                        if (networkAddresses.Length == 0) return;
+
+                        msg = Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses));
+                        SendUdp(remote, ByteString.FromBytes(msg.ToArray()));
+                        break;
+                    }
             }
         }
 

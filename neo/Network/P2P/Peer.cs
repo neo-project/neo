@@ -3,6 +3,9 @@ using Akka.IO;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Neo.IO;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -18,7 +21,6 @@ namespace Neo.Network.P2P
 {
     public abstract class Peer : UntypedActor
     {
-        public class Start { public int Port; public int WsPort; public int MinDesiredConnections; public int MaxConnections; public int MaxConnectionsPerAddress; }
         public class Peers { public IEnumerable<IPEndPoint> EndPoints; }
         public class Connect { public IPEndPoint EndPoint; public bool IsTrusted = false; }
         private class Timer { }
@@ -28,7 +30,10 @@ namespace Neo.Network.P2P
         public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
 
         private static readonly IActorRef tcp_manager = Context.System.Tcp();
+        private static readonly IActorRef udp_manager = Context.System.Udp();
+
         private IActorRef tcp_listener;
+        private IActorRef udp_listener;
         private IWebHost ws_host;
         private ICancelable timer;
         protected ActorSelection Connections => Context.ActorSelection("connection_*");
@@ -101,8 +106,14 @@ namespace Neo.Network.P2P
         {
             switch (message)
             {
-                case Start start:
-                    OnStart(start.Port, start.WsPort, start.MinDesiredConnections, start.MaxConnections, start.MaxConnectionsPerAddress);
+                case NodeStartConfig start:
+                    OnStart
+                        (
+                        start.Tcp != null && start.Tcp.IsValid ? start.Tcp.EndPoint : null,
+                        start.Udp != null && start.Udp.IsValid ? start.Udp.EndPoint : null,
+                        start.WebSocket != null && start.WebSocket.IsValid ? start.WebSocket.EndPoint : null,
+                        start.MinDesiredConnections, start.MaxConnections, start.MaxConnectionsPerAddress
+                        );
                     break;
                 case Timer _:
                     OnTimer();
@@ -122,6 +133,12 @@ namespace Neo.Network.P2P
                 case Tcp.Bound _:
                     tcp_listener = Sender;
                     break;
+                case Udp.Bound _:
+                    udp_listener = Sender;
+                    break;
+                case Udp.Received udpmsg:
+                    OnUdpMessage((IPEndPoint)udpmsg.Sender, udpmsg.Data);
+                    break;
                 case Tcp.CommandFailed commandFailed:
                     OnTcpCommandFailed(commandFailed.Cmd);
                     break;
@@ -131,38 +148,55 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnStart(int port, int wsPort, int minDesiredConnections, int maxConnections, int maxConnectionsPerAddress)
+        private void OnStart(IPEndPoint tcp, IPEndPoint udp, IPEndPoint ws, int minDesiredConnections, int maxConnections, int maxConnectionsPerAddress)
         {
-            ListenerPort = port;
+            ListenerPort = tcp == null ? 0 : tcp.Port;
             MinDesiredConnections = minDesiredConnections;
             MaxConnections = maxConnections;
             MaxConnectionsPerAddress = maxConnectionsPerAddress;
 
             timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
-            if ((port > 0 || wsPort > 0)
+            if ((ListenerPort > 0 || (ws != null && ws.Port > 0))
                 && localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
                 && UPnP.Discover())
             {
                 try
                 {
                     localAddresses.Add(UPnP.GetExternalIP());
-                    if (port > 0)
-                        UPnP.ForwardPort(port, ProtocolType.Tcp, "NEO");
-                    if (wsPort > 0)
-                        UPnP.ForwardPort(wsPort, ProtocolType.Tcp, "NEO WebSocket");
+                    if (ListenerPort > 0)
+                        UPnP.ForwardPort(ListenerPort, ProtocolType.Tcp, "NEO");
+                    if (ws != null && ws.Port > 0)
+                        UPnP.ForwardPort(ws.Port, ProtocolType.Tcp, "NEO WebSocket");
                 }
                 catch { }
             }
-            if (port > 0)
+            if (ListenerPort > 0)
             {
-                tcp_manager.Tell(new Tcp.Bind(Self, new IPEndPoint(IPAddress.Any, port), options: new[] { new Inet.SO.ReuseAddress(true) }));
+                tcp_manager.Tell(new Tcp.Bind(Self, tcp, options: new[] { new Inet.SO.ReuseAddress(true) }));
             }
-            if (wsPort > 0)
+            if (ws != null && ws.Port > 0)
             {
-                ws_host = new WebHostBuilder().UseKestrel().UseUrls($"http://*:{wsPort}").Configure(app => app.UseWebSockets().Run(ProcessWebSocketAsync)).Build();
+                var host = "*";
+
+                if (!ws.Address.GetAddressBytes().SequenceEqual(IPAddress.Any.GetAddressBytes()))
+                {
+                    // Is not for all interfaces
+
+                    host = ws.Address.ToString();
+                }
+
+                ws_host = new WebHostBuilder().UseKestrel().UseUrls($"http://{host}:{ws.Port}").Configure(app => app.UseWebSockets().Run(ProcessWebSocketAsync)).Build();
                 ws_host.Start();
             }
+            if (udp != null && udp.Port > 0)
+            {
+                udp_manager.Tell(new Udp.Bind(Self, udp));
+            }
         }
+
+        protected virtual void OnUdpMessage(IPEndPoint remote, ByteString data) { }
+
+        protected void SendUdp(IPEndPoint remote, ByteString data) => udp_listener.Tell(Udp.Send.Create(data, remote));
 
         private void OnTcpConnected(IPEndPoint remote, IPEndPoint local)
         {
@@ -243,6 +277,7 @@ namespace Neo.Network.P2P
             timer.CancelIfNotNull();
             ws_host?.Dispose();
             tcp_listener?.Tell(Tcp.Unbind.Instance);
+            udp_listener?.Tell(Tcp.Unbind.Instance);
             base.PostStop();
         }
 

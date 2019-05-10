@@ -28,7 +28,7 @@ namespace Neo
         public RpcServer RpcServer { get; private set; }
 
         private readonly Store store;
-        private Peer.Start start_message = null;
+        private NodeStartConfig start_message = null;
         private bool suspend = false;
 
         public NeoSystem(Store store)
@@ -74,17 +74,10 @@ namespace Neo
             Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);
         }
 
-        public void StartNode(int port = 0, int wsPort = 0, int minDesiredConnections = Peer.DefaultMinDesiredConnections,
-            int maxConnections = Peer.DefaultMaxConnections, int maxConnectionsPerAddress = 3)
+        public void StartNode(NodeStartConfig cfg)
         {
-            start_message = new Peer.Start
-            {
-                Port = port,
-                WsPort = wsPort,
-                MinDesiredConnections = minDesiredConnections,
-                MaxConnections = maxConnections,
-                MaxConnectionsPerAddress = maxConnectionsPerAddress
-            };
+            start_message = cfg;
+
             if (!suspend)
             {
                 LocalNode.Tell(start_message);
