@@ -430,7 +430,7 @@ namespace Neo.Consensus
                         context.CommitPayloads[i] = null;
             Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
-            foreach (UInt256 hash in context.TransactionHashes.Skip(1))
+            foreach (UInt256 hash in context.TransactionHashes)
             {
                 if (mempoolVerified.TryGetValue(hash, out Transaction tx))
                 {
@@ -446,7 +446,6 @@ namespace Neo.Consensus
             foreach (Transaction tx in unverified)
                 if (!AddTransaction(tx, true))
                     return;
-            if (!AddTransaction(message.MinerTransaction, true)) return;
             if (context.Transactions.Count < context.TransactionHashes.Length)
             {
                 UInt256[] hashes = context.TransactionHashes.Where(i => !context.Transactions.ContainsKey(i)).ToArray();
@@ -564,7 +563,6 @@ namespace Neo.Consensus
 
         private void OnTransaction(Transaction transaction)
         {
-            if (transaction.Type == TransactionType.MinerTransaction) return;
             if (!context.IsBackup() || context.NotAcceptingPayloadsDueToViewChanging() || !context.RequestSentOrReceived() || context.ResponseSent() || context.BlockSent())
                 return;
             if (context.Transactions.ContainsKey(transaction.Hash)) return;
@@ -621,9 +619,9 @@ namespace Neo.Consensus
             if (context.Validators.Length == 1)
                 CheckPreparations();
 
-            if (context.TransactionHashes.Length > 1)
+            if (context.TransactionHashes.Length > 0)
             {
-                foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes.Skip(1).ToArray()))
+                foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes))
                     localNode.Tell(Message.Create(MessageCommand.Inv, payload));
             }
             ChangeTimer(TimeSpan.FromSeconds((Blockchain.SecondsPerBlock << (context.ViewNumber + 1)) - (context.ViewNumber == 0 ? Blockchain.SecondsPerBlock : 0)));
@@ -633,9 +631,6 @@ namespace Neo.Consensus
         {
             if (!Blockchain.GetConsensusAddress(context.Snapshot.GetValidators().ToArray()).Equals(context.NextConsensus))
                 return false;
-            Transaction minerTx = context.Transactions.Values.FirstOrDefault(p => p.Type == TransactionType.MinerTransaction);
-            Fixed8 amountNetFee = Block.CalculateNetFee(context.Transactions.Values);
-            if (minerTx?.Outputs.Sum(p => p.Value) != amountNetFee) return false;
             return true;
         }
     }

@@ -12,14 +12,12 @@ namespace Neo.Consensus
         public ulong Nonce;
         public UInt160 NextConsensus;
         public UInt256[] TransactionHashes;
-        public MinerTransaction MinerTransaction;
 
         public override int Size => base.Size
             + sizeof(uint)                      //Timestamp
             + sizeof(ulong)                     //Nonce
             + NextConsensus.Size                //NextConsensus
-            + TransactionHashes.GetVarSize()    //TransactionHashes
-            + MinerTransaction.Size;            //MinerTransaction
+            + TransactionHashes.GetVarSize();   //TransactionHashes
 
         public PrepareRequest()
             : base(ConsensusMessageType.PrepareRequest)
@@ -35,9 +33,6 @@ namespace Neo.Consensus
             TransactionHashes = reader.ReadSerializableArray<UInt256>(Block.MaxTransactionsPerBlock);
             if (TransactionHashes.Distinct().Count() != TransactionHashes.Length)
                 throw new FormatException();
-            MinerTransaction = reader.ReadSerializable<MinerTransaction>();
-            if (MinerTransaction.Hash != TransactionHashes[0])
-                throw new FormatException();
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -47,7 +42,6 @@ namespace Neo.Consensus
             writer.Write(Nonce);
             writer.Write(NextConsensus);
             writer.Write(TransactionHashes);
-            writer.Write(MinerTransaction);
         }
     }
 }
