@@ -4,8 +4,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Neo.IO;
-using Neo.Ledger;
-using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -194,7 +192,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        protected virtual void OnUdpMessage(IPEndPoint remote, ByteString data) { }
+        protected abstract void OnUdpMessage(IPEndPoint remote, ByteString data) { }
 
         protected void SendUdp(IPEndPoint remote, ByteString data) => udp_listener.Tell(Udp.Send.Create(data, remote));
 
