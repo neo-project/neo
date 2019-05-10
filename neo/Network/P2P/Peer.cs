@@ -192,7 +192,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        protected abstract void OnUdpMessage(IPEndPoint remote, ByteString data) { }
+        protected abstract void OnUdpMessage(IPEndPoint remote, ByteString data);
 
         protected void SendUdp(IPEndPoint remote, ByteString data) => udp_listener.Tell(Udp.Send.Create(data, remote));
 
