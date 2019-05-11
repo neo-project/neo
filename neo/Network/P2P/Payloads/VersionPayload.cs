@@ -27,14 +27,14 @@ namespace Neo.Network.P2P.Payloads
         public NodeCapabilityBase[] Capabilities;
 
         public int Size =>
-            sizeof(uint) +              //Magic
-            sizeof(uint) +              //Version
-            sizeof(VersionServices) +   //Services
-            sizeof(uint) +              //Timestamp
-            sizeof(uint) +              //Nonce
-            UserAgent.GetVarSize() +    //UserAgent
-            sizeof(uint) +              //StartHeight
-            Capabilities.GetVarSize();  //Capabilities
+            sizeof(uint) +              // Magic
+            sizeof(uint) +              // Version
+            sizeof(VersionServices) +   // Services
+            sizeof(uint) +              // Timestamp
+            sizeof(uint) +              // Nonce
+            UserAgent.GetVarSize() +    // UserAgent
+            sizeof(uint) +              // StartHeight
+            Capabilities.GetVarSize();  // Capabilities
 
         public static VersionPayload Create(uint nonce, string userAgent, uint startHeight, IEnumerable<NodeCapabilityBase> capabilities)
         {
