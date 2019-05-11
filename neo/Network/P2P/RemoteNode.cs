@@ -30,7 +30,7 @@ namespace Neo.Network.P2P
         public override int ListenerTcpPort => Version?.Capabilities
             .Where(u => u.Type == NodeCapabilities.Server)
             .Cast<ServerCapability>()
-            .First()?.Value ?? 0;
+            .First()?.Port ?? 0;
         public VersionPayload Version { get; private set; }
         public uint LastBlockIndex { get; private set; }
 
@@ -41,7 +41,7 @@ namespace Neo.Network.P2P
             this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
 
-            var capabilities = new List<INodeCapability>();
+            var capabilities = new List<NodeCapabilityBase>();
 
             if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(ServerCapability.ChannelType.Tcp, (ushort)LocalNode.Singleton.ListenerTcpPort));
             if (LocalNode.Singleton.ListenerUdpPort > 0) capabilities.Add(new ServerCapability(ServerCapability.ChannelType.Udp, (ushort)LocalNode.Singleton.ListenerUdpPort));

@@ -24,7 +24,7 @@ namespace Neo.Network.P2P.Payloads
         public uint Nonce;
         public string UserAgent;
         public uint StartHeight;
-        public List<INodeCapability> Capabilities;
+        public NodeCapabilityBase[] Capabilities;
 
         public int Size =>
             sizeof(uint) +              //Magic
@@ -34,9 +34,9 @@ namespace Neo.Network.P2P.Payloads
             sizeof(uint) +              //Nonce
             UserAgent.GetVarSize() +    //UserAgent
             sizeof(uint) +              //StartHeight
-            (IO.Helper.GetVarSize(Capabilities.Count) + Capabilities.Sum(u => 1 /* Type */ + u.Size)); //Capabilities
+            Capabilities.GetVarSize();  //Capabilities
 
-        public static VersionPayload Create(uint nonce, string userAgent, uint startHeight, List<INodeCapability> capabilities)
+        public static VersionPayload Create(uint nonce, string userAgent, uint startHeight, IEnumerable<NodeCapabilityBase> capabilities)
         {
             return new VersionPayload
             {
@@ -47,7 +47,7 @@ namespace Neo.Network.P2P.Payloads
                 Nonce = nonce,
                 UserAgent = userAgent,
                 StartHeight = startHeight,
-                Capabilities = capabilities,
+                Capabilities = capabilities.ToArray(),
             };
         }
 
@@ -63,21 +63,21 @@ namespace Neo.Network.P2P.Payloads
 
             // Capabilities
 
-            Capabilities = new List<INodeCapability>();
+            Capabilities = new NodeCapabilityBase[reader.ReadVarInt(MaxCapabilities)];
 
-            for (var x = reader.ReadVarInt(MaxCapabilities); x > 0; x--)
+            for (int x = 0, max = Capabilities.Length; x < max; x++)
             {
-                var type = reader.ReadByte();
+                var type = reader.PeekChar();
 
-                if (!ReflectionCache.TryGetValue(type, out var objType))
+                if (!ReflectionCache.TryGetValue((byte)type, out var objType))
                 {
                     throw new FormatException();
                 }
 
-                var value = (INodeCapability)Activator.CreateInstance(objType);
+                var value = (NodeCapabilityBase)Activator.CreateInstance(objType);
                 value.Deserialize(reader);
 
-                Capabilities.Add(value);
+                Capabilities[x] = value;
             }
         }
 
@@ -93,10 +93,9 @@ namespace Neo.Network.P2P.Payloads
 
             // Capabilities
 
-            writer.WriteVarInt(Capabilities.Count);
+            writer.WriteVarInt(Capabilities.Length);
             foreach (var value in Capabilities)
             {
-                writer.Write((byte)value.Type);
                 value.Serialize(writer);
             }
         }

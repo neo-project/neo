@@ -2,7 +2,7 @@
 
 namespace Neo.Network.P2P.Capabilities
 {
-    public class ServerCapability : INodeCapability
+    public class ServerCapability : NodeCapabilityBase
     {
         public enum ChannelType : byte
         {
@@ -12,37 +12,42 @@ namespace Neo.Network.P2P.Capabilities
         }
 
         public ChannelType Channel { get; set; }
-        public ushort Value { get; set; }
-        public int Size => sizeof(ushort);
-
-        public NodeCapabilities Type => NodeCapabilities.Server;
-
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        public ServerCapability() { }
+        public ushort Port { get; set; }
+        public override int Size =>
+            base.Size +     // Type
+            sizeof(byte) +  // Channel
+            sizeof(ushort); //Port
 
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="type">Type</param>
-        /// <param name="value">Value</param>
-        public ServerCapability(ChannelType type, ushort value)
+        public ServerCapability() : base(NodeCapabilities.Server) { }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="type">Channel</param>
+        /// <param name="port">Port</param>
+        public ServerCapability(ChannelType type, ushort port) : base(NodeCapabilities.Server)
         {
             Channel = type;
-            Value = value;
+            Port = port;
         }
 
-        public void Deserialize(BinaryReader reader)
+        public override void Deserialize(BinaryReader reader)
         {
+            base.Deserialize(reader);
+
             Channel = (ChannelType)reader.ReadByte();
-            Value = reader.ReadUInt16();
+            Port = reader.ReadUInt16();
         }
 
-        public void Serialize(BinaryWriter writer)
+        public override void Serialize(BinaryWriter writer)
         {
+            base.Serialize(writer);
+
             writer.Write((byte)Type);
-            writer.Write(Value);
+            writer.Write(Port);
         }
     }
 }

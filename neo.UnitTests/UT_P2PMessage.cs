@@ -88,10 +88,11 @@ namespace Neo.UnitTests
                 StartHeight = 4,
                 Timestamp = 5,
                 Version = 6,
-                Capabilities = new List<INodeCapability>()
+                Capabilities = new NodeCapabilityBase[]
+                {
+                    new ServerCapability(ServerCapability.ChannelType.Tcp, 25)
+                }
             };
-
-            payload.Capabilities.Add(new ServerCapability(ServerCapability.ChannelType.Tcp, 25));
 
             var msg = Message.Create(MessageCommand.Version, payload);
             var buffer = msg.ToArray();
@@ -112,9 +113,9 @@ namespace Neo.UnitTests
             payloadCopy.Timestamp.Should().Be(payload.Timestamp);
             payloadCopy.Version.Should().Be(payload.Version);
 
-            payloadCopy.Capabilities.Count.Should().Be(1);
+            payloadCopy.Capabilities.Length.Should().Be(1);
             ((ServerCapability)payloadCopy.Capabilities[0]).Channel.Should().Be(ServerCapability.ChannelType.Tcp);
-            ((ServerCapability)payloadCopy.Capabilities[0]).Value.Should().Be(25);
+            ((ServerCapability)payloadCopy.Capabilities[0]).Port.Should().Be(25);
 
         }
     }
