@@ -17,7 +17,7 @@ namespace Neo.Network.P2P.Payloads
     {
         public const int MaxTransactionSize = 102400;
         /// <summary>
-        /// Maximum number of attributes that can be contained within a transaction
+        /// Maximum number of cosigners that can be contained within a transaction
         /// </summary>
         private const int MaxCosigners = 16;
 
