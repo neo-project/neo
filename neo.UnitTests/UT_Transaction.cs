@@ -38,13 +38,13 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Gas_Get()
         {
-            uut.Gas.Should().Be(Fixed8.Zero);
+            uut.Gas.Should().Be(0);
         }
 
         [TestMethod]
         public void Gas_Set()
         {
-            Fixed8 val = Fixed8.FromDecimal(42);
+            long val = 4200000000;
             uut.Gas = val;
             uut.Gas.Should().Be(val);
         }
@@ -61,7 +61,7 @@ namespace Neo.UnitTests
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
             uut.Script.GetVarSize().Should().Be(33);
-            uut.Size.Should().Be(44);
+            uut.Size.Should().Be(52);
         }
 
         [TestMethod]
@@ -69,7 +69,7 @@ namespace Neo.UnitTests
         {
             byte[] scriptVal = TestUtils.GetByteArray(32, 0x42);
             uut.Script = scriptVal;
-            Fixed8 gasVal = Fixed8.FromDecimal(42);
+            long gasVal = 4200000000;
             uut.Gas = gasVal;
 
             uut.Cosigners = new UInt160[0];
@@ -77,8 +77,8 @@ namespace Neo.UnitTests
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["txid"].AsString().Should().Be("0x30ea0d48a186e1ca99d8f072cac8cb9905af4c1428b0904a2c516554ea9032cf");
-            jObj["size"].AsNumber().Should().Be(44);
+            jObj["txid"].AsString().Should().Be("0x13968617bebc4f17c9adfd8c30f5c18d73edce9beb332937ead4b1cf6cca6851");
+            jObj["size"].AsNumber().Should().Be(52);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["cosigners"]).Count.Should().Be(0);
             jObj["net_fee"].AsString().Should().Be("0");

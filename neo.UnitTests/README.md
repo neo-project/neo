@@ -17,13 +17,10 @@ With .NET Core SDK installed, use the CLI to navigate to the neo.UnitTest folder
 Coverage
 ====================
 
-* Base
-	* Fixed8.cs
-* Core
-	* Block.cs - Some code coverage missing on the Verify() method.
-	* Header.cs
-	* Helper.cs
-	* StorageItem.cs
-	* StorageKey.cs
-	* Transaction.cs
-	* Witness.cs
+* Block.cs - Some code coverage missing on the Verify() method.
+* Header.cs
+* Helper.cs
+* StorageItem.cs
+* StorageKey.cs
+* Transaction.cs
+* Witness.cs

@@ -86,7 +86,7 @@ namespace Neo.UnitTests
 
             // System.Runtime.CheckWitness: f827ec8c (price is 200)
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[]{0x68, 0x04, 0xf8, 0x27, 0xec, 0x8c};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0) )
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
                 GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(200L);
@@ -94,7 +94,7 @@ namespace Neo.UnitTests
 
             // "System.Runtime.CheckWitness" (27 bytes -> 0x1b) - (price is 200)
             byte[] SyscallSystemRuntimeCheckWitnessString = new byte[]{0x68, 0x1b, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x2e, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x2e, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x57, 0x69, 0x74, 0x6e, 0x65, 0x73, 0x73};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0) )
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessString);
                 GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(200L);
@@ -102,7 +102,7 @@ namespace Neo.UnitTests
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
             byte[] SyscallSystemStorageGetContextHash = new byte[]{0x68, 0x04, 0x9b, 0xf6, 0x67, 0xce};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0) )
             {
                 ae.LoadScript(SyscallSystemStorageGetContextHash);
                 GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(1L);
@@ -110,7 +110,7 @@ namespace Neo.UnitTests
 
             // System.Storage.Get: 925de831 (price is 100)
             byte[] SyscallSystemStorageGetHash = new byte[]{0x68, 0x04, 0x92, 0x5d, 0xe8, 0x31};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0) )
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
                 GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(100L);
@@ -125,7 +125,7 @@ namespace Neo.UnitTests
 
             // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
             byte[] SyscallContractCreateHash00 = new byte[]{(byte)ContractPropertyState.NoProperty, 0x00, 0x00, 0x00, 0x68, 0x04, 0xf6, 0x6c, 0xa5, 0x6e};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0) )
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(SyscallContractCreateHash00);
@@ -138,7 +138,7 @@ namespace Neo.UnitTests
 
             // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
             byte[] SyscallContractCreateHash01 = new byte[]{0x51, 0x00, 0x00, 0x00, 0x68, 0x04, 0xf6, 0x6c, 0xa5, 0x6e};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0) )
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(SyscallContractCreateHash01);
@@ -151,7 +151,7 @@ namespace Neo.UnitTests
 
             // Neo.Contract.Migrate: 471b6290 (requires push properties on fourth position)
             byte[] SyscallContractMigrateHash00 = new byte[]{(byte)ContractPropertyState.NoProperty, 0x00, 0x00, 0x00, 0x68, 0x04, 0x47, 0x1b, 0x62, 0x90};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0) )
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(SyscallContractMigrateHash00);
@@ -164,7 +164,7 @@ namespace Neo.UnitTests
 
             // System.Storage.Put: e63f1884 (requires push key and value)
             byte[] SyscallStoragePutHash = new byte[]{0x53, 0x53, 0x00, 0x68, 0x04, 0xe6, 0x3f, 0x18, 0x84};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0) )
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(SyscallStoragePutHash);
@@ -176,7 +176,7 @@ namespace Neo.UnitTests
 
             // System.Storage.PutEx: 73e19b3a (requires push key and value)
             byte[] SyscallStoragePutExHash = new byte[]{0x53, 0x53, 0x00, 0x68, 0x04, 0x73, 0xe1, 0x9b, 0x3a};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero) )
+            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0) )
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(SyscallStoragePutExHash);

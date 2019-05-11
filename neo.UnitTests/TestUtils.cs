@@ -1,10 +1,7 @@
-﻿using Moq;
-using Neo.IO;
+﻿using Neo.IO;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.VM;
 using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace Neo.UnitTests
@@ -28,7 +25,7 @@ namespace Neo.UnitTests
         {
             return new Transaction
             {
-                Gas = Fixed8.Zero,
+                Gas = 0,
                 Script = new byte[1],
                 Cosigners = new UInt160[0],
                 Witnesses = new Witness[0]
@@ -59,7 +56,7 @@ namespace Neo.UnitTests
         private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal)
         {
             bb.PrevHash = val256;
-            merkRootVal = new UInt256(new byte[] { 160, 214, 120, 55, 32, 197, 172, 12, 66, 128, 70, 253, 223, 67, 28, 149, 204, 183, 151, 147, 119, 228, 130, 76, 223, 196, 14, 184, 197, 163, 28, 92 });
+            merkRootVal = new UInt256(new byte[] { 169, 106, 72, 65, 146, 118, 185, 97, 126, 3, 69, 99, 127, 206, 73, 158, 185, 246, 74, 178, 7, 59, 145, 123, 41, 219, 204, 53, 148, 16, 255, 13 });
             bb.MerkleRoot = merkRootVal;
             timestampVal = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp();
             bb.Timestamp = timestampVal;
@@ -77,21 +74,16 @@ namespace Neo.UnitTests
             bb.Witness = scriptVal;
         }
 
-        public static Mock<Transaction> CreateRandomHashMockTransaction()
+        public static Transaction CreateRandomHashTransaction()
         {
-            var mockTx = new Mock<Transaction>
-            {
-                CallBase = true
-            };
-            mockTx.Setup(p => p.Verify(It.IsAny<Snapshot>(), It.IsAny<IEnumerable<Transaction>>())).Returns(true);
-            var tx = mockTx.Object;
             var randomBytes = new byte[16];
             TestRandom.NextBytes(randomBytes);
-            tx.Script = randomBytes;
-            tx.Cosigners = new UInt160[0];
-            tx.Witnesses = new Witness[0];
-
-            return mockTx;
+            return new Transaction
+            {
+                Script = randomBytes,
+                Cosigners = new UInt160[0],
+                Witnesses = new Witness[0]
+            };
         }
 
         public static T CopyMsgBySerialization<T>(T serializableObj, T newObj) where T : ISerializable

@@ -141,7 +141,7 @@ namespace Neo.Ledger
             {
                 Version = 0,
                 Script = script,
-                Gas = Fixed8.Zero,
+                Gas = 0,
                 Cosigners = new UInt160[0],
                 Witnesses = new Witness[0]
             };

@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
 using System;
@@ -12,7 +13,7 @@ using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class Transaction : IEquatable<Transaction>, IInventory
+    public sealed class Transaction : IEquatable<Transaction>, IInventory
     {
         public const int MaxTransactionSize = 102400;
         /// <summary>
@@ -22,24 +23,16 @@ namespace Neo.Network.P2P.Payloads
 
         public byte Version;
         public byte[] Script;
-        public Fixed8 Gas;
+        public long Gas;
+        public long NetworkFee;
         public UInt160[] Cosigners;
         public Witness[] Witnesses { get; set; }
 
-        private Fixed8 _feePerByte = -Fixed8.Satoshi;
         /// <summary>
         /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
         /// <para>Note that this property must be used with care. Getting the value of this property multiple times will return the same result. The value of this property can only be obtained after the transaction has been completely built (no longer modified).</para>
         /// </summary>
-        public Fixed8 FeePerByte
-        {
-            get
-            {
-                if (_feePerByte == -Fixed8.Satoshi)
-                    _feePerByte = NetworkFee / Size;
-                return _feePerByte;
-            }
-        }
+        public long FeePerByte => NetworkFee / Size;
 
         private UInt256 _hash = null;
         public UInt256 Hash
@@ -58,18 +51,17 @@ namespace Neo.Network.P2P.Payloads
 
         public bool IsLowPriority => NetworkFee < ProtocolSettings.Default.LowPriorityThreshold;
 
-        public virtual Fixed8 NetworkFee => Fixed8.Zero;
-
-        public virtual int Size =>
+        public int Size =>
             sizeof(byte) +              //Version
             Script.GetVarSize() +       //Script
-            Gas.Size +                  //Gas
+            sizeof(long) +              //Gas
+            sizeof(long) +              //NetworkFee
             Cosigners.GetVarSize() +    //Cosigners
             Witnesses.GetVarSize();     //Witnesses
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            ((IVerifiable)this).DeserializeUnsigned(reader);
+            DeserializeUnsigned(reader);
             Witnesses = reader.ReadSerializableArray<Witness>();
         }
 
@@ -79,8 +71,10 @@ namespace Neo.Network.P2P.Payloads
             if (Version > 0) throw new FormatException();
             Script = reader.ReadVarBytes(65536);
             if (Script.Length == 0) throw new FormatException();
-            Gas = reader.ReadSerializable<Fixed8>();
-            if (Gas < Fixed8.Zero) throw new FormatException();
+            Gas = reader.ReadInt64();
+            if (Gas < 0) throw new FormatException();
+            NetworkFee = reader.ReadInt64();
+            if (NetworkFee < 0) throw new FormatException();
             Cosigners = reader.ReadSerializableArray<UInt160>(MaxCosigners);
             if (Cosigners.Distinct().Count() != Cosigners.Length)
                 throw new FormatException();
@@ -98,11 +92,17 @@ namespace Neo.Network.P2P.Payloads
             return Equals(obj as Transaction);
         }
 
-        public static Fixed8 GetGas(Fixed8 consumed)
+        public static long GetGas(long consumed)
         {
-            Fixed8 gas = consumed - Fixed8.FromDecimal(10);
-            if (gas <= Fixed8.Zero) return Fixed8.Zero;
-            return gas.Ceiling();
+            long d = (long)NativeContract.GAS.Factor;
+            long gas = consumed - 10 * d;
+            if (gas <= 0) return 0;
+            long remainder = gas % d;
+            if (remainder == 0) return gas;
+            if (remainder > 0)
+                return gas - remainder + d;
+            else
+                return gas - remainder;
         }
 
         public override int GetHashCode()
@@ -115,7 +115,7 @@ namespace Neo.Network.P2P.Payloads
             return this.GetHashData();
         }
 
-        public virtual UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+        public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
         {
             return Cosigners.OrderBy(p => p).ToArray();
         }
@@ -131,19 +131,20 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(Version);
             writer.WriteVarBytes(Script);
             writer.Write(Gas);
+            writer.Write(NetworkFee);
             writer.Write(Cosigners);
         }
 
-        public virtual JObject ToJson()
+        public JObject ToJson()
         {
             JObject json = new JObject();
             json["txid"] = Hash.ToString();
             json["size"] = Size;
             json["version"] = Version;
             json["script"] = Script.ToHexString();
-            json["gas"] = Gas.ToString();
+            json["gas"] = new BigDecimal(Gas, (byte)NativeContract.GAS.Decimals).ToString();
+            json["net_fee"] = new BigDecimal(NetworkFee, (byte)NativeContract.GAS.Decimals).ToString();
             json["cosigners"] = Cosigners.Select(p => (JObject)p.ToAddress()).ToArray();
-            json["net_fee"] = NetworkFee.ToString();
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;
         }
@@ -153,10 +154,10 @@ namespace Neo.Network.P2P.Payloads
             return Verify(snapshot, Enumerable.Empty<Transaction>());
         }
 
-        public virtual bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
+        public bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
         {
             if (Size > MaxTransactionSize) return false;
-            if (Gas.GetData() % 100000000 != 0) return false;
+            if (Gas % NativeContract.GAS.Factor != 0) return false;
             return this.VerifyWitnesses(snapshot);
         }
     }

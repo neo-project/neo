@@ -43,9 +43,9 @@ namespace Neo.UnitTests
 
         private Transaction CreateMockTransactionWithFee(long fee)
         {
-            var mockTx = TestUtils.CreateRandomHashMockTransaction();
-            mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(fee));
-            return mockTx.Object;
+            Transaction tx = TestUtils.CreateRandomHashTransaction();
+            tx.NetworkFee = fee;
+            return tx;
         }
 
         private Transaction CreateMockHighPriorityTransaction()
@@ -277,9 +277,9 @@ namespace Neo.UnitTests
         {
             var sortedVerified = _unit.GetSortedVerifiedTransactions().ToArray();
 
-            var txBarelyWontFit = CreateMockTransactionWithFee(sortedVerified.Last().NetworkFee.GetData() - 1);
+            var txBarelyWontFit = CreateMockTransactionWithFee(sortedVerified.Last().NetworkFee - 1);
             _unit.CanTransactionFitInPool(txBarelyWontFit).ShouldBeEquivalentTo(false);
-            var txBarelyFits = CreateMockTransactionWithFee(sortedVerified.Last().NetworkFee.GetData() + 1);
+            var txBarelyFits = CreateMockTransactionWithFee(sortedVerified.Last().NetworkFee + 1);
             _unit.CanTransactionFitInPool(txBarelyFits).ShouldBeEquivalentTo(true);
         }
 

@@ -9,7 +9,7 @@ namespace Neo
         public byte AddressVersion { get; }
         public string[] StandbyValidators { get; }
         public string[] SeedList { get; }
-        public Fixed8 LowPriorityThreshold { get; }
+        public long LowPriorityThreshold { get; }
         public uint SecondsPerBlock { get; }
 
         public static ProtocolSettings Default { get; }
@@ -51,7 +51,7 @@ namespace Neo
                     "seed5.neo.org:10333"
                 };
             this.SecondsPerBlock = section.GetValue("SecondsPerBlock", 15u);
-            this.LowPriorityThreshold = Fixed8.Parse(section.GetValue("LowPriorityThreshold", "0.001"));
+            this.LowPriorityThreshold = section.GetValue("LowPriorityThreshold", 100000L);
         }
     }
 }

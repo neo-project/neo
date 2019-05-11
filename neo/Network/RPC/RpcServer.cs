@@ -31,12 +31,12 @@ namespace Neo.Network.RPC
     public sealed class RpcServer : IDisposable
     {
         public Wallet Wallet { get; set; }
-        public Fixed8 MaxGasInvoke { get; }
+        public long MaxGasInvoke { get; }
 
         private IWebHost host;
         private readonly NeoSystem system;
 
-        public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8))
+        public RpcServer(NeoSystem system, Wallet wallet = null, long maxGasInvoke = default)
         {
             this.system = system;
             this.Wallet = wallet;

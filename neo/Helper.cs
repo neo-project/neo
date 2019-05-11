@@ -126,29 +126,11 @@ namespace Neo
             return new BigInteger(b);
         }
 
-        public static Fixed8 Sum(this IEnumerable<Fixed8> source)
-        {
-            long sum = 0;
-            checked
-            {
-                foreach (Fixed8 item in source)
-                {
-                    sum += item.value;
-                }
-            }
-            return new Fixed8(sum);
-        }
-
         public static BigInteger Sum(this IEnumerable<BigInteger> source)
         {
             var sum = BigInteger.Zero;
             foreach (var bi in source) sum += bi;
             return sum;
-        }
-
-        public static Fixed8 Sum<TSource>(this IEnumerable<TSource> source, Func<TSource, Fixed8> selector)
-        {
-            return source.Select(selector).Sum();
         }
 
         internal static bool TestBit(this BigInteger i, int index)
