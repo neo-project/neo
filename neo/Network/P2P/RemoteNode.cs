@@ -30,6 +30,7 @@ namespace Neo.Network.P2P
         public override int ListenerTcpPort => Version?.Capabilities
             .Where(u => u.Type == NodeCapabilities.Server)
             .Cast<ServerCapability>()
+            .Where(u => u.Channel == ServerCapability.ChannelType.Tcp)
             .First()?.Port ?? 0;
         public VersionPayload Version { get; private set; }
         public uint LastBlockIndex { get; private set; }
