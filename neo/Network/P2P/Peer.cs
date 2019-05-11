@@ -159,17 +159,17 @@ namespace Neo.Network.P2P
             MaxConnectionsPerAddress = maxConnectionsPerAddress;
 
             timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
-            if ((ListenerTcpPort > 0 || ListenerWsPort > 0)
+            if ((ListenerTcpPort > 0 || ListenerWsPort > 0 || ListenerUdpPort > 0)
                 && localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
                 && UPnP.Discover())
             {
                 try
                 {
                     localAddresses.Add(UPnP.GetExternalIP());
-                    if (ListenerTcpPort > 0)
-                        UPnP.ForwardPort(ListenerTcpPort, ProtocolType.Tcp, "NEO");
-                    if (ListenerWsPort > 0)
-                        UPnP.ForwardPort(ws.Port, ProtocolType.Tcp, "NEO WebSocket");
+
+                    if (ListenerTcpPort > 0) UPnP.ForwardPort(ListenerTcpPort, ProtocolType.Tcp, "NEO Tcp");
+                    if (ListenerUdpPort > 0) UPnP.ForwardPort(udp.Port, ProtocolType.Udp, "NEO Udp");
+                    if (ListenerWsPort > 0) UPnP.ForwardPort(ws.Port, ProtocolType.Tcp, "NEO WebSocket");
                 }
                 catch { }
             }
