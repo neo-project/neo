@@ -52,7 +52,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Size_Get()
         {
-            uut.Cosigners = new UInt160[0];
+            uut.Attributes = new TransactionAttribute[0];
             uut.Witnesses = new Witness[0];
 
             byte[] val = TestUtils.GetByteArray(32, 0x42);
@@ -72,7 +72,7 @@ namespace Neo.UnitTests
             long gasVal = 4200000000;
             uut.Gas = gasVal;
 
-            uut.Cosigners = new UInt160[0];
+            uut.Attributes = new TransactionAttribute[0];
             uut.Witnesses = new Witness[0];
 
             JObject jObj = uut.ToJson();
@@ -80,7 +80,7 @@ namespace Neo.UnitTests
             jObj["txid"].AsString().Should().Be("0x13968617bebc4f17c9adfd8c30f5c18d73edce9beb332937ead4b1cf6cca6851");
             jObj["size"].AsNumber().Should().Be(52);
             jObj["version"].AsNumber().Should().Be(0);
-            ((JArray)jObj["cosigners"]).Count.Should().Be(0);
+            ((JArray)jObj["attributes"]).Count.Should().Be(0);
             jObj["net_fee"].AsString().Should().Be("0");
             ((JArray)jObj["witnesses"]).Count.Should().Be(0);
 

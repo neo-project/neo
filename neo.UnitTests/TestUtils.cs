@@ -27,7 +27,7 @@ namespace Neo.UnitTests
             {
                 Gas = 0,
                 Script = new byte[1],
-                Cosigners = new UInt160[0],
+                Attributes = new TransactionAttribute[0],
                 Witnesses = new Witness[0]
             };
         }
@@ -81,7 +81,7 @@ namespace Neo.UnitTests
             return new Transaction
             {
                 Script = randomBytes,
-                Cosigners = new UInt160[0],
+                Attributes = new TransactionAttribute[0],
                 Witnesses = new Witness[0]
             };
         }

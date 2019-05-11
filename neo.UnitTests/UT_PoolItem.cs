@@ -139,7 +139,7 @@ namespace Neo.UnitTests
             {
                 Script = randomBytes,
                 NetworkFee = networkFee,
-                Cosigners = new UInt160[0],
+                Attributes = new TransactionAttribute[0],
                 Witnesses = new[]
                 {
                     new Witness
