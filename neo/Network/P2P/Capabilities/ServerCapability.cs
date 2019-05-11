@@ -12,11 +12,13 @@ namespace Neo.Network.P2P.Capabilities
         }
 
         public ChannelType Channel { get; set; }
+        
         public ushort Port { get; set; }
+        
         public override int Size =>
             base.Size +     // Type
             sizeof(byte) +  // Channel
-            sizeof(ushort); //Port
+            sizeof(ushort); // Port
 
         /// <summary>
         /// Constructor
