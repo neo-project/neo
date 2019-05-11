@@ -69,7 +69,7 @@ namespace Neo.Network.P2P.Payloads
         {
             Version = reader.ReadByte();
             if (Version > 0) throw new FormatException();
-            Script = reader.ReadVarBytes(65536);
+            Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
             Gas = reader.ReadInt64();
             if (Gas < 0) throw new FormatException();
