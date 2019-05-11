@@ -28,7 +28,7 @@ namespace Neo
         public RpcServer RpcServer { get; private set; }
 
         private readonly Store store;
-        private NodeStartConfig start_message = null;
+        private ChannelsStartConfig start_message = null;
         private bool suspend = false;
 
         public NeoSystem(Store store)
@@ -74,7 +74,7 @@ namespace Neo
             Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);
         }
 
-        public void StartNode(NodeStartConfig cfg)
+        public void StartNode(ChannelsStartConfig cfg)
         {
             start_message = cfg;
 

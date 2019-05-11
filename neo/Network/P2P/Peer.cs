@@ -106,7 +106,7 @@ namespace Neo.Network.P2P
         {
             switch (message)
             {
-                case NodeStartConfig start:
+                case ChannelsStartConfig start:
                     OnStart
                         (
                         start.Tcp != null && start.Tcp.IsValid ? start.Tcp.EndPoint : null,

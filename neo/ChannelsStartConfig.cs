@@ -2,7 +2,7 @@
 
 namespace Neo
 {
-    public class NodeStartConfig
+    public class ChannelsStartConfig
     {
         /// <summary>
         /// Tcp configuration
