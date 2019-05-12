@@ -75,6 +75,8 @@ namespace Neo.Network.P2P.Payloads
             NetworkFee = reader.ReadInt64();
             if (NetworkFee < 0) throw new FormatException();
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
+            var cosigners = GetScriptHashesForVerifying(null);
+            if (cosigners.Distinct().Count() != cosigners.Length) throw new FormatException();
         }
 
         public bool Equals(Transaction other)
