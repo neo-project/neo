@@ -16,7 +16,7 @@ namespace Neo.Network.P2P.Capabilities
         /// </summary>
         /// <param name="type">Channel</param>
         /// <param name="port">Port</param>
-        protected ServerCapability(NodeCapabilities type, ushort port = 0) : base(type)
+        public ServerCapability(NodeCapabilities type, ushort port = 0) : base(type)
         {
             if (type != NodeCapabilities.TcpServer && type != NodeCapabilities.UdpServer && type != NodeCapabilities.WsServer)
             {

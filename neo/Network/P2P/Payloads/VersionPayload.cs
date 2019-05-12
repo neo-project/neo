@@ -1,5 +1,4 @@
 ﻿using Neo.IO;
-using Neo.IO.Caching;
 using Neo.Network.P2P.Capabilities;
 using System;
 using System.Collections.Generic;
@@ -10,11 +9,6 @@ namespace Neo.Network.P2P.Payloads
 {
     public class VersionPayload : ISerializable
     {
-        /// <summary>
-        /// Reflection cache for ConsensusMessageType
-        /// </summary>
-        private static readonly ReflectionCache<byte> ReflectionCache = ReflectionCache<byte>.CreateFromEnum<NodeCapabilities>();
-
         const int MaxCapabilities = 32;
 
         public uint Magic;
@@ -67,17 +61,18 @@ namespace Neo.Network.P2P.Payloads
 
             for (int x = 0, max = Capabilities.Length; x < max; x++)
             {
-                var type = reader.PeekChar();
+                var cap = (NodeCapabilities)reader.PeekChar();
 
-                if (!ReflectionCache.TryGetValue((byte)type, out var objType))
+                switch ((NodeCapabilities)reader.PeekChar())
                 {
-                    throw new FormatException();
+                    case NodeCapabilities.TcpServer:
+                    case NodeCapabilities.UdpServer:
+                    case NodeCapabilities.WsServer: Capabilities[x] = new ServerCapability(cap); break;
+
+                    default: throw new FormatException();
                 }
 
-                var value = (NodeCapabilityBase)Activator.CreateInstance(objType);
-                value.Deserialize(reader);
-
-                Capabilities[x] = value;
+                Capabilities[x].Deserialize(reader);
             }
         }
 

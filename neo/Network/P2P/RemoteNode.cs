@@ -29,7 +29,7 @@ namespace Neo.Network.P2P
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
         public override int ListenerTcpPort => Version?.Capabilities
             .Where(u => u.Type == NodeCapabilities.TcpServer)
-            .Cast<TcpServerCapability>()
+            .Cast<ServerCapability>()
             .First()?.Port ?? 0;
         public VersionPayload Version { get; private set; }
         public uint LastBlockIndex { get; private set; }
@@ -43,9 +43,9 @@ namespace Neo.Network.P2P
 
             var capabilities = new List<NodeCapabilityBase>();
 
-            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new TcpServerCapability((ushort)LocalNode.Singleton.ListenerTcpPort));
-            if (LocalNode.Singleton.ListenerUdpPort > 0) capabilities.Add(new UdpServerCapability((ushort)LocalNode.Singleton.ListenerUdpPort));
-            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new WsServerCapability((ushort)LocalNode.Singleton.ListenerWsPort));
+            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilities.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
+            if (LocalNode.Singleton.ListenerUdpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilities.UdpServer, (ushort)LocalNode.Singleton.ListenerUdpPort));
+            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilities.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
 
             SendMessage(Message.Create(MessageCommand.Version,
                 VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, Blockchain.Singleton.Height, capabilities)));
