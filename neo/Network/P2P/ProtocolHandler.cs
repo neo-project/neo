@@ -1,5 +1,6 @@
 ﻿using Akka.Actor;
 using Akka.Configuration;
+using Akka.IO;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Actors;
@@ -8,7 +9,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,83 +36,123 @@ namespace Neo.Network.P2P
 
         protected override void OnReceive(object message)
         {
-            if (!(message is Message msg)) return;
-            foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
-                if (!plugin.OnP2PMessage(msg))
-                    return;
-            if (version == null)
+            switch (message)
             {
-                if (msg.Command != MessageCommand.Version)
-                    throw new ProtocolViolationException();
-                OnVersionMessageReceived((VersionPayload)msg.Payload);
-                return;
-            }
-            if (!verack)
-            {
-                if (msg.Command != MessageCommand.Verack)
-                    throw new ProtocolViolationException();
-                OnVerackMessageReceived();
-                return;
-            }
-            switch (msg.Command)
-            {
-                case MessageCommand.Addr:
-                    OnAddrMessageReceived((AddrPayload)msg.Payload);
-                    break;
-                case MessageCommand.Block:
-                    OnInventoryReceived((Block)msg.Payload);
-                    break;
-                case MessageCommand.Consensus:
-                    OnInventoryReceived((ConsensusPayload)msg.Payload);
-                    break;
-                case MessageCommand.FilterAdd:
-                    OnFilterAddMessageReceived((FilterAddPayload)msg.Payload);
-                    break;
-                case MessageCommand.FilterClear:
-                    OnFilterClearMessageReceived();
-                    break;
-                case MessageCommand.FilterLoad:
-                    OnFilterLoadMessageReceived((FilterLoadPayload)msg.Payload);
-                    break;
-                case MessageCommand.GetAddr:
-                    OnGetAddrMessageReceived();
-                    break;
-                case MessageCommand.GetBlocks:
-                    OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload);
-                    break;
-                case MessageCommand.GetData:
-                    OnGetDataMessageReceived((InvPayload)msg.Payload);
-                    break;
-                case MessageCommand.GetHeaders:
-                    OnGetHeadersMessageReceived((GetBlocksPayload)msg.Payload);
-                    break;
-                case MessageCommand.Headers:
-                    OnHeadersMessageReceived((HeadersPayload)msg.Payload);
-                    break;
-                case MessageCommand.Inv:
-                    OnInvMessageReceived((InvPayload)msg.Payload);
-                    break;
-                case MessageCommand.Mempool:
-                    OnMemPoolMessageReceived();
-                    break;
-                case MessageCommand.Ping:
-                    OnPingMessageReceived((PingPayload)msg.Payload);
-                    break;
-                case MessageCommand.Pong:
-                    OnPongMessageReceived((PingPayload)msg.Payload);
-                    break;
-                case MessageCommand.Transaction:
-                    if (msg.Payload.Size <= Transaction.MaxTransactionSize)
-                        OnInventoryReceived((Transaction)msg.Payload);
-                    break;
-                case MessageCommand.Verack:
-                case MessageCommand.Version:
-                    throw new ProtocolViolationException();
-                case MessageCommand.Alert:
-                case MessageCommand.MerkleBlock:
-                case MessageCommand.NotFound:
-                case MessageCommand.Reject:
-                default: break;
+                case Message msg:
+                    {
+                        foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
+                            if (!plugin.OnP2PMessage(msg))
+                                return;
+
+                        if (version == null)
+                        {
+                            if (msg.Command != MessageCommand.Version)
+                                throw new ProtocolViolationException();
+                            OnVersionMessageReceived((VersionPayload)msg.Payload);
+                            return;
+                        }
+                        if (!verack)
+                        {
+                            if (msg.Command != MessageCommand.Verack)
+                                throw new ProtocolViolationException();
+                            OnVerackMessageReceived();
+                            return;
+                        }
+                        switch (msg.Command)
+                        {
+                            case MessageCommand.Addr:
+                                OnAddrMessageReceived((AddrPayload)msg.Payload);
+                                break;
+                            case MessageCommand.Block:
+                                OnInventoryReceived((Block)msg.Payload);
+                                break;
+                            case MessageCommand.Consensus:
+                                OnInventoryReceived((ConsensusPayload)msg.Payload);
+                                break;
+                            case MessageCommand.FilterAdd:
+                                OnFilterAddMessageReceived((FilterAddPayload)msg.Payload);
+                                break;
+                            case MessageCommand.FilterClear:
+                                OnFilterClearMessageReceived();
+                                break;
+                            case MessageCommand.FilterLoad:
+                                OnFilterLoadMessageReceived((FilterLoadPayload)msg.Payload);
+                                break;
+                            case MessageCommand.GetAddr:
+                                OnGetAddrMessageReceived();
+                                break;
+                            case MessageCommand.GetBlocks:
+                                OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload);
+                                break;
+                            case MessageCommand.GetData:
+                                OnGetDataMessageReceived((InvPayload)msg.Payload);
+                                break;
+                            case MessageCommand.GetHeaders:
+                                OnGetHeadersMessageReceived((GetBlocksPayload)msg.Payload);
+                                break;
+                            case MessageCommand.Headers:
+                                OnHeadersMessageReceived((HeadersPayload)msg.Payload);
+                                break;
+                            case MessageCommand.Inv:
+                                OnInvMessageReceived((InvPayload)msg.Payload);
+                                break;
+                            case MessageCommand.Mempool:
+                                OnMemPoolMessageReceived();
+                                break;
+                            case MessageCommand.Ping:
+                                OnPingMessageReceived((PingPayload)msg.Payload);
+                                break;
+                            case MessageCommand.Pong:
+                                OnPongMessageReceived((PingPayload)msg.Payload);
+                                break;
+                            case MessageCommand.Transaction:
+                                if (msg.Payload.Size <= Transaction.MaxTransactionSize)
+                                    OnInventoryReceived((Transaction)msg.Payload);
+                                break;
+                            case MessageCommand.Verack:
+                            case MessageCommand.Version:
+                                throw new ProtocolViolationException();
+                            case MessageCommand.Alert:
+                            case MessageCommand.MerkleBlock:
+                            case MessageCommand.NotFound:
+                            case MessageCommand.Reject:
+                            default: break;
+                        }
+
+                        break;
+                    }
+                case Udp.Received udp:
+                    {
+                        if (Message.TryDeserialize(udp.Data, out var msg) != udp.Data.Count) return;
+
+                        switch (msg.Command)
+                        {
+                            case MessageCommand.Transaction:
+                                {
+                                    if (msg.Payload.Size <= Transaction.MaxTransactionSize)
+                                        system.LocalNode.Tell(new LocalNode.Relay { Inventory = (Transaction)msg.Payload });
+                                    break;
+                                }
+                            case MessageCommand.Ping:
+                                {
+                                    var payload = (PingPayload)msg.Payload;
+                                    msg = Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce));
+
+                                    system.LocalNode.Tell(new UdpMessage((IPEndPoint)udp.Sender, ByteString.FromBytes(msg.ToArray())));
+                                    break;
+                                }
+                            case MessageCommand.GetAddr:
+                                {
+                                    var networkAddresses = LocalNode.Singleton.GetPeers();
+                                    if (networkAddresses.Length == 0) return;
+                                    msg = Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses));
+
+                                    system.LocalNode.Tell(new UdpMessage((IPEndPoint)udp.Sender, ByteString.FromBytes(msg.ToArray())));
+                                    break;
+                                }
+                        }
+                        break;
+                    }
             }
         }
 
@@ -296,7 +336,7 @@ namespace Neo.Network.P2P
 
     internal class ProtocolHandlerMailbox : PriorityMailbox
     {
-        public ProtocolHandlerMailbox(Akka.Actor.Settings settings, Config config)
+        public ProtocolHandlerMailbox(Settings settings, Config config)
             : base(settings, config)
         {
         }

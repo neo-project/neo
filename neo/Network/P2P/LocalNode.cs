@@ -24,6 +24,7 @@ namespace Neo.Network.P2P
 
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
+        private readonly IActorRef protocol;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new ConcurrentDictionary<IActorRef, RemoteNode>();
 
         public int ConnectedCount => RemoteNodes.Count;
@@ -54,7 +55,9 @@ namespace Neo.Network.P2P
             {
                 if (_singleton != null)
                     throw new InvalidOperationException();
+
                 this.system = system;
+                protocol = Context.ActorOf(ProtocolHandler.Props(system));
                 _singleton = this;
             }
         }
@@ -140,6 +143,12 @@ namespace Neo.Network.P2P
             base.OnReceive(message);
             switch (message)
             {
+                case UdpMessage udp:
+                    SendUdp(udp.Sender, udp.Data);
+                    break;
+                case Udp.Received udpmsg:
+                    protocol.Tell(udpmsg);
+                    break;
                 case Message msg:
                     BroadcastMessage(msg);
                     break;
@@ -157,47 +166,17 @@ namespace Neo.Network.P2P
             }
         }
 
-        protected override void OnUdpMessage(IPEndPoint remote, ByteString data)
-        {
-            if (Message.TryDeserialize(data, out var msg) != data.Count) return;
-
-            switch (msg.Command)
-            {
-                case MessageCommand.Transaction:
-                    {
-                        if (msg.Payload.Size <= Transaction.MaxTransactionSize)
-                            system.LocalNode.Tell(new Relay { Inventory = (Transaction)msg.Payload });
-
-                        break;
-                    }
-                case MessageCommand.Ping:
-                    {
-                        var payload = (PingPayload)msg.Payload;
-                        msg = Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce));
-                        SendUdp(remote, ByteString.FromBytes(msg.ToArray()));
-                        break;
-                    }
-                case MessageCommand.GetAddr:
-                    {
-                        NetworkAddressWithTime[] networkAddresses = GetPeers();
-                        if (networkAddresses.Length == 0) return;
-                        msg = Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses));
-                        SendUdp(remote, ByteString.FromBytes(msg.ToArray()));
-                        break;
-                    }
-            }
-        }
-
         public NetworkAddressWithTime[] GetPeers()
         {
             Random rand = new Random();
-            IEnumerable<RemoteNode> peers = RemoteNodes.Values
+
+            return RemoteNodes.Values
                 .Where(p => p.ListenerTcpPort > 0)
                 .GroupBy(p => p.Remote.Address, (k, g) => g.First())
                 .OrderBy(p => rand.Next())
-                .Take(AddrPayload.MaxCountToSend);
-
-            return peers.Select(p => NetworkAddressWithTime.Create(p.Listener, p.Version.Services, p.Version.Timestamp)).ToArray();
+                .Take(AddrPayload.MaxCountToSend)
+                .Select(p => NetworkAddressWithTime.Create(p.Listener, p.Version.Services, p.Version.Timestamp))
+                .ToArray();
         }
 
         private void OnRelay(IInventory inventory)

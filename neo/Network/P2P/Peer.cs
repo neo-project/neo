@@ -130,9 +130,6 @@ namespace Neo.Network.P2P
                 case Udp.Bound _:
                     udp_listener = Sender;
                     break;
-                case Udp.Received udpmsg:
-                    OnUdpMessage((IPEndPoint)udpmsg.Sender, udpmsg.Data);
-                    break;
                 case Tcp.CommandFailed commandFailed:
                     OnTcpCommandFailed(commandFailed.Cmd);
                     break;
@@ -189,8 +186,6 @@ namespace Neo.Network.P2P
                 udp_manager.Tell(new Udp.Bind(Self, config.Udp));
             }
         }
-
-        protected abstract void OnUdpMessage(IPEndPoint remote, ByteString data);
 
         protected void SendUdp(IPEndPoint remote, ByteString data) => udp_listener.Tell(Udp.Send.Create(data, remote));
 
