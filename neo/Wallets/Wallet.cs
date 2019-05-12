@@ -1,5 +1,4 @@
 ﻿using Neo.Cryptography;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
@@ -32,7 +31,6 @@ namespace Neo.Wallets
         public abstract bool DeleteAccount(UInt160 scriptHash);
         public abstract WalletAccount GetAccount(UInt160 scriptHash);
         public abstract IEnumerable<WalletAccount> GetAccounts();
-        public abstract IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts);
         public abstract IEnumerable<UInt256> GetTransactions();
 
         public WalletAccount CreateAccount()
@@ -57,94 +55,32 @@ namespace Neo.Wallets
         {
         }
 
-        public IEnumerable<Coin> FindUnspentCoins(params UInt160[] from)
-        {
-            IEnumerable<UInt160> accounts = from.Length > 0 ? from : GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash);
-            return GetCoins(accounts).Where(p => p.State.HasFlag(CoinState.Confirmed) && !p.State.HasFlag(CoinState.Spent) && !p.State.HasFlag(CoinState.Frozen));
-        }
-
-        public virtual Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount, params UInt160[] from)
-        {
-            return FindUnspentCoins(FindUnspentCoins(from), asset_id, amount);
-        }
-
-        protected static Coin[] FindUnspentCoins(IEnumerable<Coin> unspents, UInt256 asset_id, Fixed8 amount)
-        {
-            Coin[] unspents_asset = unspents.Where(p => p.Output.AssetId == asset_id).ToArray();
-            Fixed8 sum = unspents_asset.Sum(p => p.Output.Value);
-            if (sum < amount) return null;
-            if (sum == amount) return unspents_asset;
-            Coin[] unspents_ordered = unspents_asset.OrderByDescending(p => p.Output.Value).ToArray();
-            int i = 0;
-            while (unspents_ordered[i].Output.Value <= amount)
-                amount -= unspents_ordered[i++].Output.Value;
-            if (amount == Fixed8.Zero)
-                return unspents_ordered.Take(i).ToArray();
-            else
-                return unspents_ordered.Take(i).Concat(new[] { unspents_ordered.Last(p => p.Output.Value >= amount) }).ToArray();
-        }
-
         public WalletAccount GetAccount(ECPoint pubkey)
         {
             return GetAccount(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash());
         }
 
-        public Fixed8 GetAvailable(UInt256 asset_id)
+        public BigDecimal GetAvailable(UInt160 asset_id)
         {
-            return FindUnspentCoins().Where(p => p.Output.AssetId.Equals(asset_id)).Sum(p => p.Output.Value);
-        }
-
-        public BigDecimal GetAvailable(UIntBase asset_id)
-        {
-            if (asset_id is UInt160 asset_id_160)
+            byte[] script;
+            UInt160[] accounts = GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
+            using (ScriptBuilder sb = new ScriptBuilder())
             {
-                byte[] script;
-                UInt160[] accounts = GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
-                using (ScriptBuilder sb = new ScriptBuilder())
+                sb.EmitPush(0);
+                foreach (UInt160 account in accounts)
                 {
-                    sb.EmitPush(0);
-                    foreach (UInt160 account in accounts)
-                    {
-                        sb.EmitAppCall(asset_id_160, "balanceOf", account);
-                        sb.Emit(OpCode.ADD);
-                    }
-                    sb.EmitAppCall(asset_id_160, "decimals");
-                    script = sb.ToArray();
+                    sb.EmitAppCall(asset_id, "balanceOf", account);
+                    sb.Emit(OpCode.ADD);
                 }
-                ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: Fixed8.FromDecimal(0.2m) * accounts.Length);
-                if (engine.State.HasFlag(VMState.FAULT))
-                    return new BigDecimal(0, 0);
-                byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
-                BigInteger amount = engine.ResultStack.Pop().GetBigInteger();
-                return new BigDecimal(amount, decimals);
+                sb.EmitAppCall(asset_id, "decimals");
+                script = sb.ToArray();
             }
-            else
-            {
-                return new BigDecimal(GetAvailable((UInt256)asset_id).GetData(), 8);
-            }
-        }
-
-        public Fixed8 GetBalance(UInt256 asset_id)
-        {
-            return GetCoins(GetAccounts().Select(p => p.ScriptHash)).Where(p => !p.State.HasFlag(CoinState.Spent) && p.Output.AssetId.Equals(asset_id)).Sum(p => p.Output.Value);
-        }
-
-        public virtual UInt160 GetChangeAddress()
-        {
-            WalletAccount[] accounts = GetAccounts().ToArray();
-            WalletAccount account = accounts.FirstOrDefault(p => p.IsDefault);
-            if (account == null)
-                account = accounts.FirstOrDefault(p => p.Contract?.Script.IsSignatureContract() == true);
-            if (account == null)
-                account = accounts.FirstOrDefault(p => !p.WatchOnly);
-            if (account == null)
-                account = accounts.FirstOrDefault();
-            return account?.ScriptHash;
-        }
-
-        public IEnumerable<Coin> GetCoins()
-        {
-            return GetCoins(GetAccounts().Select(p => p.ScriptHash));
+            ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: 20000000L * accounts.Length);
+            if (engine.State.HasFlag(VMState.FAULT))
+                return new BigDecimal(0, 0);
+            byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
+            BigInteger amount = engine.ResultStack.Pop().GetBigInteger();
+            return new BigDecimal(amount, decimals);
         }
 
         public static byte[] GetPrivateKeyFromNEP2(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
@@ -182,16 +118,6 @@ namespace Neo.Wallets
             return privateKey;
         }
 
-        public IEnumerable<Coin> GetUnclaimedCoins()
-        {
-            IEnumerable<UInt160> accounts = GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash);
-            IEnumerable<Coin> coins = GetCoins(accounts);
-            coins = coins.Where(p => p.Output.AssetId.Equals(Blockchain.GoverningToken.Hash));
-            coins = coins.Where(p => p.State.HasFlag(CoinState.Confirmed) && p.State.HasFlag(CoinState.Spent));
-            coins = coins.Where(p => !p.State.HasFlag(CoinState.Claimed) && !p.State.HasFlag(CoinState.Frozen));
-            return coins;
-        }
-
         public virtual WalletAccount Import(X509Certificate2 cert)
         {
             byte[] privateKey;
@@ -220,70 +146,11 @@ namespace Neo.Wallets
             return account;
         }
 
-        public T MakeTransaction<T>(T tx, UInt160 from = null, UInt160 change_address = null, Fixed8 fee = default(Fixed8)) where T : Transaction
+        public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null)
         {
-            if (tx.Outputs == null) tx.Outputs = new TransactionOutput[0];
-            if (tx.Attributes == null) tx.Attributes = new TransactionAttribute[0];
-            fee += tx.SystemFee;
-            var pay_total = tx.Outputs.GroupBy(p => p.AssetId, (k, g) => new
-            {
-                AssetId = k,
-                Value = g.Sum(p => p.Value)
-            }).ToDictionary(p => p.AssetId);
-            if (fee > Fixed8.Zero)
-            {
-                if (pay_total.ContainsKey(Blockchain.UtilityToken.Hash))
-                {
-                    pay_total[Blockchain.UtilityToken.Hash] = new
-                    {
-                        AssetId = Blockchain.UtilityToken.Hash,
-                        Value = pay_total[Blockchain.UtilityToken.Hash].Value + fee
-                    };
-                }
-                else
-                {
-                    pay_total.Add(Blockchain.UtilityToken.Hash, new
-                    {
-                        AssetId = Blockchain.UtilityToken.Hash,
-                        Value = fee
-                    });
-                }
-            }
-            var pay_coins = pay_total.Select(p => new
-            {
-                AssetId = p.Key,
-                Unspents = from == null ? FindUnspentCoins(p.Key, p.Value.Value) : FindUnspentCoins(p.Key, p.Value.Value, from)
-            }).ToDictionary(p => p.AssetId);
-            if (pay_coins.Any(p => p.Value.Unspents == null)) return null;
-            var input_sum = pay_coins.Values.ToDictionary(p => p.AssetId, p => new
+            var cOutputs = outputs.GroupBy(p => new
             {
                 p.AssetId,
-                Value = p.Unspents.Sum(q => q.Output.Value)
-            });
-            if (change_address == null) change_address = GetChangeAddress();
-            List<TransactionOutput> outputs_new = new List<TransactionOutput>(tx.Outputs);
-            foreach (UInt256 asset_id in input_sum.Keys)
-            {
-                if (input_sum[asset_id].Value > pay_total[asset_id].Value)
-                {
-                    outputs_new.Add(new TransactionOutput
-                    {
-                        AssetId = asset_id,
-                        Value = input_sum[asset_id].Value - pay_total[asset_id].Value,
-                        ScriptHash = change_address
-                    });
-                }
-            }
-            tx.Inputs = pay_coins.Values.SelectMany(p => p.Unspents).Select(p => p.Reference).ToArray();
-            tx.Outputs = outputs_new.ToArray();
-            return tx;
-        }
-
-        public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null, UInt160 change_address = null, Fixed8 fee = default(Fixed8))
-        {
-            var cOutputs = outputs.Where(p => !p.IsGlobalAsset).GroupBy(p => new
-            {
-                AssetId = (UInt160)p.AssetId,
                 Account = p.ScriptHash
             }, (k, g) => new
             {
@@ -343,9 +210,8 @@ namespace Neo.Wallets
                 byte[] nonce = new byte[8];
                 rand.NextBytes(nonce);
                 sb.Emit(OpCode.RET, nonce);
-                tx = new InvocationTransaction
+                tx = new Transaction
                 {
-                    Version = 1,
                     Script = sb.ToArray()
                 };
             }
@@ -355,24 +221,17 @@ namespace Neo.Wallets
                 Data = p.ToArray()
             }));
             tx.Attributes = attributes.ToArray();
-            tx.Inputs = new CoinReference[0];
-            tx.Outputs = outputs.Where(p => p.IsGlobalAsset).Select(p => p.ToTxOutput()).ToArray();
             tx.Witnesses = new Witness[0];
-            if (tx is InvocationTransaction itx)
+            using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, tx))
             {
-                ApplicationEngine engine = ApplicationEngine.Run(itx.Script, itx);
                 if (engine.State.HasFlag(VMState.FAULT)) return null;
-                tx = new InvocationTransaction
+                tx = new Transaction
                 {
-                    Version = itx.Version,
-                    Script = itx.Script,
-                    Gas = InvocationTransaction.GetGas(engine.GasConsumed),
-                    Attributes = itx.Attributes,
-                    Inputs = itx.Inputs,
-                    Outputs = itx.Outputs
+                    Script = tx.Script,
+                    Gas = Transaction.GetGas(engine.GasConsumed),
+                    Attributes = tx.Attributes
                 };
             }
-            tx = MakeTransaction(tx, from, change_address, fee);
             return tx;
         }
 

@@ -46,7 +46,7 @@ namespace Neo.UnitTests.Extensions
         public static bool Transfer(this NativeContract contract, Persistence.Snapshot snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)
         {
             var engine = new ApplicationEngine(TriggerType.Application,
-                new ManualWitness(signFrom ? new[] { new UInt160(from) } : null), snapshot, Fixed8.Zero, true);
+                new ManualWitness(signFrom ? new[] { new UInt160(from) } : null), snapshot, 0, true);
 
             engine.LoadScript(contract.Script);
 
@@ -74,7 +74,7 @@ namespace Neo.UnitTests.Extensions
 
         public static string[] SupportedStandards(this NativeContract contract)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero);
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0);
 
             engine.LoadScript(contract.Script);
 
@@ -97,7 +97,7 @@ namespace Neo.UnitTests.Extensions
 
         public static BigInteger TotalSupply(this NativeContract contract, Persistence.Snapshot snapshot)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
 
             engine.LoadScript(contract.Script);
 
@@ -118,7 +118,7 @@ namespace Neo.UnitTests.Extensions
 
         public static BigInteger BalanceOf(this NativeContract contract, Persistence.Snapshot snapshot, byte[] account)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, Fixed8.Zero, true);
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
 
             engine.LoadScript(contract.Script);
 
@@ -140,7 +140,7 @@ namespace Neo.UnitTests.Extensions
 
         public static BigInteger Decimals(this NativeContract contract)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero);
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0);
 
             engine.LoadScript(contract.Script);
 
@@ -161,7 +161,7 @@ namespace Neo.UnitTests.Extensions
 
         public static string Symbol(this NativeContract contract)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero);
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0);
 
             engine.LoadScript(contract.Script);
 
@@ -182,7 +182,7 @@ namespace Neo.UnitTests.Extensions
 
         public static string Name(this NativeContract contract)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, Fixed8.Zero);
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0);
 
             engine.LoadScript(contract.Script);
 

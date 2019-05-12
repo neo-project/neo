@@ -7,14 +7,14 @@ using Neo.Network.P2P.Payloads;
 namespace Neo.UnitTests
 {
     [TestClass]
-    public class UT_InvocationTransaction
+    public class UT_Transaction
     {
-        InvocationTransaction uut;
+        Transaction uut;
 
         [TestInitialize]
         public void TestSetup()
         {
-            uut = new InvocationTransaction();
+            uut = new Transaction();
         }
 
         [TestMethod]
@@ -38,13 +38,13 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Gas_Get()
         {
-            uut.Gas.Should().Be(Fixed8.Zero);
+            uut.Gas.Should().Be(0);
         }
 
         [TestMethod]
         public void Gas_Set()
         {
-            Fixed8 val = Fixed8.FromDecimal(42);
+            long val = 4200000000;
             uut.Gas = val;
             uut.Gas.Should().Be(val);
         }
@@ -53,41 +53,15 @@ namespace Neo.UnitTests
         public void Size_Get()
         {
             uut.Attributes = new TransactionAttribute[0];
-            uut.Inputs = new CoinReference[0];
-            uut.Outputs = new TransactionOutput[0];
             uut.Witnesses = new Witness[0];
 
             byte[] val = TestUtils.GetByteArray(32, 0x42);
             uut.Script = val;
 
-            //SIZE: SIZE_TX + Script.GetVarSize() + (Version >= 1 ? Gas.Size : 0)
-            //SIZE_TX: sizeof(TransactionType) + sizeof(byte) + Attributes.GetVarSize() + Inputs.GetVarSize() + Outputs.GetVarSize() + Witnesses.GetVarSize();
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
             uut.Script.GetVarSize().Should().Be(33);
-            uut.Size.Should().Be(39); // 1, 1, 1, 1, 1, 1 + script 33
-        }
-
-        [TestMethod]
-        public void SystemFee_Get()
-        {
-            uut.SystemFee.Should().Be(Fixed8.Zero);
-        }
-
-        [TestMethod]
-        public void SystemFee_Get_FromGas()
-        {
-            Fixed8 val = Fixed8.FromDecimal(42);
-            uut.Gas = val;
-            uut.SystemFee.Should().Be(val);
-        }
-
-        [TestMethod]
-        public void SystemFee_Set()
-        {
-            Fixed8 val = Fixed8.FromDecimal(42);
-            uut.Gas = val;
-            uut.SystemFee.Should().Be(val);
+            uut.Size.Should().Be(52);
         }
 
         [TestMethod]
@@ -95,26 +69,20 @@ namespace Neo.UnitTests
         {
             byte[] scriptVal = TestUtils.GetByteArray(32, 0x42);
             uut.Script = scriptVal;
-            Fixed8 gasVal = Fixed8.FromDecimal(42);
+            long gasVal = 4200000000;
             uut.Gas = gasVal;
 
             uut.Attributes = new TransactionAttribute[0];
-            uut.Inputs = new CoinReference[0];
-            uut.Outputs = new TransactionOutput[0];
             uut.Witnesses = new Witness[0];
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["txid"].AsString().Should().Be("0x8258b950487299376f89ad2d09598b7acbc5cde89b161b3dd73c256f9e2a94b1");
-            jObj["size"].AsNumber().Should().Be(39);
-            jObj["type"].AsString().Should().Be("InvocationTransaction");
+            jObj["txid"].AsString().Should().Be("0x13968617bebc4f17c9adfd8c30f5c18d73edce9beb332937ead4b1cf6cca6851");
+            jObj["size"].AsNumber().Should().Be(52);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
-            ((JArray)jObj["vin"]).Count.Should().Be(0);
-            ((JArray)jObj["vout"]).Count.Should().Be(0);
-            jObj["sys_fee"].AsString().Should().Be("42");
-            jObj["net_fee"].AsString().Should().Be("-42");
-            ((JArray)jObj["scripts"]).Count.Should().Be(0);
+            jObj["net_fee"].AsString().Should().Be("0");
+            ((JArray)jObj["witnesses"]).Count.Should().Be(0);
 
             jObj["script"].AsString().Should().Be("4220202020202020202020202020202020202020202020202020202020202020");
             jObj["gas"].AsNumber().Should().Be(42);

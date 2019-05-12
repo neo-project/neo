@@ -8,8 +8,6 @@ namespace Neo.Persistence
     {
         public override DataCache<UInt256, BlockState> Blocks { get; }
         public override DataCache<UInt256, TransactionState> Transactions { get; }
-        public override DataCache<UInt256, UnspentCoinState> UnspentCoins { get; }
-        public override DataCache<UInt256, AssetState> Assets { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
         public override DataCache<StorageKey, StorageItem> Storages { get; }
         public override DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
@@ -22,8 +20,6 @@ namespace Neo.Persistence
             this.PersistingBlock = snapshot.PersistingBlock;
             this.Blocks = snapshot.Blocks.CreateSnapshot();
             this.Transactions = snapshot.Transactions.CreateSnapshot();
-            this.UnspentCoins = snapshot.UnspentCoins.CreateSnapshot();
-            this.Assets = snapshot.Assets.CreateSnapshot();
             this.Contracts = snapshot.Contracts.CreateSnapshot();
             this.Storages = snapshot.Storages.CreateSnapshot();
             this.HeaderHashList = snapshot.HeaderHashList.CreateSnapshot();
