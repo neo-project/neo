@@ -90,7 +90,7 @@ namespace Neo.UnitTests
                 Version = 6,
                 Capabilities = new NodeCapabilityBase[]
                 {
-                    new ServerCapability(ServerCapability.ChannelType.Tcp, 25)
+                    new TcpServerCapability(25)
                 }
             };
 
@@ -114,8 +114,8 @@ namespace Neo.UnitTests
             payloadCopy.Version.Should().Be(payload.Version);
 
             payloadCopy.Capabilities.Length.Should().Be(1);
-            ((ServerCapability)payloadCopy.Capabilities[0]).Channel.Should().Be(ServerCapability.ChannelType.Tcp);
-            ((ServerCapability)payloadCopy.Capabilities[0]).Port.Should().Be(25);
+            ((TcpServerCapability)payloadCopy.Capabilities[0]).Type.Should().Be(NodeCapabilities.TcpServer);
+            ((TcpServerCapability)payloadCopy.Capabilities[0]).Port.Should().Be(25);
 
         }
     }
