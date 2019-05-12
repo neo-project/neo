@@ -1,4 +1,5 @@
 ﻿using Neo.Network.P2P;
+using System.Net;
 
 namespace Neo
 {
@@ -7,17 +8,17 @@ namespace Neo
         /// <summary>
         /// Tcp configuration
         /// </summary>
-        public EndPointConfig Tcp { get; set; } = new EndPointConfig() { };
+        public IPEndPoint Tcp { get; set; }
 
         /// <summary>
         /// Udp configuration
         /// </summary>
-        public EndPointConfig Udp { get; set; } = new EndPointConfig() { };
+        public IPEndPoint Udp { get; set; }
 
         /// <summary>
         /// Web socket configuration
         /// </summary>
-        public EndPointConfig WebSocket { get; set; } = new EndPointConfig() { };
+        public IPEndPoint WebSocket { get; set; }
 
         /// <summary>
         /// Minimum desired connections

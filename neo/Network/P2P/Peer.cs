@@ -169,16 +169,16 @@ namespace Neo.Network.P2P
             }
             if (ListenerTcpPort > 0)
             {
-                tcp_manager.Tell(new Tcp.Bind(Self, config.Tcp.EndPoint, options: new[] { new Inet.SO.ReuseAddress(true) }));
+                tcp_manager.Tell(new Tcp.Bind(Self, config.Tcp, options: new[] { new Inet.SO.ReuseAddress(true) }));
             }
             if (ListenerWsPort > 0)
             {
                 var host = "*";
 
-                if (!config.WebSocket.EndPoint.Address.GetAddressBytes().SequenceEqual(IPAddress.Any.GetAddressBytes()))
+                if (!config.WebSocket.Address.GetAddressBytes().SequenceEqual(IPAddress.Any.GetAddressBytes()))
                 {
                     // Is not for all interfaces
-                    host = config.WebSocket.EndPoint.Address.ToString();
+                    host = config.WebSocket.Address.ToString();
                 }
 
                 ws_host = new WebHostBuilder().UseKestrel().UseUrls($"http://{host}:{ListenerWsPort}").Configure(app => app.UseWebSockets().Run(ProcessWebSocketAsync)).Build();
@@ -186,7 +186,7 @@ namespace Neo.Network.P2P
             }
             if (ListenerUdpPort > 0)
             {
-                udp_manager.Tell(new Udp.Bind(Self, config.Udp.EndPoint));
+                udp_manager.Tell(new Udp.Bind(Self, config.Udp));
             }
         }
 
