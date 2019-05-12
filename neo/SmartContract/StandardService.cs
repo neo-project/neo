@@ -1,6 +1,8 @@
-﻿using Neo.Cryptography.ECC;
+﻿using Neo.Cryptography;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
@@ -45,6 +47,7 @@ namespace Neo.SmartContract
             Register("System.Runtime.GetTime", Runtime_GetTime, 1);
             Register("System.Runtime.Serialize", Runtime_Serialize, 1);
             Register("System.Runtime.Deserialize", Runtime_Deserialize, 1);
+            Register("System.Crypto.Verify", Crypto_Verify, 100);
             Register("System.Blockchain.GetHeight", Blockchain_GetHeight, 1);
             Register("System.Blockchain.GetHeader", Blockchain_GetHeader, 100);
             Register("System.Blockchain.GetBlock", Blockchain_GetBlock, 200);
@@ -246,6 +249,23 @@ namespace Neo.SmartContract
                 return false;
             }
             engine.CurrentContext.EvaluationStack.Push(item);
+            return true;
+        }
+
+        private bool Crypto_Verify(ApplicationEngine engine)
+        {
+            StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
+            byte[] message;
+            if (item0 is InteropInterface _interface)
+                message = _interface.GetInterface<IVerifiable>().GetHashData();
+            else
+                message = item0.GetByteArray();
+            byte[] pubkey = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            if (pubkey[0] != 2 && pubkey[0] != 3 && pubkey[0] != 4)
+                return false;
+            byte[] signature = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            bool result = Crypto.Default.VerifySignature(message, signature, pubkey);
+            engine.CurrentContext.EvaluationStack.Push(result);
             return true;
         }
 
