@@ -107,13 +107,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case ChannelsStartConfig start:
-                    OnStart
-                        (
-                        start.Tcp != null && start.Tcp.IsValid ? start.Tcp.EndPoint : null,
-                        start.Udp != null && start.Udp.IsValid ? start.Udp.EndPoint : null,
-                        start.WebSocket != null && start.WebSocket.IsValid ? start.WebSocket.EndPoint : null,
-                        start.MinDesiredConnections, start.MaxConnections, start.MaxConnectionsPerAddress
-                        );
+                    OnStart(start);
                     break;
                 case Timer _:
                     OnTimer();
@@ -148,15 +142,15 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnStart(IPEndPoint tcp, IPEndPoint udp, IPEndPoint ws, int minDesiredConnections, int maxConnections, int maxConnectionsPerAddress)
+        private void OnStart(ChannelsStartConfig config)
         {
-            ListenerTcpPort = tcp == null ? 0 : tcp.Port;
-            ListenerUdpPort = udp == null ? 0 : udp.Port;
-            ListenerWsPort = ws == null ? 0 : ws.Port;
+            ListenerTcpPort = config.Tcp == null ? 0 : config.Tcp.Port;
+            ListenerUdpPort = config.Udp == null ? 0 : config.Udp.Port;
+            ListenerWsPort = config.WebSocket == null ? 0 : config.WebSocket.Port;
 
-            MinDesiredConnections = minDesiredConnections;
-            MaxConnections = maxConnections;
-            MaxConnectionsPerAddress = maxConnectionsPerAddress;
+            MinDesiredConnections = config.MinDesiredConnections;
+            MaxConnections = config.MaxConnections;
+            MaxConnectionsPerAddress = config.MaxConnectionsPerAddress;
 
             timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
             if ((ListenerTcpPort > 0 || ListenerWsPort > 0 || ListenerUdpPort > 0)
@@ -168,23 +162,23 @@ namespace Neo.Network.P2P
                     localAddresses.Add(UPnP.GetExternalIP());
 
                     if (ListenerTcpPort > 0) UPnP.ForwardPort(ListenerTcpPort, ProtocolType.Tcp, "NEO Tcp");
-                    if (ListenerUdpPort > 0) UPnP.ForwardPort(udp.Port, ProtocolType.Udp, "NEO Udp");
-                    if (ListenerWsPort > 0) UPnP.ForwardPort(ws.Port, ProtocolType.Tcp, "NEO WebSocket");
+                    if (ListenerUdpPort > 0) UPnP.ForwardPort(ListenerUdpPort, ProtocolType.Udp, "NEO Udp");
+                    if (ListenerWsPort > 0) UPnP.ForwardPort(ListenerWsPort, ProtocolType.Tcp, "NEO WebSocket");
                 }
                 catch { }
             }
             if (ListenerTcpPort > 0)
             {
-                tcp_manager.Tell(new Tcp.Bind(Self, tcp, options: new[] { new Inet.SO.ReuseAddress(true) }));
+                tcp_manager.Tell(new Tcp.Bind(Self, config.Tcp.EndPoint, options: new[] { new Inet.SO.ReuseAddress(true) }));
             }
             if (ListenerWsPort > 0)
             {
                 var host = "*";
 
-                if (!ws.Address.GetAddressBytes().SequenceEqual(IPAddress.Any.GetAddressBytes()))
+                if (!config.WebSocket.EndPoint.Address.GetAddressBytes().SequenceEqual(IPAddress.Any.GetAddressBytes()))
                 {
                     // Is not for all interfaces
-                    host = ws.Address.ToString();
+                    host = config.WebSocket.EndPoint.Address.ToString();
                 }
 
                 ws_host = new WebHostBuilder().UseKestrel().UseUrls($"http://{host}:{ListenerWsPort}").Configure(app => app.UseWebSockets().Run(ProcessWebSocketAsync)).Build();
@@ -192,7 +186,7 @@ namespace Neo.Network.P2P
             }
             if (ListenerUdpPort > 0)
             {
-                udp_manager.Tell(new Udp.Bind(Self, udp));
+                udp_manager.Tell(new Udp.Bind(Self, config.Udp.EndPoint));
             }
         }
 
