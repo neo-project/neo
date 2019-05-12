@@ -25,14 +25,13 @@ namespace Neo.Network.P2P
         private BloomFilter bloom_filter;
         private bool ack = true;
         private bool verack = false;
+        private int listenerTcpPort = 0;
 
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
-        public override int ListenerTcpPort => Version?.Capabilities
-            .Where(u => u.Type == NodeCapabilities.TcpServer)
-            .Cast<ServerCapability>()
-            .First()?.Port ?? 0;
+        public override int ListenerTcpPort => listenerTcpPort;
         public VersionPayload Version { get; private set; }
-        public uint LastBlockIndex { get; private set; }
+        public bool AcceptRelay { get; private set; } = false;
+        public uint LastBlockIndex { get; private set; } = 0;
 
         public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
             : base(connection, remote, local)
@@ -41,14 +40,17 @@ namespace Neo.Network.P2P
             this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
 
-            var capabilities = new List<NodeCapabilityBase>();
+            var capabilities = new List<NodeCapabilityBase>
+            {
+                new FullNodeCapability(Blockchain.Singleton.Height),
+                new AcceptRelayCapability()
+            };
 
             if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilities.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
             if (LocalNode.Singleton.ListenerUdpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilities.UdpServer, (ushort)LocalNode.Singleton.ListenerUdpPort));
             if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilities.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
 
-            SendMessage(Message.Create(MessageCommand.Version,
-                VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, Blockchain.Singleton.Height, capabilities)));
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities)));
         }
 
         private void CheckMessageQueue()
@@ -155,7 +157,7 @@ namespace Neo.Network.P2P
 
         private void OnRelay(IInventory inventory)
         {
-            if (Version?.Services.HasFlag(VersionServices.AcceptRelay) != true) return;
+            if (!AcceptRelay) return;
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
@@ -166,7 +168,7 @@ namespace Neo.Network.P2P
 
         private void OnSend(IInventory inventory)
         {
-            if (Version?.Services.HasFlag(VersionServices.AcceptRelay) != true) return;
+            if (!AcceptRelay) return;
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
@@ -189,8 +191,19 @@ namespace Neo.Network.P2P
 
         private void OnVersionPayload(VersionPayload version)
         {
-            this.Version = version;
-            this.LastBlockIndex = Version.StartHeight;
+            Version = version;
+            AcceptRelay = version.Capabilities
+                .Where(u => u is AcceptRelayCapability)
+                .Any();
+            LastBlockIndex = version.Capabilities
+                .Where(u => u is FullNodeCapability)
+                .Cast<FullNodeCapability>()
+                .FirstOrDefault()?.StartHeight ?? 0;
+            listenerTcpPort = version.Capabilities
+               .Where(u => u.Type == NodeCapabilities.TcpServer)
+               .Cast<ServerCapability>()
+               .First()?.Port ?? 0;
+
             if (version.Nonce == LocalNode.Nonce || version.Magic != ProtocolSettings.Default.Magic)
             {
                 Disconnect(true);
@@ -242,10 +255,7 @@ namespace Neo.Network.P2P
 
     internal class RemoteNodeMailbox : PriorityMailbox
     {
-        public RemoteNodeMailbox(Akka.Actor.Settings settings, Config config)
-            : base(settings, config)
-        {
-        }
+        public RemoteNodeMailbox(Settings settings, Config config) : base(settings, config) { }
 
         protected override bool IsHighPriority(object message)
         {

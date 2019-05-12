@@ -6,7 +6,7 @@ namespace Neo.Network.P2P.Capabilities
 {
     public abstract class NodeCapabilityBase : ISerializable
     {
-        public virtual int Size => 1;
+        public virtual int Size => 1; // Type
 
         /// <summary>
         /// Type
@@ -33,6 +33,24 @@ namespace Neo.Network.P2P.Capabilities
         public virtual void Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Type);
+        }
+
+        /// <summary>
+        /// Create a new capability
+        /// </summary>
+        /// <param name="type">Type</param>
+        public static NodeCapabilityBase Create(NodeCapabilities type)
+        {
+            switch (type)
+            {
+                case NodeCapabilities.TcpServer:
+                case NodeCapabilities.UdpServer:
+                case NodeCapabilities.WsServer: return new ServerCapability(type); 
+                case NodeCapabilities.FullNode: return new FullNodeCapability(); 
+                case NodeCapabilities.AcceptRelay: return new AcceptRelayCapability(); 
+
+                default: throw new FormatException();
+            }
         }
     }
 }

@@ -84,8 +84,6 @@ namespace Neo.UnitTests
                 UserAgent = "".PadLeft(1024, '0'),
                 Nonce = 1,
                 Magic = 2,
-                Services = VersionServices.FullNode,
-                StartHeight = 4,
                 Timestamp = 5,
                 Version = 6,
                 Capabilities = new NodeCapabilityBase[]
@@ -108,8 +106,6 @@ namespace Neo.UnitTests
             payloadCopy.UserAgent.Should().Be(payload.UserAgent);
             payloadCopy.Nonce.Should().Be(payload.Nonce);
             payloadCopy.Magic.Should().Be(payload.Magic);
-            payloadCopy.Services.Should().Be(payload.Services);
-            payloadCopy.StartHeight.Should().Be(payload.StartHeight);
             payloadCopy.Timestamp.Should().Be(payload.Timestamp);
             payloadCopy.Version.Should().Be(payload.Version);
 
