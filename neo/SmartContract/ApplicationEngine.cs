@@ -1,6 +1,7 @@
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 
@@ -9,18 +10,17 @@ namespace Neo.SmartContract
     public class ApplicationEngine : ExecutionEngine
     {
         private const long ratio = 100000;
-        private const long gas_free = 10 * 100000000;
+        private static readonly long gas_free = 10 * (long)NativeContract.GAS.Factor;
         private readonly long gas_amount;
-        private long gas_consumed = 0;
         private readonly bool testMode;
 
-        public Fixed8 GasConsumed => new Fixed8(gas_consumed);
+        public long GasConsumed { get; private set; } = 0;
         public new NeoService Service => (NeoService)base.Service;
 
-        public ApplicationEngine(TriggerType trigger, IScriptContainer container, Snapshot snapshot, Fixed8 gas, bool testMode = false)
+        public ApplicationEngine(TriggerType trigger, IScriptContainer container, Snapshot snapshot, long gas, bool testMode = false)
             : base(container, Cryptography.Crypto.Default, new NeoService(trigger, snapshot))
         {
-            this.gas_amount = gas_free + gas.GetData();
+            this.gas_amount = gas_free + gas;
             this.testMode = testMode;
         }
 
@@ -83,7 +83,7 @@ namespace Neo.SmartContract
                 {
                     fee += 400L;
                 }
-                return fee * 100000000L / ratio;
+                return fee * (long)NativeContract.GAS.Factor / ratio;
             }
             if (api_hash == "System.Storage.Put".ToInteropMethodHash() ||
                 api_hash == "System.Storage.PutEx".ToInteropMethodHash())
@@ -95,13 +95,13 @@ namespace Neo.SmartContract
         {
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
                 return true;
-            gas_consumed = checked(gas_consumed + GetPrice() * ratio);
-            if (!testMode && gas_consumed > gas_amount) return false;
+            GasConsumed = checked(GasConsumed + GetPrice() * ratio);
+            if (!testMode && GasConsumed > gas_amount) return false;
             return true;
         }
 
         public static ApplicationEngine Run(byte[] script, Snapshot snapshot,
-            IScriptContainer container = null, Block persistingBlock = null, bool testMode = false, Fixed8 extraGAS = default(Fixed8))
+            IScriptContainer container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
         {
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? new Block
             {
@@ -125,7 +125,7 @@ namespace Neo.SmartContract
             return engine;
         }
 
-        public static ApplicationEngine Run(byte[] script, IScriptContainer container = null, Block persistingBlock = null, bool testMode = false, Fixed8 extraGAS = default(Fixed8))
+        public static ApplicationEngine Run(byte[] script, IScriptContainer container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
         {
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {

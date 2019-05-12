@@ -41,41 +41,30 @@ namespace Neo.UnitTests
             return longRand % (max - min) + min;
         }
 
-        private Transaction CreateMockTransactionWithFee(long fee)
+        private Transaction CreateTransactionWithFee(long fee)
         {
-            var mockTx = TestUtils.CreateRandomHashInvocationMockTransaction();
-            mockTx.SetupGet(p => p.NetworkFee).Returns(new Fixed8(fee));
-            var tx = mockTx.Object;
-            if (fee > 0)
-            {
-                tx.Inputs = new CoinReference[1];
-                // Any input will trigger reading the transaction output and get our mocked transaction output.
-                tx.Inputs[0] = new CoinReference
-                {
-                    PrevHash = UInt256.Zero,
-                    PrevIndex = 0
-                };
-            }
+            Transaction tx = TestUtils.CreateRandomHashTransaction();
+            tx.NetworkFee = fee;
             return tx;
         }
 
-        private Transaction CreateMockHighPriorityTransaction()
+        private Transaction CreateHighPriorityTransaction()
         {
-            return CreateMockTransactionWithFee(LongRandom(100000, 100000000, TestUtils.TestRandom));
+            return CreateTransactionWithFee(LongRandom(100000, 100000000, TestUtils.TestRandom));
         }
 
-        private Transaction CreateMockLowPriorityTransaction()
+        private Transaction CreateLowPriorityTransaction()
         {
             long rNetFee = LongRandom(0, 100000, TestUtils.TestRandom);
             // [0,0.001] GAS a fee lower than the threshold of 0.001 GAS (not enough to be a high priority TX)
-            return CreateMockTransactionWithFee(rNetFee);
+            return CreateTransactionWithFee(rNetFee);
         }
 
         private void AddTransactions(int count, bool isHighPriority = false)
         {
             for (int i = 0; i < count; i++)
             {
-                var txToAdd = isHighPriority ? CreateMockHighPriorityTransaction() : CreateMockLowPriorityTransaction();
+                var txToAdd = isHighPriority ? CreateHighPriorityTransaction() : CreateLowPriorityTransaction();
                 Console.WriteLine($"created tx: {txToAdd.Hash}");
                 _unit.TryAdd(txToAdd.Hash, txToAdd);
             }
@@ -288,9 +277,9 @@ namespace Neo.UnitTests
         {
             var sortedVerified = _unit.GetSortedVerifiedTransactions().ToArray();
 
-            var txBarelyWontFit = CreateMockTransactionWithFee(sortedVerified.Last().NetworkFee.GetData() - 1);
+            var txBarelyWontFit = CreateTransactionWithFee(sortedVerified.Last().NetworkFee - 1);
             _unit.CanTransactionFitInPool(txBarelyWontFit).ShouldBeEquivalentTo(false);
-            var txBarelyFits = CreateMockTransactionWithFee(sortedVerified.Last().NetworkFee.GetData() + 1);
+            var txBarelyFits = CreateTransactionWithFee(sortedVerified.Last().NetworkFee + 1);
             _unit.CanTransactionFitInPool(txBarelyFits).ShouldBeEquivalentTo(true);
         }
 
@@ -318,9 +307,9 @@ namespace Neo.UnitTests
             var block = new Block { Transactions = new Transaction[0] };
             _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
 
-            _unit.CanTransactionFitInPool(CreateMockLowPriorityTransaction()).ShouldBeEquivalentTo(true);
+            _unit.CanTransactionFitInPool(CreateLowPriorityTransaction()).ShouldBeEquivalentTo(true);
             AddHighPriorityTransactions(1);
-            _unit.CanTransactionFitInPool(CreateMockLowPriorityTransaction()).ShouldBeEquivalentTo(false);
+            _unit.CanTransactionFitInPool(CreateLowPriorityTransaction()).ShouldBeEquivalentTo(false);
         }
 
         [TestMethod]

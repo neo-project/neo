@@ -8,7 +8,6 @@ using Neo.Plugins;
 using Neo.Wallets;
 using System;
 using System.Net;
-using System.Threading;
 
 namespace Neo
 {
@@ -86,7 +85,7 @@ namespace Neo
         }
 
         public void StartRpc(IPAddress bindAddress, int port, Wallet wallet = null, string sslCert = null, string password = null,
-            string[] trustedAuthorities = null, Fixed8 maxGasInvoke = default(Fixed8))
+            string[] trustedAuthorities = null, long maxGasInvoke = default)
         {
             RpcServer = new RpcServer(this, wallet, maxGasInvoke);
             RpcServer.Start(bindAddress, port, sslCert, password, trustedAuthorities);

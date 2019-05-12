@@ -106,7 +106,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Check_BadScript()
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
+            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), 0);
 
             var script = new ScriptBuilder();
             script.Emit(OpCode.NOP);

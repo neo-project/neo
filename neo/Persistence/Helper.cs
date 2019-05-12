@@ -1,7 +1,5 @@
 ﻿using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Neo.Persistence
 {
@@ -70,42 +68,6 @@ namespace Neo.Persistence
         public static Transaction GetTransaction(this IPersistence persistence, UInt256 hash)
         {
             return persistence.Transactions.TryGet(hash)?.Transaction;
-        }
-
-        public static TransactionOutput GetUnspent(this IPersistence persistence, UInt256 hash, ushort index)
-        {
-            UnspentCoinState state = persistence.UnspentCoins.TryGet(hash);
-            if (state == null) return null;
-            if (index >= state.Items.Length) return null;
-            if (state.Items[index].HasFlag(CoinState.Spent)) return null;
-            return persistence.GetTransaction(hash).Outputs[index];
-        }
-
-        public static IEnumerable<TransactionOutput> GetUnspent(this IPersistence persistence, UInt256 hash)
-        {
-            List<TransactionOutput> outputs = new List<TransactionOutput>();
-            UnspentCoinState state = persistence.UnspentCoins.TryGet(hash);
-            if (state != null)
-            {
-                Transaction tx = persistence.GetTransaction(hash);
-                for (int i = 0; i < state.Items.Length; i++)
-                    if (!state.Items[i].HasFlag(CoinState.Spent))
-                        outputs.Add(tx.Outputs[i]);
-            }
-            return outputs;
-        }
-
-        public static bool IsDoubleSpend(this IPersistence persistence, Transaction tx)
-        {
-            if (tx.Inputs.Length == 0) return false;
-            foreach (var group in tx.Inputs.GroupBy(p => p.PrevHash))
-            {
-                UnspentCoinState state = persistence.UnspentCoins.TryGet(group.Key);
-                if (state == null) return true;
-                if (group.Any(p => p.PrevIndex >= state.Items.Length || state.Items[p.PrevIndex].HasFlag(CoinState.Spent)))
-                    return true;
-            }
-            return false;
         }
     }
 }

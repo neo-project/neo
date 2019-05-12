@@ -31,12 +31,12 @@ namespace Neo.Network.RPC
     public sealed class RpcServer : IDisposable
     {
         public Wallet Wallet { get; set; }
-        public Fixed8 MaxGasInvoke { get; }
+        public long MaxGasInvoke { get; }
 
         private IWebHost host;
         private readonly NeoSystem system;
 
-        public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8))
+        public RpcServer(NeoSystem system, Wallet wallet = null, long maxGasInvoke = default)
         {
             this.system = system;
             this.Wallet = wallet;
@@ -114,11 +114,6 @@ namespace Neo.Network.RPC
         {
             switch (method)
             {
-                case "getassetstate":
-                    {
-                        UInt256 asset_id = UInt256.Parse(_params[0].AsString());
-                        return GetAssetState(asset_id);
-                    }
                 case "getbestblockhash":
                     {
                         return GetBestBlockHash();
@@ -184,12 +179,6 @@ namespace Neo.Network.RPC
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
                         return GetTransactionHeight(hash);
                     }
-                case "gettxout":
-                    {
-                        UInt256 hash = UInt256.Parse(_params[0].AsString());
-                        ushort index = ushort.Parse(_params[1].AsString());
-                        return GetTxOut(hash, index);
-                    }
                 case "getvalidators":
                     {
                         return GetValidators();
@@ -216,7 +205,7 @@ namespace Neo.Network.RPC
                     }
                 case "sendrawtransaction":
                     {
-                        Transaction tx = Transaction.DeserializeFrom(_params[0].AsString().HexToBytes());
+                        Transaction tx = _params[0].AsString().HexToBytes().AsSerializable<Transaction>();
                         return SendRawTransaction(tx);
                     }
                 case "submitblock":
@@ -387,12 +376,6 @@ namespace Neo.Network.RPC
             host.Start();
         }
 
-        private JObject GetAssetState(UInt256 asset_id)
-        {
-            AssetState asset = Blockchain.Singleton.Store.GetAssets().TryGet(asset_id);
-            return asset?.ToJson() ?? throw new RpcException(-100, "Unknown asset");
-        }
-
         private JObject GetBestBlockHash()
         {
             return Blockchain.Singleton.CurrentBlockHash.ToString();
@@ -560,11 +543,6 @@ namespace Neo.Network.RPC
             uint? height = Blockchain.Singleton.Store.GetTransactions().TryGet(hash)?.BlockIndex;
             if (height.HasValue) return height.Value;
             throw new RpcException(-100, "Unknown transaction");
-        }
-
-        private JObject GetTxOut(UInt256 hash, ushort index)
-        {
-            return Blockchain.Singleton.Store.GetUnspent(hash, index)?.ToJson(index);
         }
 
         private JObject GetValidators()

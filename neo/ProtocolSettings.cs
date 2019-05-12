@@ -1,7 +1,4 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Neo.Network.P2P.Payloads;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo
@@ -12,8 +9,7 @@ namespace Neo
         public byte AddressVersion { get; }
         public string[] StandbyValidators { get; }
         public string[] SeedList { get; }
-        public IReadOnlyDictionary<TransactionType, Fixed8> SystemFee { get; }
-        public Fixed8 LowPriorityThreshold { get; }
+        public long LowPriorityThreshold { get; }
         public uint SecondsPerBlock { get; }
 
         public static ProtocolSettings Default { get; }
@@ -54,18 +50,8 @@ namespace Neo
                     "seed4.neo.org:10333",
                     "seed5.neo.org:10333"
                 };
-            Dictionary<TransactionType, Fixed8> sys_fee = new Dictionary<TransactionType, Fixed8>
-            {
-                [TransactionType.RegisterTransaction] = Fixed8.FromDecimal(10000)
-            };
-            foreach (IConfigurationSection child in section.GetSection("SystemFee").GetChildren())
-            {
-                TransactionType key = (TransactionType)Enum.Parse(typeof(TransactionType), child.Key, true);
-                sys_fee[key] = Fixed8.Parse(child.Value);
-            }
-            this.SystemFee = sys_fee;
             this.SecondsPerBlock = section.GetValue("SecondsPerBlock", 15u);
-            this.LowPriorityThreshold = Fixed8.Parse(section.GetValue("LowPriorityThreshold", "0.001"));
+            this.LowPriorityThreshold = section.GetValue("LowPriorityThreshold", 100000L);
         }
     }
 }
