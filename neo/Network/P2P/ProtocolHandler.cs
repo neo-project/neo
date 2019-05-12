@@ -138,7 +138,7 @@ namespace Neo.Network.P2P
                                     var payload = (PingPayload)msg.Payload;
                                     msg = Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce));
 
-                                    system.LocalNode.Tell(new UdpMessage((IPEndPoint)udp.Sender, ByteString.FromBytes(msg.ToArray())));
+                                    system.LocalNode.Tell(new UdpResponse((IPEndPoint)udp.Sender, ByteString.FromBytes(msg.ToArray())));
                                     break;
                                 }
                             case MessageCommand.GetAddr:
@@ -147,7 +147,7 @@ namespace Neo.Network.P2P
                                     if (networkAddresses.Length == 0) return;
                                     msg = Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses));
 
-                                    system.LocalNode.Tell(new UdpMessage((IPEndPoint)udp.Sender, ByteString.FromBytes(msg.ToArray())));
+                                    system.LocalNode.Tell(new UdpResponse((IPEndPoint)udp.Sender, ByteString.FromBytes(msg.ToArray())));
                                     break;
                                 }
                         }

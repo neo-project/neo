@@ -143,7 +143,7 @@ namespace Neo.Network.P2P
             base.OnReceive(message);
             switch (message)
             {
-                case UdpMessage udp:
+                case UdpResponse udp:
                     SendUdp(udp.Sender, udp.Data);
                     break;
                 case Udp.Received udpmsg:

@@ -3,7 +3,7 @@ using System.Net;
 
 namespace Neo.Network.P2P
 {
-    public class UdpMessage
+    public class UdpResponse
     {
         /// <summary>
         /// Sender
@@ -18,14 +18,14 @@ namespace Neo.Network.P2P
         /// <summary>
         /// Constructor
         /// </summary>
-        public UdpMessage() { }
+        public UdpResponse() { }
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="sender">Sender</param>
         /// <param name="data">Data</param>
-        public UdpMessage(IPEndPoint sender, ByteString data)
+        public UdpResponse(IPEndPoint sender, ByteString data)
         {
             Sender = sender;
             Data = data;
