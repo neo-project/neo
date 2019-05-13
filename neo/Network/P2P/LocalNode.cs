@@ -32,13 +32,13 @@ namespace Neo.Network.P2P
         public static readonly uint Nonce;
         public static string UserAgent { get; set; }
 
-        private static LocalNode _singleton;
+        private static LocalNode singleton;
         public static LocalNode Singleton
         {
             get
             {
-                while (_singleton == null) Thread.Sleep(10);
-                return _singleton;
+                while (singleton == null) Thread.Sleep(10);
+                return singleton;
             }
         }
 
@@ -53,12 +53,12 @@ namespace Neo.Network.P2P
         {
             lock (lockObj)
             {
-                if (_singleton != null)
+                if (singleton != null)
                     throw new InvalidOperationException();
 
                 this.system = system;
                 protocol = Context.ActorOf(ProtocolHandler.Props(system));
-                _singleton = this;
+                singleton = this;
             }
         }
 
@@ -143,9 +143,6 @@ namespace Neo.Network.P2P
             base.OnReceive(message);
             switch (message)
             {
-                case UdpResponse udp:
-                    SendUdp(udp.Sender, udp.Data);
-                    break;
                 case Udp.Received udpmsg:
                     protocol.Tell(udpmsg);
                     break;
