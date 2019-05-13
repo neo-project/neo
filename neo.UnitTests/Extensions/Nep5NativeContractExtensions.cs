@@ -13,7 +13,7 @@ namespace Neo.UnitTests.Extensions
 {
     public static class Nep5NativeContractExtensions
     {
-        internal class ManualWitness : IScriptContainer, IVerifiable
+        internal class ManualWitness : IVerifiable
         {
             private readonly UInt160[] _hashForVerify;
 
@@ -38,9 +38,6 @@ namespace Neo.UnitTests.Extensions
             public void Serialize(BinaryWriter writer) { }
 
             public void SerializeUnsigned(BinaryWriter writer) { }
-
-            byte[] IScriptContainer.GetMessage() => new byte[0];
-
         }
 
         public static bool Transfer(this NativeContract contract, Persistence.Snapshot snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)

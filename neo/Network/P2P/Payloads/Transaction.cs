@@ -4,7 +4,6 @@ using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -107,11 +106,6 @@ namespace Neo.Network.P2P.Payloads
         public override int GetHashCode()
         {
             return Hash.GetHashCode();
-        }
-
-        byte[] IScriptContainer.GetMessage()
-        {
-            return this.GetHashData();
         }
 
         public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)

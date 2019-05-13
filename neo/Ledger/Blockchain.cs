@@ -134,7 +134,7 @@ namespace Neo.Ledger
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitSysCall("Neo.Native.Deploy");
+                sb.EmitSysCall(InteropService.Neo_Native_Deploy);
                 script = sb.ToArray();
             }
             return new Transaction
@@ -422,7 +422,7 @@ namespace Neo.Ledger
                         engine.Execute();
                         if (!engine.State.HasFlag(VMState.FAULT))
                         {
-                            engine.Service.Commit();
+                            engine.Snapshot.Commit();
                         }
                         execution_results.Add(new ApplicationExecutionResult
                         {
@@ -431,7 +431,7 @@ namespace Neo.Ledger
                             VMState = engine.State,
                             GasConsumed = engine.GasConsumed,
                             Stack = engine.ResultStack.ToArray(),
-                            Notifications = engine.Service.Notifications.ToArray()
+                            Notifications = engine.Notifications.ToArray()
                         });
                     }
                     if (execution_results.Count > 0)

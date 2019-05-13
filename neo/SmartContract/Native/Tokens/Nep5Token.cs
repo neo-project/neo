@@ -54,7 +54,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
-            StorageItem storage = engine.Service.Snapshot.Storages.GetAndChange(CreateAccountKey(account), () => new StorageItem
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateAccountKey(account), () => new StorageItem
             {
                 Value = new TState().ToByteArray()
             });
@@ -62,26 +62,26 @@ namespace Neo.SmartContract.Native.Tokens
             state.FromByteArray(storage.Value);
             state.Balance += amount;
             storage.Value = state.ToByteArray();
-            storage = engine.Service.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem
+            storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem
             {
                 Value = BigInteger.Zero.ToByteArray()
             });
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply += amount;
             storage.Value = totalSupply.ToByteArray();
-            engine.Service.SendNotification(engine, ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount });
+            engine.SendNotification(ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount });
         }
 
         protected virtual BigInteger TotalSupply(ApplicationEngine engine)
         {
-            StorageItem storage = engine.Service.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
+            StorageItem storage = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
             if (storage is null) return BigInteger.Zero;
             return new BigInteger(storage.Value);
         }
 
         protected virtual BigInteger BalanceOf(ApplicationEngine engine, UInt160 account)
         {
-            StorageItem storage = engine.Service.Snapshot.Storages.TryGet(CreateAccountKey(account));
+            StorageItem storage = engine.Snapshot.Storages.TryGet(CreateAccountKey(account));
             if (storage is null) return BigInteger.Zero;
             Nep5AccountState state = new Nep5AccountState(storage.Value);
             return state.Balance;
@@ -89,14 +89,14 @@ namespace Neo.SmartContract.Native.Tokens
 
         protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
         {
-            if (engine.Service.Trigger != TriggerType.Application) throw new InvalidOperationException();
+            if (engine.Trigger != TriggerType.Application) throw new InvalidOperationException();
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
-            if (!from.Equals(new UInt160(engine.CurrentContext.CallingScriptHash)) && !engine.Service.CheckWitness(engine, from))
+            if (!from.Equals(engine.CallingScriptHash) && !InteropService.CheckWitness(engine, from))
                 return false;
-            ContractState contract_to = engine.Service.Snapshot.Contracts.TryGet(to);
+            ContractState contract_to = engine.Snapshot.Contracts.TryGet(to);
             if (contract_to?.Payable == false) return false;
             StorageKey key_from = CreateAccountKey(from);
-            StorageItem storage_from = engine.Service.Snapshot.Storages.TryGet(key_from);
+            StorageItem storage_from = engine.Snapshot.Storages.TryGet(key_from);
             if (amount.IsZero)
             {
                 if (storage_from != null)
@@ -121,16 +121,16 @@ namespace Neo.SmartContract.Native.Tokens
                     OnBalanceChanging(engine, from, state_from, -amount);
                     if (state_from.Balance == amount)
                     {
-                        engine.Service.Snapshot.Storages.Delete(key_from);
+                        engine.Snapshot.Storages.Delete(key_from);
                     }
                     else
                     {
                         state_from.Balance -= amount;
-                        storage_from = engine.Service.Snapshot.Storages.GetAndChange(key_from);
+                        storage_from = engine.Snapshot.Storages.GetAndChange(key_from);
                         storage_from.Value = state_from.ToByteArray();
                     }
                     StorageKey key_to = CreateAccountKey(to);
-                    StorageItem storage_to = engine.Service.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem
+                    StorageItem storage_to = engine.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem
                     {
                         Value = new TState().ToByteArray()
                     });
@@ -141,7 +141,7 @@ namespace Neo.SmartContract.Native.Tokens
                     storage_to.Value = state_to.ToByteArray();
                 }
             }
-            engine.Service.SendNotification(engine, ScriptHash, new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount });
+            engine.SendNotification(ScriptHash, new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount });
             return true;
         }
 
