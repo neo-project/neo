@@ -47,7 +47,6 @@ namespace Neo.Network.P2P.Capabilities
                 case NodeCapabilities.UdpServer:
                 case NodeCapabilities.WsServer: return new ServerCapability(type); 
                 case NodeCapabilities.FullNode: return new FullNodeCapability(); 
-                case NodeCapabilities.AcceptRelay: return new AcceptRelayCapability(); 
 
                 default: throw new FormatException();
             }

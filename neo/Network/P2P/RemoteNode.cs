@@ -30,8 +30,8 @@ namespace Neo.Network.P2P
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
         public override int ListenerTcpPort => listenerTcpPort;
         public VersionPayload Version { get; private set; }
-        public bool AcceptRelay { get; private set; } = false;
         public uint LastBlockIndex { get; private set; } = 0;
+        public bool IsFullNode { get; private set; } = false;
 
         public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
             : base(connection, remote, local)
@@ -42,8 +42,7 @@ namespace Neo.Network.P2P
 
             var capabilities = new List<NodeCapabilityBase>
             {
-                new FullNodeCapability(Blockchain.Singleton.Height),
-                new AcceptRelayCapability()
+                new FullNodeCapability(Blockchain.Singleton.Height)
             };
 
             if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilities.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
@@ -157,7 +156,7 @@ namespace Neo.Network.P2P
 
         private void OnRelay(IInventory inventory)
         {
-            if (!AcceptRelay) return;
+            if (!IsFullNode) return;
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
@@ -168,7 +167,7 @@ namespace Neo.Network.P2P
 
         private void OnSend(IInventory inventory)
         {
-            if (!AcceptRelay) return;
+            if (!IsFullNode) return;
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
@@ -192,8 +191,8 @@ namespace Neo.Network.P2P
         private void OnVersionPayload(VersionPayload version)
         {
             Version = version;
-            AcceptRelay = version.Capabilities
-                .Where(u => u is AcceptRelayCapability)
+            IsFullNode = version.Capabilities
+                .Where(u => u is FullNodeCapability)
                 .Any();
             LastBlockIndex = version.Capabilities
                 .Where(u => u is FullNodeCapability)
