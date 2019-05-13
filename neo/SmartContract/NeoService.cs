@@ -60,7 +60,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private bool Header_GetVersion(ExecutionEngine engine)
+        private bool Header_GetVersion(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -72,7 +72,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Header_GetMerkleRoot(ExecutionEngine engine)
+        private bool Header_GetMerkleRoot(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -84,7 +84,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Header_GetConsensusData(ExecutionEngine engine)
+        private bool Header_GetConsensusData(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -96,7 +96,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Header_GetNextConsensus(ExecutionEngine engine)
+        private bool Header_GetNextConsensus(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -108,7 +108,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Transaction_GetWitnesses(ExecutionEngine engine)
+        private bool Transaction_GetWitnesses(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -122,7 +122,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Transaction_GetScript(ExecutionEngine engine)
+        private bool Transaction_GetScript(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -134,7 +134,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Witness_GetVerificationScript(ExecutionEngine engine)
+        private bool Witness_GetVerificationScript(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -146,7 +146,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Account_IsStandard(ExecutionEngine engine)
+        private bool Account_IsStandard(ApplicationEngine engine)
         {
             UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
             ContractState contract = Snapshot.Contracts.TryGet(hash);
@@ -155,7 +155,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private bool Contract_Create(ExecutionEngine engine)
+        private bool Contract_Create(ApplicationEngine engine)
         {
             if (Trigger != TriggerType.Application) return false;
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
@@ -176,7 +176,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private bool Contract_Migrate(ExecutionEngine engine)
+        private bool Contract_Migrate(ApplicationEngine engine)
         {
             if (Trigger != TriggerType.Application) return false;
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
@@ -212,7 +212,7 @@ namespace Neo.SmartContract
             return Contract_Destroy(engine);
         }
 
-        private bool Contract_GetScript(ExecutionEngine engine)
+        private bool Contract_GetScript(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -224,7 +224,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Contract_IsPayable(ExecutionEngine engine)
+        private bool Contract_IsPayable(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -236,7 +236,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Storage_Find(ExecutionEngine engine)
+        private bool Storage_Find(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -267,7 +267,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Enumerator_Create(ExecutionEngine engine)
+        private bool Enumerator_Create(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is VMArray array)
             {
@@ -278,7 +278,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Enumerator_Next(ExecutionEngine engine)
+        private bool Enumerator_Next(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -289,7 +289,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Enumerator_Value(ExecutionEngine engine)
+        private bool Enumerator_Value(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -300,7 +300,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Enumerator_Concat(ExecutionEngine engine)
+        private bool Enumerator_Concat(ApplicationEngine engine)
         {
             if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface1)) return false;
             if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface2)) return false;
@@ -311,7 +311,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private bool Iterator_Create(ExecutionEngine engine)
+        private bool Iterator_Create(ApplicationEngine engine)
         {
             IIterator iterator;
             switch (engine.CurrentContext.EvaluationStack.Pop())
@@ -329,7 +329,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private bool Iterator_Key(ExecutionEngine engine)
+        private bool Iterator_Key(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -340,7 +340,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Iterator_Keys(ExecutionEngine engine)
+        private bool Iterator_Keys(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -351,7 +351,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Iterator_Values(ExecutionEngine engine)
+        private bool Iterator_Values(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -362,7 +362,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private bool Iterator_Concat(ExecutionEngine engine)
+        private bool Iterator_Concat(ApplicationEngine engine)
         {
             if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface1)) return false;
             if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface2)) return false;
