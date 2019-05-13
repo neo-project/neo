@@ -171,7 +171,6 @@ namespace Neo.SmartContract
                     ContractProperties = contract_properties
                 };
                 Snapshot.Contracts.Add(hash, contract);
-                ContractsCreated.Add(hash, new UInt160(engine.CurrentContext.ScriptHash));
             }
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
             return true;
@@ -193,7 +192,6 @@ namespace Neo.SmartContract
                     ContractProperties = contract_properties
                 };
                 Snapshot.Contracts.Add(hash, contract);
-                ContractsCreated.Add(hash, new UInt160(engine.CurrentContext.ScriptHash));
                 if (contract.HasStorage)
                 {
                     foreach (var pair in Snapshot.Storages.Find(engine.CurrentContext.ScriptHash).ToArray())

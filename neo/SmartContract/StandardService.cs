@@ -24,7 +24,6 @@ namespace Neo.SmartContract
         public readonly TriggerType Trigger;
         internal readonly Snapshot Snapshot;
         protected readonly List<IDisposable> Disposables = new List<IDisposable>();
-        protected readonly Dictionary<UInt160, UInt160> ContractsCreated = new Dictionary<UInt160, UInt160>();
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly Dictionary<uint, Func<ApplicationEngine, bool>> methods = new Dictionary<uint, Func<ApplicationEngine, bool>>();
         private readonly Dictionary<uint, long> prices = new Dictionary<uint, long>();
@@ -64,7 +63,6 @@ namespace Neo.SmartContract
             Register("System.Transaction.GetHash", Transaction_GetHash, 1);
             Register("System.Contract.Call", Contract_Call, 10);
             Register("System.Contract.Destroy", Contract_Destroy, 1);
-            Register("System.Contract.GetStorageContext", Contract_GetStorageContext, 1);
             Register("System.Storage.GetContext", Storage_GetContext, 1);
             Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 1);
             Register("System.Storage.Get", Storage_Get, 100);
@@ -497,23 +495,6 @@ namespace Neo.SmartContract
                         IsReadOnly = true
                     };
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(context));
-                return true;
-            }
-            return false;
-        }
-
-        protected bool Contract_GetStorageContext(ExecutionEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                ContractState contract = _interface.GetInterface<ContractState>();
-                if (!ContractsCreated.TryGetValue(contract.ScriptHash, out UInt160 created)) return false;
-                if (!created.Equals(new UInt160(engine.CurrentContext.ScriptHash))) return false;
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
-                {
-                    ScriptHash = contract.ScriptHash,
-                    IsReadOnly = false
-                }));
                 return true;
             }
             return false;

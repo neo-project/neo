@@ -70,7 +70,6 @@ namespace Neo.UnitTests
             uut.GetPrice("System.Block.GetTransaction".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("System.Transaction.GetHash".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("System.Contract.Destroy".ToInteropMethodHash()).Should().Be(1);
-            uut.GetPrice("System.Contract.GetStorageContext".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("System.Storage.GetContext".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("System.Storage.GetReadOnlyContext".ToInteropMethodHash()).Should().Be(1);
             uut.GetPrice("System.Storage.Get".ToInteropMethodHash()).Should().Be(100);
