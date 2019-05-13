@@ -24,7 +24,6 @@ namespace Neo.SmartContract
         public readonly TriggerType Trigger;
         internal readonly Snapshot Snapshot;
         protected readonly List<IDisposable> Disposables = new List<IDisposable>();
-        protected readonly Dictionary<UInt160, UInt160> ContractsCreated = new Dictionary<UInt160, UInt160>();
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly Dictionary<uint, Func<ApplicationEngine, bool>> methods = new Dictionary<uint, Func<ApplicationEngine, bool>>();
         private readonly Dictionary<uint, long> prices = new Dictionary<uint, long>();
@@ -64,7 +63,6 @@ namespace Neo.SmartContract
             Register("System.Transaction.GetHash", Transaction_GetHash, 1);
             Register("System.Contract.Call", Contract_Call, 10);
             Register("System.Contract.Destroy", Contract_Destroy, 1);
-            Register("System.Contract.GetStorageContext", Contract_GetStorageContext, 1);
             Register("System.Storage.GetContext", Storage_GetContext, 1);
             Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 1);
             Register("System.Storage.Get", Storage_Get, 100);
@@ -120,55 +118,55 @@ namespace Neo.SmartContract
             prices.Add(method.ToInteropMethodHash(), price);
         }
 
-        protected bool ExecutionEngine_GetScriptContainer(ExecutionEngine engine)
+        protected bool ExecutionEngine_GetScriptContainer(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(engine.ScriptContainer));
             return true;
         }
 
-        protected bool ExecutionEngine_GetExecutingScriptHash(ExecutionEngine engine)
+        protected bool ExecutionEngine_GetExecutingScriptHash(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(engine.CurrentContext.ScriptHash);
             return true;
         }
 
-        protected bool ExecutionEngine_GetCallingScriptHash(ExecutionEngine engine)
+        protected bool ExecutionEngine_GetCallingScriptHash(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(engine.CurrentContext.CallingScriptHash ?? new byte[0]);
             return true;
         }
 
-        protected bool ExecutionEngine_GetEntryScriptHash(ExecutionEngine engine)
+        protected bool ExecutionEngine_GetEntryScriptHash(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(engine.EntryScriptHash);
             return true;
         }
 
-        protected bool Runtime_Platform(ExecutionEngine engine)
+        protected bool Runtime_Platform(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(Encoding.ASCII.GetBytes("NEO"));
             return true;
         }
 
-        protected bool Runtime_GetTrigger(ExecutionEngine engine)
+        protected bool Runtime_GetTrigger(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push((int)Trigger);
             return true;
         }
 
-        internal bool CheckWitness(ExecutionEngine engine, UInt160 hash)
+        internal bool CheckWitness(ApplicationEngine engine, UInt160 hash)
         {
             IVerifiable container = (IVerifiable)engine.ScriptContainer;
             UInt160[] _hashes_for_verifying = container.GetScriptHashesForVerifying(Snapshot);
             return _hashes_for_verifying.Contains(hash);
         }
 
-        protected bool CheckWitness(ExecutionEngine engine, ECPoint pubkey)
+        protected bool CheckWitness(ApplicationEngine engine, ECPoint pubkey)
         {
             return CheckWitness(engine, Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash());
         }
 
-        protected bool Runtime_CheckWitness(ExecutionEngine engine)
+        protected bool Runtime_CheckWitness(ApplicationEngine engine)
         {
             byte[] hashOrPubkey = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             bool result;
@@ -182,27 +180,27 @@ namespace Neo.SmartContract
             return true;
         }
 
-        internal void SendNotification(ExecutionEngine engine, UInt160 script_hash, StackItem state)
+        internal void SendNotification(ApplicationEngine engine, UInt160 script_hash, StackItem state)
         {
             NotifyEventArgs notification = new NotifyEventArgs(engine.ScriptContainer, script_hash, state);
             Notify?.Invoke(this, notification);
             notifications.Add(notification);
         }
 
-        protected bool Runtime_Notify(ExecutionEngine engine)
+        protected bool Runtime_Notify(ApplicationEngine engine)
         {
             SendNotification(engine, new UInt160(engine.CurrentContext.ScriptHash), engine.CurrentContext.EvaluationStack.Pop());
             return true;
         }
 
-        protected bool Runtime_Log(ExecutionEngine engine)
+        protected bool Runtime_Log(ApplicationEngine engine)
         {
             string message = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
             Log?.Invoke(this, new LogEventArgs(engine.ScriptContainer, new UInt160(engine.CurrentContext.ScriptHash), message));
             return true;
         }
 
-        protected bool Runtime_GetTime(ExecutionEngine engine)
+        protected bool Runtime_GetTime(ApplicationEngine engine)
         {
             if (Snapshot.PersistingBlock == null)
             {
@@ -216,7 +214,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected bool Runtime_Serialize(ExecutionEngine engine)
+        protected bool Runtime_Serialize(ApplicationEngine engine)
         {
             byte[] serialized;
             try
@@ -233,7 +231,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected bool Runtime_Deserialize(ExecutionEngine engine)
+        protected bool Runtime_Deserialize(ApplicationEngine engine)
         {
             StackItem item;
             try
@@ -269,13 +267,13 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected bool Blockchain_GetHeight(ExecutionEngine engine)
+        protected bool Blockchain_GetHeight(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(Snapshot.Height);
             return true;
         }
 
-        protected bool Blockchain_GetHeader(ExecutionEngine engine)
+        protected bool Blockchain_GetHeader(ApplicationEngine engine)
         {
             byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             UInt256 hash;
@@ -297,7 +295,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected bool Blockchain_GetBlock(ExecutionEngine engine)
+        protected bool Blockchain_GetBlock(ApplicationEngine engine)
         {
             byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             UInt256 hash;
@@ -319,7 +317,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected bool Blockchain_GetTransaction(ExecutionEngine engine)
+        protected bool Blockchain_GetTransaction(ApplicationEngine engine)
         {
             byte[] hash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             Transaction tx = Snapshot.GetTransaction(new UInt256(hash));
@@ -327,7 +325,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected bool Blockchain_GetTransactionHeight(ExecutionEngine engine)
+        protected bool Blockchain_GetTransactionHeight(ApplicationEngine engine)
         {
             byte[] hash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             int? height = (int?)Snapshot.Transactions.TryGet(new UInt256(hash))?.BlockIndex;
@@ -335,7 +333,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected bool Blockchain_GetContract(ExecutionEngine engine)
+        protected bool Blockchain_GetContract(ApplicationEngine engine)
         {
             UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
             ContractState contract = Snapshot.Contracts.TryGet(hash);
@@ -346,7 +344,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected bool Header_GetIndex(ExecutionEngine engine)
+        protected bool Header_GetIndex(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -358,7 +356,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        protected bool Header_GetHash(ExecutionEngine engine)
+        protected bool Header_GetHash(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -370,7 +368,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        protected bool Header_GetPrevHash(ExecutionEngine engine)
+        protected bool Header_GetPrevHash(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -382,7 +380,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        protected bool Header_GetTimestamp(ExecutionEngine engine)
+        protected bool Header_GetTimestamp(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -394,7 +392,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        protected bool Block_GetTransactionCount(ExecutionEngine engine)
+        protected bool Block_GetTransactionCount(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -406,7 +404,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        protected bool Block_GetTransactions(ExecutionEngine engine)
+        protected bool Block_GetTransactions(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -420,7 +418,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        protected bool Block_GetTransaction(ExecutionEngine engine)
+        protected bool Block_GetTransaction(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -435,7 +433,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        protected bool Transaction_GetHash(ExecutionEngine engine)
+        protected bool Transaction_GetHash(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -447,7 +445,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        protected bool Storage_GetContext(ExecutionEngine engine)
+        protected bool Storage_GetContext(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
             {
@@ -457,7 +455,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected bool Storage_GetReadOnlyContext(ExecutionEngine engine)
+        protected bool Storage_GetReadOnlyContext(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
             {
@@ -467,7 +465,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected bool Storage_Get(ExecutionEngine engine)
+        protected bool Storage_Get(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -485,7 +483,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        protected bool StorageContext_AsReadOnly(ExecutionEngine engine)
+        protected bool StorageContext_AsReadOnly(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
@@ -502,24 +500,7 @@ namespace Neo.SmartContract
             return false;
         }
 
-        protected bool Contract_GetStorageContext(ExecutionEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                ContractState contract = _interface.GetInterface<ContractState>();
-                if (!ContractsCreated.TryGetValue(contract.ScriptHash, out UInt160 created)) return false;
-                if (!created.Equals(new UInt160(engine.CurrentContext.ScriptHash))) return false;
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
-                {
-                    ScriptHash = contract.ScriptHash,
-                    IsReadOnly = false
-                }));
-                return true;
-            }
-            return false;
-        }
-
-        private bool Contract_Call(ExecutionEngine engine)
+        private bool Contract_Call(ApplicationEngine engine)
         {
             StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
             ContractState contract;
@@ -536,7 +517,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected bool Contract_Destroy(ExecutionEngine engine)
+        protected bool Contract_Destroy(ApplicationEngine engine)
         {
             if (Trigger != TriggerType.Application) return false;
             UInt160 hash = new UInt160(engine.CurrentContext.ScriptHash);
@@ -567,7 +548,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected bool Storage_Put(ExecutionEngine engine)
+        protected bool Storage_Put(ApplicationEngine engine)
         {
             if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface))
                 return false;
@@ -577,7 +558,7 @@ namespace Neo.SmartContract
             return PutEx(context, key, value, StorageFlags.None);
         }
 
-        protected bool Storage_PutEx(ExecutionEngine engine)
+        protected bool Storage_PutEx(ApplicationEngine engine)
         {
             if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface))
                 return false;
@@ -588,7 +569,7 @@ namespace Neo.SmartContract
             return PutEx(context, key, value, flags);
         }
 
-        protected bool Storage_Delete(ExecutionEngine engine)
+        protected bool Storage_Delete(ApplicationEngine engine)
         {
             if (Trigger != TriggerType.Application) return false;
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
