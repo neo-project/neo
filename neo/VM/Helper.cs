@@ -26,7 +26,7 @@ namespace Neo.VM
             sb.Emit(OpCode.NEWARRAY);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall("System.Contract.Call");
+            sb.EmitSysCall(InteropService.System_Contract_Call);
             return sb;
         }
 
@@ -38,7 +38,7 @@ namespace Neo.VM
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall("System.Contract.Call");
+            sb.EmitSysCall(InteropService.System_Contract_Call);
             return sb;
         }
 
@@ -50,7 +50,7 @@ namespace Neo.VM
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall("System.Contract.Call");
+            sb.EmitSysCall(InteropService.System_Contract_Call);
             return sb;
         }
 
@@ -155,11 +155,11 @@ namespace Neo.VM
             return sb;
         }
 
-        public static ScriptBuilder EmitSysCall(this ScriptBuilder sb, string api, params object[] args)
+        public static ScriptBuilder EmitSysCall(this ScriptBuilder sb, uint method, params object[] args)
         {
             for (int i = args.Length - 1; i >= 0; i--)
                 EmitPush(sb, args[i]);
-            return sb.EmitSysCall(api);
+            return sb.EmitSysCall(method);
         }
 
         public static ContractParameter ToParameter(this StackItem item)

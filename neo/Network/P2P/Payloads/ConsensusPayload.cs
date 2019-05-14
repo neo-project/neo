@@ -4,7 +4,6 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.VM;
 using System;
 using System.IO;
 
@@ -89,11 +88,6 @@ namespace Neo.Network.P2P.Payloads
             BlockIndex = reader.ReadUInt32();
             ValidatorIndex = reader.ReadUInt16();
             Data = reader.ReadVarBytes();
-        }
-
-        byte[] IScriptContainer.GetMessage()
-        {
-            return this.GetHashData();
         }
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(Snapshot snapshot)

@@ -3,7 +3,6 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.IO;
@@ -60,11 +59,6 @@ namespace Neo.Network.P2P.Payloads
             Index = reader.ReadUInt32();
             ConsensusData = reader.ReadUInt64();
             NextConsensus = reader.ReadSerializable<UInt160>();
-        }
-
-        byte[] IScriptContainer.GetMessage()
-        {
-            return this.GetHashData();
         }
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(Snapshot snapshot)
