@@ -143,9 +143,12 @@ namespace Neo.Network.P2P
             base.OnReceive(message);
             switch (message)
             {
-                case Udp.Received udpmsg:
-                    protocol.Tell(udpmsg);
-                    break;
+                case Udp.Received udp:
+                    {
+                        if (Message.TryDeserialize(udp.Data, out var msg) != udp.Data.Count) return;
+                        protocol.Tell(new UdpRequest((IPEndPoint)udp.Sender, msg));
+                        break;
+                    }
                 case Message msg:
                     BroadcastMessage(msg);
                     break;

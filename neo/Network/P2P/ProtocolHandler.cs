@@ -121,33 +121,31 @@ namespace Neo.Network.P2P
 
                         break;
                     }
-                case Udp.Received udp:
+                case UdpRequest udp:
                     {
-                        if (Message.TryDeserialize(udp.Data, out var msg) != udp.Data.Count) return;
-
-                        switch (msg.Command)
+                        switch (udp.Message.Command)
                         {
                             case MessageCommand.Transaction:
                                 {
-                                    if (msg.Payload.Size <= Transaction.MaxTransactionSize)
-                                        system.LocalNode.Tell(new LocalNode.Relay { Inventory = (Transaction)msg.Payload });
+                                    if (udp.Message.Payload.Size <= Transaction.MaxTransactionSize)
+                                        system.LocalNode.Tell(new LocalNode.Relay { Inventory = (Transaction)udp.Message.Payload });
                                     break;
                                 }
                             case MessageCommand.Ping:
                                 {
-                                    var payload = (PingPayload)msg.Payload;
-                                    msg = Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce));
+                                    var payload = (PingPayload)udp.Message.Payload;
+                                    var response = Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce));
 
-                                    system.LocalNode.Tell(new UdpResponse((IPEndPoint)udp.Sender, ByteString.FromBytes(msg.ToArray())));
+                                    system.LocalNode.Tell(new UdpResponse(udp.Sender, ByteString.FromBytes(response.ToArray())));
                                     break;
                                 }
                             case MessageCommand.GetAddr:
                                 {
                                     var networkAddresses = LocalNode.Singleton.GetPeers();
                                     if (networkAddresses.Length == 0) return;
-                                    msg = Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses));
+                                    var response = Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses));
 
-                                    system.LocalNode.Tell(new UdpResponse((IPEndPoint)udp.Sender, ByteString.FromBytes(msg.ToArray())));
+                                    system.LocalNode.Tell(new UdpResponse(udp.Sender, ByteString.FromBytes(response.ToArray())));
                                     break;
                                 }
                         }
