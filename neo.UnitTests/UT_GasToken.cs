@@ -49,8 +49,6 @@ namespace Neo.UnitTests
 
             byte[] to = new byte[20];
 
-            UT_NeoToken.Check_Initialize(snapshot, from);
-
             var keyCount = snapshot.Storages.GetChangeSet().Count();
             var supply = NativeContract.GAS.TotalSupply(snapshot);
             supply.Should().Be(0);
@@ -79,7 +77,7 @@ namespace Neo.UnitTests
             supply = NativeContract.GAS.TotalSupply(snapshot);
             supply.Should().Be(800000000000);
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 2); // Gas
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 3); // Gas
 
             // Transfer
 
