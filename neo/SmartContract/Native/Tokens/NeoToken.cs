@@ -33,8 +33,6 @@ namespace Neo.SmartContract.Native.Tokens
         {
             switch (operation)
             {
-                case "initialize":
-                    return Initialize(engine, new UInt160(args[0].GetByteArray()));
                 case "unclaimedGas":
                     return UnclaimedGas(engine, new UInt160(args[0].GetByteArray()), (uint)args[1].GetBigInteger());
                 case "registerValidator":
@@ -114,10 +112,11 @@ namespace Neo.SmartContract.Native.Tokens
             return value * amount * GAS.Factor / TotalAmount;
         }
 
-        private bool Initialize(ApplicationEngine engine, UInt160 account)
+        internal override bool Initialize(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.Application) throw new InvalidOperationException();
+            if (!base.Initialize(engine)) return false;
             if (base.TotalSupply(engine) != BigInteger.Zero) return false;
+            UInt160 account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1, Blockchain.StandbyValidators).ToScriptHash();
             MintTokens(engine, account, TotalAmount);
             foreach (ECPoint pubkey in Blockchain.StandbyValidators)
                 RegisterValidator(engine, pubkey.EncodePoint(true));

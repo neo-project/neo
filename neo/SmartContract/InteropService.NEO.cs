@@ -59,6 +59,7 @@ namespace Neo.SmartContract
                     Script = contract.Script,
                     ContractProperties = contract.Properties
                 });
+                contract.Initialize(engine);
             }
             return true;
         }
