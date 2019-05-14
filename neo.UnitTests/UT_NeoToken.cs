@@ -52,8 +52,6 @@ namespace Neo.UnitTests
             byte[] from = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
                 Blockchain.StandbyValidators).ToScriptHash().ToArray();
 
-            Check_Initialize(snapshot, from);
-
             // No signature
 
             var ret = Check_Vote(snapshot, from, new byte[][] { }, false);
@@ -94,8 +92,6 @@ namespace Neo.UnitTests
             byte[] from = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
                 Blockchain.StandbyValidators).ToScriptHash().ToArray();
 
-            Check_Initialize(snapshot, from);
-
             var unclaim = Check_UnclaimedGas(snapshot, from);
             unclaim.Value.Should().Be(new BigInteger(800000000000));
             unclaim.State.Should().BeTrue();
@@ -109,10 +105,6 @@ namespace Neo.UnitTests
         public void Check_RegisterValidator()
         {
             var snapshot = Store.GetSnapshot().Clone();
-
-            byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
-                Blockchain.StandbyValidators).ToScriptHash().ToArray();
-            Check_Initialize(snapshot, account);
 
             var ret = Check_RegisterValidator(snapshot, new byte[0]);
             ret.State.Should().BeFalse();
@@ -151,8 +143,6 @@ namespace Neo.UnitTests
 
             byte[] to = new byte[20];
 
-            Check_Initialize(snapshot, from);
-
             var keyCount = snapshot.Storages.GetChangeSet().Count();
 
             // Check unclaim
@@ -174,7 +164,7 @@ namespace Neo.UnitTests
             unclaim.Value.Should().Be(new BigInteger(0));
             unclaim.State.Should().BeTrue();
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 3); // Gas + new balance
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 4); // Gas + new balance
 
             // Return balance
 
@@ -202,7 +192,6 @@ namespace Neo.UnitTests
             byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
                 Blockchain.StandbyValidators).ToScriptHash().ToArray();
 
-            Check_Initialize(snapshot, account);
             NativeContract.NEO.BalanceOf(snapshot, account).Should().Be(100_000_000);
 
             account[5]++; // Without existing balance
@@ -214,10 +203,25 @@ namespace Neo.UnitTests
         public void Check_Initialize()
         {
             var snapshot = Store.GetSnapshot().Clone();
-            byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
-                Blockchain.StandbyValidators).ToScriptHash().ToArray();
 
-            Check_Initialize(snapshot, account);
+            // StandbyValidators
+
+            var validators = Check_GetValidators(snapshot);
+
+            for (var x = 0; x < Blockchain.StandbyValidators.Length; x++)
+            {
+                validators[x].Equals(Blockchain.StandbyValidators[x]);
+            }
+
+            // Check double call
+
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+
+            engine.LoadScript(NativeContract.NEO.Script);
+
+            var result = NativeContract.NEO.Initialize(engine);
+
+            result.Should().Be(false);
         }
 
         [TestMethod]
@@ -338,78 +342,6 @@ namespace Neo.UnitTests
             result.Should().BeOfType(typeof(VM.Types.Integer));
 
             return ((result as VM.Types.Integer).GetBigInteger(), true);
-        }
-
-        internal static void Check_Initialize(Snapshot snapshot, byte[] account)
-        {
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-
-            engine.LoadScript(NativeContract.NEO.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(account);
-            script.EmitPush(1);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("initialize");
-            engine.LoadScript(script.ToArray());
-
-            engine.Execute();
-            engine.State.Should().Be(VMState.HALT);
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
-            (result as VM.Types.Boolean).GetBoolean().Should().Be(true);
-
-            var storages = snapshot.Storages.GetChangeSet().ToArray();
-
-            // Count
-
-            storages.Length.Should().Be(Blockchain.StandbyValidators.Length + 2);
-
-            // All hashes equal
-
-            foreach (var st in storages) st.Key.ScriptHash.Should().Be(NativeContract.NEO.ScriptHash);
-
-            // First key, the flag
-
-            var storage = storages.First(p => p.Key.Key[0] == 11);
-            storage.Item.Value.Should().BeEquivalentTo(new BigInteger(100000000).ToByteArray());
-            storage.Key.Key.Should().BeEquivalentTo(new byte[] { 11 });
-
-            // Balance
-
-            storage = storages.First(p => p.Key.Key[0] == 20);
-            CheckBalance(account, storage, 100_000_000, 0, new ECPoint[] { });
-
-            // StandbyValidators
-
-            var validators = Check_GetValidators(snapshot);
-
-            for (var x = 0; x < Blockchain.StandbyValidators.Length; x++)
-            {
-                CheckValidator(Blockchain.StandbyValidators[x], storages[x + 2]);
-                validators[x].Equals(Blockchain.StandbyValidators[x]);
-            }
-
-            // Check double call
-
-            engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
-
-            engine.LoadScript(NativeContract.NEO.Script);
-
-            script = new ScriptBuilder();
-            script.EmitPush(account);
-            script.EmitPush(1);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("initialize");
-            engine.LoadScript(script.ToArray());
-
-            engine.Execute();
-            engine.State.Should().Be(VMState.HALT);
-
-            result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
-            (result as VM.Types.Boolean).GetBoolean().Should().Be(false);
         }
 
         internal static void CheckValidator(ECPoint eCPoint, DataCache<StorageKey, StorageItem>.Trackable trackable)

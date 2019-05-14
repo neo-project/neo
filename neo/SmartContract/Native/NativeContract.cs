@@ -71,5 +71,12 @@ namespace Neo.SmartContract.Native
                 return SupportedStandards.Select(p => (StackItem)p).ToList();
             throw new NotSupportedException();
         }
+
+        internal virtual bool Initialize(ApplicationEngine engine)
+        {
+            if (engine.Trigger != TriggerType.Application)
+                throw new InvalidOperationException();
+            return true;
+        }
     }
 }
