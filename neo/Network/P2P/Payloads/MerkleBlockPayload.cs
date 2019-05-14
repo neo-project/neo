@@ -27,7 +27,6 @@ namespace Neo.Network.P2P.Payloads
                 MerkleRoot = block.MerkleRoot,
                 Timestamp = block.Timestamp,
                 Index = block.Index,
-                ConsensusData = block.ConsensusData,
                 NextConsensus = block.NextConsensus,
                 Witness = block.Witness,
                 TxCount = block.Transactions.Length,

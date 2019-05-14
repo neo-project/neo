@@ -143,7 +143,6 @@ namespace Neo.SmartContract
                 MerkleRoot = new UInt256(),
                 Timestamp = snapshot.Blocks[snapshot.CurrentBlockHash].TrimmedBlock.Timestamp + Blockchain.SecondsPerBlock,
                 Index = snapshot.Height + 1,
-                ConsensusData = 0,
                 NextConsensus = snapshot.Blocks[snapshot.CurrentBlockHash].TrimmedBlock.NextConsensus,
                 Witness = new Witness
                 {

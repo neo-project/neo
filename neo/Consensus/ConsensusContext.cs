@@ -29,7 +29,6 @@ namespace Neo.Consensus
         public int MyIndex { get; set; }
         public uint PrimaryIndex { get; set; }
         public uint Timestamp { get; set; }
-        public ulong Nonce { get; set; }
         public UInt160 NextConsensus { get; set; }
         public UInt256[] TransactionHashes { get; set; }
         public Dictionary<UInt256, Transaction> Transactions { get; set; }
@@ -82,7 +81,6 @@ namespace Neo.Consensus
             ViewNumber = reader.ReadByte();
             PrimaryIndex = reader.ReadUInt32();
             Timestamp = reader.ReadUInt32();
-            Nonce = reader.ReadUInt64();
             NextConsensus = reader.ReadSerializable<UInt160>();
             if (NextConsensus.Equals(UInt160.Zero))
                 NextConsensus = null;
@@ -158,7 +156,6 @@ namespace Neo.Consensus
                     MerkleRoot = MerkleTree.ComputeRoot(TransactionHashes),
                     Timestamp = Timestamp,
                     Index = BlockIndex,
-                    ConsensusData = Nonce,
                     NextConsensus = NextConsensus,
                     Transactions = new Transaction[0]
                 };
@@ -202,7 +199,6 @@ namespace Neo.Consensus
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareRequest
             {
                 Timestamp = Timestamp,
-                Nonce = Nonce,
                 NextConsensus = NextConsensus,
                 TransactionHashes = TransactionHashes
             });
@@ -225,7 +221,6 @@ namespace Neo.Consensus
                 {
                     ViewNumber = ViewNumber,
                     TransactionHashes = TransactionHashes,
-                    Nonce = Nonce,
                     NextConsensus = NextConsensus,
                     Timestamp = Timestamp
                 };
@@ -310,7 +305,6 @@ namespace Neo.Consensus
             writer.Write(ViewNumber);
             writer.Write(PrimaryIndex);
             writer.Write(Timestamp);
-            writer.Write(Nonce);
             writer.Write(NextConsensus ?? UInt160.Zero);
             writer.Write(TransactionHashes ?? new UInt256[0]);
             writer.Write(Transactions?.Values.ToArray() ?? new Transaction[0]);
