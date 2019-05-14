@@ -18,6 +18,7 @@ namespace Neo.SmartContract.Native
         public static GasToken GAS { get; } = new GasToken();
 
         public abstract string ServiceName { get; }
+        public uint ServiceHash { get; }
         public byte[] Script { get; }
         public UInt160 ScriptHash { get; }
         public virtual ContractPropertyState Properties => ContractPropertyState.NoProperty;
@@ -25,9 +26,10 @@ namespace Neo.SmartContract.Native
 
         protected NativeContract()
         {
+            this.ServiceHash = ServiceName.ToInteropMethodHash();
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitSysCall(ServiceName);
+                sb.EmitSysCall(ServiceHash);
                 this.Script = sb.ToArray();
             }
             this.ScriptHash = Script.ToScriptHash();
@@ -54,7 +56,7 @@ namespace Neo.SmartContract.Native
 
         internal bool Invoke(ApplicationEngine engine)
         {
-            if (!new UInt160(engine.CurrentContext.ScriptHash).Equals(ScriptHash))
+            if (!engine.CurrentScriptHash.Equals(ScriptHash))
                 return false;
             string operation = engine.CurrentContext.EvaluationStack.Pop().GetString();
             VMArray args = (VMArray)engine.CurrentContext.EvaluationStack.Pop();
