@@ -60,6 +60,7 @@ namespace Neo.SmartContract.Native.Tokens
             });
             TState state = new TState();
             state.FromByteArray(storage.Value);
+            OnBalanceChanging(engine, account, state, amount);
             state.Balance += amount;
             storage.Value = state.ToByteArray();
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem
