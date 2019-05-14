@@ -11,7 +11,8 @@ namespace Neo.SmartContract
 {
     public class ApplicationEngine : ExecutionEngine
     {
-        public event EventHandler<NotifyEventArgs> Notify;
+        public static event EventHandler<NotifyEventArgs> Notify;
+        public static event EventHandler<LogEventArgs> Log;
 
         private const long ratio = 100000;
         private static readonly long gas_free = 10 * (long)NativeContract.GAS.Factor;
@@ -163,6 +164,12 @@ namespace Neo.SmartContract
             {
                 return Run(script, snapshot, container, persistingBlock, testMode, extraGAS);
             }
+        }
+
+        internal void SendLog(UInt160 script_hash, string message)
+        {
+            LogEventArgs log = new LogEventArgs(ScriptContainer, script_hash, message);
+            Log?.Invoke(this, log);
         }
 
         internal void SendNotification(UInt160 script_hash, StackItem state)

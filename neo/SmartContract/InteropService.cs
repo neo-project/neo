@@ -18,8 +18,6 @@ namespace Neo.SmartContract
 {
     public static partial class InteropService
     {
-        public static event EventHandler<LogEventArgs> Log;
-
         private static readonly Dictionary<uint, Func<ApplicationEngine, bool>> methods = new Dictionary<uint, Func<ApplicationEngine, bool>>();
         private static readonly Dictionary<uint, long> prices = new Dictionary<uint, long>();
 
@@ -165,7 +163,7 @@ namespace Neo.SmartContract
         private static bool Runtime_Log(ApplicationEngine engine)
         {
             string message = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-            Log?.Invoke(null, new LogEventArgs(engine.ScriptContainer, engine.CurrentScriptHash, message));
+            engine.SendLog(engine.CurrentScriptHash, message);
             return true;
         }
 
