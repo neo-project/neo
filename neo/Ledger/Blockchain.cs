@@ -17,9 +17,9 @@ using System.Threading;
 
 namespace Neo.Ledger
 {
-    public sealed class Blockchain : UntypedActor
+    public sealed partial class Blockchain : UntypedActor
     {
-        public class ApplicationExecuted { public Transaction Transaction; public ApplicationExecutionResult[] ExecutionResults; }
+        public partial class ApplicationExecuted { }
         public class PersistCompleted { public Block Block; }
         public class Import { public IEnumerable<Block> Blocks; }
         public class ImportCompleted { }
@@ -419,7 +419,6 @@ namespace Neo.Ledger
                         BlockIndex = block.Index,
                         Transaction = tx
                     });
-                    List<ApplicationExecutionResult> execution_results = new List<ApplicationExecutionResult>();
                     using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.Gas))
                     {
                         engine.LoadScript(tx.Script);
@@ -428,23 +427,7 @@ namespace Neo.Ledger
                         {
                             engine.Snapshot.Commit();
                         }
-                        execution_results.Add(new ApplicationExecutionResult
-                        {
-                            Trigger = TriggerType.Application,
-                            ScriptHash = tx.Script.ToScriptHash(),
-                            VMState = engine.State,
-                            GasConsumed = engine.GasConsumed,
-                            Stack = engine.ResultStack.ToArray(),
-                            Notifications = engine.Notifications.ToArray()
-                        });
-                    }
-                    if (execution_results.Count > 0)
-                    {
-                        ApplicationExecuted application_executed = new ApplicationExecuted
-                        {
-                            Transaction = tx,
-                            ExecutionResults = execution_results.ToArray()
-                        };
+                        ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                         Context.System.EventStream.Publish(application_executed);
                         all_application_executed.Add(application_executed);
                     }
