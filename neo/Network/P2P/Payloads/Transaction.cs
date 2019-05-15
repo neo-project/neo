@@ -164,7 +164,7 @@ namespace Neo.Network.P2P.Payloads
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
             BigInteger fee = Gas + NetworkFee;
             if (balance < fee) return false;
-            fee += mempool.Sum(p => p.Gas + p.NetworkFee);
+            fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Sum(p => p.Gas + p.NetworkFee);
             if (balance < fee) return false;
             return this.VerifyWitnesses(snapshot);
         }
