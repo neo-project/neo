@@ -75,7 +75,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             BigInteger gas = CalculateBonus(engine, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
-            GAS.MintTokens(engine, account, gas);
+            GAS.Mint(engine, account, gas);
             engine.Snapshot.Storages.GetAndChange(CreateAccountKey(account)).Value = state.ToByteArray();
         }
 
@@ -117,7 +117,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (!base.Initialize(engine)) return false;
             if (base.TotalSupply(engine) != BigInteger.Zero) return false;
             UInt160 account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1, Blockchain.StandbyValidators).ToScriptHash();
-            MintTokens(engine, account, TotalAmount);
+            Mint(engine, account, TotalAmount);
             foreach (ECPoint pubkey in Blockchain.StandbyValidators)
                 RegisterValidator(engine, pubkey.EncodePoint(true));
             return true;

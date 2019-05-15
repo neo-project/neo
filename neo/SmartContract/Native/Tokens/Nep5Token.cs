@@ -50,7 +50,7 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        internal protected virtual void MintTokens(ApplicationEngine engine, UInt160 account, BigInteger amount)
+        internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
@@ -71,6 +71,32 @@ namespace Neo.SmartContract.Native.Tokens
             totalSupply += amount;
             storage.Value = totalSupply.ToByteArray();
             engine.SendNotification(ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount });
+        }
+
+        internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
+        {
+            if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (amount.IsZero) return;
+            StorageKey key = CreateAccountKey(account);
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(key);
+            TState state = new TState();
+            state.FromByteArray(storage.Value);
+            if (state.Balance < amount) throw new InvalidOperationException();
+            OnBalanceChanging(engine, account, state, -amount);
+            if (state.Balance == amount)
+            {
+                engine.Snapshot.Storages.Delete(key);
+            }
+            else
+            {
+                state.Balance -= amount;
+                storage.Value = state.ToByteArray();
+            }
+            storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
+            BigInteger totalSupply = new BigInteger(storage.Value);
+            totalSupply -= amount;
+            storage.Value = totalSupply.ToByteArray();
+            engine.SendNotification(ScriptHash, new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount });
         }
 
         protected virtual BigInteger TotalSupply(ApplicationEngine engine)
