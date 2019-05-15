@@ -4,10 +4,12 @@ using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -21,6 +23,7 @@ namespace Neo.Network.P2P.Payloads
 
         public byte Version;
         public byte[] Script;
+        public UInt160 Sender;
         public long Gas;
         public long NetworkFee;
         public TransactionAttribute[] Attributes;
@@ -52,6 +55,7 @@ namespace Neo.Network.P2P.Payloads
         public int Size =>
             sizeof(byte) +              //Version
             Script.GetVarSize() +       //Script
+            Sender.Size +               //Sender
             sizeof(long) +              //Gas
             sizeof(long) +              //NetworkFee
             Attributes.GetVarSize() +   //Attributes
@@ -69,10 +73,13 @@ namespace Neo.Network.P2P.Payloads
             if (Version > 0) throw new FormatException();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
+            Sender = reader.ReadSerializable<UInt160>();
             Gas = reader.ReadInt64();
             if (Gas < 0) throw new FormatException();
+            if (Gas % NativeContract.GAS.Factor != 0) throw new FormatException();
             NetworkFee = reader.ReadInt64();
             if (NetworkFee < 0) throw new FormatException();
+            if (Gas + NetworkFee < Gas) throw new FormatException();
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
             var cosigners = GetScriptHashesForVerifying(null);
             if (cosigners.Distinct().Count() != cosigners.Length) throw new FormatException();
@@ -110,7 +117,9 @@ namespace Neo.Network.P2P.Payloads
 
         public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
         {
-            return Attributes.Where(p => p.Usage == TransactionAttributeUsage.Script).Select(p => new UInt160(p.Data)).OrderBy(p => p).ToArray();
+            HashSet<UInt160> hashes = new HashSet<UInt160> { Sender };
+            hashes.UnionWith(Attributes.Where(p => p.Usage == TransactionAttributeUsage.Script).Select(p => new UInt160(p.Data)));
+            return hashes.OrderBy(p => p).ToArray();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -123,6 +132,7 @@ namespace Neo.Network.P2P.Payloads
         {
             writer.Write(Version);
             writer.WriteVarBytes(Script);
+            writer.Write(Sender);
             writer.Write(Gas);
             writer.Write(NetworkFee);
             writer.Write(Attributes);
@@ -135,6 +145,7 @@ namespace Neo.Network.P2P.Payloads
             json["size"] = Size;
             json["version"] = Version;
             json["script"] = Script.ToHexString();
+            json["sender"] = Sender.ToAddress();
             json["gas"] = new BigDecimal(Gas, (byte)NativeContract.GAS.Decimals).ToString();
             json["net_fee"] = new BigDecimal(NetworkFee, (byte)NativeContract.GAS.Decimals).ToString();
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
@@ -150,7 +161,11 @@ namespace Neo.Network.P2P.Payloads
         public bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
         {
             if (Size > MaxTransactionSize) return false;
-            if (Gas % NativeContract.GAS.Factor != 0) return false;
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
+            BigInteger fee = Gas + NetworkFee;
+            if (balance < fee) return false;
+            fee += mempool.Sum(p => p.Gas + p.NetworkFee);
+            if (balance < fee) return false;
             return this.VerifyWitnesses(snapshot);
         }
     }
