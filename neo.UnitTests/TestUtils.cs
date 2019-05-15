@@ -50,6 +50,7 @@ namespace Neo.UnitTests
                 }
             }
 
+            block.ConsensusData = new ConsensusData();
             block.Transactions = transactionsVal;
         }
 
