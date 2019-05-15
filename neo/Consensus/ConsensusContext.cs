@@ -205,7 +205,13 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakePrepareRequest()
         {
-            Fill();
+            IEnumerable<Transaction> memoryPoolTransactions = Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions();
+            foreach (IPolicyPlugin plugin in Plugin.Policies)
+                memoryPoolTransactions = plugin.FilterForBlock(memoryPoolTransactions);
+            List<Transaction> transactions = memoryPoolTransactions.ToList();
+            TransactionHashes = transactions.Select(p => p.Hash).ToArray();
+            Transactions = transactions.ToDictionary(p => p.Hash);
+            Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), PrevHeader.Timestamp + 1);
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareRequest
             {
                 Timestamp = Block.Timestamp,
@@ -352,17 +358,6 @@ namespace Neo.Consensus
                 if (!hasPayload) continue;
                 writer.Write(payload);
             }
-        }
-
-        private void Fill()
-        {
-            IEnumerable<Transaction> memoryPoolTransactions = Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions();
-            foreach (IPolicyPlugin plugin in Plugin.Policies)
-                memoryPoolTransactions = plugin.FilterForBlock(memoryPoolTransactions);
-            List<Transaction> transactions = memoryPoolTransactions.ToList();
-            TransactionHashes = transactions.Select(p => p.Hash).ToArray();
-            Transactions = transactions.ToDictionary(p => p.Hash);
-            Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), PrevHeader.Timestamp + 1);
         }
     }
 }
