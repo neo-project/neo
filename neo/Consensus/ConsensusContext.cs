@@ -22,24 +22,25 @@ namespace Neo.Consensus
         public const byte CN_Context = 0xf4;
 
         public const uint Version = 0;
-        public uint BlockIndex { get; set; }
-        public UInt256 PrevHash { get; set; }
-        public byte ViewNumber { get; set; }
-        public ECPoint[] Validators { get; set; }
-        public int MyIndex { get; set; }
-        public uint PrimaryIndex { get; set; }
-        public uint Timestamp { get; set; }
-        public UInt160 NextConsensus { get; set; }
-        public UInt256[] TransactionHashes { get; set; }
-        public Dictionary<UInt256, Transaction> Transactions { get; set; }
-        public ConsensusPayload[] PreparationPayloads { get; set; }
-        public ConsensusPayload[] CommitPayloads { get; set; }
-        public ConsensusPayload[] ChangeViewPayloads { get; set; }
-        public ConsensusPayload[] LastChangeViewPayloads { get; set; }
+        public uint BlockIndex;
+        public UInt256 PrevHash;
+        public byte ViewNumber;
+        public ECPoint[] Validators;
+        public int MyIndex;
+        public uint PrimaryIndex;
+        public uint Timestamp;
+        public UInt160 NextConsensus;
+        public UInt256[] TransactionHashes;
+        public Dictionary<UInt256, Transaction> Transactions;
+        public ConsensusPayload[] PreparationPayloads;
+        public ConsensusPayload[] CommitPayloads;
+        public ConsensusPayload[] ChangeViewPayloads;
+        public ConsensusPayload[] LastChangeViewPayloads;
         // LastSeenMessage array stores the height of the last seen message, for each validator.
         // if this node never heard from validator i, LastSeenMessage[i] will be -1.
-        public int[] LastSeenMessage { get; set; }
-        public Block Block { get; set; }
+        public int[] LastSeenMessage;
+
+        public Block Block { get; private set; }
         public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
         private readonly Wallet wallet;
