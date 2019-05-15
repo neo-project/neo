@@ -131,13 +131,14 @@ namespace Neo.UnitTests
                 randomBytes = overrideScriptBytes;
             else
             {
-                randomBytes = new byte[16];
+                randomBytes = new byte[1];
                 TestRandom.NextBytes(randomBytes);
             }
 
             Transaction tx = new Transaction
             {
                 Script = randomBytes,
+                Sender = UInt160.Zero,
                 NetworkFee = networkFee,
                 Attributes = new TransactionAttribute[0],
                 Witnesses = new[]

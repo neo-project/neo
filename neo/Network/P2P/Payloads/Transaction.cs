@@ -13,7 +13,7 @@ using System.Numerics;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public sealed class Transaction : IEquatable<Transaction>, IInventory
+    public class Transaction : IEquatable<Transaction>, IInventory
     {
         public const int MaxTransactionSize = 102400;
         /// <summary>
@@ -158,7 +158,7 @@ namespace Neo.Network.P2P.Payloads
             return Verify(snapshot, Enumerable.Empty<Transaction>());
         }
 
-        public bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
+        public virtual bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
         {
             if (Size > MaxTransactionSize) return false;
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);

@@ -146,9 +146,17 @@ namespace Neo.Ledger
             {
                 Version = 0,
                 Script = script,
+                Sender = (new[] { (byte)OpCode.PUSHT }).ToScriptHash(),
                 Gas = 0,
                 Attributes = new TransactionAttribute[0],
-                Witnesses = new Witness[0]
+                Witnesses = new[]
+                {
+                    new Witness
+                    {
+                        InvocationScript = new byte[0],
+                        VerificationScript = new[] { (byte)OpCode.PUSHT }
+                    }
+                }
             };
         }
 
@@ -406,21 +414,23 @@ namespace Neo.Ledger
             {
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
-                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true))
-                {
-                    using (ScriptBuilder sb = new ScriptBuilder())
-                    {
-                        sb.EmitAppCall(NativeContract.GAS.ScriptHash, "distributeFees");
-                        engine.LoadScript(sb.ToArray());
-                    }
-                    engine.Execute();
-                    if (engine.State != VMState.HALT) throw new InvalidOperationException();
-                    ApplicationExecuted application_executed = new ApplicationExecuted(engine);
-                    Context.System.EventStream.Publish(application_executed);
-                    all_application_executed.Add(application_executed);
-                }
                 if (block.Index > 0)
+                {
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true))
+                    {
+                        using (ScriptBuilder sb = new ScriptBuilder())
+                        {
+                            sb.EmitAppCall(NativeContract.GAS.ScriptHash, "distributeFees");
+                            engine.LoadScript(sb.ToArray());
+                        }
+                        engine.Execute();
+                        if (engine.State != VMState.HALT) throw new InvalidOperationException();
+                        ApplicationExecuted application_executed = new ApplicationExecuted(engine);
+                        Context.System.EventStream.Publish(application_executed);
+                        all_application_executed.Add(application_executed);
+                    }
                     snapshot.NextValidators.GetAndChange().Validators = snapshot.GetValidators();
+                }
                 snapshot.Blocks.Add(block.Hash, new BlockState
                 {
                     SystemFeeAmount = snapshot.GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.Gas),

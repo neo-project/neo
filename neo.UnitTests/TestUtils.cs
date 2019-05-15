@@ -25,8 +25,8 @@ namespace Neo.UnitTests
         {
             return new Transaction
             {
-                Gas = 0,
                 Script = new byte[1],
+                Sender = UInt160.Zero,
                 Attributes = new TransactionAttribute[0],
                 Witnesses = new Witness[0]
             };
@@ -57,7 +57,7 @@ namespace Neo.UnitTests
         private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal)
         {
             bb.PrevHash = val256;
-            merkRootVal = new UInt256(new byte[] { 169, 106, 72, 65, 146, 118, 185, 97, 126, 3, 69, 99, 127, 206, 73, 158, 185, 246, 74, 178, 7, 59, 145, 123, 41, 219, 204, 53, 148, 16, 255, 13 });
+            merkRootVal = new UInt256(new byte[] { 49, 73, 102, 67, 23, 43, 100, 236, 22, 37, 65, 124, 112, 39, 36, 66, 127, 219, 57, 69, 11, 184, 182, 127, 132, 95, 64, 200, 252, 206, 222, 197 });
             bb.MerkleRoot = merkRootVal;
             timestampVal = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp();
             bb.Timestamp = timestampVal;
@@ -80,6 +80,7 @@ namespace Neo.UnitTests
             return new Transaction
             {
                 Script = randomBytes,
+                Sender = UInt160.Zero,
                 Attributes = new TransactionAttribute[0],
                 Witnesses = new Witness[0]
             };
