@@ -306,7 +306,6 @@ namespace Neo.Ledger
                     {
                         snapshot.Blocks.Add(block.Hash, new BlockState
                         {
-                            SystemFeeAmount = 0,
                             TrimmedBlock = block.Header.Trim()
                         });
                         snapshot.HeaderHashIndex.GetAndChange().Hash = block.Hash;
@@ -341,7 +340,6 @@ namespace Neo.Ledger
                     header_index.Add(header.Hash);
                     snapshot.Blocks.Add(header.Hash, new BlockState
                     {
-                        SystemFeeAmount = 0,
                         TrimmedBlock = header.Trim()
                     });
                     snapshot.HeaderHashIndex.GetAndChange().Hash = header.Hash;
@@ -433,7 +431,6 @@ namespace Neo.Ledger
                 }
                 snapshot.Blocks.Add(block.Hash, new BlockState
                 {
-                    SystemFeeAmount = snapshot.GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.Gas),
                     TrimmedBlock = block.Trim()
                 });
                 foreach (Transaction tx in block.Transactions)

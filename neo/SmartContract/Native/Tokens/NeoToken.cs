@@ -1,7 +1,6 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
-using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -108,7 +107,7 @@ namespace Neo.SmartContract.Native.Tokens
                 }
                 amount += (iend - istart) * Blockchain.GenerationAmount[ustart];
             }
-            amount += (engine.Snapshot.GetSysFeeAmount(end - 1) - (start == 0 ? 0 : engine.Snapshot.GetSysFeeAmount(start - 1)));
+            amount += GAS.GetSysFeeAmount(engine, end - 1) - (start == 0 ? 0 : GAS.GetSysFeeAmount(engine, start - 1));
             return value * amount * GAS.Factor / TotalAmount;
         }
 
