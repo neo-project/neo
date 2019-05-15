@@ -9,11 +9,12 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
@@ -39,20 +40,9 @@ namespace Neo.UnitTests
         public void ConsensusService_Primary_Sends_PrepareRequest_After_OnStart()
         {
             TestProbe subscriber = CreateTestProbe();
-
-            var mockConsensusContext = new Mock<IConsensusContext>();
-            var mockStore = new Mock<Store>();
-
-            // context.Reset(): do nothing
-            //mockConsensusContext.Setup(mr => mr.Reset()).Verifiable(); // void
-            mockConsensusContext.SetupGet(mr => mr.MyIndex).Returns(2); // MyIndex == 2
-            mockConsensusContext.SetupGet(mr => mr.BlockIndex).Returns(2);
-            mockConsensusContext.SetupGet(mr => mr.PrimaryIndex).Returns(2);
-            mockConsensusContext.SetupGet(mr => mr.ViewNumber).Returns(0);
-            mockConsensusContext.SetupProperty(mr => mr.NextConsensus);
-            mockConsensusContext.Object.NextConsensus = UInt160.Zero;
-            mockConsensusContext.SetupGet(mr => mr.PreparationPayloads).Returns(new ConsensusPayload[7]);
-            mockConsensusContext.SetupGet(mr => mr.CommitPayloads).Returns(new ConsensusPayload[7]);
+            var mockWallet = new Mock<Wallet>();
+            mockWallet.Setup(p => p.GetAccount(It.IsAny<UInt160>())).Returns<UInt160>(p => new TestWalletAccount(p));
+            ConsensusContext context = new ConsensusContext(mockWallet.Object, TestBlockchain.GetStore());
 
             int timeIndex = 0;
             var timeValues = new[] {
@@ -65,9 +55,6 @@ namespace Neo.UnitTests
             //TimeProvider.Current.UtcNow.ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
 
             Console.WriteLine($"time 0: {timeValues[0].ToString()} 1: {timeValues[1].ToString()} 2: {timeValues[2].ToString()} 3: {timeValues[3].ToString()}");
-
-            //mockConsensusContext.Object.block_received_time = new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc);
-            //mockConsensusContext.Setup(mr => mr.GetUtcNow()).Returns(new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc));
 
             var timeMock = new Mock<TimeProvider>();
             timeMock.SetupGet(tp => tp.UtcNow).Returns(() => timeValues[timeIndex])
@@ -94,32 +81,14 @@ namespace Neo.UnitTests
 
             timestampVal.Should().Be(4244941696); //1968-06-01 00:00:00
                                                   // check basic ConsensusContext
-            mockConsensusContext.Object.MyIndex.Should().Be(2);
-            //mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
-
-            PrepareRequest prep = new PrepareRequest
-            {
-                NextConsensus = mockConsensusContext.Object.NextConsensus,
-                TransactionHashes = new UInt256[0]
-            };
-
-            ConsensusPayload prepPayload = new ConsensusPayload
-            {
-                Version = 0,
-                PrevHash = mockConsensusContext.Object.PrevHash,
-                BlockIndex = mockConsensusContext.Object.BlockIndex,
-                ValidatorIndex = (ushort)mockConsensusContext.Object.MyIndex,
-                ConsensusMessage = prep
-            };
-
-            mockConsensusContext.Setup(mr => mr.MakePrepareRequest()).Returns(prepPayload);
+                                                  //mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
 
             // ============================================================================
             //                      creating ConsensusService actor
             // ============================================================================
 
             TestActorRef<ConsensusService> actorConsensus = ActorOfAsTestActorRef<ConsensusService>(
-                                     Akka.Actor.Props.Create(() => new ConsensusService(subscriber, subscriber, mockConsensusContext.Object))
+                                     Akka.Actor.Props.Create(() => (ConsensusService)Activator.CreateInstance(typeof(ConsensusService), BindingFlags.Instance | BindingFlags.NonPublic, null, new object[] { subscriber, subscriber, context }, null))
                                      );
 
             Console.WriteLine("will trigger OnPersistCompleted!");
@@ -139,7 +108,10 @@ namespace Neo.UnitTests
             // OnPersist will not launch timer, we need OnStart
 
             Console.WriteLine("will start consensus!");
-            actorConsensus.Tell(new ConsensusService.Start());
+            actorConsensus.Tell(new ConsensusService.Start
+            {
+                IgnoreRecoveryLogs = true
+            });
 
             Console.WriteLine("OnTimer should expire!");
             Console.WriteLine("Waiting for subscriber message!");
@@ -580,7 +552,7 @@ namespace Neo.UnitTests
             copiedMsg.CommitMessages.ShouldAllBeEquivalentTo(msg.CommitMessages);
         }
 
-        private static ConsensusPayload MakeSignedPayload(IConsensusContext context, ConsensusMessage message, ushort validatorIndex, byte[] witnessInvocationScript)
+        private static ConsensusPayload MakeSignedPayload(ConsensusContext context, ConsensusMessage message, ushort validatorIndex, byte[] witnessInvocationScript)
         {
             return new ConsensusPayload
             {

@@ -14,7 +14,7 @@ using System.Linq;
 
 namespace Neo.Consensus
 {
-    internal class ConsensusContext : IConsensusContext
+    internal class ConsensusContext : IDisposable, ISerializable
     {
         /// <summary>
         /// Prefix for saving consensus state.

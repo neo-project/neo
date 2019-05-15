@@ -22,7 +22,7 @@ namespace Neo.Consensus
         public class SetViewNumber { public byte ViewNumber; }
         internal class Timer { public uint Height; public byte ViewNumber; }
 
-        private readonly IConsensusContext context;
+        private readonly ConsensusContext context;
         private readonly IActorRef localNode;
         private readonly IActorRef taskManager;
         private ICancelable timer_token;
@@ -50,7 +50,7 @@ namespace Neo.Consensus
         {
         }
 
-        public ConsensusService(IActorRef localNode, IActorRef taskManager, IConsensusContext context)
+        internal ConsensusService(IActorRef localNode, IActorRef taskManager, ConsensusContext context)
         {
             this.localNode = localNode;
             this.taskManager = taskManager;
