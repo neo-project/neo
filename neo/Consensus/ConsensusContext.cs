@@ -94,13 +94,12 @@ namespace Neo.Consensus
             Reset(0);
             if (reader.ReadUInt32() != Block.Version) throw new FormatException();
             if (reader.ReadUInt32() != Block.Index) throw new InvalidOperationException();
-            ViewNumber = reader.ReadByte();
-            Block.ConsensusData.PrimaryIndex = reader.ReadUInt32();
+            Block.ConsensusData = reader.ReadSerializable<ConsensusData>();
             Block.Timestamp = reader.ReadUInt32();
-            Block.ConsensusData.Nonce = reader.ReadUInt64();
             Block.NextConsensus = reader.ReadSerializable<UInt160>();
             if (Block.NextConsensus.Equals(UInt160.Zero))
                 Block.NextConsensus = null;
+            ViewNumber = reader.ReadByte();
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
             if (TransactionHashes.Length == 0)
                 TransactionHashes = null;
@@ -328,11 +327,10 @@ namespace Neo.Consensus
         {
             writer.Write(Block.Version);
             writer.Write(Block.Index);
-            writer.Write(ViewNumber);
-            writer.Write(Block.ConsensusData.PrimaryIndex);
+            writer.Write(Block.ConsensusData);
             writer.Write(Block.Timestamp);
-            writer.Write(Block.ConsensusData.Nonce);
             writer.Write(Block.NextConsensus ?? UInt160.Zero);
+            writer.Write(ViewNumber);
             writer.Write(TransactionHashes ?? new UInt256[0]);
             writer.Write(Transactions?.Values.ToArray() ?? new Transaction[0]);
             writer.WriteVarInt(PreparationPayloads.Length);
