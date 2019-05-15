@@ -17,7 +17,6 @@ namespace Neo.Consensus
         int MyIndex { get; }
         uint PrimaryIndex { get; }
         uint Timestamp { get; set; }
-        ulong Nonce { get; set; }
         UInt160 NextConsensus { get; set; }
         UInt256[] TransactionHashes { get; set; }
         Dictionary<UInt256, Transaction> Transactions { get; set; }

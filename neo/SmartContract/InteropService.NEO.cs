@@ -21,7 +21,6 @@ namespace Neo.SmartContract
         public static readonly uint Neo_Crypto_CheckMultiSig = Register("Neo.Crypto.CheckMultiSig", Crypto_CheckMultiSig);
         public static readonly uint Neo_Header_GetVersion = Register("Neo.Header.GetVersion", Header_GetVersion, 1);
         public static readonly uint Neo_Header_GetMerkleRoot = Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot, 1);
-        public static readonly uint Neo_Header_GetConsensusData = Register("Neo.Header.GetConsensusData", Header_GetConsensusData, 1);
         public static readonly uint Neo_Header_GetNextConsensus = Register("Neo.Header.GetNextConsensus", Header_GetNextConsensus, 1);
         public static readonly uint Neo_Transaction_GetWitnesses = Register("Neo.Transaction.GetWitnesses", Transaction_GetWitnesses, 200);
         public static readonly uint Neo_Transaction_GetScript = Register("Neo.Transaction.GetScript", Transaction_GetScript, 1);
@@ -158,18 +157,6 @@ namespace Neo.SmartContract
                 BlockBase header = _interface.GetInterface<BlockBase>();
                 if (header == null) return false;
                 engine.CurrentContext.EvaluationStack.Push(header.MerkleRoot.ToArray());
-                return true;
-            }
-            return false;
-        }
-
-        private static bool Header_GetConsensusData(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                BlockBase header = _interface.GetInterface<BlockBase>();
-                if (header == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(header.ConsensusData);
                 return true;
             }
             return false;

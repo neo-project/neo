@@ -414,7 +414,6 @@ namespace Neo.Consensus
             ExtendTimerByFactor(2);
 
             context.Timestamp = message.Timestamp;
-            context.Nonce = message.Nonce;
             context.NextConsensus = message.NextConsensus;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();

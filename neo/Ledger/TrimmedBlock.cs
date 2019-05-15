@@ -22,7 +22,6 @@ namespace Neo.Ledger
                 MerkleRoot = MerkleRoot,
                 Timestamp = Timestamp,
                 Index = Index,
-                ConsensusData = ConsensusData,
                 NextConsensus = NextConsensus,
                 Witness = Witness,
                 Transactions = Hashes.Select(p => cache[p].Transaction).ToArray()
@@ -43,7 +42,6 @@ namespace Neo.Ledger
                         MerkleRoot = MerkleRoot,
                         Timestamp = Timestamp,
                         Index = Index,
-                        ConsensusData = ConsensusData,
                         NextConsensus = NextConsensus,
                         Witness = Witness
                     };

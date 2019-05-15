@@ -49,7 +49,6 @@ namespace Neo.UnitTests
             mockConsensusContext.SetupGet(mr => mr.BlockIndex).Returns(2);
             mockConsensusContext.SetupGet(mr => mr.PrimaryIndex).Returns(2);
             mockConsensusContext.SetupGet(mr => mr.ViewNumber).Returns(0);
-            mockConsensusContext.SetupProperty(mr => mr.Nonce);
             mockConsensusContext.SetupProperty(mr => mr.NextConsensus);
             mockConsensusContext.Object.NextConsensus = UInt160.Zero;
             mockConsensusContext.SetupGet(mr => mr.PreparationPayloads).Returns(new ConsensusPayload[7]);
@@ -88,8 +87,8 @@ namespace Neo.UnitTests
 
             // Creating proposed block
             Header header = new Header();
-            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal);
-            header.Size.Should().Be(109);
+            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal);
+            header.Size.Should().Be(101);
 
             Console.WriteLine($"header {header} hash {header.Hash} timstamp {timestampVal}");
 
@@ -100,7 +99,6 @@ namespace Neo.UnitTests
 
             PrepareRequest prep = new PrepareRequest
             {
-                Nonce = mockConsensusContext.Object.Nonce,
                 NextConsensus = mockConsensusContext.Object.NextConsensus,
                 TransactionHashes = new UInt256[0]
             };
@@ -134,7 +132,6 @@ namespace Neo.UnitTests
                     MerkleRoot = header.MerkleRoot,
                     Timestamp = header.Timestamp,
                     Index = header.Index,
-                    ConsensusData = header.ConsensusData,
                     NextConsensus = header.NextConsensus
                 }
             });
@@ -183,7 +180,6 @@ namespace Neo.UnitTests
             consensusContext.MyIndex = -1;
             consensusContext.PrimaryIndex = 6;
             consensusContext.Timestamp = 4244941711;
-            consensusContext.Nonce = UInt64.MaxValue;
             consensusContext.NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA");
             var testTx1 = TestUtils.CreateRandomHashTransaction();
             var testTx2 = TestUtils.CreateRandomHashTransaction();
@@ -203,7 +199,6 @@ namespace Neo.UnitTests
             consensusContext.PreparationPayloads = new ConsensusPayload[consensusContext.Validators.Length];
             var prepareRequestMessage = new PrepareRequest
             {
-                Nonce = consensusContext.Nonce,
                 NextConsensus = consensusContext.NextConsensus,
                 TransactionHashes = consensusContext.TransactionHashes,
                 Timestamp = 23
@@ -245,7 +240,6 @@ namespace Neo.UnitTests
             copiedContext.MyIndex.Should().Be(consensusContext.MyIndex);
             copiedContext.PrimaryIndex.Should().Be(consensusContext.PrimaryIndex);
             copiedContext.Timestamp.Should().Be(consensusContext.Timestamp);
-            copiedContext.Nonce.Should().Be(consensusContext.Nonce);
             copiedContext.NextConsensus.Should().Be(consensusContext.NextConsensus);
             copiedContext.TransactionHashes.ShouldAllBeEquivalentTo(consensusContext.TransactionHashes);
             copiedContext.Transactions.ShouldAllBeEquivalentTo(consensusContext.Transactions);
@@ -402,7 +396,6 @@ namespace Neo.UnitTests
                 PrepareRequestMessage = new PrepareRequest
                 {
                     TransactionHashes = txs.Select(p => p.Hash).ToArray(),
-                    Nonce = ulong.MaxValue,
                     NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA")
                 },
                 PreparationHash = new UInt256(Crypto.Default.Hash256(new[] { (byte)'a' })),
@@ -457,7 +450,6 @@ namespace Neo.UnitTests
                 PrepareRequestMessage = new PrepareRequest
                 {
                     TransactionHashes = txs.Select(p => p.Hash).ToArray(),
-                    Nonce = ulong.MaxValue,
                     NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA")
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
@@ -519,7 +511,6 @@ namespace Neo.UnitTests
                 PrepareRequestMessage = new PrepareRequest
                 {
                     TransactionHashes = txs.Select(p => p.Hash).ToArray(),
-                    Nonce = ulong.MaxValue,
                     NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA")
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
