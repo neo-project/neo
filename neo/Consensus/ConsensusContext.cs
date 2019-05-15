@@ -22,15 +22,11 @@ namespace Neo.Consensus
         /// </summary>
         public const byte CN_Context = 0xf4;
 
-        public const uint Version = 0;
-        public uint BlockIndex;
-        public UInt256 PrevHash;
+        public Block Block;
         public byte ViewNumber;
         public ECPoint[] Validators;
         public int MyIndex;
         public uint PrimaryIndex;
-        public uint Timestamp;
-        public UInt160 NextConsensus;
         public UInt256[] TransactionHashes;
         public Dictionary<UInt256, Transaction> Transactions;
         public ConsensusPayload[] PreparationPayloads;
@@ -41,7 +37,6 @@ namespace Neo.Consensus
         // if this node never heard from validator i, LastSeenMessage[i] will be -1.
         public int[] LastSeenMessage;
 
-        public Block Block { get; private set; }
         public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
         private readonly Wallet wallet;
@@ -52,15 +47,15 @@ namespace Neo.Consensus
         public bool IsPrimary => MyIndex == PrimaryIndex;
         public bool IsBackup => MyIndex >= 0 && MyIndex != PrimaryIndex;
         public bool WatchOnly => MyIndex < 0;
-        public Header PrevHeader => Snapshot.GetHeader(PrevHash);
+        public Header PrevHeader => Snapshot.GetHeader(Block.PrevHash);
         public int CountCommitted => CommitPayloads.Count(p => p != null);
-        public int CountFailed => LastSeenMessage.Count(p => p < (((int)BlockIndex) - 1));
+        public int CountFailed => LastSeenMessage.Count(p => p < (((int)Block.Index) - 1));
 
         #region Consensus States
         public bool RequestSentOrReceived => PreparationPayloads[PrimaryIndex] != null;
         public bool ResponseSent => !WatchOnly && PreparationPayloads[MyIndex] != null;
         public bool CommitSent => !WatchOnly && CommitPayloads[MyIndex] != null;
-        public bool BlockSent => Block != null;
+        public bool BlockSent => Block.Transactions != null;
         public bool ViewChanging => !WatchOnly && ChangeViewPayloads[MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber > ViewNumber;
         public bool NotAcceptingPayloadsDueToViewChanging => ViewChanging && !MoreThanFNodesCommittedOrLost;
         // A possible attack can happen if the last node to commit is malicious and either sends change view after his
@@ -81,35 +76,30 @@ namespace Neo.Consensus
 
         public Block CreateBlock()
         {
-            if (Block is null)
+            Contract contract = Contract.CreateMultiSigContract(M, Validators);
+            ContractParametersContext sc = new ContractParametersContext(Block);
+            for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
             {
-                Block = MakeHeader();
-                if (Block == null) return null;
-                Contract contract = Contract.CreateMultiSigContract(M, Validators);
-                ContractParametersContext sc = new ContractParametersContext(Block);
-                for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
-                {
-                    if (CommitPayloads[i]?.ConsensusMessage.ViewNumber != ViewNumber) continue;
-                    sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
-                    j++;
-                }
-                Block.Witness = sc.GetWitnesses()[0];
-                Block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
+                if (CommitPayloads[i]?.ConsensusMessage.ViewNumber != ViewNumber) continue;
+                sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
+                j++;
             }
+            Block.Witness = sc.GetWitnesses()[0];
+            Block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
             return Block;
         }
 
         public void Deserialize(BinaryReader reader)
         {
             Reset(0);
-            if (reader.ReadUInt32() != Version) throw new FormatException();
-            if (reader.ReadUInt32() != BlockIndex) throw new InvalidOperationException();
+            if (reader.ReadUInt32() != Block.Version) throw new FormatException();
+            if (reader.ReadUInt32() != Block.Index) throw new InvalidOperationException();
             ViewNumber = reader.ReadByte();
             PrimaryIndex = reader.ReadUInt32();
-            Timestamp = reader.ReadUInt32();
-            NextConsensus = reader.ReadSerializable<UInt160>();
-            if (NextConsensus.Equals(UInt160.Zero))
-                NextConsensus = null;
+            Block.Timestamp = reader.ReadUInt32();
+            Block.NextConsensus = reader.ReadSerializable<UInt160>();
+            if (Block.NextConsensus.Equals(UInt160.Zero))
+                Block.NextConsensus = null;
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
             if (TransactionHashes.Length == 0)
                 TransactionHashes = null;
@@ -134,10 +124,18 @@ namespace Neo.Consensus
             Snapshot?.Dispose();
         }
 
+        public Block EnsureHeader()
+        {
+            if (TransactionHashes == null) return null;
+            if (Block.MerkleRoot is null)
+                Block.MerkleRoot = MerkleTree.ComputeRoot(TransactionHashes);
+            return Block;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public uint GetPrimaryIndex(byte viewNumber)
         {
-            int p = ((int)BlockIndex - viewNumber) % Validators.Length;
+            int p = ((int)Block.Index - viewNumber) % Validators.Length;
             return p >= 0 ? (uint)p : (uint)(p + Validators.Length);
         }
 
@@ -172,28 +170,8 @@ namespace Neo.Consensus
         {
             return CommitPayloads[MyIndex] ?? (CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
             {
-                Signature = MakeHeader()?.Sign(keyPair)
+                Signature = EnsureHeader().Sign(keyPair)
             }));
-        }
-
-        private Block _header = null;
-        public Block MakeHeader()
-        {
-            if (TransactionHashes == null) return null;
-            if (_header == null)
-            {
-                _header = new Block
-                {
-                    Version = Version,
-                    PrevHash = PrevHash,
-                    MerkleRoot = MerkleTree.ComputeRoot(TransactionHashes),
-                    Timestamp = Timestamp,
-                    Index = BlockIndex,
-                    NextConsensus = NextConsensus,
-                    Transactions = new Transaction[0]
-                };
-            }
-            return _header;
         }
 
         private ConsensusPayload MakeSignedPayload(ConsensusMessage message)
@@ -201,9 +179,9 @@ namespace Neo.Consensus
             message.ViewNumber = ViewNumber;
             ConsensusPayload payload = new ConsensusPayload
             {
-                Version = Version,
-                PrevHash = PrevHash,
-                BlockIndex = BlockIndex,
+                Version = Block.Version,
+                PrevHash = Block.PrevHash,
+                BlockIndex = Block.Index,
                 ValidatorIndex = (ushort)MyIndex,
                 ConsensusMessage = message
             };
@@ -228,11 +206,16 @@ namespace Neo.Consensus
 
         public ConsensusPayload MakePrepareRequest()
         {
-            Fill();
+            IEnumerable<Transaction> memoryPoolTransactions = Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions();
+            foreach (IPolicyPlugin plugin in Plugin.Policies)
+                memoryPoolTransactions = plugin.FilterForBlock(memoryPoolTransactions);
+            List<Transaction> transactions = memoryPoolTransactions.ToList();
+            TransactionHashes = transactions.Select(p => p.Hash).ToArray();
+            Transactions = transactions.ToDictionary(p => p.Hash);
+            Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), PrevHeader.Timestamp + 1);
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareRequest
             {
-                Timestamp = Timestamp,
-                NextConsensus = NextConsensus,
+                Timestamp = Block.Timestamp,
                 TransactionHashes = TransactionHashes
             });
         }
@@ -254,8 +237,7 @@ namespace Neo.Consensus
                 {
                     ViewNumber = ViewNumber,
                     TransactionHashes = TransactionHashes,
-                    NextConsensus = NextConsensus,
-                    Timestamp = Timestamp
+                    Timestamp = Block.Timestamp
                 };
             }
             return MakeSignedPayload(new RecoveryMessage()
@@ -283,11 +265,14 @@ namespace Neo.Consensus
         {
             if (viewNumber == 0)
             {
-                Block = null;
                 Snapshot?.Dispose();
                 Snapshot = Blockchain.Singleton.GetSnapshot();
-                PrevHash = Snapshot.CurrentBlockHash;
-                BlockIndex = Snapshot.Height + 1;
+                Block = new Block
+                {
+                    PrevHash = Snapshot.CurrentBlockHash,
+                    Index = Snapshot.Height + 1,
+                    NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators().ToArray())
+                };
                 Validators = Snapshot.NextValidators.Get().Validators;
                 MyIndex = -1;
                 ChangeViewPayloads = new ConsensusPayload[Validators.Length];
@@ -318,12 +303,13 @@ namespace Neo.Consensus
                         LastChangeViewPayloads[i] = null;
             }
             ViewNumber = viewNumber;
-            PrimaryIndex = this.GetPrimaryIndex(viewNumber);
-            Timestamp = 0;
+            PrimaryIndex = GetPrimaryIndex(viewNumber);
+            Block.MerkleRoot = null;
+            Block.Timestamp = 0;
+            Block.Transactions = null;
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
-            if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int) BlockIndex;
-            _header = null;
+            if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int)Block.Index;
         }
 
         public void Save()
@@ -333,12 +319,12 @@ namespace Neo.Consensus
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write(Version);
-            writer.Write(BlockIndex);
+            writer.Write(Block.Version);
+            writer.Write(Block.Index);
             writer.Write(ViewNumber);
             writer.Write(PrimaryIndex);
-            writer.Write(Timestamp);
-            writer.Write(NextConsensus ?? UInt160.Zero);
+            writer.Write(Block.Timestamp);
+            writer.Write(Block.NextConsensus ?? UInt160.Zero);
             writer.Write(TransactionHashes ?? new UInt256[0]);
             writer.Write(Transactions?.Values.ToArray() ?? new Transaction[0]);
             writer.WriteVarInt(PreparationPayloads.Length);
@@ -373,18 +359,6 @@ namespace Neo.Consensus
                 if (!hasPayload) continue;
                 writer.Write(payload);
             }
-        }
-
-        private void Fill()
-        {
-            IEnumerable<Transaction> memoryPoolTransactions = Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions();
-            foreach (IPolicyPlugin plugin in Plugin.Policies)
-                memoryPoolTransactions = plugin.FilterForBlock(memoryPoolTransactions);
-            List<Transaction> transactions = memoryPoolTransactions.ToList();
-            TransactionHashes = transactions.Select(p => p.Hash).ToArray();
-            Transactions = transactions.ToDictionary(p => p.Hash);
-            NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators().ToArray());
-            Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), PrevHeader.Timestamp + 1);
         }
     }
 }

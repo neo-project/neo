@@ -136,8 +136,9 @@ namespace Neo.UnitTests
         public void TestSerializeAndDeserializeConsensusContext()
         {
             var consensusContext = new ConsensusContext(null, null);
-            consensusContext.PrevHash = Blockchain.GenesisBlock.Hash;
-            consensusContext.BlockIndex = 1;
+            consensusContext.Block = new Block();
+            consensusContext.Block.PrevHash = Blockchain.GenesisBlock.Hash;
+            consensusContext.Block.Index = 1;
             consensusContext.ViewNumber = 2;
             consensusContext.Validators = new ECPoint[7]
             {
@@ -151,8 +152,8 @@ namespace Neo.UnitTests
             };
             consensusContext.MyIndex = -1;
             consensusContext.PrimaryIndex = 6;
-            consensusContext.Timestamp = 4244941711;
-            consensusContext.NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA");
+            consensusContext.Block.Timestamp = 4244941711;
+            consensusContext.Block.NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA");
             var testTx1 = TestUtils.CreateRandomHashTransaction();
             var testTx2 = TestUtils.CreateRandomHashTransaction();
 
@@ -171,7 +172,6 @@ namespace Neo.UnitTests
             consensusContext.PreparationPayloads = new ConsensusPayload[consensusContext.Validators.Length];
             var prepareRequestMessage = new PrepareRequest
             {
-                NextConsensus = consensusContext.NextConsensus,
                 TransactionHashes = consensusContext.TransactionHashes,
                 Timestamp = 23
             };
@@ -190,7 +190,7 @@ namespace Neo.UnitTests
                 consensusContext.CommitPayloads[6] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx2.Hash.ToArray()) }, 3, new[] { (byte)'6', (byte)'7' });
             }
 
-            consensusContext.Timestamp = TimeProvider.Current.UtcNow.ToTimestamp();
+            consensusContext.Block.Timestamp = TimeProvider.Current.UtcNow.ToTimestamp();
 
             consensusContext.ChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
             consensusContext.ChangeViewPayloads[0] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = 6 }, 0, new[] { (byte)'A' });
@@ -205,14 +205,14 @@ namespace Neo.UnitTests
 
             var copiedContext = TestUtils.CopyMsgBySerialization(consensusContext, new ConsensusContext(null, null));
 
-            copiedContext.PrevHash.Should().Be(consensusContext.PrevHash);
-            copiedContext.BlockIndex.Should().Be(consensusContext.BlockIndex);
+            copiedContext.Block.PrevHash.Should().Be(consensusContext.Block.PrevHash);
+            copiedContext.Block.Index.Should().Be(consensusContext.Block.Index);
             copiedContext.ViewNumber.Should().Be(consensusContext.ViewNumber);
             copiedContext.Validators.ShouldAllBeEquivalentTo(consensusContext.Validators);
             copiedContext.MyIndex.Should().Be(consensusContext.MyIndex);
             copiedContext.PrimaryIndex.Should().Be(consensusContext.PrimaryIndex);
-            copiedContext.Timestamp.Should().Be(consensusContext.Timestamp);
-            copiedContext.NextConsensus.Should().Be(consensusContext.NextConsensus);
+            copiedContext.Block.Timestamp.Should().Be(consensusContext.Block.Timestamp);
+            copiedContext.Block.NextConsensus.Should().Be(consensusContext.Block.NextConsensus);
             copiedContext.TransactionHashes.ShouldAllBeEquivalentTo(consensusContext.TransactionHashes);
             copiedContext.Transactions.ShouldAllBeEquivalentTo(consensusContext.Transactions);
             copiedContext.Transactions.Values.ShouldAllBeEquivalentTo(consensusContext.Transactions.Values);
@@ -367,8 +367,7 @@ namespace Neo.UnitTests
                 },
                 PrepareRequestMessage = new PrepareRequest
                 {
-                    TransactionHashes = txs.Select(p => p.Hash).ToArray(),
-                    NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA")
+                    TransactionHashes = txs.Select(p => p.Hash).ToArray()
                 },
                 PreparationHash = new UInt256(Crypto.Default.Hash256(new[] { (byte)'a' })),
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
@@ -421,8 +420,7 @@ namespace Neo.UnitTests
                 ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
                 PrepareRequestMessage = new PrepareRequest
                 {
-                    TransactionHashes = txs.Select(p => p.Hash).ToArray(),
-                    NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA")
+                    TransactionHashes = txs.Select(p => p.Hash).ToArray()
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
@@ -482,8 +480,7 @@ namespace Neo.UnitTests
                 ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
                 PrepareRequestMessage = new PrepareRequest
                 {
-                    TransactionHashes = txs.Select(p => p.Hash).ToArray(),
-                    NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA")
+                    TransactionHashes = txs.Select(p => p.Hash).ToArray()
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
                 {
@@ -556,9 +553,9 @@ namespace Neo.UnitTests
         {
             return new ConsensusPayload
             {
-                Version = ConsensusContext.Version,
-                PrevHash = context.PrevHash,
-                BlockIndex = context.BlockIndex,
+                Version = context.Block.Version,
+                PrevHash = context.Block.PrevHash,
+                BlockIndex = context.Block.Index,
                 ValidatorIndex = validatorIndex,
                 ConsensusMessage = message,
                 Witness = new Witness
