@@ -9,13 +9,11 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using System;
 using System.Linq;
 using System.Numerics;
-using System.Reflection;
 
 namespace Neo.UnitTests
 {
@@ -233,8 +231,7 @@ namespace Neo.UnitTests
             script.Emit(OpCode.NOP);
             engine.LoadScript(script.ToArray());
 
-            typeof(NeoToken).GetMethod("Invoke", BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(NativeContract.NEO, new object[] { engine }).Should().Be(false);
+            NativeContract.NEO.Invoke(engine).Should().BeFalse();
         }
 
         internal static (bool State, bool Result) Check_Vote(Snapshot snapshot, byte[] account, byte[][] pubkeys, bool signAccount)
