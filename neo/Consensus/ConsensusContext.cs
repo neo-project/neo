@@ -124,6 +124,14 @@ namespace Neo.Consensus
             Snapshot?.Dispose();
         }
 
+        public Block EnsureHeader()
+        {
+            if (TransactionHashes == null) return null;
+            if (Block.MerkleRoot is null)
+                Block.MerkleRoot = MerkleTree.ComputeRoot(TransactionHashes);
+            return Block;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public uint GetPrimaryIndex(byte viewNumber)
         {
@@ -162,15 +170,8 @@ namespace Neo.Consensus
         {
             return CommitPayloads[MyIndex] ?? (CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
             {
-                Signature = MakeHeader().Sign(keyPair)
+                Signature = EnsureHeader().Sign(keyPair)
             }));
-        }
-
-        public Block MakeHeader()
-        {
-            if (TransactionHashes == null) return null;
-            Block.MerkleRoot = MerkleTree.ComputeRoot(TransactionHashes);
-            return Block;
         }
 
         private ConsensusPayload MakeSignedPayload(ConsensusMessage message)

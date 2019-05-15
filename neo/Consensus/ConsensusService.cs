@@ -211,7 +211,7 @@ namespace Neo.Consensus
             {
                 Log($"{nameof(OnCommitReceived)}: height={payload.BlockIndex} view={commit.ViewNumber} index={payload.ValidatorIndex} nc={context.CountCommitted} nf={context.CountFailed}");
 
-                byte[] hashData = context.MakeHeader()?.GetHashData();
+                byte[] hashData = context.EnsureHeader()?.GetHashData();
                 if (hashData == null)
                 {
                     existingCommitPayload = payload;
@@ -413,7 +413,7 @@ namespace Neo.Consensus
                     if (!context.PreparationPayloads[i].GetDeserializedMessage<PrepareResponse>().PreparationHash.Equals(payload.Hash))
                         context.PreparationPayloads[i] = null;
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
-            byte[] hashData = context.MakeHeader().GetHashData();
+            byte[] hashData = context.EnsureHeader().GetHashData();
             for (int i = 0; i < context.CommitPayloads.Length; i++)
                 if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber == context.ViewNumber)
                     if (!Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
