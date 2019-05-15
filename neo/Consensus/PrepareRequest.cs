@@ -9,10 +9,12 @@ namespace Neo.Consensus
     public class PrepareRequest : ConsensusMessage
     {
         public uint Timestamp;
+        public ulong Nonce;
         public UInt256[] TransactionHashes;
 
         public override int Size => base.Size
             + sizeof(uint)                      //Timestamp
+            + sizeof(ulong)                     //Nonce
             + TransactionHashes.GetVarSize();   //TransactionHashes
 
         public PrepareRequest()
@@ -24,6 +26,7 @@ namespace Neo.Consensus
         {
             base.Deserialize(reader);
             Timestamp = reader.ReadUInt32();
+            Nonce = reader.ReadUInt64();
             TransactionHashes = reader.ReadSerializableArray<UInt256>(Block.MaxTransactionsPerBlock);
             if (TransactionHashes.Distinct().Count() != TransactionHashes.Length)
                 throw new FormatException();
@@ -33,6 +36,7 @@ namespace Neo.Consensus
         {
             base.Serialize(writer);
             writer.Write(Timestamp);
+            writer.Write(Nonce);
             writer.Write(TransactionHashes);
         }
     }
