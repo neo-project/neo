@@ -132,13 +132,13 @@ namespace Neo.SmartContract
 
         protected bool ExecutionEngine_GetCallingScriptHash(ExecutionEngine engine)
         {
-            engine.CurrentContext.EvaluationStack.Push(engine.CurrentContext.CallingScriptHash ?? new byte[0]);
+            engine.CurrentContext.EvaluationStack.Push(engine.CallingContext?.ScriptHash ?? new byte[0]);
             return true;
         }
 
         protected bool ExecutionEngine_GetEntryScriptHash(ExecutionEngine engine)
         {
-            engine.CurrentContext.EvaluationStack.Push(engine.EntryScriptHash);
+            engine.CurrentContext.EvaluationStack.Push(engine.EntryContext.ScriptHash);
             return true;
         }
 
