@@ -5,13 +5,11 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using System;
 using System.Linq;
 using System.Numerics;
-using System.Reflection;
 
 namespace Neo.UnitTests
 {
@@ -102,20 +100,17 @@ namespace Neo.UnitTests
             var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
             keyCount = snapshot.Storages.GetChangeSet().Count();
 
-            Assert.ThrowsException<TargetInvocationException>(() =>
-                typeof(GasToken).GetMethod("Burn", BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(NativeContract.GAS, new object[] { engine, new UInt160(to), BigInteger.MinusOne }));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+                NativeContract.GAS.Burn(engine, new UInt160(to), BigInteger.MinusOne));
 
             // Burn more than expected
 
-            Assert.ThrowsException<TargetInvocationException>(() =>
-                typeof(GasToken).GetMethod("Burn", BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(NativeContract.GAS, new object[] { engine, new UInt160(to), new BigInteger(800000000001) }));
+            Assert.ThrowsException<InvalidOperationException>(() =>
+                NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(800000000001)));
 
             // Real burn
 
-            typeof(GasToken).GetMethod("Burn", BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(NativeContract.GAS, new object[] { engine, new UInt160(to), new BigInteger(1) });
+            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1));
 
             NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(799999999999);
 
@@ -123,8 +118,7 @@ namespace Neo.UnitTests
 
             // Burn all
 
-            typeof(GasToken).GetMethod("Burn", BindingFlags.NonPublic | BindingFlags.Instance)
-              .Invoke(NativeContract.GAS, new object[] { engine, new UInt160(to), new BigInteger(799999999999) });
+            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(799999999999));
 
             (keyCount - 1).Should().Be(snapshot.Storages.GetChangeSet().Count());
 
@@ -144,8 +138,7 @@ namespace Neo.UnitTests
             script.Emit(OpCode.NOP);
             engine.LoadScript(script.ToArray());
 
-            typeof(GasToken).GetMethod("Invoke", BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(NativeContract.GAS, new object[] { engine }).Should().Be(false);
+            NativeContract.GAS.Invoke(engine).Should().BeFalse();
         }
     }
 }
