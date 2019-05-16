@@ -26,9 +26,9 @@ namespace Neo.Network.P2P.Capabilities
             Port = port;
         }
 
-        public override void Deserialize(BinaryReader reader)
+        public override void DeserializeWithoutType(BinaryReader reader)
         {
-            base.Deserialize(reader);
+            base.DeserializeWithoutType(reader);
             Port = reader.ReadUInt16();
         }
 

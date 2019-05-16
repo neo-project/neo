@@ -22,17 +22,17 @@ namespace Neo.Network.P2P.Capabilities
             Type = type;
         }
 
-        public virtual void Deserialize(BinaryReader reader) { }
-
-        public virtual void DeserializeWithType(BinaryReader reader)
+        public void Deserialize(BinaryReader reader)
         {
             if (reader.ReadByte() != (byte)Type)
             {
                 throw new FormatException();
             }
 
-            Deserialize(reader);
+            DeserializeWithoutType(reader);
         }
+
+        public virtual void DeserializeWithoutType(BinaryReader reader) { }
 
 
         public virtual void Serialize(BinaryWriter writer)

@@ -19,9 +19,9 @@ namespace Neo.Network.P2P.Capabilities
             StartHeight = startHeight;
         }
 
-        public override void Deserialize(BinaryReader reader)
+        public override void DeserializeWithoutType(BinaryReader reader)
         {
-            base.Deserialize(reader);
+            base.DeserializeWithoutType(reader);
             StartHeight = reader.ReadUInt32();
         }
 
