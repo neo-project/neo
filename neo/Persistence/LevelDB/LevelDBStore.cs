@@ -71,11 +71,6 @@ namespace Neo.Persistence.LevelDB
             return new DbCache<UInt32Wrapper, HeaderHashList>(db, null, null, Prefixes.IX_HeaderHashList);
         }
 
-        public override MetaDataCache<NextValidatorsState> GetNextValidators()
-        {
-            return new DbMetaDataCache<NextValidatorsState>(db, null, null, Prefixes.IX_NextValidators);
-        }
-
         public override MetaDataCache<HashIndexState> GetBlockHashIndex()
         {
             return new DbMetaDataCache<HashIndexState>(db, null, null, Prefixes.IX_CurrentBlock);

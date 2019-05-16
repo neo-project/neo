@@ -414,11 +414,13 @@ namespace Neo.Ledger
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
+                    NativeContract[] contracts = { NativeContract.GAS, NativeContract.NEO };
                     using (ApplicationEngine engine = new ApplicationEngine(TriggerType.System, null, snapshot, 0, true))
                     {
                         using (ScriptBuilder sb = new ScriptBuilder())
                         {
-                            sb.EmitAppCall(NativeContract.GAS.ScriptHash, "distributeFees");
+                            foreach (NativeContract contract in contracts)
+                                sb.EmitAppCall(contract.ScriptHash, "onPersist");
                             engine.LoadScript(sb.ToArray());
                         }
                         engine.Execute();
@@ -427,7 +429,6 @@ namespace Neo.Ledger
                         Context.System.EventStream.Publish(application_executed);
                         all_application_executed.Add(application_executed);
                     }
-                    snapshot.NextValidators.GetAndChange().Validators = snapshot.GetValidators();
                 }
                 snapshot.Blocks.Add(block.Hash, new BlockState
                 {

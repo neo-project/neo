@@ -11,7 +11,6 @@ namespace Neo.Persistence
         DataCache<UInt160, ContractState> IPersistence.Contracts => GetContracts();
         DataCache<StorageKey, StorageItem> IPersistence.Storages => GetStorages();
         DataCache<UInt32Wrapper, HeaderHashList> IPersistence.HeaderHashList => GetHeaderHashList();
-        MetaDataCache<NextValidatorsState> IPersistence.NextValidators => GetNextValidators();
         MetaDataCache<HashIndexState> IPersistence.BlockHashIndex => GetBlockHashIndex();
         MetaDataCache<HashIndexState> IPersistence.HeaderHashIndex => GetHeaderHashIndex();
 
@@ -21,7 +20,6 @@ namespace Neo.Persistence
         public abstract DataCache<UInt160, ContractState> GetContracts();
         public abstract DataCache<StorageKey, StorageItem> GetStorages();
         public abstract DataCache<UInt32Wrapper, HeaderHashList> GetHeaderHashList();
-        public abstract MetaDataCache<NextValidatorsState> GetNextValidators();
         public abstract MetaDataCache<HashIndexState> GetBlockHashIndex();
         public abstract MetaDataCache<HashIndexState> GetHeaderHashIndex();
         public abstract void Put(byte prefix, byte[] key, byte[] value);
