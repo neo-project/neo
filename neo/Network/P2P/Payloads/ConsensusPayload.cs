@@ -4,7 +4,7 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.VM;
+using Neo.SmartContract.Native;
 using System;
 using System.IO;
 
@@ -91,14 +91,9 @@ namespace Neo.Network.P2P.Payloads
             Data = reader.ReadVarBytes();
         }
 
-        byte[] IScriptContainer.GetMessage()
-        {
-            return this.GetHashData();
-        }
-
         UInt160[] IVerifiable.GetScriptHashesForVerifying(Snapshot snapshot)
         {
-            ECPoint[] validators = snapshot.NextValidators.Get().Validators;
+            ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(snapshot);
             if (validators.Length <= ValidatorIndex)
                 throw new InvalidOperationException();
             return new[] { Contract.CreateSignatureRedeemScript(validators[ValidatorIndex]).ToScriptHash() };

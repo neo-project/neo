@@ -23,11 +23,6 @@ namespace Neo.UnitTests
             throw new NotImplementedException();
         }
 
-        public byte[] GetMessage()
-        {
-            throw new NotImplementedException();
-        }
-
         public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
         {
             throw new NotImplementedException();

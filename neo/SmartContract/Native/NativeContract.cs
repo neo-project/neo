@@ -18,6 +18,7 @@ namespace Neo.SmartContract.Native
         public static GasToken GAS { get; } = new GasToken();
 
         public abstract string ServiceName { get; }
+        public uint ServiceHash { get; }
         public byte[] Script { get; }
         public UInt160 ScriptHash { get; }
         public virtual ContractPropertyState Properties => ContractPropertyState.NoProperty;
@@ -25,9 +26,10 @@ namespace Neo.SmartContract.Native
 
         protected NativeContract()
         {
+            this.ServiceHash = ServiceName.ToInteropMethodHash();
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitSysCall(ServiceName);
+                sb.EmitSysCall(ServiceHash);
                 this.Script = sb.ToArray();
             }
             this.ScriptHash = Script.ToScriptHash();
@@ -54,7 +56,7 @@ namespace Neo.SmartContract.Native
 
         internal bool Invoke(ApplicationEngine engine)
         {
-            if (!new UInt160(engine.CurrentContext.ScriptHash).Equals(ScriptHash))
+            if (!engine.CurrentScriptHash.Equals(ScriptHash))
                 return false;
             string operation = engine.CurrentContext.EvaluationStack.Pop().GetString();
             VMArray args = (VMArray)engine.CurrentContext.EvaluationStack.Pop();
@@ -65,9 +67,37 @@ namespace Neo.SmartContract.Native
 
         protected virtual StackItem Main(ApplicationEngine engine, string operation, VMArray args)
         {
-            if (operation == "supportedStandards")
-                return SupportedStandards.Select(p => (StackItem)p).ToList();
+            switch (operation)
+            {
+                case "onPersist":
+                    return OnPersist(engine);
+                case "supportedStandards":
+                    return SupportedStandards.Select(p => (StackItem)p).ToList();
+            }
             throw new NotSupportedException();
+        }
+
+        internal virtual bool Initialize(ApplicationEngine engine)
+        {
+            if (engine.Trigger != TriggerType.Application)
+                throw new InvalidOperationException();
+            return true;
+        }
+
+        protected virtual bool OnPersist(ApplicationEngine engine)
+        {
+            if (engine.Trigger != TriggerType.System)
+                throw new InvalidOperationException();
+            return true;
+        }
+
+        public ApplicationEngine TestCall(string operation, params object[] args)
+        {
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.EmitAppCall(ScriptHash, operation, args);
+                return ApplicationEngine.Run(sb.ToArray(), testMode: true);
+            }
         }
     }
 }

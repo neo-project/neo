@@ -13,6 +13,7 @@ namespace Neo.Network.P2P.Payloads
     {
         public const int MaxTransactionsPerBlock = ushort.MaxValue;
 
+        public ConsensusData ConsensusData;
         public Transaction[] Transactions;
 
         private Header _header = null;
@@ -28,7 +29,6 @@ namespace Neo.Network.P2P.Payloads
                         MerkleRoot = MerkleRoot,
                         Timestamp = Timestamp,
                         Index = Index,
-                        ConsensusData = ConsensusData,
                         NextConsensus = NextConsensus,
                         Witness = Witness
                     };
@@ -39,39 +39,16 @@ namespace Neo.Network.P2P.Payloads
 
         InventoryType IInventory.InventoryType => InventoryType.Block;
 
-        public override int Size => base.Size + Transactions.GetVarSize();
-
-        public static Fixed8 CalculateNetFee(IEnumerable<Transaction> transactions)
-        {
-            Transaction[] ts = transactions.Where(p => p.Type != TransactionType.MinerTransaction).ToArray();
-            Fixed8 amount_in = ts.SelectMany(p => p.References.Values.Where(o => o.AssetId == Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
-            Fixed8 amount_out = ts.SelectMany(p => p.Outputs.Where(o => o.AssetId == Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
-            Fixed8 amount_sysfee = ts.Sum(p => p.SystemFee);
-            return amount_in - amount_out - amount_sysfee;
-        }
+        public override int Size => base.Size + ConsensusData.Size + Transactions.GetVarSize();
 
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Transactions = new Transaction[reader.ReadVarInt(MaxTransactionsPerBlock)];
+            ConsensusData = reader.ReadSerializable<ConsensusData>();
+            Transactions = reader.ReadSerializableArray<Transaction>(MaxTransactionsPerBlock);
             if (Transactions.Length == 0) throw new FormatException();
-            HashSet<UInt256> hashes = new HashSet<UInt256>();
-            for (int i = 0; i < Transactions.Length; i++)
-            {
-                Transactions[i] = Transaction.DeserializeFrom(reader);
-                if (i == 0)
-                {
-                    if (Transactions[0].Type != TransactionType.MinerTransaction)
-                        throw new FormatException();
-                }
-                else
-                {
-                    if (Transactions[i].Type == TransactionType.MinerTransaction)
-                        throw new FormatException();
-                }
-                if (!hashes.Add(Transactions[i].Hash))
-                    throw new FormatException();
-            }
+            if (Transactions.Distinct().Count() != Transactions.Length)
+                throw new FormatException();
             if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
                 throw new FormatException();
         }
@@ -95,18 +72,25 @@ namespace Neo.Network.P2P.Payloads
 
         public void RebuildMerkleRoot()
         {
-            MerkleRoot = MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray());
+            List<UInt256> hashes = new List<UInt256>(Transactions.Length + 1)
+            {
+                ConsensusData.Hash
+            };
+            hashes.AddRange(Transactions.Select(p => p.Hash));
+            MerkleRoot = MerkleTree.ComputeRoot(hashes);
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
+            writer.Write(ConsensusData);
             writer.Write(Transactions);
         }
 
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
+            json["consensus_data"] = ConsensusData.ToJson();
             json["tx"] = Transactions.Select(p => p.ToJson()).ToArray();
             return json;
         }
@@ -120,9 +104,9 @@ namespace Neo.Network.P2P.Payloads
                 MerkleRoot = MerkleRoot,
                 Timestamp = Timestamp,
                 Index = Index,
-                ConsensusData = ConsensusData,
                 NextConsensus = NextConsensus,
                 Witness = Witness,
+                ConsensusData = ConsensusData,
                 Hashes = Transactions.Select(p => p.Hash).ToArray()
             };
         }

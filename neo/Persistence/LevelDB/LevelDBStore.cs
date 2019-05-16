@@ -41,11 +41,6 @@ namespace Neo.Persistence.LevelDB
             return slice.ToArray();
         }
 
-        public override DataCache<UInt256, AssetState> GetAssets()
-        {
-            return new DbCache<UInt256, AssetState>(db, null, null, Prefixes.ST_Asset);
-        }
-
         public override DataCache<UInt256, BlockState> GetBlocks()
         {
             return new DbCache<UInt256, BlockState>(db, null, null, Prefixes.DATA_Block);
@@ -71,19 +66,9 @@ namespace Neo.Persistence.LevelDB
             return new DbCache<UInt256, TransactionState>(db, null, null, Prefixes.DATA_Transaction);
         }
 
-        public override DataCache<UInt256, UnspentCoinState> GetUnspentCoins()
-        {
-            return new DbCache<UInt256, UnspentCoinState>(db, null, null, Prefixes.ST_Coin);
-        }
-
         public override DataCache<UInt32Wrapper, HeaderHashList> GetHeaderHashList()
         {
             return new DbCache<UInt32Wrapper, HeaderHashList>(db, null, null, Prefixes.IX_HeaderHashList);
-        }
-
-        public override MetaDataCache<NextValidatorsState> GetNextValidators()
-        {
-            return new DbMetaDataCache<NextValidatorsState>(db, null, null, Prefixes.IX_NextValidators);
         }
 
         public override MetaDataCache<HashIndexState> GetBlockHashIndex()

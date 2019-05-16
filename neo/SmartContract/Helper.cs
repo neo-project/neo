@@ -5,7 +5,6 @@ using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -18,9 +17,6 @@ namespace Neo.SmartContract
 {
     public static class Helper
     {
-        private static readonly ConcurrentDictionary<string, uint> MethodHashes
-            = new ConcurrentDictionary<string, uint>();
-
         public static StackItem DeserializeStackItem(this byte[] data, uint maxArraySize)
         {
             using (MemoryStream ms = new MemoryStream(data, false))
@@ -116,7 +112,7 @@ namespace Neo.SmartContract
         {
             int m, n = 0;
             int i = 0;
-            if (script.Length < 37) return false;
+            if (script.Length < 41) return false;
             if (script[i] > (byte)OpCode.PUSH16) return false;
             if (script[i] < (byte)OpCode.PUSH1 && script[i] != 1 && script[i] != 2) return false;
             switch (script[i])
@@ -155,15 +151,19 @@ namespace Neo.SmartContract
                     if (n != script[i++] - 80) return false;
                     break;
             }
-            if (script[i++] != (byte)OpCode.CHECKMULTISIG) return false;
-            if (script.Length != i) return false;
+            if (script[i++] != (byte)OpCode.SYSCALL) return false;
+            if (script.Length != i + 4) return false;
+            if (BitConverter.ToUInt32(script, i) != InteropService.Neo_Crypto_CheckMultiSig)
+                return false;
             return true;
         }
 
         public static bool IsSignatureContract(this byte[] script)
         {
-            if (script.Length != 35) return false;
-            if (script[0] != 33 || script[34] != (byte)OpCode.CHECKSIG)
+            if (script.Length != 39) return false;
+            if (script[0] != (byte)OpCode.PUSHBYTES33
+                || script[34] != (byte)OpCode.SYSCALL
+                || BitConverter.ToUInt32(script, 35) != InteropService.Neo_Crypto_CheckSig)
                 return false;
             return true;
         }
@@ -238,7 +238,7 @@ namespace Neo.SmartContract
 
         public static uint ToInteropMethodHash(this string method)
         {
-            return MethodHashes.GetOrAdd(method, p => BitConverter.ToUInt32(Encoding.ASCII.GetBytes(p).Sha256(), 0));
+            return BitConverter.ToUInt32(Encoding.ASCII.GetBytes(method).Sha256(), 0);
         }
 
         public static UInt160 ToScriptHash(this byte[] script)
@@ -270,7 +270,7 @@ namespace Neo.SmartContract
                 {
                     if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
                 }
-                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, Fixed8.Zero))
+                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, 0))
                 {
                     engine.LoadScript(verification);
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript);

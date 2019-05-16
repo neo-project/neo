@@ -3,7 +3,6 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.IO;
@@ -17,7 +16,6 @@ namespace Neo.Network.P2P.Payloads
         public UInt256 MerkleRoot;
         public uint Timestamp;
         public uint Index;
-        public ulong ConsensusData;
         public UInt160 NextConsensus;
         public Witness Witness;
 
@@ -42,7 +40,7 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public virtual int Size => sizeof(uint) + PrevHash.Size + MerkleRoot.Size + sizeof(uint) + sizeof(uint) + sizeof(ulong) + NextConsensus.Size + 1 + Witness.Size;
+        public virtual int Size => sizeof(uint) + PrevHash.Size + MerkleRoot.Size + sizeof(uint) + sizeof(uint) + NextConsensus.Size + 1 + Witness.Size;
 
         public virtual void Deserialize(BinaryReader reader)
         {
@@ -58,13 +56,7 @@ namespace Neo.Network.P2P.Payloads
             MerkleRoot = reader.ReadSerializable<UInt256>();
             Timestamp = reader.ReadUInt32();
             Index = reader.ReadUInt32();
-            ConsensusData = reader.ReadUInt64();
             NextConsensus = reader.ReadSerializable<UInt160>();
-        }
-
-        byte[] IScriptContainer.GetMessage()
-        {
-            return this.GetHashData();
         }
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(Snapshot snapshot)
@@ -89,7 +81,6 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(MerkleRoot);
             writer.Write(Timestamp);
             writer.Write(Index);
-            writer.Write(ConsensusData);
             writer.Write(NextConsensus);
         }
 
@@ -103,7 +94,6 @@ namespace Neo.Network.P2P.Payloads
             json["merkleroot"] = MerkleRoot.ToString();
             json["time"] = Timestamp;
             json["index"] = Index;
-            json["nonce"] = ConsensusData.ToString("x16");
             json["nextconsensus"] = NextConsensus.ToAddress();
             json["script"] = Witness.ToJson();
             return json;

@@ -101,7 +101,7 @@ namespace Neo.Wallets.NEP6
             WalletTransaction?.Invoke(this, new WalletTransactionEventArgs
             {
                 Transaction = tx,
-                RelatedAccounts = tx.Witnesses.Select(p => p.ScriptHash).Union(tx.Outputs.Select(p => p.ScriptHash)).Where(p => Contains(p)).ToArray(),
+                RelatedAccounts = tx.Witnesses.Select(p => p.ScriptHash).Where(p => Contains(p)).ToArray(),
                 Height = null,
                 Time = DateTime.UtcNow.ToTimestamp()
             });
@@ -187,11 +187,6 @@ namespace Neo.Wallets.NEP6
             indexer.WalletTransaction -= WalletIndexer_WalletTransaction;
         }
 
-        public override Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount, UInt160[] from)
-        {
-            return FindUnspentCoins(FindUnspentCoins(from).ToArray().Where(p => GetAccount(p.Output.ScriptHash).Contract.Script.IsSignatureContract()), asset_id, amount) ?? base.FindUnspentCoins(asset_id, amount, from);
-        }
-
         public override WalletAccount GetAccount(UInt160 scriptHash)
         {
             lock (accounts)
@@ -207,54 +202,6 @@ namespace Neo.Wallets.NEP6
             {
                 foreach (NEP6Account account in accounts.Values)
                     yield return account;
-            }
-        }
-
-        public override IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts)
-        {
-            if (unconfirmed.Count == 0)
-                return indexer.GetCoins(accounts);
-            else
-                return GetCoinsInternal();
-            IEnumerable<Coin> GetCoinsInternal()
-            {
-                HashSet<CoinReference> inputs;
-                Coin[] coins_unconfirmed;
-                lock (unconfirmed)
-                {
-                    inputs = new HashSet<CoinReference>(unconfirmed.Values.SelectMany(p => p.Inputs));
-                    coins_unconfirmed = unconfirmed.Values.Select(tx => tx.Outputs.Select((o, i) => new Coin
-                    {
-                        Reference = new CoinReference
-                        {
-                            PrevHash = tx.Hash,
-                            PrevIndex = (ushort)i
-                        },
-                        Output = o,
-                        State = CoinState.Unconfirmed
-                    })).SelectMany(p => p).ToArray();
-                }
-                foreach (Coin coin in indexer.GetCoins(accounts))
-                {
-                    if (inputs.Contains(coin.Reference))
-                    {
-                        if (coin.Output.AssetId.Equals(Blockchain.GoverningToken.Hash))
-                            yield return new Coin
-                            {
-                                Reference = coin.Reference,
-                                Output = coin.Output,
-                                State = coin.State | CoinState.Spent
-                            };
-                        continue;
-                    }
-                    yield return coin;
-                }
-                HashSet<UInt160> accounts_set = new HashSet<UInt160>(accounts);
-                foreach (Coin coin in coins_unconfirmed)
-                {
-                    if (accounts_set.Contains(coin.Output.ScriptHash))
-                        yield return coin;
-                }
             }
         }
 

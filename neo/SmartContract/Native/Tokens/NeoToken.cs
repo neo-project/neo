@@ -23,6 +23,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         private const byte Prefix_Validator = 33;
         private const byte Prefix_ValidatorsCount = 15;
+        private const byte Prefix_NextValidators = 14;
 
         internal NeoToken()
         {
@@ -33,8 +34,6 @@ namespace Neo.SmartContract.Native.Tokens
         {
             switch (operation)
             {
-                case "initialize":
-                    return Initialize(engine, new UInt160(args[0].GetByteArray()));
                 case "unclaimedGas":
                     return UnclaimedGas(engine, new UInt160(args[0].GetByteArray()), (uint)args[1].GetBigInteger());
                 case "registerValidator":
@@ -45,6 +44,8 @@ namespace Neo.SmartContract.Native.Tokens
                     return GetRegisteredValidators(engine).Select(p => new Struct(new StackItem[] { p.PublicKey.ToArray(), p.Votes })).ToArray();
                 case "getValidators":
                     return GetValidators(engine).Select(p => (StackItem)p.ToArray()).ToArray();
+                case "getNextBlockValidators":
+                    return GetNextBlockValidators(engine).Select(p => (StackItem)p.ToArray()).ToArray();
                 default:
                     return base.Main(engine, operation, args);
             }
@@ -62,12 +63,12 @@ namespace Neo.SmartContract.Native.Tokens
             if (state.Votes.Length == 0) return;
             foreach (ECPoint pubkey in state.Votes)
             {
-                StorageItem storage_validator = engine.Service.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Validator, pubkey.ToArray()));
+                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Validator, pubkey.ToArray()));
                 ValidatorState state_validator = ValidatorState.FromByteArray(storage_validator.Value);
                 state_validator.Votes += amount;
                 storage_validator.Value = state_validator.ToByteArray();
             }
-            StorageItem storage_count = engine.Service.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ValidatorsCount));
+            StorageItem storage_count = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ValidatorsCount));
             ValidatorsCountState state_count = ValidatorsCountState.FromByteArray(storage_count.Value);
             state_count.Votes[state.Votes.Length - 1] += amount;
             storage_count.Value = state_count.ToByteArray();
@@ -75,10 +76,10 @@ namespace Neo.SmartContract.Native.Tokens
 
         private void DistributeGas(ApplicationEngine engine, UInt160 account, AccountState state)
         {
-            BigInteger gas = CalculateBonus(engine, state.Balance, state.BalanceHeight, engine.Service.Snapshot.PersistingBlock.Index);
-            state.BalanceHeight = engine.Service.Snapshot.PersistingBlock.Index;
-            GAS.MintTokens(engine, account, gas);
-            engine.Service.Snapshot.Storages.GetAndChange(CreateAccountKey(account)).Value = state.ToByteArray();
+            BigInteger gas = CalculateBonus(engine, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
+            state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
+            GAS.Mint(engine, account, gas);
+            engine.Snapshot.Storages.GetAndChange(CreateAccountKey(account)).Value = state.ToByteArray();
         }
 
         private BigInteger CalculateBonus(ApplicationEngine engine, BigInteger value, uint start, uint end)
@@ -110,23 +111,32 @@ namespace Neo.SmartContract.Native.Tokens
                 }
                 amount += (iend - istart) * Blockchain.GenerationAmount[ustart];
             }
-            amount += (engine.Service.Snapshot.GetSysFeeAmount(end - 1) - (start == 0 ? 0 : engine.Service.Snapshot.GetSysFeeAmount(start - 1)));
+            amount += GAS.GetSysFeeAmount(engine, end - 1) - (start == 0 ? 0 : GAS.GetSysFeeAmount(engine, start - 1));
             return value * amount * GAS.Factor / TotalAmount;
         }
 
-        private bool Initialize(ApplicationEngine engine, UInt160 account)
+        internal override bool Initialize(ApplicationEngine engine)
         {
-            if (engine.Service.Trigger != TriggerType.Application) throw new InvalidOperationException();
+            if (!base.Initialize(engine)) return false;
             if (base.TotalSupply(engine) != BigInteger.Zero) return false;
-            MintTokens(engine, account, TotalAmount);
+            UInt160 account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1, Blockchain.StandbyValidators).ToScriptHash();
+            Mint(engine, account, TotalAmount);
             foreach (ECPoint pubkey in Blockchain.StandbyValidators)
                 RegisterValidator(engine, pubkey.EncodePoint(true));
             return true;
         }
 
+        protected override bool OnPersist(ApplicationEngine engine)
+        {
+            if (!base.OnPersist(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
+            storage.Value = GetValidators(engine.Snapshot).ToByteArray();
+            return true;
+        }
+
         private BigInteger UnclaimedGas(ApplicationEngine engine, UInt160 account, uint end)
         {
-            StorageItem storage = engine.Service.Snapshot.Storages.TryGet(CreateAccountKey(account));
+            StorageItem storage = engine.Snapshot.Storages.TryGet(CreateAccountKey(account));
             if (storage is null) return BigInteger.Zero;
             AccountState state = new AccountState(storage.Value);
             return CalculateBonus(engine, state.Balance, state.BalanceHeight, end);
@@ -137,8 +147,8 @@ namespace Neo.SmartContract.Native.Tokens
             if (pubkey.Length != 33 || (pubkey[0] != 0x02 && pubkey[0] != 0x03))
                 throw new ArgumentException();
             StorageKey key = CreateStorageKey(Prefix_Validator, pubkey);
-            if (engine.Service.Snapshot.Storages.TryGet(key) != null) return false;
-            engine.Service.Snapshot.Storages.Add(key, new StorageItem
+            if (engine.Snapshot.Storages.TryGet(key) != null) return false;
+            engine.Snapshot.Storages.Add(key, new StorageItem
             {
                 Value = new ValidatorState().ToByteArray()
             });
@@ -147,22 +157,22 @@ namespace Neo.SmartContract.Native.Tokens
 
         private bool Vote(ApplicationEngine engine, UInt160 account, ECPoint[] pubkeys)
         {
-            if (!engine.Service.CheckWitness(engine, account)) return false;
+            if (!InteropService.CheckWitness(engine, account)) return false;
             StorageKey key_account = CreateAccountKey(account);
-            if (engine.Service.Snapshot.Storages.TryGet(key_account) is null) return false;
-            StorageItem storage_account = engine.Service.Snapshot.Storages.GetAndChange(key_account);
+            if (engine.Snapshot.Storages.TryGet(key_account) is null) return false;
+            StorageItem storage_account = engine.Snapshot.Storages.GetAndChange(key_account);
             AccountState state_account = new AccountState(storage_account.Value);
             foreach (ECPoint pubkey in state_account.Votes)
             {
-                StorageItem storage_validator = engine.Service.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Validator, pubkey.ToArray()));
+                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Validator, pubkey.ToArray()));
                 ValidatorState state_validator = ValidatorState.FromByteArray(storage_validator.Value);
                 state_validator.Votes -= state_account.Balance;
                 storage_validator.Value = state_validator.ToByteArray();
             }
-            pubkeys = pubkeys.Distinct().Where(p => engine.Service.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Validator, p.ToArray())) != null).ToArray();
+            pubkeys = pubkeys.Distinct().Where(p => engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Validator, p.ToArray())) != null).ToArray();
             if (pubkeys.Length != state_account.Votes.Length)
             {
-                StorageItem storage_count = engine.Service.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ValidatorsCount), () => new StorageItem
+                StorageItem storage_count = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ValidatorsCount), () => new StorageItem
                 {
                     Value = new ValidatorsCountState().ToByteArray()
                 });
@@ -177,7 +187,7 @@ namespace Neo.SmartContract.Native.Tokens
             storage_account.Value = state_account.ToByteArray();
             foreach (ECPoint pubkey in state_account.Votes)
             {
-                StorageItem storage_validator = engine.Service.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Validator, pubkey.ToArray()));
+                StorageItem storage_validator = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Validator, pubkey.ToArray()));
                 ValidatorState state_validator = ValidatorState.FromByteArray(storage_validator.Value);
                 state_validator.Votes += state_account.Balance;
                 storage_validator.Value = state_validator.ToByteArray();
@@ -187,7 +197,12 @@ namespace Neo.SmartContract.Native.Tokens
 
         private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(ApplicationEngine engine)
         {
-            return engine.Service.Snapshot.Storages.Find(new[] { Prefix_Validator }).Select(p =>
+            return GetRegisteredValidators(engine.Snapshot);
+        }
+
+        public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(Snapshot snapshot)
+        {
+            return snapshot.Storages.Find(new[] { Prefix_Validator }).Select(p =>
             (
                 p.Key.Key.Skip(1).ToArray().AsSerializable<ECPoint>(),
                 ValidatorState.FromByteArray(p.Value.Value).Votes
@@ -196,7 +211,12 @@ namespace Neo.SmartContract.Native.Tokens
 
         private ECPoint[] GetValidators(ApplicationEngine engine)
         {
-            StorageItem storage_count = engine.Service.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_ValidatorsCount));
+            return GetValidators(engine.Snapshot);
+        }
+
+        public ECPoint[] GetValidators(Snapshot snapshot)
+        {
+            StorageItem storage_count = snapshot.Storages.TryGet(CreateStorageKey(Prefix_ValidatorsCount));
             if (storage_count is null) return Blockchain.StandbyValidators;
             ValidatorsCountState state_count = ValidatorsCountState.FromByteArray(storage_count.Value);
             int count = (int)state_count.Votes.Select((p, i) => new
@@ -210,7 +230,19 @@ namespace Neo.SmartContract.Native.Tokens
             }).WeightedAverage(p => p.Count, p => p.Weight);
             count = Math.Max(count, Blockchain.StandbyValidators.Length);
             HashSet<ECPoint> sv = new HashSet<ECPoint>(Blockchain.StandbyValidators);
-            return GetRegisteredValidators(engine).Where(p => (p.Votes.Sign > 0) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).OrderBy(p => p).ToArray();
+            return GetRegisteredValidators(snapshot).Where(p => (p.Votes.Sign > 0) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).OrderBy(p => p).ToArray();
+        }
+
+        private ECPoint[] GetNextBlockValidators(ApplicationEngine engine)
+        {
+            return GetNextBlockValidators(engine.Snapshot);
+        }
+
+        public ECPoint[] GetNextBlockValidators(Snapshot snapshot)
+        {
+            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_NextValidators));
+            if (storage is null) return Blockchain.StandbyValidators;
+            return storage.Value.AsSerializableArray<ECPoint>();
         }
 
         public class AccountState : Nep5AccountState

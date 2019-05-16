@@ -2,7 +2,6 @@
 {
     internal static class DataEntryPrefix
     {
-        public const byte ST_Coin = 0x44;
         public const byte ST_Transaction = 0x48;
 
         public const byte IX_Group = 0x80;

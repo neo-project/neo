@@ -5,12 +5,11 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
+using System;
 using System.Linq;
 using System.Numerics;
-using System.Reflection;
 
 namespace Neo.UnitTests
 {
@@ -39,7 +38,7 @@ namespace Neo.UnitTests
         public void Check_SupportedStandards() => NativeContract.GAS.SupportedStandards().Should().BeEquivalentTo(new string[] { "NEP-5", "NEP-10" });
 
         [TestMethod]
-        public void Check_BalanceOfAndTransfer()
+        public void Check_BalanceOfTransferAndBurn()
         {
             var snapshot = Store.GetSnapshot().Clone();
             snapshot.PersistingBlock = new Block() { Index = 1000 };
@@ -49,9 +48,9 @@ namespace Neo.UnitTests
 
             byte[] to = new byte[20];
 
-            UT_NeoToken.Check_Initialize(snapshot, from);
-
             var keyCount = snapshot.Storages.GetChangeSet().Count();
+
+            NativeContract.NEO.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
             var supply = NativeContract.GAS.TotalSupply(snapshot);
             supply.Should().Be(0);
 
@@ -79,7 +78,7 @@ namespace Neo.UnitTests
             supply = NativeContract.GAS.TotalSupply(snapshot);
             supply.Should().Be(800000000000);
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 2); // Gas
+            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 3); // Gas
 
             // Transfer
 
@@ -96,6 +95,33 @@ namespace Neo.UnitTests
 
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount); // All
 
+            // Burn
+
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            keyCount = snapshot.Storages.GetChangeSet().Count();
+
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+                NativeContract.GAS.Burn(engine, new UInt160(to), BigInteger.MinusOne));
+
+            // Burn more than expected
+
+            Assert.ThrowsException<InvalidOperationException>(() =>
+                NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(800000000001)));
+
+            // Real burn
+
+            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1));
+
+            NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(799999999999);
+
+            keyCount.Should().Be(snapshot.Storages.GetChangeSet().Count());
+
+            // Burn all
+
+            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(799999999999));
+
+            (keyCount - 1).Should().Be(snapshot.Storages.GetChangeSet().Count());
+
             // Bad inputs
 
             NativeContract.GAS.Transfer(snapshot, from, to, BigInteger.MinusOne, true).Should().BeFalse();
@@ -106,14 +132,13 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Check_BadScript()
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), Fixed8.Zero);
+            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), 0);
 
             var script = new ScriptBuilder();
             script.Emit(OpCode.NOP);
             engine.LoadScript(script.ToArray());
 
-            typeof(GasToken).GetMethod("Invoke", BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(NativeContract.GAS, new object[] { engine }).Should().Be(false);
+            NativeContract.GAS.Invoke(engine).Should().BeFalse();
         }
     }
 }

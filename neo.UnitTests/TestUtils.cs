@@ -1,10 +1,7 @@
-﻿using Moq;
-using Neo.IO;
+﻿using Neo.IO;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.VM;
 using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace Neo.UnitTests
@@ -24,50 +21,48 @@ namespace Neo.UnitTests
             return array;
         }
 
-        public static MinerTransaction GetMinerTransaction()
+        public static Transaction GetTransaction()
         {
-            return new MinerTransaction
+            return new Transaction
             {
-                Nonce = 2083236893,
+                Script = new byte[1],
+                Sender = UInt160.Zero,
                 Attributes = new TransactionAttribute[0],
-                Inputs = new CoinReference[0],
-                Outputs = new TransactionOutput[0],
                 Witnesses = new Witness[0]
             };
         }
 
-        public static void SetupHeaderWithValues(Header header, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal)
+        public static void SetupHeaderWithValues(Header header, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal)
         {
-            setupBlockBaseWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
+            setupBlockBaseWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
         }
 
-        public static void SetupBlockWithValues(Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
+        public static void SetupBlockWithValues(Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
         {
-            setupBlockBaseWithValues(block, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
+            setupBlockBaseWithValues(block, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
 
             transactionsVal = new Transaction[numberOfTransactions];
             if (numberOfTransactions > 0)
             {
                 for (int i = 0; i < numberOfTransactions; i++)
                 {
-                    transactionsVal[i] = TestUtils.GetMinerTransaction();
+                    transactionsVal[i] = TestUtils.GetTransaction();
                 }
             }
 
+            block.ConsensusData = new ConsensusData();
             block.Transactions = transactionsVal;
         }
 
-        private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal)
+        private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal)
         {
             bb.PrevHash = val256;
-            merkRootVal = new UInt256(new byte[] { 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251 });
+            merkRootVal = new UInt256(new byte[] { 49, 73, 102, 67, 23, 43, 100, 236, 22, 37, 65, 124, 112, 39, 36, 66, 127, 219, 57, 69, 11, 184, 182, 127, 132, 95, 64, 200, 252, 206, 222, 197 });
             bb.MerkleRoot = merkRootVal;
             timestampVal = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp();
             bb.Timestamp = timestampVal;
             indexVal = 0;
             bb.Index = indexVal;
-            consensusDataVal = 30;
-            bb.ConsensusData = consensusDataVal;
             val160 = UInt160.Zero;
             bb.NextConsensus = val160;
             scriptVal = new Witness
@@ -78,38 +73,17 @@ namespace Neo.UnitTests
             bb.Witness = scriptVal;
         }
 
-        public static Mock<InvocationTransaction> CreateRandomHashInvocationMockTransaction()
+        public static Transaction CreateRandomHashTransaction()
         {
-            var mockTx = new Mock<InvocationTransaction>
-            {
-                CallBase = true
-            };
-            mockTx.Setup(p => p.Verify(It.IsAny<Snapshot>(), It.IsAny<IEnumerable<Transaction>>())).Returns(true);
-            var tx = mockTx.Object;
             var randomBytes = new byte[16];
             TestRandom.NextBytes(randomBytes);
-            tx.Script = randomBytes;
-            tx.Attributes = new TransactionAttribute[0];
-            tx.Inputs = new CoinReference[0];
-            tx.Outputs = new TransactionOutput[0];
-            tx.Witnesses = new Witness[0];
-
-            return mockTx;
-        }
-
-        public static Mock<MinerTransaction> CreateRandomMockMinerTransaction()
-        {
-            var mockTx = new Mock<MinerTransaction>
+            return new Transaction
             {
-                CallBase = true
+                Script = randomBytes,
+                Sender = UInt160.Zero,
+                Attributes = new TransactionAttribute[0],
+                Witnesses = new Witness[0]
             };
-            var tx = mockTx.Object;
-            tx.Attributes = new TransactionAttribute[0];
-            tx.Inputs = new CoinReference[0];
-            tx.Outputs = new TransactionOutput[0];
-            tx.Witnesses = new Witness[0];
-            tx.Nonce = (uint)TestRandom.Next();
-            return mockTx;
         }
 
         public static T CopyMsgBySerialization<T>(T serializableObj, T newObj) where T : ISerializable
