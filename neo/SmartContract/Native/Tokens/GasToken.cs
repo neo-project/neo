@@ -4,6 +4,7 @@ using System.Numerics;
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.VM;
 using VMArray = Neo.VM.Types.Array;
 
@@ -25,7 +26,7 @@ namespace Neo.SmartContract.Native.Tokens
         protected override StackItem Main(ApplicationEngine engine, string operation, VMArray args)
         {
             if (operation == "getSysFeeAmount")
-                return GetSysFeeAmount(engine, (uint)args[0].GetBigInteger());
+                return GetSysFeeAmount(engine.Snapshot, (uint)args[0].GetBigInteger());
             else
                 return base.Main(engine, operation, args);
         }
@@ -38,7 +39,7 @@ namespace Neo.SmartContract.Native.Tokens
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
             Mint(engine, primary, engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.NetworkFee));
-            BigInteger sys_fee = GetSysFeeAmount(engine, engine.Snapshot.PersistingBlock.Index - 1) + engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.Gas);
+            BigInteger sys_fee = GetSysFeeAmount(engine.Snapshot, engine.Snapshot.PersistingBlock.Index - 1) + engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.Gas);
             StorageKey key = CreateStorageKey(Prefix_SystemFeeAmount, BitConverter.GetBytes(engine.Snapshot.PersistingBlock.Index));
             engine.Snapshot.Storages.Add(key, new StorageItem
             {
@@ -48,11 +49,11 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        internal BigInteger GetSysFeeAmount(ApplicationEngine engine, uint index)
+        public BigInteger GetSysFeeAmount(Snapshot snapshot, uint index)
         {
             if (index == 0) return Blockchain.GenesisBlock.Transactions.Sum(p => p.Gas);
             StorageKey key = CreateStorageKey(Prefix_SystemFeeAmount, BitConverter.GetBytes(index));
-            StorageItem storage = engine.Snapshot.Storages.TryGet(key);
+            StorageItem storage = snapshot.Storages.TryGet(key);
             if (storage is null) return BigInteger.Zero;
             return new BigInteger(storage.Value);
         }

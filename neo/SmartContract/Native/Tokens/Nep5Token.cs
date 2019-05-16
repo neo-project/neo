@@ -41,9 +41,9 @@ namespace Neo.SmartContract.Native.Tokens
                 case "decimals":
                     return Decimals;
                 case "totalSupply":
-                    return TotalSupply(engine);
+                    return TotalSupply(engine.Snapshot);
                 case "balanceOf":
-                    return BalanceOf(engine, new UInt160(args[0].GetByteArray()));
+                    return BalanceOf(engine.Snapshot, new UInt160(args[0].GetByteArray()));
                 case "transfer":
                     return Transfer(engine, new UInt160(args[0].GetByteArray()), new UInt160(args[1].GetByteArray()), args[2].GetBigInteger());
                 default:
@@ -100,16 +100,11 @@ namespace Neo.SmartContract.Native.Tokens
             engine.SendNotification(ScriptHash, new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount });
         }
 
-        protected virtual BigInteger TotalSupply(ApplicationEngine engine)
+        public virtual BigInteger TotalSupply(Snapshot snapshot)
         {
-            StorageItem storage = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
+            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
             if (storage is null) return BigInteger.Zero;
             return new BigInteger(storage.Value);
-        }
-
-        protected BigInteger BalanceOf(ApplicationEngine engine, UInt160 account)
-        {
-            return BalanceOf(engine.Snapshot, account);
         }
 
         public virtual BigInteger BalanceOf(Snapshot snapshot, UInt160 account)

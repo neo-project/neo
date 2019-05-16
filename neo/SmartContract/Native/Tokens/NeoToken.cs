@@ -35,23 +35,23 @@ namespace Neo.SmartContract.Native.Tokens
             switch (operation)
             {
                 case "unclaimedGas":
-                    return UnclaimedGas(engine, new UInt160(args[0].GetByteArray()), (uint)args[1].GetBigInteger());
+                    return UnclaimedGas(engine.Snapshot, new UInt160(args[0].GetByteArray()), (uint)args[1].GetBigInteger());
                 case "registerValidator":
                     return RegisterValidator(engine, args[0].GetByteArray());
                 case "vote":
                     return Vote(engine, new UInt160(args[0].GetByteArray()), ((VMArray)args[1]).Select(p => p.GetByteArray().AsSerializable<ECPoint>()).ToArray());
                 case "getRegisteredValidators":
-                    return GetRegisteredValidators(engine).Select(p => new Struct(new StackItem[] { p.PublicKey.ToArray(), p.Votes })).ToArray();
+                    return GetRegisteredValidators(engine.Snapshot).Select(p => new Struct(new StackItem[] { p.PublicKey.ToArray(), p.Votes })).ToArray();
                 case "getValidators":
-                    return GetValidators(engine).Select(p => (StackItem)p.ToArray()).ToArray();
+                    return GetValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToArray();
                 case "getNextBlockValidators":
-                    return GetNextBlockValidators(engine).Select(p => (StackItem)p.ToArray()).ToArray();
+                    return GetNextBlockValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToArray();
                 default:
                     return base.Main(engine, operation, args);
             }
         }
 
-        protected override BigInteger TotalSupply(ApplicationEngine engine)
+        public override BigInteger TotalSupply(Snapshot snapshot)
         {
             return TotalAmount;
         }
@@ -76,13 +76,13 @@ namespace Neo.SmartContract.Native.Tokens
 
         private void DistributeGas(ApplicationEngine engine, UInt160 account, AccountState state)
         {
-            BigInteger gas = CalculateBonus(engine, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
+            BigInteger gas = CalculateBonus(engine.Snapshot, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
             GAS.Mint(engine, account, gas);
             engine.Snapshot.Storages.GetAndChange(CreateAccountKey(account)).Value = state.ToByteArray();
         }
 
-        private BigInteger CalculateBonus(ApplicationEngine engine, BigInteger value, uint start, uint end)
+        private BigInteger CalculateBonus(Snapshot snapshot, BigInteger value, uint start, uint end)
         {
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
@@ -111,14 +111,14 @@ namespace Neo.SmartContract.Native.Tokens
                 }
                 amount += (iend - istart) * Blockchain.GenerationAmount[ustart];
             }
-            amount += GAS.GetSysFeeAmount(engine, end - 1) - (start == 0 ? 0 : GAS.GetSysFeeAmount(engine, start - 1));
+            amount += GAS.GetSysFeeAmount(snapshot, end - 1) - (start == 0 ? 0 : GAS.GetSysFeeAmount(snapshot, start - 1));
             return value * amount * GAS.Factor / TotalAmount;
         }
 
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
-            if (base.TotalSupply(engine) != BigInteger.Zero) return false;
+            if (base.TotalSupply(engine.Snapshot) != BigInteger.Zero) return false;
             UInt160 account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1, Blockchain.StandbyValidators).ToScriptHash();
             Mint(engine, account, TotalAmount);
             foreach (ECPoint pubkey in Blockchain.StandbyValidators)
@@ -134,12 +134,12 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        private BigInteger UnclaimedGas(ApplicationEngine engine, UInt160 account, uint end)
+        public BigInteger UnclaimedGas(Snapshot snapshot, UInt160 account, uint end)
         {
-            StorageItem storage = engine.Snapshot.Storages.TryGet(CreateAccountKey(account));
+            StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
             if (storage is null) return BigInteger.Zero;
             AccountState state = new AccountState(storage.Value);
-            return CalculateBonus(engine, state.Balance, state.BalanceHeight, end);
+            return CalculateBonus(snapshot, state.Balance, state.BalanceHeight, end);
         }
 
         private bool RegisterValidator(ApplicationEngine engine, byte[] pubkey)
@@ -195,11 +195,6 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(ApplicationEngine engine)
-        {
-            return GetRegisteredValidators(engine.Snapshot);
-        }
-
         public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(Snapshot snapshot)
         {
             return snapshot.Storages.Find(new[] { Prefix_Validator }).Select(p =>
@@ -207,11 +202,6 @@ namespace Neo.SmartContract.Native.Tokens
                 p.Key.Key.Skip(1).ToArray().AsSerializable<ECPoint>(),
                 ValidatorState.FromByteArray(p.Value.Value).Votes
             ));
-        }
-
-        private ECPoint[] GetValidators(ApplicationEngine engine)
-        {
-            return GetValidators(engine.Snapshot);
         }
 
         public ECPoint[] GetValidators(Snapshot snapshot)
@@ -231,11 +221,6 @@ namespace Neo.SmartContract.Native.Tokens
             count = Math.Max(count, Blockchain.StandbyValidators.Length);
             HashSet<ECPoint> sv = new HashSet<ECPoint>(Blockchain.StandbyValidators);
             return GetRegisteredValidators(snapshot).Where(p => (p.Votes.Sign > 0) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).OrderBy(p => p).ToArray();
-        }
-
-        private ECPoint[] GetNextBlockValidators(ApplicationEngine engine)
-        {
-            return GetNextBlockValidators(engine.Snapshot);
         }
 
         public ECPoint[] GetNextBlockValidators(Snapshot snapshot)
