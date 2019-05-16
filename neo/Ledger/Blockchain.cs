@@ -429,7 +429,6 @@ namespace Neo.Ledger
                         Context.System.EventStream.Publish(application_executed);
                         all_application_executed.Add(application_executed);
                     }
-                    snapshot.NextValidators.GetAndChange().Validators = snapshot.GetValidators();
                 }
                 snapshot.Blocks.Add(block.Hash, new BlockState
                 {

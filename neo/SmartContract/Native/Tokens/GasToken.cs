@@ -35,11 +35,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (!base.OnPersist(engine)) return false;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
                 Burn(engine, tx.Sender, tx.Gas + tx.NetworkFee);
-            ECPoint[] validators;
-            if (engine.Snapshot.PersistingBlock.Index > 1)
-                validators = engine.Snapshot.NextValidators.Get().Validators;
-            else
-                validators = Blockchain.StandbyValidators;
+            ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
             Mint(engine, primary, engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.NetworkFee));
             BigInteger sys_fee = GetSysFeeAmount(engine, engine.Snapshot.PersistingBlock.Index - 1) + engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.Gas);

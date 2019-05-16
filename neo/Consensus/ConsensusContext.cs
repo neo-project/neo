@@ -6,6 +6,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -276,10 +277,10 @@ namespace Neo.Consensus
                 {
                     PrevHash = Snapshot.CurrentBlockHash,
                     Index = Snapshot.Height + 1,
-                    NextConsensus = Blockchain.GetConsensusAddress(Snapshot.GetValidators().ToArray()),
+                    NextConsensus = Blockchain.GetConsensusAddress(NativeContract.NEO.GetValidators(Snapshot).ToArray()),
                     ConsensusData = new ConsensusData()
                 };
-                Validators = Snapshot.NextValidators.Get().Validators;
+                Validators = NativeContract.NEO.GetNextBlockValidators(Snapshot);
                 MyIndex = -1;
                 ChangeViewPayloads = new ConsensusPayload[Validators.Length];
                 LastChangeViewPayloads = new ConsensusPayload[Validators.Length];
