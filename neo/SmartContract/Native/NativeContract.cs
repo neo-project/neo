@@ -20,7 +20,7 @@ namespace Neo.SmartContract.Native
         public abstract string ServiceName { get; }
         public uint ServiceHash { get; }
         public byte[] Script { get; }
-        public UInt160 ScriptHash { get; }
+        public UInt160 Hash { get; }
         public virtual ContractPropertyState Properties => ContractPropertyState.NoProperty;
         public virtual string[] SupportedStandards { get; } = { "NEP-10" };
 
@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Native
                 sb.EmitSysCall(ServiceHash);
                 this.Script = sb.ToArray();
             }
-            this.ScriptHash = Script.ToScriptHash();
+            this.Hash = Script.ToScriptHash();
             contracts.Add(this);
         }
 
@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Native
         {
             StorageKey storageKey = new StorageKey
             {
-                ScriptHash = ScriptHash,
+                ScriptHash = Hash,
                 Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
             };
             storageKey.Key[0] = prefix;
@@ -56,7 +56,7 @@ namespace Neo.SmartContract.Native
 
         internal bool Invoke(ApplicationEngine engine)
         {
-            if (!engine.CurrentScriptHash.Equals(ScriptHash))
+            if (!engine.CurrentScriptHash.Equals(Hash))
                 return false;
             string operation = engine.CurrentContext.EvaluationStack.Pop().GetString();
             VMArray args = (VMArray)engine.CurrentContext.EvaluationStack.Pop();
@@ -95,7 +95,7 @@ namespace Neo.SmartContract.Native
         {
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitAppCall(ScriptHash, operation, args);
+                sb.EmitAppCall(Hash, operation, args);
                 return ApplicationEngine.Run(sb.ToArray(), testMode: true);
             }
         }

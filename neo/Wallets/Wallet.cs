@@ -265,7 +265,7 @@ namespace Neo.Wallets
                             sb.Emit(OpCode.THROWIFNOT);
                         }
                     }
-                    if (group.Key.Equals(NativeContract.GAS.ScriptHash))
+                    if (group.Key.Equals(NativeContract.GAS.Hash))
                         balances_gas = balances;
                 }
                 byte[] nonce = new byte[8];

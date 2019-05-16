@@ -420,7 +420,7 @@ namespace Neo.Ledger
                         using (ScriptBuilder sb = new ScriptBuilder())
                         {
                             foreach (NativeContract contract in contracts)
-                                sb.EmitAppCall(contract.ScriptHash, "onPersist");
+                                sb.EmitAppCall(contract.Hash, "onPersist");
                             engine.LoadScript(sb.ToArray());
                         }
                         engine.Execute();

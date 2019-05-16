@@ -14,7 +14,7 @@ namespace Neo.SmartContract.Native.Tokens
         public override string[] SupportedStandards { get; } = { "NEP-5", "NEP-10" };
         public abstract string Name { get; }
         public abstract string Symbol { get; }
-        public abstract int Decimals { get; }
+        public abstract byte Decimals { get; }
         public BigInteger Factor { get; }
 
         protected const byte Prefix_TotalSupply = 11;
@@ -39,7 +39,7 @@ namespace Neo.SmartContract.Native.Tokens
                 case "symbol":
                     return Symbol;
                 case "decimals":
-                    return Decimals;
+                    return (uint)Decimals;
                 case "totalSupply":
                     return TotalSupply(engine.Snapshot);
                 case "balanceOf":
@@ -71,7 +71,7 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply += amount;
             storage.Value = totalSupply.ToByteArray();
-            engine.SendNotification(ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount });
+            engine.SendNotification(Hash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount });
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
@@ -97,7 +97,7 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply -= amount;
             storage.Value = totalSupply.ToByteArray();
-            engine.SendNotification(ScriptHash, new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount });
+            engine.SendNotification(Hash, new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount });
         }
 
         public virtual BigInteger TotalSupply(Snapshot snapshot)
@@ -169,7 +169,7 @@ namespace Neo.SmartContract.Native.Tokens
                     storage_to.Value = state_to.ToByteArray();
                 }
             }
-            engine.SendNotification(ScriptHash, new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount });
+            engine.SendNotification(Hash, new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount });
             return true;
         }
 

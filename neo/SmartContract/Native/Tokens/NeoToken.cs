@@ -18,7 +18,7 @@ namespace Neo.SmartContract.Native.Tokens
         public override string ServiceName => "Neo.Native.Tokens.NEO";
         public override string Name => "NEO";
         public override string Symbol => "neo";
-        public override int Decimals => 0;
+        public override byte Decimals => 0;
         public BigInteger TotalAmount { get; }
 
         private const byte Prefix_Validator = 33;
