@@ -22,13 +22,18 @@ namespace Neo.Network.P2P.Capabilities
             Type = type;
         }
 
-        public virtual void Deserialize(BinaryReader reader)
+        public virtual void Deserialize(BinaryReader reader) { }
+
+        public virtual void DeserializeWithType(BinaryReader reader)
         {
             if (reader.ReadByte() != (byte)Type)
             {
                 throw new FormatException();
             }
+
+            Deserialize(reader);
         }
+
 
         public virtual void Serialize(BinaryWriter writer)
         {
@@ -45,8 +50,8 @@ namespace Neo.Network.P2P.Capabilities
             {
                 case NodeCapabilities.TcpServer:
                 case NodeCapabilities.UdpServer:
-                case NodeCapabilities.WsServer: return new ServerCapability(type); 
-                case NodeCapabilities.FullNode: return new FullNodeCapability(); 
+                case NodeCapabilities.WsServer: return new ServerCapability(type);
+                case NodeCapabilities.FullNode: return new FullNodeCapability();
 
                 default: throw new FormatException();
             }

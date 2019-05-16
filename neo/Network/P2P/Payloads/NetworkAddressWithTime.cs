@@ -43,7 +43,7 @@ namespace Neo.Network.P2P.Payloads
 
             for (int x = 0, max = Capabilities.Length; x < max; x++)
             {
-                Capabilities[x] = NodeCapabilityBase.Create((NodeCapabilities)reader.PeekChar());
+                Capabilities[x] = NodeCapabilityBase.Create((NodeCapabilities)reader.ReadByte());
                 Capabilities[x].Deserialize(reader);
             }
         }
