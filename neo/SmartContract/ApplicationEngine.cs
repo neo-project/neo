@@ -14,8 +14,8 @@ namespace Neo.SmartContract
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
 
+        public static readonly long GasFree = 10 * (long)NativeContract.GAS.Factor;
         private const long ratio = 100000;
-        private static readonly long gas_free = 10 * (long)NativeContract.GAS.Factor;
         private readonly long gas_amount;
         private readonly bool testMode;
         private readonly RandomAccessStack<UInt160> hashes = new RandomAccessStack<UInt160>();
@@ -33,7 +33,7 @@ namespace Neo.SmartContract
 
         public ApplicationEngine(TriggerType trigger, IVerifiable container, Snapshot snapshot, long gas, bool testMode = false)
         {
-            this.gas_amount = gas_free + gas;
+            this.gas_amount = GasFree + gas;
             this.testMode = testMode;
             this.Trigger = trigger;
             this.ScriptContainer = container;
