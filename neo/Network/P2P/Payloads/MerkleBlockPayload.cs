@@ -8,11 +8,12 @@ namespace Neo.Network.P2P.Payloads
 {
     public class MerkleBlockPayload : BlockBase
     {
+        public ConsensusData ConsensusData;
         public int TxCount;
         public UInt256[] Hashes;
         public byte[] Flags;
 
-        public override int Size => base.Size + sizeof(int) + Hashes.GetVarSize() + Flags.GetVarSize();
+        public override int Size => base.Size + ConsensusData.Size + sizeof(int) + Hashes.GetVarSize() + Flags.GetVarSize();
 
         public static MerkleBlockPayload Create(Block block, BitArray flags)
         {
@@ -27,9 +28,9 @@ namespace Neo.Network.P2P.Payloads
                 MerkleRoot = block.MerkleRoot,
                 Timestamp = block.Timestamp,
                 Index = block.Index,
-                ConsensusData = block.ConsensusData,
                 NextConsensus = block.NextConsensus,
                 Witness = block.Witness,
+                ConsensusData = block.ConsensusData,
                 TxCount = block.Transactions.Length,
                 Hashes = tree.ToHashArray(),
                 Flags = buffer
@@ -39,6 +40,7 @@ namespace Neo.Network.P2P.Payloads
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
+            ConsensusData = reader.ReadSerializable<ConsensusData>();
             TxCount = (int)reader.ReadVarInt(int.MaxValue);
             Hashes = reader.ReadSerializableArray<UInt256>();
             Flags = reader.ReadVarBytes();
@@ -47,6 +49,7 @@ namespace Neo.Network.P2P.Payloads
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
+            writer.Write(ConsensusData);
             writer.WriteVarInt(TxCount);
             writer.Write(Hashes);
             writer.WriteVarBytes(Flags);

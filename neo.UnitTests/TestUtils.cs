@@ -32,14 +32,14 @@ namespace Neo.UnitTests
             };
         }
 
-        public static void SetupHeaderWithValues(Header header, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal)
+        public static void SetupHeaderWithValues(Header header, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal)
         {
-            setupBlockBaseWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
+            setupBlockBaseWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
         }
 
-        public static void SetupBlockWithValues(Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
+        public static void SetupBlockWithValues(Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
         {
-            setupBlockBaseWithValues(block, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
+            setupBlockBaseWithValues(block, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
 
             transactionsVal = new Transaction[numberOfTransactions];
             if (numberOfTransactions > 0)
@@ -50,10 +50,11 @@ namespace Neo.UnitTests
                 }
             }
 
+            block.ConsensusData = new ConsensusData();
             block.Transactions = transactionsVal;
         }
 
-        private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out ulong consensusDataVal, out Witness scriptVal)
+        private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal)
         {
             bb.PrevHash = val256;
             merkRootVal = new UInt256(new byte[] { 169, 106, 72, 65, 146, 118, 185, 97, 126, 3, 69, 99, 127, 206, 73, 158, 185, 246, 74, 178, 7, 59, 145, 123, 41, 219, 204, 53, 148, 16, 255, 13 });
@@ -62,8 +63,6 @@ namespace Neo.UnitTests
             bb.Timestamp = timestampVal;
             indexVal = 0;
             bb.Index = indexVal;
-            consensusDataVal = 30;
-            bb.ConsensusData = consensusDataVal;
             val160 = UInt160.Zero;
             bb.NextConsensus = val160;
             scriptVal = new Witness

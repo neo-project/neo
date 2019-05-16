@@ -52,6 +52,10 @@ namespace Neo.UnitTests
 
                 Console.WriteLine("initialize NeoSystem");
                 TheNeoSystem = new NeoSystem(_Store.Object); // new Mock<NeoSystem>(mockStore.Object);
+
+                // Ensure that blockchain is loaded
+
+                var blockchain = Blockchain.Singleton;
             }
 
             return TheNeoSystem;
