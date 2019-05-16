@@ -35,7 +35,7 @@ A link to the essential C# reference implementation can be seen below:
 * [neo-cli](https://github.com/neo-project/neo-cli/tree/master-2.x)
 * [neo-plugins](https://github.com/neo-project/neo-plugins/tree/master-2.x)
 
-NEO 1.x was known as Antsharess, the roots of such codes can be found historically in this current repository. 
+NEO 1.x was known as Antshares, the roots of such codes can be found historically in this current repository. 
 
 
 Supported Platforms
