@@ -77,7 +77,7 @@ namespace Neo.Network.P2P.Payloads
             }
             _hash = null;
             long d = (long)NativeContract.GAS.Factor;
-            Gas = consumed - 10 * d;
+            Gas = consumed - ApplicationEngine.GasFree;
             if (Gas <= 0)
             {
                 Gas = 0;
