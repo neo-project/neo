@@ -24,20 +24,15 @@ namespace Neo.SmartContract.Native.Tokens
 
         protected override StackItem Main(ApplicationEngine engine, string operation, VMArray args)
         {
-            switch (operation)
-            {
-                case "distributeFees":
-                    return DistributeFees(engine);
-                case "getSysFeeAmount":
-                    return GetSysFeeAmount(engine, (uint)args[0].GetBigInteger());
-                default:
-                    return base.Main(engine, operation, args);
-            }
+            if (operation == "getSysFeeAmount")
+                return GetSysFeeAmount(engine, (uint)args[0].GetBigInteger());
+            else
+                return base.Main(engine, operation, args);
         }
 
-        private bool DistributeFees(ApplicationEngine engine)
+        protected override bool OnPersist(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.System) throw new InvalidOperationException();
+            if (!base.OnPersist(engine)) return false;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
                 Burn(engine, tx.Sender, tx.Gas + tx.NetworkFee);
             ECPoint[] validators;

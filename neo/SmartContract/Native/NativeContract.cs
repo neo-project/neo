@@ -67,14 +67,26 @@ namespace Neo.SmartContract.Native
 
         protected virtual StackItem Main(ApplicationEngine engine, string operation, VMArray args)
         {
-            if (operation == "supportedStandards")
-                return SupportedStandards.Select(p => (StackItem)p).ToList();
+            switch (operation)
+            {
+                case "onPersist":
+                    return OnPersist(engine);
+                case "supportedStandards":
+                    return SupportedStandards.Select(p => (StackItem)p).ToList();
+            }
             throw new NotSupportedException();
         }
 
         internal virtual bool Initialize(ApplicationEngine engine)
         {
             if (engine.Trigger != TriggerType.Application)
+                throw new InvalidOperationException();
+            return true;
+        }
+
+        protected virtual bool OnPersist(ApplicationEngine engine)
+        {
+            if (engine.Trigger != TriggerType.System)
                 throw new InvalidOperationException();
             return true;
         }
