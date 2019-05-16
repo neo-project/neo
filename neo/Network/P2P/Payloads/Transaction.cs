@@ -4,6 +4,7 @@ using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -61,6 +62,37 @@ namespace Neo.Network.P2P.Payloads
             Attributes.GetVarSize() +   //Attributes
             Witnesses.GetVarSize();     //Witnesses
 
+        public void CalculateGas()
+        {
+            if (Sender is null) Sender = UInt160.Zero;
+            if (Attributes is null) Attributes = new TransactionAttribute[0];
+            if (Witnesses is null) Witnesses = new Witness[0];
+            _hash = null;
+            long consumed;
+            using (ApplicationEngine engine = ApplicationEngine.Run(Script, this))
+            {
+                if (engine.State.HasFlag(VMState.FAULT))
+                    throw new InvalidOperationException();
+                consumed = engine.GasConsumed;
+            }
+            _hash = null;
+            long d = (long)NativeContract.GAS.Factor;
+            Gas = consumed - 10 * d;
+            if (Gas <= 0)
+            {
+                Gas = 0;
+            }
+            else
+            {
+                long remainder = Gas % d;
+                if (remainder == 0) return;
+                if (remainder > 0)
+                    Gas += d - remainder;
+                else
+                    Gas -= remainder;
+            }
+        }
+
         void ISerializable.Deserialize(BinaryReader reader)
         {
             DeserializeUnsigned(reader);
@@ -95,19 +127,6 @@ namespace Neo.Network.P2P.Payloads
         public override bool Equals(object obj)
         {
             return Equals(obj as Transaction);
-        }
-
-        public static long GetGas(long consumed)
-        {
-            long d = (long)NativeContract.GAS.Factor;
-            long gas = consumed - 10 * d;
-            if (gas <= 0) return 0;
-            long remainder = gas % d;
-            if (remainder == 0) return gas;
-            if (remainder > 0)
-                return gas - remainder + d;
-            else
-                return gas - remainder;
         }
 
         public override int GetHashCode()

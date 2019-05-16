@@ -58,6 +58,24 @@ namespace Neo.Wallets
         {
         }
 
+        public void FillTransaction(Transaction tx, UInt160 sender = null)
+        {
+            tx.CalculateGas();
+            UInt160[] accounts = sender is null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { sender };
+            BigInteger fee = tx.Gas + tx.NetworkFee;
+            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                foreach (UInt160 account in accounts)
+                {
+                    BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, account);
+                    if (balance >= fee)
+                    {
+                        tx.Sender = account;
+                        return;
+                    }
+                }
+            throw new InvalidOperationException();
+        }
+
         private List<(UInt160 Account, BigInteger Value)> FindPayingAccounts(List<(UInt160 Account, BigInteger Value)> orderedAccounts, BigInteger amount)
         {
             var result = new List<(UInt160 Account, BigInteger Value)>();
@@ -212,11 +230,11 @@ namespace Neo.Wallets
             return account;
         }
 
-        public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null)
+        public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null, long net_fee = 0)
         {
             if (attributes == null) attributes = new List<TransactionAttribute>();
             var output_groups = outputs.GroupBy(p => p.AssetId);
-            UInt160[] accounts = from == null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { from };
+            UInt160[] accounts = from is null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { from };
             HashSet<UInt160> sAttributes = new HashSet<UInt160>();
             byte[] script;
             List<(UInt160 Account, BigInteger Value)> balances_gas = null;
@@ -263,27 +281,25 @@ namespace Neo.Wallets
             Transaction tx = new Transaction
             {
                 Script = script,
-                Sender = UInt160.Zero,
-                Attributes = attributes.ToArray(),
-                Witnesses = new Witness[0]
+                NetworkFee = net_fee,
+                Attributes = attributes.ToArray()
             };
-            using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, tx))
+            try
             {
-                if (engine.State.HasFlag(VMState.FAULT)) return null;
-                tx = new Transaction
-                {
-                    Script = tx.Script,
-                    Gas = Transaction.GetGas(engine.GasConsumed),
-                    Attributes = tx.Attributes
-                };
+                tx.CalculateGas();
             }
+            catch (InvalidOperationException)
+            {
+                return null;
+            }
+            BigInteger fee = tx.Gas + tx.NetworkFee;
             if (balances_gas is null)
             {
                 using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                     foreach (UInt160 account in accounts)
                     {
                         BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, account);
-                        if (balance >= tx.Gas)
+                        if (balance >= fee)
                         {
                             tx.Sender = account;
                             break;
@@ -292,7 +308,7 @@ namespace Neo.Wallets
             }
             else
             {
-                tx.Sender = balances_gas.FirstOrDefault(p => p.Value >= tx.Gas).Account;
+                tx.Sender = balances_gas.FirstOrDefault(p => p.Value >= fee).Account;
             }
             if (tx.Sender is null) return null;
             return tx;
