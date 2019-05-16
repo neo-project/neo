@@ -1,6 +1,7 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -22,6 +23,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         private const byte Prefix_Validator = 33;
         private const byte Prefix_ValidatorsCount = 15;
+        private const byte Prefix_NextValidators = 14;
 
         internal NeoToken()
         {
@@ -42,6 +44,8 @@ namespace Neo.SmartContract.Native.Tokens
                     return GetRegisteredValidators(engine).Select(p => new Struct(new StackItem[] { p.PublicKey.ToArray(), p.Votes })).ToArray();
                 case "getValidators":
                     return GetValidators(engine).Select(p => (StackItem)p.ToArray()).ToArray();
+                case "getNextBlockValidators":
+                    return GetNextBlockValidators(engine).Select(p => (StackItem)p.ToArray()).ToArray();
                 default:
                     return base.Main(engine, operation, args);
             }
@@ -122,6 +126,14 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
+        protected override bool OnPersist(ApplicationEngine engine)
+        {
+            if (!base.OnPersist(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextValidators), () => new StorageItem());
+            storage.Value = GetValidators(engine.Snapshot).ToByteArray();
+            return true;
+        }
+
         private BigInteger UnclaimedGas(ApplicationEngine engine, UInt160 account, uint end)
         {
             StorageItem storage = engine.Snapshot.Storages.TryGet(CreateAccountKey(account));
@@ -185,7 +197,12 @@ namespace Neo.SmartContract.Native.Tokens
 
         private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(ApplicationEngine engine)
         {
-            return engine.Snapshot.Storages.Find(new[] { Prefix_Validator }).Select(p =>
+            return GetRegisteredValidators(engine.Snapshot);
+        }
+
+        public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(Snapshot snapshot)
+        {
+            return snapshot.Storages.Find(new[] { Prefix_Validator }).Select(p =>
             (
                 p.Key.Key.Skip(1).ToArray().AsSerializable<ECPoint>(),
                 ValidatorState.FromByteArray(p.Value.Value).Votes
@@ -194,7 +211,12 @@ namespace Neo.SmartContract.Native.Tokens
 
         private ECPoint[] GetValidators(ApplicationEngine engine)
         {
-            StorageItem storage_count = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_ValidatorsCount));
+            return GetValidators(engine.Snapshot);
+        }
+
+        public ECPoint[] GetValidators(Snapshot snapshot)
+        {
+            StorageItem storage_count = snapshot.Storages.TryGet(CreateStorageKey(Prefix_ValidatorsCount));
             if (storage_count is null) return Blockchain.StandbyValidators;
             ValidatorsCountState state_count = ValidatorsCountState.FromByteArray(storage_count.Value);
             int count = (int)state_count.Votes.Select((p, i) => new
@@ -208,7 +230,19 @@ namespace Neo.SmartContract.Native.Tokens
             }).WeightedAverage(p => p.Count, p => p.Weight);
             count = Math.Max(count, Blockchain.StandbyValidators.Length);
             HashSet<ECPoint> sv = new HashSet<ECPoint>(Blockchain.StandbyValidators);
-            return GetRegisteredValidators(engine).Where(p => (p.Votes.Sign > 0) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).OrderBy(p => p).ToArray();
+            return GetRegisteredValidators(snapshot).Where(p => (p.Votes.Sign > 0) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).OrderBy(p => p).ToArray();
+        }
+
+        private ECPoint[] GetNextBlockValidators(ApplicationEngine engine)
+        {
+            return GetNextBlockValidators(engine.Snapshot);
+        }
+
+        public ECPoint[] GetNextBlockValidators(Snapshot snapshot)
+        {
+            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_NextValidators));
+            if (storage is null) return Blockchain.StandbyValidators;
+            return storage.Value.AsSerializableArray<ECPoint>();
         }
 
         public class AccountState : Nep5AccountState
