@@ -52,33 +52,30 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Size_Get()
         {
+            uut.Script = TestUtils.GetByteArray(32, 0x42);
+            uut.Sender = UInt160.Zero;
             uut.Attributes = new TransactionAttribute[0];
             uut.Witnesses = new Witness[0];
-
-            byte[] val = TestUtils.GetByteArray(32, 0x42);
-            uut.Script = val;
 
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
             uut.Script.GetVarSize().Should().Be(33);
-            uut.Size.Should().Be(52);
+            uut.Size.Should().Be(72);
         }
 
         [TestMethod]
         public void ToJson()
         {
-            byte[] scriptVal = TestUtils.GetByteArray(32, 0x42);
-            uut.Script = scriptVal;
-            long gasVal = 4200000000;
-            uut.Gas = gasVal;
-
+            uut.Script = TestUtils.GetByteArray(32, 0x42);
+            uut.Sender = UInt160.Zero;
+            uut.Gas = 4200000000;
             uut.Attributes = new TransactionAttribute[0];
             uut.Witnesses = new Witness[0];
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["txid"].AsString().Should().Be("0x13968617bebc4f17c9adfd8c30f5c18d73edce9beb332937ead4b1cf6cca6851");
-            jObj["size"].AsNumber().Should().Be(52);
+            jObj["txid"].AsString().Should().Be("0x4ab5a033d7dfb79b42315d29cc106b5fcc3604b70f4fa2e98dae06e3decc245e");
+            jObj["size"].AsNumber().Should().Be(72);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
             jObj["net_fee"].AsString().Should().Be("0");
