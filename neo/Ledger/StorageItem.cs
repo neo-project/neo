@@ -3,12 +3,12 @@ using System.IO;
 
 namespace Neo.Ledger
 {
-    public class StorageItem : StateBase, ICloneable<StorageItem>
+    public class StorageItem : ICloneable<StorageItem>, ISerializable
     {
         public byte[] Value;
         public bool IsConstant;
 
-        public override int Size => base.Size + Value.GetVarSize() + sizeof(bool);
+        public int Size => Value.GetVarSize() + sizeof(bool);
 
         StorageItem ICloneable<StorageItem>.Clone()
         {
@@ -19,9 +19,8 @@ namespace Neo.Ledger
             };
         }
 
-        public override void Deserialize(BinaryReader reader)
+        public void Deserialize(BinaryReader reader)
         {
-            base.Deserialize(reader);
             Value = reader.ReadVarBytes();
             IsConstant = reader.ReadBoolean();
         }
@@ -32,9 +31,8 @@ namespace Neo.Ledger
             IsConstant = replica.IsConstant;
         }
 
-        public override void Serialize(BinaryWriter writer)
+        public void Serialize(BinaryWriter writer)
         {
-            base.Serialize(writer);
             writer.WriteVarBytes(Value);
             writer.Write(IsConstant);
         }

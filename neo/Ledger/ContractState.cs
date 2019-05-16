@@ -5,7 +5,7 @@ using System.IO;
 
 namespace Neo.Ledger
 {
-    public class ContractState : StateBase, ICloneable<ContractState>
+    public class ContractState : ICloneable<ContractState>, ISerializable
     {
         public byte[] Script;
         public ContractPropertyState ContractProperties;
@@ -26,7 +26,7 @@ namespace Neo.Ledger
             }
         }
 
-        public override int Size => base.Size + Script.GetVarSize() + sizeof(ContractParameterType);
+        int ISerializable.Size => Script.GetVarSize() + sizeof(ContractParameterType);
 
         ContractState ICloneable<ContractState>.Clone()
         {
@@ -37,9 +37,8 @@ namespace Neo.Ledger
             };
         }
 
-        public override void Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(BinaryReader reader)
         {
-            base.Deserialize(reader);
             Script = reader.ReadVarBytes();
             ContractProperties = (ContractPropertyState)reader.ReadByte();
         }
@@ -50,16 +49,15 @@ namespace Neo.Ledger
             ContractProperties = replica.ContractProperties;
         }
 
-        public override void Serialize(BinaryWriter writer)
+        void ISerializable.Serialize(BinaryWriter writer)
         {
-            base.Serialize(writer);
             writer.WriteVarBytes(Script);
             writer.Write((byte)ContractProperties);
         }
 
-        public override JObject ToJson()
+        public JObject ToJson()
         {
-            JObject json = base.ToJson();
+            JObject json = new JObject();
             json["hash"] = ScriptHash.ToString();
             json["script"] = Script.ToHexString();
             json["properties"] = new JObject();
