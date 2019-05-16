@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Neo.SmartContract.Native;
 using System.Linq;
 
 namespace Neo
@@ -51,7 +52,7 @@ namespace Neo
                     "seed5.neo.org:10333"
                 };
             this.SecondsPerBlock = section.GetValue("SecondsPerBlock", 15u);
-            this.LowPriorityThreshold = section.GetValue("LowPriorityThreshold", 100000L);
+            this.LowPriorityThreshold = (long)BigDecimal.Parse(section.GetValue("LowPriorityThreshold", "0.001"), NativeContract.GAS.Decimals).Value;
         }
     }
 }
