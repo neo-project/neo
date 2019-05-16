@@ -1,7 +1,9 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,9 +45,17 @@ namespace Neo.UnitTests
 
         private Transaction CreateTransactionWithFee(long fee)
         {
-            Transaction tx = TestUtils.CreateRandomHashTransaction();
-            tx.NetworkFee = fee;
-            return tx;
+            Random random = new Random();
+            var randomBytes = new byte[16];
+            random.NextBytes(randomBytes);
+            Mock<Transaction> mock = new Mock<Transaction>();
+            mock.Setup(p => p.Verify(It.IsAny<Snapshot>(), It.IsAny<IEnumerable<Transaction>>())).Returns(true);
+            mock.Object.Script = randomBytes;
+            mock.Object.Sender = UInt160.Zero;
+            mock.Object.NetworkFee = fee;
+            mock.Object.Attributes = new TransactionAttribute[0];
+            mock.Object.Witnesses = new Witness[0];
+            return mock.Object;
         }
 
         private Transaction CreateHighPriorityTransaction()

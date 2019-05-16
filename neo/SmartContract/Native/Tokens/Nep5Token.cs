@@ -1,4 +1,5 @@
 ﻿using Neo.Ledger;
+using Neo.Persistence;
 using Neo.VM;
 using System;
 using System.Numerics;
@@ -106,9 +107,14 @@ namespace Neo.SmartContract.Native.Tokens
             return new BigInteger(storage.Value);
         }
 
-        protected virtual BigInteger BalanceOf(ApplicationEngine engine, UInt160 account)
+        protected BigInteger BalanceOf(ApplicationEngine engine, UInt160 account)
         {
-            StorageItem storage = engine.Snapshot.Storages.TryGet(CreateAccountKey(account));
+            return BalanceOf(engine.Snapshot, account);
+        }
+
+        public virtual BigInteger BalanceOf(Snapshot snapshot, UInt160 account)
+        {
+            StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
             if (storage is null) return BigInteger.Zero;
             Nep5AccountState state = new Nep5AccountState(storage.Value);
             return state.Balance;

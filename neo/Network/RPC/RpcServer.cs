@@ -23,6 +23,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
 
@@ -454,9 +455,10 @@ namespace Neo.Network.RPC
         private JObject GetBlockSysFee(uint height)
         {
             if (height <= Blockchain.Singleton.Height)
-            {
-                return Blockchain.Singleton.Store.GetSysFeeAmount(height).ToString();
-            }
+                using (ApplicationEngine engine = NativeContract.GAS.TestCall("getSysFeeAmount", height))
+                {
+                    return engine.ResultStack.Peek().GetBigInteger().ToString();
+                }
             throw new RpcException(-100, "Invalid Height");
         }
 

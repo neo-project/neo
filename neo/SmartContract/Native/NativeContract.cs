@@ -78,5 +78,14 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException();
             return true;
         }
+
+        public ApplicationEngine TestCall(string operation, params object[] args)
+        {
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                sb.EmitAppCall(ScriptHash, operation, args);
+                return ApplicationEngine.Run(sb.ToArray(), testMode: true);
+            }
+        }
     }
 }
