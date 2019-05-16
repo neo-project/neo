@@ -34,7 +34,6 @@ namespace Neo.Network.P2P.Capabilities
 
         public virtual void DeserializeWithoutType(BinaryReader reader) { }
 
-
         public virtual void Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Type);
