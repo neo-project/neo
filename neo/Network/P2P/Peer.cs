@@ -102,8 +102,8 @@ namespace Neo.Network.P2P
         {
             switch (message)
             {
-                case ChannelsStartConfig start:
-                    OnStart(start);
+                case ChannelsConfig config:
+                    OnStart(config);
                     break;
                 case Timer _:
                     OnTimer();
@@ -132,7 +132,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnStart(ChannelsStartConfig config)
+        private void OnStart(ChannelsConfig config)
         {
             ListenerTcpPort = config.Tcp?.Port ?? 0;
             ListenerWsPort = config.WebSocket?.Port ?? 0;

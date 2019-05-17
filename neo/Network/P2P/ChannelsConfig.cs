@@ -2,7 +2,7 @@
 
 namespace Neo.Network.P2P
 {
-    public class ChannelsStartConfig
+    public class ChannelsConfig
     {
         /// <summary>
         /// Tcp configuration
