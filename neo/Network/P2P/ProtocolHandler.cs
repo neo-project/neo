@@ -120,7 +120,7 @@ namespace Neo.Network.P2P
         {
             system.LocalNode.Tell(new Peer.Peers
             {
-                EndPoints = payload.AddressList.Select(p => p.EndPoint)
+                EndPoints = payload.AddressList.Select(p => p.EndPoint).Where(p => p.Port > 0)
             });
         }
 
@@ -150,7 +150,7 @@ namespace Neo.Network.P2P
                 .GroupBy(p => p.Remote.Address, (k, g) => g.First())
                 .OrderBy(p => rand.Next())
                 .Take(AddrPayload.MaxCountToSend);
-            NetworkAddressWithTime[] networkAddresses = peers.Select(p => NetworkAddressWithTime.Create(p.Listener, p.Version.Timestamp, p.Version.Capabilities)).ToArray();
+            NetworkAddressWithTime[] networkAddresses = peers.Select(p => NetworkAddressWithTime.Create(p.Listener.Address, p.Version.Timestamp, p.Version.Capabilities)).ToArray();
             if (networkAddresses.Length == 0) return;
             Context.Parent.Tell(Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses)));
         }
