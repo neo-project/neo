@@ -6,7 +6,7 @@ namespace Neo.Persistence
 {
     internal class CloneSnapshot : Snapshot
     {
-        public override DataCache<UInt256, BlockState> Blocks { get; }
+        public override DataCache<UInt256, TrimmedBlock> Blocks { get; }
         public override DataCache<UInt256, TransactionState> Transactions { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
         public override DataCache<StorageKey, StorageItem> Storages { get; }

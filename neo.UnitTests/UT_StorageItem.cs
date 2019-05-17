@@ -38,14 +38,14 @@ namespace Neo.UnitTests
         public void Size_Get()
         {
             uut.Value = TestUtils.GetByteArray(10, 0x42);
-            uut.Size.Should().Be(13); // 2 + 10 + 1
+            uut.Size.Should().Be(12); // 2 + 10
         }
 
         [TestMethod]
         public void Size_Get_Larger()
         {
             uut.Value = TestUtils.GetByteArray(88, 0x42);
-            uut.Size.Should().Be(91); // 2 + 88 + 1
+            uut.Size.Should().Be(90); // 2 + 88
         }
 
         [TestMethod]
@@ -65,7 +65,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Deserialize()
         {
-            byte[] data = new byte[] { 0, 10, 66, 32, 32, 32, 32, 32, 32, 32, 32, 32, 0 };
+            byte[] data = new byte[] { 10, 66, 32, 32, 32, 32, 32, 32, 32, 32, 32, 0 };
             int index = 0;
             using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
             {
@@ -97,10 +97,10 @@ namespace Neo.UnitTests
                 }
             }
 
-            byte[] requiredData = new byte[] { 0, 10, 66, 32, 32, 32, 32, 32, 32, 32, 32, 32, 0 };
+            byte[] requiredData = new byte[] { 10, 66, 32, 32, 32, 32, 32, 32, 32, 32, 32, 0 };
 
-            data.Length.Should().Be(13);
-            for (int i = 0; i < 12; i++)
+            data.Length.Should().Be(requiredData.Length);
+            for (int i = 0; i < requiredData.Length; i++)
             {
                 data[i].Should().Be(requiredData[i]);
             }

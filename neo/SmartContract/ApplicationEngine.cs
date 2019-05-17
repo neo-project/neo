@@ -141,9 +141,9 @@ namespace Neo.SmartContract
                 Version = 0,
                 PrevHash = snapshot.CurrentBlockHash,
                 MerkleRoot = new UInt256(),
-                Timestamp = snapshot.Blocks[snapshot.CurrentBlockHash].TrimmedBlock.Timestamp + Blockchain.SecondsPerBlock,
+                Timestamp = snapshot.Blocks[snapshot.CurrentBlockHash].Timestamp + Blockchain.SecondsPerBlock,
                 Index = snapshot.Height + 1,
-                NextConsensus = snapshot.Blocks[snapshot.CurrentBlockHash].TrimmedBlock.NextConsensus,
+                NextConsensus = snapshot.Blocks[snapshot.CurrentBlockHash].NextConsensus,
                 Witness = new Witness
                 {
                     InvocationScript = new byte[0],
