@@ -104,7 +104,7 @@ namespace Neo.Wallets.SQLite
                         Buffer.BlockCopy(account.Key.PrivateKey, 0, decryptedPrivateKey, 64, 32);
                         byte[] encryptedPrivateKey = EncryptPrivateKey(decryptedPrivateKey);
                         Array.Clear(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
-                        Account db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash.SequenceEqual(account.Key.PublicKeyHash.ToArray()));
+                        Account db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
                         if (db_account == null)
                         {
                             db_account = ctx.Accounts.Add(new Account
@@ -120,7 +120,7 @@ namespace Neo.Wallets.SQLite
                     }
                     if (account.Contract != null)
                     {
-                        Contract db_contract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash.SequenceEqual(account.Contract.ScriptHash.ToArray()));
+                        Contract db_contract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == account.Contract.ScriptHash.ToArray());
                         if (db_contract != null)
                         {
                             db_contract.PublicKeyHash = account.Key.PublicKeyHash.ToArray();
@@ -137,7 +137,7 @@ namespace Neo.Wallets.SQLite
                     }
                     //add address
                     {
-                        Address db_address = ctx.Addresses.FirstOrDefault(p => p.ScriptHash.SequenceEqual(account.Contract.ScriptHash.ToArray()));
+                        Address db_address = ctx.Addresses.FirstOrDefault(p => p.ScriptHash == account.Contract.ScriptHash.ToArray());
                         if (db_address == null)
                         {
                             ctx.Addresses.Add(new Address
@@ -159,7 +159,7 @@ namespace Neo.Wallets.SQLite
             WalletTransaction?.Invoke(this, new WalletTransactionEventArgs
             {
                 Transaction = tx,
-                RelatedAccounts = tx.Witnesses.Select(p => p.ScriptHash).Union(tx.Outputs.Select(p => p.ScriptHash)).Where(p => Contains(p)).ToArray(),
+                RelatedAccounts = tx.Witnesses.Select(p => p.ScriptHash).Where(p => Contains(p)).ToArray(),
                 Height = null,
                 Time = DateTime.UtcNow.ToTimestamp()
             });
@@ -275,17 +275,17 @@ namespace Neo.Wallets.SQLite
                     {
                         if (account.HasKey)
                         {
-                            Account db_account = ctx.Accounts.First(p => p.PublicKeyHash.SequenceEqual(account.Key.PublicKeyHash.ToArray()));
+                            Account db_account = ctx.Accounts.First(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
                             ctx.Accounts.Remove(db_account);
                         }
                         if (account.Contract != null)
                         {
-                            Contract db_contract = ctx.Contracts.First(p => p.ScriptHash.SequenceEqual(scriptHash.ToArray()));
+                            Contract db_contract = ctx.Contracts.First(p => p.ScriptHash == scriptHash.ToArray());
                             ctx.Contracts.Remove(db_contract);
                         }
                         //delete address
                         {
-                            Address db_address = ctx.Addresses.First(p => p.ScriptHash.SequenceEqual(scriptHash.ToArray()));
+                            Address db_address = ctx.Addresses.First(p => p.ScriptHash == scriptHash.ToArray());
                             ctx.Addresses.Remove(db_address);
                         }
                         ctx.SaveChanges();
@@ -305,11 +305,6 @@ namespace Neo.Wallets.SQLite
             return decryptedPrivateKey.AesEncrypt(masterKey, iv);
         }
 
-        public override Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount, UInt160[] from)
-        {
-            return FindUnspentCoins(FindUnspentCoins(from).ToArray().Where(p => GetAccount(p.Output.ScriptHash).Contract.Script.IsSignatureContract()), asset_id, amount) ?? base.FindUnspentCoins(asset_id, amount, from);
-        }
-
         public override WalletAccount GetAccount(UInt160 scriptHash)
         {
             lock (accounts)
@@ -325,59 +320,6 @@ namespace Neo.Wallets.SQLite
             {
                 foreach (UserWalletAccount account in accounts.Values)
                     yield return account;
-            }
-        }
-
-        public override IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts)
-        {
-            if (unconfirmed.Count == 0)
-                return indexer.GetCoins(accounts);
-            else
-                return GetCoinsInternal();
-            IEnumerable<Coin> GetCoinsInternal()
-            {
-                HashSet<CoinReference> inputs, claims;
-                Coin[] coins_unconfirmed;
-                lock (unconfirmed)
-                {
-                    inputs = new HashSet<CoinReference>(unconfirmed.Values.SelectMany(p => p.Inputs));
-                    claims = new HashSet<CoinReference>(unconfirmed.Values.OfType<ClaimTransaction>().SelectMany(p => p.Claims));
-                    coins_unconfirmed = unconfirmed.Values.Select(tx => tx.Outputs.Select((o, i) => new Coin
-                    {
-                        Reference = new CoinReference
-                        {
-                            PrevHash = tx.Hash,
-                            PrevIndex = (ushort)i
-                        },
-                        Output = o,
-                        State = CoinState.Unconfirmed
-                    })).SelectMany(p => p).ToArray();
-                }
-                foreach (Coin coin in indexer.GetCoins(accounts))
-                {
-                    if (inputs.Contains(coin.Reference))
-                    {
-                        if (coin.Output.AssetId.Equals(Blockchain.GoverningToken.Hash))
-                            yield return new Coin
-                            {
-                                Reference = coin.Reference,
-                                Output = coin.Output,
-                                State = coin.State | CoinState.Spent
-                            };
-                        continue;
-                    }
-                    else if (claims.Contains(coin.Reference))
-                    {
-                        continue;
-                    }
-                    yield return coin;
-                }
-                HashSet<UInt160> accounts_set = new HashSet<UInt160>(accounts);
-                foreach (Coin coin in coins_unconfirmed)
-                {
-                    if (accounts_set.Contains(coin.Output.ScriptHash))
-                        yield return coin;
-                }
             }
         }
 

@@ -20,23 +20,13 @@ namespace Neo.VM
             return sb;
         }
 
-        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, bool useTailCall = false)
-        {
-            return sb.EmitAppCall(scriptHash.ToArray(), useTailCall);
-        }
-
-        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, params ContractParameter[] parameters)
-        {
-            for (int i = parameters.Length - 1; i >= 0; i--)
-                sb.EmitPush(parameters[i]);
-            return sb.EmitAppCall(scriptHash);
-        }
-
         public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation)
         {
-            sb.EmitPush(false);
+            sb.EmitPush(0);
+            sb.Emit(OpCode.NEWARRAY);
             sb.EmitPush(operation);
-            sb.EmitAppCall(scriptHash);
+            sb.EmitPush(scriptHash);
+            sb.EmitSysCall(InteropService.System_Contract_Call);
             return sb;
         }
 
@@ -47,7 +37,8 @@ namespace Neo.VM
             sb.EmitPush(args.Length);
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
-            sb.EmitAppCall(scriptHash);
+            sb.EmitPush(scriptHash);
+            sb.EmitSysCall(InteropService.System_Contract_Call);
             return sb;
         }
 
@@ -58,7 +49,8 @@ namespace Neo.VM
             sb.EmitPush(args.Length);
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
-            sb.EmitAppCall(scriptHash);
+            sb.EmitPush(scriptHash);
+            sb.EmitSysCall(InteropService.System_Contract_Call);
             return sb;
         }
 
@@ -163,11 +155,11 @@ namespace Neo.VM
             return sb;
         }
 
-        public static ScriptBuilder EmitSysCall(this ScriptBuilder sb, string api, params object[] args)
+        public static ScriptBuilder EmitSysCall(this ScriptBuilder sb, uint method, params object[] args)
         {
             for (int i = args.Length - 1; i >= 0; i--)
                 EmitPush(sb, args[i]);
-            return sb.EmitSysCall(api);
+            return sb.EmitSysCall(method);
         }
 
         public static ContractParameter ToParameter(this StackItem item)

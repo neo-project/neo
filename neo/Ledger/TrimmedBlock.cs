@@ -9,6 +9,7 @@ namespace Neo.Ledger
 {
     public class TrimmedBlock : BlockBase
     {
+        public ConsensusData ConsensusData;
         public UInt256[] Hashes;
 
         public bool IsBlock => Hashes.Length > 0;
@@ -22,9 +23,9 @@ namespace Neo.Ledger
                 MerkleRoot = MerkleRoot,
                 Timestamp = Timestamp,
                 Index = Index,
-                ConsensusData = ConsensusData,
                 NextConsensus = NextConsensus,
                 Witness = Witness,
+                ConsensusData = ConsensusData,
                 Transactions = Hashes.Select(p => cache[p].Transaction).ToArray()
             };
         }
@@ -43,7 +44,6 @@ namespace Neo.Ledger
                         MerkleRoot = MerkleRoot,
                         Timestamp = Timestamp,
                         Index = Index,
-                        ConsensusData = ConsensusData,
                         NextConsensus = NextConsensus,
                         Witness = Witness
                     };
@@ -52,23 +52,26 @@ namespace Neo.Ledger
             }
         }
 
-        public override int Size => base.Size + Hashes.GetVarSize();
+        public override int Size => base.Size + ConsensusData.Size + Hashes.GetVarSize();
 
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Hashes = reader.ReadSerializableArray<UInt256>();
+            ConsensusData = reader.ReadSerializable<ConsensusData>();
+            Hashes = reader.ReadSerializableArray<UInt256>(Block.MaxTransactionsPerBlock);
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
+            writer.Write(ConsensusData);
             writer.Write(Hashes);
         }
 
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
+            json["consensus_data"] = ConsensusData.ToJson();
             json["hashes"] = Hashes.Select(p => (JObject)p.ToString()).ToArray();
             return json;
         }

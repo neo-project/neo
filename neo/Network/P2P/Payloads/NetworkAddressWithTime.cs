@@ -8,15 +8,13 @@ namespace Neo.Network.P2P.Payloads
 {
     public class NetworkAddressWithTime : ISerializable
     {
-        public const ulong NODE_NETWORK = 1;
-
         public uint Timestamp;
-        public ulong Services;
+        public VersionServices Services;
         public IPEndPoint EndPoint;
 
         public int Size => sizeof(uint) + sizeof(ulong) + 16 + sizeof(ushort);
 
-        public static NetworkAddressWithTime Create(IPEndPoint endpoint, ulong services, uint timestamp)
+        public static NetworkAddressWithTime Create(IPEndPoint endpoint, VersionServices services, uint timestamp)
         {
             return new NetworkAddressWithTime
             {
@@ -29,7 +27,7 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Timestamp = reader.ReadUInt32();
-            Services = reader.ReadUInt64();
+            Services = (VersionServices)reader.ReadUInt64();
             byte[] data = reader.ReadBytes(16);
             if (data.Length != 16) throw new FormatException();
             IPAddress address = new IPAddress(data).Unmap();
@@ -42,7 +40,7 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(Timestamp);
-            writer.Write(Services);
+            writer.Write((ulong)Services);
             writer.Write(EndPoint.Address.MapToIPv6().GetAddressBytes());
             writer.Write(BitConverter.GetBytes((ushort)EndPoint.Port).Reverse().ToArray());
         }

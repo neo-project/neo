@@ -25,7 +25,7 @@ namespace Neo.Ledger
         {
             base.Deserialize(reader);
             BlockIndex = reader.ReadUInt32();
-            Transaction = Transaction.DeserializeFrom(reader);
+            Transaction = reader.ReadSerializable<Transaction>();
         }
 
         void ICloneable<TransactionState>.FromReplica(TransactionState replica)

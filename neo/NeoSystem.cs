@@ -26,41 +26,81 @@ namespace Neo
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
 
+        private readonly Store store;
+        private Peer.Start start_message = null;
+        private bool suspend = false;
+
         public NeoSystem(Store store)
         {
+            this.store = store;
+            Plugin.LoadPlugins(this);
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
-            Plugin.LoadPlugins(this);
+            Plugin.NotifyPluginsLoadedAfterSystemConstructed();
         }
 
         public void Dispose()
         {
             RpcServer?.Dispose();
-            ActorSystem.Stop(LocalNode);
+            EnsureStoped(LocalNode);
+            // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
+            ActorSystem.WhenTerminated.Wait();
         }
 
-        public void StartConsensus(Wallet wallet)
+        public void EnsureStoped(IActorRef actor)
         {
-            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this, wallet));
-            Consensus.Tell(new ConsensusService.Start());
+            Inbox inbox = Inbox.Create(ActorSystem);
+            inbox.Watch(actor);
+            ActorSystem.Stop(actor);
+            inbox.Receive(TimeSpan.FromMinutes(5));
         }
 
-        public void StartNode(int port = 0, int ws_port = 0)
+        internal void ResumeNodeStartup()
         {
-            LocalNode.Tell(new Peer.Start
+            suspend = false;
+            if (start_message != null)
+            {
+                LocalNode.Tell(start_message);
+                start_message = null;
+            }
+        }
+
+        public void StartConsensus(Wallet wallet, Store consensus_store = null, bool ignoreRecoveryLogs = false)
+        {
+            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, consensus_store ?? store, wallet));
+            Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);
+        }
+
+        public void StartNode(int port = 0, int wsPort = 0, int minDesiredConnections = Peer.DefaultMinDesiredConnections,
+            int maxConnections = Peer.DefaultMaxConnections, int maxConnectionsPerAddress = 3)
+        {
+            start_message = new Peer.Start
             {
                 Port = port,
-                WsPort = ws_port
-            });
+                WsPort = wsPort,
+                MinDesiredConnections = minDesiredConnections,
+                MaxConnections = maxConnections,
+                MaxConnectionsPerAddress = maxConnectionsPerAddress
+            };
+            if (!suspend)
+            {
+                LocalNode.Tell(start_message);
+                start_message = null;
+            }
         }
 
         public void StartRpc(IPAddress bindAddress, int port, Wallet wallet = null, string sslCert = null, string password = null,
-            string[] trustedAuthorities = null, Fixed8 maxGasInvoke = default(Fixed8))
+            string[] trustedAuthorities = null, long maxGasInvoke = default)
         {
             RpcServer = new RpcServer(this, wallet, maxGasInvoke);
             RpcServer.Start(bindAddress, port, sslCert, password, trustedAuthorities);
+        }
+
+        internal void SuspendNodeStartup()
+        {
+            suspend = true;
         }
     }
 }

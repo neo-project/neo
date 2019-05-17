@@ -1,3 +1,19 @@
+<p align="center">
+<img
+    src="https://neo-cdn.azureedge.net/images/neo_logo.svg"
+    width="250px">
+</p>
+
+<p align="center">      
+  <a href="https://travis-ci.org/neo-project/neo">
+    <img src="https://travis-ci.org/neo-project/neo.svg?branch=master">
+  </a>
+  <a href="https://github.com/neo-project/neo/blob/master/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg">
+  </a>
+
+</p>
+
 NEO: A distributed network for the Smart Economy
 ================
 
@@ -44,7 +60,7 @@ For more information about how to build DAPPs for NEO, please read the [document
 Daily builds
 --------
 
-If you want to use the latest daily build then you need to add a NuGet.Config to your app with the following content:
+If you want to use the [latest daily build](https://www.myget.org/feed/neo/package/nuget/Neo) then you need to add a NuGet.Config to your app with the following content:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>

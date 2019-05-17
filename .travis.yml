@@ -4,11 +4,11 @@ os:
  - linux
  - osx
 
-dist: trusty
+dist: bionic
 osx_image: xcode9.1
 
 mono: none
-dotnet: 2.0.0
+dotnet: 2.1.502
 
 before_install:
   - cd neo.UnitTests

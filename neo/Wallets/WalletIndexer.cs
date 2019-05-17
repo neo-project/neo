@@ -18,8 +18,7 @@ namespace Neo.Wallets
         public event EventHandler<WalletTransactionEventArgs> WalletTransaction;
 
         private readonly Dictionary<uint, HashSet<UInt160>> indexes = new Dictionary<uint, HashSet<UInt160>>();
-        private readonly Dictionary<UInt160, HashSet<CoinReference>> accounts_tracked = new Dictionary<UInt160, HashSet<CoinReference>>();
-        private readonly Dictionary<CoinReference, Coin> coins_tracked = new Dictionary<CoinReference, Coin>();
+        private readonly HashSet<UInt160> accounts_tracked = new HashSet<UInt160>();
 
         private readonly DB db;
         private readonly Thread thread;
@@ -54,18 +53,7 @@ namespace Neo.Wallets
                 {
                     UInt160[] accounts = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.IX_Accounts).Add(group.Id)).ToArray().AsSerializableArray<UInt160>();
                     indexes.Add(group.Height, new HashSet<UInt160>(accounts));
-                    foreach (UInt160 account in accounts)
-                        accounts_tracked.Add(account, new HashSet<CoinReference>());
-                }
-                foreach (Coin coin in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.ST_Coin), (k, v) => new Coin
-                {
-                    Reference = k.ToArray().Skip(1).ToArray().AsSerializable<CoinReference>(),
-                    Output = v.ToArray().AsSerializable<TransactionOutput>(),
-                    State = (CoinState)v.ToArray()[60]
-                }))
-                {
-                    accounts_tracked[coin.Output.ScriptHash].Add(coin.Reference);
-                    coins_tracked.Add(coin.Reference, coin);
+                    accounts_tracked.Union(accounts);
                 }
             }
             else
@@ -97,16 +85,6 @@ namespace Neo.Wallets
             db.Dispose();
         }
 
-        public IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts)
-        {
-            lock (SyncRoot)
-            {
-                foreach (UInt160 account in accounts)
-                    foreach (CoinReference reference in accounts_tracked[account])
-                        yield return coins_tracked[reference];
-            }
-        }
-
         private static byte[] GetGroupId()
         {
             byte[] groupId = new byte[32];
@@ -127,106 +105,23 @@ namespace Neo.Wallets
                 yield return hash;
         }
 
-        private void ProcessBlock(Block block, HashSet<UInt160> accounts, WriteBatch batch)
+        private (Transaction, UInt160[])[] ProcessBlock(Block block, HashSet<UInt160> accounts, WriteBatch batch)
         {
+            var change_set = new List<(Transaction, UInt160[])>();
             foreach (Transaction tx in block.Transactions)
             {
                 HashSet<UInt160> accounts_changed = new HashSet<UInt160>();
-                for (ushort index = 0; index < tx.Outputs.Length; index++)
-                {
-                    TransactionOutput output = tx.Outputs[index];
-                    if (accounts_tracked.ContainsKey(output.ScriptHash))
-                    {
-                        CoinReference reference = new CoinReference
-                        {
-                            PrevHash = tx.Hash,
-                            PrevIndex = index
-                        };
-                        if (coins_tracked.TryGetValue(reference, out Coin coin))
-                        {
-                            coin.State |= CoinState.Confirmed;
-                        }
-                        else
-                        {
-                            accounts_tracked[output.ScriptHash].Add(reference);
-                            coins_tracked.Add(reference, coin = new Coin
-                            {
-                                Reference = reference,
-                                Output = output,
-                                State = CoinState.Confirmed
-                            });
-                        }
-                        batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_Coin).Add(reference), SliceBuilder.Begin().Add(output).Add((byte)coin.State));
-                        accounts_changed.Add(output.ScriptHash);
-                    }
-                }
-                foreach (CoinReference input in tx.Inputs)
-                {
-                    if (coins_tracked.TryGetValue(input, out Coin coin))
-                    {
-                        if (coin.Output.AssetId.Equals(Blockchain.GoverningToken.Hash))
-                        {
-                            coin.State |= CoinState.Spent | CoinState.Confirmed;
-                            batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_Coin).Add(input), SliceBuilder.Begin().Add(coin.Output).Add((byte)coin.State));
-                        }
-                        else
-                        {
-                            accounts_tracked[coin.Output.ScriptHash].Remove(input);
-                            coins_tracked.Remove(input);
-                            batch.Delete(DataEntryPrefix.ST_Coin, input);
-                        }
-                        accounts_changed.Add(coin.Output.ScriptHash);
-                    }
-                }
-                switch (tx)
-                {
-                    case MinerTransaction _:
-                    case ContractTransaction _:
-#pragma warning disable CS0612
-                    case PublishTransaction _:
-#pragma warning restore CS0612
-                        break;
-                    case ClaimTransaction tx_claim:
-                        foreach (CoinReference claim in tx_claim.Claims)
-                        {
-                            if (coins_tracked.TryGetValue(claim, out Coin coin))
-                            {
-                                accounts_tracked[coin.Output.ScriptHash].Remove(claim);
-                                coins_tracked.Remove(claim);
-                                batch.Delete(DataEntryPrefix.ST_Coin, claim);
-                                accounts_changed.Add(coin.Output.ScriptHash);
-                            }
-                        }
-                        break;
-#pragma warning disable CS0612
-                    case EnrollmentTransaction tx_enrollment:
-                        if (accounts_tracked.ContainsKey(tx_enrollment.ScriptHash))
-                            accounts_changed.Add(tx_enrollment.ScriptHash);
-                        break;
-                    case RegisterTransaction tx_register:
-                        if (accounts_tracked.ContainsKey(tx_register.OwnerScriptHash))
-                            accounts_changed.Add(tx_register.OwnerScriptHash);
-                        break;
-#pragma warning restore CS0612
-                    default:
-                        foreach (UInt160 hash in tx.Witnesses.Select(p => p.ScriptHash))
-                            if (accounts_tracked.ContainsKey(hash))
-                                accounts_changed.Add(hash);
-                        break;
-                }
+                foreach (UInt160 hash in tx.Witnesses.Select(p => p.ScriptHash))
+                    if (accounts.Contains(hash))
+                        accounts_changed.Add(hash);
                 if (accounts_changed.Count > 0)
                 {
                     foreach (UInt160 account in accounts_changed)
                         batch.Put(SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account).Add(tx.Hash), false);
-                    WalletTransaction?.Invoke(null, new WalletTransactionEventArgs
-                    {
-                        Transaction = tx,
-                        RelatedAccounts = accounts_changed.ToArray(),
-                        Height = block.Index,
-                        Time = block.Timestamp
-                    });
+                    change_set.Add((tx, accounts_changed.ToArray()));
                 }
             }
+            return change_set.ToArray();
         }
 
         private void ProcessBlocks()
@@ -234,15 +129,18 @@ namespace Neo.Wallets
             while (!disposed)
             {
                 while (!disposed)
+                {
+                    Block block;
+                    (Transaction, UInt160[])[] change_set;
                     lock (SyncRoot)
                     {
                         if (indexes.Count == 0) break;
                         uint height = indexes.Keys.Min();
-                        Block block = Blockchain.Singleton.Store.GetBlock(height);
+                        block = Blockchain.Singleton.Store.GetBlock(height);
                         if (block == null) break;
                         WriteBatch batch = new WriteBatch();
                         HashSet<UInt160> accounts = indexes[height];
-                        ProcessBlock(block, accounts, batch);
+                        change_set = ProcessBlock(block, accounts, batch);
                         ReadOptions options = ReadOptions.Default;
                         byte[] groupId = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height)).ToArray();
                         indexes.Remove(height);
@@ -261,6 +159,17 @@ namespace Neo.Wallets
                         }
                         db.Write(WriteOptions.Default, batch);
                     }
+                    foreach (var (tx, accounts) in change_set)
+                    {
+                        WalletTransaction?.Invoke(null, new WalletTransactionEventArgs
+                        {
+                            Transaction = tx,
+                            RelatedAccounts = accounts,
+                            Height = block.Index,
+                            Time = block.Timestamp
+                        });
+                    }
+                }
                 for (int i = 0; i < 20 && !disposed; i++)
                     Thread.Sleep(100);
             }
@@ -281,16 +190,11 @@ namespace Neo.Wallets
                 indexes.Clear();
                 if (accounts_tracked.Count > 0)
                 {
-                    indexes[0] = new HashSet<UInt160>(accounts_tracked.Keys);
+                    indexes[0] = new HashSet<UInt160>(accounts_tracked);
                     byte[] groupId = GetGroupId();
                     batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(0u), groupId);
-                    batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Accounts).Add(groupId), accounts_tracked.Keys.ToArray().ToByteArray());
-                    foreach (HashSet<CoinReference> coins in accounts_tracked.Values)
-                        coins.Clear();
+                    batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Accounts).Add(groupId), accounts_tracked.ToArray().ToByteArray());
                 }
-                foreach (CoinReference reference in coins_tracked.Keys)
-                    batch.Delete(DataEntryPrefix.ST_Coin, reference);
-                coins_tracked.Clear();
                 foreach (Slice key in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.ST_Transaction), (k, v) => k))
                     batch.Delete(key);
                 db.Write(WriteOptions.Default, batch);
@@ -304,11 +208,8 @@ namespace Neo.Wallets
                 bool index_exists = indexes.TryGetValue(height, out HashSet<UInt160> index);
                 if (!index_exists) index = new HashSet<UInt160>();
                 foreach (UInt160 account in accounts)
-                    if (!accounts_tracked.ContainsKey(account))
-                    {
+                    if (accounts_tracked.Add(account))
                         index.Add(account);
-                        accounts_tracked.Add(account, new HashSet<CoinReference>());
-                    }
                 if (index.Count > 0)
                 {
                     WriteBatch batch = new WriteBatch();
@@ -337,7 +238,7 @@ namespace Neo.Wallets
                 ReadOptions options = new ReadOptions { FillCache = false };
                 foreach (UInt160 account in accounts)
                 {
-                    if (accounts_tracked.TryGetValue(account, out HashSet<CoinReference> references))
+                    if (accounts_tracked.Contains(account))
                     {
                         foreach (uint height in indexes.Keys.ToArray())
                         {
@@ -359,11 +260,6 @@ namespace Neo.Wallets
                             }
                         }
                         accounts_tracked.Remove(account);
-                        foreach (CoinReference reference in references)
-                        {
-                            batch.Delete(DataEntryPrefix.ST_Coin, reference);
-                            coins_tracked.Remove(reference);
-                        }
                         foreach (Slice key in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account), (k, v) => k))
                             batch.Delete(key);
                     }
