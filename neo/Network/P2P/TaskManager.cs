@@ -219,13 +219,13 @@ namespace Neo.Network.P2P
                     return;
                 }
             }
-            if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && Blockchain.Singleton.HeaderHeight < session.Version.StartHeight)
+            if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && Blockchain.Singleton.HeaderHeight < session.StartHeight)
             {
                 session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
                 session.RemoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlocksPayload.Create(Blockchain.Singleton.CurrentHeaderHash)));
             }
-            else if (Blockchain.Singleton.Height < session.Version.StartHeight)
+            else if (Blockchain.Singleton.Height < session.StartHeight)
             {
                 UInt256 hash = Blockchain.Singleton.CurrentBlockHash;
                 for (uint i = Blockchain.Singleton.Height + 1; i <= Blockchain.Singleton.HeaderHeight; i++)

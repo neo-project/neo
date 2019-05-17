@@ -1,4 +1,5 @@
 ﻿using Neo.IO;
+using Neo.Network.P2P.Capabilities;
 using System;
 using System.IO;
 
@@ -6,37 +7,33 @@ namespace Neo.Network.P2P.Payloads
 {
     public class VersionPayload : ISerializable
     {
+        public const int MaxCapabilities = 32;
+
         public uint Magic;
         public uint Version;
-        public VersionServices Services;
         public uint Timestamp;
-        public ushort Port;
         public uint Nonce;
         public string UserAgent;
-        public uint StartHeight;
+        public NodeCapability[] Capabilities;
 
         public int Size =>
-            sizeof(uint) +              //Magic
-            sizeof(uint) +              //Version
-            sizeof(VersionServices) +   //Services
-            sizeof(uint) +              //Timestamp
-            sizeof(ushort) +            //Port
-            sizeof(uint) +              //Nonce
-            UserAgent.GetVarSize() +    //UserAgent
-            sizeof(uint);               //StartHeight
+            sizeof(uint) +              // Magic
+            sizeof(uint) +              // Version
+            sizeof(uint) +              // Timestamp
+            sizeof(uint) +              // Nonce
+            UserAgent.GetVarSize() +    // UserAgent
+            Capabilities.GetVarSize();  // Capabilities
 
-        public static VersionPayload Create(int port, uint nonce, string userAgent, uint startHeight)
+        public static VersionPayload Create(uint nonce, string userAgent, params NodeCapability[] capabilities)
         {
             return new VersionPayload
             {
                 Magic = ProtocolSettings.Default.Magic,
                 Version = LocalNode.ProtocolVersion,
-                Services = VersionServices.FullNode,
                 Timestamp = DateTime.Now.ToTimestamp(),
-                Port = (ushort)port,
                 Nonce = nonce,
                 UserAgent = userAgent,
-                StartHeight = startHeight,
+                Capabilities = capabilities,
             };
         }
 
@@ -44,24 +41,24 @@ namespace Neo.Network.P2P.Payloads
         {
             Magic = reader.ReadUInt32();
             Version = reader.ReadUInt32();
-            Services = (VersionServices)reader.ReadUInt64();
             Timestamp = reader.ReadUInt32();
-            Port = reader.ReadUInt16();
             Nonce = reader.ReadUInt32();
             UserAgent = reader.ReadVarString(1024);
-            StartHeight = reader.ReadUInt32();
+
+            // Capabilities
+            Capabilities = new NodeCapability[reader.ReadVarInt(MaxCapabilities)];
+            for (int x = 0, max = Capabilities.Length; x < max; x++)
+                Capabilities[x] = NodeCapability.DeserializeFrom(reader);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(Magic);
             writer.Write(Version);
-            writer.Write((ulong)Services);
             writer.Write(Timestamp);
-            writer.Write(Port);
             writer.Write(Nonce);
             writer.WriteVarString(UserAgent);
-            writer.Write(StartHeight);
+            writer.Write(Capabilities);
         }
     }
 }

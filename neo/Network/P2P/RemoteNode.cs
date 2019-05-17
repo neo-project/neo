@@ -5,6 +5,7 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Actors;
 using Neo.Ledger;
+using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,10 +26,11 @@ namespace Neo.Network.P2P
         private bool ack = true;
         private bool verack = false;
 
-        public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerPort);
-        public override int ListenerPort => Version?.Port ?? 0;
+        public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
+        public int ListenerTcpPort => Version.Capabilities.OfType<ServerCapability>().FirstOrDefault(p => p.Type == NodeCapabilityType.TcpServer)?.Port ?? 0;
         public VersionPayload Version { get; private set; }
-        public uint LastBlockIndex { get; private set; }
+        public uint LastBlockIndex { get; private set; } = 0;
+        public bool IsFullNode { get; private set; } = false;
 
         public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
             : base(connection, remote, local)
@@ -37,7 +39,15 @@ namespace Neo.Network.P2P
             this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
 
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Singleton.ListenerPort, LocalNode.Nonce, LocalNode.UserAgent, Blockchain.Singleton.Height)));
+            var capabilities = new List<NodeCapability>
+            {
+                new FullNodeCapability(Blockchain.Singleton.Height)
+            };
+
+            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
+            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
+
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
 
         private void CheckMessageQueue()
@@ -144,7 +154,7 @@ namespace Neo.Network.P2P
 
         private void OnRelay(IInventory inventory)
         {
-            if (Version?.Services.HasFlag(VersionServices.AcceptRelay) != true) return;
+            if (!IsFullNode) return;
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
@@ -155,7 +165,7 @@ namespace Neo.Network.P2P
 
         private void OnSend(IInventory inventory)
         {
-            if (Version?.Services.HasFlag(VersionServices.AcceptRelay) != true) return;
+            if (!IsFullNode) return;
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
@@ -178,8 +188,11 @@ namespace Neo.Network.P2P
 
         private void OnVersionPayload(VersionPayload version)
         {
-            this.Version = version;
-            this.LastBlockIndex = Version.StartHeight;
+            Version = version;
+            FullNodeCapability capability = (FullNodeCapability)version.Capabilities.FirstOrDefault(p => p.Type == NodeCapabilityType.FullNode);
+            IsFullNode = capability != null;
+            if (IsFullNode) LastBlockIndex = capability.StartHeight;
+
             if (version.Nonce == LocalNode.Nonce || version.Magic != ProtocolSettings.Default.Magic)
             {
                 Disconnect(true);
@@ -231,10 +244,7 @@ namespace Neo.Network.P2P
 
     internal class RemoteNodeMailbox : PriorityMailbox
     {
-        public RemoteNodeMailbox(Akka.Actor.Settings settings, Config config)
-            : base(settings, config)
-        {
-        }
+        public RemoteNodeMailbox(Settings settings, Config config) : base(settings, config) { }
 
         protected override bool IsHighPriority(object message)
         {

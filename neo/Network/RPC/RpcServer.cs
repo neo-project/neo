@@ -488,7 +488,7 @@ namespace Neo.Network.RPC
             {
                 JObject peerJson = new JObject();
                 peerJson["address"] = p.Remote.Address.ToString();
-                peerJson["port"] = p.ListenerPort;
+                peerJson["port"] = p.ListenerTcpPort;
                 return peerJson;
             }));
             return json;
@@ -566,7 +566,8 @@ namespace Neo.Network.RPC
         private JObject GetVersion()
         {
             JObject json = new JObject();
-            json["port"] = LocalNode.Singleton.ListenerPort;
+            json["tcpPort"] = LocalNode.Singleton.ListenerTcpPort;
+            json["wsPort"] = LocalNode.Singleton.ListenerWsPort;
             json["nonce"] = LocalNode.Nonce;
             json["useragent"] = LocalNode.UserAgent;
             return json;

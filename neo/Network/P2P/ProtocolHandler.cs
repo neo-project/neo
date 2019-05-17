@@ -120,7 +120,7 @@ namespace Neo.Network.P2P
         {
             system.LocalNode.Tell(new Peer.Peers
             {
-                EndPoints = payload.AddressList.Select(p => p.EndPoint)
+                EndPoints = payload.AddressList.Select(p => p.EndPoint).Where(p => p.Port > 0)
             });
         }
 
@@ -146,11 +146,11 @@ namespace Neo.Network.P2P
         {
             Random rand = new Random();
             IEnumerable<RemoteNode> peers = LocalNode.Singleton.RemoteNodes.Values
-                .Where(p => p.ListenerPort > 0)
+                .Where(p => p.ListenerTcpPort > 0)
                 .GroupBy(p => p.Remote.Address, (k, g) => g.First())
                 .OrderBy(p => rand.Next())
                 .Take(AddrPayload.MaxCountToSend);
-            NetworkAddressWithTime[] networkAddresses = peers.Select(p => NetworkAddressWithTime.Create(p.Listener, p.Version.Services, p.Version.Timestamp)).ToArray();
+            NetworkAddressWithTime[] networkAddresses = peers.Select(p => NetworkAddressWithTime.Create(p.Listener.Address, p.Version.Timestamp, p.Version.Capabilities)).ToArray();
             if (networkAddresses.Length == 0) return;
             Context.Parent.Tell(Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses)));
         }
@@ -302,7 +302,7 @@ namespace Neo.Network.P2P
 
     internal class ProtocolHandlerMailbox : PriorityMailbox
     {
-        public ProtocolHandlerMailbox(Akka.Actor.Settings settings, Config config)
+        public ProtocolHandlerMailbox(Settings settings, Config config)
             : base(settings, config)
         {
         }

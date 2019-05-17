@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P;
+using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 
 namespace Neo.UnitTests
@@ -81,12 +82,15 @@ namespace Neo.UnitTests
             {
                 UserAgent = "".PadLeft(1024, '0'),
                 Nonce = 1,
-                Port = 2,
-                Services = VersionServices.FullNode,
-                StartHeight = 4,
+                Magic = 2,
                 Timestamp = 5,
-                Version = 6
+                Version = 6,
+                Capabilities = new NodeCapability[]
+                {
+                    new ServerCapability(NodeCapabilityType.TcpServer, 25)
+                }
             };
+
             var msg = Message.Create(MessageCommand.Version, payload);
             var buffer = msg.ToArray();
 
@@ -100,11 +104,14 @@ namespace Neo.UnitTests
 
             payloadCopy.UserAgent.Should().Be(payload.UserAgent);
             payloadCopy.Nonce.Should().Be(payload.Nonce);
-            payloadCopy.Port.Should().Be(payload.Port);
-            payloadCopy.Services.Should().Be(payload.Services);
-            payloadCopy.StartHeight.Should().Be(payload.StartHeight);
+            payloadCopy.Magic.Should().Be(payload.Magic);
             payloadCopy.Timestamp.Should().Be(payload.Timestamp);
             payloadCopy.Version.Should().Be(payload.Version);
+
+            payloadCopy.Capabilities.Length.Should().Be(1);
+            ((ServerCapability)payloadCopy.Capabilities[0]).Type.Should().Be(NodeCapabilityType.TcpServer);
+            ((ServerCapability)payloadCopy.Capabilities[0]).Port.Should().Be(25);
+
         }
     }
 }
