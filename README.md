@@ -25,8 +25,8 @@ NEO 2.x: Reference template
 ================
 
 NEO adopts a model of continuous improvement and evolution.
-We believe that Blockchain field of research and development will be kept in continous transformation for the next years.
-From 2017 until middle 2020, NEO 2.x will still be supported and compatibility of new packages will be mantained.
+We believe that the research and development of blockchain technology will be kept in continuous transformation for the next years.
+From 2017 until the middle of 2020 (estimated), NEO 2.x will still be supported and the compatibility of new packages will be maintained.
 
 A link to the essential C# reference implementation can be seen below:
 
@@ -36,7 +36,7 @@ A link to the essential C# reference implementation can be seen below:
 * [neo-plugins](https://github.com/neo-project/neo-plugins/tree/master-2.x)
 * [neo-compiler](https://github.com/neo-project/neo-compiler/tree/master-2.x)
 
-NEO 1.x was known as Antshares, the roots of such codes can be found historically in this current repository. 
+NEO 1.x was known as Antshares and the roots of the code can be found historically in this current repository.
 
 Supported Platforms
 --------
