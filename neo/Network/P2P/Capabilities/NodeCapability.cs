@@ -39,7 +39,6 @@ namespace Neo.Network.P2P.Capabilities
             switch (type)
             {
                 case NodeCapabilityType.TcpServer:
-                case NodeCapabilityType.UdpServer:
                 case NodeCapabilityType.WsServer:
                     capability = new ServerCapability(type);
                     break;

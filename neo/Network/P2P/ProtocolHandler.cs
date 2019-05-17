@@ -1,6 +1,5 @@
 ﻿using Akka.Actor;
 using Akka.Configuration;
-using Akka.IO;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Actors;
@@ -119,36 +118,6 @@ namespace Neo.Network.P2P
                             default: break;
                         }
 
-                        break;
-                    }
-                case UdpRequest udp:
-                    {
-                        switch (udp.Message.Command)
-                        {
-                            case MessageCommand.Transaction:
-                                {
-                                    if (udp.Message.Payload.Size <= Transaction.MaxTransactionSize)
-                                        system.LocalNode.Tell(new LocalNode.Relay { Inventory = (Transaction)udp.Message.Payload });
-                                    break;
-                                }
-                            case MessageCommand.Ping:
-                                {
-                                    var payload = (PingPayload)udp.Message.Payload;
-                                    var response = Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce));
-
-                                    system.LocalNode.Tell(new UdpResponse(udp.Sender, ByteString.FromBytes(response.ToArray())));
-                                    break;
-                                }
-                            case MessageCommand.GetAddr:
-                                {
-                                    var networkAddresses = LocalNode.Singleton.GetPeers();
-                                    if (networkAddresses.Length == 0) return;
-                                    var response = Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses));
-
-                                    system.LocalNode.Tell(new UdpResponse(udp.Sender, ByteString.FromBytes(response.ToArray())));
-                                    break;
-                                }
-                        }
                         break;
                     }
             }

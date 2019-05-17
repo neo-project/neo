@@ -567,7 +567,6 @@ namespace Neo.Network.RPC
         {
             JObject json = new JObject();
             json["tcpPort"] = LocalNode.Singleton.ListenerTcpPort;
-            json["udpPort"] = LocalNode.Singleton.ListenerUdpPort;
             json["wsPort"] = LocalNode.Singleton.ListenerWsPort;
             json["nonce"] = LocalNode.Nonce;
             json["useragent"] = LocalNode.UserAgent;

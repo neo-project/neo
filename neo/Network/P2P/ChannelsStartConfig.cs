@@ -10,11 +10,6 @@ namespace Neo.Network.P2P
         public IPEndPoint Tcp { get; set; }
 
         /// <summary>
-        /// Udp configuration
-        /// </summary>
-        public IPEndPoint Udp { get; set; }
-
-        /// <summary>
         /// Web socket configuration
         /// </summary>
         public IPEndPoint WebSocket { get; set; }

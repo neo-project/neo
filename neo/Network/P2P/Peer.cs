@@ -28,10 +28,8 @@ namespace Neo.Network.P2P
         public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
 
         private static readonly IActorRef tcp_manager = Context.System.Tcp();
-        private static readonly IActorRef udp_manager = Context.System.Udp();
 
         private IActorRef tcp_listener;
-        private IActorRef udp_listener;
         private IWebHost ws_host;
         private ICancelable timer;
         protected ActorSelection Connections => Context.ActorSelection("connection_*");
@@ -44,7 +42,6 @@ namespace Neo.Network.P2P
         protected HashSet<IPAddress> TrustedIpAddresses { get; } = new HashSet<IPAddress>();
 
         public int ListenerTcpPort { get; private set; }
-        public int ListenerUdpPort { get; private set; }
         public int ListenerWsPort { get; private set; }
         public int MaxConnectionsPerAddress { get; private set; } = 3;
         public int MinDesiredConnections { get; private set; } = DefaultMinDesiredConnections;
@@ -127,12 +124,6 @@ namespace Neo.Network.P2P
                 case Tcp.Bound _:
                     tcp_listener = Sender;
                     break;
-                case Udp.Bound _:
-                    udp_listener = Sender;
-                    break;
-                case UdpResponse udp:
-                    udp_listener.Tell(Udp.Send.Create(udp.Data, udp.Sender));
-                    break;
                 case Tcp.CommandFailed commandFailed:
                     OnTcpCommandFailed(commandFailed.Cmd);
                     break;
@@ -145,7 +136,6 @@ namespace Neo.Network.P2P
         private void OnStart(ChannelsStartConfig config)
         {
             ListenerTcpPort = config.Tcp == null ? 0 : config.Tcp.Port;
-            ListenerUdpPort = config.Udp == null ? 0 : config.Udp.Port;
             ListenerWsPort = config.WebSocket == null ? 0 : config.WebSocket.Port;
 
             MinDesiredConnections = config.MinDesiredConnections;
@@ -153,7 +143,7 @@ namespace Neo.Network.P2P
             MaxConnectionsPerAddress = config.MaxConnectionsPerAddress;
 
             timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
-            if ((ListenerTcpPort > 0 || ListenerWsPort > 0 || ListenerUdpPort > 0)
+            if ((ListenerTcpPort > 0 || ListenerWsPort > 0)
                 && localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
                 && UPnP.Discover())
             {
@@ -162,7 +152,6 @@ namespace Neo.Network.P2P
                     localAddresses.Add(UPnP.GetExternalIP());
 
                     if (ListenerTcpPort > 0) UPnP.ForwardPort(ListenerTcpPort, ProtocolType.Tcp, "NEO Tcp");
-                    if (ListenerUdpPort > 0) UPnP.ForwardPort(ListenerUdpPort, ProtocolType.Udp, "NEO Udp");
                     if (ListenerWsPort > 0) UPnP.ForwardPort(ListenerWsPort, ProtocolType.Tcp, "NEO WebSocket");
                 }
                 catch { }
@@ -183,10 +172,6 @@ namespace Neo.Network.P2P
 
                 ws_host = new WebHostBuilder().UseKestrel().UseUrls($"http://{host}:{ListenerWsPort}").Configure(app => app.UseWebSockets().Run(ProcessWebSocketAsync)).Build();
                 ws_host.Start();
-            }
-            if (ListenerUdpPort > 0)
-            {
-                udp_manager.Tell(new Udp.Bind(Self, config.Udp));
             }
         }
 
@@ -269,7 +254,6 @@ namespace Neo.Network.P2P
             timer.CancelIfNotNull();
             ws_host?.Dispose();
             tcp_listener?.Tell(Tcp.Unbind.Instance);
-            udp_listener?.Tell(Udp.Unbind.Instance);
             base.PostStop();
         }
 

@@ -18,7 +18,7 @@ namespace Neo.Network.P2P.Capabilities
         /// <param name="port">Port</param>
         public ServerCapability(NodeCapabilityType type, ushort port = 0) : base(type)
         {
-            if (type != NodeCapabilityType.TcpServer && type != NodeCapabilityType.UdpServer && type != NodeCapabilityType.WsServer)
+            if (type != NodeCapabilityType.TcpServer && type != NodeCapabilityType.WsServer)
             {
                 throw new ArgumentException(nameof(type));
             }
