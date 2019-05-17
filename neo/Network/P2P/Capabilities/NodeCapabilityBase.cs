@@ -6,12 +6,12 @@ namespace Neo.Network.P2P.Capabilities
 {
     public abstract class NodeCapabilityBase : ISerializable
     {
-        public virtual int Size => 1; // Type
-
         /// <summary>
         /// Type
         /// </summary>
-        public NodeCapabilities Type { get; }
+        public readonly NodeCapabilities Type;
+
+        public virtual int Size => sizeof(NodeCapabilities); // Type
 
         /// <summary>
         /// Constructor
@@ -19,10 +19,10 @@ namespace Neo.Network.P2P.Capabilities
         /// <param name="type">Type</param>
         protected NodeCapabilityBase(NodeCapabilities type)
         {
-            Type = type;
+            this.Type = type;
         }
 
-        public void Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(BinaryReader reader)
         {
             if (reader.ReadByte() != (byte)Type)
             {
@@ -32,28 +32,35 @@ namespace Neo.Network.P2P.Capabilities
             DeserializeWithoutType(reader);
         }
 
-        public virtual void DeserializeWithoutType(BinaryReader reader) { }
-
-        public virtual void Serialize(BinaryWriter writer)
+        public static NodeCapabilityBase DeserializeFrom(BinaryReader reader)
         {
-            writer.Write((byte)Type);
-        }
-
-        /// <summary>
-        /// Create a new capability
-        /// </summary>
-        /// <param name="type">Type</param>
-        public static NodeCapabilityBase Create(NodeCapabilities type)
-        {
+            NodeCapabilityBase result;
+            NodeCapabilities type = (NodeCapabilities)reader.ReadByte();
             switch (type)
             {
                 case NodeCapabilities.TcpServer:
                 case NodeCapabilities.UdpServer:
-                case NodeCapabilities.WsServer: return new ServerCapability(type);
-                case NodeCapabilities.FullNode: return new FullNodeCapability();
-
-                default: throw new FormatException();
+                case NodeCapabilities.WsServer:
+                    result = new ServerCapability(type);
+                    break;
+                case NodeCapabilities.FullNode:
+                    result = new FullNodeCapability();
+                    break;
+                default:
+                    throw new FormatException();
             }
+            result.DeserializeWithoutType(reader);
+            return result;
         }
+
+        protected abstract void DeserializeWithoutType(BinaryReader reader);
+
+        void ISerializable.Serialize(BinaryWriter writer)
+        {
+            writer.Write((byte)Type);
+            SerializeWithoutType(writer);
+        }
+
+        protected abstract void SerializeWithoutType(BinaryWriter writer);
     }
 }

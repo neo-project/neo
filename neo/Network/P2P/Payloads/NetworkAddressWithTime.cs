@@ -42,10 +42,7 @@ namespace Neo.Network.P2P.Payloads
             Capabilities = new NodeCapabilityBase[reader.ReadVarInt(VersionPayload.MaxCapabilities)];
 
             for (int x = 0, max = Capabilities.Length; x < max; x++)
-            {
-                Capabilities[x] = NodeCapabilityBase.Create((NodeCapabilities)reader.ReadByte());
-                Capabilities[x].DeserializeWithoutType(reader);
-            }
+                Capabilities[x] = NodeCapabilityBase.DeserializeFrom(reader);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

@@ -4,7 +4,7 @@ namespace Neo.Network.P2P.Capabilities
 {
     public class FullNodeCapability : NodeCapabilityBase
     {
-        public uint StartHeight { get; set; }
+        public uint StartHeight;
 
         public override int Size =>
             base.Size +    // Type
@@ -19,15 +19,13 @@ namespace Neo.Network.P2P.Capabilities
             StartHeight = startHeight;
         }
 
-        public override void DeserializeWithoutType(BinaryReader reader)
+        protected override void DeserializeWithoutType(BinaryReader reader)
         {
-            base.DeserializeWithoutType(reader);
             StartHeight = reader.ReadUInt32();
         }
 
-        public override void Serialize(BinaryWriter writer)
+        protected override void SerializeWithoutType(BinaryWriter writer)
         {
-            base.Serialize(writer);
             writer.Write(StartHeight);
         }
     }

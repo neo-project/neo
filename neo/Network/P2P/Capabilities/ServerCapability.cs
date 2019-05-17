@@ -5,7 +5,7 @@ namespace Neo.Network.P2P.Capabilities
 {
     public class ServerCapability : NodeCapabilityBase
     {
-        public ushort Port { get; set; }
+        public ushort Port;
 
         public override int Size =>
             base.Size +     // Type
@@ -26,15 +26,13 @@ namespace Neo.Network.P2P.Capabilities
             Port = port;
         }
 
-        public override void DeserializeWithoutType(BinaryReader reader)
+        protected override void DeserializeWithoutType(BinaryReader reader)
         {
-            base.DeserializeWithoutType(reader);
             Port = reader.ReadUInt16();
         }
 
-        public override void Serialize(BinaryWriter writer)
+        protected override void SerializeWithoutType(BinaryWriter writer)
         {
-            base.Serialize(writer);
             writer.Write(Port);
         }
     }
