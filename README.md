@@ -19,7 +19,7 @@ NEO 3.0 (under development): A distributed network for the Smart Economy
 
 NEO uses digital identity and blockchain technology to digitize assets and leverages smart contracts for autonomously managed digital assets to create a "smart economy" within a decentralized network.
 
-To learn more about NEO, please read the [White Paper](https://docs.neo.org/en-us/whitepaper.html)|[白皮书](https://docs.neo.org/en-us/whitepaper.htmll).
+To learn more about NEO, please read the [White Paper](https://docs.neo.org/en-us/whitepaper.html)|[白皮书](https://docs.neo.org/zh-cn/whitepaper.html).
 
 NEO 2.x: Reference template  
 ================
