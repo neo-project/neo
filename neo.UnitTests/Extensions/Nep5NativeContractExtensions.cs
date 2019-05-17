@@ -56,9 +56,7 @@ namespace Neo.UnitTests.Extensions
             script.EmitPush("transfer");
             engine.LoadScript(script.ToArray());
 
-            engine.Execute();
-
-            if (engine.State == VMState.FAULT)
+            if (engine.Execute() == VMState.FAULT)
             {
                 return false;
             }
@@ -81,8 +79,7 @@ namespace Neo.UnitTests.Extensions
             script.EmitPush("supportedStandards");
             engine.LoadScript(script.ToArray());
 
-            engine.Execute();
-            engine.State.Should().Be(VMState.HALT);
+            engine.Execute().Should().Be(VMState.HALT);
 
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Array));
@@ -104,8 +101,7 @@ namespace Neo.UnitTests.Extensions
             script.EmitPush("totalSupply");
             engine.LoadScript(script.ToArray());
 
-            engine.Execute();
-            engine.State.Should().Be(VMState.HALT);
+            engine.Execute().Should().Be(VMState.HALT);
 
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Integer));
@@ -126,8 +122,7 @@ namespace Neo.UnitTests.Extensions
             script.EmitPush("balanceOf");
             engine.LoadScript(script.ToArray());
 
-            engine.Execute();
-            engine.State.Should().Be(VMState.HALT);
+            engine.Execute().Should().Be(VMState.HALT);
 
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Integer));
@@ -147,8 +142,7 @@ namespace Neo.UnitTests.Extensions
             script.EmitPush("decimals");
             engine.LoadScript(script.ToArray());
 
-            engine.Execute();
-            engine.State.Should().Be(VMState.HALT);
+            engine.Execute().Should().Be(VMState.HALT);
 
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Integer));
@@ -168,8 +162,7 @@ namespace Neo.UnitTests.Extensions
             script.EmitPush("symbol");
             engine.LoadScript(script.ToArray());
 
-            engine.Execute();
-            engine.State.Should().Be(VMState.HALT);
+            engine.Execute().Should().Be(VMState.HALT);
 
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.ByteArray));
@@ -189,8 +182,7 @@ namespace Neo.UnitTests.Extensions
             script.EmitPush("name");
             engine.LoadScript(script.ToArray());
 
-            engine.Execute();
-            engine.State.Should().Be(VMState.HALT);
+            engine.Execute().Should().Be(VMState.HALT);
 
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.ByteArray));
