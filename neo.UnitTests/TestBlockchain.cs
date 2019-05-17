@@ -22,7 +22,7 @@ namespace Neo.UnitTests
             if (TheNeoSystem == null)
             {
                 var mockSnapshot = new Mock<Snapshot>();
-                mockSnapshot.SetupGet(p => p.Blocks).Returns(new TestDataCache<UInt256, BlockState>());
+                mockSnapshot.SetupGet(p => p.Blocks).Returns(new TestDataCache<UInt256, TrimmedBlock>());
                 mockSnapshot.SetupGet(p => p.Transactions).Returns(new TestDataCache<UInt256, TransactionState>());
                 mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>());
                 mockSnapshot.SetupGet(p => p.Storages).Returns(new TestDataCache<StorageKey, StorageItem>());
@@ -33,7 +33,7 @@ namespace Neo.UnitTests
                 _Store = new Mock<Store>();
 
                 var defaultTx = TestUtils.CreateRandomHashTransaction();
-                _Store.Setup(p => p.GetBlocks()).Returns(new TestDataCache<UInt256, BlockState>());
+                _Store.Setup(p => p.GetBlocks()).Returns(new TestDataCache<UInt256, TrimmedBlock>());
                 _Store.Setup(p => p.GetTransactions()).Returns(new TestDataCache<UInt256, TransactionState>(
                     new TransactionState
                     {

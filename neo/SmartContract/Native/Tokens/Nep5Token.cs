@@ -14,7 +14,7 @@ namespace Neo.SmartContract.Native.Tokens
         public override string[] SupportedStandards { get; } = { "NEP-5", "NEP-10" };
         public abstract string Name { get; }
         public abstract string Symbol { get; }
-        public abstract int Decimals { get; }
+        public abstract byte Decimals { get; }
         public BigInteger Factor { get; }
 
         protected const byte Prefix_TotalSupply = 11;
@@ -39,11 +39,11 @@ namespace Neo.SmartContract.Native.Tokens
                 case "symbol":
                     return Symbol;
                 case "decimals":
-                    return Decimals;
+                    return (uint)Decimals;
                 case "totalSupply":
-                    return TotalSupply(engine);
+                    return TotalSupply(engine.Snapshot);
                 case "balanceOf":
-                    return BalanceOf(engine, new UInt160(args[0].GetByteArray()));
+                    return BalanceOf(engine.Snapshot, new UInt160(args[0].GetByteArray()));
                 case "transfer":
                     return Transfer(engine, new UInt160(args[0].GetByteArray()), new UInt160(args[1].GetByteArray()), args[2].GetBigInteger());
                 default:
@@ -71,7 +71,7 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply += amount;
             storage.Value = totalSupply.ToByteArray();
-            engine.SendNotification(ScriptHash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount });
+            engine.SendNotification(Hash, new StackItem[] { "Transfer", StackItem.Null, account.ToArray(), amount });
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
@@ -97,19 +97,14 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply -= amount;
             storage.Value = totalSupply.ToByteArray();
-            engine.SendNotification(ScriptHash, new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount });
+            engine.SendNotification(Hash, new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount });
         }
 
-        protected virtual BigInteger TotalSupply(ApplicationEngine engine)
+        public virtual BigInteger TotalSupply(Snapshot snapshot)
         {
-            StorageItem storage = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
+            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
             if (storage is null) return BigInteger.Zero;
             return new BigInteger(storage.Value);
-        }
-
-        protected BigInteger BalanceOf(ApplicationEngine engine, UInt160 account)
-        {
-            return BalanceOf(engine.Snapshot, account);
         }
 
         public virtual BigInteger BalanceOf(Snapshot snapshot, UInt160 account)
@@ -174,7 +169,7 @@ namespace Neo.SmartContract.Native.Tokens
                     storage_to.Value = state_to.ToByteArray();
                 }
             }
-            engine.SendNotification(ScriptHash, new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount });
+            engine.SendNotification(Hash, new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount });
             return true;
         }
 

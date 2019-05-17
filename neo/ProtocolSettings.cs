@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Neo.SmartContract.Native;
 using System.Linq;
 
 namespace Neo
@@ -22,7 +23,7 @@ namespace Neo
 
         private ProtocolSettings(IConfigurationSection section)
         {
-            this.Magic = section.GetValue("Magic", 0x746E41u);
+            this.Magic = section.GetValue("Magic", 0x4F454Eu);
             this.AddressVersion = section.GetValue("AddressVersion", (byte)0x17);
             IConfigurationSection section_sv = section.GetSection("StandbyValidators");
             if (section_sv.Exists())
@@ -51,7 +52,7 @@ namespace Neo
                     "seed5.neo.org:10333"
                 };
             this.SecondsPerBlock = section.GetValue("SecondsPerBlock", 15u);
-            this.LowPriorityThreshold = section.GetValue("LowPriorityThreshold", 100000L);
+            this.LowPriorityThreshold = (long)BigDecimal.Parse(section.GetValue("LowPriorityThreshold", "0.001"), NativeContract.GAS.Decimals).Value;
         }
     }
 }
