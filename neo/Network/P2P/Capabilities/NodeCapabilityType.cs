@@ -2,13 +2,11 @@
 {
     public enum NodeCapabilityType : byte
     {
-        #region Servers
-        
+        //Servers
         TcpServer = 0x01,
         WsServer = 0x02,
-        
-        #endregion
 
+        //Others
         FullNode = 0x10
     }
 }

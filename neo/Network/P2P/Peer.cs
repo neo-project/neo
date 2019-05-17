@@ -28,7 +28,6 @@ namespace Neo.Network.P2P
         public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
 
         private static readonly IActorRef tcp_manager = Context.System.Tcp();
-
         private IActorRef tcp_listener;
         private IWebHost ws_host;
         private ICancelable timer;
@@ -135,8 +134,8 @@ namespace Neo.Network.P2P
 
         private void OnStart(ChannelsStartConfig config)
         {
-            ListenerTcpPort = config.Tcp == null ? 0 : config.Tcp.Port;
-            ListenerWsPort = config.WebSocket == null ? 0 : config.WebSocket.Port;
+            ListenerTcpPort = config.Tcp?.Port ?? 0;
+            ListenerWsPort = config.WebSocket?.Port ?? 0;
 
             MinDesiredConnections = config.MinDesiredConnections;
             MaxConnections = config.MaxConnections;

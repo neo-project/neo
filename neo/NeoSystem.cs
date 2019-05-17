@@ -73,9 +73,9 @@ namespace Neo
             Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);
         }
 
-        public void StartNode(ChannelsStartConfig cfg)
+        public void StartNode(ChannelsStartConfig config)
         {
-            start_message = cfg;
+            start_message = config;
 
             if (!suspend)
             {

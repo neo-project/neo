@@ -1,7 +1,6 @@
 ﻿using Neo.IO;
 using Neo.Network.P2P.Capabilities;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -16,13 +15,13 @@ namespace Neo.Network.P2P.Payloads
 
         public int Size => sizeof(uint) + 16 + sizeof(ushort) + Capabilities.GetVarSize();
 
-        public static NetworkAddressWithTime Create(IPEndPoint endpoint, uint timestamp, IEnumerable<NodeCapability> capabilities)
+        public static NetworkAddressWithTime Create(IPEndPoint endpoint, uint timestamp, params NodeCapability[] capabilities)
         {
             return new NetworkAddressWithTime
             {
                 Timestamp = timestamp,
                 EndPoint = endpoint,
-                Capabilities = capabilities.ToArray()
+                Capabilities = capabilities
             };
         }
 

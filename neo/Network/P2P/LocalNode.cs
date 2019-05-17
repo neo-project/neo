@@ -1,5 +1,4 @@
 ﻿using Akka.Actor;
-using Akka.IO;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -54,7 +53,6 @@ namespace Neo.Network.P2P
             {
                 if (singleton != null)
                     throw new InvalidOperationException();
-
                 this.system = system;
                 singleton = this;
             }
@@ -77,7 +75,7 @@ namespace Neo.Network.P2P
             IPHostEntry entry;
             try
             {
-                entry = System.Net.Dns.GetHostEntry(hostNameOrAddress);
+                entry = Dns.GetHostEntry(hostNameOrAddress);
             }
             catch (SocketException)
             {
@@ -156,19 +154,6 @@ namespace Neo.Network.P2P
                 case RelayResultReason _:
                     break;
             }
-        }
-
-        public NetworkAddressWithTime[] GetPeers()
-        {
-            Random rand = new Random();
-
-            return RemoteNodes.Values
-                .Where(p => p.ListenerTcpPort > 0)
-                .GroupBy(p => p.Remote.Address, (k, g) => g.First())
-                .OrderBy(p => rand.Next())
-                .Take(AddrPayload.MaxCountToSend)
-                .Select(p => NetworkAddressWithTime.Create(p.Listener, p.Version.Timestamp, p.Version.Capabilities))
-                .ToArray();
         }
 
         private void OnRelay(IInventory inventory)

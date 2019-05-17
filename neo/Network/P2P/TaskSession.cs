@@ -20,12 +20,11 @@ namespace Neo.Network.P2P
 
         public TaskSession(IActorRef node, VersionPayload version)
         {
-            RemoteNode = node;
-            Version = version;
-            StartHeight = version.Capabilities
-              .Where(u => u is FullNodeCapability)
-              .Cast<FullNodeCapability>()
-              .FirstOrDefault()?.StartHeight ?? 0;
+            this.RemoteNode = node;
+            this.Version = version;
+            this.StartHeight = version.Capabilities
+                .OfType<FullNodeCapability>()
+                .FirstOrDefault()?.StartHeight ?? 0;
         }
     }
 }

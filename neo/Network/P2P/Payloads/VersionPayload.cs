@@ -1,9 +1,7 @@
 ﻿using Neo.IO;
 using Neo.Network.P2P.Capabilities;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -14,19 +12,19 @@ namespace Neo.Network.P2P.Payloads
         public uint Magic;
         public uint Version;
         public uint Timestamp;
-        public NodeCapability[] Capabilities;
         public uint Nonce;
         public string UserAgent;
+        public NodeCapability[] Capabilities;
 
         public int Size =>
             sizeof(uint) +              // Magic
             sizeof(uint) +              // Version
             sizeof(uint) +              // Timestamp
-            Capabilities.GetVarSize() + // Capabilities
             sizeof(uint) +              // Nonce
-            UserAgent.GetVarSize();     // UserAgent
+            UserAgent.GetVarSize() +    // UserAgent
+            Capabilities.GetVarSize();  // Capabilities
 
-        public static VersionPayload Create(uint nonce, string userAgent, IEnumerable<NodeCapability> capabilities)
+        public static VersionPayload Create(uint nonce, string userAgent, params NodeCapability[] capabilities)
         {
             return new VersionPayload
             {
@@ -35,7 +33,7 @@ namespace Neo.Network.P2P.Payloads
                 Timestamp = DateTime.Now.ToTimestamp(),
                 Nonce = nonce,
                 UserAgent = userAgent,
-                Capabilities = capabilities.ToArray(),
+                Capabilities = capabilities,
             };
         }
 
@@ -44,16 +42,13 @@ namespace Neo.Network.P2P.Payloads
             Magic = reader.ReadUInt32();
             Version = reader.ReadUInt32();
             Timestamp = reader.ReadUInt32();
-
-            // Capabilities
-
-            Capabilities = new NodeCapability[reader.ReadVarInt(MaxCapabilities)];
-
-            for (int x = 0, max = Capabilities.Length; x < max; x++)
-                Capabilities[x] = NodeCapability.DeserializeFrom(reader);
-
             Nonce = reader.ReadUInt32();
             UserAgent = reader.ReadVarString(1024);
+
+            // Capabilities
+            Capabilities = new NodeCapability[reader.ReadVarInt(MaxCapabilities)];
+            for (int x = 0, max = Capabilities.Length; x < max; x++)
+                Capabilities[x] = NodeCapability.DeserializeFrom(reader);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -61,9 +56,9 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(Magic);
             writer.Write(Version);
             writer.Write(Timestamp);
-            writer.Write(Capabilities);
             writer.Write(Nonce);
             writer.WriteVarString(UserAgent);
+            writer.Write(Capabilities);
         }
     }
 }
