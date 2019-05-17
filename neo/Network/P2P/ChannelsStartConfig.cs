@@ -1,7 +1,6 @@
-﻿using Neo.Network.P2P;
-using System.Net;
+﻿using System.Net;
 
-namespace Neo
+namespace Neo.Network.P2P
 {
     public class ChannelsStartConfig
     {
