@@ -1,6 +1,9 @@
 ﻿using Neo.Cryptography;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -55,6 +58,82 @@ namespace Neo.Wallets
         {
         }
 
+        public void FillTransaction(Transaction tx, UInt160 sender = null)
+        {
+            tx.CalculateGas();
+            UInt160[] accounts = sender is null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { sender };
+            BigInteger fee = tx.Gas + tx.NetworkFee;
+            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                foreach (UInt160 account in accounts)
+                {
+                    BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, account);
+                    if (balance >= fee)
+                    {
+                        tx.Sender = account;
+                        return;
+                    }
+                }
+            throw new InvalidOperationException();
+        }
+
+        private List<(UInt160 Account, BigInteger Value)> FindPayingAccounts(List<(UInt160 Account, BigInteger Value)> orderedAccounts, BigInteger amount)
+        {
+            var result = new List<(UInt160 Account, BigInteger Value)>();
+            BigInteger sum_balance = orderedAccounts.Select(p => p.Value).Sum();
+            if (sum_balance == amount)
+            {
+                result.AddRange(orderedAccounts);
+                orderedAccounts.Clear();
+            }
+            else
+            {
+                for (int i = 0; i < orderedAccounts.Count; i++)
+                {
+                    if (orderedAccounts[i].Value < amount)
+                        continue;
+                    if (orderedAccounts[i].Value == amount)
+                    {
+                        result.Add(orderedAccounts[i]);
+                        orderedAccounts.RemoveAt(i);
+                    }
+                    else
+                    {
+                        result.Add((orderedAccounts[i].Account, amount));
+                        orderedAccounts[i] = (orderedAccounts[i].Account, orderedAccounts[i].Value - amount);
+                    }
+                    break;
+                }
+                if (result.Count == 0)
+                {
+                    int i = orderedAccounts.Count - 1;
+                    while (orderedAccounts[i].Value <= amount)
+                    {
+                        result.Add(orderedAccounts[i]);
+                        amount -= orderedAccounts[i].Value;
+                        orderedAccounts.RemoveAt(i);
+                        i--;
+                    }
+                    for (i = 0; i < orderedAccounts.Count; i++)
+                    {
+                        if (orderedAccounts[i].Value < amount)
+                            continue;
+                        if (orderedAccounts[i].Value == amount)
+                        {
+                            result.Add(orderedAccounts[i]);
+                            orderedAccounts.RemoveAt(i);
+                        }
+                        else
+                        {
+                            result.Add((orderedAccounts[i].Account, amount));
+                            orderedAccounts[i] = (orderedAccounts[i].Account, orderedAccounts[i].Value - amount);
+                        }
+                        break;
+                    }
+                }
+            }
+            return result;
+        }
+
         public WalletAccount GetAccount(ECPoint pubkey)
         {
             return GetAccount(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash());
@@ -62,8 +141,13 @@ namespace Neo.Wallets
 
         public BigDecimal GetAvailable(UInt160 asset_id)
         {
-            byte[] script;
             UInt160[] accounts = GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
+            return GetBalance(asset_id, accounts);
+        }
+
+        public BigDecimal GetBalance(UInt160 asset_id, params UInt160[] accounts)
+        {
+            byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.EmitPush(0);
@@ -146,92 +230,87 @@ namespace Neo.Wallets
             return account;
         }
 
-        public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null)
+        public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null, long net_fee = 0)
         {
-            var cOutputs = outputs.GroupBy(p => new
-            {
-                p.AssetId,
-                Account = p.ScriptHash
-            }, (k, g) => new
-            {
-                k.AssetId,
-                Value = g.Aggregate(BigInteger.Zero, (x, y) => x + y.Value.Value),
-                k.Account
-            }).ToArray();
-            Transaction tx;
             if (attributes == null) attributes = new List<TransactionAttribute>();
-            UInt160[] accounts = from == null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { from };
+            var output_groups = outputs.GroupBy(p => p.AssetId);
+            UInt160[] accounts = from is null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { from };
             HashSet<UInt160> sAttributes = new HashSet<UInt160>();
+            byte[] script;
+            List<(UInt160 Account, BigInteger Value)> balances_gas = null;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                foreach (var output in cOutputs)
+                foreach (var group in output_groups)
                 {
+                    BigInteger sum_output = group.Select(p => p.Value.Value).Sum();
                     var balances = new List<(UInt160 Account, BigInteger Value)>();
                     foreach (UInt160 account in accounts)
-                    {
-                        byte[] script;
                         using (ScriptBuilder sb2 = new ScriptBuilder())
                         {
-                            sb2.EmitAppCall(output.AssetId, "balanceOf", account);
-                            script = sb2.ToArray();
+                            sb2.EmitAppCall(group.Key, "balanceOf", account);
+                            ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray());
+                            if (engine.State.HasFlag(VMState.FAULT)) return null;
+                            balances.Add((account, engine.ResultStack.Pop().GetBigInteger()));
                         }
-                        ApplicationEngine engine = ApplicationEngine.Run(script);
-                        if (engine.State.HasFlag(VMState.FAULT)) return null;
-                        balances.Add((account, engine.ResultStack.Pop().GetBigInteger()));
-                    }
-                    BigInteger sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
-                    if (sum < output.Value) return null;
-                    if (sum != output.Value)
+                    BigInteger sum_balance = balances.Select(p => p.Value).Sum();
+                    if (sum_balance < sum_output) return null;
+                    foreach (var output in group)
                     {
-                        balances = balances.OrderByDescending(p => p.Value).ToList();
-                        BigInteger amount = output.Value;
-                        int i = 0;
-                        while (balances[i].Value <= amount)
-                            amount -= balances[i++].Value;
-                        if (amount == BigInteger.Zero)
-                            balances = balances.Take(i).ToList();
-                        else
-                            balances = balances.Take(i).Concat(new[] { balances.Last(p => p.Value >= amount) }).ToList();
-                        sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
-                    }
-                    sAttributes.UnionWith(balances.Select(p => p.Account));
-                    for (int i = 0; i < balances.Count; i++)
-                    {
-                        BigInteger value = balances[i].Value;
-                        if (i == 0)
+                        balances = balances.OrderBy(p => p.Value).ToList();
+                        var balances_used = FindPayingAccounts(balances, output.Value.Value);
+                        sAttributes.UnionWith(balances_used.Select(p => p.Account));
+                        foreach (var (account, value) in balances_used)
                         {
-                            BigInteger change = sum - output.Value;
-                            if (change > 0) value -= change;
+                            sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value);
+                            sb.Emit(OpCode.THROWIFNOT);
                         }
-                        sb.EmitAppCall(output.AssetId, "transfer", balances[i].Account, output.Account, value);
-                        sb.Emit(OpCode.THROWIFNOT);
                     }
+                    if (group.Key.Equals(NativeContract.GAS.Hash))
+                        balances_gas = balances;
                 }
                 byte[] nonce = new byte[8];
                 rand.NextBytes(nonce);
                 sb.Emit(OpCode.RET, nonce);
-                tx = new Transaction
-                {
-                    Script = sb.ToArray()
-                };
+                script = sb.ToArray();
             }
             attributes.AddRange(sAttributes.Select(p => new TransactionAttribute
             {
                 Usage = TransactionAttributeUsage.Script,
                 Data = p.ToArray()
             }));
-            tx.Attributes = attributes.ToArray();
-            tx.Witnesses = new Witness[0];
-            using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, tx))
+            Transaction tx = new Transaction
             {
-                if (engine.State.HasFlag(VMState.FAULT)) return null;
-                tx = new Transaction
-                {
-                    Script = tx.Script,
-                    Gas = Transaction.GetGas(engine.GasConsumed),
-                    Attributes = tx.Attributes
-                };
+                Script = script,
+                NetworkFee = net_fee,
+                Attributes = attributes.ToArray()
+            };
+            try
+            {
+                tx.CalculateGas();
             }
+            catch (InvalidOperationException)
+            {
+                return null;
+            }
+            BigInteger fee = tx.Gas + tx.NetworkFee;
+            if (balances_gas is null)
+            {
+                using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                    foreach (UInt160 account in accounts)
+                    {
+                        BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, account);
+                        if (balance >= fee)
+                        {
+                            tx.Sender = account;
+                            break;
+                        }
+                    }
+            }
+            else
+            {
+                tx.Sender = balances_gas.FirstOrDefault(p => p.Value >= fee).Account;
+            }
+            if (tx.Sender is null) return null;
             return tx;
         }
 
