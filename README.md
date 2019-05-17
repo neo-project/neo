@@ -24,7 +24,7 @@ To learn more about NEO, please read the [White Paper](https://docs.neo.org/en-u
 NEO 2.x: Reference template  
 ================
 
-NEO adopts a continous improvement and evolution model.
+NEO adopts a model of continuous improvement and evolution.
 We believe that Blockchain field of research and development will be kept in continous transformation for the next years.
 From 2017 until middle 2020, NEO 2.x will still be supported and compatibility of new packages will be mantained.
 
