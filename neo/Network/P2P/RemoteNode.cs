@@ -40,14 +40,14 @@ namespace Neo.Network.P2P
             this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
 
-            var capabilities = new List<NodeCapabilityBase>
+            var capabilities = new List<NodeCapability>
             {
                 new FullNodeCapability(Blockchain.Singleton.Height)
             };
 
-            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilities.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
-            if (LocalNode.Singleton.ListenerUdpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilities.UdpServer, (ushort)LocalNode.Singleton.ListenerUdpPort));
-            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilities.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
+            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
+            if (LocalNode.Singleton.ListenerUdpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.UdpServer, (ushort)LocalNode.Singleton.ListenerUdpPort));
+            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
 
             SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities)));
         }
@@ -199,7 +199,7 @@ namespace Neo.Network.P2P
                 .Cast<FullNodeCapability>()
                 .FirstOrDefault()?.StartHeight ?? 0;
             listenerTcpPort = version.Capabilities
-               .Where(u => u.Type == NodeCapabilities.TcpServer)
+               .Where(u => u.Type == NodeCapabilityType.TcpServer)
                .Cast<ServerCapability>()
                .First()?.Port ?? 0;
 

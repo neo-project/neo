@@ -4,20 +4,20 @@ using System.IO;
 
 namespace Neo.Network.P2P.Capabilities
 {
-    public abstract class NodeCapabilityBase : ISerializable
+    public abstract class NodeCapability : ISerializable
     {
         /// <summary>
         /// Type
         /// </summary>
-        public readonly NodeCapabilities Type;
+        public readonly NodeCapabilityType Type;
 
-        public virtual int Size => sizeof(NodeCapabilities); // Type
+        public virtual int Size => sizeof(NodeCapabilityType); // Type
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="type">Type</param>
-        protected NodeCapabilityBase(NodeCapabilities type)
+        protected NodeCapability(NodeCapabilityType type)
         {
             this.Type = type;
         }
@@ -32,25 +32,25 @@ namespace Neo.Network.P2P.Capabilities
             DeserializeWithoutType(reader);
         }
 
-        public static NodeCapabilityBase DeserializeFrom(BinaryReader reader)
+        public static NodeCapability DeserializeFrom(BinaryReader reader)
         {
-            NodeCapabilityBase result;
-            NodeCapabilities type = (NodeCapabilities)reader.ReadByte();
+            NodeCapability capability;
+            NodeCapabilityType type = (NodeCapabilityType)reader.ReadByte();
             switch (type)
             {
-                case NodeCapabilities.TcpServer:
-                case NodeCapabilities.UdpServer:
-                case NodeCapabilities.WsServer:
-                    result = new ServerCapability(type);
+                case NodeCapabilityType.TcpServer:
+                case NodeCapabilityType.UdpServer:
+                case NodeCapabilityType.WsServer:
+                    capability = new ServerCapability(type);
                     break;
-                case NodeCapabilities.FullNode:
-                    result = new FullNodeCapability();
+                case NodeCapabilityType.FullNode:
+                    capability = new FullNodeCapability();
                     break;
                 default:
                     throw new FormatException();
             }
-            result.DeserializeWithoutType(reader);
-            return result;
+            capability.DeserializeWithoutType(reader);
+            return capability;
         }
 
         protected abstract void DeserializeWithoutType(BinaryReader reader);

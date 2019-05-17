@@ -1,6 +1,6 @@
 ﻿namespace Neo.Network.P2P.Capabilities
 {
-    public enum NodeCapabilities : byte
+    public enum NodeCapabilityType : byte
     {
         TcpServer = 0x01,
         UdpServer = 0x02,

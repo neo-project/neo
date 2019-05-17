@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Neo.Network.P2P.Capabilities
 {
-    public class ServerCapability : NodeCapabilityBase
+    public class ServerCapability : NodeCapability
     {
         public ushort Port;
 
@@ -16,9 +16,9 @@ namespace Neo.Network.P2P.Capabilities
         /// </summary>
         /// <param name="type">Channel</param>
         /// <param name="port">Port</param>
-        public ServerCapability(NodeCapabilities type, ushort port = 0) : base(type)
+        public ServerCapability(NodeCapabilityType type, ushort port = 0) : base(type)
         {
-            if (type != NodeCapabilities.TcpServer && type != NodeCapabilities.UdpServer && type != NodeCapabilities.WsServer)
+            if (type != NodeCapabilityType.TcpServer && type != NodeCapabilityType.UdpServer && type != NodeCapabilityType.WsServer)
             {
                 throw new ArgumentException(nameof(type));
             }

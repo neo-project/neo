@@ -2,7 +2,7 @@
 
 namespace Neo.Network.P2P.Capabilities
 {
-    public class FullNodeCapability : NodeCapabilityBase
+    public class FullNodeCapability : NodeCapability
     {
         public uint StartHeight;
 
@@ -14,7 +14,7 @@ namespace Neo.Network.P2P.Capabilities
         /// Constructor
         /// </summary>
         /// <param name="startHeight">Start Height</param>
-        public FullNodeCapability(uint startHeight = 0) : base(NodeCapabilities.FullNode)
+        public FullNodeCapability(uint startHeight = 0) : base(NodeCapabilityType.FullNode)
         {
             StartHeight = startHeight;
         }

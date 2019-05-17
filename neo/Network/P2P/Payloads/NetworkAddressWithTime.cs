@@ -12,11 +12,11 @@ namespace Neo.Network.P2P.Payloads
     {
         public uint Timestamp;
         public IPEndPoint EndPoint;
-        public NodeCapabilityBase[] Capabilities;
+        public NodeCapability[] Capabilities;
 
         public int Size => sizeof(uint) + 16 + sizeof(ushort) + Capabilities.GetVarSize();
 
-        public static NetworkAddressWithTime Create(IPEndPoint endpoint, uint timestamp, IEnumerable<NodeCapabilityBase> capabilities)
+        public static NetworkAddressWithTime Create(IPEndPoint endpoint, uint timestamp, IEnumerable<NodeCapability> capabilities)
         {
             return new NetworkAddressWithTime
             {
@@ -39,10 +39,10 @@ namespace Neo.Network.P2P.Payloads
 
             // Capabilities
 
-            Capabilities = new NodeCapabilityBase[reader.ReadVarInt(VersionPayload.MaxCapabilities)];
+            Capabilities = new NodeCapability[reader.ReadVarInt(VersionPayload.MaxCapabilities)];
 
             for (int x = 0, max = Capabilities.Length; x < max; x++)
-                Capabilities[x] = NodeCapabilityBase.DeserializeFrom(reader);
+                Capabilities[x] = NodeCapability.DeserializeFrom(reader);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

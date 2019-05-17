@@ -14,7 +14,7 @@ namespace Neo.Network.P2P.Payloads
         public uint Magic;
         public uint Version;
         public uint Timestamp;
-        public NodeCapabilityBase[] Capabilities;
+        public NodeCapability[] Capabilities;
         public uint Nonce;
         public string UserAgent;
 
@@ -26,7 +26,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(uint) +              // Nonce
             UserAgent.GetVarSize();     // UserAgent
 
-        public static VersionPayload Create(uint nonce, string userAgent, IEnumerable<NodeCapabilityBase> capabilities)
+        public static VersionPayload Create(uint nonce, string userAgent, IEnumerable<NodeCapability> capabilities)
         {
             return new VersionPayload
             {
@@ -47,10 +47,10 @@ namespace Neo.Network.P2P.Payloads
 
             // Capabilities
 
-            Capabilities = new NodeCapabilityBase[reader.ReadVarInt(MaxCapabilities)];
+            Capabilities = new NodeCapability[reader.ReadVarInt(MaxCapabilities)];
 
             for (int x = 0, max = Capabilities.Length; x < max; x++)
-                Capabilities[x] = NodeCapabilityBase.DeserializeFrom(reader);
+                Capabilities[x] = NodeCapability.DeserializeFrom(reader);
 
             Nonce = reader.ReadUInt32();
             UserAgent = reader.ReadVarString(1024);
