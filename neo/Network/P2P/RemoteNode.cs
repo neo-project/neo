@@ -25,10 +25,9 @@ namespace Neo.Network.P2P
         private BloomFilter bloom_filter;
         private bool ack = true;
         private bool verack = false;
-        private int listenerTcpPort = 0;
 
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
-        public override int ListenerTcpPort => listenerTcpPort;
+        public int ListenerTcpPort => Version.Capabilities.OfType<ServerCapability>().FirstOrDefault(p => p.Type == NodeCapabilityType.TcpServer)?.Port ?? 0;
         public VersionPayload Version { get; private set; }
         public uint LastBlockIndex { get; private set; } = 0;
         public bool IsFullNode { get; private set; } = false;
@@ -191,17 +190,9 @@ namespace Neo.Network.P2P
         private void OnVersionPayload(VersionPayload version)
         {
             Version = version;
-            IsFullNode = version.Capabilities
-                .Where(u => u is FullNodeCapability)
-                .Any();
-            LastBlockIndex = version.Capabilities
-                .Where(u => u is FullNodeCapability)
-                .Cast<FullNodeCapability>()
-                .FirstOrDefault()?.StartHeight ?? 0;
-            listenerTcpPort = version.Capabilities
-               .Where(u => u.Type == NodeCapabilityType.TcpServer)
-               .Cast<ServerCapability>()
-               .First()?.Port ?? 0;
+            FullNodeCapability capability = (FullNodeCapability)version.Capabilities.FirstOrDefault(p => p.Type == NodeCapabilityType.FullNode);
+            IsFullNode = capability != null;
+            if (IsFullNode) LastBlockIndex = capability.StartHeight;
 
             if (version.Nonce == LocalNode.Nonce || version.Magic != ProtocolSettings.Default.Magic)
             {
