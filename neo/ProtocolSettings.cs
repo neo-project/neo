@@ -23,7 +23,7 @@ namespace Neo
 
         private ProtocolSettings(IConfigurationSection section)
         {
-            this.Magic = section.GetValue("Magic", 0x746E41u);
+            this.Magic = section.GetValue("Magic", 0x4F454Eu);
             this.AddressVersion = section.GetValue("AddressVersion", (byte)0x17);
             IConfigurationSection section_sv = section.GetSection("StandbyValidators");
             if (section_sv.Exists())
