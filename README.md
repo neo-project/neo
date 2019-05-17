@@ -14,12 +14,29 @@
 
 </p>
 
-NEO: A distributed network for the Smart Economy
+NEO 3.0 (under development): A distributed network for the Smart Economy
 ================
 
 NEO uses digital identity and blockchain technology to digitize assets and leverages smart contracts for autonomously managed digital assets to create a "smart economy" within a decentralized network.
 
-To learn more about NEO, please read the [White Paper](http://docs.neo.org/en-us/index.html)|[白皮书](http://docs.neo.org/zh-cn/index.html).
+To learn more about NEO, please read the [White Paper](https://docs.neo.org/en-us/whitepaper.html)|[白皮书](https://docs.neo.org/zh-cn/whitepaper.html).
+
+NEO 2.x: Reference template  
+================
+
+NEO adopts a model of continuous improvement and evolution.
+We believe that the research and development of blockchain technology will be kept in continuous transformation for the next years.
+From 2017 until the middle of 2020 (estimated), NEO 2.x will still be supported and the compatibility of new packages will be maintained.
+
+A link to the essential C# reference implementation can be seen below:
+
+* [neo-core](https://github.com/neo-project/neo/tree/master-2.x)
+* [neo-vm](https://github.com/neo-project/neo-vm/tree/master-2.x)
+* [neo-cli](https://github.com/neo-project/neo-cli/tree/master-2.x)
+* [neo-plugins](https://github.com/neo-project/neo-plugins/tree/master-2.x)
+* [neo-compiler](https://github.com/neo-project/neo-compiler/tree/master-2.x)
+
+NEO 1.x was known as Antshares and the roots of the code can be found historically in this current repository.
 
 Supported Platforms
 --------
