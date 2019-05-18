@@ -111,7 +111,7 @@ namespace Neo.SmartContract
                 {
                     if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
                 }
-                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, Fixed8.Zero))
+                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot.Clone(), Fixed8.Zero))
                 {
                     engine.LoadScript(verification);
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript);
