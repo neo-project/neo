@@ -112,7 +112,7 @@ namespace Neo.Ledger.MPT
                 }
             }
 
-            return new System.Security.Cryptography.SHA256Managed().ComputeHash(bytes.ToArray());
+            return new Crypto().Hash256(bytes.ToArray());
         }
 
         /// <inheritdoc />
