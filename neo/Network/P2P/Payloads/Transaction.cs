@@ -1,6 +1,7 @@
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -62,7 +63,7 @@ namespace Neo.Network.P2P.Payloads
             Attributes.GetVarSize() +   //Attributes
             Witnesses.GetVarSize();     //Witnesses
 
-        public void CalculateGas()
+        public void CalculateFees()
         {
             if (Sender is null) Sender = UInt160.Zero;
             if (Attributes is null) Attributes = new TransactionAttribute[0];
@@ -90,6 +91,13 @@ namespace Neo.Network.P2P.Payloads
                     Gas += d - remainder;
                 else
                     Gas -= remainder;
+            }
+            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+            {
+                long feeperbyte = NativeContract.Policy.GetFeePerByte(snapshot);
+                long fee = feeperbyte * Size;
+                if (fee > NetworkFee)
+                    NetworkFee = fee;
             }
         }
 
