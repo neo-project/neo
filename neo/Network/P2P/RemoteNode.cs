@@ -27,7 +27,7 @@ namespace Neo.Network.P2P
         private bool verack = false;
 
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
-        public int ListenerTcpPort => Version.Capabilities.OfType<ServerCapability>().FirstOrDefault(p => p.Type == NodeCapabilityType.TcpServer)?.Port ?? 0;
+        public int ListenerTcpPort { get; private set; } = 0;
         public VersionPayload Version { get; private set; }
         public uint LastBlockIndex { get; private set; } = 0;
         public bool IsFullNode { get; private set; } = false;
@@ -196,6 +196,10 @@ namespace Neo.Network.P2P
                     case FullNodeCapability fullNodeCapability:
                         IsFullNode = true;
                         LastBlockIndex = fullNodeCapability.StartHeight;
+                        break;
+                    case ServerCapability serverCapability:
+                        if (serverCapability.Type == NodeCapabilityType.TcpServer)
+                            ListenerTcpPort = serverCapability.Port;
                         break;
                 }
             }
