@@ -179,7 +179,12 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
         {
-            if (Size > MaxTransactionSize) return false;
+            int size = Size;
+            if (size > MaxTransactionSize) return false;
+            if (size > NativeContract.Policy.GetMaxFreeTransactionSize(snapshot) && NetworkFee / size < NativeContract.Policy.GetFeePerByte(snapshot))
+                return false;
+            if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(GetScriptHashesForVerifying(snapshot)).Count() > 0)
+                return false;
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
             BigInteger fee = Gas + NetworkFee;
             if (balance < fee) return false;
