@@ -13,6 +13,8 @@ namespace Neo.SmartContract.Native
         public override string ServiceName => "Neo.Native.Policy";
         public override ContractPropertyState Properties => ContractPropertyState.HasStorage;
 
+        private const byte Prefix_MaxTransactionsPerBlock = 23;
+        private const byte Prefix_MaxLowPriorityTransactionsPerBlock = 34;
         private const byte Prefix_MaxLowPriorityTransactionSize = 29;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccounts = 15;
@@ -28,12 +30,20 @@ namespace Neo.SmartContract.Native
         {
             switch (operation)
             {
+                case "getMaxTransactionsPerBlock":
+                    return GetMaxTransactionsPerBlock(engine.Snapshot);
+                case "getMaxLowPriorityTransactionsPerBlock":
+                    return GetMaxLowPriorityTransactionsPerBlock(engine.Snapshot);
                 case "getMaxLowPriorityTransactionSize":
                     return GetMaxLowPriorityTransactionSize(engine.Snapshot);
                 case "getFeePerByte":
                     return GetFeePerByte(engine.Snapshot);
                 case "getBlockedAccounts":
                     return GetBlockedAccounts(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToArray();
+                case "setMaxTransactionsPerBlock":
+                    return SetMaxTransactionsPerBlock(engine, (uint)args[0].GetBigInteger());
+                case "setMaxLowPriorityTransactionsPerBlock":
+                    return SetMaxLowPriorityTransactionsPerBlock(engine, (uint)args[0].GetBigInteger());
                 case "setMaxLowPriorityTransactionSize":
                     return SetMaxLowPriorityTransactionSize(engine, (uint)args[0].GetBigInteger());
                 case "setFeePerByte":
@@ -48,6 +58,14 @@ namespace Neo.SmartContract.Native
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxTransactionsPerBlock), new StorageItem
+            {
+                Value = BitConverter.GetBytes(512u)
+            });
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxLowPriorityTransactionsPerBlock), new StorageItem
+            {
+                Value = BitConverter.GetBytes(20u)
+            });
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxLowPriorityTransactionSize), new StorageItem
             {
                 Value = BitConverter.GetBytes(256u)
@@ -63,6 +81,16 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
+        public uint GetMaxTransactionsPerBlock(Snapshot snapshot)
+        {
+            return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxTransactionsPerBlock)].Value, 0);
+        }
+
+        public uint GetMaxLowPriorityTransactionsPerBlock(Snapshot snapshot)
+        {
+            return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxLowPriorityTransactionsPerBlock)].Value, 0);
+        }
+
         public uint GetMaxLowPriorityTransactionSize(Snapshot snapshot)
         {
             return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxLowPriorityTransactionSize)].Value, 0);
@@ -76,6 +104,24 @@ namespace Neo.SmartContract.Native
         public UInt160[] GetBlockedAccounts(Snapshot snapshot)
         {
             return snapshot.Storages[CreateStorageKey(Prefix_BlockedAccounts)].Value.AsSerializableArray<UInt160>();
+        }
+
+        private bool SetMaxTransactionsPerBlock(ApplicationEngine engine, uint value)
+        {
+            if (engine.Trigger != TriggerType.Application) return false;
+            if (!CheckValidators(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock));
+            storage.Value = BitConverter.GetBytes(value);
+            return true;
+        }
+
+        private bool SetMaxLowPriorityTransactionsPerBlock(ApplicationEngine engine, uint value)
+        {
+            if (engine.Trigger != TriggerType.Application) return false;
+            if (!CheckValidators(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxLowPriorityTransactionsPerBlock));
+            storage.Value = BitConverter.GetBytes(value);
+            return true;
         }
 
         private bool SetMaxLowPriorityTransactionSize(ApplicationEngine engine, uint value)
