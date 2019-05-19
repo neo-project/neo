@@ -13,7 +13,7 @@ namespace Neo.SmartContract.Native
         public override string ServiceName => "Neo.Native.Policy";
         public override ContractPropertyState Properties => ContractPropertyState.HasStorage;
 
-        private const byte Prefix_MaxFreeTransactionSize = 22;
+        private const byte Prefix_MaxLowPriorityTransactionSize = 29;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccounts = 15;
 
@@ -28,14 +28,14 @@ namespace Neo.SmartContract.Native
         {
             switch (operation)
             {
-                case "getMaxFreeTransactionSize":
-                    return GetMaxFreeTransactionSize(engine.Snapshot);
+                case "getMaxLowPriorityTransactionSize":
+                    return GetMaxLowPriorityTransactionSize(engine.Snapshot);
                 case "getFeePerByte":
                     return GetFeePerByte(engine.Snapshot);
                 case "getBlockedAccounts":
                     return GetBlockedAccounts(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToArray();
-                case "setMaxFreeTransactionSize":
-                    return SetMaxFreeTransactionSize(engine, (uint)args[0].GetBigInteger());
+                case "setMaxLowPriorityTransactionSize":
+                    return SetMaxLowPriorityTransactionSize(engine, (uint)args[0].GetBigInteger());
                 case "setFeePerByte":
                     return SetFeePerByte(engine, (long)args[0].GetBigInteger());
                 case "blockAccount":
@@ -48,7 +48,7 @@ namespace Neo.SmartContract.Native
         internal override bool Initialize(ApplicationEngine engine)
         {
             if (!base.Initialize(engine)) return false;
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxFreeTransactionSize), new StorageItem
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MaxLowPriorityTransactionSize), new StorageItem
             {
                 Value = BitConverter.GetBytes(256u)
             });
@@ -63,9 +63,9 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        public uint GetMaxFreeTransactionSize(Snapshot snapshot)
+        public uint GetMaxLowPriorityTransactionSize(Snapshot snapshot)
         {
-            return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxFreeTransactionSize)].Value, 0);
+            return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxLowPriorityTransactionSize)].Value, 0);
         }
 
         public long GetFeePerByte(Snapshot snapshot)
@@ -78,11 +78,11 @@ namespace Neo.SmartContract.Native
             return snapshot.Storages[CreateStorageKey(Prefix_BlockedAccounts)].Value.AsSerializableArray<UInt160>();
         }
 
-        private bool SetMaxFreeTransactionSize(ApplicationEngine engine, uint value)
+        private bool SetMaxLowPriorityTransactionSize(ApplicationEngine engine, uint value)
         {
             if (engine.Trigger != TriggerType.Application) return false;
             if (!CheckValidators(engine)) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxFreeTransactionSize));
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxLowPriorityTransactionSize));
             storage.Value = BitConverter.GetBytes(value);
             return true;
         }

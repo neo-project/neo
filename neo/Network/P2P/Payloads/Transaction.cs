@@ -181,7 +181,7 @@ namespace Neo.Network.P2P.Payloads
         {
             int size = Size;
             if (size > MaxTransactionSize) return false;
-            if (size > NativeContract.Policy.GetMaxFreeTransactionSize(snapshot) && NetworkFee / size < NativeContract.Policy.GetFeePerByte(snapshot))
+            if (size > NativeContract.Policy.GetMaxLowPriorityTransactionSize(snapshot) && NetworkFee / size < NativeContract.Policy.GetFeePerByte(snapshot))
                 return false;
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(GetScriptHashesForVerifying(snapshot)).Count() > 0)
                 return false;
