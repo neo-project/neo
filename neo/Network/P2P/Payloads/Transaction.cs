@@ -52,8 +52,6 @@ namespace Neo.Network.P2P.Payloads
 
         InventoryType IInventory.InventoryType => InventoryType.TX;
 
-        public bool IsLowPriority => NetworkFee < ProtocolSettings.Default.LowPriorityThreshold;
-
         public int Size =>
             sizeof(byte) +              //Version
             Script.GetVarSize() +       //Script
