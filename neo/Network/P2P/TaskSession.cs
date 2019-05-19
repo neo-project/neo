@@ -23,9 +23,8 @@ namespace Neo.Network.P2P
             RemoteNode = node;
             Version = version;
             StartHeight = version.Capabilities
-              .Where(u => u is FullNodeCapability)
-              .Cast<FullNodeCapability>()
-              .FirstOrDefault()?.StartHeight ?? 0;
+                .OfType<FullNodeCapability>()
+                .FirstOrDefault()?.StartHeight ?? 0;
         }
     }
 }

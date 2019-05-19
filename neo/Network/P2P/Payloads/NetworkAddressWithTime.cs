@@ -11,45 +11,43 @@ namespace Neo.Network.P2P.Payloads
     public class NetworkAddressWithTime : ISerializable
     {
         public uint Timestamp;
-        public IPEndPoint EndPoint;
+        public IPAddress Address;
         public NodeCapability[] Capabilities;
 
-        public int Size => sizeof(uint) + 16 + sizeof(ushort) + Capabilities.GetVarSize();
+        public IPEndPoint EndPoint => new IPEndPoint(Address, Capabilities.Where(p => p.Type == NodeCapabilityType.TcpServer).Select(p => (ServerCapability)p).FirstOrDefault()?.Port ?? 0);
+        public int Size => sizeof(uint) + 16 + Capabilities.GetVarSize();
 
-        public static NetworkAddressWithTime Create(IPEndPoint endpoint, uint timestamp, IEnumerable<NodeCapability> capabilities)
+        public static NetworkAddressWithTime Create(IPAddress address, uint timestamp, params NodeCapability[] capabilities)
         {
             return new NetworkAddressWithTime
             {
                 Timestamp = timestamp,
-                EndPoint = endpoint,
-                Capabilities = capabilities.ToArray()
+                Address = address,
+                Capabilities = capabilities
             };
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Timestamp = reader.ReadUInt32();
+
+            // Address
             byte[] data = reader.ReadBytes(16);
             if (data.Length != 16) throw new FormatException();
-            IPAddress address = new IPAddress(data).Unmap();
-            data = reader.ReadBytes(2);
-            if (data.Length != 2) throw new FormatException();
-            ushort port = data.Reverse().ToArray().ToUInt16(0);
-            EndPoint = new IPEndPoint(address, port);
+            Address = new IPAddress(data).Unmap();
 
             // Capabilities
-
             Capabilities = new NodeCapability[reader.ReadVarInt(VersionPayload.MaxCapabilities)];
-
             for (int x = 0, max = Capabilities.Length; x < max; x++)
                 Capabilities[x] = NodeCapability.DeserializeFrom(reader);
+            if (Capabilities.Select(p => p.Type).Distinct().Count() != Capabilities.Length)
+                throw new FormatException();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(Timestamp);
-            writer.Write(EndPoint.Address.MapToIPv6().GetAddressBytes());
-            writer.Write(BitConverter.GetBytes((ushort)EndPoint.Port).Reverse().ToArray());
+            writer.Write(Address.MapToIPv6().GetAddressBytes());
             writer.Write(Capabilities);
         }
     }

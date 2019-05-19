@@ -99,18 +99,18 @@ namespace Neo.Ledger
                 stored_header_count += (uint)header_index.Count;
                 if (stored_header_count == 0)
                 {
-                    header_index.AddRange(store.GetBlocks().Find().OrderBy(p => p.Value.TrimmedBlock.Index).Select(p => p.Key));
+                    header_index.AddRange(store.GetBlocks().Find().OrderBy(p => p.Value.Index).Select(p => p.Key));
                 }
                 else
                 {
                     HashIndexState hashIndex = store.GetHeaderHashIndex().Get();
                     if (hashIndex.Index >= stored_header_count)
                     {
-                        DataCache<UInt256, BlockState> cache = store.GetBlocks();
+                        DataCache<UInt256, TrimmedBlock> cache = store.GetBlocks();
                         for (UInt256 hash = hashIndex.Hash; hash != header_index[(int)stored_header_count - 1];)
                         {
                             header_index.Insert((int)stored_header_count, hash);
-                            hash = cache[hash].TrimmedBlock.PrevHash;
+                            hash = cache[hash].PrevHash;
                         }
                     }
                 }
@@ -304,10 +304,7 @@ namespace Neo.Ledger
                     header_index.Add(block.Hash);
                     using (Snapshot snapshot = GetSnapshot())
                     {
-                        snapshot.Blocks.Add(block.Hash, new BlockState
-                        {
-                            TrimmedBlock = block.Header.Trim()
-                        });
+                        snapshot.Blocks.Add(block.Hash, block.Header.Trim());
                         snapshot.HeaderHashIndex.GetAndChange().Hash = block.Hash;
                         snapshot.HeaderHashIndex.GetAndChange().Index = block.Index;
                         SaveHeaderHashList(snapshot);
@@ -338,10 +335,7 @@ namespace Neo.Ledger
                     if (header.Index < header_index.Count) continue;
                     if (!header.Verify(snapshot)) break;
                     header_index.Add(header.Hash);
-                    snapshot.Blocks.Add(header.Hash, new BlockState
-                    {
-                        TrimmedBlock = header.Trim()
-                    });
+                    snapshot.Blocks.Add(header.Hash, header.Trim());
                     snapshot.HeaderHashIndex.GetAndChange().Hash = header.Hash;
                     snapshot.HeaderHashIndex.GetAndChange().Index = header.Index;
                 }
@@ -423,17 +417,13 @@ namespace Neo.Ledger
                                 sb.EmitAppCall(contract.Hash, "onPersist");
                             engine.LoadScript(sb.ToArray());
                         }
-                        engine.Execute();
-                        if (engine.State != VMState.HALT) throw new InvalidOperationException();
+                        if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
                         ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                         Context.System.EventStream.Publish(application_executed);
                         all_application_executed.Add(application_executed);
                     }
                 }
-                snapshot.Blocks.Add(block.Hash, new BlockState
-                {
-                    TrimmedBlock = block.Trim()
-                });
+                snapshot.Blocks.Add(block.Hash, block.Trim());
                 foreach (Transaction tx in block.Transactions)
                 {
                     snapshot.Transactions.Add(tx.Hash, new TransactionState
@@ -444,8 +434,7 @@ namespace Neo.Ledger
                     using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.Gas))
                     {
                         engine.LoadScript(tx.Script);
-                        engine.Execute();
-                        if (!engine.State.HasFlag(VMState.FAULT))
+                        if (!engine.Execute().HasFlag(VMState.FAULT))
                         {
                             engine.Snapshot.Commit();
                         }

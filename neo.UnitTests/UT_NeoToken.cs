@@ -253,9 +253,7 @@ namespace Neo.UnitTests
             script.EmitPush("vote");
             engine.LoadScript(script.ToArray());
 
-            engine.Execute();
-
-            if (engine.State == VMState.FAULT)
+            if (engine.Execute() == VMState.FAULT)
             {
                 return (false, false);
             }
@@ -279,9 +277,7 @@ namespace Neo.UnitTests
             script.EmitPush("registerValidator");
             engine.LoadScript(script.ToArray());
 
-            engine.Execute();
-
-            if (engine.State == VMState.FAULT)
+            if (engine.Execute() == VMState.FAULT)
             {
                 return (false, false);
             }
@@ -304,9 +300,7 @@ namespace Neo.UnitTests
             script.EmitPush("getValidators");
             engine.LoadScript(script.ToArray());
 
-            engine.Execute();
-
-            engine.State.Should().Be(VMState.HALT);
+            engine.Execute().Should().Be(VMState.HALT);
 
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Array));
@@ -328,9 +322,7 @@ namespace Neo.UnitTests
             script.EmitPush("unclaimedGas");
             engine.LoadScript(script.ToArray());
 
-            engine.Execute();
-
-            if (engine.State == VMState.FAULT)
+            if (engine.Execute() == VMState.FAULT)
             {
                 return (BigInteger.Zero, false);
             }

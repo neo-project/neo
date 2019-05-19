@@ -47,8 +47,7 @@ namespace Neo.Network.P2P
             if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
             if (LocalNode.Singleton.ListenerUdpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.UdpServer, (ushort)LocalNode.Singleton.ListenerUdpPort));
             if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
-
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities)));
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
 
         private void CheckMessageQueue()
@@ -190,10 +189,20 @@ namespace Neo.Network.P2P
         private void OnVersionPayload(VersionPayload version)
         {
             Version = version;
-            FullNodeCapability capability = (FullNodeCapability)version.Capabilities.FirstOrDefault(p => p.Type == NodeCapabilityType.FullNode);
-            IsFullNode = capability != null;
-            if (IsFullNode) LastBlockIndex = capability.StartHeight;
-
+            foreach (NodeCapability capability in version.Capabilities)
+            {
+                switch (capability)
+                {
+                    case FullNodeCapability fullNodeCapability:
+                        IsFullNode = true;
+                        LastBlockIndex = fullNodeCapability.StartHeight;
+                        break;
+                    case ServerCapability serverCapability:
+                        if (serverCapability.Type == NodeCapabilityType.TcpServer)
+                            ListenerTcpPort = serverCapability.Port;
+                        break;
+                }
+            }
             if (version.Nonce == LocalNode.Nonce || version.Magic != ProtocolSettings.Default.Magic)
             {
                 Disconnect(true);
