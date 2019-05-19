@@ -17,6 +17,13 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccounts = 15;
 
+        private bool CheckValidators(ApplicationEngine engine)
+        {
+            UInt256 prev_hash = engine.Snapshot.PersistingBlock.PrevHash;
+            TrimmedBlock prev_block = engine.Snapshot.Blocks[prev_hash];
+            return InteropService.CheckWitness(engine, prev_block.NextConsensus);
+        }
+
         protected override StackItem Main(ApplicationEngine engine, string operation, VM.Types.Array args)
         {
             switch (operation)
@@ -28,11 +35,11 @@ namespace Neo.SmartContract.Native
                 case "getBlockedAccounts":
                     return GetBlockedAccounts(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToArray();
                 case "setMaxFreeTransactionSize":
-                    return SetMaxFreeTransactionSize(engine.Snapshot, (uint)args[0].GetBigInteger());
+                    return SetMaxFreeTransactionSize(engine, (uint)args[0].GetBigInteger());
                 case "setFeePerByte":
-                    return SetFeePerByte(engine.Snapshot, (long)args[0].GetBigInteger());
+                    return SetFeePerByte(engine, (long)args[0].GetBigInteger());
                 case "blockAccount":
-                    return BlockAccount(engine.Snapshot, new UInt160(args[0].GetByteArray()));
+                    return BlockAccount(engine, new UInt160(args[0].GetByteArray()));
                 default:
                     return base.Main(engine, operation, args);
             }
@@ -56,42 +63,48 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        private uint GetMaxFreeTransactionSize(Snapshot snapshot)
+        public uint GetMaxFreeTransactionSize(Snapshot snapshot)
         {
             return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxFreeTransactionSize)].Value, 0);
         }
 
-        private long GetFeePerByte(Snapshot snapshot)
+        public long GetFeePerByte(Snapshot snapshot)
         {
             return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_FeePerByte)].Value, 0);
         }
 
-        private UInt160[] GetBlockedAccounts(Snapshot snapshot)
+        public UInt160[] GetBlockedAccounts(Snapshot snapshot)
         {
             return snapshot.Storages[CreateStorageKey(Prefix_BlockedAccounts)].Value.AsSerializableArray<UInt160>();
         }
 
-        private bool SetMaxFreeTransactionSize(Snapshot snapshot, uint value)
+        private bool SetMaxFreeTransactionSize(ApplicationEngine engine, uint value)
         {
-            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxFreeTransactionSize));
+            if (engine.Trigger != TriggerType.Application) return false;
+            if (!CheckValidators(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxFreeTransactionSize));
             storage.Value = BitConverter.GetBytes(value);
             return true;
         }
 
-        private bool SetFeePerByte(Snapshot snapshot, long value)
+        private bool SetFeePerByte(ApplicationEngine engine, long value)
         {
-            StorageItem storage = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte));
+            if (engine.Trigger != TriggerType.Application) return false;
+            if (!CheckValidators(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte));
             storage.Value = BitConverter.GetBytes(value);
             return true;
         }
 
-        private bool BlockAccount(Snapshot snapshot, UInt160 account)
+        private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
+            if (engine.Trigger != TriggerType.Application) return false;
+            if (!CheckValidators(engine)) return false;
             StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
-            StorageItem storage = snapshot.Storages[key];
+            StorageItem storage = engine.Snapshot.Storages[key];
             HashSet<UInt160> accounts = new HashSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
             if (!accounts.Add(account)) return false;
-            storage = snapshot.Storages.GetAndChange(key);
+            storage = engine.Snapshot.Storages.GetAndChange(key);
             storage.Value = accounts.ToArray().ToByteArray();
             return true;
         }
