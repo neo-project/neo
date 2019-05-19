@@ -197,10 +197,6 @@ namespace Neo.Network.P2P
                         IsFullNode = true;
                         LastBlockIndex = fullNodeCapability.StartHeight;
                         break;
-                    case ServerCapability serverCapability:
-                        if (serverCapability.Type == NodeCapabilityType.TcpServer)
-                            ListenerTcpPort = serverCapability.Port;
-                        break;
                 }
             }
             if (version.Nonce == LocalNode.Nonce || version.Magic != ProtocolSettings.Default.Magic)

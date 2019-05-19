@@ -15,6 +15,11 @@ namespace Neo.Network.P2P
         public IPEndPoint WebSocket { get; set; }
 
         /// <summary>
+        /// Udp configuration
+        /// </summary>
+        public IPEndPoint Udp { get; set; }
+
+        /// <summary>
         /// Minimum desired connections
         /// </summary>
         public int MinDesiredConnections { get; set; } = Peer.DefaultMinDesiredConnections;

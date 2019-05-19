@@ -146,7 +146,7 @@ namespace Neo.Network.P2P
         {
             ListenerTcpPort = config.Tcp?.Port ?? 0;
             ListenerWsPort = config.WebSocket?.Port ?? 0;
-            ListenerUdpPort = config.Udp == null ? 0 : config.Udp.Port;
+            ListenerUdpPort = config.Udp?.Port ?? 0;
 
             MinDesiredConnections = config.MinDesiredConnections;
             MaxConnections = config.MaxConnections;

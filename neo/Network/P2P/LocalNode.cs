@@ -175,7 +175,7 @@ namespace Neo.Network.P2P
                 .GroupBy(p => p.Remote.Address, (k, g) => g.First())
                 .OrderBy(p => rand.Next())
                 .Take(AddrPayload.MaxCountToSend)
-                .Select(p => NetworkAddressWithTime.Create(p.Listener, p.Version.Timestamp, p.Version.Capabilities))
+                .Select(p => NetworkAddressWithTime.Create(p.Listener.Address, p.Version.Timestamp, p.Version.Capabilities))
                 .ToArray();
         }
 
