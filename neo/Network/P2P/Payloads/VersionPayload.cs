@@ -1,7 +1,6 @@
 ﻿using Neo.IO;
 using Neo.Network.P2P.Capabilities;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
