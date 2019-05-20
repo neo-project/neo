@@ -17,7 +17,7 @@ namespace Neo.SmartContract
         /// <returns>Return true or false</returns>
         public bool IsAllowed(UInt160 contractHash, string method)
         {
-            if (Permissions == null) return true; // * wildcard
+            if (Permissions == null || Permissions.Length == 0) return true; // * wildcard
 
             foreach (var right in Permissions)
             {
