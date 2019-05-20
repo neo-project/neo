@@ -1,6 +1,4 @@
 ﻿using Neo.IO.Json;
-using Neo.Ledger;
-using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
@@ -14,9 +12,6 @@ namespace Neo.Wallets.NEP6
 {
     public class NEP6Wallet : Wallet
     {
-        public override event EventHandler<WalletTransactionEventArgs> WalletTransaction;
-
-        private readonly WalletIndexer indexer;
         private readonly string path;
         private string password;
         private string name;
@@ -24,15 +19,12 @@ namespace Neo.Wallets.NEP6
         public readonly ScryptParameters Scrypt;
         private readonly Dictionary<UInt160, NEP6Account> accounts;
         private readonly JObject extra;
-        private readonly Dictionary<UInt256, Transaction> unconfirmed = new Dictionary<UInt256, Transaction>();
 
         public override string Name => name;
         public override Version Version => version;
-        public override uint WalletHeight => indexer.IndexHeight;
 
-        public NEP6Wallet(WalletIndexer indexer, string path, string name = null)
+        public NEP6Wallet(string path, string name = null)
         {
-            this.indexer = indexer;
             this.path = path;
             if (File.Exists(path))
             {
@@ -46,7 +38,6 @@ namespace Neo.Wallets.NEP6
                 this.Scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
                 this.accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p, this)).ToDictionary(p => p.ScriptHash);
                 this.extra = wallet["extra"];
-                indexer.RegisterAccounts(accounts.Keys);
             }
             else
             {
@@ -56,7 +47,6 @@ namespace Neo.Wallets.NEP6
                 this.accounts = new Dictionary<UInt160, NEP6Account>();
                 this.extra = JObject.Null;
             }
-            indexer.WalletTransaction += WalletIndexer_WalletTransaction;
         }
 
         private void AddAccount(NEP6Account account, bool is_import)
@@ -84,27 +74,8 @@ namespace Neo.Wallets.NEP6
                     }
                     account.Extra = account_old.Extra;
                 }
-                else
-                {
-                    indexer.RegisterAccounts(new[] { account.ScriptHash }, is_import ? 0 : Blockchain.Singleton.Height);
-                }
                 accounts[account.ScriptHash] = account;
             }
-        }
-
-        public override void ApplyTransaction(Transaction tx)
-        {
-            lock (unconfirmed)
-            {
-                unconfirmed[tx.Hash] = tx;
-            }
-            WalletTransaction?.Invoke(this, new WalletTransactionEventArgs
-            {
-                Transaction = tx,
-                RelatedAccounts = tx.Witnesses.Select(p => p.ScriptHash).Where(p => Contains(p)).ToArray(),
-                Height = null,
-                Time = DateTime.UtcNow.ToTimestamp()
-            });
         }
 
         public override bool Contains(UInt160 scriptHash)
@@ -170,21 +141,10 @@ namespace Neo.Wallets.NEP6
 
         public override bool DeleteAccount(UInt160 scriptHash)
         {
-            bool removed;
             lock (accounts)
             {
-                removed = accounts.Remove(scriptHash);
+                return accounts.Remove(scriptHash);
             }
-            if (removed)
-            {
-                indexer.UnregisterAccounts(new[] { scriptHash });
-            }
-            return removed;
-        }
-
-        public override void Dispose()
-        {
-            indexer.WalletTransaction -= WalletIndexer_WalletTransaction;
         }
 
         public override WalletAccount GetAccount(UInt160 scriptHash)
@@ -202,17 +162,6 @@ namespace Neo.Wallets.NEP6
             {
                 foreach (NEP6Account account in accounts.Values)
                     yield return account;
-            }
-        }
-
-        public override IEnumerable<UInt256> GetTransactions()
-        {
-            foreach (UInt256 hash in indexer.GetTransactions(accounts.Keys))
-                yield return hash;
-            lock (unconfirmed)
-            {
-                foreach (UInt256 hash in unconfirmed.Keys)
-                    yield return hash;
             }
         }
 
@@ -281,20 +230,18 @@ namespace Neo.Wallets.NEP6
             password = null;
         }
 
-        public static NEP6Wallet Migrate(WalletIndexer indexer, string path, string db3path, string password)
+        public static NEP6Wallet Migrate(string path, string db3path, string password)
         {
-            using (UserWallet wallet_old = UserWallet.Open(indexer, db3path, password))
+            UserWallet wallet_old = UserWallet.Open(db3path, password);
+            NEP6Wallet wallet_new = new NEP6Wallet(path, wallet_old.Name);
+            using (wallet_new.Unlock(password))
             {
-                NEP6Wallet wallet_new = new NEP6Wallet(indexer, path, wallet_old.Name);
-                using (wallet_new.Unlock(password))
+                foreach (WalletAccount account in wallet_old.GetAccounts())
                 {
-                    foreach (WalletAccount account in wallet_old.GetAccounts())
-                    {
-                        wallet_new.CreateAccount(account.Contract, account.GetKey());
-                    }
+                    wallet_new.CreateAccount(account.Contract, account.GetKey());
                 }
-                return wallet_new;
             }
+            return wallet_new;
         }
 
         public void Save()
@@ -342,29 +289,6 @@ namespace Neo.Wallets.NEP6
                         return false;
                     }
                 }
-            }
-        }
-
-        private void WalletIndexer_WalletTransaction(object sender, WalletTransactionEventArgs e)
-        {
-            lock (unconfirmed)
-            {
-                unconfirmed.Remove(e.Transaction.Hash);
-            }
-            UInt160[] relatedAccounts;
-            lock (accounts)
-            {
-                relatedAccounts = e.RelatedAccounts.Where(p => accounts.ContainsKey(p)).ToArray();
-            }
-            if (relatedAccounts.Length > 0)
-            {
-                WalletTransaction?.Invoke(this, new WalletTransactionEventArgs
-                {
-                    Transaction = e.Transaction,
-                    RelatedAccounts = relatedAccounts,
-                    Height = e.Height,
-                    Time = e.Time
-                });
             }
         }
     }
