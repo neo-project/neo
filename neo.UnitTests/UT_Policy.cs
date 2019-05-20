@@ -196,7 +196,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void Check_BlockAccount()
+        public void Check_Block_UnblockAccount()
         {
             var snapshot = Store.GetSnapshot().Clone();
 
@@ -207,7 +207,7 @@ namespace Neo.UnitTests
 
             NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
 
-            // Without signature
+            // Block without signature
 
             var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(new UInt160[] { }),
                 "blockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
@@ -218,7 +218,7 @@ namespace Neo.UnitTests
             ret.Should().BeOfType<VM.Types.Array>();
             ((VM.Types.Array)ret).Count.Should().Be(0);
 
-            // With signature
+            // Block with signature
 
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(new UInt160[] { UInt160.Zero }),
                 "blockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
@@ -229,6 +229,29 @@ namespace Neo.UnitTests
             ret.Should().BeOfType<VM.Types.Array>();
             ((VM.Types.Array)ret).Count.Should().Be(1);
             ((VM.Types.Array)ret)[0].GetByteArray().ShouldBeEquivalentTo(UInt160.Zero.ToArray());
+            
+            // Unblock without signature
+
+            var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(new UInt160[] { }),
+                "unblockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeFalse();
+
+            ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
+            ret.Should().BeOfType<VM.Types.Array>();
+            ((VM.Types.Array)ret).Count.Should().Be(1);
+            ((VM.Types.Array)ret)[0].GetByteArray().ShouldBeEquivalentTo(UInt160.Zero.ToArray());
+
+            // Unblock with signature
+
+            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(new UInt160[] { UInt160.Zero }),
+                "unblockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeTrue();
+
+            ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
+            ret.Should().BeOfType<VM.Types.Array>();
+            ((VM.Types.Array)ret).Count.Should().Be(0);
         }
     }
 }
