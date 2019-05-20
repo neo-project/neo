@@ -266,7 +266,7 @@ namespace Neo.Wallets
             }
             attributes.AddRange(sAttributes.Select(p => new TransactionAttribute
             {
-                Usage = TransactionAttributeUsage.Script,
+                Usage = TransactionAttributeUsage.Cosigner,
                 Data = p.ToArray()
             }));
             Transaction tx = new Transaction

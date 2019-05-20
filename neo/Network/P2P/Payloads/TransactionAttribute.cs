@@ -14,7 +14,7 @@ namespace Neo.Network.P2P.Payloads
         {
             get
             {
-                if (Usage == TransactionAttributeUsage.Script)
+                if (Usage == TransactionAttributeUsage.Cosigner)
                     return sizeof(TransactionAttributeUsage) + 20;
                 else
                     return sizeof(TransactionAttributeUsage) + Data.GetVarSize();
@@ -24,7 +24,7 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Usage = (TransactionAttributeUsage)reader.ReadByte();
-            if (Usage == TransactionAttributeUsage.Script)
+            if (Usage == TransactionAttributeUsage.Cosigner)
                 Data = reader.ReadBytes(20);
             else if (Usage == TransactionAttributeUsage.Url)
                 Data = reader.ReadVarBytes(252);
@@ -35,7 +35,7 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Usage);
-            if (Usage == TransactionAttributeUsage.Script)
+            if (Usage == TransactionAttributeUsage.Cosigner)
                 writer.Write(Data);
             else
                 writer.WriteVarBytes(Data);
