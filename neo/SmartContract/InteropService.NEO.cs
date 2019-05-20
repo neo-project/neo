@@ -2,6 +2,7 @@
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Attributes;
 using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Native;
@@ -47,9 +48,9 @@ namespace Neo.SmartContract
                 Register(contract.ServiceName, contract.Invoke);
         }
 
+        [AllowedTrigger(TriggerType.Application)]
         private static bool Native_Deploy(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.Application) return false;
             if (engine.Snapshot.PersistingBlock.Index != 0) return false;
             foreach (NativeContract contract in NativeContract.Contracts)
             {
@@ -63,6 +64,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Crypto_CheckSig(ApplicationEngine engine)
         {
             byte[] pubkey = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
@@ -79,6 +81,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Crypto_CheckMultiSig(ApplicationEngine engine)
         {
             int n;
@@ -138,6 +141,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Header_GetVersion(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -150,6 +154,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Header_GetMerkleRoot(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -162,6 +167,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Header_GetNextConsensus(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -174,6 +180,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Transaction_GetWitnesses(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -188,6 +195,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Transaction_GetScript(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -200,6 +208,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Witness_GetVerificationScript(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -212,6 +221,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Account_IsStandard(ApplicationEngine engine)
         {
             UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
@@ -221,9 +231,9 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application)]
         private static bool Contract_Create(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.Application) return false;
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
             ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
@@ -242,9 +252,9 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application)]
         private static bool Contract_Migrate(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.Application) return false;
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
             ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
@@ -278,6 +288,7 @@ namespace Neo.SmartContract
             return Contract_Destroy(engine);
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Contract_GetScript(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -290,6 +301,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Contract_IsPayable(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -302,6 +314,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Storage_Find(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -332,6 +345,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Enumerator_Create(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is VMArray array)
@@ -343,6 +357,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Enumerator_Next(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -354,6 +369,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Enumerator_Value(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -365,6 +381,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Enumerator_Concat(ApplicationEngine engine)
         {
             if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface1)) return false;
@@ -376,6 +393,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Iterator_Create(ApplicationEngine engine)
         {
             IIterator iterator;
@@ -394,6 +412,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Iterator_Key(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -405,6 +424,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Iterator_Keys(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -416,6 +436,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Iterator_Values(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -427,6 +448,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Iterator_Concat(ApplicationEngine engine)
         {
             if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface1)) return false;

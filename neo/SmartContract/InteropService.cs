@@ -5,6 +5,7 @@ using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Attributes;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -18,7 +19,9 @@ namespace Neo.SmartContract
 {
     public static partial class InteropService
     {
-        private static readonly Dictionary<uint, Func<ApplicationEngine, bool>> methods = new Dictionary<uint, Func<ApplicationEngine, bool>>();
+        private static readonly Dictionary<uint, Func<ApplicationEngine, bool>> applicationMethods = new Dictionary<uint, Func<ApplicationEngine, bool>>();
+        private static readonly Dictionary<uint, Func<ApplicationEngine, bool>> verificationMethods = new Dictionary<uint, Func<ApplicationEngine, bool>>();
+        private static readonly Dictionary<uint, Func<ApplicationEngine, bool>> systemMethods = new Dictionary<uint, Func<ApplicationEngine, bool>>();
         private static readonly Dictionary<uint, long> prices = new Dictionary<uint, long>();
 
         public static readonly uint System_ExecutionEngine_GetScriptContainer = Register("System.ExecutionEngine.GetScriptContainer", ExecutionEngine_GetScriptContainer, 1);
@@ -74,15 +77,52 @@ namespace Neo.SmartContract
 
         internal static bool Invoke(ApplicationEngine engine, uint method)
         {
-            if (!methods.TryGetValue(method, out Func<ApplicationEngine, bool> func))
-                return false;
+            Func<ApplicationEngine, bool> func;
+
+            switch (engine.Trigger)
+            {
+                case TriggerType.Application:
+                    {
+                        if (!applicationMethods.TryGetValue(method, out func)) return false;
+                        break;
+                    }
+                case TriggerType.Verification:
+                    {
+                        if (!verificationMethods.TryGetValue(method, out func)) return false;
+                        break;
+                    }
+                case TriggerType.System:
+                    {
+                        if (!systemMethods.TryGetValue(method, out func)) return false;
+                        break;
+                    }
+                default: return false;
+            }
+
             return func(engine);
         }
 
         private static uint Register(string method, Func<ApplicationEngine, bool> handler)
         {
             uint hash = method.ToInteropMethodHash();
-            methods.Add(hash, handler);
+
+            var attr = handler.Method.GetCustomAttributes(typeof(AllowedTriggerAttribute), true).Cast<AllowedTriggerAttribute>().FirstOrDefault();
+            if (attr != null)
+            {
+                if (attr.AllowedTypes.Contains(TriggerType.Application))
+                {
+                    applicationMethods.Add(hash, handler);
+                }
+                if (attr.AllowedTypes.Contains(TriggerType.Verification))
+                {
+                    verificationMethods.Add(hash, handler);
+                }
+                if (attr.AllowedTypes.Contains(TriggerType.System))
+                {
+                    systemMethods.Add(hash, handler);
+                }
+            }
+
             return hash;
         }
 
@@ -93,36 +133,42 @@ namespace Neo.SmartContract
             return hash;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool ExecutionEngine_GetScriptContainer(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(engine.ScriptContainer));
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool ExecutionEngine_GetExecutingScriptHash(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(engine.CurrentScriptHash.ToArray());
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool ExecutionEngine_GetCallingScriptHash(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(engine.CallingScriptHash?.ToArray() ?? new byte[0]);
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool ExecutionEngine_GetEntryScriptHash(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(engine.EntryScriptHash.ToArray());
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Runtime_Platform(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(Encoding.ASCII.GetBytes("NEO"));
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Runtime_GetTrigger(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push((int)engine.Trigger);
@@ -140,6 +186,7 @@ namespace Neo.SmartContract
             return CheckWitness(engine, Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash());
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Runtime_CheckWitness(ApplicationEngine engine)
         {
             byte[] hashOrPubkey = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
@@ -154,12 +201,14 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Runtime_Notify(ApplicationEngine engine)
         {
             engine.SendNotification(engine.CurrentScriptHash, engine.CurrentContext.EvaluationStack.Pop());
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Runtime_Log(ApplicationEngine engine)
         {
             string message = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
@@ -167,6 +216,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Runtime_GetTime(ApplicationEngine engine)
         {
             if (engine.Snapshot.PersistingBlock == null)
@@ -181,6 +231,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Runtime_Serialize(ApplicationEngine engine)
         {
             byte[] serialized;
@@ -198,6 +249,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Runtime_Deserialize(ApplicationEngine engine)
         {
             StackItem item;
@@ -217,6 +269,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Crypto_Verify(ApplicationEngine engine)
         {
             StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
@@ -234,12 +287,14 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Blockchain_GetHeight(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(engine.Snapshot.Height);
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Blockchain_GetHeader(ApplicationEngine engine)
         {
             byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
@@ -262,6 +317,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Blockchain_GetBlock(ApplicationEngine engine)
         {
             byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
@@ -284,6 +340,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Blockchain_GetTransaction(ApplicationEngine engine)
         {
             byte[] hash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
@@ -292,6 +349,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Blockchain_GetTransactionHeight(ApplicationEngine engine)
         {
             byte[] hash = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
@@ -300,6 +358,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Blockchain_GetContract(ApplicationEngine engine)
         {
             UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
@@ -311,6 +370,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Header_GetIndex(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -323,6 +383,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Header_GetHash(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -335,6 +396,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Header_GetPrevHash(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -347,6 +409,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Header_GetTimestamp(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -359,6 +422,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Block_GetTransactionCount(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -371,6 +435,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Block_GetTransactions(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -385,6 +450,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Block_GetTransaction(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -400,6 +466,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Transaction_GetHash(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -412,6 +479,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Storage_GetContext(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
@@ -422,6 +490,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Storage_GetReadOnlyContext(ApplicationEngine engine)
         {
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
@@ -432,6 +501,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Storage_Get(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -450,6 +520,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool StorageContext_AsReadOnly(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -467,6 +538,7 @@ namespace Neo.SmartContract
             return false;
         }
 
+        [AllowedTrigger(TriggerType.Application, TriggerType.Verification, TriggerType.System)]
         private static bool Contract_Call(ApplicationEngine engine)
         {
             StackItem item0 = engine.CurrentContext.EvaluationStack.Pop();
@@ -484,9 +556,9 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application)]
         private static bool Contract_Destroy(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.Application) return false;
             UInt160 hash = engine.CurrentScriptHash;
             ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
             if (contract == null) return true;
@@ -499,7 +571,6 @@ namespace Neo.SmartContract
 
         private static bool PutEx(ApplicationEngine engine, StorageContext context, byte[] key, byte[] value, StorageFlags flags)
         {
-            if (engine.Trigger != TriggerType.Application) return false;
             if (key.Length > 1024) return false;
             if (context.IsReadOnly) return false;
             if (!CheckStorageContext(engine, context)) return false;
@@ -515,6 +586,7 @@ namespace Neo.SmartContract
             return true;
         }
 
+        [AllowedTrigger(TriggerType.Application)]
         private static bool Storage_Put(ApplicationEngine engine)
         {
             if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface))
@@ -525,6 +597,7 @@ namespace Neo.SmartContract
             return PutEx(engine, context, key, value, StorageFlags.None);
         }
 
+        [AllowedTrigger(TriggerType.Application)]
         private static bool Storage_PutEx(ApplicationEngine engine)
         {
             if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface))
@@ -536,9 +609,9 @@ namespace Neo.SmartContract
             return PutEx(engine, context, key, value, flags);
         }
 
+        [AllowedTrigger(TriggerType.Application)]
         private static bool Storage_Delete(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.Application) return false;
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
                 StorageContext context = _interface.GetInterface<StorageContext>();
