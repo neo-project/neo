@@ -1,4 +1,7 @@
-﻿namespace Neo.SmartContract
+﻿using System;
+using System.Linq;
+
+namespace Neo.SmartContract
 {
     /// <summary>
     /// The permissions field is an array containing a set of Permission objects. It describes which contracts may be invoked and which methods are called.
@@ -16,5 +19,23 @@
         /// If a contract invokes a contract or method that is not declared in the manifest at runtime, the invocation will fail.
         /// </summary>
         public string[] Methods { get; set; }
+
+        /// <summary>
+        /// Return true if is allowed
+        /// </summary>
+        /// <param name="contractHash">Contract hash</param>
+        /// <param name="method">Method</param>
+        /// <returns>Return true or false</returns>
+        public bool IsAllowed(UInt160 contractHash, string method)
+        {
+            if (!Contract.Equals(contractHash))
+            {
+                // * wildcard
+
+                if (Contract != UInt160.Zero) return false;
+            }
+
+            return Methods == null || Methods.Contains(method);
+        }
     }
 }
