@@ -1,4 +1,5 @@
-﻿using Neo.SmartContract;
+﻿using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
@@ -7,14 +8,23 @@ namespace Neo.UnitTests.Extensions
 {
     public static class NativeContractExtensions
     {
-        public static StackItem Call(this NativeContract contract, Persistence.Snapshot snapshot, string method)
+        public static StackItem Call(this NativeContract contract, Persistence.Snapshot snapshot, string method, params ContractParameter[] args)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            return Call(contract, snapshot, null, method, args);
+        }
+
+        public static StackItem Call(this NativeContract contract, Persistence.Snapshot snapshot, IVerifiable container, string method, params ContractParameter[] args)
+        {
+            var engine = new ApplicationEngine(TriggerType.Application, container, snapshot, 0, true);
 
             engine.LoadScript(contract.Script);
 
             var script = new ScriptBuilder();
-            script.EmitPush(0);
+
+            for (var i = args.Length - 1; i >= 0; i--)
+                script.EmitPush(args[i]);
+
+            script.EmitPush(args.Length);
             script.Emit(OpCode.PACK);
             script.EmitPush(method);
             engine.LoadScript(script.ToArray());
