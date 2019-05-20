@@ -1,4 +1,6 @@
-﻿namespace Neo.SmartContract
+﻿using Neo.Cryptography;
+
+namespace Neo.SmartContract
 {
     /// <summary>
     /// A group represents a set of mutually trusted contracts. A contract will trust and allow any contract in the same group to invoke it, and the user interface will not give any warnings.
@@ -16,5 +18,15 @@
         /// Signature is the signature of the contract hash.
         /// </summary>
         public byte[] Signature { get; set; }
+
+        /// <summary>
+        /// Return true if the signature is valid
+        /// </summary>
+        /// <param name="contractHash">Contract Hash</param>
+        /// <returns>Return true or false</returns>
+        public bool IsValid(UInt160 contractHash)
+        {
+            return Crypto.Default.VerifySignature(contractHash.ToArray(), Signature, PubKey.ToArray());
+        }
     }
 }
