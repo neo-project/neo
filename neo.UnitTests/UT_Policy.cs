@@ -232,7 +232,7 @@ namespace Neo.UnitTests
             
             // Unblock without signature
 
-            var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(new UInt160[] { }),
+            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(new UInt160[] { }),
                 "unblockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeFalse();
