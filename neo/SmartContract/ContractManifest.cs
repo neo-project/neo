@@ -1,9 +1,11 @@
 ﻿using Neo.Ledger;
+using System.Linq;
 
 namespace Neo.SmartContract
 {
     public class ContractManifest
     {
+        public UInt160 Hash { get; set; }
         public ContractManifestGroup Group { get; set; }
         public ContractPropertyState Features { get; set; }
         public ContractAbi Abi { get; set; }
@@ -14,19 +16,32 @@ namespace Neo.SmartContract
         /// <summary>
         /// Return true if is allowed
         /// </summary>
-        /// <param name="contractHash">Contract hash</param>
+        /// <param name="manifest">Manifest</param>
         /// <param name="method">Method</param>
         /// <returns>Return true or false</returns>
-        public bool IsAllowed(UInt160 contractHash, string method)
+        public bool CanCall(ContractManifest manifest, string method)
         {
-            if (Permissions == null || Permissions.Length == 0) return true; // * wildcard
-
-            foreach (var right in Permissions)
+            if (Group != null && manifest.Group != null && manifest.Group.PubKey.Equals(Group.PubKey))
             {
-                if (right.IsAllowed(contractHash, method)) return true;
+                // Same group
+
+                return true;
             }
 
-            // TODO: Read Contract manifest group from `contractHash`
+            if (manifest.Trusts != null && manifest.Trusts.Contains(Hash))
+            {
+                // null == * wildcard
+                // You don't have rights in the contract
+
+                return false;
+            }
+
+            if (Permissions == null || Permissions.Any(u => u.IsAllowed(manifest.Hash, method)))
+            {
+                // null == * wildcard
+
+                return true;
+            }
 
             return false;
         }
