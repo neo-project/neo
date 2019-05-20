@@ -36,14 +36,9 @@ namespace Neo.SmartContract
                 return false;
             }
 
-            if (Permissions == null || Permissions.Any(u => u.IsAllowed(manifest.Hash, method)))
-            {
-                // null == * wildcard
+            // null == * wildcard
 
-                return true;
-            }
-
-            return false;
+            return Permissions == null || Permissions.Any(u => u.IsAllowed(manifest.Hash, method));
         }
     }
 }
