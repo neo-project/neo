@@ -3,6 +3,10 @@ using System.Linq;
 
 namespace Neo.SmartContract
 {
+    /// <summary>
+    /// When a smart contract is deployed, it must explicitly declare the features and permissions it will use.
+    /// When it is running, it will be limited by its declared list of features and permissions, and cannot make any behavior beyond the scope of the list.
+    /// </summary>
     public class ContractManifest
     {
         /// <summary>
