@@ -16,6 +16,7 @@ namespace Neo.SmartContract.Native
         public static IReadOnlyCollection<NativeContract> Contracts { get; } = contracts;
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
+        public static PolicyContract Policy { get; } = new PolicyContract();
 
         public abstract string ServiceName { get; }
         public uint ServiceHash { get; }

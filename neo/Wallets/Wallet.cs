@@ -51,7 +51,7 @@ namespace Neo.Wallets
 
         public void FillTransaction(Transaction tx, UInt160 sender = null)
         {
-            tx.CalculateGas();
+            tx.CalculateFees();
             UInt160[] accounts = sender is null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { sender };
             BigInteger fee = tx.Gas + tx.NetworkFee;
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
@@ -221,7 +221,7 @@ namespace Neo.Wallets
             return account;
         }
 
-        public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null, long net_fee = 0)
+        public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null)
         {
             if (attributes == null) attributes = new List<TransactionAttribute>();
             var output_groups = outputs.GroupBy(p => p.AssetId);
@@ -272,12 +272,11 @@ namespace Neo.Wallets
             Transaction tx = new Transaction
             {
                 Script = script,
-                NetworkFee = net_fee,
                 Attributes = attributes.ToArray()
             };
             try
             {
-                tx.CalculateGas();
+                tx.CalculateFees();
             }
             catch (InvalidOperationException)
             {

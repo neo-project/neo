@@ -1,6 +1,7 @@
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -51,8 +52,6 @@ namespace Neo.Network.P2P.Payloads
 
         InventoryType IInventory.InventoryType => InventoryType.TX;
 
-        public bool IsLowPriority => NetworkFee < ProtocolSettings.Default.LowPriorityThreshold;
-
         public int Size =>
             sizeof(byte) +              //Version
             Script.GetVarSize() +       //Script
@@ -62,7 +61,7 @@ namespace Neo.Network.P2P.Payloads
             Attributes.GetVarSize() +   //Attributes
             Witnesses.GetVarSize();     //Witnesses
 
-        public void CalculateGas()
+        public void CalculateFees()
         {
             if (Sender is null) Sender = UInt160.Zero;
             if (Attributes is null) Attributes = new TransactionAttribute[0];
@@ -90,6 +89,13 @@ namespace Neo.Network.P2P.Payloads
                     Gas += d - remainder;
                 else
                     Gas -= remainder;
+            }
+            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+            {
+                long feeperbyte = NativeContract.Policy.GetFeePerByte(snapshot);
+                long fee = feeperbyte * Size;
+                if (fee > NetworkFee)
+                    NetworkFee = fee;
             }
         }
 
@@ -179,7 +185,12 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
         {
-            if (Size > MaxTransactionSize) return false;
+            int size = Size;
+            if (size > MaxTransactionSize) return false;
+            if (size > NativeContract.Policy.GetMaxLowPriorityTransactionSize(snapshot) && NetworkFee / size < NativeContract.Policy.GetFeePerByte(snapshot))
+                return false;
+            if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(GetScriptHashesForVerifying(snapshot)).Count() > 0)
+                return false;
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
             BigInteger fee = Gas + NetworkFee;
             if (balance < fee) return false;

@@ -115,9 +115,14 @@ namespace Neo.Ledger
                     }
                 }
                 if (header_index.Count == 0)
+                {
                     Persist(GenesisBlock);
+                }
                 else
+                {
                     UpdateCurrentSnapshot();
+                    MemPool.LoadPolicy(currentSnapshot);
+                }
                 singleton = this;
             }
         }
