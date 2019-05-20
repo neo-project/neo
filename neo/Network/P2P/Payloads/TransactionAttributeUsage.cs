@@ -2,7 +2,7 @@
 {
     public enum TransactionAttributeUsage : byte
     {
-        Script = 0x20,
+        Cosigner = 0x20,
         Url = 0x81
     }
 }
