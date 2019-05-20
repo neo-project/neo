@@ -13,7 +13,7 @@
         /// <summary>
         /// Entrypoint is a Method object which describe the details of the entrypoint of the contract.
         /// </summary>
-        public string EntryPoint { get; set; }
+        public ContractMethodWithReturnDefinition EntryPoint { get; set; }
 
         /// <summary>
         /// Methods is an array of Method objects which describe the details of each method in the contract.

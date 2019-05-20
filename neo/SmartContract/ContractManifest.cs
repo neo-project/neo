@@ -1,9 +1,11 @@
-﻿namespace Neo.SmartContract
+﻿using Neo.Ledger;
+
+namespace Neo.SmartContract
 {
     public class ContractManifest
     {
         public ContractManifestGroup Group { get; set; }
-        public ContractManifestFeatures Features { get; } = new ContractManifestFeatures();
+        public ContractPropertyState Features { get; set; }
         public ContractAbi Abi { get; set; }
         public ContractPermission[] Permissions { get; set; }
 
@@ -21,6 +23,8 @@
             {
                 if (right.IsAllowed(contractHash, method)) return true;
             }
+
+            // TODO: Read Contract manifest group from `contractHash`
 
             return false;
         }
