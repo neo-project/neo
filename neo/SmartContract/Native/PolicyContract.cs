@@ -50,6 +50,8 @@ namespace Neo.SmartContract.Native
                     return SetFeePerByte(engine, (long)args[0].GetBigInteger());
                 case "blockAccount":
                     return BlockAccount(engine, new UInt160(args[0].GetByteArray()));
+                case "unblockAccount":
+                    return UnblockAccount(engine, new UInt160(args[0].GetByteArray()));
                 default:
                     return base.Main(engine, operation, args);
             }
@@ -150,6 +152,19 @@ namespace Neo.SmartContract.Native
             StorageItem storage = engine.Snapshot.Storages[key];
             HashSet<UInt160> accounts = new HashSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
             if (!accounts.Add(account)) return false;
+            storage = engine.Snapshot.Storages.GetAndChange(key);
+            storage.Value = accounts.ToArray().ToByteArray();
+            return true;
+        }
+
+        private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
+        {
+            if (engine.Trigger != TriggerType.Application) return false;
+            if (!CheckValidators(engine)) return false;
+            StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
+            StorageItem storage = engine.Snapshot.Storages[key];
+            HashSet<UInt160> accounts = new HashSet<UInt160>(storage.Value.AsSerializableArray<UInt160>());
+            if (!accounts.Remove(account)) return false;
             storage = engine.Snapshot.Storages.GetAndChange(key);
             storage.Value = accounts.ToArray().ToByteArray();
             return true;
