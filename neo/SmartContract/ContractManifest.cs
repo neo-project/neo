@@ -8,6 +8,8 @@ namespace Neo.SmartContract
         public ContractPropertyState Features { get; set; }
         public ContractAbi Abi { get; set; }
         public ContractPermission[] Permissions { get; set; }
+        public UInt160[] Trusts { get; set; }
+        public string[] SafeMethods { get; set; }
 
         /// <summary>
         /// Return true if is allowed
