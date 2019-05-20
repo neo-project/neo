@@ -1,8 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.Ledger;
-using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
@@ -16,18 +14,13 @@ namespace Neo.Wallets.SQLite
 {
     public class UserWallet : Wallet
     {
-        public override event EventHandler<WalletTransactionEventArgs> WalletTransaction;
-
         private readonly object db_lock = new object();
-        private readonly WalletIndexer indexer;
         private readonly string path;
         private readonly byte[] iv;
         private readonly byte[] masterKey;
         private readonly Dictionary<UInt160, UserWalletAccount> accounts;
-        private readonly Dictionary<UInt256, Transaction> unconfirmed = new Dictionary<UInt256, Transaction>();
 
         public override string Name => Path.GetFileNameWithoutExtension(path);
-        public override uint WalletHeight => indexer.IndexHeight;
 
         public override Version Version
         {
@@ -43,9 +36,8 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        private UserWallet(WalletIndexer indexer, string path, byte[] passwordKey, bool create)
+        private UserWallet(string path, byte[] passwordKey, bool create)
         {
-            this.indexer = indexer;
             this.path = path;
             if (create)
             {
@@ -72,9 +64,7 @@ namespace Neo.Wallets.SQLite
                 this.iv = LoadStoredData("IV");
                 this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
                 this.accounts = LoadAccounts();
-                indexer.RegisterAccounts(accounts.Keys);
             }
-            indexer.WalletTransaction += WalletIndexer_WalletTransaction;
         }
 
         private void AddAccount(UserWalletAccount account, bool is_import)
@@ -87,10 +77,6 @@ namespace Neo.Wallets.SQLite
                     {
                         account.Contract = account_old.Contract;
                     }
-                }
-                else
-                {
-                    indexer.RegisterAccounts(new[] { account.ScriptHash }, is_import ? 0 : Blockchain.Singleton.Height);
                 }
                 accounts[account.ScriptHash] = account;
             }
@@ -150,21 +136,6 @@ namespace Neo.Wallets.SQLite
                 }
         }
 
-        public override void ApplyTransaction(Transaction tx)
-        {
-            lock (unconfirmed)
-            {
-                unconfirmed[tx.Hash] = tx;
-            }
-            WalletTransaction?.Invoke(this, new WalletTransactionEventArgs
-            {
-                Transaction = tx,
-                RelatedAccounts = tx.Witnesses.Select(p => p.ScriptHash).Where(p => Contains(p)).ToArray(),
-                Height = null,
-                Time = DateTime.UtcNow.ToTimestamp()
-            });
-        }
-
         private void BuildDatabase()
         {
             using (WalletDataContext ctx = new WalletDataContext(path))
@@ -198,14 +169,14 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        public static UserWallet Create(WalletIndexer indexer, string path, string password)
+        public static UserWallet Create(string path, string password)
         {
-            return new UserWallet(indexer, path, password.ToAesKey(), true);
+            return new UserWallet(path, password.ToAesKey(), true);
         }
 
-        public static UserWallet Create(WalletIndexer indexer, string path, SecureString password)
+        public static UserWallet Create(string path, SecureString password)
         {
-            return new UserWallet(indexer, path, password.ToAesKey(), true);
+            return new UserWallet(path, password.ToAesKey(), true);
         }
 
         public override WalletAccount CreateAccount(byte[] privateKey)
@@ -269,7 +240,6 @@ namespace Neo.Wallets.SQLite
             }
             if (account != null)
             {
-                indexer.UnregisterAccounts(new[] { scriptHash });
                 lock (db_lock)
                     using (WalletDataContext ctx = new WalletDataContext(path))
                     {
@@ -295,11 +265,6 @@ namespace Neo.Wallets.SQLite
             return false;
         }
 
-        public override void Dispose()
-        {
-            indexer.WalletTransaction -= WalletIndexer_WalletTransaction;
-        }
-
         private byte[] EncryptPrivateKey(byte[] decryptedPrivateKey)
         {
             return decryptedPrivateKey.AesEncrypt(masterKey, iv);
@@ -320,17 +285,6 @@ namespace Neo.Wallets.SQLite
             {
                 foreach (UserWalletAccount account in accounts.Values)
                     yield return account;
-            }
-        }
-
-        public override IEnumerable<UInt256> GetTransactions()
-        {
-            foreach (UInt256 hash in indexer.GetTransactions(accounts.Keys))
-                yield return hash;
-            lock (unconfirmed)
-            {
-                foreach (UInt256 hash in unconfirmed.Keys)
-                    yield return hash;
             }
         }
 
@@ -358,14 +312,14 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        public static UserWallet Open(WalletIndexer indexer, string path, string password)
+        public static UserWallet Open(string path, string password)
         {
-            return new UserWallet(indexer, path, password.ToAesKey(), false);
+            return new UserWallet(path, password.ToAesKey(), false);
         }
 
-        public static UserWallet Open(WalletIndexer indexer, string path, SecureString password)
+        public static UserWallet Open(string path, SecureString password)
         {
-            return new UserWallet(indexer, path, password.ToAesKey(), false);
+            return new UserWallet(path, password.ToAesKey(), false);
         }
 
         private void SaveStoredData(string name, byte[] value)
@@ -398,29 +352,6 @@ namespace Neo.Wallets.SQLite
         public override bool VerifyPassword(string password)
         {
             return password.ToAesKey().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
-        }
-
-        private void WalletIndexer_WalletTransaction(object sender, WalletTransactionEventArgs e)
-        {
-            lock (unconfirmed)
-            {
-                unconfirmed.Remove(e.Transaction.Hash);
-            }
-            UInt160[] relatedAccounts;
-            lock (accounts)
-            {
-                relatedAccounts = e.RelatedAccounts.Where(p => accounts.ContainsKey(p)).ToArray();
-            }
-            if (relatedAccounts.Length > 0)
-            {
-                WalletTransaction?.Invoke(this, new WalletTransactionEventArgs
-                {
-                    Transaction = e.Transaction,
-                    RelatedAccounts = relatedAccounts,
-                    Height = e.Height,
-                    Time = e.Time
-                });
-            }
         }
     }
 }
