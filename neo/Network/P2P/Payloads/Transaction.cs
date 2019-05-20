@@ -143,7 +143,7 @@ namespace Neo.Network.P2P.Payloads
         public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
         {
             HashSet<UInt160> hashes = new HashSet<UInt160> { Sender };
-            hashes.UnionWith(Attributes.Where(p => p.Usage == TransactionAttributeUsage.Script).Select(p => new UInt160(p.Data)));
+            hashes.UnionWith(Attributes.Where(p => p.Usage == TransactionAttributeUsage.Cosigner).Select(p => new UInt160(p.Data)));
             return hashes.OrderBy(p => p).ToArray();
         }
 

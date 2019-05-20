@@ -16,17 +16,13 @@ using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Wallets
 {
-    public abstract class Wallet : IDisposable
+    public abstract class Wallet
     {
-        public abstract event EventHandler<WalletTransactionEventArgs> WalletTransaction;
-
         private static readonly Random rand = new Random();
 
         public abstract string Name { get; }
         public abstract Version Version { get; }
-        public abstract uint WalletHeight { get; }
 
-        public abstract void ApplyTransaction(Transaction tx);
         public abstract bool Contains(UInt160 scriptHash);
         public abstract WalletAccount CreateAccount(byte[] privateKey);
         public abstract WalletAccount CreateAccount(Contract contract, KeyPair key = null);
@@ -34,7 +30,6 @@ namespace Neo.Wallets
         public abstract bool DeleteAccount(UInt160 scriptHash);
         public abstract WalletAccount GetAccount(UInt160 scriptHash);
         public abstract IEnumerable<WalletAccount> GetAccounts();
-        public abstract IEnumerable<UInt256> GetTransactions();
 
         public WalletAccount CreateAccount()
         {
@@ -52,10 +47,6 @@ namespace Neo.Wallets
         {
             if (privateKey == null) return CreateAccount(contract);
             return CreateAccount(contract, new KeyPair(privateKey));
-        }
-
-        public virtual void Dispose()
-        {
         }
 
         public void FillTransaction(Transaction tx, UInt160 sender = null)
@@ -275,7 +266,7 @@ namespace Neo.Wallets
             }
             attributes.AddRange(sAttributes.Select(p => new TransactionAttribute
             {
-                Usage = TransactionAttributeUsage.Script,
+                Usage = TransactionAttributeUsage.Cosigner,
                 Data = p.ToArray()
             }));
             Transaction tx = new Transaction
