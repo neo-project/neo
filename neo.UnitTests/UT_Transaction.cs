@@ -60,7 +60,7 @@ namespace Neo.UnitTests
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
             uut.Script.GetVarSize().Should().Be(33);
-            uut.Size.Should().Be(72);
+            uut.Size.Should().Be(80);
         }
 
         [TestMethod]
@@ -74,8 +74,8 @@ namespace Neo.UnitTests
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["txid"].AsString().Should().Be("0x4ab5a033d7dfb79b42315d29cc106b5fcc3604b70f4fa2e98dae06e3decc245e");
-            jObj["size"].AsNumber().Should().Be(72);
+            jObj["txid"].AsString().Should().Be("0x38274692538dfecaae36f8fd518d92bae25607d491c40a8f927cc06bd97ab2c8");
+            jObj["size"].AsNumber().Should().Be(80);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
             jObj["net_fee"].AsString().Should().Be("0");

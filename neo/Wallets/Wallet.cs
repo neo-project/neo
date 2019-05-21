@@ -51,6 +51,11 @@ namespace Neo.Wallets
 
         public void FillTransaction(Transaction tx, UInt160 sender = null)
         {
+            if (tx.Nonce == 0)
+                tx.Nonce = (uint)rand.Next();
+            if (tx.ValidUntilBlock == 0)
+                using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                    tx.ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement;
             tx.CalculateFees();
             UInt160[] accounts = sender is null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { sender };
             BigInteger fee = tx.Gas + tx.NetworkFee;
@@ -259,9 +264,6 @@ namespace Neo.Wallets
                     if (group.Key.Equals(NativeContract.GAS.Hash))
                         balances_gas = balances;
                 }
-                byte[] nonce = new byte[8];
-                rand.NextBytes(nonce);
-                sb.Emit(OpCode.RET, nonce);
                 script = sb.ToArray();
             }
             attributes.AddRange(sAttributes.Select(p => new TransactionAttribute

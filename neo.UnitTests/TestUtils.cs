@@ -57,7 +57,7 @@ namespace Neo.UnitTests
         private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal)
         {
             bb.PrevHash = val256;
-            merkRootVal = new UInt256(new byte[] { 85, 15, 137, 214, 4, 56, 169, 237, 207, 165, 210, 86, 200, 243, 244, 58, 41, 141, 205, 167, 102, 164, 244, 100, 123, 192, 245, 38, 155, 47, 226, 103 });
+            merkRootVal = new UInt256(new byte[] { 242, 128, 130, 9, 63, 13, 149, 96, 141, 161, 52, 196, 148, 141, 241, 126, 172, 102, 108, 194, 91, 50, 128, 91, 64, 116, 127, 40, 58, 171, 158, 197 });
             bb.MerkleRoot = merkRootVal;
             timestampVal = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp();
             bb.Timestamp = timestampVal;
