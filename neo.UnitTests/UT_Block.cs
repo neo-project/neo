@@ -63,9 +63,9 @@ namespace Neo.UnitTests
             Witness scriptVal;
             Transaction[] transactionsVal;
             TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal, out transactionsVal, 0);
-            // blockbase 4 + 32 + 32 + 4 + 4 + 20 + 1 + 3
+            // blockbase 4 + 32 + 32 + 4 + 4 + 20 + 3
             // block 9 + 1
-            uut.Size.Should().Be(110);
+            uut.Size.Should().Be(109);
         }
 
         [TestMethod]
@@ -103,7 +103,7 @@ namespace Neo.UnitTests
                 TestUtils.GetTransaction()
             };
 
-            uut.Size.Should().Be(257);
+            uut.Size.Should().Be(259);
         }
 
         [TestMethod]
@@ -127,7 +127,7 @@ namespace Neo.UnitTests
                 }
             }
 
-            byte[] requiredData = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 242, 128, 130, 9, 63, 13, 149, 96, 141, 161, 52, 196, 148, 141, 241, 126, 172, 102, 108, 194, 91, 50, 128, 91, 64, 116, 127, 40, 58, 171, 158, 197, 128, 171, 4, 253, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            byte[] requiredData = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 242, 128, 130, 9, 63, 13, 149, 96, 141, 161, 52, 196, 148, 141, 241, 126, 172, 102, 108, 194, 91, 50, 128, 91, 64, 116, 127, 40, 58, 171, 158, 197, 128, 171, 4, 253, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 81, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
             data.Length.Should().Be(requiredData.Length);
             for (int i = 0; i < data.Length; i++)
@@ -149,7 +149,7 @@ namespace Neo.UnitTests
 
             uut.MerkleRoot = merkRoot; // need to set for deserialise to be valid
 
-            byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 242, 128, 130, 9, 63, 13, 149, 96, 141, 161, 52, 196, 148, 141, 241, 126, 172, 102, 108, 194, 91, 50, 128, 91, 64, 116, 127, 40, 58, 171, 158, 197, 128, 171, 4, 253, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 242, 128, 130, 9, 63, 13, 149, 96, 141, 161, 52, 196, 148, 141, 241, 126, 172, 102, 108, 194, 91, 50, 128, 91, 64, 116, 127, 40, 58, 171, 158, 197, 128, 171, 4, 253, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 81, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             int index = 0;
             using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
             {
@@ -266,18 +266,17 @@ namespace Neo.UnitTests
             jObj["index"].AsNumber().Should().Be(0);
             jObj["nextconsensus"].AsString().Should().Be("AFmseVrdL9f9oyCzZefL9tG6UbvhPbdYzM");
 
-            JObject scObj = jObj["script"];
+            JObject scObj = jObj["witness"];
             scObj["invocation"].AsString().Should().Be("");
             scObj["verification"].AsString().Should().Be("51");
 
             jObj["tx"].Should().NotBeNull();
             JArray txObj = (JArray)jObj["tx"];
             txObj[0]["txid"].AsString().Should().Be("0x7647acf1ef8a841b87f2369398a0e9f0ccde0ed9e835d980657103da6da59580");
-            txObj[0]["size"].AsNumber().Should().Be(49);
+            txObj[0]["size"].AsNumber().Should().Be(50);
             txObj[0]["version"].AsNumber().Should().Be(0);
             ((JArray)txObj[0]["attributes"]).Count.Should().Be(0);
             txObj[0]["net_fee"].AsString().Should().Be("0");
-            ((JArray)txObj[0]["witnesses"]).Count.Should().Be(0);
         }
     }
 }

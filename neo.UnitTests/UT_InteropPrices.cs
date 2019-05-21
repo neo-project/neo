@@ -17,9 +17,8 @@ namespace Neo.UnitTests
             InteropService.GetPrice(InteropService.Neo_Header_GetVersion).Should().Be(1);
             InteropService.GetPrice(InteropService.Neo_Header_GetMerkleRoot).Should().Be(1);
             InteropService.GetPrice(InteropService.Neo_Header_GetNextConsensus).Should().Be(1);
-            InteropService.GetPrice(InteropService.Neo_Transaction_GetWitnesses).Should().Be(200);
             InteropService.GetPrice(InteropService.Neo_Transaction_GetScript).Should().Be(1);
-            InteropService.GetPrice(InteropService.Neo_Witness_GetVerificationScript).Should().Be(100);
+            InteropService.GetPrice(InteropService.Neo_Transaction_GetWitnessScript).Should().Be(100);
             InteropService.GetPrice(InteropService.Neo_Account_IsStandard).Should().Be(100);
             InteropService.GetPrice(InteropService.Neo_Contract_GetScript).Should().Be(1);
             InteropService.GetPrice(InteropService.Neo_Contract_IsPayable).Should().Be(1);

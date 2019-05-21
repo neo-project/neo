@@ -134,8 +134,7 @@ namespace Neo.SmartContract
 
         internal static bool CheckWitness(ApplicationEngine engine, UInt160 hash)
         {
-            UInt160[] _hashes_for_verifying = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot);
-            return _hashes_for_verifying.Contains(hash);
+            return hash.Equals(engine.ScriptContainer.GetScriptHashForVerification(engine.Snapshot));
         }
 
         private static bool CheckWitness(ApplicationEngine engine, ECPoint pubkey)

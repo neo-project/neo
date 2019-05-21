@@ -246,37 +246,33 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Default.Hash160(script));
         }
 
-        internal static bool VerifyWitnesses(this IVerifiable verifiable, Snapshot snapshot)
+        internal static bool VerifyWitness(this IVerifiable verifiable, Snapshot snapshot)
         {
-            UInt160[] hashes;
+            UInt160 hash;
             try
             {
-                hashes = verifiable.GetScriptHashesForVerifying(snapshot);
+                hash = verifiable.GetScriptHashForVerification(snapshot);
             }
             catch (InvalidOperationException)
             {
                 return false;
             }
-            if (hashes.Length != verifiable.Witnesses.Length) return false;
-            for (int i = 0; i < hashes.Length; i++)
+            byte[] verification = verifiable.Witness.VerificationScript;
+            if (verification.Length == 0)
             {
-                byte[] verification = verifiable.Witnesses[i].VerificationScript;
-                if (verification.Length == 0)
-                {
-                    verification = snapshot.Contracts.TryGet(hashes[i])?.Script;
-                    if (verification is null) return false;
-                }
-                else
-                {
-                    if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
-                }
-                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, 0))
-                {
-                    engine.LoadScript(verification);
-                    engine.LoadScript(verifiable.Witnesses[i].InvocationScript);
-                    if (engine.Execute().HasFlag(VMState.FAULT)) return false;
-                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
-                }
+                verification = snapshot.Contracts.TryGet(hash)?.Script;
+                if (verification is null) return false;
+            }
+            else
+            {
+                if (hash != verifiable.Witness.ScriptHash) return false;
+            }
+            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, 0))
+            {
+                engine.LoadScript(verification);
+                engine.LoadScript(verifiable.Witness.InvocationScript);
+                if (engine.Execute().HasFlag(VMState.FAULT)) return false;
+                if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
             }
             return true;
         }
