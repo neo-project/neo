@@ -34,19 +34,19 @@ namespace Neo.SmartContract
         /// <summary>
         /// The permissions field is an array containing a set of Permission objects. It describes which contracts may be invoked and which methods are called.
         /// </summary>
-        public WillCardContainer<ContractPermission> Permissions { get; set; }
+        public WildCardContainer<ContractPermission> Permissions { get; set; }
 
         /// <summary>
         /// The trusts field is an array containing a set of contract hashes or group public keys. It can also be assigned with a wildcard *. If it is a wildcard *, then it means that it trusts any contract.
         /// If a contract is trusted, the user interface will not give any warnings when called by the contract.
         /// </summary>
-        public WillCardContainer<UInt160> Trusts { get; set; }
+        public WildCardContainer<UInt160> Trusts { get; set; }
 
         /// <summary>
         /// The safemethods field is an array containing a set of method names. It can also be assigned with a wildcard *. If it is a wildcard *, then it means that all methods of the contract are safe.
         /// If a method is marked as safe, the user interface will not give any warnings when it is called by any other contract.
         /// </summary>
-        public WillCardContainer<string> SafeMethods { get; set; }
+        public WildCardContainer<string> SafeMethods { get; set; }
 
         /// <summary>
         /// Return true if is allowed

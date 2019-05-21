@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Neo.SmartContract
 {
-    public class WillCardContainer<T> : IReadOnlyList<T>
+    public class WildCardContainer<T> : IReadOnlyList<T>
     {
         private readonly T[] _data;
 
@@ -23,7 +23,7 @@ namespace Neo.SmartContract
         /// Constructor
         /// </summary>
         /// <param name="data">Data</param>
-        public WillCardContainer(T[] data)
+        public WildCardContainer(T[] data)
         {
             _data = data;
         }
@@ -33,13 +33,13 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="data">Data</param>
         /// <returns>WillCardContainer</returns>
-        public static WillCardContainer<T> Create(params T[] data) => new WillCardContainer<T>(data);
+        public static WildCardContainer<T> Create(params T[] data) => new WildCardContainer<T>(data);
 
         /// <summary>
         /// Create a will card
         /// </summary>
         /// <returns>WillCardContainer</returns>
-        public static WillCardContainer<T> CreateWildcard() => new WillCardContainer<T>(null);
+        public static WildCardContainer<T> CreateWildcard() => new WildCardContainer<T>(null);
 
         public IEnumerator<T> GetEnumerator() => ((IReadOnlyList<T>)_data).GetEnumerator();
 
