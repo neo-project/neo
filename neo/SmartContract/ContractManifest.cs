@@ -56,7 +56,7 @@ namespace Neo.SmartContract
         /// <returns>Return true or false</returns>
         public bool CanCall(ContractManifest manifest, string method)
         {
-            if (Groups != null && manifest.Groups != null && Groups.Any(u => manifest.Groups.Any(b => u.PubKey.Equals(b.PubKey))))
+            if (Groups != null && manifest.Groups != null && Groups.Any(a => manifest.Groups.Any(b => a.PubKey.Equals(b.PubKey))))
             {
                 // Same group
 
