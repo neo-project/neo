@@ -22,7 +22,7 @@ namespace Neo.SmartContract.Native
         public uint ServiceHash { get; }
         public byte[] Script { get; }
         public UInt160 Hash { get; }
-        public virtual ContractManifest Manifest { get; }
+        public ContractManifest Manifest { get; }
         public virtual string[] SupportedStandards { get; } = { "NEP-10" };
 
         protected NativeContract()
