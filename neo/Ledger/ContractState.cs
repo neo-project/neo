@@ -53,7 +53,7 @@ namespace Neo.Ledger
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.WriteVarBytes(Script);
-            writer.WriteVarString(Manifest.ToJson());
+            writer.Write(Manifest);
         }
 
         public JObject ToJson()

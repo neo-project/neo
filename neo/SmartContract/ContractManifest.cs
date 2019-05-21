@@ -1,5 +1,7 @@
-﻿using Neo.Ledger;
+﻿using Neo.IO;
+using Neo.Ledger;
 using System;
+using System.IO;
 using System.Linq;
 
 namespace Neo.SmartContract
@@ -8,7 +10,7 @@ namespace Neo.SmartContract
     /// When a smart contract is deployed, it must explicitly declare the features and permissions it will use.
     /// When it is running, it will be limited by its declared list of features and permissions, and cannot make any behavior beyond the scope of the list.
     /// </summary>
-    public class ContractManifest
+    public class ContractManifest : ISerializable
     {
         /// <summary>
         /// Contract hash
@@ -47,6 +49,11 @@ namespace Neo.SmartContract
         /// If a method is marked as safe, the user interface will not give any warnings when it is called by any other contract.
         /// </summary>
         public WildCardContainer<string> SafeMethods { get; set; }
+
+        /// <summary>
+        /// Serialized size
+        /// </summary>
+        public int Size => ToJson().GetVarSize();
 
         /// <summary>
         /// Create Default Contract manifest
@@ -127,5 +134,15 @@ namespace Neo.SmartContract
         /// </summary>
         /// <returns>Return json string</returns>
         public override string ToString() => ToJson();
+
+        public void Serialize(BinaryWriter writer)
+        {
+            writer.WriteVarString(ToJson());
+        }
+
+        public void Deserialize(BinaryReader reader)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
