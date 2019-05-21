@@ -18,7 +18,7 @@ namespace Neo.SmartContract
 {
     public static partial class InteropService
     {
-        public const int MaxStorageKeySize = 512;
+        public const int MaxStorageKeySize = 64;
         public const int MaxStorageValueSize = 65536;
 
         private static readonly Dictionary<uint, Func<ApplicationEngine, bool>> methods = new Dictionary<uint, Func<ApplicationEngine, bool>>();
