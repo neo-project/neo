@@ -18,7 +18,7 @@ namespace Neo.SmartContract
         /// The methods field is an array containing a set of methods to be called. It can also be assigned with a wildcard *. If it is a wildcard *, then it means that any method can be called.
         /// If a contract invokes a contract or method that is not declared in the manifest at runtime, the invocation will fail.
         /// </summary>
-        public string[] Methods { get; set; }
+        public WillCardContainer<string> Methods { get; set; }
 
         /// <summary>
         /// Return true if is allowed
@@ -30,12 +30,12 @@ namespace Neo.SmartContract
         {
             if (!Contract.Equals(contractHash))
             {
-                // * wildcard
+                // 0x00 = * wildcard
 
                 if (Contract != UInt160.Zero) return false;
             }
 
-            return Methods == null || Methods.Contains(method);
+            return Methods == null || Methods.IsWildcard || Methods.Contains(method);
         }
     }
 }
