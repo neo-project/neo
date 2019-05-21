@@ -1,4 +1,5 @@
 ﻿using Neo.Ledger;
+using System;
 using System.Linq;
 
 namespace Neo.SmartContract
@@ -18,7 +19,7 @@ namespace Neo.SmartContract
         /// A group represents a set of mutually trusted contracts. A contract will trust and allow any contract in the same group to invoke it, and the user interface will not give any warnings.
         /// The group field can be null.
         /// </summary>
-        public ContractManifestGroup Group { get; set; }
+        public ContractManifestGroup[] Groups { get; set; }
 
         /// <summary>
         /// The features field describes what features are available for the contract.
@@ -55,7 +56,7 @@ namespace Neo.SmartContract
         /// <returns>Return true or false</returns>
         public bool CanCall(ContractManifest manifest, string method)
         {
-            if (Group != null && manifest.Group != null && manifest.Group.PubKey.Equals(Group.PubKey))
+            if (Groups != null && manifest.Groups != null && Groups.Any(u => manifest.Groups.Any(b => u.PubKey.Equals(b.PubKey))))
             {
                 // Same group
 
