@@ -230,6 +230,8 @@ namespace Neo.SmartContract
             if (script.Length > 1024 * 1024) return false;
 
             var manifest = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
+            if (manifest.Length >= ContractManifest.MaxLength) return false;
+
             UInt160 hash = script.ToScriptHash();
             ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
             if (contract == null)

@@ -41,7 +41,7 @@ namespace Neo.Ledger
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Script = reader.ReadVarBytes();
-            Manifest = ContractManifest.Parse(reader.ReadVarString(ushort.MaxValue));
+            Manifest = ContractManifest.Parse(reader.ReadVarString(ContractManifest.MaxLength));
         }
 
         void ICloneable<ContractState>.FromReplica(ContractState replica)

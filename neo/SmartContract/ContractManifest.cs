@@ -13,6 +13,11 @@ namespace Neo.SmartContract
     public class ContractManifest : ISerializable
     {
         /// <summary>
+        /// Max length for a valid Contract Manifest
+        /// </summary>
+        public const int MaxLength = ushort.MaxValue;
+
+        /// <summary>
         /// Contract hash
         /// </summary>
         public UInt160 Hash { get; set; }
