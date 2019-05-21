@@ -73,5 +73,40 @@ namespace Neo.SmartContract
 
             return Permissions == null || Permissions.IsWildcard || Permissions.Any(u => u.IsAllowed(manifest.Hash, method));
         }
+
+        /// <summary>
+        /// Parse ContractManifest from json
+        /// </summary>
+        /// <param name="json">Json</param>
+        /// <returns>Return Contract manifest</returns>
+        public static ContractManifest Parse(string json)
+        {
+            // TODO: Parse json
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// To json
+        /// </summary>
+        /// <returns>Return json string</returns>
+        public string ToJson()
+        {
+            // TODO: Generate json
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Clone
+        /// </summary>
+        /// <returns>Return a copy of this object</returns>
+        public ContractManifest Clone() => Parse(ToJson());
+
+        /// <summary>
+        /// String representation
+        /// </summary>
+        /// <returns>Return json string</returns>
+        public override string ToString() => ToJson();
     }
 }

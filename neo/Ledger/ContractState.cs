@@ -8,10 +8,8 @@ namespace Neo.Ledger
     public class ContractState : ICloneable<ContractState>, ISerializable
     {
         public byte[] Script;
-        public ContractPropertyState ContractProperties;
 
-        public bool HasStorage => ContractProperties.HasFlag(ContractPropertyState.HasStorage);
-        public bool Payable => ContractProperties.HasFlag(ContractPropertyState.Payable);
+        public ContractManifest Manifest;
 
         private UInt160 _scriptHash;
         public UInt160 ScriptHash
@@ -26,33 +24,36 @@ namespace Neo.Ledger
             }
         }
 
-        int ISerializable.Size => Script.GetVarSize() + sizeof(ContractParameterType);
+        public bool HasStorage => Manifest.Features.HasFlag(ContractPropertyState.HasStorage);
+        public bool Payable => Manifest.Features.HasFlag(ContractPropertyState.Payable);
+
+        int ISerializable.Size => Script.GetVarSize() + Manifest.ToJson().GetVarSize();
 
         ContractState ICloneable<ContractState>.Clone()
         {
             return new ContractState
             {
                 Script = Script,
-                ContractProperties = ContractProperties
+                Manifest = Manifest
             };
         }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Script = reader.ReadVarBytes();
-            ContractProperties = (ContractPropertyState)reader.ReadByte();
+            Manifest = ContractManifest.Parse(reader.ReadVarString(ushort.MaxValue));
         }
 
         void ICloneable<ContractState>.FromReplica(ContractState replica)
         {
             Script = replica.Script;
-            ContractProperties = replica.ContractProperties;
+            Manifest = replica.Manifest.Clone();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.WriteVarBytes(Script);
-            writer.Write((byte)ContractProperties);
+            writer.WriteVarString(Manifest.ToJson());
         }
 
         public JObject ToJson()
@@ -61,8 +62,8 @@ namespace Neo.Ledger
             json["hash"] = ScriptHash.ToString();
             json["script"] = Script.ToHexString();
             json["properties"] = new JObject();
-            json["properties"]["storage"] = HasStorage;
-            json["properties"]["payable"] = Payable;
+            json["properties"]["storage"] = Manifest.Features.HasFlag(ContractPropertyState.HasStorage);
+            json["properties"]["payable"] = Manifest.Features.HasFlag(ContractPropertyState.Payable);
             return json;
         }
     }

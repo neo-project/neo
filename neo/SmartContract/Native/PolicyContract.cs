@@ -11,7 +11,16 @@ namespace Neo.SmartContract.Native
     public sealed class PolicyContract : NativeContract
     {
         public override string ServiceName => "Neo.Native.Policy";
-        public override ContractPropertyState Properties => ContractPropertyState.HasStorage;
+        public override ContractManifest Manifest
+        {
+            get
+            {
+                var manifest = base.Manifest;
+                manifest.Features = ContractPropertyState.HasStorage;
+
+                return manifest;
+            }
+        }
 
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_MaxLowPriorityTransactionsPerBlock = 34;

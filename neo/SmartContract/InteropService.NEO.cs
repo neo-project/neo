@@ -10,6 +10,7 @@ using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -51,12 +52,13 @@ namespace Neo.SmartContract
         {
             if (engine.Trigger != TriggerType.Application) return false;
             if (engine.Snapshot.PersistingBlock.Index != 0) return false;
+
             foreach (NativeContract contract in NativeContract.Contracts)
             {
                 engine.Snapshot.Contracts.Add(contract.Hash, new ContractState
                 {
                     Script = contract.Script,
-                    ContractProperties = contract.Properties
+                    Manifest = contract.Manifest
                 });
                 contract.Initialize(engine);
             }
@@ -226,7 +228,8 @@ namespace Neo.SmartContract
             if (engine.Trigger != TriggerType.Application) return false;
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
-            ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
+
+            var manifest = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
             UInt160 hash = script.ToScriptHash();
             ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
             if (contract == null)
@@ -234,7 +237,7 @@ namespace Neo.SmartContract
                 contract = new ContractState
                 {
                     Script = script,
-                    ContractProperties = contract_properties
+                    Manifest = ContractManifest.Parse(manifest)
                 };
                 engine.Snapshot.Contracts.Add(hash, contract);
             }
@@ -247,7 +250,8 @@ namespace Neo.SmartContract
             if (engine.Trigger != TriggerType.Application) return false;
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
-            ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
+
+            var manifest = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
             UInt160 hash = script.ToScriptHash();
             ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
             if (contract == null)
@@ -255,7 +259,7 @@ namespace Neo.SmartContract
                 contract = new ContractState
                 {
                     Script = script,
-                    ContractProperties = contract_properties
+                    Manifest = ContractManifest.Parse(manifest)
                 };
                 engine.Snapshot.Contracts.Add(hash, contract);
                 if (contract.HasStorage)
