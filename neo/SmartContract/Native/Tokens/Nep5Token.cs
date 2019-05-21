@@ -2,6 +2,7 @@
 using Neo.Persistence;
 using Neo.VM;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using VMArray = Neo.VM.Types.Array;
 
@@ -29,9 +30,75 @@ namespace Neo.SmartContract.Native.Tokens
         protected const byte Prefix_TotalSupply = 11;
         protected const byte Prefix_Account = 20;
 
-        protected Nep5Token()
+        protected Nep5Token() : base()
         {
             this.Factor = BigInteger.Pow(10, Decimals);
+
+            var list = new List<ContractMethodWithReturnDefinition>(Manifest.Abi.Methods)
+            {
+                new ContractMethodWithReturnDefinition()
+                {
+                    Name = "name",
+                    Parameters = new ContractParameterDefinition[0],
+                    ReturnType = ContractParameterType.String
+                },
+                new ContractMethodWithReturnDefinition()
+                {
+                    Name = "symbol",
+                    Parameters = new ContractParameterDefinition[0],
+                    ReturnType = ContractParameterType.String
+                },
+                new ContractMethodWithReturnDefinition()
+                {
+                    Name = "decimals",
+                    Parameters = new ContractParameterDefinition[0],
+                    ReturnType = ContractParameterType.Integer
+                },
+                new ContractMethodWithReturnDefinition()
+                {
+                    Name = "totalSupply",
+                    Parameters = new ContractParameterDefinition[0],
+                    ReturnType = ContractParameterType.Integer
+                },
+                new ContractMethodWithReturnDefinition()
+                {
+                    Name = "balanceOf",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "account",
+                            Type = ContractParameterType.Hash160
+                        }
+                    },
+                    ReturnType = ContractParameterType.Integer
+                },
+                new ContractMethodWithReturnDefinition()
+                {
+                    Name = "transfer",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "from",
+                            Type = ContractParameterType.Hash160
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "to",
+                            Type = ContractParameterType.Hash160
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "amount",
+                            Type = ContractParameterType.Integer
+                        }
+                    },
+                    ReturnType = ContractParameterType.Boolean
+                }
+            };
+
+            Manifest.Abi.Methods = list.ToArray();
         }
 
         protected StorageKey CreateAccountKey(UInt160 account)
