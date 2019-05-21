@@ -25,9 +25,82 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte Prefix_ValidatorsCount = 15;
         private const byte Prefix_NextValidators = 14;
 
-        internal NeoToken()
+        internal NeoToken() : base()
         {
             this.TotalAmount = 100000000 * Factor;
+
+            var list = new List<ContractMethodWithReturnDefinition>(Manifest.Abi.Methods)
+            {
+                new ContractMethodWithReturnDefinition()
+                {
+                    Name = "unclaimedGas",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                             Name = "account",
+                             Type = ContractParameterType.Hash160
+                        },
+                        new ContractParameterDefinition()
+                        {
+                             Name = "end",
+                             Type = ContractParameterType.Integer
+                        }
+                    },
+                    ReturnType = ContractParameterType.Integer
+                },
+                new ContractMethodWithReturnDefinition()
+                {
+                    Name = "registerValidator",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                             Name = "pubkey",
+                             Type = ContractParameterType.ByteArray
+                        }
+                    },
+                    ReturnType = ContractParameterType.Boolean
+                },
+                new ContractMethodWithReturnDefinition()
+                {
+                    Name = "vote",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                             Name = "account",
+                             Type = ContractParameterType.Hash160
+                        },
+                        new ContractParameterDefinition()
+                        {
+                             Name = "pubkeys",
+                             Type = ContractParameterType.Array
+                        }
+                    },
+                    ReturnType = ContractParameterType.Boolean
+                },
+                new ContractMethodWithReturnDefinition()
+                {
+                    Name = "getRegisteredValidators",
+                    Parameters = new ContractParameterDefinition[0],
+                    ReturnType = ContractParameterType.Array
+                },
+                new ContractMethodWithReturnDefinition()
+                {
+                    Name = "getValidators",
+                    Parameters = new ContractParameterDefinition[0],
+                    ReturnType = ContractParameterType.Array
+                },
+                new ContractMethodWithReturnDefinition()
+                {
+                    Name = "getNextBlockValidators",
+                    Parameters = new ContractParameterDefinition[0],
+                    ReturnType = ContractParameterType.Array
+                }
+            };
+
+            Manifest.Abi.Methods = list.ToArray();
         }
 
         protected override StackItem Main(ApplicationEngine engine, string operation, VMArray args)
