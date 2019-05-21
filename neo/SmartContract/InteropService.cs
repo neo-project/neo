@@ -18,6 +18,9 @@ namespace Neo.SmartContract
 {
     public static partial class InteropService
     {
+        public const int MaxStorageKeySize = 64;
+        public const int MaxStorageValueSize = ushort.MaxValue;
+
         private static readonly Dictionary<uint, Func<ApplicationEngine, bool>> methods = new Dictionary<uint, Func<ApplicationEngine, bool>>();
         private static readonly Dictionary<uint, long> prices = new Dictionary<uint, long>();
 
@@ -500,7 +503,8 @@ namespace Neo.SmartContract
         private static bool PutEx(ApplicationEngine engine, StorageContext context, byte[] key, byte[] value, StorageFlags flags)
         {
             if (engine.Trigger != TriggerType.Application) return false;
-            if (key.Length > 1024) return false;
+            if (key.Length > MaxStorageKeySize) return false;
+            if (value.Length > MaxStorageValueSize) return false;
             if (context.IsReadOnly) return false;
             if (!CheckStorageContext(engine, context)) return false;
             StorageKey skey = new StorageKey
