@@ -63,7 +63,7 @@ namespace Neo.SmartContract
                 return true;
             }
 
-            if (manifest.Trusts != null && !manifest.Trusts.IsWildcard && manifest.Trusts.Contains(Hash))
+            if (manifest.Trusts != null && !manifest.Trusts.IsWildcard && !manifest.Trusts.Contains(Hash))
             {
                 // null == * wildcard
                 // You don't have rights in the contract
