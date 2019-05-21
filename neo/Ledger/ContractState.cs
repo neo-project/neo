@@ -61,9 +61,7 @@ namespace Neo.Ledger
             JObject json = new JObject();
             json["hash"] = ScriptHash.ToString();
             json["script"] = Script.ToHexString();
-            json["properties"] = new JObject();
-            json["properties"]["storage"] = Manifest.Features.HasFlag(ContractPropertyState.HasStorage);
-            json["properties"]["payable"] = Manifest.Features.HasFlag(ContractPropertyState.Payable);
+            json["manifest"] = Manifest.ToJson();
             return json;
         }
     }
