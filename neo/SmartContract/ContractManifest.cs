@@ -33,19 +33,19 @@ namespace Neo.SmartContract
         /// <summary>
         /// The permissions field is an array containing a set of Permission objects. It describes which contracts may be invoked and which methods are called.
         /// </summary>
-        public ContractPermission[] Permissions { get; set; }
+        public WillCardContainer<ContractPermission> Permissions { get; set; }
 
         /// <summary>
         /// The trusts field is an array containing a set of contract hashes or group public keys. It can also be assigned with a wildcard *. If it is a wildcard *, then it means that it trusts any contract.
         /// If a contract is trusted, the user interface will not give any warnings when called by the contract.
         /// </summary>
-        public UInt160[] Trusts { get; set; }
-        
+        public WillCardContainer<UInt160> Trusts { get; set; }
+
         /// <summary>
         /// The safemethods field is an array containing a set of method names. It can also be assigned with a wildcard *. If it is a wildcard *, then it means that all methods of the contract are safe.
         /// If a method is marked as safe, the user interface will not give any warnings when it is called by any other contract.
         /// </summary>
-        public string[] SafeMethods { get; set; }
+        public WillCardContainer<string> SafeMethods { get; set; }
 
         /// <summary>
         /// Return true if is allowed
@@ -62,7 +62,7 @@ namespace Neo.SmartContract
                 return true;
             }
 
-            if (manifest.Trusts != null && manifest.Trusts.Contains(Hash))
+            if (manifest.Trusts != null && !manifest.Trusts.IsWildcard && manifest.Trusts.Contains(Hash))
             {
                 // null == * wildcard
                 // You don't have rights in the contract
@@ -70,9 +70,7 @@ namespace Neo.SmartContract
                 return false;
             }
 
-            // null == * wildcard
-
-            return Permissions == null || Permissions.Any(u => u.IsAllowed(manifest.Hash, method));
+            return Permissions == null || Permissions.IsWildcard || Permissions.Any(u => u.IsAllowed(manifest.Hash, method));
         }
     }
 }
