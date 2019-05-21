@@ -66,7 +66,30 @@ namespace Neo.SmartContract
             {
                 Hash = hash,
                 Permissions = WildCardContainer<ContractPermission>.CreateWildcard(),
-                Abi = null,
+                Abi = new ContractAbi()
+                {
+                    Hash = hash,
+                    EntryPoint = new ContractMethodWithReturnDefinition()
+                    {
+                        Name = "Main",
+                        Parameters = new ContractParameterDefinition[]
+                        {
+                            new ContractParameterDefinition()
+                            {
+                                 Name = "operation",
+                                 Type = ContractParameterType.String
+                            },
+                            new ContractParameterDefinition()
+                            {
+                                 Name = "args",
+                                 Type = ContractParameterType.Array
+                            }
+                        },
+                        ReturnType = ContractParameterType.Array
+                    },
+                    Events = new ContractMethodDefinition[0],
+                    Methods = new ContractMethodWithReturnDefinition[0]
+                },
                 Features = ContractPropertyState.NoProperty,
                 Groups = null,
                 SafeMethods = WildCardContainer<string>.CreateWildcard(),

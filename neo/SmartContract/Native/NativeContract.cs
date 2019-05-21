@@ -36,29 +36,7 @@ namespace Neo.SmartContract.Native
 
             this.Hash = Script.ToScriptHash();
             this.Manifest = ContractManifest.CreateDefault(this.Hash);
-            this.Manifest.Abi = new ContractAbi()
-            {
-                Hash = Hash,
-                Events = new ContractMethodDefinition[0],
-                EntryPoint = new ContractMethodWithReturnDefinition()
-                {
-                    Name = "Main",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                             Name = "operation",
-                             Type = ContractParameterType.String
-                        },
-                        new ContractParameterDefinition()
-                        {
-                             Name = "args",
-                             Type = ContractParameterType.Array
-                        }
-                    },
-                    ReturnType = ContractParameterType.Array
-                },
-                Methods = new ContractMethodWithReturnDefinition[]
+            this.Manifest.Abi.Methods = new ContractMethodWithReturnDefinition[]
                 {
                     new ContractMethodWithReturnDefinition()
                     {
@@ -72,8 +50,7 @@ namespace Neo.SmartContract.Native
                          ReturnType = ContractParameterType.Array,
                          Parameters = new ContractParameterDefinition[0]
                     }
-                }
-            };
+                };
 
             contracts.Add(this);
         }
