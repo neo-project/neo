@@ -49,6 +49,25 @@ namespace Neo.SmartContract
         public WildCardContainer<string> SafeMethods { get; set; }
 
         /// <summary>
+        /// Create Default Contract manifest
+        /// </summary>
+        /// <param name="hash">Hash</param>
+        /// <returns>Return default manifest for this contract</returns>
+        public static ContractManifest CreateDefault(UInt160 hash)
+        {
+            return new ContractManifest()
+            {
+                Hash = hash,
+                Permissions = WildCardContainer<ContractPermission>.CreateWildcard(),
+                Abi = null,
+                Features = ContractPropertyState.NoProperty,
+                Groups = null,
+                SafeMethods = WildCardContainer<string>.CreateWildcard(),
+                Trusts = WildCardContainer<UInt160>.CreateWildcard()
+            };
+        }
+
+        /// <summary>
         /// Return true if is allowed
         /// </summary>
         /// <param name="manifest">Manifest</param>
