@@ -73,15 +73,6 @@ namespace Neo.UnitTests
                 // pitem1 > pitem2  (fee) => 1
                 pitem1.CompareTo(pitem2).Should().Be(1);
             }
-
-            // equal hashes should be equal
-            var tx3 = GenerateTx(netFeeSatoshiFixed, sizeFixed, new byte[] { 0x13, 0x37 });
-            var tx4 = GenerateTx(netFeeSatoshiFixed, sizeFixed, new byte[] { 0x13, 0x37 });
-            PoolItem pitem3 = new PoolItem(tx3);
-            PoolItem pitem4 = new PoolItem(tx4);
-
-            pitem3.CompareTo(pitem4).Should().Be(0);
-            pitem4.CompareTo(pitem3).Should().Be(0);
         }
 
         [TestMethod]
@@ -89,11 +80,10 @@ namespace Neo.UnitTests
         {
             int sizeFixed = 500;
             int netFeeSatoshiFixed = 10;
-            var tx1 = GenerateTx(netFeeSatoshiFixed, sizeFixed, new byte[] { 0x13, 0x37 });
-            var tx2 = GenerateTx(netFeeSatoshiFixed, sizeFixed, new byte[] { 0x13, 0x37 });
+            var tx = GenerateTx(netFeeSatoshiFixed, sizeFixed, new byte[] { 0x13, 0x37 });
 
-            PoolItem pitem1 = new PoolItem(tx1);
-            PoolItem pitem2 = new PoolItem(tx2);
+            PoolItem pitem1 = new PoolItem(tx);
+            PoolItem pitem2 = new PoolItem(tx);
 
             // pitem1 == pitem2 (fee) => 0
             pitem1.CompareTo(pitem2).Should().Be(0);
@@ -125,19 +115,10 @@ namespace Neo.UnitTests
         // Generate Transaction with different sizes and prices
         public static Transaction GenerateTx(long networkFee, int size, byte[] overrideScriptBytes = null)
         {
-            // use random bytes in the script to get a different hash since we cannot mock the Hash
-            byte[] randomBytes;
-            if (overrideScriptBytes != null)
-                randomBytes = overrideScriptBytes;
-            else
-            {
-                randomBytes = new byte[1];
-                TestRandom.NextBytes(randomBytes);
-            }
-
             Transaction tx = new Transaction
             {
-                Script = randomBytes,
+                Nonce = (uint)TestRandom.Next(),
+                Script = overrideScriptBytes ?? new byte[0],
                 Sender = UInt160.Zero,
                 NetworkFee = networkFee,
                 Attributes = new TransactionAttribute[0],
