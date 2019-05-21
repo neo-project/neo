@@ -36,7 +36,6 @@ namespace Neo.SmartContract.Native
 
             this.Hash = Script.ToScriptHash();
             this.Manifest = ContractManifest.CreateDefault(this.Hash);
-
             this.Manifest.Abi = new ContractAbi()
             {
                 Hash = Hash,

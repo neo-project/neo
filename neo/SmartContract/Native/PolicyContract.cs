@@ -65,7 +65,7 @@ namespace Neo.SmartContract.Native
                              Type = ContractParameterType.Integer
                         }
                     },
-                    ReturnType = ContractParameterType.Integer
+                    ReturnType = ContractParameterType.Boolean
                 },
                 new ContractMethodWithReturnDefinition()
                 {
@@ -78,7 +78,7 @@ namespace Neo.SmartContract.Native
                              Type = ContractParameterType.Integer
                         }
                     },
-                    ReturnType = ContractParameterType.Integer
+                    ReturnType = ContractParameterType.Boolean
                 },
                 new ContractMethodWithReturnDefinition()
                 {
@@ -91,7 +91,7 @@ namespace Neo.SmartContract.Native
                              Type = ContractParameterType.Integer
                         }
                     },
-                    ReturnType = ContractParameterType.Integer
+                    ReturnType = ContractParameterType.Boolean
                 },
                 new ContractMethodWithReturnDefinition()
                 {
@@ -104,7 +104,7 @@ namespace Neo.SmartContract.Native
                              Type = ContractParameterType.Integer
                         }
                     },
-                    ReturnType = ContractParameterType.Integer
+                    ReturnType = ContractParameterType.Boolean
                 },
 
                 new ContractMethodWithReturnDefinition()
