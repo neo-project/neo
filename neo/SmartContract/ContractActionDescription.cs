@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Neo.SmartContract
 {
-    public class ContractMethodDefinition : IEquatable<ContractMethodDefinition>
+    public class ContractActionDescription : IEquatable<ContractActionDescription>
     {
         /// <summary>
         /// Name is the name of the method, which can be any valid identifier.
@@ -15,7 +15,7 @@ namespace Neo.SmartContract
         /// </summary>
         public ContractParameterDefinition[] Parameters { get; set; }
 
-        public virtual bool Equals(ContractMethodDefinition other)
+        public virtual bool Equals(ContractActionDescription other)
         {
             if (other == null) return false;
             if (ReferenceEquals(other, this)) return true;

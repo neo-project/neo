@@ -4,7 +4,7 @@ using System;
 
 namespace Neo.SmartContract
 {
-    public class ContractMethodWithReturnDefinition : ContractMethodDefinition, IEquatable<ContractMethodWithReturnDefinition>
+    public class ContractMethodDescription : ContractActionDescription, IEquatable<ContractMethodDescription>
     {
         /// <summary>
         /// Returntype indicates the return type of the method. It can be one of the following values: 
@@ -13,18 +13,18 @@ namespace Neo.SmartContract
         [JsonConverter(typeof(StringEnumConverter))]
         public ContractParameterType ReturnType { get; set; }
 
-        public override bool Equals(ContractMethodDefinition other)
+        public override bool Equals(ContractActionDescription other)
         {
             if (!base.Equals(other)) return false;
-            if (!(other is ContractMethodWithReturnDefinition b)) return false;
+            if (!(other is ContractMethodDescription b)) return false;
             if (ReturnType != b.ReturnType) return false;
 
             return true;
         }
 
-        bool IEquatable<ContractMethodWithReturnDefinition>.Equals(ContractMethodWithReturnDefinition other)
+        bool IEquatable<ContractMethodDescription>.Equals(ContractMethodDescription other)
         {
-            return Equals((ContractMethodDefinition)other);
+            return Equals((ContractActionDescription)other);
         }
     }
 }

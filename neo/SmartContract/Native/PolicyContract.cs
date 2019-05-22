@@ -22,39 +22,39 @@ namespace Neo.SmartContract.Native
         {
             Manifest.Features = ContractPropertyState.HasStorage;
 
-            var list = new List<ContractMethodWithReturnDefinition>(Manifest.Abi.Methods)
+            var list = new List<ContractMethodDescription>(Manifest.Abi.Methods)
             {
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "getMaxTransactionsPerBlock",
                     Parameters = new ContractParameterDefinition[0],
                     ReturnType = ContractParameterType.Integer
                 },
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "getMaxLowPriorityTransactionsPerBlock",
                     Parameters = new ContractParameterDefinition[0],
                     ReturnType = ContractParameterType.Integer
                 },
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "getMaxLowPriorityTransactionSize",
                     Parameters = new ContractParameterDefinition[0],
                     ReturnType = ContractParameterType.Integer
                 },
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "getFeePerByte",
                     Parameters = new ContractParameterDefinition[0],
                     ReturnType = ContractParameterType.Integer
                 },
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "getBlockedAccounts",
                     Parameters = new ContractParameterDefinition[0],
                     ReturnType = ContractParameterType.Integer
                 },
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "setMaxTransactionsPerBlock",
                     Parameters = new ContractParameterDefinition[]
@@ -67,7 +67,7 @@ namespace Neo.SmartContract.Native
                     },
                     ReturnType = ContractParameterType.Boolean
                 },
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "setMaxLowPriorityTransactionsPerBlock",
                     Parameters = new ContractParameterDefinition[]
@@ -80,7 +80,7 @@ namespace Neo.SmartContract.Native
                     },
                     ReturnType = ContractParameterType.Boolean
                 },
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "setMaxLowPriorityTransactionSize",
                     Parameters = new ContractParameterDefinition[]
@@ -93,7 +93,7 @@ namespace Neo.SmartContract.Native
                     },
                     ReturnType = ContractParameterType.Boolean
                 },
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "setFeePerByte",
                     Parameters = new ContractParameterDefinition[]
@@ -107,7 +107,7 @@ namespace Neo.SmartContract.Native
                     ReturnType = ContractParameterType.Boolean
                 },
 
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "blockAccount",
                     Parameters = new ContractParameterDefinition[]
@@ -120,7 +120,7 @@ namespace Neo.SmartContract.Native
                     },
                     ReturnType = ContractParameterType.Boolean
                 },
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "unblockAccount",
                     Parameters = new ContractParameterDefinition[]

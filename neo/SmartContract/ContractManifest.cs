@@ -89,7 +89,7 @@ namespace Neo.SmartContract
                 Abi = new ContractAbi()
                 {
                     Hash = hash,
-                    EntryPoint = new ContractMethodWithReturnDefinition()
+                    EntryPoint = new ContractMethodDescription()
                     {
                         Name = "Main",
                         Parameters = new ContractParameterDefinition[]
@@ -107,8 +107,8 @@ namespace Neo.SmartContract
                         },
                         ReturnType = ContractParameterType.Array
                     },
-                    Events = new ContractMethodDefinition[0],
-                    Methods = new ContractMethodWithReturnDefinition[0]
+                    Events = new ContractActionDescription[0],
+                    Methods = new ContractMethodDescription[0]
                 },
                 Features = ContractPropertyState.NoProperty,
                 Groups = null,

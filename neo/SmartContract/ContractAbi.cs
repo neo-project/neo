@@ -19,17 +19,17 @@ namespace Neo.SmartContract
         /// <summary>
         /// Entrypoint is a Method object which describe the details of the entrypoint of the contract.
         /// </summary>
-        public ContractMethodWithReturnDefinition EntryPoint { get; set; }
+        public ContractMethodDescription EntryPoint { get; set; }
 
         /// <summary>
         /// Methods is an array of Method objects which describe the details of each method in the contract.
         /// </summary>
-        public ContractMethodWithReturnDefinition[] Methods { get; set; }
+        public ContractMethodDescription[] Methods { get; set; }
 
         /// <summary>
         /// Events is an array of Event objects which describe the details of each event in the contract.
         /// </summary>
-        public ContractMethodDefinition[] Events { get; set; }
+        public ContractActionDescription[] Events { get; set; }
 
         public bool Equals(ContractAbi other)
         {

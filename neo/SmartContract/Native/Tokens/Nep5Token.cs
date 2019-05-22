@@ -24,33 +24,33 @@ namespace Neo.SmartContract.Native.Tokens
         {
             this.Factor = BigInteger.Pow(10, Decimals);
 
-            var list = new List<ContractMethodWithReturnDefinition>(Manifest.Abi.Methods)
+            var list = new List<ContractMethodDescription>(Manifest.Abi.Methods)
             {
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "name",
                     Parameters = new ContractParameterDefinition[0],
                     ReturnType = ContractParameterType.String
                 },
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "symbol",
                     Parameters = new ContractParameterDefinition[0],
                     ReturnType = ContractParameterType.String
                 },
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "decimals",
                     Parameters = new ContractParameterDefinition[0],
                     ReturnType = ContractParameterType.Integer
                 },
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "totalSupply",
                     Parameters = new ContractParameterDefinition[0],
                     ReturnType = ContractParameterType.Integer
                 },
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "balanceOf",
                     Parameters = new ContractParameterDefinition[]
@@ -63,7 +63,7 @@ namespace Neo.SmartContract.Native.Tokens
                     },
                     ReturnType = ContractParameterType.Integer
                 },
-                new ContractMethodWithReturnDefinition()
+                new ContractMethodDescription()
                 {
                     Name = "transfer",
                     Parameters = new ContractParameterDefinition[]
