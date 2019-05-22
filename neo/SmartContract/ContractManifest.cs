@@ -13,7 +13,7 @@ namespace Neo.SmartContract
     /// When a smart contract is deployed, it must explicitly declare the features and permissions it will use.
     /// When it is running, it will be limited by its declared list of features and permissions, and cannot make any behavior beyond the scope of the list.
     /// </summary>
-    public class ContractManifest : ISerializable
+    public class ContractManifest : ISerializable, IEquatable<ContractManifest>
     {
         private static readonly JsonSerializerSettings _jsonSettings = new JsonSerializerSettings()
         {
@@ -182,6 +182,32 @@ namespace Neo.SmartContract
         public void Deserialize(BinaryReader reader)
         {
             throw new NotImplementedException();
+        }
+
+        public bool Equals(ContractManifest other)
+        {
+            if (other == null) return false;
+            if (ReferenceEquals(this, other)) return true;
+
+            if (!Hash.Equals(other.Hash)) return false;
+            if ((Groups == null || other.Groups == null) && Groups != other.Groups) return false;
+            if (Groups != null && !Groups.SequenceEqual(other.Groups)) return false;
+            if (!Trusts.SequenceEqual(other.Trusts)) return false;
+            if (!Permissions.SequenceEqual(other.Permissions)) return false;
+            if (!SafeMethods.SequenceEqual(other.SafeMethods)) return false;
+            if (!Abi.Equals(other.Abi)) return false;
+            if (Features != other.Features) return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Return true if is valid
+        /// </summary>
+        /// <returns>Return true or false</returns>
+        public bool IsValid()
+        {
+            return Abi != null && Trusts != null && SafeMethods != null && Permissions != null && (Groups == null || Groups.All(u => u.IsValid(Hash)));
         }
     }
 }
