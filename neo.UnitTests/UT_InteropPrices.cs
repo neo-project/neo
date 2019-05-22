@@ -125,7 +125,7 @@ namespace Neo.UnitTests
                 debugger.StepInto(); // push 0
                 debugger.StepInto(); // push 0
                 debugger.StepInto(); // push 0
-                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.Neo_Contract_Create }).Should().Be(500_00000000L); // assuming private ae.ratio = 100000
+                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.Neo_Contract_Create }).Should().Be(100_00000000L); // assuming private ae.ratio = 100000
             }
 
             // Neo.Contract.Migrate: 471b6290 (requires push properties on fourth position)
@@ -138,7 +138,7 @@ namespace Neo.UnitTests
                 debugger.StepInto(); // push 0
                 debugger.StepInto(); // push 0
                 debugger.StepInto(); // push 0
-                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.Neo_Contract_Migrate }).Should().Be(100_00000000L); // assuming private ae.ratio = 100000
+                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.Neo_Contract_Migrate }).Should().Be(10_00000000L); // assuming private ae.ratio = 100000
             }
 
             // System.Storage.Put: e63f1884 (requires push key and value)
