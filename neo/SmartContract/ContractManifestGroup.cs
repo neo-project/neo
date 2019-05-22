@@ -1,4 +1,6 @@
 ﻿using Neo.Cryptography;
+using Neo.SmartContract.Converters;
+using Newtonsoft.Json;
 
 namespace Neo.SmartContract
 {
@@ -12,6 +14,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Pubkey represents the public key of the group.
         /// </summary>
+        [JsonConverter(typeof(Hash160JsonConverter))]
         public UInt160 PubKey { get; set; }
 
         /// <summary>
