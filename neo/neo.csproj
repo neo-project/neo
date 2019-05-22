@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Copyright>2015-2019 The Neo Project</Copyright>
     <AssemblyTitle>Neo</AssemblyTitle>
-    <Version>2.10.2</Version>
+    <Version>2.10.2.1</Version>
     <Authors>The Neo Project</Authors>
     <TargetFrameworks>netstandard2.0;net47</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -11,6 +11,7 @@
     <PackageId>Neo</PackageId>
     <PackageTags>NEO;AntShares;Blockchain;Smart Contract</PackageTags>
     <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/neo-project/neo.git</RepositoryUrl>
     <RootNamespace>Neo</RootNamespace>
