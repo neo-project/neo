@@ -18,11 +18,13 @@ namespace Neo.SmartContract
 {
     public static partial class InteropService
     {
+        public const long GasPerByte = 100000;
         public const int MaxStorageKeySize = 64;
         public const int MaxStorageValueSize = ushort.MaxValue;
 
         private static readonly Dictionary<uint, Func<ApplicationEngine, bool>> methods = new Dictionary<uint, Func<ApplicationEngine, bool>>();
         private static readonly Dictionary<uint, long> prices = new Dictionary<uint, long>();
+        private static readonly Dictionary<uint, Func<RandomAccessStack<StackItem>, long>> priceCalculators = new Dictionary<uint, Func<RandomAccessStack<StackItem>, long>>();
 
         public static readonly uint System_ExecutionEngine_GetScriptContainer = Register("System.ExecutionEngine.GetScriptContainer", ExecutionEngine_GetScriptContainer, 0_00000250);
         public static readonly uint System_ExecutionEngine_GetExecutingScriptHash = Register("System.ExecutionEngine.GetExecutingScriptHash", ExecutionEngine_GetExecutingScriptHash, 0_00000400);
@@ -56,8 +58,8 @@ namespace Neo.SmartContract
         public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400);
         public static readonly uint System_Storage_GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 0_00000400);
         public static readonly uint System_Storage_Get = Register("System.Storage.Get", Storage_Get, 0_01000000);
-        public static readonly uint System_Storage_Put = Register("System.Storage.Put", Storage_Put);
-        public static readonly uint System_Storage_PutEx = Register("System.Storage.PutEx", Storage_PutEx);
+        public static readonly uint System_Storage_Put = Register("System.Storage.Put", Storage_Put, GetStoragePrice);
+        public static readonly uint System_Storage_PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice);
         public static readonly uint System_Storage_Delete = Register("System.Storage.Delete", Storage_Delete, 0_01000000);
         public static readonly uint System_StorageContext_AsReadOnly = Register("System.StorageContext.AsReadOnly", StorageContext_AsReadOnly, 0_00000400);
 
@@ -69,9 +71,17 @@ namespace Neo.SmartContract
             return true;
         }
 
-        public static long GetPrice(uint hash)
+        public static long GetPrice(uint hash, RandomAccessStack<StackItem> stack)
         {
-            return prices.TryGetValue(hash, out long price) ? price : -1;
+            if (prices.TryGetValue(hash, out long price))
+                return price;
+            else
+                return priceCalculators[hash](stack);
+        }
+
+        private static long GetStoragePrice(RandomAccessStack<StackItem> stack)
+        {
+            return (stack.Peek(1).GetByteLength() + stack.Peek(2).GetByteLength()) * GasPerByte;
         }
 
         internal static bool Invoke(ApplicationEngine engine, uint method)
@@ -81,17 +91,19 @@ namespace Neo.SmartContract
             return func(engine);
         }
 
-        private static uint Register(string method, Func<ApplicationEngine, bool> handler)
+        private static uint Register(string method, Func<ApplicationEngine, bool> handler, long price)
         {
             uint hash = method.ToInteropMethodHash();
             methods.Add(hash, handler);
+            prices.Add(hash, price);
             return hash;
         }
 
-        private static uint Register(string method, Func<ApplicationEngine, bool> handler, long price)
+        private static uint Register(string method, Func<ApplicationEngine, bool> handler, Func<RandomAccessStack<StackItem>, long> priceCalculator)
         {
-            uint hash = Register(method, handler);
-            prices.Add(hash, price);
+            uint hash = method.ToInteropMethodHash();
+            methods.Add(hash, handler);
+            priceCalculators.Add(hash, priceCalculator);
             return hash;
         }
 

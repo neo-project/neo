@@ -4,7 +4,6 @@ using Neo.Persistence;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
-using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
 {
@@ -14,7 +13,6 @@ namespace Neo.SmartContract
         public static event EventHandler<LogEventArgs> Log;
 
         public const long GasFree = 0;
-        public const long GasPerByte = 100000;
         private readonly long gas_amount;
         private readonly bool testMode;
         private readonly RandomAccessStack<UInt160> hashes = new RandomAccessStack<UInt160>();
@@ -71,32 +69,10 @@ namespace Neo.SmartContract
             base.Dispose();
         }
 
-        private long GetPriceForSysCall(uint method)
-        {
-            long price = InteropService.GetPrice(method);
-            if (price >= 0) return price;
-            if (method == InteropService.Neo_Crypto_CheckMultiSig)
-            {
-                if (CurrentContext.EvaluationStack.Count == 0) return 0;
-
-                var item = CurrentContext.EvaluationStack.Peek();
-
-                int n;
-                if (item is VMArray array) n = array.Count;
-                else n = (int)item.GetBigInteger();
-
-                if (n < 1) return 0;
-                return InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig) * n;
-            }
-            if (method == InteropService.System_Storage_Put ||
-                method == InteropService.System_Storage_PutEx)
-                return (CurrentContext.EvaluationStack.Peek(1).GetByteLength() + CurrentContext.EvaluationStack.Peek(2).GetByteLength()) * GasPerByte;
-            return 1;
-        }
-
         protected override bool OnSysCall(uint method)
         {
-            if (!AddGas(GetPriceForSysCall(method))) return false;
+            if (!AddGas(InteropService.GetPrice(method, CurrentContext.EvaluationStack)))
+                return false;
             return InteropService.Invoke(this, method);
         }
 

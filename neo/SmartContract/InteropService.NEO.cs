@@ -18,7 +18,7 @@ namespace Neo.SmartContract
     {
         public static readonly uint Neo_Native_Deploy = Register("Neo.Native.Deploy", Native_Deploy, 0);
         public static readonly uint Neo_Crypto_CheckSig = Register("Neo.Crypto.CheckSig", Crypto_CheckSig, 0_01000000);
-        public static readonly uint Neo_Crypto_CheckMultiSig = Register("Neo.Crypto.CheckMultiSig", Crypto_CheckMultiSig);
+        public static readonly uint Neo_Crypto_CheckMultiSig = Register("Neo.Crypto.CheckMultiSig", Crypto_CheckMultiSig, GetCheckMultiSigPrice);
         public static readonly uint Neo_Header_GetVersion = Register("Neo.Header.GetVersion", Header_GetVersion, 0_00000400);
         public static readonly uint Neo_Header_GetMerkleRoot = Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot, 0_00000400);
         public static readonly uint Neo_Header_GetNextConsensus = Register("Neo.Header.GetNextConsensus", Header_GetNextConsensus, 0_00000400);
@@ -44,7 +44,18 @@ namespace Neo.SmartContract
         static InteropService()
         {
             foreach (NativeContract contract in NativeContract.Contracts)
-                Register(contract.ServiceName, contract.Invoke);
+                Register(contract.ServiceName, contract.Invoke, 0);
+        }
+
+        private static long GetCheckMultiSigPrice(RandomAccessStack<StackItem> stack)
+        {
+            if (stack.Count == 0) return 0;
+            var item = stack.Peek();
+            int n;
+            if (item is VMArray array) n = array.Count;
+            else n = (int)item.GetBigInteger();
+            if (n < 1) return 0;
+            return GetPrice(Neo_Crypto_CheckSig, stack) * n;
         }
 
         private static bool Native_Deploy(ApplicationEngine engine)

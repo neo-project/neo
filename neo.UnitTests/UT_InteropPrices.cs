@@ -13,14 +13,12 @@ namespace Neo.UnitTests
         [TestMethod]
         public void ApplicationEngineFixedPrices()
         {
-            MethodInfo GetPriceForSysCall = typeof(ApplicationEngine).GetMethod("GetPriceForSysCall", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(uint) }, null);
-
             // System.Runtime.CheckWitness: f827ec8c (price is 200)
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
-                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.System_Runtime_CheckWitness }).Should().Be(0_00030000L);
+                InteropService.GetPrice(InteropService.System_Runtime_CheckWitness, ae.CurrentContext.EvaluationStack).Should().Be(0_00030000L);
             }
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
@@ -28,7 +26,7 @@ namespace Neo.UnitTests
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetContextHash);
-                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.System_Storage_GetContext }).Should().Be(0_00000400L);
+                InteropService.GetPrice(InteropService.System_Storage_GetContext, ae.CurrentContext.EvaluationStack).Should().Be(0_00000400L);
             }
 
             // System.Storage.Get: 925de831 (price is 100)
@@ -36,15 +34,13 @@ namespace Neo.UnitTests
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
-                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.System_Storage_Get }).Should().Be(0_01000000L);
+                InteropService.GetPrice(InteropService.System_Storage_Get, ae.CurrentContext.EvaluationStack).Should().Be(0_01000000L);
             }
         }
 
         [TestMethod]
         public void ApplicationEngineVariablePrices()
         {
-            MethodInfo GetPriceForSysCall = typeof(ApplicationEngine).GetMethod("GetPriceForSysCall", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(uint) }, null);
-
             // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
             byte[] SyscallContractCreateHash00 = new byte[] { (byte)ContractPropertyState.NoProperty, 0x00, 0x00, 0x00, 0x68, 0xf6, 0x6c, 0xa5, 0x6e };
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
@@ -55,7 +51,7 @@ namespace Neo.UnitTests
                 debugger.StepInto(); // push 0
                 debugger.StepInto(); // push 0
                 debugger.StepInto(); // push 0
-                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.Neo_Contract_Create }).Should().Be(100_00000000L);
+                InteropService.GetPrice(InteropService.Neo_Contract_Create, ae.CurrentContext.EvaluationStack).Should().Be(100_00000000L);
             }
 
             // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
@@ -68,7 +64,7 @@ namespace Neo.UnitTests
                 debugger.StepInto(); // push 0
                 debugger.StepInto(); // push 0
                 debugger.StepInto(); // push 0
-                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.Neo_Contract_Create }).Should().Be(100_00000000L); // assuming private ae.ratio = 100000
+                InteropService.GetPrice(InteropService.Neo_Contract_Create, ae.CurrentContext.EvaluationStack).Should().Be(100_00000000L);
             }
 
             // Neo.Contract.Migrate: 471b6290 (requires push properties on fourth position)
@@ -81,7 +77,7 @@ namespace Neo.UnitTests
                 debugger.StepInto(); // push 0
                 debugger.StepInto(); // push 0
                 debugger.StepInto(); // push 0
-                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.Neo_Contract_Migrate }).Should().Be(10_00000000L); // assuming private ae.ratio = 100000
+                InteropService.GetPrice(InteropService.Neo_Contract_Migrate, ae.CurrentContext.EvaluationStack).Should().Be(10_00000000L);
             }
 
             // System.Storage.Put: e63f1884 (requires push key and value)
@@ -93,7 +89,7 @@ namespace Neo.UnitTests
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.System_Storage_Put }).Should().Be(200000L); //(1+1) * 100000;
+                InteropService.GetPrice(InteropService.System_Storage_Put, ae.CurrentContext.EvaluationStack).Should().Be(200000L);
             }
 
             // System.Storage.PutEx: 73e19b3a (requires push key and value)
@@ -105,7 +101,7 @@ namespace Neo.UnitTests
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
-                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.System_Storage_PutEx }).Should().Be(200000L); //(1+1) * 100000;
+                InteropService.GetPrice(InteropService.System_Storage_PutEx, ae.CurrentContext.EvaluationStack).Should().Be(200000L);
             }
         }
     }
