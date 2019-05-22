@@ -26,8 +26,8 @@ namespace Neo.SmartContract
         public static readonly uint Neo_Transaction_GetScript = Register("Neo.Transaction.GetScript", Transaction_GetScript, 100000);
         public static readonly uint Neo_Witness_GetVerificationScript = Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript, 10000000);
         public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 10000000);
-        public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create);
-        public static readonly uint Neo_Contract_Migrate = Register("Neo.Contract.Migrate", Contract_Migrate);
+        public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, 100_00000000);
+        public static readonly uint Neo_Contract_Migrate = Register("Neo.Contract.Migrate", Contract_Migrate, 10_00000000);
         public static readonly uint Neo_Contract_GetScript = Register("Neo.Contract.GetScript", Contract_GetScript, 100000);
         public static readonly uint Neo_Contract_IsPayable = Register("Neo.Contract.IsPayable", Contract_IsPayable, 100000);
         public static readonly uint Neo_Storage_Find = Register("Neo.Storage.Find", Storage_Find, 100000);

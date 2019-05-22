@@ -88,19 +88,6 @@ namespace Neo.SmartContract
                 if (n < 1) return 0;
                 return InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig) * n;
             }
-            if (method == InteropService.Neo_Contract_Create ||
-                method == InteropService.Neo_Contract_Migrate)
-            {
-                long fee = 100_00000000;
-
-                ContractPropertyState contract_properties = (ContractPropertyState)(byte)CurrentContext.EvaluationStack.Peek(3).GetBigInteger();
-
-                if (contract_properties.HasFlag(ContractPropertyState.HasStorage))
-                {
-                    fee += 400_00000000;
-                }
-                return fee;
-            }
             if (method == InteropService.System_Storage_Put ||
                 method == InteropService.System_Storage_PutEx)
                 return (CurrentContext.EvaluationStack.Peek(1).GetByteLength() + CurrentContext.EvaluationStack.Peek(2).GetByteLength()) * GasPerByte;
