@@ -23,6 +23,17 @@ namespace Neo.SmartContract.Native.Tokens
         {
         }
 
+        protected override long GetPriceForMethod(string method)
+        {
+            switch (method)
+            {
+                case "getSysFeeAmount":
+                    return 0_01000000;
+                default:
+                    return base.GetPriceForMethod(method);
+            }
+        }
+
         protected override StackItem Main(ApplicationEngine engine, string operation, VMArray args)
         {
             if (operation == "getSysFeeAmount")

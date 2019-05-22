@@ -30,6 +30,25 @@ namespace Neo.SmartContract.Native.Tokens
             this.TotalAmount = 100000000 * Factor;
         }
 
+        protected override long GetPriceForMethod(string method)
+        {
+            switch (method)
+            {
+                case "unclaimedGas":
+                    return 0_03000000;
+                case "registerValidator":
+                    return 0_05000000;
+                case "vote":
+                    return 5_00000000;
+                case "getRegisteredValidators":
+                case "getValidators":
+                case "getNextBlockValidators":
+                    return 1_00000000;
+                default:
+                    return base.GetPriceForMethod(method);
+            }
+        }
+
         protected override StackItem Main(ApplicationEngine engine, string operation, VMArray args)
         {
             switch (operation)

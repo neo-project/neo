@@ -30,6 +30,24 @@ namespace Neo.SmartContract.Native.Tokens
             return CreateStorageKey(Prefix_Account, account);
         }
 
+        protected override long GetPriceForMethod(string method)
+        {
+            switch (method)
+            {
+                case "name":
+                case "symbol":
+                case "decimals":
+                    return 0;
+                case "totalSupply":
+                case "balanceOf":
+                    return 0_01000000;
+                case "transfer":
+                    return 0_08000000;
+                default:
+                    return base.GetPriceForMethod(method);
+            }
+        }
+
         protected override StackItem Main(ApplicationEngine engine, string operation, VMArray args)
         {
             switch (operation)

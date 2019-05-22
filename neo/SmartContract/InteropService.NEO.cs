@@ -44,7 +44,7 @@ namespace Neo.SmartContract
         static InteropService()
         {
             foreach (NativeContract contract in NativeContract.Contracts)
-                Register(contract.ServiceName, contract.Invoke, 0);
+                Register(contract.ServiceName, contract.Invoke, contract.GetPrice);
         }
 
         private static long GetCheckMultiSigPrice(RandomAccessStack<StackItem> stack)
