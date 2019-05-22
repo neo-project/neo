@@ -128,7 +128,6 @@ namespace Neo.SmartContract
             if (Groups != null && manifest.Groups != null && Groups.Any(a => manifest.Groups.Any(b => a.PubKey.Equals(b.PubKey))))
             {
                 // Same group
-
                 return true;
             }
 
@@ -136,7 +135,6 @@ namespace Neo.SmartContract
             {
                 // null == * wildcard
                 // You don't have rights in the contract
-
                 return false;
             }
 
@@ -156,10 +154,11 @@ namespace Neo.SmartContract
         /// <summary>
         /// To json
         /// </summary>
+        /// <param name="indented">Indented</param>
         /// <returns>Return json string</returns>
-        public string ToJson()
+        public string ToJson(bool indented = false)
         {
-            return JsonConvert.SerializeObject(this, Formatting.None, _jsonSettings);
+            return JsonConvert.SerializeObject(this, indented ? Formatting.Indented : Formatting.None, _jsonSettings);
         }
 
         /// <summary>
@@ -181,7 +180,15 @@ namespace Neo.SmartContract
 
         public void Deserialize(BinaryReader reader)
         {
-            throw new NotImplementedException();
+            var manifest = Parse(reader.ReadVarString(MaxLength));
+
+            Hash = manifest.Hash;
+            Groups = manifest.Groups;
+            Trusts = manifest.Trusts;
+            Permissions = manifest.Permissions;
+            SafeMethods = manifest.SafeMethods;
+            Abi = manifest.Abi;
+            Features = manifest.Features;
         }
 
         public bool Equals(ContractManifest other)
