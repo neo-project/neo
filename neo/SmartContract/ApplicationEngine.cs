@@ -1,7 +1,6 @@
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -9,13 +8,13 @@ using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
 {
-    public class ApplicationEngine : ExecutionEngine
+    public partial class ApplicationEngine : ExecutionEngine
     {
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
 
-        public static readonly long GasFree = 10 * (long)NativeContract.GAS.Factor;
-        private const long ratio = 100000;
+        public const long GasFree = 0;
+        public const long GasPerByte = 100000;
         private readonly long gas_amount;
         private readonly bool testMode;
         private readonly RandomAccessStack<UInt160> hashes = new RandomAccessStack<UInt160>();
@@ -48,6 +47,12 @@ namespace Neo.SmartContract
             return disposable;
         }
 
+        private bool AddGas(long gas)
+        {
+            GasConsumed = checked(GasConsumed + gas);
+            return testMode || GasConsumed <= gas_amount;
+        }
+
         private void ApplicationEngine_ContextLoaded(object sender, ExecutionContext e)
         {
             hashes.Push(((byte[])e.Script).ToScriptHash());
@@ -66,30 +71,13 @@ namespace Neo.SmartContract
             base.Dispose();
         }
 
-        protected virtual long GetPrice()
+        private long GetPriceForSysCall(uint method)
         {
-            Instruction instruction = CurrentContext.CurrentInstruction;
-            if (instruction.OpCode <= OpCode.NOP) return 0;
-            switch (instruction.OpCode)
-            {
-                case OpCode.SYSCALL:
-                    return GetPriceForSysCall();
-                case OpCode.SHA1:
-                case OpCode.SHA256:
-                    return 10;
-                default: return 1;
-            }
-        }
-
-        protected virtual long GetPriceForSysCall()
-        {
-            Instruction instruction = CurrentContext.CurrentInstruction;
-            uint method = instruction.TokenU32;
             long price = InteropService.GetPrice(method);
-            if (price > 0) return price;
+            if (price >= 0) return price;
             if (method == InteropService.Neo_Crypto_CheckMultiSig)
             {
-                if (CurrentContext.EvaluationStack.Count == 0) return 1;
+                if (CurrentContext.EvaluationStack.Count == 0) return 0;
 
                 var item = CurrentContext.EvaluationStack.Peek();
 
@@ -97,30 +85,31 @@ namespace Neo.SmartContract
                 if (item is VMArray array) n = array.Count;
                 else n = (int)item.GetBigInteger();
 
-                if (n < 1) return 1;
-                return 100 * n;
+                if (n < 1) return 0;
+                return InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig) * n;
             }
             if (method == InteropService.Neo_Contract_Create ||
                 method == InteropService.Neo_Contract_Migrate)
             {
-                long fee = 100L;
+                long fee = 100_00000000;
 
                 ContractPropertyState contract_properties = (ContractPropertyState)(byte)CurrentContext.EvaluationStack.Peek(3).GetBigInteger();
 
                 if (contract_properties.HasFlag(ContractPropertyState.HasStorage))
                 {
-                    fee += 400L;
+                    fee += 400_00000000;
                 }
-                return fee * (long)NativeContract.GAS.Factor / ratio;
+                return fee;
             }
             if (method == InteropService.System_Storage_Put ||
                 method == InteropService.System_Storage_PutEx)
-                return ((CurrentContext.EvaluationStack.Peek(1).GetByteArray().Length + CurrentContext.EvaluationStack.Peek(2).GetByteArray().Length - 1) / 1024 + 1) * 1000;
+                return (CurrentContext.EvaluationStack.Peek(1).GetByteLength() + CurrentContext.EvaluationStack.Peek(2).GetByteLength()) * GasPerByte;
             return 1;
         }
 
         protected override bool OnSysCall(uint method)
         {
+            if (!AddGas(GetPriceForSysCall(method))) return false;
             return InteropService.Invoke(this, method);
         }
 
@@ -128,9 +117,7 @@ namespace Neo.SmartContract
         {
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
                 return true;
-            GasConsumed = checked(GasConsumed + GetPrice() * ratio);
-            if (!testMode && GasConsumed > gas_amount) return false;
-            return true;
+            return AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
         }
 
         public static ApplicationEngine Run(byte[] script, Snapshot snapshot,

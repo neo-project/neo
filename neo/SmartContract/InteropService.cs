@@ -24,42 +24,42 @@ namespace Neo.SmartContract
         private static readonly Dictionary<uint, Func<ApplicationEngine, bool>> methods = new Dictionary<uint, Func<ApplicationEngine, bool>>();
         private static readonly Dictionary<uint, long> prices = new Dictionary<uint, long>();
 
-        public static readonly uint System_ExecutionEngine_GetScriptContainer = Register("System.ExecutionEngine.GetScriptContainer", ExecutionEngine_GetScriptContainer, 1);
-        public static readonly uint System_ExecutionEngine_GetExecutingScriptHash = Register("System.ExecutionEngine.GetExecutingScriptHash", ExecutionEngine_GetExecutingScriptHash, 1);
-        public static readonly uint System_ExecutionEngine_GetCallingScriptHash = Register("System.ExecutionEngine.GetCallingScriptHash", ExecutionEngine_GetCallingScriptHash, 1);
-        public static readonly uint System_ExecutionEngine_GetEntryScriptHash = Register("System.ExecutionEngine.GetEntryScriptHash", ExecutionEngine_GetEntryScriptHash, 1);
-        public static readonly uint System_Runtime_Platform = Register("System.Runtime.Platform", Runtime_Platform, 1);
-        public static readonly uint System_Runtime_GetTrigger = Register("System.Runtime.GetTrigger", Runtime_GetTrigger, 1);
-        public static readonly uint System_Runtime_CheckWitness = Register("System.Runtime.CheckWitness", Runtime_CheckWitness, 200);
-        public static readonly uint System_Runtime_Notify = Register("System.Runtime.Notify", Runtime_Notify, 1);
-        public static readonly uint System_Runtime_Log = Register("System.Runtime.Log", Runtime_Log, 1);
-        public static readonly uint System_Runtime_GetTime = Register("System.Runtime.GetTime", Runtime_GetTime, 1);
-        public static readonly uint System_Runtime_Serialize = Register("System.Runtime.Serialize", Runtime_Serialize, 1);
-        public static readonly uint System_Runtime_Deserialize = Register("System.Runtime.Deserialize", Runtime_Deserialize, 1);
-        public static readonly uint System_Crypto_Verify = Register("System.Crypto.Verify", Crypto_Verify, 100);
-        public static readonly uint System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", Blockchain_GetHeight, 1);
-        public static readonly uint System_Blockchain_GetHeader = Register("System.Blockchain.GetHeader", Blockchain_GetHeader, 100);
-        public static readonly uint System_Blockchain_GetBlock = Register("System.Blockchain.GetBlock", Blockchain_GetBlock, 200);
-        public static readonly uint System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", Blockchain_GetTransaction, 200);
-        public static readonly uint System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight, 100);
-        public static readonly uint System_Blockchain_GetContract = Register("System.Blockchain.GetContract", Blockchain_GetContract, 100);
-        public static readonly uint System_Header_GetIndex = Register("System.Header.GetIndex", Header_GetIndex, 1);
-        public static readonly uint System_Header_GetHash = Register("System.Header.GetHash", Header_GetHash, 1);
-        public static readonly uint System_Header_GetPrevHash = Register("System.Header.GetPrevHash", Header_GetPrevHash, 1);
-        public static readonly uint System_Header_GetTimestamp = Register("System.Header.GetTimestamp", Header_GetTimestamp, 1);
-        public static readonly uint System_Block_GetTransactionCount = Register("System.Block.GetTransactionCount", Block_GetTransactionCount, 1);
-        public static readonly uint System_Block_GetTransactions = Register("System.Block.GetTransactions", Block_GetTransactions, 1);
-        public static readonly uint System_Block_GetTransaction = Register("System.Block.GetTransaction", Block_GetTransaction, 1);
-        public static readonly uint System_Transaction_GetHash = Register("System.Transaction.GetHash", Transaction_GetHash, 1);
-        public static readonly uint System_Contract_Call = Register("System.Contract.Call", Contract_Call, 10);
-        public static readonly uint System_Contract_Destroy = Register("System.Contract.Destroy", Contract_Destroy, 1);
-        public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 1);
-        public static readonly uint System_Storage_GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 1);
-        public static readonly uint System_Storage_Get = Register("System.Storage.Get", Storage_Get, 100);
+        public static readonly uint System_ExecutionEngine_GetScriptContainer = Register("System.ExecutionEngine.GetScriptContainer", ExecutionEngine_GetScriptContainer, 100000);
+        public static readonly uint System_ExecutionEngine_GetExecutingScriptHash = Register("System.ExecutionEngine.GetExecutingScriptHash", ExecutionEngine_GetExecutingScriptHash, 100000);
+        public static readonly uint System_ExecutionEngine_GetCallingScriptHash = Register("System.ExecutionEngine.GetCallingScriptHash", ExecutionEngine_GetCallingScriptHash, 100000);
+        public static readonly uint System_ExecutionEngine_GetEntryScriptHash = Register("System.ExecutionEngine.GetEntryScriptHash", ExecutionEngine_GetEntryScriptHash, 100000);
+        public static readonly uint System_Runtime_Platform = Register("System.Runtime.Platform", Runtime_Platform, 100000);
+        public static readonly uint System_Runtime_GetTrigger = Register("System.Runtime.GetTrigger", Runtime_GetTrigger, 100000);
+        public static readonly uint System_Runtime_CheckWitness = Register("System.Runtime.CheckWitness", Runtime_CheckWitness, 20000000);
+        public static readonly uint System_Runtime_Notify = Register("System.Runtime.Notify", Runtime_Notify, 100000);
+        public static readonly uint System_Runtime_Log = Register("System.Runtime.Log", Runtime_Log, 100000);
+        public static readonly uint System_Runtime_GetTime = Register("System.Runtime.GetTime", Runtime_GetTime, 100000);
+        public static readonly uint System_Runtime_Serialize = Register("System.Runtime.Serialize", Runtime_Serialize, 100000);
+        public static readonly uint System_Runtime_Deserialize = Register("System.Runtime.Deserialize", Runtime_Deserialize, 100000);
+        public static readonly uint System_Crypto_Verify = Register("System.Crypto.Verify", Crypto_Verify, 10000000);
+        public static readonly uint System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", Blockchain_GetHeight, 100000);
+        public static readonly uint System_Blockchain_GetHeader = Register("System.Blockchain.GetHeader", Blockchain_GetHeader, 10000000);
+        public static readonly uint System_Blockchain_GetBlock = Register("System.Blockchain.GetBlock", Blockchain_GetBlock, 20000000);
+        public static readonly uint System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", Blockchain_GetTransaction, 20000000);
+        public static readonly uint System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight, 10000000);
+        public static readonly uint System_Blockchain_GetContract = Register("System.Blockchain.GetContract", Blockchain_GetContract, 10000000);
+        public static readonly uint System_Header_GetIndex = Register("System.Header.GetIndex", Header_GetIndex, 100000);
+        public static readonly uint System_Header_GetHash = Register("System.Header.GetHash", Header_GetHash, 100000);
+        public static readonly uint System_Header_GetPrevHash = Register("System.Header.GetPrevHash", Header_GetPrevHash, 100000);
+        public static readonly uint System_Header_GetTimestamp = Register("System.Header.GetTimestamp", Header_GetTimestamp, 100000);
+        public static readonly uint System_Block_GetTransactionCount = Register("System.Block.GetTransactionCount", Block_GetTransactionCount, 100000);
+        public static readonly uint System_Block_GetTransactions = Register("System.Block.GetTransactions", Block_GetTransactions, 100000);
+        public static readonly uint System_Block_GetTransaction = Register("System.Block.GetTransaction", Block_GetTransaction, 100000);
+        public static readonly uint System_Transaction_GetHash = Register("System.Transaction.GetHash", Transaction_GetHash, 100000);
+        public static readonly uint System_Contract_Call = Register("System.Contract.Call", Contract_Call, 1000000);
+        public static readonly uint System_Contract_Destroy = Register("System.Contract.Destroy", Contract_Destroy, 100000);
+        public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 100000);
+        public static readonly uint System_Storage_GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 100000);
+        public static readonly uint System_Storage_Get = Register("System.Storage.Get", Storage_Get, 10000000);
         public static readonly uint System_Storage_Put = Register("System.Storage.Put", Storage_Put);
         public static readonly uint System_Storage_PutEx = Register("System.Storage.PutEx", Storage_PutEx);
-        public static readonly uint System_Storage_Delete = Register("System.Storage.Delete", Storage_Delete, 100);
-        public static readonly uint System_StorageContext_AsReadOnly = Register("System.StorageContext.AsReadOnly", StorageContext_AsReadOnly, 1);
+        public static readonly uint System_Storage_Delete = Register("System.Storage.Delete", Storage_Delete, 10000000);
+        public static readonly uint System_StorageContext_AsReadOnly = Register("System.StorageContext.AsReadOnly", StorageContext_AsReadOnly, 100000);
 
         private static bool CheckStorageContext(ApplicationEngine engine, StorageContext context)
         {
@@ -71,8 +71,7 @@ namespace Neo.SmartContract
 
         public static long GetPrice(uint hash)
         {
-            prices.TryGetValue(hash, out long price);
-            return price;
+            return prices.TryGetValue(hash, out long price) ? price : -1;
         }
 
         internal static bool Invoke(ApplicationEngine engine, uint method)
