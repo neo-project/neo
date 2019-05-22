@@ -11,63 +11,6 @@ namespace Neo.UnitTests
     public class UT_InteropPrices
     {
         [TestMethod]
-        public void NeoServiceFixedPrices()
-        {
-            InteropService.GetPrice(InteropService.Neo_Header_GetVersion).Should().Be(100000);
-            InteropService.GetPrice(InteropService.Neo_Header_GetMerkleRoot).Should().Be(100000);
-            InteropService.GetPrice(InteropService.Neo_Header_GetNextConsensus).Should().Be(100000);
-            InteropService.GetPrice(InteropService.Neo_Transaction_GetWitnesses).Should().Be(20000000);
-            InteropService.GetPrice(InteropService.Neo_Transaction_GetScript).Should().Be(100000);
-            InteropService.GetPrice(InteropService.Neo_Witness_GetVerificationScript).Should().Be(10000000);
-            InteropService.GetPrice(InteropService.Neo_Account_IsStandard).Should().Be(10000000);
-            InteropService.GetPrice(InteropService.Neo_Contract_GetScript).Should().Be(100000);
-            InteropService.GetPrice(InteropService.Neo_Contract_IsPayable).Should().Be(100000);
-            InteropService.GetPrice(InteropService.Neo_Storage_Find).Should().Be(100000);
-            InteropService.GetPrice(InteropService.Neo_Enumerator_Create).Should().Be(100000);
-            InteropService.GetPrice(InteropService.Neo_Enumerator_Next).Should().Be(100000);
-            InteropService.GetPrice(InteropService.Neo_Enumerator_Value).Should().Be(100000);
-            InteropService.GetPrice(InteropService.Neo_Enumerator_Concat).Should().Be(100000);
-            InteropService.GetPrice(InteropService.Neo_Iterator_Create).Should().Be(100000);
-            InteropService.GetPrice(InteropService.Neo_Iterator_Key).Should().Be(100000);
-            InteropService.GetPrice(InteropService.Neo_Iterator_Keys).Should().Be(100000);
-            InteropService.GetPrice(InteropService.Neo_Iterator_Values).Should().Be(100000);
-            InteropService.GetPrice(InteropService.Neo_Iterator_Concat).Should().Be(100000);
-        }
-
-        [TestMethod]
-        public void StandardServiceFixedPrices()
-        {
-            InteropService.GetPrice(InteropService.System_Runtime_Platform).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Runtime_GetTrigger).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Runtime_CheckWitness).Should().Be(20000000);
-            InteropService.GetPrice(InteropService.System_Runtime_Notify).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Runtime_Log).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Runtime_GetTime).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Runtime_Serialize).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Runtime_Deserialize).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Blockchain_GetHeight).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Blockchain_GetHeader).Should().Be(10000000);
-            InteropService.GetPrice(InteropService.System_Blockchain_GetBlock).Should().Be(20000000);
-            InteropService.GetPrice(InteropService.System_Blockchain_GetTransaction).Should().Be(20000000);
-            InteropService.GetPrice(InteropService.System_Blockchain_GetTransactionHeight).Should().Be(10000000);
-            InteropService.GetPrice(InteropService.System_Blockchain_GetContract).Should().Be(10000000);
-            InteropService.GetPrice(InteropService.System_Header_GetIndex).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Header_GetHash).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Header_GetPrevHash).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Header_GetTimestamp).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Block_GetTransactionCount).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Block_GetTransactions).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Block_GetTransaction).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Transaction_GetHash).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Contract_Destroy).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Storage_GetContext).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Storage_GetReadOnlyContext).Should().Be(100000);
-            InteropService.GetPrice(InteropService.System_Storage_Get).Should().Be(10000000);
-            InteropService.GetPrice(InteropService.System_Storage_Delete).Should().Be(10000000);
-            InteropService.GetPrice(InteropService.System_StorageContext_AsReadOnly).Should().Be(100000);
-        }
-
-        [TestMethod]
         public void ApplicationEngineFixedPrices()
         {
             MethodInfo GetPriceForSysCall = typeof(ApplicationEngine).GetMethod("GetPriceForSysCall", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(uint) }, null);
@@ -77,7 +20,7 @@ namespace Neo.UnitTests
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
-                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.System_Runtime_CheckWitness }).Should().Be(20000000L);
+                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.System_Runtime_CheckWitness }).Should().Be(0_00030000L);
             }
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
@@ -85,7 +28,7 @@ namespace Neo.UnitTests
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetContextHash);
-                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.System_Storage_GetContext }).Should().Be(100000L);
+                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.System_Storage_GetContext }).Should().Be(0_00000400L);
             }
 
             // System.Storage.Get: 925de831 (price is 100)
@@ -93,7 +36,7 @@ namespace Neo.UnitTests
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
-                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.System_Storage_Get }).Should().Be(10000000L);
+                GetPriceForSysCall.Invoke(ae, new object[] { InteropService.System_Storage_Get }).Should().Be(0_01000000L);
             }
         }
 
