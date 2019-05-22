@@ -46,7 +46,6 @@ namespace Neo.SmartContract
             if (!Contract.Equals(contractHash))
             {
                 // 0x00 = * wildcard
-
                 if (Contract != UInt160.Zero) return false;
             }
 
