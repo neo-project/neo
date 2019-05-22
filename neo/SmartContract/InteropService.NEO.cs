@@ -29,6 +29,7 @@ namespace Neo.SmartContract
         public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 100);
         public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create);
         public static readonly uint Neo_Contract_Migrate = Register("Neo.Contract.Migrate", Contract_Migrate);
+        public static readonly uint Neo_Contract_UpdateManifest = Register("Neo.Contract.UpdateManifest", Contract_UpdateManifest);
         public static readonly uint Neo_Contract_GetScript = Register("Neo.Contract.GetScript", Contract_GetScript, 1);
         public static readonly uint Neo_Contract_IsPayable = Register("Neo.Contract.IsPayable", Contract_IsPayable, 1);
         public static readonly uint Neo_Storage_Find = Register("Neo.Storage.Find", Storage_Find, 1);
@@ -246,6 +247,24 @@ namespace Neo.SmartContract
 
                 engine.Snapshot.Contracts.Add(hash, contract);
             }
+            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
+            return true;
+        }
+
+        private static bool Contract_UpdateManifest(ApplicationEngine engine)
+        {
+            if (engine.Trigger != TriggerType.Application) return false;
+
+            var manifest = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
+            if (manifest.Length >= ContractManifest.MaxLength) return false;
+
+            var contract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
+            if (contract == null) return false;
+
+            contract.Manifest = ContractManifest.Parse(manifest);
+            if (!contract.Manifest.IsValid()) return false;
+
+            engine.Snapshot.Contracts.Add(contract.ScriptHash, contract);
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
             return true;
         }
