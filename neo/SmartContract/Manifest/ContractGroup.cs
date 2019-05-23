@@ -1,8 +1,6 @@
 ﻿using Neo.Cryptography;
 using Neo.Cryptography.ECC;
-using Neo.IO;
 using Neo.IO.Json;
-using System.Linq;
 
 namespace Neo.SmartContract.Manifest
 {
@@ -43,7 +41,7 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return true or false</returns>
         public bool IsValid(UInt160 contractHash)
         {
-            return Crypto.Default.VerifySignature(contractHash.ToArray(), Signature, PubKey.ToArray());
+            return Crypto.Default.VerifySignature(contractHash.ToArray(), Signature, PubKey.EncodePoint(false));
         }
 
         public virtual JObject ToJson()
