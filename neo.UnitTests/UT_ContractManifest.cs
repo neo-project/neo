@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.ECC;
 using Neo.SmartContract;
 
 namespace Neo.UnitTests
@@ -72,12 +73,12 @@ namespace Neo.UnitTests
         [TestMethod]
         public void ParseFromJson_Groups()
         {
-            var json = @"{""groups"":[{""pubKey"":""0x0000000000000000000000000000000000000000"",""signature"":""41""}],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Array""},""methods"":[],""events"":[]},""permissions"":[],""trusts"":[],""safeMethods"":[]}";
+            var json = @"{""groups"":[{""pubKey"":""03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c"",""signature"":""41414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141""}],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Array""},""methods"":[],""events"":[]},""permissions"":[],""trusts"":[],""safeMethods"":[]}";
             var manifest = ContractManifest.Parse(json);
             Assert.AreEqual(manifest.ToJson().ToString(), json);
 
             var check = ContractManifest.CreateDefault(UInt160.Zero);
-            check.Groups = new ContractManifestGroup[] { new ContractManifestGroup() { PubKey = UInt160.Zero, Signature = new byte[] { 0x41 } } };
+            check.Groups = new ContractManifestGroup[] { new ContractManifestGroup() { PubKey = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1), Signature = "41414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141".HexToBytes() } };
             Assert.IsTrue(manifest.Equals(check));
         }
     }

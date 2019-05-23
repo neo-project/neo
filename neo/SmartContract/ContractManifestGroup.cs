@@ -1,4 +1,6 @@
 ﻿using Neo.Cryptography;
+using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.IO.Json;
 using System;
 using System.Linq;
@@ -15,7 +17,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Pubkey represents the public key of the group.
         /// </summary>
-        public UInt160 PubKey { get; set; }
+        public ECPoint PubKey { get; set; }
 
         /// <summary>
         /// Signature is the signature of the contract hash.
@@ -52,7 +54,7 @@ namespace Neo.SmartContract
         {
             return new ContractManifestGroup
             {
-                PubKey = UInt160.Parse(json["pubKey"].AsString()),
+                PubKey = ECPoint.Parse(json["pubKey"].AsString(), ECCurve.Secp256r1),
                 Signature = json["signature"].AsString().HexToBytes(),
             };
         }
