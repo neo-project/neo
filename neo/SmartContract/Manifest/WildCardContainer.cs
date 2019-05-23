@@ -18,7 +18,7 @@ namespace Neo.SmartContract.Manifest
         public int Count => _data?.Length ?? 0;
 
         /// <summary>
-        /// Is will card?
+        /// Is wildcard?
         /// </summary>
         public bool IsWildcard => _data is null;
 
@@ -32,16 +32,16 @@ namespace Neo.SmartContract.Manifest
         }
 
         /// <summary>
-        /// Create a new WillCardContainer
+        /// Create a new WildCardContainer
         /// </summary>
         /// <param name="data">Data</param>
-        /// <returns>WillCardContainer</returns>
+        /// <returns>WildCardContainer</returns>
         public static WildCardContainer<T> Create(params T[] data) => new WildCardContainer<T>(data);
 
         /// <summary>
-        /// Create a will card
+        /// Create a wildcard
         /// </summary>
-        /// <returns>WillCardContainer</returns>
+        /// <returns>WildCardContainer</returns>
         public static WildCardContainer<T> CreateWildcard() => new WildCardContainer<T>(null);
 
         public static WildCardContainer<T> FromJson(JObject json, Func<JObject, T> elementSelector)
