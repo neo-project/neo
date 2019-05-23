@@ -473,27 +473,27 @@ namespace Neo.SmartContract
 
         private static bool Contract_Call(ApplicationEngine engine)
         {
-            var contractItem = engine.CurrentContext.EvaluationStack.Pop();
+            StackItem contractOrHash = engine.CurrentContext.EvaluationStack.Pop();
 
             ContractState contract;
-            if (contractItem is InteropInterface<ContractState> _interface)
+            if (contractOrHash is InteropInterface<ContractState> _interface)
                 contract = _interface;
             else
-                contract = engine.Snapshot.Contracts.TryGet(new UInt160(contractItem.GetByteArray()));
+                contract = engine.Snapshot.Contracts.TryGet(new UInt160(contractOrHash.GetByteArray()));
             if (contract is null) return false;
 
-            var argumentItem = engine.CurrentContext.EvaluationStack.Pop();
-            var methodItem = engine.CurrentContext.EvaluationStack.Pop();
+            var method = engine.CurrentContext.EvaluationStack.Pop();
+            var args = engine.CurrentContext.EvaluationStack.Pop();
             var currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest ?? ContractManifest.CreateDefault(engine.CurrentScriptHash);
 
-            if (!currentManifest.CanCall(contract.Manifest ?? ContractManifest.CreateDefault(engine.CurrentScriptHash), Encoding.UTF8.GetString(methodItem.GetByteArray())))
+            if (!currentManifest.CanCall(contract.Manifest ?? ContractManifest.CreateDefault(engine.CurrentScriptHash), Encoding.UTF8.GetString(args.GetByteArray())))
             {
                 return false;
             }
 
             var context_new = engine.LoadScript(contract.Script, 1);
-            context_new.EvaluationStack.Push(methodItem);
-            context_new.EvaluationStack.Push(argumentItem);
+            context_new.EvaluationStack.Push(args);
+            context_new.EvaluationStack.Push(method);
             return true;
         }
 
