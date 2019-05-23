@@ -242,6 +242,7 @@ namespace Neo.SmartContract
             };
 
             if (!contract.Manifest.IsValid()) return false;
+            if (contract.Manifest.Hash != contract.ScriptHash) return false;
 
             engine.Snapshot.Contracts.Add(hash, contract);
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
