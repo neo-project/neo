@@ -1,6 +1,5 @@
 ﻿using Neo.IO;
 using Neo.IO.Json;
-using System;
 using System.IO;
 using System.Linq;
 
@@ -45,7 +44,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// The permissions field is an array containing a set of Permission objects. It describes which contracts may be invoked and which methods are called.
         /// </summary>
-        public WildCardContainer<ContractPermission> Permissions { get; set; }
+        public ContractPermission[] Permissions { get; set; }
 
         /// <summary>
         /// The trusts field is an array containing a set of contract hashes or group public keys. It can also be assigned with a wildcard *. If it is a wildcard *, then it means that it trusts any contract.
@@ -68,7 +67,7 @@ namespace Neo.SmartContract.Manifest
         {
             return new ContractManifest()
             {
-                Permissions = WildCardContainer<ContractPermission>.CreateWildcard(),
+                Permissions = new[] { ContractPermission.DefaultPermission },
                 Abi = new ContractAbi()
                 {
                     Hash = hash,
@@ -91,20 +90,7 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return true or false</returns>
         public bool CanCall(ContractManifest manifest, string method)
         {
-            if (Groups.Any(a => manifest.Groups.Any(b => a.PubKey.Equals(b.PubKey))))
-            {
-                // Same group
-                return true;
-            }
-
-            if (manifest.Trusts != null && !manifest.Trusts.IsWildcard && !manifest.Trusts.Contains(Hash))
-            {
-                // null == * wildcard
-                // You don't have rights in the contract
-                return false;
-            }
-
-            return Permissions == null || Permissions.IsWildcard || Permissions.Any(u => u.IsAllowed(manifest.Hash, method));
+            return Permissions.Any(u => u.IsAllowed(manifest, method));
         }
 
         /// <summary>
@@ -139,7 +125,7 @@ namespace Neo.SmartContract.Manifest
             json["groups"] = new JArray(Groups.Select(u => u.ToJson()).ToArray());
             json["features"] = feature;
             json["abi"] = Abi.ToJson();
-            json["permissions"] = Permissions.ToJson();
+            json["permissions"] = Permissions.Select(p => p.ToJson()).ToArray();
             json["trusts"] = Trusts.ToJson();
             json["safeMethods"] = SafeMethods.ToJson();
 
@@ -173,7 +159,7 @@ namespace Neo.SmartContract.Manifest
             Abi = ContractAbi.FromJson(json["abi"]);
             Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson(u)).ToArray();
             Features = ContractFeatures.NoProperty;
-            Permissions = WildCardContainer<ContractPermission>.FromJson(json["permissions"], ContractPermission.FromJson);
+            Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray();
             Trusts = WildCardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString()));
             SafeMethods = WildCardContainer<string>.FromJson(json["safeMethods"], u => u.AsString());
 

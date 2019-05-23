@@ -70,16 +70,7 @@ namespace Neo.SmartContract.Manifest
         public JObject ToJson()
         {
             if (IsWildcard) return "*";
-            return _data.Select(p =>
-            {
-                switch (p)
-                {
-                    case IJsonSerializable serializable:
-                        return serializable.ToJson();
-                    default:
-                        return p.ToString();
-                }
-            }).ToArray();
+            return _data.Select(p => (JObject)p.ToString()).ToArray();
         }
     }
 }
