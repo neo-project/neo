@@ -131,19 +131,6 @@ namespace Neo.UnitTests
                 GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(500L * 100000000L / 100000); // assuming private ae.ratio = 100000
             }
 
-            // Neo.Contract.Migrate: 471b6290 (requires push properties on fourth position)
-            byte[] SyscallContractMigrateHash00 = new byte[]{(byte)ContractFeatures.NoProperty, 0x00, 0x00, 0x00, 0x68, 0x47, 0x1b, 0x62, 0x90};
-            using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0) )
-            {
-                Debugger debugger = new Debugger(ae);
-                ae.LoadScript(SyscallContractMigrateHash00);
-                debugger.StepInto(); // push 0 - ContractPropertyState.NoProperty
-                debugger.StepInto(); // push 0
-                debugger.StepInto(); // push 0
-                debugger.StepInto(); // push 0
-                GetPriceForSysCall.Invoke(ae, new object[]{}).Should().Be(100L * 100000000L / 100000); // assuming private ae.ratio = 100000
-            }
-
             // System.Storage.Put: e63f1884 (requires push key and value)
             byte[] SyscallStoragePutHash = new byte[]{0x53, 0x53, 0x00, 0x68, 0xe6, 0x3f, 0x18, 0x84};
             using ( ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0) )

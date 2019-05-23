@@ -102,7 +102,7 @@ namespace Neo.SmartContract
                 return 100 * n;
             }
             if (method == InteropService.Neo_Contract_Create ||
-                method == InteropService.Neo_Contract_Migrate)
+                method == InteropService.Neo_Contract_Update)
             {
                 long fee = 100L;
 
