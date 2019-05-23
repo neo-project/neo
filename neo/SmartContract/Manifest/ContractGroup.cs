@@ -37,7 +37,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Return true if the signature is valid
         /// </summary>
-        /// <param name="contractHash">Contract Hash</param>
+        /// <param name="hash">Contract Hash</param>
         /// <returns>Return true or false</returns>
         public bool IsValid(UInt160 hash)
         {
