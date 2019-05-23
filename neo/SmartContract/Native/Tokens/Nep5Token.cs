@@ -25,7 +25,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             this.Factor = BigInteger.Pow(10, Decimals);
 
-            var list = new List<ContractMethodDescriptor>(Manifest.Abi.Methods)
+            var methods = new List<ContractMethodDescriptor>(Manifest.Abi.Methods)
             {
                 new ContractMethodDescriptor()
                 {
@@ -89,7 +89,36 @@ namespace Neo.SmartContract.Native.Tokens
                 }
             };
 
-            Manifest.Abi.Methods = list.ToArray();
+            Manifest.Abi.Methods = methods.ToArray();
+
+            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
+            {
+                new ContractMethodDescriptor()
+                {
+                    Name = "Transfer",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "from",
+                            Type = ContractParameterType.Hash160
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "to",
+                            Type = ContractParameterType.Hash160
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "amount",
+                            Type = ContractParameterType.Integer
+                        }
+                    },
+                    ReturnType = ContractParameterType.Boolean
+                }
+            };
+
+            Manifest.Abi.Events = events.ToArray();
         }
 
         protected StorageKey CreateAccountKey(UInt160 account)
