@@ -74,24 +74,7 @@ namespace Neo.SmartContract
                 Abi = new ContractAbi()
                 {
                     Hash = hash,
-                    EntryPoint = new ContractMethodDescriptor()
-                    {
-                        Name = "Main",
-                        Parameters = new ContractParameterDefinition[]
-                        {
-                            new ContractParameterDefinition()
-                            {
-                                 Name = "operation",
-                                 Type = ContractParameterType.String
-                            },
-                            new ContractParameterDefinition()
-                            {
-                                 Name = "args",
-                                 Type = ContractParameterType.Array
-                            }
-                        },
-                        ReturnType = ContractParameterType.Array
-                    },
+                    EntryPoint = ContractMethodDescriptor.DefaultEntryPoint,
                     Events = new ContractEventDescriptor[0],
                     Methods = new ContractMethodDescriptor[0]
                 },

@@ -7,6 +7,28 @@ namespace Neo.SmartContract
     public class ContractMethodDescriptor : ContractEventDescriptor, IEquatable<ContractMethodDescriptor>
     {
         /// <summary>
+        /// Default entry point
+        /// </summary>
+        public static readonly ContractMethodDescriptor DefaultEntryPoint = new ContractMethodDescriptor()
+        {
+            Name = "Main",
+            Parameters = new ContractParameterDefinition[]
+            {
+                new ContractParameterDefinition()
+                {
+                        Name = "operation",
+                        Type = ContractParameterType.String
+                },
+                new ContractParameterDefinition()
+                {
+                        Name = "args",
+                        Type = ContractParameterType.Array
+                }
+            },
+            ReturnType = ContractParameterType.Array
+        };
+
+        /// <summary>
         /// Returntype indicates the return type of the method. It can be one of the following values: 
         ///     Signature, Boolean, Integer, Hash160, Hash256, ByteArray, PublicKey, String, Array, InteropInterface, Void.
         /// </summary>
