@@ -52,7 +52,6 @@ namespace Neo.SmartContract
         {
             if (engine.Trigger != TriggerType.Application) return false;
             if (engine.Snapshot.PersistingBlock.Index != 0) return false;
-
             foreach (NativeContract contract in NativeContract.Contracts)
             {
                 engine.Snapshot.Contracts.Add(contract.Hash, new ContractState

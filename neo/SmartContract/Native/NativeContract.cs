@@ -38,20 +38,20 @@ namespace Neo.SmartContract.Native
             this.Hash = Script.ToScriptHash();
             this.Manifest = ContractManifest.CreateDefault(this.Hash);
             this.Manifest.Abi.Methods = new ContractMethodDescriptor[]
+            {
+                new ContractMethodDescriptor()
                 {
-                    new ContractMethodDescriptor()
-                    {
-                         Name = "onPersist",
-                         ReturnType = ContractParameterType.Boolean,
-                         Parameters = new ContractParameterDefinition[0]
-                    },
-                    new ContractMethodDescriptor()
-                    {
-                         Name = "supportedStandards",
-                         ReturnType = ContractParameterType.Array,
-                         Parameters = new ContractParameterDefinition[0]
-                    }
-                };
+                    Name = "onPersist",
+                    ReturnType = ContractParameterType.Boolean,
+                    Parameters = new ContractParameterDefinition[0]
+                },
+                new ContractMethodDescriptor()
+                {
+                    Name = "supportedStandards",
+                    ReturnType = ContractParameterType.Array,
+                    Parameters = new ContractParameterDefinition[0]
+                }
+            };
 
             contracts.Add(this);
         }

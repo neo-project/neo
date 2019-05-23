@@ -9,8 +9,10 @@ namespace Neo.Ledger
     public class ContractState : ICloneable<ContractState>, ISerializable
     {
         public byte[] Script;
-
         public ContractManifest Manifest;
+
+        public bool HasStorage => Manifest.Features.HasFlag(ContractFeatures.HasStorage);
+        public bool Payable => Manifest.Features.HasFlag(ContractFeatures.Payable);
 
         private UInt160 _scriptHash;
         public UInt160 ScriptHash
@@ -24,9 +26,6 @@ namespace Neo.Ledger
                 return _scriptHash;
             }
         }
-
-        public bool HasStorage => Manifest.Features.HasFlag(ContractFeatures.HasStorage);
-        public bool Payable => Manifest.Features.HasFlag(ContractFeatures.Payable);
 
         int ISerializable.Size => Script.GetVarSize() + Manifest.ToJson().ToString().GetVarSize();
 
@@ -59,7 +58,7 @@ namespace Neo.Ledger
 
         public JObject ToJson()
         {
-            var json = new JObject();
+            JObject json = new JObject();
             json["hash"] = ScriptHash.ToString();
             json["script"] = Script.ToHexString();
             json["manifest"] = Manifest.ToJson();
