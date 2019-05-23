@@ -482,16 +482,14 @@ namespace Neo.SmartContract
                 contract = engine.Snapshot.Contracts.TryGet(new UInt160(contractOrHash.GetByteArray()));
             if (contract is null) return false;
 
-            var method = engine.CurrentContext.EvaluationStack.Pop();
-            var args = engine.CurrentContext.EvaluationStack.Pop();
-            var currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest ?? ContractManifest.CreateDefault(engine.CurrentScriptHash);
+            StackItem method = engine.CurrentContext.EvaluationStack.Pop();
+            StackItem args = engine.CurrentContext.EvaluationStack.Pop();
+            ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
 
-            if (!currentManifest.CanCall(contract.Manifest ?? ContractManifest.CreateDefault(engine.CurrentScriptHash), Encoding.UTF8.GetString(args.GetByteArray())))
-            {
+            if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method.GetString()))
                 return false;
-            }
 
-            var context_new = engine.LoadScript(contract.Script, 1);
+            ExecutionContext context_new = engine.LoadScript(contract.Script, 1);
             context_new.EvaluationStack.Push(args);
             context_new.EvaluationStack.Push(method);
             return true;
