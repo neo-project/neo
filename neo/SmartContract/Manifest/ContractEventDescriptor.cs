@@ -1,10 +1,9 @@
 ﻿using Neo.IO.Json;
-using System;
 using System.Linq;
 
 namespace Neo.SmartContract.Manifest
 {
-    public class ContractEventDescriptor : IEquatable<ContractEventDescriptor>
+    public class ContractEventDescriptor
     {
         /// <summary>
         /// Name is the name of the method, which can be any valid identifier.
@@ -15,17 +14,6 @@ namespace Neo.SmartContract.Manifest
         /// Parameters is an array of Parameter objects which describe the details of each parameter in the method.
         /// </summary>
         public ContractParameterDefinition[] Parameters { get; set; }
-
-        public virtual bool Equals(ContractEventDescriptor other)
-        {
-            if (other == null) return false;
-            if (ReferenceEquals(other, this)) return true;
-
-            if (Name != other.Name) return false;
-            if (!Parameters.SequenceEqual(other.Parameters)) return false;
-
-            return true;
-        }
 
         /// <summary>
         /// Parse ContractMethodDescription from json

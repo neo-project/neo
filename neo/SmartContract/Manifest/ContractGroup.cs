@@ -2,7 +2,6 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
-using System;
 using System.Linq;
 
 namespace Neo.SmartContract.Manifest
@@ -12,7 +11,7 @@ namespace Neo.SmartContract.Manifest
     /// The group field can be null.
     /// A group is identified by a public key and must be accompanied by a signature for the contract hash to prove that the contract is indeed included in the group.
     /// </summary>
-    public class ContractGroup : IEquatable<ContractGroup>
+    public class ContractGroup
     {
         /// <summary>
         /// Pubkey represents the public key of the group.
@@ -23,17 +22,6 @@ namespace Neo.SmartContract.Manifest
         /// Signature is the signature of the contract hash.
         /// </summary>
         public byte[] Signature { get; set; }
-
-        public bool Equals(ContractGroup other)
-        {
-            if (other == null) return false;
-            if (ReferenceEquals(other, this)) return true;
-
-            if (!PubKey.Equals(other.PubKey)) return false;
-            if (!Signature.SequenceEqual(other.Signature)) return false;
-
-            return true;
-        }
 
         /// <summary>
         /// Return true if the signature is valid

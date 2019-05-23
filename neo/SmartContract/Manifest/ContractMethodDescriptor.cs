@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Neo.SmartContract.Manifest
 {
-    public class ContractMethodDescriptor : ContractEventDescriptor, IEquatable<ContractMethodDescriptor>
+    public class ContractMethodDescriptor : ContractEventDescriptor
     {
         /// <summary>
         /// Default entry point
@@ -33,20 +33,6 @@ namespace Neo.SmartContract.Manifest
         ///     Signature, Boolean, Integer, Hash160, Hash256, ByteArray, PublicKey, String, Array, InteropInterface, Void.
         /// </summary>
         public ContractParameterType ReturnType { get; set; }
-
-        public override bool Equals(ContractEventDescriptor other)
-        {
-            if (!base.Equals(other)) return false;
-            if (!(other is ContractMethodDescriptor b)) return false;
-            if (ReturnType != b.ReturnType) return false;
-
-            return true;
-        }
-
-        bool IEquatable<ContractMethodDescriptor>.Equals(ContractMethodDescriptor other)
-        {
-            return Equals((ContractEventDescriptor)other);
-        }
 
         /// <summary>
         /// Parse ContractMethodDescription from json

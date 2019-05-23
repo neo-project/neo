@@ -3,7 +3,7 @@ using System;
 
 namespace Neo.SmartContract.Manifest
 {
-    public class ContractParameterDefinition : IEquatable<ContractParameterDefinition>
+    public class ContractParameterDefinition
     {
         /// <summary>
         /// Name is the name of the parameter, which can be any valid identifier.
@@ -15,17 +15,6 @@ namespace Neo.SmartContract.Manifest
         ///     Signature, Boolean, Integer, Hash160, Hash256, ByteArray, PublicKey, String, Array, InteropInterface.
         /// </summary>
         public ContractParameterType Type { get; set; }
-
-        public bool Equals(ContractParameterDefinition other)
-        {
-            if (other == null) return false;
-            if (ReferenceEquals(other, this)) return true;
-
-            if (Type != other.Type) return false;
-            if (Name != other.Name) return false;
-
-            return true;
-        }
 
         /// <summary>
         /// Parse ContractParameterDefinition from json
