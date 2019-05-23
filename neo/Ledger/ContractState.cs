@@ -27,7 +27,7 @@ namespace Neo.Ledger
         public bool HasStorage => Manifest.Features.HasFlag(ContractPropertyState.HasStorage);
         public bool Payable => Manifest.Features.HasFlag(ContractPropertyState.Payable);
 
-        int ISerializable.Size => Script.GetVarSize() + Manifest.ToJson().GetVarSize();
+        int ISerializable.Size => Script.GetVarSize() + Manifest.ToJson().ToString().GetVarSize();
 
         ContractState ICloneable<ContractState>.Clone()
         {
@@ -58,7 +58,7 @@ namespace Neo.Ledger
 
         public JObject ToJson()
         {
-            JObject json = new JObject();
+            var json = new JObject();
             json["hash"] = ScriptHash.ToString();
             json["script"] = Script.ToHexString();
             json["manifest"] = Manifest.ToJson();

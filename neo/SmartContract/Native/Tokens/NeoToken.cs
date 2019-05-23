@@ -29,9 +29,9 @@ namespace Neo.SmartContract.Native.Tokens
         {
             this.TotalAmount = 100000000 * Factor;
 
-            var list = new List<ContractMethodDescription>(Manifest.Abi.Methods)
+            var list = new List<ContractMethodDescriptor>(Manifest.Abi.Methods)
             {
-                new ContractMethodDescription()
+                new ContractMethodDescriptor()
                 {
                     Name = "unclaimedGas",
                     Parameters = new ContractParameterDefinition[]
@@ -49,7 +49,7 @@ namespace Neo.SmartContract.Native.Tokens
                     },
                     ReturnType = ContractParameterType.Integer
                 },
-                new ContractMethodDescription()
+                new ContractMethodDescriptor()
                 {
                     Name = "registerValidator",
                     Parameters = new ContractParameterDefinition[]
@@ -62,7 +62,7 @@ namespace Neo.SmartContract.Native.Tokens
                     },
                     ReturnType = ContractParameterType.Boolean
                 },
-                new ContractMethodDescription()
+                new ContractMethodDescriptor()
                 {
                     Name = "vote",
                     Parameters = new ContractParameterDefinition[]
@@ -80,19 +80,19 @@ namespace Neo.SmartContract.Native.Tokens
                     },
                     ReturnType = ContractParameterType.Boolean
                 },
-                new ContractMethodDescription()
+                new ContractMethodDescriptor()
                 {
                     Name = "getRegisteredValidators",
                     Parameters = new ContractParameterDefinition[0],
                     ReturnType = ContractParameterType.Array
                 },
-                new ContractMethodDescription()
+                new ContractMethodDescriptor()
                 {
                     Name = "getValidators",
                     Parameters = new ContractParameterDefinition[0],
                     ReturnType = ContractParameterType.Array
                 },
-                new ContractMethodDescription()
+                new ContractMethodDescriptor()
                 {
                     Name = "getNextBlockValidators",
                     Parameters = new ContractParameterDefinition[0],

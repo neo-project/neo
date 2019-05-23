@@ -1,6 +1,4 @@
-﻿using Neo.SmartContract.Converters;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Globalization;
 using System.Linq;
 
@@ -9,7 +7,6 @@ namespace Neo
     /// <summary>
     /// This class stores a 160 bit unsigned int, represented as a 20-byte little-endian byte array
     /// </summary>
-    [JsonConverter(typeof(Hash160JsonConverter))]
     public class UInt160 : UIntBase, IComparable<UInt160>, IEquatable<UInt160>
     {
         public static readonly UInt160 Zero = new UInt160();

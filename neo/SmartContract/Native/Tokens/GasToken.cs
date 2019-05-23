@@ -22,9 +22,9 @@ namespace Neo.SmartContract.Native.Tokens
 
         internal GasToken() : base()
         {
-            var list = new List<ContractMethodDescription>(Manifest.Abi.Methods)
+            var list = new List<ContractMethodDescriptor>(Manifest.Abi.Methods)
             {
-                new ContractMethodDescription()
+                new ContractMethodDescriptor()
                 {
                     Name = "getSysFeeAmount",
                     Parameters = new ContractParameterDefinition[]

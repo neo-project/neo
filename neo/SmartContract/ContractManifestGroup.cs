@@ -1,6 +1,5 @@
 ﻿using Neo.Cryptography;
-using Neo.SmartContract.Converters;
-using Newtonsoft.Json;
+using Neo.IO.Json;
 using System;
 using System.Linq;
 
@@ -16,7 +15,6 @@ namespace Neo.SmartContract
         /// <summary>
         /// Pubkey represents the public key of the group.
         /// </summary>
-        [JsonConverter(typeof(Hash160JsonConverter))]
         public UInt160 PubKey { get; set; }
 
         /// <summary>
@@ -43,6 +41,28 @@ namespace Neo.SmartContract
         public bool IsValid(UInt160 contractHash)
         {
             return Crypto.Default.VerifySignature(contractHash.ToArray(), Signature, PubKey.ToArray());
+        }
+
+        /// <summary>
+        /// Parse ContractManifestGroup from json
+        /// </summary>
+        /// <param name="json">Json</param>
+        /// <returns>Return ContractManifestGroup</returns>
+        public static ContractManifestGroup Parse(JObject json)
+        {
+            return new ContractManifestGroup
+            {
+                PubKey = UInt160.Parse(json["pubKey"].AsString()),
+                Signature = json["signature"].AsString().HexToBytes(),
+            };
+        }
+
+        public virtual JObject ToJson()
+        {
+            var json = new JObject();
+            json["pubKey"] = PubKey.ToString();
+            json["signature"] = Signature.ToHexString(true);
+            return json;
         }
     }
 }

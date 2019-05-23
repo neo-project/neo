@@ -1,8 +1,6 @@
 ﻿using Neo.IO;
+using Neo.IO.Json;
 using Neo.Ledger;
-using Neo.SmartContract.Converters;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using System;
 using System.IO;
 using System.Linq;
@@ -15,22 +13,20 @@ namespace Neo.SmartContract
     /// </summary>
     public class ContractManifest : ISerializable, IEquatable<ContractManifest>
     {
-        private static readonly JsonSerializerSettings _jsonSettings = new JsonSerializerSettings()
-        {
-            TypeNameHandling = TypeNameHandling.None,
-            ContractResolver = new CamelCasePropertyNamesContractResolver() { }
-        };
-
         /// <summary>
         /// Max length for a valid Contract Manifest
         /// </summary>
         public const int MaxLength = ushort.MaxValue;
 
         /// <summary>
+        /// Serialized size
+        /// </summary>
+        public int Size => ToJson().ToString().GetVarSize();
+
+        /// <summary>
         /// Contract hash
         /// </summary>
-        [JsonConverter(typeof(Hash160JsonConverter))]
-        public UInt160 Hash { get; set; }
+        public UInt160 Hash => Abi.Hash;
 
         /// <summary>
         /// A group represents a set of mutually trusted contracts. A contract will trust and allow any contract in the same group to invoke it, and the user interface will not give any warnings.
@@ -41,7 +37,6 @@ namespace Neo.SmartContract
         /// <summary>
         /// The features field describes what features are available for the contract.
         /// </summary>
-        [JsonConverter(typeof(FeaturesConverter))]
         public ContractPropertyState Features { get; set; }
 
         /// <summary>
@@ -52,28 +47,19 @@ namespace Neo.SmartContract
         /// <summary>
         /// The permissions field is an array containing a set of Permission objects. It describes which contracts may be invoked and which methods are called.
         /// </summary>
-        [JsonConverter(typeof(WillCardJsonConverter<ContractPermission>))]
         public WildCardContainer<ContractPermission> Permissions { get; set; }
 
         /// <summary>
         /// The trusts field is an array containing a set of contract hashes or group public keys. It can also be assigned with a wildcard *. If it is a wildcard *, then it means that it trusts any contract.
         /// If a contract is trusted, the user interface will not give any warnings when called by the contract.
         /// </summary>
-        [JsonConverter(typeof(WillCardJsonConverter<UInt160>))]
         public WildCardContainer<UInt160> Trusts { get; set; }
 
         /// <summary>
         /// The safemethods field is an array containing a set of method names. It can also be assigned with a wildcard *. If it is a wildcard *, then it means that all methods of the contract are safe.
         /// If a method is marked as safe, the user interface will not give any warnings when it is called by any other contract.
         /// </summary>
-        [JsonConverter(typeof(WillCardJsonConverter<string>))]
         public WildCardContainer<string> SafeMethods { get; set; }
-
-        /// <summary>
-        /// Serialized size
-        /// </summary>
-        [JsonIgnore]
-        public int Size => ToJson().GetVarSize();
 
         /// <summary>
         /// Create Default Contract manifest
@@ -84,12 +70,11 @@ namespace Neo.SmartContract
         {
             return new ContractManifest()
             {
-                Hash = hash,
                 Permissions = WildCardContainer<ContractPermission>.CreateWildcard(),
                 Abi = new ContractAbi()
                 {
                     Hash = hash,
-                    EntryPoint = new ContractMethodDescription()
+                    EntryPoint = new ContractMethodDescriptor()
                     {
                         Name = "Main",
                         Parameters = new ContractParameterDefinition[]
@@ -107,8 +92,8 @@ namespace Neo.SmartContract
                         },
                         ReturnType = ContractParameterType.Array
                     },
-                    Events = new ContractActionDescription[0],
-                    Methods = new ContractMethodDescription[0]
+                    Events = new ContractEventDescriptor[0],
+                    Methods = new ContractMethodDescriptor[0]
                 },
                 Features = ContractPropertyState.NoProperty,
                 Groups = null,
@@ -145,20 +130,49 @@ namespace Neo.SmartContract
         /// Parse ContractManifest from json
         /// </summary>
         /// <param name="json">Json</param>
-        /// <returns>Return Contract manifest</returns>
-        public static ContractManifest Parse(string json)
-        {
-            return JsonConvert.DeserializeObject<ContractManifest>(json, _jsonSettings);
-        }
+        /// <returns>Return ContractManifest</returns>
+        public static ContractManifest Parse(string json) => Parse(JObject.Parse(json));
 
         /// <summary>
+        /// Parse ContractManifest from json
+        /// </summary>
+        /// <param name="json">Json</param>
+        /// <returns>Return ContractManifest</returns>
+        public static ContractManifest Parse(JObject json)
+        {
+            var manifest = new ContractManifest
+            {
+                Abi = ContractAbi.Parse(json["abi"]),
+                Groups = json.Properties.ContainsKey("groups") && json["groups"] != null ? ((JArray)json["groups"]).Select(u => ContractManifestGroup.Parse(u)).ToArray() : null,
+                Permissions = new WildCardContainer<ContractPermission>(((JArray)json["permissions"]).Select(u => ContractPermission.Parse(u)).ToArray()),
+                Trusts = new WildCardContainer<UInt160>(((JArray)json["trusts"]).Select(u => UInt160.Parse(u.AsString())).ToArray()),
+                SafeMethods = new WildCardContainer<string>(((JArray)json["safeMethods"]).Select(u => u.AsString()).ToArray()),
+            };
+
+            if (json["features"]["storage"].AsBoolean()) manifest.Features |= ContractPropertyState.HasStorage;
+            if (json["features"]["payable"].AsBoolean()) manifest.Features |= ContractPropertyState.Payable;
+
+            return manifest;
+        }
+
+        /// <summary
         /// To json
         /// </summary>
-        /// <param name="indented">Indented</param>
-        /// <returns>Return json string</returns>
-        public string ToJson(bool indented = false)
+        public JObject ToJson()
         {
-            return JsonConvert.SerializeObject(this, indented ? Formatting.Indented : Formatting.None, _jsonSettings);
+            var feature = new JObject();
+            feature["storage"] = Features.HasFlag(ContractPropertyState.HasStorage);
+            feature["payable"] = Features.HasFlag(ContractPropertyState.Payable);
+
+            var json = new JObject();
+            json["groups"] = Groups == null ? null : new JArray(Groups.Select(u => u.ToJson()).ToArray());
+            json["features"] = feature;
+            json["abi"] = Abi.ToJson();
+            json["permissions"] = new JArray(Permissions.Select(u => u.ToJson()).ToArray());
+            json["trusts"] = new JArray(Trusts.Select(u => new JString(u.ToString())).ToArray());
+            json["safeMethods"] = new JArray(SafeMethods.Select(u => new JString(u)).ToArray());
+
+            return json;
         }
 
         /// <summary>
@@ -171,18 +185,17 @@ namespace Neo.SmartContract
         /// String representation
         /// </summary>
         /// <returns>Return json string</returns>
-        public override string ToString() => ToJson();
+        public override string ToString() => ToJson().ToString();
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.WriteVarString(ToJson());
+            writer.WriteVarString(ToJson().ToString());
         }
 
         public void Deserialize(BinaryReader reader)
         {
             var manifest = Parse(reader.ReadVarString(MaxLength));
 
-            Hash = manifest.Hash;
             Groups = manifest.Groups;
             Trusts = manifest.Trusts;
             Permissions = manifest.Permissions;

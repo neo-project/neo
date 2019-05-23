@@ -63,11 +63,17 @@ namespace Neo
         {
             if (value == null || value.Length == 0)
                 return new byte[0];
+
+            var index = 0;
+            if (value.StartsWith("0x")) index = 2;
+
             if (value.Length % 2 == 1)
                 throw new FormatException();
-            byte[] result = new byte[value.Length / 2];
+
+            byte[] result = new byte[(value.Length - index) / 2];
             for (int i = 0; i < result.Length; i++)
-                result[i] = byte.Parse(value.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier);
+                result[i] = byte.Parse(value.Substring(index + (i * 2), 2), NumberStyles.AllowHexSpecifier);
+
             return result;
         }
 
@@ -148,11 +154,18 @@ namespace Neo
             return unixEpoch.AddSeconds(timestamp).ToLocalTime();
         }
 
-        public static string ToHexString(this IEnumerable<byte> value)
+        public static string ToHexString(this IEnumerable<byte> value, bool append0x = false)
         {
             StringBuilder sb = new StringBuilder();
+
             foreach (byte b in value)
                 sb.AppendFormat("{0:x2}", b);
+
+            if (append0x && sb.Length > 0)
+            {
+                return "0x" + sb.ToString();
+            }
+
             return sb.ToString();
         }
 

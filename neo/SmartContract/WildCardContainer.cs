@@ -21,7 +21,7 @@ namespace Neo.SmartContract
         /// Is will card?
         /// </summary>
         [JsonIgnore]
-        public bool IsWildcard => _data != null ? _data.Length == 0 : true;
+        public bool IsWildcard => _data is null;
 
         /// <summary>
         /// Constructor
