@@ -72,7 +72,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void ParseFromJson_Groups()
         {
-            var json = @"{""groups"":[{""pubKey"":""0x0000000000000000000000000000000000000000"",""signature"":""0x41""}],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Array""},""methods"":[],""events"":[]},""permissions"":[],""trusts"":[],""safeMethods"":[]}";
+            var json = @"{""groups"":[{""pubKey"":""0x0000000000000000000000000000000000000000"",""signature"":""41""}],""features"":{""storage"":false,""payable"":false},""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""entryPoint"":{""name"":""Main"",""parameters"":[{""name"":""operation"",""type"":""String""},{""name"":""args"",""type"":""Array""}],""returnType"":""Array""},""methods"":[],""events"":[]},""permissions"":[],""trusts"":[],""safeMethods"":[]}";
             var manifest = ContractManifest.Parse(json);
             Assert.AreEqual(manifest.ToJson().ToString(), json);
 

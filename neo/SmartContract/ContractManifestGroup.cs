@@ -61,7 +61,7 @@ namespace Neo.SmartContract
         {
             var json = new JObject();
             json["pubKey"] = PubKey.ToString();
-            json["signature"] = Signature.ToHexString(true);
+            json["signature"] = Signature.ToHexString();
             return json;
         }
     }
