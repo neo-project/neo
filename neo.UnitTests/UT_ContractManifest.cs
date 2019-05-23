@@ -15,7 +15,7 @@ namespace Neo.UnitTests
 
             Assert.AreEqual(manifest.ToString(), json);
             Assert.AreEqual(manifest.ToString(), ContractManifest.CreateDefault(UInt160.Zero).ToString());
-            Assert.IsTrue(manifest.IsValid());
+            Assert.IsTrue(manifest.IsValid(UInt160.Zero));
         }
 
         [TestMethod]

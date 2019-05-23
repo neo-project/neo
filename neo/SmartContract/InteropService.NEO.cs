@@ -241,8 +241,7 @@ namespace Neo.SmartContract
                 Manifest = ContractManifest.Parse(manifest)
             };
 
-            if (!contract.Manifest.IsValid()) return false;
-            if (contract.Manifest.Hash != contract.ScriptHash) return false;
+            if (!contract.Manifest.IsValid(hash)) return false;
 
             engine.Snapshot.Contracts.Add(hash, contract);
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
@@ -294,8 +293,7 @@ namespace Neo.SmartContract
             {
                 contract = engine.Snapshot.Contracts.GetAndChange(contract.ScriptHash);
                 contract.Manifest = ContractManifest.Parse(manifest);
-                if (!contract.Manifest.IsValid()) return false;
-                if (contract.Manifest.Hash != contract.ScriptHash) return false;
+                if (!contract.Manifest.IsValid(contract.ScriptHash)) return false;
             }
 
             return true;

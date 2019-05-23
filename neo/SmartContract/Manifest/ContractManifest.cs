@@ -171,9 +171,10 @@ namespace Neo.SmartContract.Manifest
         /// Return true if is valid
         /// </summary>
         /// <returns>Return true or false</returns>
-        public bool IsValid()
+        public bool IsValid(UInt160 hash)
         {
-            return Abi != null && Trusts != null && SafeMethods != null && Permissions != null && Groups != null && Groups.All(u => u.IsValid(Hash));
+            if (!Abi.Hash.Equals(hash)) return false;
+            return Groups.All(u => u.IsValid(hash));
         }
     }
 }

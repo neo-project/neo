@@ -39,9 +39,9 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="contractHash">Contract Hash</param>
         /// <returns>Return true or false</returns>
-        public bool IsValid(UInt160 contractHash)
+        public bool IsValid(UInt160 hash)
         {
-            return Crypto.Default.VerifySignature(contractHash.ToArray(), Signature, PubKey.EncodePoint(false));
+            return Crypto.Default.VerifySignature(hash.ToArray(), Signature, PubKey.EncodePoint(false));
         }
 
         public virtual JObject ToJson()
