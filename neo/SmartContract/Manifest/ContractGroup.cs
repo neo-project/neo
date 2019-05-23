@@ -8,7 +8,6 @@ namespace Neo.SmartContract.Manifest
 {
     /// <summary>
     /// A group represents a set of mutually trusted contracts. A contract will trust and allow any contract in the same group to invoke it, and the user interface will not give any warnings.
-    /// The group field can be null.
     /// A group is identified by a public key and must be accompanied by a signature for the contract hash to prove that the contract is indeed included in the group.
     /// </summary>
     public class ContractGroup
@@ -24,6 +23,20 @@ namespace Neo.SmartContract.Manifest
         public byte[] Signature { get; set; }
 
         /// <summary>
+        /// Parse ContractManifestGroup from json
+        /// </summary>
+        /// <param name="json">Json</param>
+        /// <returns>Return ContractManifestGroup</returns>
+        public static ContractGroup FromJson(JObject json)
+        {
+            return new ContractGroup
+            {
+                PubKey = ECPoint.Parse(json["pubKey"].AsString(), ECCurve.Secp256r1),
+                Signature = json["signature"].AsString().HexToBytes(),
+            };
+        }
+
+        /// <summary>
         /// Return true if the signature is valid
         /// </summary>
         /// <param name="contractHash">Contract Hash</param>
@@ -31,20 +44,6 @@ namespace Neo.SmartContract.Manifest
         public bool IsValid(UInt160 contractHash)
         {
             return Crypto.Default.VerifySignature(contractHash.ToArray(), Signature, PubKey.ToArray());
-        }
-
-        /// <summary>
-        /// Parse ContractManifestGroup from json
-        /// </summary>
-        /// <param name="json">Json</param>
-        /// <returns>Return ContractManifestGroup</returns>
-        public static ContractGroup Parse(JObject json)
-        {
-            return new ContractGroup
-            {
-                PubKey = ECPoint.Parse(json["pubKey"].AsString(), ECCurve.Secp256r1),
-                Signature = json["signature"].AsString().HexToBytes(),
-            };
         }
 
         public virtual JObject ToJson()

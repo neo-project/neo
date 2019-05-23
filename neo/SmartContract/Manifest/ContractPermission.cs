@@ -7,7 +7,7 @@ namespace Neo.SmartContract.Manifest
     /// <summary>
     /// The permissions field is an array containing a set of Permission objects. It describes which contracts may be invoked and which methods are called.
     /// </summary>
-    public class ContractPermission
+    public class ContractPermission : IJsonSerializable
     {
         /// <summary>
         /// The contract field indicates the contract to be invoked. It can be a hash of a contract, a public key of a group, or a wildcard *.
@@ -26,12 +26,12 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">Json</param>
         /// <returns>Return ContractPermission</returns>
-        public static ContractPermission Parse(JObject json)
+        public static ContractPermission FromJson(JObject json)
         {
             return new ContractPermission
             {
                 Contract = UInt160.Parse(json["contract"].AsString()),
-                Methods = new WildCardContainer<string>(((JArray)json["methods"]).Select(u => u.AsString()).ToArray()),
+                Methods = WildCardContainer<string>.FromJson(json["methods"], u => u.AsString()),
             };
         }
 
@@ -42,7 +42,7 @@ namespace Neo.SmartContract.Manifest
         {
             var json = new JObject();
             json["contract"] = Contract.ToString();
-            json["methods"] = new JArray(Methods.Select(u => new JString(u)).ToArray());
+            json["methods"] = Methods.ToJson();
             return json;
         }
 

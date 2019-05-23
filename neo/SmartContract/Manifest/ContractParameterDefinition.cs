@@ -21,7 +21,7 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">Json</param>
         /// <returns>Return ContractParameterDefinition</returns>
-        public static ContractParameterDefinition Parse(JObject json)
+        public static ContractParameterDefinition FromJson(JObject json)
         {
             return new ContractParameterDefinition
             {

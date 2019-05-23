@@ -29,7 +29,6 @@ namespace Neo.SmartContract.Manifest
 
         /// <summary>
         /// A group represents a set of mutually trusted contracts. A contract will trust and allow any contract in the same group to invoke it, and the user interface will not give any warnings.
-        /// The group field can be null.
         /// </summary>
         public ContractGroup[] Groups { get; set; }
 
@@ -78,9 +77,9 @@ namespace Neo.SmartContract.Manifest
                     Methods = new ContractMethodDescriptor[0]
                 },
                 Features = ContractFeatures.NoProperty,
-                Groups = null,
-                SafeMethods = WildCardContainer<string>.CreateWildcard(),
-                Trusts = WildCardContainer<UInt160>.CreateWildcard()
+                Groups = new ContractGroup[0],
+                SafeMethods = WildCardContainer<string>.Create(),
+                Trusts = WildCardContainer<UInt160>.Create()
             };
         }
 
@@ -113,22 +112,15 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">Json</param>
         /// <returns>Return ContractManifest</returns>
-        public static ContractManifest Parse(string json) => Parse(JObject.Parse(json));
-
-        /// <summary>
-        /// Parse ContractManifest from json
-        /// </summary>
-        /// <param name="json">Json</param>
-        /// <returns>Return ContractManifest</returns>
-        public static ContractManifest Parse(JObject json)
+        public static ContractManifest FromJson(JObject json)
         {
             var manifest = new ContractManifest
             {
-                Abi = ContractAbi.Parse(json["abi"]),
-                Groups = json.Properties.ContainsKey("groups") && json["groups"] != null ? ((JArray)json["groups"]).Select(u => ContractGroup.Parse(u)).ToArray() : null,
-                Permissions = new WildCardContainer<ContractPermission>(((JArray)json["permissions"]).Select(u => ContractPermission.Parse(u)).ToArray()),
-                Trusts = new WildCardContainer<UInt160>(((JArray)json["trusts"]).Select(u => UInt160.Parse(u.AsString())).ToArray()),
-                SafeMethods = new WildCardContainer<string>(((JArray)json["safeMethods"]).Select(u => u.AsString()).ToArray()),
+                Abi = ContractAbi.FromJson(json["abi"]),
+                Groups = ((JArray)json["groups"])?.Select(u => ContractGroup.FromJson(u)).ToArray() ?? new ContractGroup[0],
+                Permissions = WildCardContainer<ContractPermission>.FromJson(json["permissions"], ContractPermission.FromJson) ?? WildCardContainer<ContractPermission>.CreateWildcard(),
+                Trusts = WildCardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString())) ?? WildCardContainer<UInt160>.Create(),
+                SafeMethods = WildCardContainer<string>.FromJson(json["safeMethods"], u => u.AsString()) ?? WildCardContainer<string>.Create()
             };
 
             if (json["features"]["storage"].AsBoolean()) manifest.Features |= ContractFeatures.HasStorage;
@@ -136,6 +128,13 @@ namespace Neo.SmartContract.Manifest
 
             return manifest;
         }
+
+        /// <summary>
+        /// Parse ContractManifest from json
+        /// </summary>
+        /// <param name="json">Json</param>
+        /// <returns>Return ContractManifest</returns>
+        public static ContractManifest Parse(string json) => FromJson(JObject.Parse(json));
 
         /// <summary
         /// To json
@@ -147,12 +146,12 @@ namespace Neo.SmartContract.Manifest
             feature["payable"] = Features.HasFlag(ContractFeatures.Payable);
 
             var json = new JObject();
-            json["groups"] = Groups == null ? null : new JArray(Groups.Select(u => u.ToJson()).ToArray());
+            json["groups"] = new JArray(Groups.Select(u => u.ToJson()).ToArray());
             json["features"] = feature;
             json["abi"] = Abi.ToJson();
-            json["permissions"] = new JArray(Permissions.Select(u => u.ToJson()).ToArray());
-            json["trusts"] = new JArray(Trusts.Select(u => new JString(u.ToString())).ToArray());
-            json["safeMethods"] = new JArray(SafeMethods.Select(u => new JString(u)).ToArray());
+            json["permissions"] = Permissions.ToJson();
+            json["trusts"] = Trusts.ToJson();
+            json["safeMethods"] = SafeMethods.ToJson();
 
             return json;
         }
@@ -161,7 +160,7 @@ namespace Neo.SmartContract.Manifest
         /// Clone
         /// </summary>
         /// <returns>Return a copy of this object</returns>
-        public ContractManifest Clone() => Parse(ToJson());
+        public ContractManifest Clone() => FromJson(ToJson());
 
         /// <summary>
         /// String representation

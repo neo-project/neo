@@ -33,21 +33,14 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">Json</param>
         /// <returns>Return ContractAbi</returns>
-        public static ContractAbi Parse(string json) => Parse(JObject.Parse(json));
-
-        /// <summary>
-        /// Parse ContractAbi from json
-        /// </summary>
-        /// <param name="json">Json</param>
-        /// <returns>Return ContractAbi</returns>
-        public static ContractAbi Parse(JObject json)
+        public static ContractAbi FromJson(JObject json)
         {
             return new ContractAbi
             {
                 Hash = UInt160.Parse(json["hash"].AsString()),
-                EntryPoint = ContractMethodDescriptor.Parse(json["entryPoint"]),
-                Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.Parse(u)).ToArray(),
-                Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.Parse(u)).ToArray()
+                EntryPoint = ContractMethodDescriptor.FromJson(json["entryPoint"]),
+                Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.FromJson(u)).ToArray(),
+                Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray()
             };
         }
 
