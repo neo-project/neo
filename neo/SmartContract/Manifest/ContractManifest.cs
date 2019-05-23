@@ -114,18 +114,8 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return ContractManifest</returns>
         public static ContractManifest FromJson(JObject json)
         {
-            var manifest = new ContractManifest
-            {
-                Abi = ContractAbi.FromJson(json["abi"]),
-                Groups = ((JArray)json["groups"])?.Select(u => ContractGroup.FromJson(u)).ToArray() ?? new ContractGroup[0],
-                Permissions = WildCardContainer<ContractPermission>.FromJson(json["permissions"], ContractPermission.FromJson) ?? WildCardContainer<ContractPermission>.CreateWildcard(),
-                Trusts = WildCardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString())) ?? WildCardContainer<UInt160>.Create(),
-                SafeMethods = WildCardContainer<string>.FromJson(json["safeMethods"], u => u.AsString()) ?? WildCardContainer<string>.Create()
-            };
-
-            if (json["features"]["storage"].AsBoolean()) manifest.Features |= ContractFeatures.HasStorage;
-            if (json["features"]["payable"].AsBoolean()) manifest.Features |= ContractFeatures.Payable;
-
+            var manifest = new ContractManifest();
+            manifest.DeserializeFromJson(json);
             return manifest;
         }
 
@@ -175,14 +165,20 @@ namespace Neo.SmartContract.Manifest
 
         public void Deserialize(BinaryReader reader)
         {
-            var manifest = Parse(reader.ReadVarString(MaxLength));
+            DeserializeFromJson(JObject.Parse(reader.ReadVarString(MaxLength)));
+        }
 
-            Groups = manifest.Groups;
-            Trusts = manifest.Trusts;
-            Permissions = manifest.Permissions;
-            SafeMethods = manifest.SafeMethods;
-            Abi = manifest.Abi;
-            Features = manifest.Features;
+        private void DeserializeFromJson(JObject json)
+        {
+            Abi = ContractAbi.FromJson(json["abi"]);
+            Groups = ((JArray)json["groups"])?.Select(u => ContractGroup.FromJson(u)).ToArray() ?? new ContractGroup[0];
+            Features = ContractFeatures.NoProperty;
+            Permissions = WildCardContainer<ContractPermission>.FromJson(json["permissions"], ContractPermission.FromJson) ?? WildCardContainer<ContractPermission>.CreateWildcard();
+            Trusts = WildCardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString())) ?? WildCardContainer<UInt160>.Create();
+            SafeMethods = WildCardContainer<string>.FromJson(json["safeMethods"], u => u.AsString()) ?? WildCardContainer<string>.Create();
+
+            if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
+            if (json["features"]["payable"].AsBoolean()) Features |= ContractFeatures.Payable;
         }
 
         /// <summary>
