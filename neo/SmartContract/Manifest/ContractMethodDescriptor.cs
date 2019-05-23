@@ -25,7 +25,7 @@ namespace Neo.SmartContract.Manifest
                         Type = ContractParameterType.Array
                 }
             },
-            ReturnType = ContractParameterType.Array
+            ReturnType = ContractParameterType.Any
         };
 
         /// <summary>

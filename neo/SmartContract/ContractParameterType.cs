@@ -16,6 +16,7 @@
 
         InteropInterface = 0xf0,
 
+        Any = 0xfe,
         Void = 0xff
     }
 }
