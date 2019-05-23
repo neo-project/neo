@@ -5,14 +5,14 @@ using Neo.IO.Json;
 using System;
 using System.Linq;
 
-namespace Neo.SmartContract
+namespace Neo.SmartContract.Manifest
 {
     /// <summary>
     /// A group represents a set of mutually trusted contracts. A contract will trust and allow any contract in the same group to invoke it, and the user interface will not give any warnings.
     /// The group field can be null.
     /// A group is identified by a public key and must be accompanied by a signature for the contract hash to prove that the contract is indeed included in the group.
     /// </summary>
-    public class ContractManifestGroup : IEquatable<ContractManifestGroup>
+    public class ContractGroup : IEquatable<ContractGroup>
     {
         /// <summary>
         /// Pubkey represents the public key of the group.
@@ -24,7 +24,7 @@ namespace Neo.SmartContract
         /// </summary>
         public byte[] Signature { get; set; }
 
-        public bool Equals(ContractManifestGroup other)
+        public bool Equals(ContractGroup other)
         {
             if (other == null) return false;
             if (ReferenceEquals(other, this)) return true;
@@ -50,9 +50,9 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="json">Json</param>
         /// <returns>Return ContractManifestGroup</returns>
-        public static ContractManifestGroup Parse(JObject json)
+        public static ContractGroup Parse(JObject json)
         {
-            return new ContractManifestGroup
+            return new ContractGroup
             {
                 PubKey = ECPoint.Parse(json["pubKey"].AsString(), ECCurve.Secp256r1),
                 Signature = json["signature"].AsString().HexToBytes(),

@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Neo.SmartContract
+namespace Neo.SmartContract.Manifest
 {
     public class WildCardContainer<T> : IReadOnlyList<T>
     {

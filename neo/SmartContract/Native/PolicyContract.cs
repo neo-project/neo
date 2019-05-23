@@ -1,6 +1,7 @@
 ﻿using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ namespace Neo.SmartContract.Native
 
         public PolicyContract() : base()
         {
-            Manifest.Features = ContractPropertyState.HasStorage;
+            Manifest.Features = ContractFeatures.HasStorage;
 
             var list = new List<ContractMethodDescriptor>(Manifest.Abi.Methods)
             {

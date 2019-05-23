@@ -2,7 +2,7 @@
 using System;
 using System.Linq;
 
-namespace Neo.SmartContract
+namespace Neo.SmartContract.Manifest
 {
     /// <summary>
     /// For technical details of ABI, please refer to NEP-3: NeoContract ABI. (https://github.com/neo-project/proposals/blob/master/nep-3.mediawiki)

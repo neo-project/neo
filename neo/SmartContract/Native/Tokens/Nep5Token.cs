@@ -1,5 +1,6 @@
 ﻿using Neo.Ledger;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
 using System.Collections.Generic;

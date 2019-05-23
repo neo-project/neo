@@ -1,5 +1,6 @@
 ﻿using Neo.IO;
 using Neo.Ledger;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using System;

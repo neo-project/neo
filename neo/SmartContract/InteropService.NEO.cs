@@ -4,6 +4,7 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;

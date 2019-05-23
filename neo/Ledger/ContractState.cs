@@ -1,6 +1,7 @@
 ﻿using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
 using System.IO;
 
 namespace Neo.Ledger
@@ -24,8 +25,8 @@ namespace Neo.Ledger
             }
         }
 
-        public bool HasStorage => Manifest.Features.HasFlag(ContractPropertyState.HasStorage);
-        public bool Payable => Manifest.Features.HasFlag(ContractPropertyState.Payable);
+        public bool HasStorage => Manifest.Features.HasFlag(ContractFeatures.HasStorage);
+        public bool Payable => Manifest.Features.HasFlag(ContractFeatures.Payable);
 
         int ISerializable.Size => Script.GetVarSize() + Manifest.ToJson().ToString().GetVarSize();
 

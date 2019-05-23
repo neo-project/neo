@@ -1,6 +1,7 @@
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
@@ -105,9 +106,9 @@ namespace Neo.SmartContract
             {
                 long fee = 100L;
 
-                ContractPropertyState contract_properties = (ContractPropertyState)(byte)CurrentContext.EvaluationStack.Peek(3).GetBigInteger();
+                ContractFeatures contract_properties = (ContractFeatures)(byte)CurrentContext.EvaluationStack.Peek(3).GetBigInteger();
 
-                if (contract_properties.HasFlag(ContractPropertyState.HasStorage))
+                if (contract_properties.HasFlag(ContractFeatures.HasStorage))
                 {
                     fee += 400L;
                 }

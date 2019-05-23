@@ -2,7 +2,7 @@
 using System;
 using System.Linq;
 
-namespace Neo.SmartContract
+namespace Neo.SmartContract.Manifest
 {
     /// <summary>
     /// The permissions field is an array containing a set of Permission objects. It describes which contracts may be invoked and which methods are called.

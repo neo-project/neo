@@ -2,7 +2,7 @@
 using System;
 using System.Linq;
 
-namespace Neo.SmartContract
+namespace Neo.SmartContract.Manifest
 {
     public class ContractMethodDescriptor : ContractEventDescriptor, IEquatable<ContractMethodDescriptor>
     {

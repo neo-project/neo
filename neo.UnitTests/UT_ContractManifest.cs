@@ -1,6 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
-using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
 
 namespace Neo.UnitTests
 {
@@ -26,7 +26,7 @@ namespace Neo.UnitTests
             Assert.AreEqual(manifest.ToJson().ToString(), json);
 
             var check = ContractManifest.CreateDefault(UInt160.Zero);
-            check.Features = Ledger.ContractPropertyState.HasStorage | Ledger.ContractPropertyState.Payable;
+            check.Features = ContractFeatures.HasStorage | ContractFeatures.Payable;
             Assert.IsTrue(manifest.Equals(check));
         }
 
@@ -78,7 +78,7 @@ namespace Neo.UnitTests
             Assert.AreEqual(manifest.ToJson().ToString(), json);
 
             var check = ContractManifest.CreateDefault(UInt160.Zero);
-            check.Groups = new ContractManifestGroup[] { new ContractManifestGroup() { PubKey = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1), Signature = "41414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141".HexToBytes() } };
+            check.Groups = new ContractGroup[] { new ContractGroup() { PubKey = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1), Signature = "41414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141".HexToBytes() } };
             Assert.IsTrue(manifest.Equals(check));
         }
     }

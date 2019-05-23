@@ -1,11 +1,10 @@
 ﻿using Neo.IO;
 using Neo.IO.Json;
-using Neo.Ledger;
 using System;
 using System.IO;
 using System.Linq;
 
-namespace Neo.SmartContract
+namespace Neo.SmartContract.Manifest
 {
     /// <summary>
     /// When a smart contract is deployed, it must explicitly declare the features and permissions it will use.
@@ -32,12 +31,12 @@ namespace Neo.SmartContract
         /// A group represents a set of mutually trusted contracts. A contract will trust and allow any contract in the same group to invoke it, and the user interface will not give any warnings.
         /// The group field can be null.
         /// </summary>
-        public ContractManifestGroup[] Groups { get; set; }
+        public ContractGroup[] Groups { get; set; }
 
         /// <summary>
         /// The features field describes what features are available for the contract.
         /// </summary>
-        public ContractPropertyState Features { get; set; }
+        public ContractFeatures Features { get; set; }
 
         /// <summary>
         /// For technical details of ABI, please refer to NEP-3: NeoContract ABI. (https://github.com/neo-project/proposals/blob/master/nep-3.mediawiki)
@@ -78,7 +77,7 @@ namespace Neo.SmartContract
                     Events = new ContractEventDescriptor[0],
                     Methods = new ContractMethodDescriptor[0]
                 },
-                Features = ContractPropertyState.NoProperty,
+                Features = ContractFeatures.NoProperty,
                 Groups = null,
                 SafeMethods = WildCardContainer<string>.CreateWildcard(),
                 Trusts = WildCardContainer<UInt160>.CreateWildcard()
@@ -126,14 +125,14 @@ namespace Neo.SmartContract
             var manifest = new ContractManifest
             {
                 Abi = ContractAbi.Parse(json["abi"]),
-                Groups = json.Properties.ContainsKey("groups") && json["groups"] != null ? ((JArray)json["groups"]).Select(u => ContractManifestGroup.Parse(u)).ToArray() : null,
+                Groups = json.Properties.ContainsKey("groups") && json["groups"] != null ? ((JArray)json["groups"]).Select(u => ContractGroup.Parse(u)).ToArray() : null,
                 Permissions = new WildCardContainer<ContractPermission>(((JArray)json["permissions"]).Select(u => ContractPermission.Parse(u)).ToArray()),
                 Trusts = new WildCardContainer<UInt160>(((JArray)json["trusts"]).Select(u => UInt160.Parse(u.AsString())).ToArray()),
                 SafeMethods = new WildCardContainer<string>(((JArray)json["safeMethods"]).Select(u => u.AsString()).ToArray()),
             };
 
-            if (json["features"]["storage"].AsBoolean()) manifest.Features |= ContractPropertyState.HasStorage;
-            if (json["features"]["payable"].AsBoolean()) manifest.Features |= ContractPropertyState.Payable;
+            if (json["features"]["storage"].AsBoolean()) manifest.Features |= ContractFeatures.HasStorage;
+            if (json["features"]["payable"].AsBoolean()) manifest.Features |= ContractFeatures.Payable;
 
             return manifest;
         }
@@ -144,8 +143,8 @@ namespace Neo.SmartContract
         public JObject ToJson()
         {
             var feature = new JObject();
-            feature["storage"] = Features.HasFlag(ContractPropertyState.HasStorage);
-            feature["payable"] = Features.HasFlag(ContractPropertyState.Payable);
+            feature["storage"] = Features.HasFlag(ContractFeatures.HasStorage);
+            feature["payable"] = Features.HasFlag(ContractFeatures.Payable);
 
             var json = new JObject();
             json["groups"] = Groups == null ? null : new JArray(Groups.Select(u => u.ToJson()).ToArray());
