@@ -91,7 +91,7 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return true or false</returns>
         public bool CanCall(ContractManifest manifest, string method)
         {
-            if (Groups != null && manifest.Groups != null && Groups.Any(a => manifest.Groups.Any(b => a.PubKey.Equals(b.PubKey))))
+            if (Groups.Any(a => manifest.Groups.Any(b => a.PubKey.Equals(b.PubKey))))
             {
                 // Same group
                 return true;
@@ -187,7 +187,7 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return true or false</returns>
         public bool IsValid()
         {
-            return Abi != null && Trusts != null && SafeMethods != null && Permissions != null && (Groups == null || Groups.All(u => u.IsValid(Hash)));
+            return Abi != null && Trusts != null && SafeMethods != null && Permissions != null && Groups != null && Groups.All(u => u.IsValid(Hash));
         }
     }
 }
