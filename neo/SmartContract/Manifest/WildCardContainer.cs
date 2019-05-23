@@ -53,8 +53,6 @@ namespace Neo.SmartContract.Manifest
                     return CreateWildcard();
                 case JArray array:
                     return Create(array.Select(p => elementSelector(p)).ToArray());
-                case null:
-                    return null;
                 default:
                     throw new FormatException();
             }

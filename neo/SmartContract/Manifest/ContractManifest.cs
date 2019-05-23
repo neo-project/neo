@@ -171,11 +171,11 @@ namespace Neo.SmartContract.Manifest
         private void DeserializeFromJson(JObject json)
         {
             Abi = ContractAbi.FromJson(json["abi"]);
-            Groups = ((JArray)json["groups"])?.Select(u => ContractGroup.FromJson(u)).ToArray() ?? new ContractGroup[0];
+            Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson(u)).ToArray();
             Features = ContractFeatures.NoProperty;
-            Permissions = WildCardContainer<ContractPermission>.FromJson(json["permissions"], ContractPermission.FromJson) ?? WildCardContainer<ContractPermission>.CreateWildcard();
-            Trusts = WildCardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString())) ?? WildCardContainer<UInt160>.Create();
-            SafeMethods = WildCardContainer<string>.FromJson(json["safeMethods"], u => u.AsString()) ?? WildCardContainer<string>.Create();
+            Permissions = WildCardContainer<ContractPermission>.FromJson(json["permissions"], ContractPermission.FromJson);
+            Trusts = WildCardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString()));
+            SafeMethods = WildCardContainer<string>.FromJson(json["safeMethods"], u => u.AsString());
 
             if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
             if (json["features"]["payable"].AsBoolean()) Features |= ContractFeatures.Payable;
