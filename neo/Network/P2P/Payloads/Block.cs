@@ -60,11 +60,7 @@ namespace Neo.Network.P2P.Payloads
             ConsensusData = reader.ReadSerializable<ConsensusData>();
             Transactions = new Transaction[count - 1];
             for (int i = 0; i < Transactions.Length; i++)
-            {
                 Transactions[i] = reader.ReadSerializable<Transaction>();
-                if (Transactions[i].Hash.Equals(ConsensusData.Hash))
-                    throw new FormatException();
-            }
             if (Transactions.Distinct().Count() != Transactions.Length)
                 throw new FormatException();
             if (CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
