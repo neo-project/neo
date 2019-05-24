@@ -17,6 +17,7 @@ namespace Neo.SmartContract.Native
     {
         private static readonly List<NativeContract> contracts = new List<NativeContract>();
         private readonly Dictionary<string, Func<ApplicationEngine, VMArray, StackItem>> methods = new Dictionary<string, Func<ApplicationEngine, VMArray, StackItem>>();
+        private readonly Dictionary<string, long> prices = new Dictionary<string, long>();
 
         public static IReadOnlyCollection<NativeContract> Contracts { get; } = contracts;
         public static NeoToken NEO { get; } = new NeoToken();
@@ -53,6 +54,7 @@ namespace Neo.SmartContract.Native
                     ReturnType = attribute.ReturnType,
                     Parameters = attribute.ParameterTypes.Zip(attribute.ParameterNames, (t, n) => new ContractParameterDefinition { Type = t, Name = n }).ToArray()
                 });
+                prices.Add(name, attribute.Price);
             }
             this.Manifest.Abi.Methods = descriptors.ToArray();
             contracts.Add(this);
@@ -89,14 +91,9 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        internal virtual long GetPrice(RandomAccessStack<StackItem> stack)
+        internal long GetPrice(RandomAccessStack<StackItem> stack)
         {
-            return GetPriceForMethod(stack.Peek().GetString());
-        }
-
-        protected virtual long GetPriceForMethod(string method)
-        {
-            return 0;
+            return prices.TryGetValue(stack.Peek().GetString(), out long price) ? price : 0;
         }
 
         internal virtual bool Initialize(ApplicationEngine engine)
@@ -106,7 +103,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(ContractParameterType.Boolean)]
+        [ContractMethod(0, ContractParameterType.Boolean)]
         protected StackItem OnPersist(ApplicationEngine engine, VMArray args)
         {
             return OnPersist(engine);
@@ -119,7 +116,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(ContractParameterType.Array, Name = "supportedStandards")]
+        [ContractMethod(0, ContractParameterType.Array, Name = "supportedStandards")]
         protected StackItem SupportedStandardsMethod(ApplicationEngine engine, VMArray args)
         {
             return SupportedStandards.Select(p => (StackItem)p).ToList();

@@ -25,17 +25,6 @@ namespace Neo.SmartContract.Native.Tokens
         {
         }
 
-        protected override long GetPriceForMethod(string method)
-        {
-            switch (method)
-            {
-                case "getSysFeeAmount":
-                    return 0_01000000;
-                default:
-                    return base.GetPriceForMethod(method);
-            }
-        }
-
         protected override bool OnPersist(ApplicationEngine engine)
         {
             if (!base.OnPersist(engine)) return false;
@@ -54,7 +43,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "index" })]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "index" })]
         private StackItem GetSysFeeAmount(ApplicationEngine engine, VMArray args)
         {
             uint index = (uint)args[0].GetBigInteger();

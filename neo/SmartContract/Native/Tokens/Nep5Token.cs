@@ -64,24 +64,6 @@ namespace Neo.SmartContract.Native.Tokens
             return CreateStorageKey(Prefix_Account, account);
         }
 
-        protected override long GetPriceForMethod(string method)
-        {
-            switch (method)
-            {
-                case "name":
-                case "symbol":
-                case "decimals":
-                    return 0;
-                case "totalSupply":
-                case "balanceOf":
-                    return 0_01000000;
-                case "transfer":
-                    return 0_08000000;
-                default:
-                    return base.GetPriceForMethod(method);
-            }
-        }
-
         internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
@@ -131,25 +113,25 @@ namespace Neo.SmartContract.Native.Tokens
             engine.SendNotification(Hash, new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount });
         }
 
-        [ContractMethod(ContractParameterType.String, Name = "name")]
+        [ContractMethod(0, ContractParameterType.String, Name = "name")]
         protected StackItem NameMethod(ApplicationEngine engine, VMArray args)
         {
             return Name;
         }
 
-        [ContractMethod(ContractParameterType.String, Name = "symbol")]
+        [ContractMethod(0, ContractParameterType.String, Name = "symbol")]
         protected StackItem SymbolMethod(ApplicationEngine engine, VMArray args)
         {
             return Symbol;
         }
 
-        [ContractMethod(ContractParameterType.Integer, Name = "decimals")]
+        [ContractMethod(0, ContractParameterType.Integer, Name = "decimals")]
         protected StackItem DecimalsMethod(ApplicationEngine engine, VMArray args)
         {
             return (uint)Decimals;
         }
 
-        [ContractMethod(ContractParameterType.Integer)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer)]
         protected StackItem TotalSupply(ApplicationEngine engine, VMArray args)
         {
             return TotalSupply(engine.Snapshot);
@@ -162,7 +144,7 @@ namespace Neo.SmartContract.Native.Tokens
             return new BigInteger(storage.Value);
         }
 
-        [ContractMethod(ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
         protected StackItem BalanceOf(ApplicationEngine engine, VMArray args)
         {
             return BalanceOf(engine.Snapshot, new UInt160(args[0].GetByteArray()));
@@ -176,7 +158,7 @@ namespace Neo.SmartContract.Native.Tokens
             return state.Balance;
         }
 
-        [ContractMethod(ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" })]
+        [ContractMethod(0_08000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" })]
         protected StackItem Transfer(ApplicationEngine engine, VMArray args)
         {
             if (engine.Trigger != TriggerType.Application) throw new InvalidOperationException();

@@ -6,12 +6,14 @@ namespace Neo.SmartContract.Native
     internal class ContractMethodAttribute : Attribute
     {
         public string Name { get; set; }
+        public long Price { get; }
         public ContractParameterType ReturnType { get; }
         public ContractParameterType[] ParameterTypes { get; set; } = new ContractParameterType[0];
         public string[] ParameterNames { get; set; } = new string[0];
 
-        public ContractMethodAttribute(ContractParameterType returnType)
+        public ContractMethodAttribute(long price, ContractParameterType returnType)
         {
+            this.Price = price;
             this.ReturnType = returnType;
         }
     }
