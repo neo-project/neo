@@ -280,7 +280,7 @@ namespace Neo.UnitTests
                 verifiedTxs.Length.ShouldBeEquivalentTo(2);
                 verifiedTxs[0].ShouldBeEquivalentTo(maxHighPriorityTransaction);
                 verifiedTxs[1].ShouldBeEquivalentTo(maxLowPriorityTransaction);
-                var blockWith2Tx = new Block { Transactions = new Transaction[2] { maxHighPriorityTransaction, maxLowPriorityTransaction } };
+                var blockWith2Tx = new Block { Transactions = new[] { maxHighPriorityTransaction, maxLowPriorityTransaction } };
                 // verify and remove the 2 transactions from the verified pool
                 _unit.UpdatePoolForBlockPersisted(blockWith2Tx, Blockchain.Singleton.GetSnapshot());
                 _unit.InvalidateVerifiedTransactions();
