@@ -1,4 +1,6 @@
-﻿using Neo.IO;
+﻿#pragma warning disable IDE0060
+
+using Neo.IO;
 using Neo.Ledger;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Tokens;
@@ -6,6 +8,7 @@ using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
@@ -13,6 +16,7 @@ namespace Neo.SmartContract.Native
     public abstract class NativeContract
     {
         private static readonly List<NativeContract> contracts = new List<NativeContract>();
+        private readonly Dictionary<string, Func<ApplicationEngine, VMArray, StackItem>> methods = new Dictionary<string, Func<ApplicationEngine, VMArray, StackItem>>();
 
         public static IReadOnlyCollection<NativeContract> Contracts { get; } = contracts;
         public static NeoToken NEO { get; } = new NeoToken();
@@ -53,6 +57,14 @@ namespace Neo.SmartContract.Native
                 }
             };
 
+            foreach (MethodInfo method in GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+            {
+                ContractMethodAttribute attribute = method.GetCustomAttribute<ContractMethodAttribute>();
+                if (attribute is null) continue;
+                string name = attribute.Name ?? (method.Name.ToLower()[0] + method.Name.Substring(1));
+                methods.Add(name, (Func<ApplicationEngine, VMArray, StackItem>)method.CreateDelegate(typeof(Func<ApplicationEngine, VMArray, StackItem>), this));
+            }
+
             contracts.Add(this);
         }
 
@@ -80,7 +92,9 @@ namespace Neo.SmartContract.Native
                 return false;
             string operation = engine.CurrentContext.EvaluationStack.Pop().GetString();
             VMArray args = (VMArray)engine.CurrentContext.EvaluationStack.Pop();
-            StackItem result = Main(engine, operation, args);
+            if (!methods.TryGetValue(operation, out var method))
+                return false;
+            StackItem result = method(engine, args);
             engine.CurrentContext.EvaluationStack.Push(result);
             return true;
         }
@@ -95,18 +109,6 @@ namespace Neo.SmartContract.Native
             return 0;
         }
 
-        protected virtual StackItem Main(ApplicationEngine engine, string operation, VMArray args)
-        {
-            switch (operation)
-            {
-                case "onPersist":
-                    return OnPersist(engine);
-                case "supportedStandards":
-                    return SupportedStandards.Select(p => (StackItem)p).ToList();
-            }
-            throw new NotSupportedException();
-        }
-
         internal virtual bool Initialize(ApplicationEngine engine)
         {
             if (engine.Trigger != TriggerType.Application)
@@ -114,11 +116,23 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
+        [ContractMethod]
+        protected StackItem OnPersist(ApplicationEngine engine, VMArray args)
+        {
+            return OnPersist(engine);
+        }
+
         protected virtual bool OnPersist(ApplicationEngine engine)
         {
             if (engine.Trigger != TriggerType.System)
                 throw new InvalidOperationException();
             return true;
+        }
+
+        [ContractMethod(Name = "supportedStandards")]
+        protected StackItem SupportedStandardsMethod(ApplicationEngine engine, VMArray args)
+        {
+            return SupportedStandards.Select(p => (StackItem)p).ToList();
         }
 
         public ApplicationEngine TestCall(string operation, params object[] args)

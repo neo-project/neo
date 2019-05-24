@@ -1,4 +1,6 @@
-﻿using Neo.Ledger;
+﻿#pragma warning disable IDE0060
+
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
@@ -144,27 +146,6 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        protected override StackItem Main(ApplicationEngine engine, string operation, VMArray args)
-        {
-            switch (operation)
-            {
-                case "name":
-                    return Name;
-                case "symbol":
-                    return Symbol;
-                case "decimals":
-                    return (uint)Decimals;
-                case "totalSupply":
-                    return TotalSupply(engine.Snapshot);
-                case "balanceOf":
-                    return BalanceOf(engine.Snapshot, new UInt160(args[0].GetByteArray()));
-                case "transfer":
-                    return Transfer(engine, new UInt160(args[0].GetByteArray()), new UInt160(args[1].GetByteArray()), args[2].GetBigInteger());
-                default:
-                    return base.Main(engine, operation, args);
-            }
-        }
-
         internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
@@ -214,11 +195,41 @@ namespace Neo.SmartContract.Native.Tokens
             engine.SendNotification(Hash, new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount });
         }
 
+        [ContractMethod(Name = "name")]
+        protected StackItem NameMethod(ApplicationEngine engine, VMArray args)
+        {
+            return Name;
+        }
+
+        [ContractMethod(Name = "symbol")]
+        protected StackItem SymbolMethod(ApplicationEngine engine, VMArray args)
+        {
+            return Symbol;
+        }
+
+        [ContractMethod(Name = "decimals")]
+        protected StackItem DecimalsMethod(ApplicationEngine engine, VMArray args)
+        {
+            return (uint)Decimals;
+        }
+
+        [ContractMethod]
+        protected StackItem TotalSupply(ApplicationEngine engine, VMArray args)
+        {
+            return TotalSupply(engine.Snapshot);
+        }
+
         public virtual BigInteger TotalSupply(Snapshot snapshot)
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
             if (storage is null) return BigInteger.Zero;
             return new BigInteger(storage.Value);
+        }
+
+        [ContractMethod]
+        protected StackItem BalanceOf(ApplicationEngine engine, VMArray args)
+        {
+            return BalanceOf(engine.Snapshot, new UInt160(args[0].GetByteArray()));
         }
 
         public virtual BigInteger BalanceOf(Snapshot snapshot, UInt160 account)
@@ -229,9 +240,18 @@ namespace Neo.SmartContract.Native.Tokens
             return state.Balance;
         }
 
-        protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
+        [ContractMethod]
+        protected StackItem Transfer(ApplicationEngine engine, VMArray args)
         {
             if (engine.Trigger != TriggerType.Application) throw new InvalidOperationException();
+            UInt160 from = new UInt160(args[0].GetByteArray());
+            UInt160 to = new UInt160(args[1].GetByteArray());
+            BigInteger amount = args[2].GetBigInteger();
+            return Transfer(engine, from, to, amount);
+        }
+
+        protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
+        {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (!from.Equals(engine.CallingScriptHash) && !InteropService.CheckWitness(engine, from))
                 return false;
