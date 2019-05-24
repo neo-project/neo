@@ -2,7 +2,7 @@
 
 namespace Neo.SmartContract.Native
 {
-    [AttributeUsage(AttributeTargets.Method)]
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     internal class ContractMethodAttribute : Attribute
     {
         public string Name { get; set; }
