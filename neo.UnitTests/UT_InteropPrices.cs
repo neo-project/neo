@@ -42,29 +42,14 @@ namespace Neo.UnitTests
         public void ApplicationEngineVariablePrices()
         {
             // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
-            byte[] SyscallContractCreateHash00 = new byte[] { (byte)ContractFeatures.NoProperty, 0x00, 0x00, 0x00, 0x68, 0xf6, 0x6c, 0xa5, 0x6e };
+            byte[] SyscallContractCreateHash00 = new byte[] { 0x01, 0x00, 0x02, 0x00, 0x00, 0x68, 0xf6, 0x6c, 0xa5, 0x6e };
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
                 ae.LoadScript(SyscallContractCreateHash00);
-                debugger.StepInto(); // push 0 - ContractPropertyState.NoProperty
-                debugger.StepInto(); // push 0
-                debugger.StepInto(); // push 0
-                debugger.StepInto(); // push 0
-                InteropService.GetPrice(InteropService.Neo_Contract_Create, ae.CurrentContext.EvaluationStack).Should().Be(100_00000000L);
-            }
-
-            // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
-            byte[] SyscallContractCreateHash01 = new byte[] { 0x51, 0x00, 0x00, 0x00, 0x68, 0xf6, 0x6c, 0xa5, 0x6e };
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
-            {
-                Debugger debugger = new Debugger(ae);
-                ae.LoadScript(SyscallContractCreateHash01);
-                debugger.StepInto(); // push 01 - ContractPropertyState.HasStorage
-                debugger.StepInto(); // push 0
-                debugger.StepInto(); // push 0
-                debugger.StepInto(); // push 0
-                InteropService.GetPrice(InteropService.Neo_Contract_Create, ae.CurrentContext.EvaluationStack).Should().Be(100_00000000L);
+                debugger.StepInto(); // PUSHBYTES1
+                debugger.StepInto(); // PUSHBYTES2
+                InteropService.GetPrice(InteropService.Neo_Contract_Create, ae.CurrentContext.EvaluationStack).Should().Be(0_00300000L);
             }
 
             // System.Storage.Put: e63f1884 (requires push key and value)
