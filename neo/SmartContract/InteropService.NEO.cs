@@ -27,8 +27,8 @@ namespace Neo.SmartContract
         public static readonly uint Neo_Transaction_GetScript = Register("Neo.Transaction.GetScript", Transaction_GetScript, 0_00000400);
         public static readonly uint Neo_Witness_GetVerificationScript = Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript, 0_00000400);
         public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 0_00030000);
-        public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, 100_00000000);
-        public static readonly uint Neo_Contract_Update = Register("Neo.Contract.Update", Contract_Update, 10_00000000);
+        public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, GetDeploymentPrice);
+        public static readonly uint Neo_Contract_Update = Register("Neo.Contract.Update", Contract_Update, GetDeploymentPrice);
         public static readonly uint Neo_Contract_GetScript = Register("Neo.Contract.GetScript", Contract_GetScript, 0_00000400);
         public static readonly uint Neo_Contract_IsPayable = Register("Neo.Contract.IsPayable", Contract_IsPayable, 0_00000400);
         public static readonly uint Neo_Storage_Find = Register("Neo.Storage.Find", Storage_Find, 0_01000000);
@@ -57,6 +57,12 @@ namespace Neo.SmartContract
             else n = (int)item.GetBigInteger();
             if (n < 1) return 0;
             return GetPrice(Neo_Crypto_CheckSig, stack) * n;
+        }
+
+        private static long GetDeploymentPrice(RandomAccessStack<StackItem> stack)
+        {
+            int size = stack.Peek(0).GetByteLength() + stack.Peek(1).GetByteLength();
+            return GasPerByte * size;
         }
 
         private static bool Native_Deploy(ApplicationEngine engine)
