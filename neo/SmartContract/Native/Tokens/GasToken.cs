@@ -4,10 +4,8 @@ using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using VMArray = Neo.VM.Types.Array;
@@ -23,26 +21,8 @@ namespace Neo.SmartContract.Native.Tokens
 
         private const byte Prefix_SystemFeeAmount = 15;
 
-        internal GasToken() : base()
+        internal GasToken()
         {
-            var list = new List<ContractMethodDescriptor>(Manifest.Abi.Methods)
-            {
-                new ContractMethodDescriptor()
-                {
-                    Name = "getSysFeeAmount",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                             Name = "index",
-                             Type = ContractParameterType.Integer
-                        }
-                    },
-                    ReturnType = ContractParameterType.Integer
-                }
-            };
-
-            Manifest.Abi.Methods = list.ToArray();
         }
 
         protected override long GetPriceForMethod(string method)
@@ -74,7 +54,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod]
+        [ContractMethod(ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "index" })]
         private StackItem GetSysFeeAmount(ApplicationEngine engine, VMArray args)
         {
             uint index = (uint)args[0].GetBigInteger();

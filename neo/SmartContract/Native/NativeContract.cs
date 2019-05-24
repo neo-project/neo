@@ -38,33 +38,23 @@ namespace Neo.SmartContract.Native
                 sb.EmitSysCall(ServiceHash);
                 this.Script = sb.ToArray();
             }
-
             this.Hash = Script.ToScriptHash();
             this.Manifest = ContractManifest.CreateDefault(this.Hash);
-            this.Manifest.Abi.Methods = new ContractMethodDescriptor[]
-            {
-                new ContractMethodDescriptor()
-                {
-                    Name = "onPersist",
-                    ReturnType = ContractParameterType.Boolean,
-                    Parameters = new ContractParameterDefinition[0]
-                },
-                new ContractMethodDescriptor()
-                {
-                    Name = "supportedStandards",
-                    ReturnType = ContractParameterType.Array,
-                    Parameters = new ContractParameterDefinition[0]
-                }
-            };
-
+            List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
             foreach (MethodInfo method in GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 ContractMethodAttribute attribute = method.GetCustomAttribute<ContractMethodAttribute>();
                 if (attribute is null) continue;
                 string name = attribute.Name ?? (method.Name.ToLower()[0] + method.Name.Substring(1));
                 methods.Add(name, (Func<ApplicationEngine, VMArray, StackItem>)method.CreateDelegate(typeof(Func<ApplicationEngine, VMArray, StackItem>), this));
+                descriptors.Add(new ContractMethodDescriptor
+                {
+                    Name = name,
+                    ReturnType = attribute.ReturnType,
+                    Parameters = attribute.ParameterTypes.Zip(attribute.ParameterNames, (t, n) => new ContractParameterDefinition { Type = t, Name = n }).ToArray()
+                });
             }
-
+            this.Manifest.Abi.Methods = descriptors.ToArray();
             contracts.Add(this);
         }
 
@@ -116,7 +106,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod]
+        [ContractMethod(ContractParameterType.Boolean)]
         protected StackItem OnPersist(ApplicationEngine engine, VMArray args)
         {
             return OnPersist(engine);
@@ -129,7 +119,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(Name = "supportedStandards")]
+        [ContractMethod(ContractParameterType.Array, Name = "supportedStandards")]
         protected StackItem SupportedStandardsMethod(ApplicationEngine engine, VMArray args)
         {
             return SupportedStandards.Select(p => (StackItem)p).ToList();

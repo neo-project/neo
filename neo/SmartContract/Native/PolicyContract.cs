@@ -23,124 +23,9 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccounts = 15;
 
-        public PolicyContract() : base()
+        public PolicyContract()
         {
             Manifest.Features = ContractFeatures.HasStorage;
-
-            var list = new List<ContractMethodDescriptor>(Manifest.Abi.Methods)
-            {
-                new ContractMethodDescriptor()
-                {
-                    Name = "getMaxTransactionsPerBlock",
-                    Parameters = new ContractParameterDefinition[0],
-                    ReturnType = ContractParameterType.Integer
-                },
-                new ContractMethodDescriptor()
-                {
-                    Name = "getMaxLowPriorityTransactionsPerBlock",
-                    Parameters = new ContractParameterDefinition[0],
-                    ReturnType = ContractParameterType.Integer
-                },
-                new ContractMethodDescriptor()
-                {
-                    Name = "getMaxLowPriorityTransactionSize",
-                    Parameters = new ContractParameterDefinition[0],
-                    ReturnType = ContractParameterType.Integer
-                },
-                new ContractMethodDescriptor()
-                {
-                    Name = "getFeePerByte",
-                    Parameters = new ContractParameterDefinition[0],
-                    ReturnType = ContractParameterType.Integer
-                },
-                new ContractMethodDescriptor()
-                {
-                    Name = "getBlockedAccounts",
-                    Parameters = new ContractParameterDefinition[0],
-                    ReturnType = ContractParameterType.Integer
-                },
-                new ContractMethodDescriptor()
-                {
-                    Name = "setMaxTransactionsPerBlock",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                             Name = "value",
-                             Type = ContractParameterType.Integer
-                        }
-                    },
-                    ReturnType = ContractParameterType.Boolean
-                },
-                new ContractMethodDescriptor()
-                {
-                    Name = "setMaxLowPriorityTransactionsPerBlock",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                             Name = "value",
-                             Type = ContractParameterType.Integer
-                        }
-                    },
-                    ReturnType = ContractParameterType.Boolean
-                },
-                new ContractMethodDescriptor()
-                {
-                    Name = "setMaxLowPriorityTransactionSize",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                             Name = "value",
-                             Type = ContractParameterType.Integer
-                        }
-                    },
-                    ReturnType = ContractParameterType.Boolean
-                },
-                new ContractMethodDescriptor()
-                {
-                    Name = "setFeePerByte",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                             Name = "value",
-                             Type = ContractParameterType.Integer
-                        }
-                    },
-                    ReturnType = ContractParameterType.Boolean
-                },
-
-                new ContractMethodDescriptor()
-                {
-                    Name = "blockAccount",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                             Name = "account",
-                             Type = ContractParameterType.Hash160
-                        }
-                    },
-                    ReturnType = ContractParameterType.Boolean
-                },
-                new ContractMethodDescriptor()
-                {
-                    Name = "unblockAccount",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                             Name = "account",
-                             Type = ContractParameterType.Hash160
-                        }
-                    },
-                    ReturnType = ContractParameterType.Boolean
-                }
-            };
-
-            Manifest.Abi.Methods = list.ToArray();
         }
 
         private bool CheckValidators(ApplicationEngine engine)
@@ -198,7 +83,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod]
+        [ContractMethod(ContractParameterType.Integer)]
         private StackItem GetMaxTransactionsPerBlock(ApplicationEngine engine, VMArray args)
         {
             return GetMaxTransactionsPerBlock(engine.Snapshot);
@@ -209,7 +94,7 @@ namespace Neo.SmartContract.Native
             return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxTransactionsPerBlock)].Value, 0);
         }
 
-        [ContractMethod]
+        [ContractMethod(ContractParameterType.Integer)]
         private StackItem GetMaxLowPriorityTransactionsPerBlock(ApplicationEngine engine, VMArray args)
         {
             return GetMaxLowPriorityTransactionsPerBlock(engine.Snapshot);
@@ -220,7 +105,7 @@ namespace Neo.SmartContract.Native
             return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxLowPriorityTransactionsPerBlock)].Value, 0);
         }
 
-        [ContractMethod]
+        [ContractMethod(ContractParameterType.Integer)]
         private StackItem GetMaxLowPriorityTransactionSize(ApplicationEngine engine, VMArray args)
         {
             return GetMaxLowPriorityTransactionSize(engine.Snapshot);
@@ -231,7 +116,7 @@ namespace Neo.SmartContract.Native
             return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxLowPriorityTransactionSize)].Value, 0);
         }
 
-        [ContractMethod]
+        [ContractMethod(ContractParameterType.Integer)]
         private StackItem GetFeePerByte(ApplicationEngine engine, VMArray args)
         {
             return GetFeePerByte(engine.Snapshot);
@@ -242,7 +127,7 @@ namespace Neo.SmartContract.Native
             return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_FeePerByte)].Value, 0);
         }
 
-        [ContractMethod]
+        [ContractMethod(ContractParameterType.Array)]
         private StackItem GetBlockedAccounts(ApplicationEngine engine, VMArray args)
         {
             return GetBlockedAccounts(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToList();
@@ -253,7 +138,7 @@ namespace Neo.SmartContract.Native
             return snapshot.Storages[CreateStorageKey(Prefix_BlockedAccounts)].Value.AsSerializableArray<UInt160>();
         }
 
-        [ContractMethod]
+        [ContractMethod(ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
         private StackItem SetMaxTransactionsPerBlock(ApplicationEngine engine, VMArray args)
         {
             if (engine.Trigger != TriggerType.Application) return false;
@@ -264,7 +149,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod]
+        [ContractMethod(ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
         private StackItem SetMaxLowPriorityTransactionsPerBlock(ApplicationEngine engine, VMArray args)
         {
             if (engine.Trigger != TriggerType.Application) return false;
@@ -275,7 +160,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod]
+        [ContractMethod(ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
         private StackItem SetMaxLowPriorityTransactionSize(ApplicationEngine engine, VMArray args)
         {
             if (engine.Trigger != TriggerType.Application) return false;
@@ -286,7 +171,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod]
+        [ContractMethod(ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
         private StackItem SetFeePerByte(ApplicationEngine engine, VMArray args)
         {
             if (engine.Trigger != TriggerType.Application) return false;
@@ -297,7 +182,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod]
+        [ContractMethod(ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
         private StackItem BlockAccount(ApplicationEngine engine, VMArray args)
         {
             if (engine.Trigger != TriggerType.Application) return false;
@@ -312,7 +197,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod]
+        [ContractMethod(ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
         private StackItem UnblockAccount(ApplicationEngine engine, VMArray args)
         {
             if (engine.Trigger != TriggerType.Application) return false;
