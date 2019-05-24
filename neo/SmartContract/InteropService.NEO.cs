@@ -4,6 +4,7 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
@@ -27,7 +28,7 @@ namespace Neo.SmartContract
         public static readonly uint Neo_Witness_GetVerificationScript = Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript, 100);
         public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 100);
         public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create);
-        public static readonly uint Neo_Contract_Migrate = Register("Neo.Contract.Migrate", Contract_Migrate);
+        public static readonly uint Neo_Contract_Update = Register("Neo.Contract.Update", Contract_Update);
         public static readonly uint Neo_Contract_GetScript = Register("Neo.Contract.GetScript", Contract_GetScript, 1);
         public static readonly uint Neo_Contract_IsPayable = Register("Neo.Contract.IsPayable", Contract_IsPayable, 1);
         public static readonly uint Neo_Storage_Find = Register("Neo.Storage.Find", Storage_Find, 1);
@@ -56,7 +57,7 @@ namespace Neo.SmartContract
                 engine.Snapshot.Contracts.Add(contract.Hash, new ContractState
                 {
                     Script = contract.Script,
-                    ContractProperties = contract.Properties
+                    Manifest = contract.Manifest
                 });
                 contract.Initialize(engine);
             }
@@ -226,45 +227,57 @@ namespace Neo.SmartContract
             if (engine.Trigger != TriggerType.Application) return false;
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
-            ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
+
+            var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            if (manifest.Length > ContractManifest.MaxLength) return false;
+
             UInt160 hash = script.ToScriptHash();
             ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
-            if (contract == null)
+            if (contract != null) return false;
+            contract = new ContractState
             {
-                contract = new ContractState
-                {
-                    Script = script,
-                    ContractProperties = contract_properties
-                };
-                engine.Snapshot.Contracts.Add(hash, contract);
-            }
+                Script = script,
+                Manifest = ContractManifest.Parse(manifest)
+            };
+
+            if (!contract.Manifest.IsValid(hash)) return false;
+
+            engine.Snapshot.Contracts.Add(hash, contract);
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
             return true;
         }
 
-        private static bool Contract_Migrate(ApplicationEngine engine)
+        private static bool Contract_Update(ApplicationEngine engine)
         {
             if (engine.Trigger != TriggerType.Application) return false;
+
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
-            ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
-            UInt160 hash = script.ToScriptHash();
-            ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
-            if (contract == null)
+            var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            if (manifest.Length > ContractManifest.MaxLength) return false;
+
+            var contract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
+            if (contract is null) return false;
+
+            if (script.Length > 0)
             {
+                UInt160 hash_new = script.ToScriptHash();
+                if (hash_new.Equals(engine.CurrentScriptHash)) return false;
+                if (engine.Snapshot.Contracts.TryGet(hash_new) != null) return false;
                 contract = new ContractState
                 {
                     Script = script,
-                    ContractProperties = contract_properties
+                    Manifest = contract.Manifest
                 };
-                engine.Snapshot.Contracts.Add(hash, contract);
+                contract.Manifest.Abi.Hash = hash_new;
+                engine.Snapshot.Contracts.Add(hash_new, contract);
                 if (contract.HasStorage)
                 {
                     foreach (var pair in engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).ToArray())
                     {
                         engine.Snapshot.Storages.Add(new StorageKey
                         {
-                            ScriptHash = hash,
+                            ScriptHash = hash_new,
                             Key = pair.Key.Key
                         }, new StorageItem
                         {
@@ -273,9 +286,16 @@ namespace Neo.SmartContract
                         });
                     }
                 }
+                Contract_Destroy(engine);
             }
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
-            return Contract_Destroy(engine);
+            if (manifest.Length > 0)
+            {
+                contract = engine.Snapshot.Contracts.GetAndChange(contract.ScriptHash);
+                contract.Manifest = ContractManifest.Parse(manifest);
+                if (!contract.Manifest.IsValid(contract.ScriptHash)) return false;
+            }
+
+            return true;
         }
 
         private static bool Contract_GetScript(ApplicationEngine engine)
