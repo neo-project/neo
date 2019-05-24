@@ -69,7 +69,6 @@ namespace Neo.UnitTests
             Transaction[] transactionsVal;
             TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal, out transactionsVal, 0);
 
-            uut.ConsensusData = new ConsensusData();
             uut.Transactions = new[]
             {
                 TestUtils.GetTransaction()
@@ -89,7 +88,6 @@ namespace Neo.UnitTests
             Transaction[] transactionsVal;
             TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal, out transactionsVal, 0);
 
-            uut.ConsensusData = new ConsensusData();
             uut.Transactions = new[]
             {
                 TestUtils.GetTransaction(),

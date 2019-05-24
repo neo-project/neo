@@ -3,7 +3,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using System;
 using System.IO;
-using System.Linq;
 
 namespace Neo.UnitTests
 {
