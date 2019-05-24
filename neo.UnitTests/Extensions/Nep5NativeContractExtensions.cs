@@ -69,7 +69,7 @@ namespace Neo.UnitTests.Extensions
 
         public static string[] SupportedStandards(this NativeContract contract)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0);
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true);
 
             engine.LoadScript(contract.Script);
 
@@ -132,7 +132,7 @@ namespace Neo.UnitTests.Extensions
 
         public static BigInteger Decimals(this NativeContract contract)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0);
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true);
 
             engine.LoadScript(contract.Script);
 
@@ -152,7 +152,7 @@ namespace Neo.UnitTests.Extensions
 
         public static string Symbol(this NativeContract contract)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0);
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true);
 
             engine.LoadScript(contract.Script);
 
@@ -172,7 +172,7 @@ namespace Neo.UnitTests.Extensions
 
         public static string Name(this NativeContract contract)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0);
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true);
 
             engine.LoadScript(contract.Script);
 
