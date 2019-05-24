@@ -11,10 +11,12 @@ namespace Neo.Network.P2P.Payloads
 {
     public class Block : BlockBase, IInventory, IEquatable<Block>
     {
-        public const int MaxTransactionsPerBlock = ushort.MaxValue;
+        public const int MaxContentsPerBlock = ushort.MaxValue;
+        public const int MaxTransactionsPerBlock = MaxContentsPerBlock - 1;
 
-        public ConsensusData ConsensusData;
-        public Transaction[] Transactions;
+        public IBlockContent[] Contents;
+
+        public ConsensusData ConsensusData => (ConsensusData)Contents[0];
 
         private Header _header = null;
         public Header Header
@@ -39,24 +41,22 @@ namespace Neo.Network.P2P.Payloads
 
         InventoryType IInventory.InventoryType => InventoryType.Block;
 
-        public override int Size => base.Size + ConsensusData.Size + Transactions.GetVarSize();
+        public override int Size => base.Size + Contents.GetVarSize();
 
-        public static UInt256 CalculateMerkleRoot(UInt256 consensusDataHash, params UInt256[] transactionHashes)
-        {
-            List<UInt256> hashes = new List<UInt256>(transactionHashes.Length + 1) { consensusDataHash };
-            hashes.AddRange(transactionHashes);
-            return MerkleTree.ComputeRoot(hashes);
-        }
+        public IEnumerable<Transaction> Transactions => Contents.Skip(1).Cast<Transaction>();
+
+        public int TransactionCount => Contents.Length - 1;
 
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            ConsensusData = reader.ReadSerializable<ConsensusData>();
-            Transactions = reader.ReadSerializableArray<Transaction>(MaxTransactionsPerBlock);
-            if (Transactions.Length == 0) throw new FormatException();
-            if (Transactions.Distinct().Count() != Transactions.Length)
+            Contents = new IBlockContent[reader.ReadVarInt(MaxContentsPerBlock)];
+            Contents[0] = reader.ReadSerializable<ConsensusData>();
+            for (int i = 1; i < Contents.Length; i++)
+                Contents[i] = reader.ReadSerializable<Transaction>();
+            if (Contents.Select(p => p.Hash).Distinct().Count() != Contents.Length)
                 throw new FormatException();
-            if (CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
+            if (MerkleTree.ComputeRoot(Contents.Select(p => p.Hash).ToArray()) != MerkleRoot)
                 throw new FormatException();
         }
 
@@ -79,14 +79,13 @@ namespace Neo.Network.P2P.Payloads
 
         public void RebuildMerkleRoot()
         {
-            MerkleRoot = CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash).ToArray());
+            MerkleRoot = MerkleTree.ComputeRoot(Contents.Select(p => p.Hash).ToArray());
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(ConsensusData);
-            writer.Write(Transactions);
+            writer.Write(Contents);
         }
 
         public override JObject ToJson()
@@ -108,8 +107,8 @@ namespace Neo.Network.P2P.Payloads
                 Index = Index,
                 NextConsensus = NextConsensus,
                 Witness = Witness,
-                ConsensusData = ConsensusData,
-                Hashes = Transactions.Select(p => p.Hash).ToArray()
+                Hashes = Contents.Select(p => p.Hash).ToArray(),
+                ConsensusData = ConsensusData
             };
         }
     }

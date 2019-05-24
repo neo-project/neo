@@ -6,7 +6,7 @@ using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class ConsensusData : ISerializable
+    public class ConsensusData : IBlockContent
     {
         public uint PrimaryIndex;
         public ulong Nonce;

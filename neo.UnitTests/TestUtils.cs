@@ -3,6 +3,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Neo.UnitTests
 {
@@ -50,8 +51,7 @@ namespace Neo.UnitTests
                 }
             }
 
-            block.ConsensusData = new ConsensusData();
-            block.Transactions = transactionsVal;
+            block.Contents = new IBlockContent[] { new ConsensusData() }.Concat(transactionsVal).ToArray();
         }
 
         private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal)

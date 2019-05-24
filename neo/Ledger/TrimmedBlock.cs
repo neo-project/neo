@@ -9,8 +9,8 @@ namespace Neo.Ledger
 {
     public class TrimmedBlock : BlockBase, ICloneable<TrimmedBlock>
     {
-        public ConsensusData ConsensusData;
         public UInt256[] Hashes;
+        public ConsensusData ConsensusData;
 
         public bool IsBlock => Hashes.Length > 0;
 
@@ -25,8 +25,7 @@ namespace Neo.Ledger
                 Index = Index,
                 NextConsensus = NextConsensus,
                 Witness = Witness,
-                ConsensusData = ConsensusData,
-                Transactions = Hashes.Select(p => cache[p].Transaction).ToArray()
+                Contents = Hashes.Select((h, i) => i == 0 ? (IBlockContent)ConsensusData : cache[h].Transaction).ToArray()
             };
         }
 
@@ -52,7 +51,9 @@ namespace Neo.Ledger
             }
         }
 
-        public override int Size => base.Size + ConsensusData.Size + Hashes.GetVarSize();
+        public override int Size => base.Size
+            /*Hashes*/ + Hashes.GetVarSize()
+            /*ConsensusData*/ + Hashes.Length > 0 ? ConsensusData.Size : 0;
 
         TrimmedBlock ICloneable<TrimmedBlock>.Clone()
         {
@@ -65,8 +66,8 @@ namespace Neo.Ledger
                 Index = Index,
                 NextConsensus = NextConsensus,
                 Witness = Witness,
-                ConsensusData = ConsensusData,
                 Hashes = Hashes,
+                ConsensusData = ConsensusData,
                 _header = _header
             };
         }
@@ -74,8 +75,9 @@ namespace Neo.Ledger
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            ConsensusData = reader.ReadSerializable<ConsensusData>();
-            Hashes = reader.ReadSerializableArray<UInt256>(Block.MaxTransactionsPerBlock);
+            Hashes = reader.ReadSerializableArray<UInt256>(Block.MaxContentsPerBlock);
+            if (Hashes.Length > 0)
+                ConsensusData = reader.ReadSerializable<ConsensusData>();
         }
 
         void ICloneable<TrimmedBlock>.FromReplica(TrimmedBlock replica)
@@ -87,22 +89,23 @@ namespace Neo.Ledger
             Index = replica.Index;
             NextConsensus = replica.NextConsensus;
             Witness = replica.Witness;
-            ConsensusData = replica.ConsensusData;
             Hashes = replica.Hashes;
+            ConsensusData = replica.ConsensusData;
             _header = replica._header;
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(ConsensusData);
             writer.Write(Hashes);
+            if (Hashes.Length > 0)
+                writer.Write(ConsensusData);
         }
 
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
-            json["consensus_data"] = ConsensusData.ToJson();
+            json["consensus_data"] = ConsensusData?.ToJson();
             json["hashes"] = Hashes.Select(p => (JObject)p.ToString()).ToArray();
             return json;
         }
