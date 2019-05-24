@@ -7,7 +7,7 @@ namespace Neo.IO.Caching
         where TKey : IEquatable<TKey>, ISerializable
         where TValue : class, ICloneable<TValue>, ISerializable, new()
     {
-        private DataCache<TKey, TValue> innerCache;
+        private readonly DataCache<TKey, TValue> innerCache;
 
         public CloneCache(DataCache<TKey, TValue> innerCache)
         {
