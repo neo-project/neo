@@ -246,7 +246,7 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Default.Hash160(script));
         }
 
-        internal static bool VerifyWitnesses(this IVerifiable verifiable, Snapshot snapshot)
+        internal static bool VerifyWitnesses(this IVerifiable verifiable, Snapshot snapshot, long gas)
         {
             UInt160[] hashes;
             try
@@ -270,7 +270,7 @@ namespace Neo.SmartContract
                 {
                     if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
                 }
-                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, 0))
+                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
                 {
                     engine.LoadScript(verification);
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript);

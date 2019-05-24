@@ -1,9 +1,9 @@
 ﻿using System;
 
-namespace Neo.Ledger
+namespace Neo.SmartContract.Manifest
 {
     [Flags]
-    public enum ContractPropertyState : byte
+    public enum ContractFeatures : byte
     {
         NoProperty = 0,
 

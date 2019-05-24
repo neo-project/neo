@@ -16,4 +16,10 @@ before_install:
 
 script:
  - dotnet restore
- - dotnet test
+ - find * -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
+ - dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+
+after_success:
+  # After all tests OK, Send CodeDov report
+  - echo "Test Success - Branch($TRAVIS_BRANCH) Pull Request($TRAVIS_PULL_REQUEST) Tag($TRAVIS_TAG)"
+  - bash <(curl -s https://codecov.io/bash) -v

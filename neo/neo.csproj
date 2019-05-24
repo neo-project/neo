@@ -11,6 +11,7 @@
     <PackageId>Neo</PackageId>
     <PackageTags>NEO;AntShares;Blockchain;Smart Contract</PackageTags>
     <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/neo-project/neo.git</RepositoryUrl>
     <RootNamespace>Neo</RootNamespace>

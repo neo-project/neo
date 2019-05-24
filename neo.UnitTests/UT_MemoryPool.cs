@@ -25,6 +25,7 @@ namespace Neo.UnitTests
 
             // Create a MemoryPool with capacity of 100
             _unit = new MemoryPool(TheNeoSystem, 100);
+            _unit.LoadPolicy(TestBlockchain.GetStore().GetSnapshot());
 
             // Verify capacity equals the amount specified
             _unit.Capacity.ShouldBeEquivalentTo(100);
@@ -65,9 +66,14 @@ namespace Neo.UnitTests
 
         private Transaction CreateLowPriorityTransaction()
         {
-            long rNetFee = LongRandom(0, 100000, TestUtils.TestRandom);
+            long rNetFee = LongRandom(0, 10000, TestUtils.TestRandom);
             // [0,0.001] GAS a fee lower than the threshold of 0.001 GAS (not enough to be a high priority TX)
             return CreateTransactionWithFee(rNetFee);
+        }
+
+        private bool IsLowPriority(Transaction tx)
+        {
+            return tx.FeePerByte < 1000;
         }
 
         private void AddTransactions(int count, bool isHighPriority = false)
@@ -150,9 +156,10 @@ namespace Neo.UnitTests
             var block = new Block
             {
                 Transactions = _unit.GetSortedVerifiedTransactions().Take(10)
-                    .Concat(_unit.GetSortedVerifiedTransactions().Where(x => x.IsLowPriority).Take(5)).ToArray()
+                    .Concat(_unit.GetSortedVerifiedTransactions().Where(x => IsLowPriority(x)).Take(5)).ToArray()
             };
             _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
+            _unit.InvalidateVerifiedTransactions();
             _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(0);
             _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(0);
             _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(60);
@@ -250,7 +257,7 @@ namespace Neo.UnitTests
             // move all to unverified
             var block = new Block { Transactions = new Transaction[0] };
             _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
-
+            _unit.InvalidateVerifiedTransactions();
             _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(0);
             _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(0);
             _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(50);
@@ -265,7 +272,7 @@ namespace Neo.UnitTests
                 var sortedUnverifiedArray = sortedUnverifiedTransactions.ToArray();
                 verifyTransactionsSortedDescending(sortedUnverifiedArray);
                 var maxHighPriorityTransaction = sortedUnverifiedArray.First();
-                var maxLowPriorityTransaction = sortedUnverifiedArray.First(tx => tx.IsLowPriority);
+                var maxLowPriorityTransaction = sortedUnverifiedArray.First(tx => IsLowPriority(tx));
 
                 // reverify 1 high priority and 1 low priority transaction
                 _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(2, Blockchain.Singleton.GetSnapshot());
@@ -273,9 +280,10 @@ namespace Neo.UnitTests
                 verifiedTxs.Length.ShouldBeEquivalentTo(2);
                 verifiedTxs[0].ShouldBeEquivalentTo(maxHighPriorityTransaction);
                 verifiedTxs[1].ShouldBeEquivalentTo(maxLowPriorityTransaction);
-                var blockWith2Tx = new Block { Transactions = new Transaction[2] { maxHighPriorityTransaction, maxLowPriorityTransaction } };
+                var blockWith2Tx = new Block { Transactions = new[] { maxHighPriorityTransaction, maxLowPriorityTransaction } };
                 // verify and remove the 2 transactions from the verified pool
                 _unit.UpdatePoolForBlockPersisted(blockWith2Tx, Blockchain.Singleton.GetSnapshot());
+                _unit.InvalidateVerifiedTransactions();
                 _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(0);
                 _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(0);
             }

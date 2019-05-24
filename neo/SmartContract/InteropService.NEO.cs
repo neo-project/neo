@@ -4,6 +4,7 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
@@ -17,34 +18,51 @@ namespace Neo.SmartContract
     static partial class InteropService
     {
         public static readonly uint Neo_Native_Deploy = Register("Neo.Native.Deploy", Native_Deploy, 0);
-        public static readonly uint Neo_Crypto_CheckSig = Register("Neo.Crypto.CheckSig", Crypto_CheckSig, 100);
-        public static readonly uint Neo_Crypto_CheckMultiSig = Register("Neo.Crypto.CheckMultiSig", Crypto_CheckMultiSig);
-        public static readonly uint Neo_Header_GetVersion = Register("Neo.Header.GetVersion", Header_GetVersion, 1);
-        public static readonly uint Neo_Header_GetMerkleRoot = Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot, 1);
-        public static readonly uint Neo_Header_GetNextConsensus = Register("Neo.Header.GetNextConsensus", Header_GetNextConsensus, 1);
-        public static readonly uint Neo_Transaction_GetWitnesses = Register("Neo.Transaction.GetWitnesses", Transaction_GetWitnesses, 200);
-        public static readonly uint Neo_Transaction_GetScript = Register("Neo.Transaction.GetScript", Transaction_GetScript, 1);
-        public static readonly uint Neo_Witness_GetVerificationScript = Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript, 100);
-        public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 100);
-        public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create);
-        public static readonly uint Neo_Contract_Migrate = Register("Neo.Contract.Migrate", Contract_Migrate);
-        public static readonly uint Neo_Contract_GetScript = Register("Neo.Contract.GetScript", Contract_GetScript, 1);
-        public static readonly uint Neo_Contract_IsPayable = Register("Neo.Contract.IsPayable", Contract_IsPayable, 1);
-        public static readonly uint Neo_Storage_Find = Register("Neo.Storage.Find", Storage_Find, 1);
-        public static readonly uint Neo_Enumerator_Create = Register("Neo.Enumerator.Create", Enumerator_Create, 1);
-        public static readonly uint Neo_Enumerator_Next = Register("Neo.Enumerator.Next", Enumerator_Next, 1);
-        public static readonly uint Neo_Enumerator_Value = Register("Neo.Enumerator.Value", Enumerator_Value, 1);
-        public static readonly uint Neo_Enumerator_Concat = Register("Neo.Enumerator.Concat", Enumerator_Concat, 1);
-        public static readonly uint Neo_Iterator_Create = Register("Neo.Iterator.Create", Iterator_Create, 1);
-        public static readonly uint Neo_Iterator_Key = Register("Neo.Iterator.Key", Iterator_Key, 1);
-        public static readonly uint Neo_Iterator_Keys = Register("Neo.Iterator.Keys", Iterator_Keys, 1);
-        public static readonly uint Neo_Iterator_Values = Register("Neo.Iterator.Values", Iterator_Values, 1);
-        public static readonly uint Neo_Iterator_Concat = Register("Neo.Iterator.Concat", Iterator_Concat, 1);
+        public static readonly uint Neo_Crypto_CheckSig = Register("Neo.Crypto.CheckSig", Crypto_CheckSig, 0_01000000);
+        public static readonly uint Neo_Crypto_CheckMultiSig = Register("Neo.Crypto.CheckMultiSig", Crypto_CheckMultiSig, GetCheckMultiSigPrice);
+        public static readonly uint Neo_Header_GetVersion = Register("Neo.Header.GetVersion", Header_GetVersion, 0_00000400);
+        public static readonly uint Neo_Header_GetMerkleRoot = Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot, 0_00000400);
+        public static readonly uint Neo_Header_GetNextConsensus = Register("Neo.Header.GetNextConsensus", Header_GetNextConsensus, 0_00000400);
+        public static readonly uint Neo_Transaction_GetWitnesses = Register("Neo.Transaction.GetWitnesses", Transaction_GetWitnesses, 0_00010000);
+        public static readonly uint Neo_Transaction_GetScript = Register("Neo.Transaction.GetScript", Transaction_GetScript, 0_00000400);
+        public static readonly uint Neo_Witness_GetVerificationScript = Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript, 0_00000400);
+        public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 0_00030000);
+        public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, GetDeploymentPrice);
+        public static readonly uint Neo_Contract_Update = Register("Neo.Contract.Update", Contract_Update, GetDeploymentPrice);
+        public static readonly uint Neo_Contract_GetScript = Register("Neo.Contract.GetScript", Contract_GetScript, 0_00000400);
+        public static readonly uint Neo_Contract_IsPayable = Register("Neo.Contract.IsPayable", Contract_IsPayable, 0_00000400);
+        public static readonly uint Neo_Storage_Find = Register("Neo.Storage.Find", Storage_Find, 0_01000000);
+        public static readonly uint Neo_Enumerator_Create = Register("Neo.Enumerator.Create", Enumerator_Create, 0_00000400);
+        public static readonly uint Neo_Enumerator_Next = Register("Neo.Enumerator.Next", Enumerator_Next, 0_01000000);
+        public static readonly uint Neo_Enumerator_Value = Register("Neo.Enumerator.Value", Enumerator_Value, 0_00000400);
+        public static readonly uint Neo_Enumerator_Concat = Register("Neo.Enumerator.Concat", Enumerator_Concat, 0_00000400);
+        public static readonly uint Neo_Iterator_Create = Register("Neo.Iterator.Create", Iterator_Create, 0_00000400);
+        public static readonly uint Neo_Iterator_Key = Register("Neo.Iterator.Key", Iterator_Key, 0_00000400);
+        public static readonly uint Neo_Iterator_Keys = Register("Neo.Iterator.Keys", Iterator_Keys, 0_00000400);
+        public static readonly uint Neo_Iterator_Values = Register("Neo.Iterator.Values", Iterator_Values, 0_00000400);
+        public static readonly uint Neo_Iterator_Concat = Register("Neo.Iterator.Concat", Iterator_Concat, 0_00000400);
 
         static InteropService()
         {
             foreach (NativeContract contract in NativeContract.Contracts)
-                Register(contract.ServiceName, contract.Invoke);
+                Register(contract.ServiceName, contract.Invoke, contract.GetPrice);
+        }
+
+        private static long GetCheckMultiSigPrice(RandomAccessStack<StackItem> stack)
+        {
+            if (stack.Count == 0) return 0;
+            var item = stack.Peek();
+            int n;
+            if (item is VMArray array) n = array.Count;
+            else n = (int)item.GetBigInteger();
+            if (n < 1) return 0;
+            return GetPrice(Neo_Crypto_CheckSig, stack) * n;
+        }
+
+        private static long GetDeploymentPrice(RandomAccessStack<StackItem> stack)
+        {
+            int size = stack.Peek(0).GetByteLength() + stack.Peek(1).GetByteLength();
+            return GasPerByte * size;
         }
 
         private static bool Native_Deploy(ApplicationEngine engine)
@@ -56,7 +74,7 @@ namespace Neo.SmartContract
                 engine.Snapshot.Contracts.Add(contract.Hash, new ContractState
                 {
                     Script = contract.Script,
-                    ContractProperties = contract.Properties
+                    Manifest = contract.Manifest
                 });
                 contract.Initialize(engine);
             }
@@ -226,45 +244,57 @@ namespace Neo.SmartContract
             if (engine.Trigger != TriggerType.Application) return false;
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
-            ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
+
+            var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            if (manifest.Length > ContractManifest.MaxLength) return false;
+
             UInt160 hash = script.ToScriptHash();
             ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
-            if (contract == null)
+            if (contract != null) return false;
+            contract = new ContractState
             {
-                contract = new ContractState
-                {
-                    Script = script,
-                    ContractProperties = contract_properties
-                };
-                engine.Snapshot.Contracts.Add(hash, contract);
-            }
+                Script = script,
+                Manifest = ContractManifest.Parse(manifest)
+            };
+
+            if (!contract.Manifest.IsValid(hash)) return false;
+
+            engine.Snapshot.Contracts.Add(hash, contract);
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
             return true;
         }
 
-        private static bool Contract_Migrate(ApplicationEngine engine)
+        private static bool Contract_Update(ApplicationEngine engine)
         {
             if (engine.Trigger != TriggerType.Application) return false;
+
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
-            ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
-            UInt160 hash = script.ToScriptHash();
-            ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
-            if (contract == null)
+            var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
+            if (manifest.Length > ContractManifest.MaxLength) return false;
+
+            var contract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
+            if (contract is null) return false;
+
+            if (script.Length > 0)
             {
+                UInt160 hash_new = script.ToScriptHash();
+                if (hash_new.Equals(engine.CurrentScriptHash)) return false;
+                if (engine.Snapshot.Contracts.TryGet(hash_new) != null) return false;
                 contract = new ContractState
                 {
                     Script = script,
-                    ContractProperties = contract_properties
+                    Manifest = contract.Manifest
                 };
-                engine.Snapshot.Contracts.Add(hash, contract);
+                contract.Manifest.Abi.Hash = hash_new;
+                engine.Snapshot.Contracts.Add(hash_new, contract);
                 if (contract.HasStorage)
                 {
                     foreach (var pair in engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).ToArray())
                     {
                         engine.Snapshot.Storages.Add(new StorageKey
                         {
-                            ScriptHash = hash,
+                            ScriptHash = hash_new,
                             Key = pair.Key.Key
                         }, new StorageItem
                         {
@@ -273,9 +303,16 @@ namespace Neo.SmartContract
                         });
                     }
                 }
+                Contract_Destroy(engine);
             }
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
-            return Contract_Destroy(engine);
+            if (manifest.Length > 0)
+            {
+                contract = engine.Snapshot.Contracts.GetAndChange(contract.ScriptHash);
+                contract.Manifest = ContractManifest.Parse(manifest);
+                if (!contract.Manifest.IsValid(contract.ScriptHash)) return false;
+            }
+
+            return true;
         }
 
         private static bool Contract_GetScript(ApplicationEngine engine)

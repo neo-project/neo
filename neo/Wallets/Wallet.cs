@@ -16,17 +16,13 @@ using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Wallets
 {
-    public abstract class Wallet : IDisposable
+    public abstract class Wallet
     {
-        public abstract event EventHandler<WalletTransactionEventArgs> WalletTransaction;
-
         private static readonly Random rand = new Random();
 
         public abstract string Name { get; }
         public abstract Version Version { get; }
-        public abstract uint WalletHeight { get; }
 
-        public abstract void ApplyTransaction(Transaction tx);
         public abstract bool Contains(UInt160 scriptHash);
         public abstract WalletAccount CreateAccount(byte[] privateKey);
         public abstract WalletAccount CreateAccount(Contract contract, KeyPair key = null);
@@ -34,7 +30,6 @@ namespace Neo.Wallets
         public abstract bool DeleteAccount(UInt160 scriptHash);
         public abstract WalletAccount GetAccount(UInt160 scriptHash);
         public abstract IEnumerable<WalletAccount> GetAccounts();
-        public abstract IEnumerable<UInt256> GetTransactions();
 
         public WalletAccount CreateAccount()
         {
@@ -54,13 +49,14 @@ namespace Neo.Wallets
             return CreateAccount(contract, new KeyPair(privateKey));
         }
 
-        public virtual void Dispose()
-        {
-        }
-
         public void FillTransaction(Transaction tx, UInt160 sender = null)
         {
-            tx.CalculateGas();
+            if (tx.Nonce == 0)
+                tx.Nonce = (uint)rand.Next();
+            if (tx.ValidUntilBlock == 0)
+                using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                    tx.ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement;
+            tx.CalculateFees();
             UInt160[] accounts = sender is null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { sender };
             BigInteger fee = tx.Gas + tx.NetworkFee;
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
@@ -230,7 +226,7 @@ namespace Neo.Wallets
             return account;
         }
 
-        public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null, long net_fee = 0)
+        public Transaction MakeTransaction(List<TransactionAttribute> attributes, IEnumerable<TransferOutput> outputs, UInt160 from = null)
         {
             if (attributes == null) attributes = new List<TransactionAttribute>();
             var output_groups = outputs.GroupBy(p => p.AssetId);
@@ -268,25 +264,21 @@ namespace Neo.Wallets
                     if (group.Key.Equals(NativeContract.GAS.Hash))
                         balances_gas = balances;
                 }
-                byte[] nonce = new byte[8];
-                rand.NextBytes(nonce);
-                sb.Emit(OpCode.RET, nonce);
                 script = sb.ToArray();
             }
             attributes.AddRange(sAttributes.Select(p => new TransactionAttribute
             {
-                Usage = TransactionAttributeUsage.Script,
+                Usage = TransactionAttributeUsage.Cosigner,
                 Data = p.ToArray()
             }));
             Transaction tx = new Transaction
             {
                 Script = script,
-                NetworkFee = net_fee,
                 Attributes = attributes.ToArray()
             };
             try
             {
-                tx.CalculateGas();
+                tx.CalculateFees();
             }
             catch (InvalidOperationException)
             {
