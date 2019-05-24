@@ -25,7 +25,8 @@ namespace Neo.Ledger
                 Index = Index,
                 NextConsensus = NextConsensus,
                 Witness = Witness,
-                Contents = Hashes.Select((h, i) => i == 0 ? (IBlockContent)ConsensusData : cache[h].Transaction).ToArray()
+                ConsensusData = ConsensusData,
+                Transactions = Hashes.Skip(1).Select(p => cache[p].Transaction).ToArray()
             };
         }
 
@@ -52,8 +53,8 @@ namespace Neo.Ledger
         }
 
         public override int Size => base.Size
-            /*Hashes*/ + Hashes.GetVarSize()
-            /*ConsensusData*/ + Hashes.Length > 0 ? ConsensusData.Size : 0;
+            + Hashes.GetVarSize()           //Hashes
+            + (ConsensusData?.Size ?? 0);   //ConsensusData
 
         TrimmedBlock ICloneable<TrimmedBlock>.Clone()
         {

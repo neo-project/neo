@@ -155,8 +155,7 @@ namespace Neo.UnitTests
 
             var block = new Block
             {
-                Contents = new IBlockContent[] { new ConsensusData() }
-                    .Concat(_unit.GetSortedVerifiedTransactions().Take(10))
+                Transactions = _unit.GetSortedVerifiedTransactions().Take(10)
                     .Concat(_unit.GetSortedVerifiedTransactions().Where(x => IsLowPriority(x)).Take(5)).ToArray()
             };
             _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
@@ -256,7 +255,7 @@ namespace Neo.UnitTests
             verifyTransactionsSortedDescending(sortedVerifiedTxs);
 
             // move all to unverified
-            var block = new Block { Contents = new IBlockContent[0] };
+            var block = new Block { Transactions = new Transaction[0] };
             _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
             _unit.InvalidateVerifiedTransactions();
             _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(0);
@@ -281,7 +280,7 @@ namespace Neo.UnitTests
                 verifiedTxs.Length.ShouldBeEquivalentTo(2);
                 verifiedTxs[0].ShouldBeEquivalentTo(maxHighPriorityTransaction);
                 verifiedTxs[1].ShouldBeEquivalentTo(maxLowPriorityTransaction);
-                var blockWith2Tx = new Block { Contents = new IBlockContent[] { new ConsensusData(), maxHighPriorityTransaction, maxLowPriorityTransaction } };
+                var blockWith2Tx = new Block { Transactions = new[] { maxHighPriorityTransaction, maxLowPriorityTransaction } };
                 // verify and remove the 2 transactions from the verified pool
                 _unit.UpdatePoolForBlockPersisted(blockWith2Tx, Blockchain.Singleton.GetSnapshot());
                 _unit.InvalidateVerifiedTransactions();
@@ -323,7 +322,7 @@ namespace Neo.UnitTests
             AddHighPriorityTransactions(99);
 
             // move all to unverified
-            var block = new Block { Contents = new IBlockContent[0] };
+            var block = new Block { Transactions = new Transaction[0] };
             _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
 
             _unit.CanTransactionFitInPool(CreateLowPriorityTransaction()).ShouldBeEquivalentTo(true);

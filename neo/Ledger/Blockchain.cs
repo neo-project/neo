@@ -45,15 +45,12 @@ namespace Neo.Ledger
                 InvocationScript = new byte[0],
                 VerificationScript = new[] { (byte)OpCode.PUSHT }
             },
-            Contents = new IBlockContent[]
+            ConsensusData = new ConsensusData
             {
-                new ConsensusData
-                {
-                    PrimaryIndex = 0,
-                    Nonce = 2083236893
-                },
-                DeployNativeContracts()
-            }
+                PrimaryIndex = 0,
+                Nonce = 2083236893
+            },
+            Transactions = new[] { DeployNativeContracts() }
         };
 
         private const int MemoryPoolMaxTransactions = 50_000;

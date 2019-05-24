@@ -51,7 +51,8 @@ namespace Neo.UnitTests
                 }
             }
 
-            block.Contents = new IBlockContent[] { new ConsensusData() }.Concat(transactionsVal).ToArray();
+            block.ConsensusData = new ConsensusData();
+            block.Transactions = transactionsVal;
         }
 
         private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal)

@@ -107,7 +107,7 @@ namespace Neo.Consensus
             if (context.CommitPayloads.Count(p => p?.ConsensusMessage.ViewNumber == context.ViewNumber) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
                 Block block = context.CreateBlock();
-                Log($"relay block: height={block.Index} hash={block.Hash} tx={block.TransactionCount}");
+                Log($"relay block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
                 localNode.Tell(new LocalNode.Relay { Inventory = block });
             }
         }
@@ -292,7 +292,7 @@ namespace Neo.Consensus
 
         private void OnPersistCompleted(Block block)
         {
-            Log($"persist block: height={block.Index} hash={block.Hash} tx={block.TransactionCount}");
+            Log($"persist block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
             block_received_time = TimeProvider.Current.UtcNow;
             knownHashes.Clear();
             InitializeConsensus(0);
@@ -388,7 +388,7 @@ namespace Neo.Consensus
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
         {
             if (context.RequestSentOrReceived || context.NotAcceptingPayloadsDueToViewChanging) return;
-            if (payload.ValidatorIndex != context.ConsensusData.PrimaryIndex || message.ViewNumber != context.ViewNumber) return;
+            if (payload.ValidatorIndex != context.Block.ConsensusData.PrimaryIndex || message.ViewNumber != context.ViewNumber) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
             if (message.Timestamp <= context.PrevHeader.Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMinutes(10).ToTimestamp())
             {
@@ -406,7 +406,7 @@ namespace Neo.Consensus
             ExtendTimerByFactor(2);
 
             context.Block.Timestamp = message.Timestamp;
-            context.ConsensusData.Nonce = message.Nonce;
+            context.Block.ConsensusData.Nonce = message.Nonce;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
             for (int i = 0; i < context.PreparationPayloads.Length; i++)
@@ -451,7 +451,7 @@ namespace Neo.Consensus
         {
             if (message.ViewNumber != context.ViewNumber) return;
             if (context.PreparationPayloads[payload.ValidatorIndex] != null || context.NotAcceptingPayloadsDueToViewChanging) return;
-            if (context.PreparationPayloads[context.ConsensusData.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.ConsensusData.PrimaryIndex].Hash))
+            if (context.PreparationPayloads[context.Block.ConsensusData.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.Block.ConsensusData.PrimaryIndex].Hash))
                 return;
 
             // Timeout extension: prepare response has been received with success

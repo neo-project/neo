@@ -369,7 +369,7 @@ namespace Neo.SmartContract
             {
                 Block block = _interface.GetInterface<Block>();
                 if (block == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(block.TransactionCount);
+                engine.CurrentContext.EvaluationStack.Push(block.Transactions.Length);
                 return true;
             }
             return false;
@@ -381,7 +381,7 @@ namespace Neo.SmartContract
             {
                 Block block = _interface.GetInterface<Block>();
                 if (block == null) return false;
-                if (block.TransactionCount > engine.MaxArraySize)
+                if (block.Transactions.Length > engine.MaxArraySize)
                     return false;
                 engine.CurrentContext.EvaluationStack.Push(block.Transactions.Select(p => StackItem.FromInterface(p)).ToArray());
                 return true;
@@ -396,8 +396,8 @@ namespace Neo.SmartContract
                 Block block = _interface.GetInterface<Block>();
                 int index = (int)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
                 if (block == null) return false;
-                if (index < 0 || index >= block.TransactionCount) return false;
-                Transaction tx = (Transaction)block.Contents[index + 1];
+                if (index < 0 || index >= block.Transactions.Length) return false;
+                Transaction tx = block.Transactions[index];
                 engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(tx));
                 return true;
             }

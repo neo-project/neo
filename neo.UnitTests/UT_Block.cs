@@ -19,9 +19,9 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void Contents_Get()
+        public void Transactions_Get()
         {
-            uut.Contents.Should().BeNull();
+            uut.Transactions.Should().BeNull();
         }
 
         [TestMethod]
@@ -69,9 +69,9 @@ namespace Neo.UnitTests
             Transaction[] transactionsVal;
             TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal, out transactionsVal, 0);
 
-            uut.Contents = new IBlockContent[]
+            uut.ConsensusData = new ConsensusData();
+            uut.Transactions = new[]
             {
-                new ConsensusData(),
                 TestUtils.GetTransaction()
             };
 
@@ -89,9 +89,9 @@ namespace Neo.UnitTests
             Transaction[] transactionsVal;
             TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal, out transactionsVal, 0);
 
-            uut.Contents = new IBlockContent[]
+            uut.ConsensusData = new ConsensusData();
+            uut.Transactions = new[]
             {
-                new ConsensusData(),
                 TestUtils.GetTransaction(),
                 TestUtils.GetTransaction(),
                 TestUtils.GetTransaction()
@@ -168,8 +168,8 @@ namespace Neo.UnitTests
             uut.Witness.VerificationScript[0].Should().Be(scriptVal.VerificationScript[0]);
             if (testTransactions)
             {
-                uut.TransactionCount.Should().Be(1);
-                uut.Contents[1].Should().Be(transactionsVal[0]);
+                uut.Transactions.Length.Should().Be(1);
+                uut.Transactions[0].Should().Be(transactionsVal[0]);
             }
         }
 

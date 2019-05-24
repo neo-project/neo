@@ -143,10 +143,10 @@ namespace Neo.UnitTests
                     Index = 1,
                     Timestamp = 4244941711,
                     NextConsensus = UInt160.Parse("5555AAAA5555AAAA5555AAAA5555AAAA5555AAAA"),
-                },
-                ConsensusData = new ConsensusData
-                {
-                    PrimaryIndex = 6
+                    ConsensusData = new ConsensusData
+                    {
+                        PrimaryIndex = 6
+                    }
                 },
                 ViewNumber = 2,
                 Validators = new ECPoint[7]
@@ -217,7 +217,7 @@ namespace Neo.UnitTests
             copiedContext.ViewNumber.Should().Be(consensusContext.ViewNumber);
             copiedContext.Validators.ShouldAllBeEquivalentTo(consensusContext.Validators);
             copiedContext.MyIndex.Should().Be(consensusContext.MyIndex);
-            copiedContext.ConsensusData.PrimaryIndex.Should().Be(consensusContext.ConsensusData.PrimaryIndex);
+            copiedContext.Block.ConsensusData.PrimaryIndex.Should().Be(consensusContext.Block.ConsensusData.PrimaryIndex);
             copiedContext.Block.Timestamp.Should().Be(consensusContext.Block.Timestamp);
             copiedContext.Block.NextConsensus.Should().Be(consensusContext.Block.NextConsensus);
             copiedContext.TransactionHashes.ShouldAllBeEquivalentTo(consensusContext.TransactionHashes);

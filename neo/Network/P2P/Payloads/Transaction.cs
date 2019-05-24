@@ -15,7 +15,7 @@ using System.Numerics;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class Transaction : IBlockContent, IEquatable<Transaction>, IInventory
+    public class Transaction : IEquatable<Transaction>, IInventory
     {
         public const int MaxTransactionSize = 102400;
         public const uint MaxValidUntilBlockIncrement = 2102400;

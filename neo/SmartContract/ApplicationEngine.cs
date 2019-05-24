@@ -150,10 +150,8 @@ namespace Neo.SmartContract
                     InvocationScript = new byte[0],
                     VerificationScript = new byte[0]
                 },
-                Contents = new IBlockContent[]
-                {
-                    new ConsensusData()
-                }
+                ConsensusData = new ConsensusData(),
+                Transactions = new Transaction[0]
             };
             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, extraGAS, testMode);
             engine.LoadScript(script);

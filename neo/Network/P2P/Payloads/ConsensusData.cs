@@ -6,12 +6,24 @@ using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class ConsensusData : IBlockContent
+    public class ConsensusData : ISerializable
     {
         public uint PrimaryIndex;
         public ulong Nonce;
 
-        public UInt256 Hash => new UInt256(Crypto.Default.Hash256(this.ToArray()));
+        private UInt256 _hash = null;
+        public UInt256 Hash
+        {
+            get
+            {
+                if (_hash == null)
+                {
+                    _hash = new UInt256(Crypto.Default.Hash256(this.ToArray()));
+                }
+                return _hash;
+            }
+        }
+
         public int Size => IO.Helper.GetVarSize((int)PrimaryIndex) + sizeof(ulong);
 
         void ISerializable.Deserialize(BinaryReader reader)
