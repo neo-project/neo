@@ -23,6 +23,7 @@ namespace Neo.Network.P2P.Payloads
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
         private const int MaxTransactionAttributes = 16;
+        private const long VerificationGasLimited = 0_10000000;
 
         public byte Version;
         public uint Nonce;
@@ -209,7 +210,7 @@ namespace Neo.Network.P2P.Payloads
             if (balance < fee) return false;
             fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Sum(p => p.Gas + p.NetworkFee);
             if (balance < fee) return false;
-            return this.VerifyWitness(snapshot);
+            return this.VerifyWitness(snapshot, VerificationGasLimited);
         }
     }
 }

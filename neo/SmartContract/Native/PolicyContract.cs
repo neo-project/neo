@@ -146,6 +146,28 @@ namespace Neo.SmartContract.Native
             return InteropService.CheckWitness(engine, prev_block.NextConsensus);
         }
 
+        protected override long GetPriceForMethod(string method)
+        {
+            switch (method)
+            {
+                case "getMaxTransactionsPerBlock":
+                case "getMaxLowPriorityTransactionsPerBlock":
+                case "getMaxLowPriorityTransactionSize":
+                case "getFeePerByte":
+                case "getBlockedAccounts":
+                    return 0_01000000;
+                case "setMaxTransactionsPerBlock":
+                case "setMaxLowPriorityTransactionsPerBlock":
+                case "setMaxLowPriorityTransactionSize":
+                case "setFeePerByte":
+                case "blockAccount":
+                case "unblockAccount":
+                    return 0_03000000;
+                default:
+                    return base.GetPriceForMethod(method);
+            }
+        }
+
         protected override StackItem Main(ApplicationEngine engine, string operation, VM.Types.Array args)
         {
             switch (operation)

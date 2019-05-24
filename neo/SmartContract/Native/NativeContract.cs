@@ -85,6 +85,16 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
+        internal virtual long GetPrice(RandomAccessStack<StackItem> stack)
+        {
+            return GetPriceForMethod(stack.Peek().GetString());
+        }
+
+        protected virtual long GetPriceForMethod(string method)
+        {
+            return 0;
+        }
+
         protected virtual StackItem Main(ApplicationEngine engine, string operation, VMArray args)
         {
             switch (operation)
