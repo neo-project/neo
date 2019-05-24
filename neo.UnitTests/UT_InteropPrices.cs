@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Ledger;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System.Reflection;
 
@@ -42,7 +42,7 @@ namespace Neo.UnitTests
         public void ApplicationEngineVariablePrices()
         {
             // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
-            byte[] SyscallContractCreateHash00 = new byte[] { (byte)ContractPropertyState.NoProperty, 0x00, 0x00, 0x00, 0x68, 0xf6, 0x6c, 0xa5, 0x6e };
+            byte[] SyscallContractCreateHash00 = new byte[] { (byte)ContractFeatures.NoProperty, 0x00, 0x00, 0x00, 0x68, 0xf6, 0x6c, 0xa5, 0x6e };
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
@@ -65,19 +65,6 @@ namespace Neo.UnitTests
                 debugger.StepInto(); // push 0
                 debugger.StepInto(); // push 0
                 InteropService.GetPrice(InteropService.Neo_Contract_Create, ae.CurrentContext.EvaluationStack).Should().Be(100_00000000L);
-            }
-
-            // Neo.Contract.Migrate: 471b6290 (requires push properties on fourth position)
-            byte[] SyscallContractMigrateHash00 = new byte[] { (byte)ContractPropertyState.NoProperty, 0x00, 0x00, 0x00, 0x68, 0x47, 0x1b, 0x62, 0x90 };
-            using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
-            {
-                Debugger debugger = new Debugger(ae);
-                ae.LoadScript(SyscallContractMigrateHash00);
-                debugger.StepInto(); // push 0 - ContractPropertyState.NoProperty
-                debugger.StepInto(); // push 0
-                debugger.StepInto(); // push 0
-                debugger.StepInto(); // push 0
-                InteropService.GetPrice(InteropService.Neo_Contract_Migrate, ae.CurrentContext.EvaluationStack).Should().Be(10_00000000L);
             }
 
             // System.Storage.Put: e63f1884 (requires push key and value)

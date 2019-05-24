@@ -1,5 +1,6 @@
 ﻿using Neo.IO;
 using Neo.Ledger;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using System;
@@ -22,7 +23,7 @@ namespace Neo.SmartContract.Native
         public uint ServiceHash { get; }
         public byte[] Script { get; }
         public UInt160 Hash { get; }
-        public virtual ContractPropertyState Properties => ContractPropertyState.NoProperty;
+        public ContractManifest Manifest { get; }
         public virtual string[] SupportedStandards { get; } = { "NEP-10" };
 
         protected NativeContract()
@@ -33,7 +34,25 @@ namespace Neo.SmartContract.Native
                 sb.EmitSysCall(ServiceHash);
                 this.Script = sb.ToArray();
             }
+
             this.Hash = Script.ToScriptHash();
+            this.Manifest = ContractManifest.CreateDefault(this.Hash);
+            this.Manifest.Abi.Methods = new ContractMethodDescriptor[]
+            {
+                new ContractMethodDescriptor()
+                {
+                    Name = "onPersist",
+                    ReturnType = ContractParameterType.Boolean,
+                    Parameters = new ContractParameterDefinition[0]
+                },
+                new ContractMethodDescriptor()
+                {
+                    Name = "supportedStandards",
+                    ReturnType = ContractParameterType.Array,
+                    Parameters = new ContractParameterDefinition[0]
+                }
+            };
+
             contracts.Add(this);
         }
 
