@@ -1,8 +1,11 @@
+using System;
+
 namespace Neo.SmartContract
 {
+    [Flags]
     public enum TriggerType : byte
     {
-        System = 0x00,
+        System = 0x01,
         /// <summary>
         /// The verification trigger indicates that the contract is being invoked as a verification function.
         /// The verification function can accept multiple parameters, and should return a boolean value that indicates the validity of the transaction or block.
@@ -18,6 +21,8 @@ namespace Neo.SmartContract
         ///     public byte[] main(string operation, params object[] args)
         /// The functions can be invoked by creating an InvocationTransaction.
         /// </summary>
-        Application = 0x40
+        Application = 0x40,
+
+        All = System | Verification | Application
     }
 }

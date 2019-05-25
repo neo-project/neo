@@ -1,11 +1,11 @@
-﻿using Neo.Cryptography.ECC;
+﻿#pragma warning disable IDE0051
+
+using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using VMArray = Neo.VM.Types.Array;
@@ -21,45 +21,8 @@ namespace Neo.SmartContract.Native.Tokens
 
         private const byte Prefix_SystemFeeAmount = 15;
 
-        internal GasToken() : base()
+        internal GasToken()
         {
-            var list = new List<ContractMethodDescriptor>(Manifest.Abi.Methods)
-            {
-                new ContractMethodDescriptor()
-                {
-                    Name = "getSysFeeAmount",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                             Name = "index",
-                             Type = ContractParameterType.Integer
-                        }
-                    },
-                    ReturnType = ContractParameterType.Integer
-                }
-            };
-
-            Manifest.Abi.Methods = list.ToArray();
-        }
-
-        protected override long GetPriceForMethod(string method)
-        {
-            switch (method)
-            {
-                case "getSysFeeAmount":
-                    return 0_01000000;
-                default:
-                    return base.GetPriceForMethod(method);
-            }
-        }
-
-        protected override StackItem Main(ApplicationEngine engine, string operation, VMArray args)
-        {
-            if (operation == "getSysFeeAmount")
-                return GetSysFeeAmount(engine.Snapshot, (uint)args[0].GetBigInteger());
-            else
-                return base.Main(engine, operation, args);
         }
 
         protected override bool OnPersist(ApplicationEngine engine)
@@ -78,6 +41,13 @@ namespace Neo.SmartContract.Native.Tokens
                 IsConstant = true
             });
             return true;
+        }
+
+        [ContractMethod(0_01000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "index" }, SafeMethod = true)]
+        private StackItem GetSysFeeAmount(ApplicationEngine engine, VMArray args)
+        {
+            uint index = (uint)args[0].GetBigInteger();
+            return GetSysFeeAmount(engine.Snapshot, index);
         }
 
         public BigInteger GetSysFeeAmount(Snapshot snapshot, uint index)
