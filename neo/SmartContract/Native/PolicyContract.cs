@@ -61,7 +61,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
         private StackItem GetMaxTransactionsPerBlock(ApplicationEngine engine, VMArray args)
         {
             return GetMaxTransactionsPerBlock(engine.Snapshot);
@@ -72,7 +72,7 @@ namespace Neo.SmartContract.Native
             return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxTransactionsPerBlock)].Value, 0);
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
         private StackItem GetMaxLowPriorityTransactionsPerBlock(ApplicationEngine engine, VMArray args)
         {
             return GetMaxLowPriorityTransactionsPerBlock(engine.Snapshot);
@@ -83,7 +83,7 @@ namespace Neo.SmartContract.Native
             return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxLowPriorityTransactionsPerBlock)].Value, 0);
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
         private StackItem GetMaxLowPriorityTransactionSize(ApplicationEngine engine, VMArray args)
         {
             return GetMaxLowPriorityTransactionSize(engine.Snapshot);
@@ -94,7 +94,7 @@ namespace Neo.SmartContract.Native
             return BitConverter.ToUInt32(snapshot.Storages[CreateStorageKey(Prefix_MaxLowPriorityTransactionSize)].Value, 0);
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
         private StackItem GetFeePerByte(ApplicationEngine engine, VMArray args)
         {
             return GetFeePerByte(engine.Snapshot);
@@ -105,7 +105,7 @@ namespace Neo.SmartContract.Native
             return BitConverter.ToInt64(snapshot.Storages[CreateStorageKey(Prefix_FeePerByte)].Value, 0);
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Array)]
+        [ContractMethod(0_01000000, ContractParameterType.Array, SafeMethod = true)]
         private StackItem GetBlockedAccounts(ApplicationEngine engine, VMArray args)
         {
             return GetBlockedAccounts(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToList();

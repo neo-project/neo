@@ -113,25 +113,25 @@ namespace Neo.SmartContract.Native.Tokens
             engine.SendNotification(Hash, new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount });
         }
 
-        [ContractMethod(0, ContractParameterType.String, Name = "name")]
+        [ContractMethod(0, ContractParameterType.String, Name = "name", SafeMethod = true)]
         protected StackItem NameMethod(ApplicationEngine engine, VMArray args)
         {
             return Name;
         }
 
-        [ContractMethod(0, ContractParameterType.String, Name = "symbol")]
+        [ContractMethod(0, ContractParameterType.String, Name = "symbol", SafeMethod = true)]
         protected StackItem SymbolMethod(ApplicationEngine engine, VMArray args)
         {
             return Symbol;
         }
 
-        [ContractMethod(0, ContractParameterType.Integer, Name = "decimals")]
+        [ContractMethod(0, ContractParameterType.Integer, Name = "decimals", SafeMethod = true)]
         protected StackItem DecimalsMethod(ApplicationEngine engine, VMArray args)
         {
             return (uint)Decimals;
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer)]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
         protected StackItem TotalSupply(ApplicationEngine engine, VMArray args)
         {
             return TotalSupply(engine.Snapshot);
@@ -144,7 +144,7 @@ namespace Neo.SmartContract.Native.Tokens
             return new BigInteger(storage.Value);
         }
 
-        [ContractMethod(0_01000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
+        [ContractMethod(0_01000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" }, SafeMethod = true)]
         protected StackItem BalanceOf(ApplicationEngine engine, VMArray args)
         {
             return BalanceOf(engine.Snapshot, new UInt160(args[0].GetByteArray()));

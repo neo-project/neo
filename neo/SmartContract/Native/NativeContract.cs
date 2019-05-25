@@ -41,6 +41,7 @@ namespace Neo.SmartContract.Native
             this.Hash = Script.ToScriptHash();
             this.Manifest = ContractManifest.CreateDefault(this.Hash);
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
+            List<string> safeMethods = new List<string>();
             foreach (MethodInfo method in GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 ContractMethodAttribute attribute = method.GetCustomAttribute<ContractMethodAttribute>();
@@ -52,6 +53,7 @@ namespace Neo.SmartContract.Native
                     ReturnType = attribute.ReturnType,
                     Parameters = attribute.ParameterTypes.Zip(attribute.ParameterNames, (t, n) => new ContractParameterDefinition { Type = t, Name = n }).ToArray()
                 });
+                if (attribute.SafeMethod) safeMethods.Add(name);
                 methods.Add(name, new ContractMethodMetadata
                 {
                     Delegate = (Func<ApplicationEngine, VMArray, StackItem>)method.CreateDelegate(typeof(Func<ApplicationEngine, VMArray, StackItem>), this),
@@ -60,6 +62,7 @@ namespace Neo.SmartContract.Native
                 });
             }
             this.Manifest.Abi.Methods = descriptors.ToArray();
+            this.Manifest.SafeMethods = WildCardContainer<string>.Create(safeMethods.ToArray());
             contracts.Add(this);
         }
 
@@ -118,7 +121,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0, ContractParameterType.Array, Name = "supportedStandards")]
+        [ContractMethod(0, ContractParameterType.Array, Name = "supportedStandards", SafeMethod = true)]
         protected StackItem SupportedStandardsMethod(ApplicationEngine engine, VMArray args)
         {
             return SupportedStandards.Select(p => (StackItem)p).ToList();
