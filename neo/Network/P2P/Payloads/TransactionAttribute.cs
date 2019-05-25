@@ -10,35 +10,20 @@ namespace Neo.Network.P2P.Payloads
         public TransactionAttributeUsage Usage;
         public byte[] Data;
 
-        public int Size
-        {
-            get
-            {
-                if (Usage == TransactionAttributeUsage.Cosigner)
-                    return sizeof(TransactionAttributeUsage) + 20;
-                else
-                    return sizeof(TransactionAttributeUsage) + Data.GetVarSize();
-            }
-        }
+        public int Size => sizeof(TransactionAttributeUsage) + Data.GetVarSize();
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Usage = (TransactionAttributeUsage)reader.ReadByte();
-            if (Usage == TransactionAttributeUsage.Cosigner)
-                Data = reader.ReadBytes(20);
-            else if (Usage == TransactionAttributeUsage.Url)
-                Data = reader.ReadVarBytes(252);
-            else
+            if (!Enum.IsDefined(typeof(TransactionAttributeUsage), Usage))
                 throw new FormatException();
+            Data = reader.ReadVarBytes(252);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Usage);
-            if (Usage == TransactionAttributeUsage.Cosigner)
-                writer.Write(Data);
-            else
-                writer.WriteVarBytes(Data);
+            writer.WriteVarBytes(Data);
         }
 
         public JObject ToJson()
