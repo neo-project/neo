@@ -16,8 +16,7 @@ namespace Neo.SmartContract.Native
     public abstract class NativeContract
     {
         private static readonly List<NativeContract> contracts = new List<NativeContract>();
-        private readonly Dictionary<string, Func<ApplicationEngine, VMArray, StackItem>> methods = new Dictionary<string, Func<ApplicationEngine, VMArray, StackItem>>();
-        private readonly Dictionary<string, long> prices = new Dictionary<string, long>();
+        private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
 
         public static IReadOnlyCollection<NativeContract> Contracts { get; } = contracts;
         public static NeoToken NEO { get; } = new NeoToken();
@@ -47,14 +46,18 @@ namespace Neo.SmartContract.Native
                 ContractMethodAttribute attribute = method.GetCustomAttribute<ContractMethodAttribute>();
                 if (attribute is null) continue;
                 string name = attribute.Name ?? (method.Name.ToLower()[0] + method.Name.Substring(1));
-                methods.Add(name, (Func<ApplicationEngine, VMArray, StackItem>)method.CreateDelegate(typeof(Func<ApplicationEngine, VMArray, StackItem>), this));
                 descriptors.Add(new ContractMethodDescriptor
                 {
                     Name = name,
                     ReturnType = attribute.ReturnType,
                     Parameters = attribute.ParameterTypes.Zip(attribute.ParameterNames, (t, n) => new ContractParameterDefinition { Type = t, Name = n }).ToArray()
                 });
-                prices.Add(name, attribute.Price);
+                methods.Add(name, new ContractMethodMetadata
+                {
+                    Delegate = (Func<ApplicationEngine, VMArray, StackItem>)method.CreateDelegate(typeof(Func<ApplicationEngine, VMArray, StackItem>), this),
+                    Price = attribute.Price,
+                    AllowedTriggers = attribute.AllowedTriggers
+                });
             }
             this.Manifest.Abi.Methods = descriptors.ToArray();
             contracts.Add(this);
@@ -84,16 +87,17 @@ namespace Neo.SmartContract.Native
                 return false;
             string operation = engine.CurrentContext.EvaluationStack.Pop().GetString();
             VMArray args = (VMArray)engine.CurrentContext.EvaluationStack.Pop();
-            if (!methods.TryGetValue(operation, out var method))
+            if (!methods.TryGetValue(operation, out ContractMethodMetadata method))
                 return false;
-            StackItem result = method(engine, args);
+            if (!method.AllowedTriggers.HasFlag(engine.Trigger)) return false;
+            StackItem result = method.Delegate(engine, args);
             engine.CurrentContext.EvaluationStack.Push(result);
             return true;
         }
 
         internal long GetPrice(RandomAccessStack<StackItem> stack)
         {
-            return prices.TryGetValue(stack.Peek().GetString(), out long price) ? price : 0;
+            return methods.TryGetValue(stack.Peek().GetString(), out ContractMethodMetadata method) ? method.Price : 0;
         }
 
         internal virtual bool Initialize(ApplicationEngine engine)
@@ -103,7 +107,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0, ContractParameterType.Boolean)]
+        [ContractMethod(0, ContractParameterType.Boolean, AllowedTriggers = TriggerType.System)]
         protected StackItem OnPersist(ApplicationEngine engine, VMArray args)
         {
             return OnPersist(engine);
@@ -111,8 +115,6 @@ namespace Neo.SmartContract.Native
 
         protected virtual bool OnPersist(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.System)
-                throw new InvalidOperationException();
             return true;
         }
 
