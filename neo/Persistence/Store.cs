@@ -12,7 +12,6 @@ namespace Neo.Persistence
         DataCache<StorageKey, StorageItem> IPersistence.Storages => GetStorages();
         DataCache<UInt32Wrapper, HeaderHashList> IPersistence.HeaderHashList => GetHeaderHashList();
         MetaDataCache<HashIndexState> IPersistence.BlockHashIndex => GetBlockHashIndex();
-        MetaDataCache<HashIndexState> IPersistence.HeaderHashIndex => GetHeaderHashIndex();
 
         public abstract byte[] Get(byte prefix, byte[] key);
         public abstract DataCache<UInt256, TrimmedBlock> GetBlocks();
@@ -21,7 +20,6 @@ namespace Neo.Persistence
         public abstract DataCache<StorageKey, StorageItem> GetStorages();
         public abstract DataCache<UInt32Wrapper, HeaderHashList> GetHeaderHashList();
         public abstract MetaDataCache<HashIndexState> GetBlockHashIndex();
-        public abstract MetaDataCache<HashIndexState> GetHeaderHashIndex();
         public abstract void Put(byte prefix, byte[] key, byte[] value);
         public abstract void PutSync(byte prefix, byte[] key, byte[] value);
 

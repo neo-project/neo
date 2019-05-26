@@ -12,6 +12,5 @@ namespace Neo.Persistence
         DataCache<StorageKey, StorageItem> Storages { get; }
         DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
         MetaDataCache<HashIndexState> BlockHashIndex { get; }
-        MetaDataCache<HashIndexState> HeaderHashIndex { get; }
     }
 }

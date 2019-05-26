@@ -63,12 +63,8 @@ namespace Neo.Network.P2P
                 case MessageCommand.Pong:
                     Payload = decompressed.AsSerializable<PingPayload>();
                     break;
-                case MessageCommand.GetHeaders:
                 case MessageCommand.GetBlocks:
                     Payload = decompressed.AsSerializable<GetBlocksPayload>();
-                    break;
-                case MessageCommand.Headers:
-                    Payload = decompressed.AsSerializable<HeadersPayload>();
                     break;
                 case MessageCommand.Inv:
                 case MessageCommand.GetData:

@@ -15,7 +15,6 @@ namespace Neo.Network.P2P
         public class Register { public VersionPayload Version; }
         public class NewTasks { public InvPayload Payload; }
         public class TaskCompleted { public UInt256 Hash; }
-        public class HeaderTaskCompleted { }
         public class RestartTasks { public InvPayload Payload; }
         private class Timer { }
 
@@ -29,28 +28,16 @@ namespace Neo.Network.P2P
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
-        private readonly UInt256 HeaderTaskHash = UInt256.Zero;
-        private bool HasHeaderTask => globalTasks.ContainsKey(HeaderTaskHash);
-
         public TaskManager(NeoSystem system)
         {
             this.system = system;
-        }
-
-        private void OnHeaderTaskCompleted()
-        {
-            if (!sessions.TryGetValue(Sender, out TaskSession session))
-                return;
-            session.Tasks.Remove(HeaderTaskHash);
-            DecrementGlobalTask(HeaderTaskHash);
-            RequestTasks(session);
         }
 
         private void OnNewTasks(InvPayload payload)
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
-            if (payload.Type == InventoryType.TX && Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
+            if (payload.Type == InventoryType.TX && Blockchain.Singleton.Height < session.StartHeight)
             {
                 RequestTasks(session);
                 return;
@@ -89,9 +76,6 @@ namespace Neo.Network.P2P
                     break;
                 case TaskCompleted completed:
                     OnTaskCompleted(completed.Hash);
-                    break;
-                case HeaderTaskCompleted _:
-                    OnHeaderTaskCompleted();
                     break;
                 case RestartTasks restart:
                     OnRestartTasks(restart.Payload);
@@ -219,24 +203,9 @@ namespace Neo.Network.P2P
                     return;
                 }
             }
-            if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && Blockchain.Singleton.HeaderHeight < session.StartHeight)
-            {
-                session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
-                IncrementGlobalTask(HeaderTaskHash);
-                session.RemoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlocksPayload.Create(Blockchain.Singleton.CurrentHeaderHash)));
-            }
-            else if (Blockchain.Singleton.Height < session.StartHeight)
+            if (Blockchain.Singleton.Height < session.StartHeight)
             {
                 UInt256 hash = Blockchain.Singleton.CurrentBlockHash;
-                for (uint i = Blockchain.Singleton.Height + 1; i <= Blockchain.Singleton.HeaderHeight; i++)
-                {
-                    hash = Blockchain.Singleton.GetBlockHash(i);
-                    if (!globalTasks.ContainsKey(hash))
-                    {
-                        hash = Blockchain.Singleton.GetBlockHash(i - 1);
-                        break;
-                    }
-                }
                 session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlocks, GetBlocksPayload.Create(hash)));
             }
         }

@@ -12,7 +12,6 @@ namespace Neo.Persistence
         public override DataCache<StorageKey, StorageItem> Storages { get; }
         public override DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
-        public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
 
         public CloneSnapshot(Snapshot snapshot)
         {
@@ -23,7 +22,6 @@ namespace Neo.Persistence
             this.Storages = snapshot.Storages.CreateSnapshot();
             this.HeaderHashList = snapshot.HeaderHashList.CreateSnapshot();
             this.BlockHashIndex = snapshot.BlockHashIndex.CreateSnapshot();
-            this.HeaderHashIndex = snapshot.HeaderHashIndex.CreateSnapshot();
         }
     }
 }

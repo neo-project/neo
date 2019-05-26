@@ -134,12 +134,6 @@ namespace Neo.Network.RPC
                         uint height = uint.Parse(_params[0].AsString());
                         return GetBlockHash(height);
                     }
-                case "getblockheader":
-                    {
-                        JObject key = _params[0];
-                        bool verbose = _params.Count >= 2 && _params[1].AsBoolean();
-                        return GetBlockHeader(key, verbose);
-                    }
                 case "getblocksysfee":
                     {
                         uint height = uint.Parse(_params[0].AsString());
@@ -423,35 +417,6 @@ namespace Neo.Network.RPC
             throw new RpcException(-100, "Invalid Height");
         }
 
-        private JObject GetBlockHeader(JObject key, bool verbose)
-        {
-            Header header;
-            if (key is JNumber)
-            {
-                uint height = uint.Parse(key.AsString());
-                header = Blockchain.Singleton.Store.GetHeader(height);
-            }
-            else
-            {
-                UInt256 hash = UInt256.Parse(key.AsString());
-                header = Blockchain.Singleton.Store.GetHeader(hash);
-            }
-            if (header == null)
-                throw new RpcException(-100, "Unknown block");
-
-            if (verbose)
-            {
-                JObject json = header.ToJson();
-                json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
-                UInt256 hash = Blockchain.Singleton.Store.GetNextBlockHash(header.Hash);
-                if (hash != null)
-                    json["nextblockhash"] = hash.ToString();
-                return json;
-            }
-
-            return header.ToArray().ToHexString();
-        }
-
         private JObject GetBlockSysFee(uint height)
         {
             if (height <= Blockchain.Singleton.Height)
@@ -520,10 +485,11 @@ namespace Neo.Network.RPC
                 uint? height = Blockchain.Singleton.Store.GetTransactions().TryGet(hash)?.BlockIndex;
                 if (height != null)
                 {
-                    Header header = Blockchain.Singleton.Store.GetHeader((uint)height);
-                    json["blockhash"] = header.Hash.ToString();
-                    json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
-                    json["blocktime"] = header.Timestamp;
+                    UInt256 block_hash = Blockchain.Singleton.GetBlockHash((uint)height);
+                    TrimmedBlock block = Blockchain.Singleton.Store.GetBlocks()[block_hash];
+                    json["blockhash"] = block.Hash.ToString();
+                    json["confirmations"] = Blockchain.Singleton.Height - block.Index + 1;
+                    json["blocktime"] = block.Timestamp;
                 }
                 return json;
             }

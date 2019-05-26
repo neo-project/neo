@@ -57,19 +57,16 @@ namespace Neo.Ledger
         private const int MaxTxToReverifyPerIdle = 10;
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
-        private readonly List<UInt256> header_index = new List<UInt256>();
+        private readonly List<UInt256> block_index = new List<UInt256>();
         private uint stored_header_count = 0;
-        private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private Snapshot currentSnapshot;
 
         public Store Store { get; }
         public MemoryPool MemPool { get; }
-        public uint Height => currentSnapshot.Height;
-        public uint HeaderHeight => (uint)header_index.Count - 1;
-        public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
-        public UInt256 CurrentHeaderHash => header_index[header_index.Count - 1];
+        public uint Height => (uint)block_index.Count - 1;
+        public UInt256 CurrentBlockHash => block_index[block_index.Count - 1];
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -95,26 +92,26 @@ namespace Neo.Ledger
             {
                 if (singleton != null)
                     throw new InvalidOperationException();
-                header_index.AddRange(store.GetHeaderHashList().Find().OrderBy(p => (uint)p.Key).SelectMany(p => p.Value.Hashes));
-                stored_header_count += (uint)header_index.Count;
+                block_index.AddRange(store.GetHeaderHashList().Find().OrderBy(p => (uint)p.Key).SelectMany(p => p.Value.Hashes));
+                stored_header_count += (uint)block_index.Count;
                 if (stored_header_count == 0)
                 {
-                    header_index.AddRange(store.GetBlocks().Find().OrderBy(p => p.Value.Index).Select(p => p.Key));
+                    block_index.AddRange(store.GetBlocks().Find().OrderBy(p => p.Value.Index).Select(p => p.Key));
                 }
                 else
                 {
-                    HashIndexState hashIndex = store.GetHeaderHashIndex().Get();
+                    HashIndexState hashIndex = store.GetBlockHashIndex().Get();
                     if (hashIndex.Index >= stored_header_count)
                     {
                         DataCache<UInt256, TrimmedBlock> cache = store.GetBlocks();
-                        for (UInt256 hash = hashIndex.Hash; hash != header_index[(int)stored_header_count - 1];)
+                        for (UInt256 hash = hashIndex.Hash; hash != block_index[(int)stored_header_count - 1];)
                         {
-                            header_index.Insert((int)stored_header_count, hash);
+                            block_index.Insert((int)stored_header_count, hash);
                             hash = cache[hash].PrevHash;
                         }
                     }
                 }
-                if (header_index.Count == 0)
+                if (block_index.Count == 0)
                 {
                     Persist(GenesisBlock);
                 }
@@ -129,7 +126,6 @@ namespace Neo.Ledger
 
         public bool ContainsBlock(UInt256 hash)
         {
-            if (block_cache.ContainsKey(hash)) return true;
             return Store.ContainsBlock(hash);
         }
 
@@ -164,15 +160,13 @@ namespace Neo.Ledger
 
         public Block GetBlock(UInt256 hash)
         {
-            if (block_cache.TryGetValue(hash, out Block block))
-                return block;
             return Store.GetBlock(hash);
         }
 
         public UInt256 GetBlockHash(uint index)
         {
-            if (header_index.Count <= index) return null;
-            return header_index[(int)index];
+            if (block_index.Count <= index) return null;
+            return block_index[(int)index];
         }
 
         public static UInt160 GetConsensusAddress(ECPoint[] validators)
@@ -243,77 +237,24 @@ namespace Neo.Ledger
 
         private RelayResultReason OnNewBlock(Block block)
         {
-            if (block.Index <= Height)
+            if (block.Index < block_index.Count)
                 return RelayResultReason.AlreadyExists;
-            if (block_cache.ContainsKey(block.Hash))
-                return RelayResultReason.AlreadyExists;
-            if (block.Index - 1 >= header_index.Count)
+            if (block.Index > block_index.Count)
             {
                 AddUnverifiedBlockToCache(block);
                 return RelayResultReason.UnableToVerify;
             }
-            if (block.Index == header_index.Count)
+            if (!block.Verify(currentSnapshot))
+                return RelayResultReason.Invalid;
+            block_cache_unverified.Remove(block.Index);
+            Persist(block);
+            system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
+            SaveHeaderHashList();
+            if (block_cache_unverified.TryGetValue(block.Index + 1, out LinkedList<Block> unverifiedBlocks))
             {
-                if (!block.Verify(currentSnapshot))
-                    return RelayResultReason.Invalid;
-            }
-            else
-            {
-                if (!block.Hash.Equals(header_index[(int)block.Index]))
-                    return RelayResultReason.Invalid;
-            }
-            if (block.Index == Height + 1)
-            {
-                Block block_persist = block;
-                List<Block> blocksToPersistList = new List<Block>();
-                while (true)
-                {
-                    blocksToPersistList.Add(block_persist);
-                    if (block_persist.Index + 1 >= header_index.Count) break;
-                    UInt256 hash = header_index[(int)block_persist.Index + 1];
-                    if (!block_cache.TryGetValue(hash, out block_persist)) break;
-                }
-
-                int blocksPersisted = 0;
-                foreach (Block blockToPersist in blocksToPersistList)
-                {
-                    block_cache_unverified.Remove(blockToPersist.Index);
-                    Persist(blockToPersist);
-
-                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0,(15 - SecondsPerBlock)))) continue;
-                    // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
-                    // Increase in the rate of 1 block per second in configurations with faster blocks
-
-                    if (blockToPersist.Index + 100 >= header_index.Count)
-                        system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = blockToPersist });
-                }
-                SaveHeaderHashList();
-
-                if (block_cache_unverified.TryGetValue(Height + 1, out LinkedList<Block> unverifiedBlocks))
-                {
-                    foreach (var unverifiedBlock in unverifiedBlocks)
-                        Self.Tell(unverifiedBlock, ActorRefs.NoSender);
-                    block_cache_unverified.Remove(Height + 1);
-                }
-            }
-            else
-            {
-                block_cache.Add(block.Hash, block);
-                if (block.Index + 100 >= header_index.Count)
-                    system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
-                if (block.Index == header_index.Count)
-                {
-                    header_index.Add(block.Hash);
-                    using (Snapshot snapshot = GetSnapshot())
-                    {
-                        snapshot.Blocks.Add(block.Hash, block.Header.Trim());
-                        snapshot.HeaderHashIndex.GetAndChange().Hash = block.Hash;
-                        snapshot.HeaderHashIndex.GetAndChange().Index = block.Index;
-                        SaveHeaderHashList(snapshot);
-                        snapshot.Commit();
-                    }
-                    UpdateCurrentSnapshot();
-                }
+                foreach (var unverifiedBlock in unverifiedBlocks)
+                    Self.Tell(unverifiedBlock, ActorRefs.NoSender);
+                block_cache_unverified.Remove(block.Index + 1);
             }
             return RelayResultReason.Succeed;
         }
@@ -325,27 +266,6 @@ namespace Neo.Ledger
             RelayCache.Add(payload);
             system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = payload });
             return RelayResultReason.Succeed;
-        }
-
-        private void OnNewHeaders(Header[] headers)
-        {
-            using (Snapshot snapshot = GetSnapshot())
-            {
-                foreach (Header header in headers)
-                {
-                    if (header.Index - 1 >= header_index.Count) break;
-                    if (header.Index < header_index.Count) continue;
-                    if (!header.Verify(snapshot)) break;
-                    header_index.Add(header.Hash);
-                    snapshot.Blocks.Add(header.Hash, header.Trim());
-                    snapshot.HeaderHashIndex.GetAndChange().Hash = header.Hash;
-                    snapshot.HeaderHashIndex.GetAndChange().Index = header.Index;
-                }
-                SaveHeaderHashList(snapshot);
-                snapshot.Commit();
-            }
-            UpdateCurrentSnapshot();
-            system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
         private RelayResultReason OnNewTransaction(Transaction transaction)
@@ -368,7 +288,6 @@ namespace Neo.Ledger
 
         private void OnPersistCompleted(Block block)
         {
-            block_cache.Remove(block.Hash);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
@@ -382,9 +301,6 @@ namespace Neo.Ledger
                     break;
                 case FillMemoryPool fill:
                     OnFillMemoryPool(fill.Transactions);
-                    break;
-                case Header[] headers:
-                    OnNewHeaders(headers);
                     break;
                 case Block block:
                     Sender.Tell(OnNewBlock(block));
@@ -447,12 +363,7 @@ namespace Neo.Ledger
                 }
                 snapshot.BlockHashIndex.GetAndChange().Hash = block.Hash;
                 snapshot.BlockHashIndex.GetAndChange().Index = block.Index;
-                if (block.Index == header_index.Count)
-                {
-                    header_index.Add(block.Hash);
-                    snapshot.HeaderHashIndex.GetAndChange().Hash = block.Hash;
-                    snapshot.HeaderHashIndex.GetAndChange().Index = block.Index;
-                }
+                block_index.Add(block.Hash);
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot, all_application_executed);
                 snapshot.Commit();
@@ -493,17 +404,17 @@ namespace Neo.Ledger
 
         private void SaveHeaderHashList(Snapshot snapshot = null)
         {
-            if ((header_index.Count - stored_header_count < 2000))
+            if ((block_index.Count - stored_header_count < 2000))
                 return;
             bool snapshot_created = snapshot == null;
             if (snapshot_created) snapshot = GetSnapshot();
             try
             {
-                while (header_index.Count - stored_header_count >= 2000)
+                while (block_index.Count - stored_header_count >= 2000)
                 {
                     snapshot.HeaderHashList.Add(stored_header_count, new HeaderHashList
                     {
-                        Hashes = header_index.Skip((int)stored_header_count).Take(2000).ToArray()
+                        Hashes = block_index.Skip((int)stored_header_count).Take(2000).ToArray()
                     });
                     stored_header_count += 2000;
                 }
@@ -532,7 +443,6 @@ namespace Neo.Ledger
         {
             switch (message)
             {
-                case Header[] _:
                 case Block _:
                 case ConsensusPayload _:
                 case Terminated _:

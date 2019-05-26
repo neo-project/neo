@@ -48,7 +48,7 @@ namespace Neo.Consensus
         public bool IsPrimary => MyIndex == Block.ConsensusData.PrimaryIndex;
         public bool IsBackup => MyIndex >= 0 && MyIndex != Block.ConsensusData.PrimaryIndex;
         public bool WatchOnly => MyIndex < 0;
-        public Header PrevHeader => Snapshot.GetHeader(Block.PrevHash);
+        public TrimmedBlock PrevBlock => Snapshot.Blocks[Block.PrevHash];
         public int CountCommitted => CommitPayloads.Count(p => p != null);
         public int CountFailed => LastSeenMessage.Count(p => p < (((int)Block.Index) - 1));
 
@@ -215,7 +215,7 @@ namespace Neo.Consensus
             List<Transaction> transactions = memoryPoolTransactions.ToList();
             TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             Transactions = transactions.ToDictionary(p => p.Hash);
-            Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), PrevHeader.Timestamp + 1);
+            Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), PrevBlock.Timestamp + 1);
             Block.ConsensusData.Nonce = BitConverter.ToUInt64(buffer, 0);
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareRequest
             {

@@ -83,12 +83,6 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetData:
                     OnGetDataMessageReceived((InvPayload)msg.Payload);
                     break;
-                case MessageCommand.GetHeaders:
-                    OnGetHeadersMessageReceived((GetBlocksPayload)msg.Payload);
-                    break;
-                case MessageCommand.Headers:
-                    OnHeadersMessageReceived((HeadersPayload)msg.Payload);
-                    break;
                 case MessageCommand.Inv:
                     OnInvMessageReceived((InvPayload)msg.Payload);
                     break;
@@ -213,33 +207,6 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnGetHeadersMessageReceived(GetBlocksPayload payload)
-        {
-            UInt256 hash = payload.HashStart;
-            int count = payload.Count < 0 ? HeadersPayload.MaxHeadersCount : payload.Count;
-            DataCache<UInt256, TrimmedBlock> cache = Blockchain.Singleton.Store.GetBlocks();
-            TrimmedBlock state = cache.TryGet(hash);
-            if (state == null) return;
-            List<Header> headers = new List<Header>();
-            for (uint i = 1; i <= count; i++)
-            {
-                uint index = state.Index + i;
-                hash = Blockchain.Singleton.GetBlockHash(index);
-                if (hash == null) break;
-                Header header = cache.TryGet(hash)?.Header;
-                if (header == null) break;
-                headers.Add(header);
-            }
-            if (headers.Count == 0) return;
-            Context.Parent.Tell(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers)));
-        }
-
-        private void OnHeadersMessageReceived(HeadersPayload payload)
-        {
-            if (payload.Headers.Length == 0) return;
-            system.Blockchain.Tell(payload.Headers, Context.Parent);
-        }
-
         private void OnInventoryReceived(IInventory inventory)
         {
             system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash }, Context.Parent);
@@ -333,7 +300,6 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetAddr:
                 case MessageCommand.GetBlocks:
                 case MessageCommand.GetData:
-                case MessageCommand.GetHeaders:
                 case MessageCommand.Mempool:
                     return queue.OfType<Message>().Any(p => p.Command == msg.Command);
                 default:

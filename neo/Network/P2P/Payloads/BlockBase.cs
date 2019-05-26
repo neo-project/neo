@@ -1,6 +1,7 @@
 ﻿using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.Wallets;
@@ -53,9 +54,9 @@ namespace Neo.Network.P2P.Payloads
         UInt160 IVerifiable.GetScriptHashForVerification(Snapshot snapshot)
         {
             if (PrevHash == UInt256.Zero) return Witness.ScriptHash;
-            Header prev_header = snapshot.GetHeader(PrevHash);
-            if (prev_header == null) throw new InvalidOperationException();
-            return prev_header.NextConsensus;
+            TrimmedBlock prev_block = snapshot.Blocks.TryGet(PrevHash);
+            if (prev_block is null) throw new InvalidOperationException();
+            return prev_block.NextConsensus;
         }
 
         public virtual void Serialize(BinaryWriter writer)
@@ -91,10 +92,10 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual bool Verify(Snapshot snapshot)
         {
-            Header prev_header = snapshot.GetHeader(PrevHash);
-            if (prev_header == null) return false;
-            if (prev_header.Index + 1 != Index) return false;
-            if (prev_header.Timestamp >= Timestamp) return false;
+            TrimmedBlock prev_block = snapshot.Blocks.TryGet(PrevHash);
+            if (prev_block is null) return false;
+            if (prev_block.Index + 1 != Index) return false;
+            if (prev_block.Timestamp >= Timestamp) return false;
             if (!this.VerifyWitness(snapshot, 1_00000000)) return false;
             return true;
         }

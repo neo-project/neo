@@ -30,28 +30,6 @@ namespace Neo.Ledger
             };
         }
 
-        private Header _header = null;
-        public Header Header
-        {
-            get
-            {
-                if (_header == null)
-                {
-                    _header = new Header
-                    {
-                        Version = Version,
-                        PrevHash = PrevHash,
-                        MerkleRoot = MerkleRoot,
-                        Timestamp = Timestamp,
-                        Index = Index,
-                        NextConsensus = NextConsensus,
-                        Witness = Witness
-                    };
-                }
-                return _header;
-            }
-        }
-
         public override int Size => base.Size
             + Hashes.GetVarSize()           //Hashes
             + (ConsensusData?.Size ?? 0);   //ConsensusData
@@ -68,8 +46,7 @@ namespace Neo.Ledger
                 NextConsensus = NextConsensus,
                 Witness = Witness,
                 Hashes = Hashes,
-                ConsensusData = ConsensusData,
-                _header = _header
+                ConsensusData = ConsensusData
             };
         }
 
@@ -92,7 +69,6 @@ namespace Neo.Ledger
             Witness = replica.Witness;
             Hashes = replica.Hashes;
             ConsensusData = replica.ConsensusData;
-            _header = replica._header;
         }
 
         public override void Serialize(BinaryWriter writer)

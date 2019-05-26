@@ -41,15 +41,14 @@ namespace Neo.SmartContract
         public static readonly uint System_Runtime_Deserialize = Register("System.Runtime.Deserialize", Runtime_Deserialize, 0_00500000);
         public static readonly uint System_Crypto_Verify = Register("System.Crypto.Verify", Crypto_Verify, 0_01000000);
         public static readonly uint System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", Blockchain_GetHeight, 0_00000400);
-        public static readonly uint System_Blockchain_GetHeader = Register("System.Blockchain.GetHeader", Blockchain_GetHeader, 0_00007000);
         public static readonly uint System_Blockchain_GetBlock = Register("System.Blockchain.GetBlock", Blockchain_GetBlock, 0_02500000);
         public static readonly uint System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", Blockchain_GetTransaction, 0_01000000);
         public static readonly uint System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight, 0_01000000);
         public static readonly uint System_Blockchain_GetContract = Register("System.Blockchain.GetContract", Blockchain_GetContract, 0_01000000);
-        public static readonly uint System_Header_GetIndex = Register("System.Header.GetIndex", Header_GetIndex, 0_00000400);
-        public static readonly uint System_Header_GetHash = Register("System.Header.GetHash", Header_GetHash, 0_00000400);
-        public static readonly uint System_Header_GetPrevHash = Register("System.Header.GetPrevHash", Header_GetPrevHash, 0_00000400);
-        public static readonly uint System_Header_GetTimestamp = Register("System.Header.GetTimestamp", Header_GetTimestamp, 0_00000400);
+        public static readonly uint System_Block_GetIndex = Register("System.Block.GetIndex", Block_GetIndex, 0_00000400);
+        public static readonly uint System_Block_GetHash = Register("System.Block.GetHash", Block_GetHash, 0_00000400);
+        public static readonly uint System_Block_GetPrevHash = Register("System.Block.GetPrevHash", Block_GetPrevHash, 0_00000400);
+        public static readonly uint System_Block_GetTimestamp = Register("System.Block.GetTimestamp", Block_GetTimestamp, 0_00000400);
         public static readonly uint System_Block_GetTransactionCount = Register("System.Block.GetTransactionCount", Block_GetTransactionCount, 0_00000400);
         public static readonly uint System_Block_GetTransactions = Register("System.Block.GetTransactions", Block_GetTransactions, 0_00010000);
         public static readonly uint System_Block_GetTransaction = Register("System.Block.GetTransaction", Block_GetTransaction, 0_00000400);
@@ -185,8 +184,8 @@ namespace Neo.SmartContract
         {
             if (engine.Snapshot.PersistingBlock == null)
             {
-                Header header = engine.Snapshot.GetHeader(engine.Snapshot.CurrentBlockHash);
-                engine.CurrentContext.EvaluationStack.Push(header.Timestamp + Blockchain.SecondsPerBlock);
+                TrimmedBlock block = engine.Snapshot.Blocks[engine.Snapshot.CurrentBlockHash];
+                engine.CurrentContext.EvaluationStack.Push(block.Timestamp + Blockchain.SecondsPerBlock);
             }
             else
             {
@@ -254,28 +253,6 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private static bool Blockchain_GetHeader(ApplicationEngine engine)
-        {
-            byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            UInt256 hash;
-            if (data.Length <= 5)
-                hash = Blockchain.Singleton.GetBlockHash((uint)new BigInteger(data));
-            else if (data.Length == 32)
-                hash = new UInt256(data);
-            else
-                return false;
-            if (hash == null)
-            {
-                engine.CurrentContext.EvaluationStack.Push(new byte[0]);
-            }
-            else
-            {
-                Header header = engine.Snapshot.GetHeader(hash);
-                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(header));
-            }
-            return true;
-        }
-
         private static bool Blockchain_GetBlock(ApplicationEngine engine)
         {
             byte[] data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
@@ -325,49 +302,49 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private static bool Header_GetIndex(ApplicationEngine engine)
+        private static bool Block_GetIndex(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                BlockBase header = _interface.GetInterface<BlockBase>();
-                if (header == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(header.Index);
+                Block block = _interface.GetInterface<Block>();
+                if (block == null) return false;
+                engine.CurrentContext.EvaluationStack.Push(block.Index);
                 return true;
             }
             return false;
         }
 
-        private static bool Header_GetHash(ApplicationEngine engine)
+        private static bool Block_GetHash(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                BlockBase header = _interface.GetInterface<BlockBase>();
-                if (header == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(header.Hash.ToArray());
+                Block block = _interface.GetInterface<Block>();
+                if (block == null) return false;
+                engine.CurrentContext.EvaluationStack.Push(block.Hash.ToArray());
                 return true;
             }
             return false;
         }
 
-        private static bool Header_GetPrevHash(ApplicationEngine engine)
+        private static bool Block_GetPrevHash(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                BlockBase header = _interface.GetInterface<BlockBase>();
-                if (header == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(header.PrevHash.ToArray());
+                Block block = _interface.GetInterface<Block>();
+                if (block == null) return false;
+                engine.CurrentContext.EvaluationStack.Push(block.PrevHash.ToArray());
                 return true;
             }
             return false;
         }
 
-        private static bool Header_GetTimestamp(ApplicationEngine engine)
+        private static bool Block_GetTimestamp(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
-                BlockBase header = _interface.GetInterface<BlockBase>();
-                if (header == null) return false;
-                engine.CurrentContext.EvaluationStack.Push(header.Timestamp);
+                Block block = _interface.GetInterface<Block>();
+                if (block == null) return false;
+                engine.CurrentContext.EvaluationStack.Push(block.Timestamp);
                 return true;
             }
             return false;

@@ -75,7 +75,6 @@ namespace Neo.Network.P2P
                 case MessageCommand.Addr:
                 case MessageCommand.GetAddr:
                 case MessageCommand.GetBlocks:
-                case MessageCommand.GetHeaders:
                 case MessageCommand.Mempool:
                 case MessageCommand.Ping:
                 case MessageCommand.Pong:

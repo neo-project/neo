@@ -25,25 +25,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void Header_Get()
-        {
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRootVal;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal, out transactionsVal, 0);
-
-            uut.Header.Should().NotBeNull();
-            uut.Header.PrevHash.Should().Be(val256);
-            uut.Header.MerkleRoot.Should().Be(merkRootVal);
-            uut.Header.Timestamp.Should().Be(timestampVal);
-            uut.Header.Index.Should().Be(indexVal);
-            uut.Header.Witness.Should().Be(scriptVal);
-        }
-
-        [TestMethod]
         public void Size_Get()
         {
             UInt256 val256 = UInt256.Zero;

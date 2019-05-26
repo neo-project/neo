@@ -15,12 +15,9 @@ namespace Neo.Persistence
         public abstract DataCache<StorageKey, StorageItem> Storages { get; }
         public abstract DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
-        public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
 
         public uint Height => BlockHashIndex.Get().Index;
-        public uint HeaderHeight => HeaderHashIndex.Get().Index;
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
-        public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
 
         public Snapshot Clone()
         {
@@ -35,7 +32,6 @@ namespace Neo.Persistence
             Storages.Commit();
             HeaderHashList.Commit();
             BlockHashIndex.Commit();
-            HeaderHashIndex.Commit();
         }
 
         public virtual void Dispose()

@@ -73,11 +73,10 @@ namespace Neo.UnitTests
              */
 
             // Creating proposed block
-            Header header = new Header();
-            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal);
-            header.Size.Should().Be(100);
+            Block block = new Block();
+            TestUtils.SetupBlockWithValues(block, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal, out var transactions, 0);
 
-            Console.WriteLine($"header {header} hash {header.Hash} timstamp {timestampVal}");
+            Console.WriteLine($"block hash={block.Hash} timstamp={timestampVal}");
 
             timestampVal.Should().Be(4244941696); //1968-06-01 00:00:00
                                                   // check basic ConsensusContext
@@ -92,18 +91,7 @@ namespace Neo.UnitTests
                                      );
 
             Console.WriteLine("will trigger OnPersistCompleted!");
-            actorConsensus.Tell(new Blockchain.PersistCompleted
-            {
-                Block = new Block
-                {
-                    Version = header.Version,
-                    PrevHash = header.PrevHash,
-                    MerkleRoot = header.MerkleRoot,
-                    Timestamp = header.Timestamp,
-                    Index = header.Index,
-                    NextConsensus = header.NextConsensus
-                }
-            });
+            actorConsensus.Tell(new Blockchain.PersistCompleted { Block = block });
 
             // OnPersist will not launch timer, we need OnStart
 

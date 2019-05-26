@@ -18,7 +18,6 @@ Coverage
 ====================
 
 * Block.cs - Some code coverage missing on the Verify() method.
-* Header.cs
 * Helper.cs
 * StorageItem.cs
 * StorageKey.cs

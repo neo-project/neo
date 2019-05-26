@@ -17,27 +17,6 @@ namespace Neo.Network.P2P.Payloads
         public ConsensusData ConsensusData;
         public Transaction[] Transactions;
 
-        private Header _header = null;
-        public Header Header
-        {
-            get
-            {
-                if (_header == null)
-                {
-                    _header = new Header
-                    {
-                        PrevHash = PrevHash,
-                        MerkleRoot = MerkleRoot,
-                        Timestamp = Timestamp,
-                        Index = Index,
-                        NextConsensus = NextConsensus,
-                        Witness = Witness
-                    };
-                }
-                return _header;
-            }
-        }
-
         InventoryType IInventory.InventoryType => InventoryType.Block;
 
         public override int Size => base.Size

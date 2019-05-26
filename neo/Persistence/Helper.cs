@@ -33,18 +33,6 @@ namespace Neo.Persistence
             return state.GetBlock(persistence.Transactions);
         }
 
-        public static Header GetHeader(this IPersistence persistence, uint index)
-        {
-            UInt256 hash = Blockchain.Singleton.GetBlockHash(index);
-            if (hash == null) return null;
-            return persistence.GetHeader(hash);
-        }
-
-        public static Header GetHeader(this IPersistence persistence, UInt256 hash)
-        {
-            return persistence.Blocks.TryGet(hash)?.Header;
-        }
-
         public static UInt256 GetNextBlockHash(this IPersistence persistence, UInt256 hash)
         {
             TrimmedBlock state = persistence.Blocks.TryGet(hash);
