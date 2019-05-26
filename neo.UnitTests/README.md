@@ -23,4 +23,3 @@ Coverage
 * StorageItem.cs
 * StorageKey.cs
 * Transaction.cs
-* Witness.cs

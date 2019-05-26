@@ -3,8 +3,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using System;
-using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -13,41 +11,14 @@ namespace Neo.UnitTests.Extensions
 {
     public static class Nep5NativeContractExtensions
     {
-        internal class ManualWitness : IVerifiable
-        {
-            private readonly UInt160 _hashForVerify;
-
-            public Witness Witness
-            {
-                get => throw new NotImplementedException();
-                set => throw new NotImplementedException();
-            }
-
-            public int Size => 0;
-
-            public ManualWitness(UInt160 hashForVerify)
-            {
-                _hashForVerify = hashForVerify;
-            }
-
-            public void Deserialize(BinaryReader reader) { }
-
-            public void DeserializeUnsigned(BinaryReader reader) { }
-
-            public UInt160 GetScriptHashForVerification(Persistence.Snapshot snapshot)
-            {
-                return _hashForVerify;
-            }
-
-            public void Serialize(BinaryWriter writer) { }
-
-            public void SerializeUnsigned(BinaryWriter writer) { }
-        }
-
         public static bool Transfer(this NativeContract contract, Persistence.Snapshot snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)
         {
-            var engine = new ApplicationEngine(TriggerType.Application,
-                new ManualWitness(signFrom ? new UInt160(from) : null), snapshot, 0, true);
+            Transaction tx = new Transaction
+            {
+                Sender = signFrom ? from : new byte[20]
+            };
+
+            var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, 0, true);
 
             engine.LoadScript(contract.Script);
 

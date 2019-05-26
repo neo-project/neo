@@ -1,22 +1,19 @@
 ﻿using Neo.Cryptography.ECC;
 using Neo.IO.Json;
-using Neo.Ledger;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
 namespace Neo.SmartContract
 {
     public class ContractParametersContext
     {
-        public readonly IVerifiable Verifiable;
-        private byte[] Script;
+        public readonly Transaction Transaction;
         private ContractParameter[] Parameters;
         private Dictionary<ECPoint, byte[]> Signatures;
 
@@ -29,23 +26,11 @@ namespace Neo.SmartContract
             }
         }
 
-        private UInt160 _ScriptHash = null;
-        public UInt160 ScriptHash
-        {
-            get
-            {
-                if (_ScriptHash == null)
-                    using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
-                    {
-                        _ScriptHash = Verifiable.GetScriptHashForVerification(snapshot);
-                    }
-                return _ScriptHash;
-            }
-        }
+        public UInt160 ScriptHash => Transaction.SenderHash;
 
-        public ContractParametersContext(IVerifiable verifiable)
+        public ContractParametersContext(Transaction tx)
         {
-            this.Verifiable = verifiable;
+            this.Transaction = tx;
         }
 
         public bool Add(Contract contract, int index, object parameter)
@@ -53,7 +38,6 @@ namespace Neo.SmartContract
             if (!ScriptHash.Equals(contract.ScriptHash)) return false;
             if (Parameters is null)
             {
-                Script = contract.Script;
                 Parameters = contract.ParameterList.Select(p => new ContractParameter { Type = p }).ToArray();
             }
             Parameters[index].Value = parameter;
@@ -67,7 +51,6 @@ namespace Neo.SmartContract
                 if (!ScriptHash.Equals(contract.ScriptHash)) return false;
                 if (Parameters is null)
                 {
-                    Script = contract.Script;
                     Parameters = contract.ParameterList.Select(p => new ContractParameter { Type = p }).ToArray();
                 }
                 if (Parameters.All(p => p.Value != null)) return false;
@@ -136,16 +119,14 @@ namespace Neo.SmartContract
 
         public static ContractParametersContext FromJson(JObject json)
         {
-            IVerifiable verifiable = typeof(ContractParametersContext).GetTypeInfo().Assembly.CreateInstance(json["type"].AsString()) as IVerifiable;
-            if (verifiable == null) throw new FormatException();
+            Transaction tx = new Transaction();
             using (MemoryStream ms = new MemoryStream(json["hex"].AsString().HexToBytes(), false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
-                verifiable.DeserializeUnsigned(reader);
+                tx.DeserializeUnsigned(reader);
             }
-            return new ContractParametersContext(verifiable)
+            return new ContractParametersContext(tx)
             {
-                Script = json["script"]?.AsString().HexToBytes(),
                 Parameters = ((JArray)json["parameters"])?.Select(p => ContractParameter.FromJson(p)).ToArray(),
                 Signatures = json["signatures"]?.Properties.Select(p => new
                 {
@@ -165,7 +146,7 @@ namespace Neo.SmartContract
             return Parameters;
         }
 
-        public Witness GetWitness()
+        public byte[] GetWitness()
         {
             if (!Completed) throw new InvalidOperationException();
             using (ScriptBuilder sb = new ScriptBuilder())
@@ -174,11 +155,7 @@ namespace Neo.SmartContract
                 {
                     sb.EmitPush(parameter);
                 }
-                return new Witness
-                {
-                    InvocationScript = sb.ToArray(),
-                    VerificationScript = Script ?? new byte[0]
-                };
+                return sb.ToArray();
             }
         }
 
@@ -190,16 +167,7 @@ namespace Neo.SmartContract
         public JObject ToJson()
         {
             JObject json = new JObject();
-            json["type"] = Verifiable.GetType().FullName;
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
-            {
-                Verifiable.SerializeUnsigned(writer);
-                writer.Flush();
-                json["hex"] = ms.ToArray().ToHexString();
-            }
-            if (Script != null)
-                json["script"] = Script.ToHexString();
+            json["hex"] = Transaction.GetHashData().ToHexString();
             if (Parameters != null)
                 json["parameters"] = new JArray(Parameters.Select(p => p.ToJson()));
             if (Signatures != null)

@@ -1,4 +1,5 @@
 using Neo.Cryptography;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
@@ -28,12 +29,12 @@ namespace Neo.Network.P2P.Payloads
         public byte Version;
         public uint Nonce;
         public byte[] Script;
-        public UInt160 Sender;
+        public byte[] Sender;
         public long Gas;
         public long NetworkFee;
         public uint ValidUntilBlock;
         public TransactionAttribute[] Attributes;
-        public Witness Witness { get; set; }
+        public byte[] Witness;
 
         /// <summary>
         /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
@@ -56,26 +57,50 @@ namespace Neo.Network.P2P.Payloads
 
         InventoryType IInventory.InventoryType => InventoryType.TX;
 
+        private UInt160 _sender_hash = null;
+        public UInt160 SenderHash
+        {
+            get
+            {
+                if (_sender_hash is null)
+                {
+                    switch (Sender.Length)
+                    {
+                        case 20: //contract hash
+                            _sender_hash = new UInt160(Sender);
+                            break;
+                        case 33: //pubkey
+                            _sender_hash = Contract.CreateSignatureRedeemScript(Sender.AsSerializable<ECPoint>()).ToScriptHash();
+                            break;
+                        case 35: //compatible old address script
+                            if (Sender[0] != 33 || Sender[34] != 0xAC)
+                                throw new InvalidOperationException();
+                            _sender_hash = Sender.ToScriptHash();
+                            break;
+                        default:
+                            throw new InvalidOperationException();
+                    }
+                }
+                return _sender_hash;
+            }
+        }
+
         public int Size =>
             sizeof(byte) +              //Version
             sizeof(uint) +              //Nonce
             Script.GetVarSize() +       //Script
-            Sender.Size +               //Sender
+            Sender.GetVarSize() +       //Sender
             sizeof(long) +              //Gas
             sizeof(long) +              //NetworkFee
             sizeof(uint) +              //ValidUntilBlock
             Attributes.GetVarSize() +   //Attributes
-            Witness.Size;               //Witnesses
+            Witness.GetVarSize();       //Witnesses
 
         public void CalculateFees()
         {
-            if (Sender is null) Sender = UInt160.Zero;
+            if (Sender is null) Sender = new byte[35];
             if (Attributes is null) Attributes = new TransactionAttribute[0];
-            if (Witness is null) Witness = new Witness
-            {
-                InvocationScript = new byte[65],
-                VerificationScript = new byte[39]
-            };
+            if (Witness is null) Witness = new byte[74];
             _hash = null;
             long consumed;
             using (ApplicationEngine engine = ApplicationEngine.Run(Script, this))
@@ -112,7 +137,7 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(BinaryReader reader)
         {
             DeserializeUnsigned(reader);
-            Witness = reader.ReadSerializable<Witness>();
+            Witness = reader.ReadVarBytes(ushort.MaxValue);
         }
 
         public void DeserializeUnsigned(BinaryReader reader)
@@ -122,7 +147,15 @@ namespace Neo.Network.P2P.Payloads
             Nonce = reader.ReadUInt32();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
-            Sender = reader.ReadSerializable<UInt160>();
+            Sender = reader.ReadVarBytes(35);
+            try
+            {
+                _ = SenderHash; //Ensure `SenderHash`
+            }
+            catch
+            {
+                throw new FormatException();
+            }
             Gas = reader.ReadInt64();
             if (Gas < 0) throw new FormatException();
             if (Gas % NativeContract.GAS.Factor != 0) throw new FormatException();
@@ -150,15 +183,10 @@ namespace Neo.Network.P2P.Payloads
             return Hash.GetHashCode();
         }
 
-        public UInt160 GetScriptHashForVerification(Snapshot snapshot)
-        {
-            return Sender;
-        }
-
         void ISerializable.Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
-            writer.Write(Witness);
+            writer.WriteVarBytes(Witness);
         }
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
@@ -166,7 +194,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(Version);
             writer.Write(Nonce);
             writer.WriteVarBytes(Script);
-            writer.Write(Sender);
+            writer.WriteVarBytes(Sender);
             writer.Write(Gas);
             writer.Write(NetworkFee);
             writer.Write(ValidUntilBlock);
@@ -181,12 +209,12 @@ namespace Neo.Network.P2P.Payloads
             json["version"] = Version;
             json["nonce"] = Nonce;
             json["script"] = Script.ToHexString();
-            json["sender"] = Sender.ToAddress();
-            json["gas"] = new BigDecimal(Gas, (byte)NativeContract.GAS.Decimals).ToString();
-            json["net_fee"] = new BigDecimal(NetworkFee, (byte)NativeContract.GAS.Decimals).ToString();
+            json["sender"] = SenderHash.ToAddress();
+            json["gas"] = new BigDecimal(Gas, NativeContract.GAS.Decimals).ToString();
+            json["net_fee"] = new BigDecimal(NetworkFee, NativeContract.GAS.Decimals).ToString();
             json["valid_until_block"] = ValidUntilBlock;
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
-            json["witness"] = Witness.ToJson();
+            json["witness"] = Witness.ToHexString();
             return json;
         }
 
@@ -203,14 +231,44 @@ namespace Neo.Network.P2P.Payloads
             if (size > MaxTransactionSize) return false;
             if (size > NativeContract.Policy.GetMaxLowPriorityTransactionSize(snapshot) && NetworkFee / size < NativeContract.Policy.GetFeePerByte(snapshot))
                 return false;
-            if (NativeContract.Policy.GetBlockedAccounts(snapshot).Contains(Sender))
+            if (NativeContract.Policy.GetBlockedAccounts(snapshot).Contains(SenderHash))
                 return false;
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, SenderHash);
             BigInteger fee = Gas + NetworkFee;
             if (balance < fee) return false;
             fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Sum(p => p.Gas + p.NetworkFee);
             if (balance < fee) return false;
-            return this.VerifyWitness(snapshot, VerificationGasLimited);
+            byte[] script = null, pubkey = null;
+            switch (Sender.Length)
+            {
+                case 20:
+                    script = snapshot.Contracts.TryGet(SenderHash)?.Script;
+                    if (script is null) return false;
+                    break;
+                case 33:
+                    pubkey = Sender;
+                    break;
+                case 35:
+                    pubkey = Sender.Skip(1).Take(33).ToArray();
+                    break;
+                default:
+                    return false;
+            }
+            if (script is null)
+            {
+                return Crypto.Default.VerifySignature(this.GetHashData(), Witness.Skip(1).Take(64).ToArray(), pubkey);
+            }
+            else
+            {
+                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, this, snapshot, VerificationGasLimited))
+                {
+                    engine.LoadScript(script);
+                    engine.LoadScript(Witness);
+                    if (engine.Execute().HasFlag(VMState.FAULT)) return false;
+                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
+                }
+                return true;
+            }
         }
     }
 }

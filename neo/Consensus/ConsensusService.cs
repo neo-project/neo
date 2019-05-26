@@ -148,7 +148,7 @@ namespace Neo.Consensus
         {
             context.Reset(viewNumber);
             if (viewNumber > 0)
-                Log($"changeview: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
+                Log($"changeview: view={viewNumber} primary={context.Block.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
             Log($"initialize: height={context.Block.Index} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary ? "Primary" : context.WatchOnly ? "WatchOnly" : "Backup")}");
             if (context.WatchOnly) return;
             if (context.IsPrimary)
@@ -217,7 +217,7 @@ namespace Neo.Consensus
                     existingCommitPayload = payload;
                 }
                 else if (Crypto.Default.VerifySignature(hashData, commit.Signature,
-                    context.Validators[payload.ValidatorIndex].EncodePoint(false)))
+                    context.Block.Validators[payload.ValidatorIndex].EncodePoint(false)))
                 {
                     existingCommitPayload = payload;
                     CheckCommits();
@@ -249,7 +249,7 @@ namespace Neo.Consensus
                 }
                 return;
             }
-            if (payload.ValidatorIndex >= context.Validators.Length) return;
+            if (payload.ValidatorIndex >= context.Block.Validators.Length) return;
             ConsensusMessage message;
             try
             {
@@ -373,7 +373,7 @@ namespace Neo.Consensus
                 // Limit recoveries to be sent from an upper limit of `f` nodes
                 for (int i = 1; i <= allowedRecoveryNodeCount; i++)
                 {
-                    var chosenIndex = (payload.ValidatorIndex + i) % context.Validators.Length;
+                    var chosenIndex = (payload.ValidatorIndex + i) % context.Block.Validators.Length;
                     if (chosenIndex != context.MyIndex) continue;
                     shouldSendRecovery = true;
                     break;
@@ -417,7 +417,7 @@ namespace Neo.Consensus
             byte[] hashData = context.EnsureHeader().GetHashData();
             for (int i = 0; i < context.CommitPayloads.Length; i++)
                 if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber == context.ViewNumber)
-                    if (!Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
+                    if (!Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Block.Validators[i].EncodePoint(false)))
                         context.CommitPayloads[i] = null;
             Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
@@ -607,7 +607,7 @@ namespace Neo.Consensus
             Log($"send prepare request: height={context.Block.Index} view={context.ViewNumber}");
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
 
-            if (context.Validators.Length == 1)
+            if (context.Block.Validators.Length == 1)
                 CheckPreparations();
 
             if (context.TransactionHashes.Length > 0)

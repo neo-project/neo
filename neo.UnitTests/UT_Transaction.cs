@@ -53,13 +53,9 @@ namespace Neo.UnitTests
         public void Size_Get()
         {
             uut.Script = TestUtils.GetByteArray(32, 0x42);
-            uut.Sender = UInt160.Zero;
+            uut.Sender = new byte[20];
             uut.Attributes = new TransactionAttribute[0];
-            uut.Witness = new Witness
-            {
-                InvocationScript = new byte[0],
-                VerificationScript = new byte[0]
-            };
+            uut.Witness = new byte[0];
 
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
@@ -71,18 +67,14 @@ namespace Neo.UnitTests
         public void ToJson()
         {
             uut.Script = TestUtils.GetByteArray(32, 0x42);
-            uut.Sender = UInt160.Zero;
+            uut.Sender = new byte[20];
             uut.Gas = 4200000000;
             uut.Attributes = new TransactionAttribute[0];
-            uut.Witness = new Witness
-            {
-                InvocationScript = new byte[0],
-                VerificationScript = new byte[0]
-            };
+            uut.Witness = new byte[0];
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["txid"].AsString().Should().Be("0x38274692538dfecaae36f8fd518d92bae25607d491c40a8f927cc06bd97ab2c8");
+            jObj["txid"].AsString().Should().Be("0xed98f45fec90e9ca09f45896b7d8e52e23a5ca5f93365c96c061757b74dc7308");
             jObj["size"].AsNumber().Should().Be(81);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);

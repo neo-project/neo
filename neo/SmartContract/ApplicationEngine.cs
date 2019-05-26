@@ -1,3 +1,4 @@
+using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -20,7 +21,7 @@ namespace Neo.SmartContract
         private readonly List<IDisposable> disposables = new List<IDisposable>();
 
         public TriggerType Trigger { get; }
-        public IVerifiable ScriptContainer { get; }
+        public Transaction ScriptContainer { get; }
         public Snapshot Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
         public UInt160 CurrentScriptHash => hashes.Count > 0 ? hashes.Peek() : null;
@@ -28,7 +29,7 @@ namespace Neo.SmartContract
         public UInt160 EntryScriptHash => hashes.Count > 0 ? hashes.Peek(hashes.Count - 1) : null;
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
 
-        public ApplicationEngine(TriggerType trigger, IVerifiable container, Snapshot snapshot, long gas, bool testMode = false)
+        public ApplicationEngine(TriggerType trigger, Transaction container, Snapshot snapshot, long gas, bool testMode = false)
         {
             this.gas_amount = GasFree + gas;
             this.testMode = testMode;
@@ -84,7 +85,7 @@ namespace Neo.SmartContract
         }
 
         public static ApplicationEngine Run(byte[] script, Snapshot snapshot,
-            IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
+            Transaction container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
         {
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? new Block
             {
@@ -94,11 +95,8 @@ namespace Neo.SmartContract
                 Timestamp = snapshot.Blocks[snapshot.CurrentBlockHash].Timestamp + Blockchain.SecondsPerBlock,
                 Index = snapshot.Height + 1,
                 NextConsensus = snapshot.Blocks[snapshot.CurrentBlockHash].NextConsensus,
-                Witness = new Witness
-                {
-                    InvocationScript = new byte[0],
-                    VerificationScript = new byte[0]
-                },
+                Validators = new ECPoint[0],
+                Signatures = new byte[0][],
                 ConsensusData = new ConsensusData(),
                 Transactions = new Transaction[0]
             };
@@ -108,7 +106,7 @@ namespace Neo.SmartContract
             return engine;
         }
 
-        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
+        public static ApplicationEngine Run(byte[] script, Transaction container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
         {
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {

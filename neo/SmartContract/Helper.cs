@@ -1,7 +1,5 @@
 ﻿using Neo.Cryptography;
 using Neo.IO;
-using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -168,11 +166,6 @@ namespace Neo.SmartContract
             return true;
         }
 
-        public static bool IsStandardContract(this byte[] script)
-        {
-            return script.IsSignatureContract() || script.IsMultiSigContract();
-        }
-
         public static byte[] Serialize(this StackItem item)
         {
             using (MemoryStream ms = new MemoryStream())
@@ -244,37 +237,6 @@ namespace Neo.SmartContract
         public static UInt160 ToScriptHash(this byte[] script)
         {
             return new UInt160(Crypto.Default.Hash160(script));
-        }
-
-        internal static bool VerifyWitness(this IVerifiable verifiable, Snapshot snapshot, long gas)
-        {
-            UInt160 hash;
-            try
-            {
-                hash = verifiable.GetScriptHashForVerification(snapshot);
-            }
-            catch (InvalidOperationException)
-            {
-                return false;
-            }
-            byte[] verification = verifiable.Witness.VerificationScript;
-            if (verification.Length == 0)
-            {
-                verification = snapshot.Contracts.TryGet(hash)?.Script;
-                if (verification is null) return false;
-            }
-            else
-            {
-                if (hash != verifiable.Witness.ScriptHash) return false;
-            }
-            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
-            {
-                engine.LoadScript(verification);
-                engine.LoadScript(verifiable.Witness.InvocationScript);
-                if (engine.Execute().HasFlag(VMState.FAULT)) return false;
-                if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
-            }
-            return true;
         }
     }
 }

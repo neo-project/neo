@@ -236,8 +236,12 @@ namespace Neo.UnitTests
 
         internal static (bool State, bool Result) Check_Vote(Snapshot snapshot, byte[] account, byte[][] pubkeys, bool signAccount)
         {
-            var engine = new ApplicationEngine(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(signAccount ? new UInt160(account) : UInt160.Zero), snapshot, 0, true);
+            Transaction tx = new Transaction
+            {
+                Sender = signAccount ? account : new byte[20]
+            };
+
+            var engine = new ApplicationEngine(TriggerType.Application, tx, snapshot, 0, true);
 
             engine.LoadScript(NativeContract.NEO.Script);
 

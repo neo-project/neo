@@ -1,7 +1,6 @@
 ﻿using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -59,11 +58,7 @@ namespace Neo.Consensus
                     ViewNumber = p.OriginalViewNumber,
                     Timestamp = p.Timestamp
                 },
-                Witness = new Witness
-                {
-                    InvocationScript = p.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[p.ValidatorIndex])
-                }
+                Signature = p.PayloadSignature
             }).ToArray();
         }
 
@@ -80,11 +75,7 @@ namespace Neo.Consensus
                     ViewNumber = p.ViewNumber,
                     Signature = p.Signature
                 },
-                Witness = new Witness
-                {
-                    InvocationScript = p.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[p.ValidatorIndex])
-                }
+                Signature = p.PayloadSignature
             }).ToArray();
         }
 
@@ -100,11 +91,7 @@ namespace Neo.Consensus
                 BlockIndex = payload.BlockIndex,
                 ValidatorIndex = (ushort)context.Block.ConsensusData.PrimaryIndex,
                 ConsensusMessage = PrepareRequestMessage,
-                Witness = new Witness
-                {
-                    InvocationScript = compact.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[context.Block.ConsensusData.PrimaryIndex])
-                }
+                Signature = compact.PayloadSignature
             };
         }
 
@@ -123,11 +110,7 @@ namespace Neo.Consensus
                     ViewNumber = ViewNumber,
                     PreparationHash = preparationHash
                 },
-                Witness = new Witness
-                {
-                    InvocationScript = p.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[p.ValidatorIndex])
-                }
+                Signature = p.PayloadSignature
             }).ToArray();
         }
 

@@ -13,6 +13,7 @@ namespace Neo.UnitTests
     public class UT_Policy
     {
         Store Store;
+        byte[] wrongAddress = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
         [TestInitialize]
         public void TestSetup()
@@ -69,7 +70,7 @@ namespace Neo.UnitTests
 
             // Without signature
 
-            var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(null),
+            var ret = NativeContract.Policy.Call(snapshot, new Transaction { Sender = wrongAddress },
                 "setMaxTransactionsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeFalse();
@@ -80,7 +81,7 @@ namespace Neo.UnitTests
 
             // With signature
 
-            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
+            ret = NativeContract.Policy.Call(snapshot, new Transaction { Sender = new byte[20] },
                 "setMaxTransactionsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeTrue();
@@ -104,7 +105,7 @@ namespace Neo.UnitTests
 
             // Without signature
 
-            var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(null),
+            var ret = NativeContract.Policy.Call(snapshot, new Transaction { Sender = wrongAddress },
                 "setMaxLowPriorityTransactionsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeFalse();
@@ -115,7 +116,7 @@ namespace Neo.UnitTests
 
             // With signature
 
-            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
+            ret = NativeContract.Policy.Call(snapshot, new Transaction { Sender = new byte[20] },
                 "setMaxLowPriorityTransactionsPerBlock", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeTrue();
@@ -139,7 +140,7 @@ namespace Neo.UnitTests
 
             // Without signature
 
-            var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(null),
+            var ret = NativeContract.Policy.Call(snapshot, new Transaction { Sender = wrongAddress },
                 "setMaxLowPriorityTransactionSize", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeFalse();
@@ -150,7 +151,7 @@ namespace Neo.UnitTests
 
             // With signature
 
-            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
+            ret = NativeContract.Policy.Call(snapshot, new Transaction { Sender = new byte[20] },
                 "setMaxLowPriorityTransactionSize", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeTrue();
@@ -174,7 +175,7 @@ namespace Neo.UnitTests
 
             // Without signature
 
-            var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(null),
+            var ret = NativeContract.Policy.Call(snapshot, new Transaction { Sender = wrongAddress },
                 "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeFalse();
@@ -185,7 +186,7 @@ namespace Neo.UnitTests
 
             // With signature
 
-            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
+            ret = NativeContract.Policy.Call(snapshot, new Transaction { Sender = new byte[20] },
                 "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeTrue();
@@ -209,7 +210,7 @@ namespace Neo.UnitTests
 
             // Block without signature
 
-            var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(null),
+            var ret = NativeContract.Policy.Call(snapshot, new Transaction { Sender = wrongAddress },
                 "blockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeFalse();
@@ -220,7 +221,7 @@ namespace Neo.UnitTests
 
             // Block with signature
 
-            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
+            ret = NativeContract.Policy.Call(snapshot, new Transaction { Sender = new byte[20] },
                 "blockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeTrue();
@@ -229,10 +230,10 @@ namespace Neo.UnitTests
             ret.Should().BeOfType<VM.Types.Array>();
             ((VM.Types.Array)ret).Count.Should().Be(1);
             ((VM.Types.Array)ret)[0].GetByteArray().ShouldBeEquivalentTo(UInt160.Zero.ToArray());
-            
+
             // Unblock without signature
 
-            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(null),
+            ret = NativeContract.Policy.Call(snapshot, new Transaction { Sender = wrongAddress },
                 "unblockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeFalse();
@@ -244,7 +245,7 @@ namespace Neo.UnitTests
 
             // Unblock with signature
 
-            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
+            ret = NativeContract.Policy.Call(snapshot, new Transaction { Sender = new byte[20] },
                 "unblockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeTrue();

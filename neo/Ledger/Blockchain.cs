@@ -40,17 +40,14 @@ namespace Neo.Ledger
             Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestamp(),
             Index = 0,
             NextConsensus = GetConsensusAddress(StandbyValidators),
-            Witness = new Witness
-            {
-                InvocationScript = new byte[0],
-                VerificationScript = new[] { (byte)OpCode.PUSHT }
-            },
+            Validators = new ECPoint[0],
+            Signatures = new byte[0][],
             ConsensusData = new ConsensusData
             {
                 PrimaryIndex = 0,
                 Nonce = 2083236893
             },
-            Transactions = new[] { DeployNativeContracts() }
+            Transactions = new[] { InitializeBlockchain() }
         };
 
         private const int MemoryPoolMaxTransactions = 50_000;
@@ -139,26 +136,22 @@ namespace Neo.Ledger
             return Store.ContainsTransaction(hash);
         }
 
-        private static Transaction DeployNativeContracts()
+        private static Transaction InitializeBlockchain()
         {
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitSysCall(InteropService.Neo_Native_Deploy);
+                sb.EmitSysCall(InteropService.Neo_Blockchain_Initialize);
                 script = sb.ToArray();
             }
             return new Transaction
             {
                 Version = 0,
                 Script = script,
-                Sender = (new[] { (byte)OpCode.PUSHT }).ToScriptHash(),
+                Sender = new byte[20],
                 Gas = 0,
                 Attributes = new TransactionAttribute[0],
-                Witness = new Witness
-                {
-                    InvocationScript = new byte[0],
-                    VerificationScript = new[] { (byte)OpCode.PUSHT }
-                }
+                Witness = new byte[0]
             };
         }
 

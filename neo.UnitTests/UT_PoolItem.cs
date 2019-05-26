@@ -119,20 +119,16 @@ namespace Neo.UnitTests
             {
                 Nonce = (uint)TestRandom.Next(),
                 Script = overrideScriptBytes ?? new byte[0],
-                Sender = UInt160.Zero,
+                Sender = new byte[20],
                 NetworkFee = networkFee,
                 Attributes = new TransactionAttribute[0],
-                Witness = new Witness
-                {
-                    InvocationScript = new byte[0],
-                    VerificationScript = new byte[0]
-                }
+                Witness = new byte[0]
             };
 
             int diff = size - tx.Size;
             if (diff < 0) throw new ArgumentException();
             if (diff > 0)
-                tx.Witness.VerificationScript = new byte[diff];
+                tx.Witness = new byte[diff];
             return tx;
         }
     }

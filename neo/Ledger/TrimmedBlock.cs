@@ -24,7 +24,8 @@ namespace Neo.Ledger
                 Timestamp = Timestamp,
                 Index = Index,
                 NextConsensus = NextConsensus,
-                Witness = Witness,
+                Validators = Validators,
+                Signatures = Signatures,
                 ConsensusData = ConsensusData,
                 Transactions = Hashes.Skip(1).Select(p => cache[p].Transaction).ToArray()
             };
@@ -45,7 +46,8 @@ namespace Neo.Ledger
                         Timestamp = Timestamp,
                         Index = Index,
                         NextConsensus = NextConsensus,
-                        Witness = Witness
+                        Validators = Validators,
+                        Signatures = Signatures
                     };
                 }
                 return _header;
@@ -66,7 +68,8 @@ namespace Neo.Ledger
                 Timestamp = Timestamp,
                 Index = Index,
                 NextConsensus = NextConsensus,
-                Witness = Witness,
+                Validators = Validators,
+                Signatures = Signatures,
                 Hashes = Hashes,
                 ConsensusData = ConsensusData,
                 _header = _header
@@ -89,7 +92,8 @@ namespace Neo.Ledger
             Timestamp = replica.Timestamp;
             Index = replica.Index;
             NextConsensus = replica.NextConsensus;
-            Witness = replica.Witness;
+            Validators = replica.Validators;
+            Signatures = replica.Signatures;
             Hashes = replica.Hashes;
             ConsensusData = replica.ConsensusData;
             _header = replica._header;
@@ -106,8 +110,8 @@ namespace Neo.Ledger
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
-            json["consensus_data"] = ConsensusData?.ToJson();
             json["hashes"] = Hashes.Select(p => (JObject)p.ToString()).ToArray();
+            json["consensus_data"] = ConsensusData?.ToJson();
             return json;
         }
     }

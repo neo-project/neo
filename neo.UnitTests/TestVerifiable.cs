@@ -9,7 +9,7 @@ namespace Neo.UnitTests
     {
         private string testStr = "testStr";
 
-        public Witness Witness { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public byte[] Witness { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         public int Size => throw new NotImplementedException();
 
@@ -23,7 +23,7 @@ namespace Neo.UnitTests
             throw new NotImplementedException();
         }
 
-        public UInt160 GetScriptHashForVerification(Snapshot snapshot)
+        public byte[] GetScriptForVerification(Snapshot snapshot)
         {
             throw new NotImplementedException();
         }

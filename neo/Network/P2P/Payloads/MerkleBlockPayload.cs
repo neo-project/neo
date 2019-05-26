@@ -27,7 +27,8 @@ namespace Neo.Network.P2P.Payloads
                 Timestamp = block.Timestamp,
                 Index = block.Index,
                 NextConsensus = block.NextConsensus,
-                Witness = block.Witness,
+                Validators = block.Validators,
+                Signatures = block.Signatures,
                 ContentCount = block.Transactions.Length + 1,
                 Hashes = tree.ToHashArray(),
                 Flags = buffer

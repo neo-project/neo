@@ -52,14 +52,10 @@ namespace Neo.UnitTests
             Mock<Transaction> mock = new Mock<Transaction>();
             mock.Setup(p => p.Verify(It.IsAny<Snapshot>(), It.IsAny<IEnumerable<Transaction>>())).Returns(true);
             mock.Object.Script = randomBytes;
-            mock.Object.Sender = UInt160.Zero;
+            mock.Object.Sender = new byte[20];
             mock.Object.NetworkFee = fee;
             mock.Object.Attributes = new TransactionAttribute[0];
-            mock.Object.Witness = new Witness
-            {
-                InvocationScript = new byte[0],
-                VerificationScript = new byte[0]
-            };
+            mock.Object.Witness = new byte[0];
             return mock.Object;
         }
 

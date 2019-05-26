@@ -13,7 +13,7 @@ namespace Neo.UnitTests.Extensions
             return Call(contract, snapshot, null, method, args);
         }
 
-        public static StackItem Call(this NativeContract contract, Persistence.Snapshot snapshot, IVerifiable container, string method, params ContractParameter[] args)
+        public static StackItem Call(this NativeContract contract, Persistence.Snapshot snapshot, Transaction container, string method, params ContractParameter[] args)
         {
             var engine = new ApplicationEngine(TriggerType.Application, container, snapshot, 0, true);
 

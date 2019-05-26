@@ -9,16 +9,16 @@ namespace Neo.Consensus
         public class PreparationPayloadCompact : ISerializable
         {
             public ushort ValidatorIndex;
-            public byte[] InvocationScript;
+            public byte[] PayloadSignature;
 
             int ISerializable.Size =>
-                sizeof(ushort) +                //ValidatorIndex
-                InvocationScript.GetVarSize();  //InvocationScript
+                sizeof(ushort) +            //ValidatorIndex
+                PayloadSignature.Length;    //PayloadSignature
 
             void ISerializable.Deserialize(BinaryReader reader)
             {
                 ValidatorIndex = reader.ReadUInt16();
-                InvocationScript = reader.ReadVarBytes(1024);
+                PayloadSignature = reader.ReadBytes(64);
             }
 
             public static PreparationPayloadCompact FromPayload(ConsensusPayload payload)
@@ -26,14 +26,14 @@ namespace Neo.Consensus
                 return new PreparationPayloadCompact
                 {
                     ValidatorIndex = payload.ValidatorIndex,
-                    InvocationScript = payload.Witness.InvocationScript
+                    PayloadSignature = payload.Signature
                 };
             }
 
             void ISerializable.Serialize(BinaryWriter writer)
             {
                 writer.Write(ValidatorIndex);
-                writer.WriteVarBytes(InvocationScript);
+                writer.Write(PayloadSignature);
             }
         }
     }

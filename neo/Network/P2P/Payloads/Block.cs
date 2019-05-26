@@ -31,7 +31,8 @@ namespace Neo.Network.P2P.Payloads
                         Timestamp = Timestamp,
                         Index = Index,
                         NextConsensus = NextConsensus,
-                        Witness = Witness
+                        Validators = Validators,
+                        Signatures = Signatures
                     };
                 }
                 return _header;
@@ -116,7 +117,8 @@ namespace Neo.Network.P2P.Payloads
                 Timestamp = Timestamp,
                 Index = Index,
                 NextConsensus = NextConsensus,
-                Witness = Witness,
+                Validators = Validators,
+                Signatures = Signatures,
                 Hashes = new[] { ConsensusData.Hash }.Concat(Transactions.Select(p => p.Hash)).ToArray(),
                 ConsensusData = ConsensusData
             };

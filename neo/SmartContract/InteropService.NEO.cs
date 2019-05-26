@@ -17,14 +17,13 @@ namespace Neo.SmartContract
 {
     static partial class InteropService
     {
-        public static readonly uint Neo_Native_Deploy = Register("Neo.Native.Deploy", Native_Deploy, 0);
+        public static readonly uint Neo_Blockchain_Initialize = Register("Neo.Blockchain.Initialize", Blockchain_Initialize, 0);
         public static readonly uint Neo_Crypto_CheckSig = Register("Neo.Crypto.CheckSig", Crypto_CheckSig, 0_01000000);
         public static readonly uint Neo_Crypto_CheckMultiSig = Register("Neo.Crypto.CheckMultiSig", Crypto_CheckMultiSig, GetCheckMultiSigPrice);
         public static readonly uint Neo_Header_GetVersion = Register("Neo.Header.GetVersion", Header_GetVersion, 0_00000400);
         public static readonly uint Neo_Header_GetMerkleRoot = Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot, 0_00000400);
         public static readonly uint Neo_Header_GetNextConsensus = Register("Neo.Header.GetNextConsensus", Header_GetNextConsensus, 0_00000400);
         public static readonly uint Neo_Transaction_GetScript = Register("Neo.Transaction.GetScript", Transaction_GetScript, 0_00000400);
-        public static readonly uint Neo_Transaction_GetWitnessScript = Register("Neo.Transaction.GetWitnessScript", Transaction_GetWitnessScript, 0_00000400);
         public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 0_00030000);
         public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, GetDeploymentPrice);
         public static readonly uint Neo_Contract_Update = Register("Neo.Contract.Update", Contract_Update, GetDeploymentPrice);
@@ -64,10 +63,31 @@ namespace Neo.SmartContract
             return GasPerByte * size;
         }
 
-        private static bool Native_Deploy(ApplicationEngine engine)
+        private static bool Blockchain_Initialize(ApplicationEngine engine)
         {
             if (engine.Trigger != TriggerType.Application) return false;
             if (engine.Snapshot.PersistingBlock.Index != 0) return false;
+            byte[] validatorsContractScript = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1, Blockchain.StandbyValidators);
+            ContractState validatorsContract = new ContractState
+            {
+                Script = validatorsContractScript,
+                Manifest = new ContractManifest
+                {
+                    Groups = new ContractGroup[0],
+                    Features = ContractFeatures.Payable,
+                    Abi = new ContractAbi
+                    {
+                        Hash = validatorsContractScript.ToScriptHash(),
+                        EntryPoint = ContractMethodDescriptor.DefaultEntryPoint,
+                        Methods = new ContractMethodDescriptor[0],
+                        Events = new ContractEventDescriptor[0]
+                    },
+                    Permissions = new ContractPermission[0],
+                    Trusts = WildCardContainer<UInt160>.Create(),
+                    SafeMethods = WildCardContainer<string>.CreateWildcard()
+                }
+            };
+            engine.Snapshot.Contracts.Add(validatorsContract.ScriptHash, validatorsContract);
             foreach (NativeContract contract in NativeContract.Contracts)
             {
                 engine.Snapshot.Contracts.Add(contract.Hash, new ContractState
@@ -203,26 +223,11 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private static bool Transaction_GetWitnessScript(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                Transaction tx = _interface.GetInterface<Transaction>();
-                if (tx == null) return false;
-                byte[] script = tx.Witness.VerificationScript;
-                if (script.Length == 0)
-                    script = engine.Snapshot.Contracts[tx.Sender].Script;
-                engine.CurrentContext.EvaluationStack.Push(script);
-                return true;
-            }
-            return false;
-        }
-
         private static bool Account_IsStandard(ApplicationEngine engine)
         {
             UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
             ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
-            bool isStandard = contract is null || contract.Script.IsStandardContract();
+            bool isStandard = contract is null || contract.Script.IsSignatureContract();
             engine.CurrentContext.EvaluationStack.Push(isStandard);
             return true;
         }
