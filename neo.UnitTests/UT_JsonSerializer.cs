@@ -8,7 +8,7 @@ using System.Text;
 namespace Neo.UnitTests
 {
     [TestClass]
-    public class UT_JsonParser
+    public class UT_JsonSerializer
     {
         [TestMethod]
         public void Deserialize_WrongJson()
