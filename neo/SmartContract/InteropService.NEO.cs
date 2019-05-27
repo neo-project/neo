@@ -1,4 +1,5 @@
 ﻿using Neo.Cryptography;
+using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -11,6 +12,7 @@ using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -40,6 +42,8 @@ namespace Neo.SmartContract
         public static readonly uint Neo_Iterator_Keys = Register("Neo.Iterator.Keys", Iterator_Keys, 0_00000400);
         public static readonly uint Neo_Iterator_Values = Register("Neo.Iterator.Values", Iterator_Values, 0_00000400);
         public static readonly uint Neo_Iterator_Concat = Register("Neo.Iterator.Concat", Iterator_Concat, 0_00000400);
+        public static readonly uint Neo_Json_Deserialize = Register("Neo.Json.Deserialize", Json_Deserialize, 100_00000000/*TODO: Compute gast cost*/);
+        public static readonly uint Neo_Json_Serialize = Register("Neo.Json.Serialize", Json_Serialize, 100_00000000/*TODO: Compute gast cost*/);
 
         static InteropService()
         {
@@ -460,6 +464,25 @@ namespace Neo.SmartContract
             IIterator second = _interface2.GetInterface<IIterator>();
             IIterator result = new ConcatenatedIterator(first, second);
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(result));
+            return true;
+        }
+
+        private static bool Json_Deserialize(ApplicationEngine engine)
+        {
+            var json = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
+            var obj = JObject.Parse(json, 100);
+            var item = JsonParser.Deserialize(obj);
+
+            engine.CurrentContext.EvaluationStack.Push(item);
+            return true;
+        }
+
+        private static bool Json_Serialize(ApplicationEngine engine)
+        {
+            var item = engine.CurrentContext.EvaluationStack.Pop();
+            var json = JsonParser.Serialize(item);
+
+            engine.CurrentContext.EvaluationStack.Push(new ByteArray(Encoding.UTF8.GetBytes(json.ToString())));
             return true;
         }
     }

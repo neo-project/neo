@@ -8,11 +8,61 @@ namespace Neo.VM
     public static class JsonParser
     {
         /// <summary>
+        /// Convert stack item in json
+        /// </summary>
+        /// <param name="item">Item</param>
+        /// <returns>Json</returns>
+        public static JObject Serialize(StackItem item)
+        {
+            switch (item)
+            {
+                case VM.Types.Array array:
+                    {
+                        var ret = new JArray();
+
+                        foreach (var entry in array)
+                        {
+                            ret.Add(Serialize(entry));
+                        }
+
+                        return ret;
+                    }
+                case VM.Types.ByteArray buffer:
+                    {
+                        return new JString(buffer.GetString());
+                    }
+                case VM.Types.Integer num:
+                    {
+                        return new JNumber((double)num.GetBigInteger());
+                    }
+                case VM.Types.Boolean boolean:
+                    {
+                        return new JBoolean(boolean.GetBoolean());
+                    }
+                case VM.Types.Map obj:
+                    {
+                        var ret = new JObject();
+
+                        foreach (var entry in obj)
+                        {
+                            var key = entry.Key.GetString();
+                            var value = Serialize(entry.Value);
+
+                            ret[key] = value;
+                        }
+
+                        return ret;
+                    }
+                default: throw new FormatException();
+            }
+        }
+
+        /// <summary>
         /// Convert json object to stack item
         /// </summary>
         /// <param name="json">Json</param>
         /// <returns>Return stack item</returns>
-        public static StackItem JsonToStackItem(JObject json)
+        public static StackItem Deserialize(JObject json)
         {
             switch (json)
             {
@@ -22,7 +72,7 @@ namespace Neo.VM
 
                         foreach (var entry in array)
                         {
-                            item.Add(JsonToStackItem(entry));
+                            item.Add(Deserialize(entry));
                         }
 
                         return item;
@@ -46,7 +96,7 @@ namespace Neo.VM
                         foreach (var entry in obj.Properties)
                         {
                             var key = new Types.ByteArray(Encoding.UTF8.GetBytes(entry.Key));
-                            var value = JsonToStackItem(entry.Value);
+                            var value = Deserialize(entry.Value);
 
                             item.Add(key, value);
                         }
