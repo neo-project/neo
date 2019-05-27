@@ -88,6 +88,8 @@ namespace Neo.VM
                     }
                 case JNumber num:
                     {
+                        if ((num.Value % 1) != 0) throw new FormatException("Decimal value is not allowed");
+
                         return new Types.Integer((BigInteger)num.Value);
                     }
                 case JBoolean boolean:
