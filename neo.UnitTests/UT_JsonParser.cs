@@ -2,6 +2,7 @@
 using Neo.IO.Json;
 using Neo.VM;
 using System;
+using System.Numerics;
 using System.Text;
 
 namespace Neo.UnitTests
@@ -28,6 +29,19 @@ namespace Neo.UnitTests
             var json = JsonParser.Serialize(entry).ToString();
 
             Assert.AreEqual(json, "{}");
+        }
+
+        [TestMethod]
+        public void Serialize_Number()
+        {
+            var entry = new VM.Types.Array()
+            {
+                new VM.Types.Integer(1),
+                new VM.Types.Integer(new BigInteger(ulong.MaxValue)+1),
+            };
+            var json = JsonParser.Serialize(entry).ToString();
+
+            Assert.AreEqual(json, "[1,\"18446744073709551616\"]");
         }
 
         [TestMethod]
