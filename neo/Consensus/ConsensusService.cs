@@ -412,13 +412,19 @@ namespace Neo.Consensus
             for (int i = 0; i < context.PreparationPayloads.Length; i++)
                 if (context.PreparationPayloads[i] != null)
                     if (!context.PreparationPayloads[i].GetDeserializedMessage<PrepareResponse>().PreparationHash.Equals(payload.Hash))
+                    {
+                        Log($"{nameof(OnPrepareRequestReceived)}: hashes can not be different - payload.Hash={payload.Hash} node={i} prepResponse.Hash={context.PreparationPayloads[i].GetDeserializedMessage<PrepareResponse>().PreparationHash}");
                         context.PreparationPayloads[i] = null;
+                    }
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
             byte[] hashData = context.EnsureHeader().GetHashData();
             for (int i = 0; i < context.CommitPayloads.Length; i++)
                 if (context.CommitPayloads[i]?.ConsensusMessage.ViewNumber == context.ViewNumber)
                     if (!Crypto.Default.VerifySignature(hashData, context.CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, context.Validators[i].EncodePoint(false)))
+                    {
+                        Log($"{nameof(OnPrepareRequestReceived)}: commit signatures should match preparation hash - node={i} commit failled");                        
                         context.CommitPayloads[i] = null;
+                    }
             Dictionary<UInt256, Transaction> mempoolVerified = Blockchain.Singleton.MemPool.GetVerifiedTransactions().ToDictionary(p => p.Hash);
             List<Transaction> unverified = new List<Transaction>();
             foreach (UInt256 hash in context.TransactionHashes)
@@ -452,7 +458,10 @@ namespace Neo.Consensus
             if (message.ViewNumber != context.ViewNumber) return;
             if (context.PreparationPayloads[payload.ValidatorIndex] != null || context.NotAcceptingPayloadsDueToViewChanging) return;
             if (context.PreparationPayloads[context.Block.ConsensusData.PrimaryIndex] != null && !message.PreparationHash.Equals(context.PreparationPayloads[context.Block.ConsensusData.PrimaryIndex].Hash))
+            {
+                Log($"{nameof(OnPrepareResponseReceived)}: hashes can not be different - message.PreparationHash={message.PreparationHash} context.PrepReq.Hash={context.PreparationPayloads[context.Block.ConsensusData.PrimaryIndex].Hash}");
                 return;
+            }
 
             // Timeout extension: prepare response has been received with success
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
