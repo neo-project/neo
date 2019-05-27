@@ -37,7 +37,7 @@ namespace Neo.IO.Json
 
         public virtual string AsString()
         {
-            return "[object Object]";
+            return ToString();
         }
 
         public bool ContainsProperty(string key)

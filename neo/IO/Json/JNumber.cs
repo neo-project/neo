@@ -26,8 +26,8 @@ namespace Neo.IO.Json
 
         public override string AsString()
         {
-            if (double.IsPositiveInfinity(Value)) return "Infinity";
-            if (double.IsNegativeInfinity(Value)) return "-Infinity";
+            if (double.IsPositiveInfinity(Value)) throw new FormatException("Positive infinity number");
+            if (double.IsNegativeInfinity(Value)) throw new FormatException("Negative infinity number");
             return Value.ToString(CultureInfo.InvariantCulture);
         }
 
@@ -38,16 +38,32 @@ namespace Neo.IO.Json
             while (true)
             {
                 char c = (char)reader.Peek();
-                if (c >= '0' && c <= '9' || c == '.' || c == '-')
+
+                if (c >= '0' && c <= '9')
                 {
                     sb.Append(c);
                     reader.Read();
                 }
-                else
+                else if (c == '+' || c == '-')
                 {
-                    break;
+                    if (sb.Length > 0) throw new FormatException("+ or - only could be the first character");
+
+                    sb.Append(c);
+                    reader.Read();
                 }
+                else if (c == '.')
+                {
+                    if (sb.Length == 0) throw new FormatException(". could not be the first character");
+                    if (sb.ToString().Contains(".")) throw new FormatException("Only one decimal separator is allowed");
+
+                    sb.Append(c);
+                    reader.Read();
+                }
+                else break;
             }
+
+            if (sb.ToString().EndsWith(".")) throw new FormatException(". could not be the last character");
+
             return new JNumber(double.Parse(sb.ToString(), CultureInfo.InvariantCulture));
         }
 

@@ -34,14 +34,15 @@ namespace Neo.IO.Json
         internal static JString Parse(TextReader reader)
         {
             SkipSpace(reader);
-            char[] buffer = new char[4];
             char firstChar = (char)reader.Read();
             if (firstChar != '\"' && firstChar != '\'') throw new FormatException();
+
+            char[] buffer = new char[4];
             StringBuilder sb = new StringBuilder();
             while (true)
             {
                 char c = (char)reader.Read();
-                if (c == 65535) throw new FormatException();
+                if (c == ushort.MaxValue) throw new FormatException();
                 if (c == firstChar) break;
                 if (c == '\\')
                 {
@@ -52,12 +53,11 @@ namespace Neo.IO.Json
                             reader.Read(buffer, 0, 4);
                             c = (char)short.Parse(new string(buffer), NumberStyles.HexNumber);
                             break;
-                        case 'r':
-                            c = '\r';
-                            break;
-                        case 'n':
-                            c = '\n';
-                            break;
+                        case 'r': c = '\r'; break;
+                        case 'n': c = '\n'; break;
+                        case 't': c = '\t'; break;
+                        case 'f': c = '\f'; break;
+                        case 'b': c = '\b'; break;
                     }
                 }
                 sb.Append(c);

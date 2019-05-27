@@ -24,7 +24,7 @@ namespace Neo.IO.Json
 
         public override string AsString()
         {
-            return Value.ToString().ToLower();
+            return Value.ToString().ToLowerInvariant();
         }
 
         internal static JBoolean Parse(TextReader reader)
