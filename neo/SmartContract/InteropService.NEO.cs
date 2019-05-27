@@ -471,7 +471,7 @@ namespace Neo.SmartContract
         {
             var json = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
             var obj = JObject.Parse(json, 10);
-            var item = JsonParser.Deserialize(obj);
+            var item = JsonSerializer.Deserialize(obj);
 
             engine.CurrentContext.EvaluationStack.Push(item);
             return true;
@@ -480,7 +480,7 @@ namespace Neo.SmartContract
         private static bool Json_Serialize(ApplicationEngine engine)
         {
             var item = engine.CurrentContext.EvaluationStack.Pop();
-            var json = JsonParser.Serialize(item);
+            var json = JsonSerializer.Serialize(item);
 
             engine.CurrentContext.EvaluationStack.Push(new ByteArray(Encoding.UTF8.GetBytes(json.ToString())));
             return true;

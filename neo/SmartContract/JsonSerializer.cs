@@ -1,11 +1,15 @@
 ﻿using Neo.IO.Json;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Numerics;
 using System.Text;
+using VMArray = Neo.VM.Types.Array;
+using VMBoolean = Neo.VM.Types.Boolean;
 
-namespace Neo.VM
+namespace Neo.SmartContract
 {
-    public static class JsonParser
+    public static class JsonSerializer
     {
         private static readonly BigInteger MaxInteger = BigInteger.Pow(2, 53) - 1;
 
@@ -18,7 +22,7 @@ namespace Neo.VM
         {
             switch (item)
             {
-                case Types.Array array:
+                case VMArray array:
                     {
                         var ret = new JArray();
 
@@ -29,22 +33,22 @@ namespace Neo.VM
 
                         return ret;
                     }
-                case Types.ByteArray buffer:
+                case ByteArray buffer:
                     {
                         return new JString(buffer.GetString());
                     }
-                case Types.Integer num:
+                case Integer num:
                     {
                         var integer = num.GetBigInteger();
                         if (integer > MaxInteger) return new JString(integer.ToString());
 
                         return new JNumber((double)num.GetBigInteger());
                     }
-                case Types.Boolean boolean:
+                case VMBoolean boolean:
                     {
                         return new JBoolean(boolean.GetBoolean());
                     }
-                case Types.Map obj:
+                case Map obj:
                     {
                         var ret = new JObject();
 
@@ -73,7 +77,7 @@ namespace Neo.VM
             {
                 case JArray array:
                     {
-                        var item = new Types.Array();
+                        var item = new VMArray();
 
                         foreach (var entry in array)
                         {
@@ -84,25 +88,25 @@ namespace Neo.VM
                     }
                 case JString str:
                     {
-                        return new Types.ByteArray(Encoding.UTF8.GetBytes(str.Value));
+                        return new ByteArray(Encoding.UTF8.GetBytes(str.Value));
                     }
                 case JNumber num:
                     {
                         if ((num.Value % 1) != 0) throw new FormatException("Decimal value is not allowed");
 
-                        return new Types.Integer((BigInteger)num.Value);
+                        return new Integer((BigInteger)num.Value);
                     }
                 case JBoolean boolean:
                     {
-                        return new Types.Boolean(boolean.Value);
+                        return new VMBoolean(boolean.Value);
                     }
                 case JObject obj:
                     {
-                        var item = new Types.Map();
+                        var item = new Map();
 
                         foreach (var entry in obj.Properties)
                         {
-                            var key = new Types.ByteArray(Encoding.UTF8.GetBytes(entry.Key));
+                            var key = new ByteArray(Encoding.UTF8.GetBytes(entry.Key));
                             var value = Deserialize(entry.Value);
 
                             item.Add(key, value);
