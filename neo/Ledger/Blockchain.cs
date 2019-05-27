@@ -154,13 +154,10 @@ namespace Neo.Ledger
                 Sender = (new[] { (byte)OpCode.PUSHT }).ToScriptHash(),
                 Gas = 0,
                 Attributes = new TransactionAttribute[0],
-                Witnesses = new[]
+                Witness = new Witness
                 {
-                    new Witness
-                    {
-                        InvocationScript = new byte[0],
-                        VerificationScript = new[] { (byte)OpCode.PUSHT }
-                    }
+                    InvocationScript = new byte[0],
+                    VerificationScript = new[] { (byte)OpCode.PUSHT }
                 }
             };
         }
