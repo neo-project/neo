@@ -64,22 +64,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (_sender_hash is null)
                 {
-                    switch (Sender.Length)
-                    {
-                        case 20: //contract hash
-                            _sender_hash = new UInt160(Sender);
-                            break;
-                        case 33: //pubkey
-                            _sender_hash = Contract.CreateSignatureRedeemScript(Sender.AsSerializable<ECPoint>()).ToScriptHash();
-                            break;
-                        case 35: //compatible old address script
-                            if (Sender[0] != 33 || Sender[34] != 0xAC)
-                                throw new InvalidOperationException();
-                            _sender_hash = Sender.ToScriptHash();
-                            break;
-                        default:
-                            throw new InvalidOperationException();
-                    }
+                    ComputeSenderHash();
                 }
                 return _sender_hash;
             }
@@ -150,7 +135,7 @@ namespace Neo.Network.P2P.Payloads
             Sender = reader.ReadVarBytes(35);
             try
             {
-                _ = SenderHash; //Ensure `SenderHash`
+                ComputeSenderHash();
             }
             catch
             {
@@ -164,6 +149,26 @@ namespace Neo.Network.P2P.Payloads
             if (Gas + NetworkFee < Gas) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
+        }
+
+        private void ComputeSenderHash()
+        {
+            switch (Sender.Length)
+            {
+                case 20: //contract hash
+                    _sender_hash = new UInt160(Sender);
+                    break;
+                case 33: //pubkey
+                    _sender_hash = Contract.CreateSignatureRedeemScript(Sender.AsSerializable<ECPoint>()).ToScriptHash();
+                    break;
+                case 35: //compatible old address script
+                    if (Sender[0] != 33 || Sender[34] != 0xAC)
+                        throw new InvalidOperationException();
+                    _sender_hash = Sender.ToScriptHash();
+                    break;
+                default:
+                    throw new InvalidOperationException();
+            }
         }
 
         public bool Equals(Transaction other)
