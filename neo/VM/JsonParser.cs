@@ -7,7 +7,7 @@ namespace Neo.VM
 {
     public static class JsonParser
     {
-        private static readonly BigInteger MaxInteger = new BigInteger(double.MaxValue);
+        private static readonly BigInteger MaxInteger = new BigInteger(Math.Pow(2, 53)) - 1;
 
         /// <summary>
         /// Convert stack item in json
