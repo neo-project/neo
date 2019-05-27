@@ -7,6 +7,8 @@ namespace Neo.VM
 {
     public static class JsonParser
     {
+        private static readonly BigInteger MaxInteger = new BigInteger(double.MaxValue);
+
         /// <summary>
         /// Convert stack item in json
         /// </summary>
@@ -16,7 +18,7 @@ namespace Neo.VM
         {
             switch (item)
             {
-                case VM.Types.Array array:
+                case Types.Array array:
                     {
                         var ret = new JArray();
 
@@ -27,22 +29,22 @@ namespace Neo.VM
 
                         return ret;
                     }
-                case VM.Types.ByteArray buffer:
+                case Types.ByteArray buffer:
                     {
                         return new JString(buffer.GetString());
                     }
-                case VM.Types.Integer num:
+                case Types.Integer num:
                     {
                         var integer = num.GetBigInteger();
-                        if (integer > new BigInteger(double.MaxValue)) return new JString(integer.ToString());
+                        if (integer > MaxInteger) return new JString(integer.ToString());
 
                         return new JNumber((double)num.GetBigInteger());
                     }
-                case VM.Types.Boolean boolean:
+                case Types.Boolean boolean:
                     {
                         return new JBoolean(boolean.GetBoolean());
                     }
-                case VM.Types.Map obj:
+                case Types.Map obj:
                     {
                         var ret = new JObject();
 
