@@ -2,8 +2,8 @@
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Linq;
 using System.Numerics;
-using System.Text;
 using VMArray = Neo.VM.Types.Array;
 using VMBoolean = Neo.VM.Types.Boolean;
 
@@ -24,35 +24,28 @@ namespace Neo.SmartContract
             {
                 case VMArray array:
                     {
-                        var ret = new JArray();
-
-                        foreach (var entry in array)
-                        {
-                            ret.Add(Serialize(entry));
-                        }
-
-                        return ret;
+                        return array.Select(p => Serialize(p)).ToArray();
                     }
                 case ByteArray buffer:
                     {
-                        return new JString(buffer.GetString());
+                        return buffer.GetString();
                     }
                 case Integer num:
                     {
                         var integer = num.GetBigInteger();
-                        if (integer > MaxInteger) return new JString(integer.ToString());
+                        if (integer > MaxInteger) return integer.ToString();
 
-                        return new JNumber((double)num.GetBigInteger());
+                        return (double)num.GetBigInteger();
                     }
                 case VMBoolean boolean:
                     {
-                        return new JBoolean(boolean.GetBoolean());
+                        return boolean.GetBoolean();
                     }
-                case Map obj:
+                case Map map:
                     {
                         var ret = new JObject();
 
-                        foreach (var entry in obj)
+                        foreach (var entry in map)
                         {
                             var key = entry.Key.GetString();
                             var value = Serialize(entry.Value);
@@ -77,24 +70,17 @@ namespace Neo.SmartContract
             {
                 case JArray array:
                     {
-                        var item = new VMArray();
-
-                        foreach (var entry in array)
-                        {
-                            item.Add(Deserialize(entry));
-                        }
-
-                        return item;
+                        return array.Select(p => Deserialize(p)).ToList();
                     }
                 case JString str:
                     {
-                        return new ByteArray(Encoding.UTF8.GetBytes(str.Value));
+                        return str.Value;
                     }
                 case JNumber num:
                     {
                         if ((num.Value % 1) != 0) throw new FormatException("Decimal value is not allowed");
 
-                        return new Integer((BigInteger)num.Value);
+                        return (BigInteger)num.Value;
                     }
                 case JBoolean boolean:
                     {
@@ -106,7 +92,7 @@ namespace Neo.SmartContract
 
                         foreach (var entry in obj.Properties)
                         {
-                            var key = new ByteArray(Encoding.UTF8.GetBytes(entry.Key));
+                            var key = entry.Key;
                             var value = Deserialize(entry.Value);
 
                             item.Add(key, value);

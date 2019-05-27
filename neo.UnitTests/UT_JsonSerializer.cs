@@ -1,9 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
 using Neo.SmartContract;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
-using System.Numerics;
-using System.Text;
 
 namespace Neo.UnitTests
 {
@@ -19,13 +19,13 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Serialize_WrongJson()
         {
-            Assert.ThrowsException<FormatException>(() => JsonSerializer.Serialize(VM.Types.InteropInterface.FromInterface<object>(new object())));
+            Assert.ThrowsException<FormatException>(() => JsonSerializer.Serialize(StackItem.FromInterface(new object())));
         }
 
         [TestMethod]
         public void Serialize_EmptyObject()
         {
-            var entry = new VM.Types.Map();
+            var entry = new Map();
             var json = JsonSerializer.Serialize(entry).ToString();
 
             Assert.AreEqual(json, "{}");
@@ -34,11 +34,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Serialize_Number()
         {
-            var entry = new VM.Types.Array()
-            {
-                new VM.Types.Integer(1),
-                new VM.Types.Integer(new BigInteger(9007199254740992)),
-            };
+            var entry = new VM.Types.Array { 1, 9007199254740992 };
             var json = JsonSerializer.Serialize(entry).ToString();
 
             Assert.AreEqual(json, "[1,\"9007199254740992\"]");
@@ -49,8 +45,8 @@ namespace Neo.UnitTests
         {
             var items = JsonSerializer.Deserialize(JObject.Parse("{}"));
 
-            Assert.IsInstanceOfType(items, typeof(VM.Types.Map));
-            Assert.AreEqual(((VM.Types.Map)items).Count, 0);
+            Assert.IsInstanceOfType(items, typeof(Map));
+            Assert.AreEqual(((Map)items).Count, 0);
         }
 
         [TestMethod]
@@ -74,8 +70,10 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Serialize_Map_Test()
         {
-            var entry = new VM.Types.Map();
-            entry[new VM.Types.ByteArray(Encoding.UTF8.GetBytes("test"))] = new VM.Types.Integer(123);
+            var entry = new Map
+            {
+                ["test"] = 123
+            };
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
@@ -87,24 +85,19 @@ namespace Neo.UnitTests
         {
             var items = JsonSerializer.Deserialize(JObject.Parse("{\"test\":123}"));
 
-            Assert.IsInstanceOfType(items, typeof(VM.Types.Map));
-            Assert.AreEqual(((VM.Types.Map)items).Count, 1);
+            Assert.IsInstanceOfType(items, typeof(Map));
+            Assert.AreEqual(((Map)items).Count, 1);
 
-            var map = (VM.Types.Map)items;
+            var map = (Map)items;
 
-            Assert.IsTrue(map.TryGetValue(new VM.Types.ByteArray(Encoding.UTF8.GetBytes("test")), out var value));
-            Assert.AreEqual(((VM.Types.Integer)value).GetBigInteger(), 123);
+            Assert.IsTrue(map.TryGetValue("test", out var value));
+            Assert.AreEqual(value.GetBigInteger(), 123);
         }
 
         [TestMethod]
         public void Serialize_Array_Bool_Str_Num()
         {
-            var entry = new VM.Types.Array
-            {
-                new VM.Types.Boolean(true),
-                new VM.Types.ByteArray(Encoding.UTF8.GetBytes("test")),
-                new VM.Types.Integer(123)
-            };
+            var entry = new VM.Types.Array { true, "test", 123 };
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
@@ -121,9 +114,9 @@ namespace Neo.UnitTests
 
             var array = (VM.Types.Array)items;
 
-            Assert.IsTrue(((VM.Types.Boolean)array[0]).GetBoolean());
-            Assert.AreEqual(((VM.Types.ByteArray)array[1]).GetString(), "test");
-            Assert.AreEqual(((VM.Types.Integer)array[2]).GetBigInteger(), 123);
+            Assert.IsTrue(array[0].GetBoolean());
+            Assert.AreEqual(array[1].GetString(), "test");
+            Assert.AreEqual(array[2].GetBigInteger(), 123);
         }
 
         [TestMethod]
@@ -131,12 +124,7 @@ namespace Neo.UnitTests
         {
             var entry = new VM.Types.Array
             {
-                new VM.Types.Array
-                {
-                    new VM.Types.Boolean(true),
-                    new VM.Types.ByteArray(Encoding.UTF8.GetBytes("test")),
-                    new VM.Types.Integer(123)
-                }
+                new VM.Types.Array { true, "test", 123 }
             };
 
             var json = JsonSerializer.Serialize(entry).ToString();
@@ -159,9 +147,9 @@ namespace Neo.UnitTests
 
             array = (VM.Types.Array)array[0];
 
-            Assert.IsTrue(((VM.Types.Boolean)array[0]).GetBoolean());
-            Assert.AreEqual(((VM.Types.ByteArray)array[1]).GetString(), "test");
-            Assert.AreEqual(((VM.Types.Integer)array[2]).GetBigInteger(), 123);
+            Assert.IsTrue(array[0].GetBoolean());
+            Assert.AreEqual(array[1].GetString(), "test");
+            Assert.AreEqual(array[2].GetBigInteger(), 123);
         }
     }
 }
