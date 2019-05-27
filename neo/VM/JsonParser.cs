@@ -34,7 +34,7 @@ namespace Neo.VM
                 case VM.Types.Integer num:
                     {
                         var integer = num.GetBigInteger();
-                        if (integer > ulong.MaxValue) return new JString(integer.ToString());
+                        if (integer > new BigInteger(double.MaxValue)) return new JString(integer.ToString());
 
                         return new JNumber((double)num.GetBigInteger());
                     }

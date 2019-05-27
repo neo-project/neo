@@ -37,11 +37,11 @@ namespace Neo.UnitTests
             var entry = new VM.Types.Array()
             {
                 new VM.Types.Integer(1),
-                new VM.Types.Integer(new BigInteger(ulong.MaxValue)+1),
+                new VM.Types.Integer(new BigInteger(double.MaxValue)+1),
             };
             var json = JsonParser.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "[1,\"18446744073709551616\"]");
+            Assert.AreEqual(json, "[1,\"179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858369\"]");
         }
 
         [TestMethod]
