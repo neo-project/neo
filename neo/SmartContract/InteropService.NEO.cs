@@ -12,7 +12,6 @@ using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Linq;
-using System.Text;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -469,7 +468,7 @@ namespace Neo.SmartContract
 
         private static bool Json_Deserialize(ApplicationEngine engine)
         {
-            var json = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
+            var json = engine.CurrentContext.EvaluationStack.Pop().GetString();
             var obj = JObject.Parse(json, 10);
             var item = JsonSerializer.Deserialize(obj);
 
@@ -482,7 +481,7 @@ namespace Neo.SmartContract
             var item = engine.CurrentContext.EvaluationStack.Pop();
             var json = JsonSerializer.Serialize(item);
 
-            engine.CurrentContext.EvaluationStack.Push(new ByteArray(Encoding.UTF8.GetBytes(json.ToString())));
+            engine.CurrentContext.EvaluationStack.Push(json.ToString());
             return true;
         }
     }
