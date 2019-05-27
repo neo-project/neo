@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -27,7 +28,7 @@ namespace Neo.IO.Json
         {
             if (double.IsPositiveInfinity(Value)) return "Infinity";
             if (double.IsNegativeInfinity(Value)) return "-Infinity";
-            return Value.ToString();
+            return Value.ToString(CultureInfo.InvariantCulture);
         }
 
         internal static JNumber Parse(TextReader reader)
@@ -47,7 +48,7 @@ namespace Neo.IO.Json
                     break;
                 }
             }
-            return new JNumber(double.Parse(sb.ToString()));
+            return new JNumber(double.Parse(sb.ToString(), CultureInfo.InvariantCulture));
         }
 
         public override string ToString()
