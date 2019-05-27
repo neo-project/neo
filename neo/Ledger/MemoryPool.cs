@@ -20,9 +20,6 @@ namespace Neo.Ledger
         private const int BlocksTillRebroadcastHighPriorityPoolTx = 10;
         private int RebroadcastMultiplierThreshold => Capacity / 10;
 
-        private static readonly double MaxSecondsToReverifyHighPrioTx = (double) Blockchain.SecondsPerBlock / 3;
-        private static readonly double MaxSecondsToReverifyLowPrioTx = (double) Blockchain.SecondsPerBlock / 5;
-
         // These two are not expected to be hit, they are just safegaurds.
         private static readonly double MaxSecondsToReverifyHighPrioTxPerIdle = (double) Blockchain.SecondsPerBlock / 15;
         private static readonly double MaxSecondsToReverifyLowPrioTxPerIdle = (double) Blockchain.SecondsPerBlock / 30;
