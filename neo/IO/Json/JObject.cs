@@ -100,19 +100,27 @@ namespace Neo.IO.Json
             SkipSpace(reader);
             if (reader.Read() != BEGIN_OBJECT) throw new FormatException();
             JObject obj = new JObject();
-            while (true)
+            SkipSpace(reader);
+            if (reader.Peek() != END_OBJECT)
             {
-                string name = JString.Parse(reader).Value;
-                if (obj.properties.ContainsKey(name)) throw new FormatException();
-                SkipSpace(reader);
-                if (reader.Read() != NAME_SEPARATOR) throw new FormatException();
-                JObject value = Parse(reader, max_nest - 1);
-                obj.properties.Add(name, value);
-                SkipSpace(reader);
-                char nextchar = (char)reader.Read();
-                if (nextchar == VALUE_SEPARATOR) continue;
-                if (nextchar == END_OBJECT) break;
-                throw new FormatException();
+                while (true)
+                {
+                    string name = JString.Parse(reader).Value;
+                    if (obj.properties.ContainsKey(name)) throw new FormatException();
+                    SkipSpace(reader);
+                    if (reader.Read() != NAME_SEPARATOR) throw new FormatException();
+                    JObject value = Parse(reader, max_nest - 1);
+                    obj.properties.Add(name, value);
+                    SkipSpace(reader);
+                    char nextchar = (char)reader.Read();
+                    if (nextchar == VALUE_SEPARATOR) continue;
+                    if (nextchar == END_OBJECT) break;
+                    throw new FormatException();
+                }
+            }
+            else
+            {
+                reader.Read();
             }
             return obj;
         }

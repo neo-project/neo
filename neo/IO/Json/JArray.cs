@@ -98,15 +98,23 @@ namespace Neo.IO.Json
             SkipSpace(reader);
             if (reader.Read() != BEGIN_ARRAY) throw new FormatException();
             JArray array = new JArray();
-            while (true)
+            SkipSpace(reader);
+            if (reader.Peek() != END_ARRAY)
             {
-                JObject obj = JObject.Parse(reader, max_nest - 1);
-                array.items.Add(obj);
-                SkipSpace(reader);
-                char nextchar = (char)reader.Read();
-                if (nextchar == VALUE_SEPARATOR) continue;
-                if (nextchar == END_ARRAY) break;
-                throw new FormatException();
+                while (true)
+                {
+                    JObject obj = JObject.Parse(reader, max_nest - 1);
+                    array.items.Add(obj);
+                    SkipSpace(reader);
+                    char nextchar = (char)reader.Read();
+                    if (nextchar == VALUE_SEPARATOR) continue;
+                    if (nextchar == END_ARRAY) break;
+                    throw new FormatException();
+                }
+            }
+            else
+            {
+                reader.Read();
             }
             return array;
         }
