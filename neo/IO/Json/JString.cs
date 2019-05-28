@@ -42,7 +42,7 @@ namespace Neo.IO.Json
             while (true)
             {
                 char c = (char)reader.Read();
-                if (c == ushort.MaxValue) throw new FormatException();
+                if (c == char.MaxValue) throw new FormatException();
                 if (c == firstChar) break;
                 if (c == '\\')
                 {
