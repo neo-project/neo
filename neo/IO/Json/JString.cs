@@ -56,7 +56,7 @@ namespace Neo.IO.Json
                         case 't': c = '\t'; break;
                         case 'u':
                             reader.Read(buffer, 0, buffer.Length);
-                            c = (char)short.Parse(new string(buffer), NumberStyles.HexNumber);
+                            c = short.Parse(new string(buffer), NumberStyles.HexNumber);
                             break;
                         default: throw new FormatException();
                     }
@@ -65,7 +65,7 @@ namespace Neo.IO.Json
                 {
                     throw new FormatException();
                 }
-                sb.Append(c);
+                sb.Append((char)c);
             }
             return new JString(sb.ToString());
         }
