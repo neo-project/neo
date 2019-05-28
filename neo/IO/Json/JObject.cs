@@ -102,6 +102,7 @@ namespace Neo.IO.Json
             while (true)
             {
                 string name = JString.Parse(reader).Value;
+                if (obj.properties.ContainsKey(name)) throw new FormatException();
                 SkipSpace(reader);
                 if (reader.Read() != NAME_SEPARATOR) throw new FormatException();
                 JObject value = Parse(reader, max_nest - 1);
