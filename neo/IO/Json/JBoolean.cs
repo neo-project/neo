@@ -30,29 +30,30 @@ namespace Neo.IO.Json
         internal static JBoolean Parse(TextReader reader)
         {
             SkipSpace(reader);
-            char firstChar = (char)reader.Read();
-            if (firstChar == 't')
-            {
-                int c2 = reader.Read();
-                int c3 = reader.Read();
-                int c4 = reader.Read();
-                if (c2 == 'r' && c3 == 'u' && c4 == 'e')
-                {
-                    return new JBoolean(true);
-                }
-            }
-            else if (firstChar == 'f')
-            {
-                int c2 = reader.Read();
-                int c3 = reader.Read();
-                int c4 = reader.Read();
-                int c5 = reader.Read();
-                if (c2 == 'a' && c3 == 'l' && c4 == 's' && c5 == 'e')
-                {
-                    return new JBoolean(false);
-                }
-            }
+            char firstChar = (char)reader.Peek();
+            if (firstChar == LITERAL_FALSE[0])
+                return ParseFalse(reader);
+            else if (firstChar == LITERAL_TRUE[0])
+                return ParseTrue(reader);
             throw new FormatException();
+        }
+
+        internal static JBoolean ParseFalse(TextReader reader)
+        {
+            SkipSpace(reader);
+            for (int i = 0; i < LITERAL_FALSE.Length; i++)
+                if ((char)reader.Read() != LITERAL_FALSE[i])
+                    throw new FormatException();
+            return new JBoolean(false);
+        }
+
+        internal static JBoolean ParseTrue(TextReader reader)
+        {
+            SkipSpace(reader);
+            for (int i = 0; i < LITERAL_TRUE.Length; i++)
+                if ((char)reader.Read() != LITERAL_TRUE[i])
+                    throw new FormatException();
+            return new JBoolean(true);
         }
 
         public override string ToString()
