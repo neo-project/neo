@@ -98,20 +98,20 @@ namespace Neo.IO.Json
         {
             SkipSpace(reader);
             if (reader.Read() != BEGIN_OBJECT) throw new FormatException();
-            SkipSpace(reader);
             JObject obj = new JObject();
-            while (reader.Peek() != END_OBJECT)
+            while (true)
             {
-                if (reader.Peek() == VALUE_SEPARATOR) reader.Read();
-                SkipSpace(reader);
                 string name = JString.Parse(reader).Value;
                 SkipSpace(reader);
                 if (reader.Read() != NAME_SEPARATOR) throw new FormatException();
                 JObject value = Parse(reader, max_nest - 1);
                 obj.properties.Add(name, value);
                 SkipSpace(reader);
+                char nextchar = (char)reader.Read();
+                if (nextchar == VALUE_SEPARATOR) continue;
+                if (nextchar == END_OBJECT) break;
+                throw new FormatException();
             }
-            reader.Read();
             return obj;
         }
 

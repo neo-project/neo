@@ -95,19 +95,19 @@ namespace Neo.IO.Json
 
         internal new static JArray Parse(TextReader reader, int max_nest)
         {
-            if (max_nest < 0) throw new FormatException();
             SkipSpace(reader);
             if (reader.Read() != BEGIN_ARRAY) throw new FormatException();
-            SkipSpace(reader);
             JArray array = new JArray();
-            while (reader.Peek() != END_ARRAY)
+            while (true)
             {
-                if (reader.Peek() == VALUE_SEPARATOR) reader.Read();
                 JObject obj = JObject.Parse(reader, max_nest - 1);
                 array.items.Add(obj);
                 SkipSpace(reader);
+                char nextchar = (char)reader.Read();
+                if (nextchar == VALUE_SEPARATOR) continue;
+                if (nextchar == END_ARRAY) break;
+                throw new FormatException();
             }
-            reader.Read();
             return array;
         }
 
