@@ -35,35 +35,55 @@ namespace Neo.IO.Json
         {
             SkipSpace(reader);
             StringBuilder sb = new StringBuilder();
-            while (true)
+            char nextchar = (char)reader.Read();
+            if (nextchar == '-')
             {
-                char c = (char)reader.Peek();
-
-                if (c >= '0' && c <= '9')
-                {
-                    sb.Append(c);
-                    reader.Read();
-                }
-                else if (c == '+' || c == '-')
-                {
-                    if (sb.Length > 0) throw new FormatException("+ or - only could be the first character");
-
-                    sb.Append(c);
-                    reader.Read();
-                }
-                else if (c == '.')
-                {
-                    if (sb.Length == 0) throw new FormatException(". could not be the first character");
-                    if (sb.ToString().Contains(".")) throw new FormatException("Only one decimal separator is allowed");
-
-                    sb.Append(c);
-                    reader.Read();
-                }
-                else break;
+                sb.Append(nextchar);
+                nextchar = (char)reader.Read();
             }
-
-            if (sb.ToString().EndsWith(".")) throw new FormatException(". could not be the last character");
-
+            if (nextchar < '0' || nextchar > '9') throw new FormatException();
+            sb.Append(nextchar);
+            if (nextchar > '0')
+            {
+                while (true)
+                {
+                    char c = (char)reader.Peek();
+                    if (c < '0' || c > '9') break;
+                    sb.Append((char)reader.Read());
+                }
+            }
+            nextchar = (char)reader.Peek();
+            if (nextchar == '.')
+            {
+                sb.Append((char)reader.Read());
+                nextchar = (char)reader.Read();
+                if (nextchar < '0' || nextchar > '9') throw new FormatException();
+                sb.Append(nextchar);
+                while (true)
+                {
+                    nextchar = (char)reader.Peek();
+                    if (nextchar < '0' || nextchar > '9') break;
+                    sb.Append((char)reader.Read());
+                }
+            }
+            if (nextchar == 'e' || nextchar == 'E')
+            {
+                sb.Append((char)reader.Read());
+                nextchar = (char)reader.Read();
+                if (nextchar == '-' || nextchar == '+')
+                {
+                    sb.Append(nextchar);
+                    nextchar = (char)reader.Read();
+                }
+                if (nextchar < '0' || nextchar > '9') throw new FormatException();
+                sb.Append(nextchar);
+                while (true)
+                {
+                    nextchar = (char)reader.Peek();
+                    if (nextchar < '0' || nextchar > '9') break;
+                    sb.Append((char)reader.Read());
+                }
+            }
             return new JNumber(double.Parse(sb.ToString(), CultureInfo.InvariantCulture));
         }
 
