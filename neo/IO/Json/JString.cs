@@ -34,31 +34,36 @@ namespace Neo.IO.Json
         internal static JString Parse(TextReader reader)
         {
             SkipSpace(reader);
-            char firstChar = (char)reader.Read();
-            if (firstChar != '\"' && firstChar != '\'') throw new FormatException();
-
+            if (reader.Read() != QUOTATION_MARK) throw new FormatException();
             char[] buffer = new char[4];
             StringBuilder sb = new StringBuilder();
             while (true)
             {
-                char c = (char)reader.Read();
-                if (c == char.MaxValue) throw new FormatException();
-                if (c == firstChar) break;
+                int c = reader.Read();
+                if (c == QUOTATION_MARK) break;
                 if (c == '\\')
                 {
                     c = (char)reader.Read();
                     switch (c)
                     {
+                        case QUOTATION_MARK: c = QUOTATION_MARK; break;
+                        case '\\': c = '\\'; break;
+                        case '/': c = '/'; break;
+                        case 'b': c = '\b'; break;
+                        case 'f': c = '\f'; break;
+                        case 'n': c = '\n'; break;
+                        case 'r': c = '\r'; break;
+                        case 't': c = '\t'; break;
                         case 'u':
-                            reader.Read(buffer, 0, 4);
+                            reader.Read(buffer, 0, buffer.Length);
                             c = (char)short.Parse(new string(buffer), NumberStyles.HexNumber);
                             break;
-                        case 'r': c = '\r'; break;
-                        case 'n': c = '\n'; break;
-                        case 't': c = '\t'; break;
-                        case 'f': c = '\f'; break;
-                        case 'b': c = '\b'; break;
+                        default: throw new FormatException();
                     }
+                }
+                else if (c < ' ' || c == -1)
+                {
+                    throw new FormatException();
                 }
                 sb.Append(c);
             }
@@ -67,7 +72,7 @@ namespace Neo.IO.Json
 
         public override string ToString()
         {
-            return $"\"{JavaScriptEncoder.Default.Encode(Value)}\"";
+            return $"{QUOTATION_MARK}{JavaScriptEncoder.Default.Encode(Value)}{QUOTATION_MARK}";
         }
 
         public override T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false)

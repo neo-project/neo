@@ -13,6 +13,7 @@ namespace Neo.IO.Json
         protected const char END_OBJECT = '}';
         protected const char NAME_SEPARATOR = ':';
         protected const char VALUE_SEPARATOR = ',';
+        protected const char QUOTATION_MARK = '"';
         protected const string WS = " \t\n\r";
         protected const string LITERAL_FALSE = "false";
         protected const string LITERAL_NULL = "null";
@@ -73,7 +74,7 @@ namespace Neo.IO.Json
                 return JArray.Parse(reader, max_nest);
             if ((firstChar >= '0' && firstChar <= '9') || firstChar == '-')
                 return JNumber.Parse(reader);
-            if (firstChar == '\"' || firstChar == '\'')
+            if (firstChar == QUOTATION_MARK)
                 return JString.Parse(reader);
             throw new FormatException();
         }
@@ -130,9 +131,7 @@ namespace Neo.IO.Json
             sb.Append(BEGIN_OBJECT);
             foreach (KeyValuePair<string, JObject> pair in properties)
             {
-                sb.Append('"');
-                sb.Append(pair.Key);
-                sb.Append('"');
+                sb.Append((JObject)pair.Key);
                 sb.Append(NAME_SEPARATOR);
                 if (pair.Value == null)
                 {
