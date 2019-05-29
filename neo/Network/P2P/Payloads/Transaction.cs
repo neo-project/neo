@@ -35,6 +35,8 @@ namespace Neo.Network.P2P.Payloads
         public TransactionAttribute[] Attributes;
         public Witness Witness { get; set; }
 
+        public long AvailableGas;
+
         /// <summary>
         /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
         /// <para>Note that this property must be used with care. Getting the value of this property multiple times will return the same result. The value of this property can only be obtained after the transaction has been completely built (no longer modified).</para>
@@ -206,11 +208,15 @@ namespace Neo.Network.P2P.Payloads
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Contains(Sender))
                 return false;
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
-            BigInteger fee = Gas + NetworkFee;
+            var fee = Gas + NetworkFee;
             if (balance < fee) return false;
             fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Sum(p => p.Gas + p.NetworkFee);
             if (balance < fee) return false;
-            return this.VerifyWitness(snapshot, VerificationGasLimited);
+
+            AvailableGas = Gas;
+            var ret = this.VerifyWitness(snapshot, ref AvailableGas);
+
+            return ret;
         }
     }
 }

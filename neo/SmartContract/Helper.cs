@@ -246,7 +246,7 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Default.Hash160(script));
         }
 
-        internal static bool VerifyWitness(this IVerifiable verifiable, Snapshot snapshot, long gas)
+        internal static bool VerifyWitness(this IVerifiable verifiable, Snapshot snapshot, ref long availableGas)
         {
             UInt160 hash;
             try
@@ -267,12 +267,14 @@ namespace Neo.SmartContract
             {
                 if (hash != verifiable.Witness.ScriptHash) return false;
             }
-            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
+            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, availableGas))
             {
                 engine.LoadScript(verification);
                 engine.LoadScript(verifiable.Witness.InvocationScript);
                 if (engine.Execute().HasFlag(VMState.FAULT)) return false;
                 if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
+
+                availableGas -= engine.GasConsumed;
             }
             return true;
         }

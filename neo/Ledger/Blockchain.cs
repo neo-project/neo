@@ -433,7 +433,7 @@ namespace Neo.Ledger
                         BlockIndex = block.Index,
                         Transaction = tx
                     });
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.Gas))
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.AvailableGas))
                     {
                         engine.LoadScript(tx.Script);
                         if (!engine.Execute().HasFlag(VMState.FAULT))
