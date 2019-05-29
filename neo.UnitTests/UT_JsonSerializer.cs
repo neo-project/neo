@@ -4,6 +4,8 @@ using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Linq;
+using System.Numerics;
 
 namespace Neo.UnitTests
 {
@@ -227,26 +229,32 @@ namespace Neo.UnitTests
         {
             var entry = new Map
             {
-                ["test"] = 123
+                ["test1"] = 123,
+                ["test2"] = 321
             };
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "{\"test\":123}");
+            Assert.AreEqual(json, "{\"test1\":123,\"test2\":321}");
         }
 
         [TestMethod]
         public void Deserialize_Map_Test()
         {
-            var items = JsonSerializer.Deserialize(JObject.Parse("{\"test\":123}"));
+            var items = JsonSerializer.Deserialize(JObject.Parse("{\"test1\":123,\"test2\":321}"));
 
             Assert.IsInstanceOfType(items, typeof(Map));
-            Assert.AreEqual(((Map)items).Count, 1);
+            Assert.AreEqual(((Map)items).Count, 2);
 
             var map = (Map)items;
 
-            Assert.IsTrue(map.TryGetValue("test", out var value));
+            Assert.IsTrue(map.TryGetValue("test1", out var value));
             Assert.AreEqual(value.GetBigInteger(), 123);
+
+            Assert.IsTrue(map.TryGetValue("test2", out value));
+            Assert.AreEqual(value.GetBigInteger(), 321);
+
+            CollectionAssert.AreEqual(map.Values.Select(u => u.GetBigInteger()).ToArray(), new BigInteger[] { 123, 321 });
         }
 
         [TestMethod]
@@ -279,21 +287,22 @@ namespace Neo.UnitTests
         {
             var entry = new VM.Types.Array
             {
-                new VM.Types.Array { true, "test", 123 }
+                new VM.Types.Array { true, "test1", 123 },
+                new VM.Types.Array { true, "test2", 321 }
             };
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "[[true,\"test\",123]]");
+            Assert.AreEqual(json, "[[true,\"test1\",123],[true,\"test2\",321]]");
         }
 
         [TestMethod]
         public void Deserialize_Array_OfArray()
         {
-            var items = JsonSerializer.Deserialize(JObject.Parse("[[true,\"test\",123]]"));
+            var items = JsonSerializer.Deserialize(JObject.Parse("[[true,\"test1\",123],[true,\"test2\",321]]"));
 
             Assert.IsInstanceOfType(items, typeof(VM.Types.Array));
-            Assert.AreEqual(((VM.Types.Array)items).Count, 1);
+            Assert.AreEqual(((VM.Types.Array)items).Count, 2);
 
             var array = (VM.Types.Array)items;
 
@@ -301,10 +310,19 @@ namespace Neo.UnitTests
             Assert.AreEqual(((VM.Types.Array)array[0]).Count, 3);
 
             array = (VM.Types.Array)array[0];
+            Assert.AreEqual(array.Count, 3);
 
             Assert.IsTrue(array[0].GetBoolean());
-            Assert.AreEqual(array[1].GetString(), "test");
+            Assert.AreEqual(array[1].GetString(), "test1");
             Assert.AreEqual(array[2].GetBigInteger(), 123);
+
+            array = (VM.Types.Array)items;
+            array = (VM.Types.Array)array[1];
+            Assert.AreEqual(array.Count, 3);
+
+            Assert.IsTrue(array[0].GetBoolean());
+            Assert.AreEqual(array[1].GetString(), "test2");
+            Assert.AreEqual(array[2].GetBigInteger(), 321);
         }
     }
 }
