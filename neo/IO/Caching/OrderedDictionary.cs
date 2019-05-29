@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Neo.IO.Caching
 {
-    internal class OrderedDictionary<TKey, TValue> : IDictionary<TKey, TValue>
+    public class OrderedDictionary<TKey, TValue> : IDictionary<TKey, TValue>
     {
         private class TItem
         {

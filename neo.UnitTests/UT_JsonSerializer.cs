@@ -229,13 +229,14 @@ namespace Neo.UnitTests
         {
             var entry = new Map
             {
-                ["test1"] = 123,
-                ["test2"] = 321
+                ["test1"] = 1,
+                ["test3"] = 3,
+                ["test2"] = 2
             };
 
             var json = JsonSerializer.Serialize(entry).ToString();
 
-            Assert.AreEqual(json, "{\"test1\":123,\"test2\":321}");
+            Assert.AreEqual(json, "{\"test1\":1,\"test3\":3,\"test2\":2}");
         }
 
         [TestMethod]
