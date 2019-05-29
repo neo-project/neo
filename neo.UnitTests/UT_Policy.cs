@@ -30,7 +30,7 @@ namespace Neo.UnitTests
             var snapshot = Store.GetSnapshot().Clone();
             var keyCount = snapshot.Storages.GetChangeSet().Count();
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
+            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, new GasControl(0))).Should().BeTrue();
 
             (keyCount + 5).Should().Be(snapshot.Storages.GetChangeSet().Count());
 
@@ -65,7 +65,7 @@ namespace Neo.UnitTests
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
+            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, new GasControl(0))).Should().BeTrue();
 
             // Without signature
 
@@ -100,7 +100,7 @@ namespace Neo.UnitTests
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
+            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, new GasControl(0))).Should().BeTrue();
 
             // Without signature
 
@@ -135,7 +135,7 @@ namespace Neo.UnitTests
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
+            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, new GasControl(0))).Should().BeTrue();
 
             // Without signature
 
@@ -170,7 +170,7 @@ namespace Neo.UnitTests
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
+            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, new GasControl(0))).Should().BeTrue();
 
             // Without signature
 
@@ -205,7 +205,7 @@ namespace Neo.UnitTests
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
+            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, new GasControl(0))).Should().BeTrue();
 
             // Block without signature
 

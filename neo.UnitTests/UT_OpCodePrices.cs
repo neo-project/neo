@@ -12,7 +12,7 @@ namespace Neo.UnitTests
         public void AllOpcodePriceAreSet()
         {
             foreach (OpCode opcode in Enum.GetValues(typeof(OpCode)))
-                Assert.IsTrue(ApplicationEngine.OpCodePrices.ContainsKey(opcode));
+                Assert.IsTrue(GasControl.OpCodePrices.ContainsKey(opcode));
         }
     }
 }

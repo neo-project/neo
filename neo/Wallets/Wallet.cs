@@ -97,7 +97,7 @@ namespace Neo.Wallets
                 sb.EmitAppCall(asset_id, "decimals");
                 script = sb.ToArray();
             }
-            ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: 20000000L * accounts.Length);
+            ApplicationEngine engine = ApplicationEngine.Run(script, control: new GasControl(20000000L * accounts.Length));
             if (engine.State.HasFlag(VMState.FAULT))
                 return new BigDecimal(0, 0);
             byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();

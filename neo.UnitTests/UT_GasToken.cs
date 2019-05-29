@@ -50,7 +50,7 @@ namespace Neo.UnitTests
 
             var keyCount = snapshot.Storages.GetChangeSet().Count();
 
-            NativeContract.NEO.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
+            NativeContract.NEO.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, new GasControl(0)));
             var supply = NativeContract.GAS.TotalSupply(snapshot);
             supply.Should().Be(0);
 
@@ -97,7 +97,7 @@ namespace Neo.UnitTests
 
             // Burn
 
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0);
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, new GasControl(0));
             keyCount = snapshot.Storages.GetChangeSet().Count();
 
             Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
@@ -132,7 +132,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Check_BadScript()
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), 0);
+            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), new GasControl(0));
 
             var script = new ScriptBuilder();
             script.Emit(OpCode.NOP);

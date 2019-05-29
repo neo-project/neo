@@ -15,7 +15,7 @@ namespace Neo.UnitTests.Extensions
 
         public static StackItem Call(this NativeContract contract, Persistence.Snapshot snapshot, IVerifiable container, string method, params ContractParameter[] args)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, container, snapshot, 0, true);
+            var engine = new ApplicationEngine(TriggerType.Application, container, snapshot, new GasControl(0, true));
 
             engine.LoadScript(contract.Script);
 

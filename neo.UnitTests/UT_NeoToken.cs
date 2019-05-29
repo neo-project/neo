@@ -213,7 +213,7 @@ namespace Neo.UnitTests
 
             // Check double call
 
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, new GasControl(0, true));
 
             engine.LoadScript(NativeContract.NEO.Script);
 
@@ -225,7 +225,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Check_BadScript()
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), 0);
+            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), new GasControl(0));
 
             var script = new ScriptBuilder();
             script.Emit(OpCode.NOP);
@@ -237,7 +237,7 @@ namespace Neo.UnitTests
         internal static (bool State, bool Result) Check_Vote(Snapshot snapshot, byte[] account, byte[][] pubkeys, bool signAccount)
         {
             var engine = new ApplicationEngine(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(signAccount ? new UInt160(account) : UInt160.Zero), snapshot, 0, true);
+                new Nep5NativeContractExtensions.ManualWitness(signAccount ? new UInt160(account) : UInt160.Zero), snapshot, new GasControl(0, true));
 
             engine.LoadScript(NativeContract.NEO.Script);
 
@@ -266,7 +266,7 @@ namespace Neo.UnitTests
 
         internal static (bool State, bool Result) Check_RegisterValidator(Snapshot snapshot, byte[] pubkey)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, new GasControl(0, true));
 
             engine.LoadScript(NativeContract.NEO.Script);
 
@@ -290,7 +290,7 @@ namespace Neo.UnitTests
 
         internal static ECPoint[] Check_GetValidators(Snapshot snapshot)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, new GasControl(0, true));
 
             engine.LoadScript(NativeContract.NEO.Script);
 
@@ -310,7 +310,7 @@ namespace Neo.UnitTests
 
         internal static (BigInteger Value, bool State) Check_UnclaimedGas(Snapshot snapshot, byte[] address)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, 0, true);
+            var engine = new ApplicationEngine(TriggerType.Application, null, snapshot, new GasControl(0, true));
 
             engine.LoadScript(NativeContract.NEO.Script);
 

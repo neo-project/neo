@@ -74,11 +74,16 @@ namespace Neo.Network.RPC
 
         private JObject GetInvokeResult(byte[] script)
         {
-            ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: MaxGasInvoke);
+            ApplicationEngine engine = ApplicationEngine.Run(script, control: new GasControl(MaxGasInvoke));
             JObject json = new JObject();
             json["script"] = script.ToHexString();
             json["state"] = engine.State;
-            json["gas_consumed"] = engine.GasConsumed.ToString();
+
+            if (engine.Control is GasControl gas)
+            {
+                json["gas_consumed"] = gas.GasConsumed.ToString();
+            }
+
             try
             {
                 json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));

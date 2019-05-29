@@ -12,26 +12,22 @@ namespace Neo.SmartContract
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
 
-        public const long GasFree = 0;
-        private readonly long gas_amount;
-        private readonly bool testMode;
         private readonly RandomAccessStack<UInt160> hashes = new RandomAccessStack<UInt160>();
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly List<IDisposable> disposables = new List<IDisposable>();
 
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
+        public IExecutionControl Control { get; }
         public Snapshot Snapshot { get; }
-        public long GasConsumed { get; private set; } = 0;
         public UInt160 CurrentScriptHash => hashes.Count > 0 ? hashes.Peek() : null;
         public UInt160 CallingScriptHash => hashes.Count > 1 ? hashes.Peek(1) : null;
         public UInt160 EntryScriptHash => hashes.Count > 0 ? hashes.Peek(hashes.Count - 1) : null;
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
 
-        public ApplicationEngine(TriggerType trigger, IVerifiable container, Snapshot snapshot, long gas, bool testMode = false)
+        public ApplicationEngine(TriggerType trigger, IVerifiable container, Snapshot snapshot, IExecutionControl control = null)
         {
-            this.gas_amount = GasFree + gas;
-            this.testMode = testMode;
+            this.Control = control;
             this.Trigger = trigger;
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
@@ -43,12 +39,6 @@ namespace Neo.SmartContract
         {
             disposables.Add(disposable);
             return disposable;
-        }
-
-        private bool AddGas(long gas)
-        {
-            GasConsumed = checked(GasConsumed + gas);
-            return testMode || GasConsumed <= gas_amount;
         }
 
         private void ApplicationEngine_ContextLoaded(object sender, ExecutionContext e)
@@ -71,8 +61,8 @@ namespace Neo.SmartContract
 
         protected override bool OnSysCall(uint method)
         {
-            if (!AddGas(InteropService.GetPrice(method, CurrentContext.EvaluationStack)))
-                return false;
+            if (Control != null && !Control.OnSysCall(method, this)) return false;
+
             return InteropService.Invoke(this, method);
         }
 
@@ -80,11 +70,12 @@ namespace Neo.SmartContract
         {
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
                 return true;
-            return AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+
+            return Control == null || Control.OnPreExecute(CurrentContext.CurrentInstruction.OpCode);
         }
 
         public static ApplicationEngine Run(byte[] script, Snapshot snapshot,
-            IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
+            IVerifiable container = null, Block persistingBlock = null, IExecutionControl control = null)
         {
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? new Block
             {
@@ -102,17 +93,17 @@ namespace Neo.SmartContract
                 ConsensusData = new ConsensusData(),
                 Transactions = new Transaction[0]
             };
-            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, extraGAS, testMode);
+            ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, control);
             engine.LoadScript(script);
             engine.Execute();
             return engine;
         }
 
-        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
+        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, IExecutionControl control = null)
         {
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                return Run(script, snapshot, container, persistingBlock, testMode, extraGAS);
+                return Run(script, snapshot, container, persistingBlock, control);
             }
         }
 

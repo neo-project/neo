@@ -78,15 +78,16 @@ namespace Neo.Network.P2P.Payloads
             };
             _hash = null;
             long consumed;
-            using (ApplicationEngine engine = ApplicationEngine.Run(Script, this))
+            using (ApplicationEngine engine = ApplicationEngine.Run(Script, this, control: new GasControl(0, true)))
             {
                 if (engine.State.HasFlag(VMState.FAULT))
                     throw new InvalidOperationException();
-                consumed = engine.GasConsumed;
+
+                consumed = (engine.Control as GasControl).GasConsumed;
             }
             _hash = null;
             long d = (long)NativeContract.GAS.Factor;
-            Gas = consumed - ApplicationEngine.GasFree;
+            Gas = consumed - GasControl.GasFree;
             if (Gas <= 0)
             {
                 Gas = 0;

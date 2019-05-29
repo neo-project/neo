@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Neo.SmartContract
 {
-    partial class ApplicationEngine
+    partial class GasControl
     {
         public static readonly IReadOnlyDictionary<OpCode, long> OpCodePrices = new Dictionary<OpCode, long>
         {

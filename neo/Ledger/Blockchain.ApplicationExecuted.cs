@@ -21,9 +21,11 @@ namespace Neo.Ledger
                 Transaction = engine.ScriptContainer as Transaction;
                 Trigger = engine.Trigger;
                 VMState = engine.State;
-                GasConsumed = engine.GasConsumed;
                 Stack = engine.ResultStack.ToArray();
                 Notifications = engine.Notifications.ToArray();
+
+                if (engine.Control is GasControl gas) GasConsumed = gas.GasConsumed;
+                else GasConsumed = 0;
             }
         }
     }
