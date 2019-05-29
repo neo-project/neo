@@ -23,7 +23,7 @@ namespace Neo.IO.Json
         public override double AsNumber()
         {
             if (string.IsNullOrEmpty(Value)) return 0;
-            return double.TryParse(Value, out double result) ? result : double.NaN;
+            return double.TryParse(Value, NumberStyles.Float, CultureInfo.InvariantCulture, out double result) ? result : double.NaN;
         }
 
         public override string AsString()

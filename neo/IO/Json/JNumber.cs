@@ -84,7 +84,7 @@ namespace Neo.IO.Json
                     sb.Append((char)reader.Read());
                 }
             }
-            return new JNumber(double.Parse(sb.ToString(), CultureInfo.InvariantCulture));
+            return new JNumber(double.Parse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture));
         }
 
         public override string ToString()
