@@ -83,7 +83,10 @@ namespace Neo.IO.Json
         {
             using (StringReader reader = new StringReader(value))
             {
-                return Parse(reader, max_nest);
+                JObject json = Parse(reader, max_nest);
+                SkipSpace(reader);
+                if (reader.Read() != -1) throw new FormatException();
+                return json;
             }
         }
 
