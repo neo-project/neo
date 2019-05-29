@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Neo.IO.Caching;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -20,22 +21,20 @@ namespace Neo.IO.Json
         protected const string LITERAL_TRUE = "true";
 
         public static readonly JObject Null = null;
-        private readonly Dictionary<string, JObject> properties = new Dictionary<string, JObject>();
+        public OrderedDictionary<string, JObject> Properties { get; } = new OrderedDictionary<string, JObject>();
 
         public JObject this[string name]
         {
             get
             {
-                properties.TryGetValue(name, out JObject value);
+                Properties.TryGetValue(name, out JObject value);
                 return value;
             }
             set
             {
-                properties[name] = value;
+                Properties[name] = value;
             }
         }
-
-        public IReadOnlyDictionary<string, JObject> Properties => properties;
 
         public virtual bool AsBoolean()
         {
@@ -54,7 +53,7 @@ namespace Neo.IO.Json
 
         public bool ContainsProperty(string key)
         {
-            return properties.ContainsKey(key);
+            return Properties.ContainsKey(key);
         }
 
         public static JObject Parse(TextReader reader, int max_nest = 100)
@@ -109,11 +108,11 @@ namespace Neo.IO.Json
                 while (true)
                 {
                     string name = JString.Parse(reader).Value;
-                    if (obj.properties.ContainsKey(name)) throw new FormatException();
+                    if (obj.Properties.ContainsKey(name)) throw new FormatException();
                     SkipSpace(reader);
                     if (reader.Read() != NAME_SEPARATOR) throw new FormatException();
                     JObject value = Parse(reader, max_nest - 1);
-                    obj.properties.Add(name, value);
+                    obj.Properties.Add(name, value);
                     SkipSpace(reader);
                     char nextchar = (char)reader.Read();
                     if (nextchar == VALUE_SEPARATOR) continue;
@@ -140,7 +139,7 @@ namespace Neo.IO.Json
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(BEGIN_OBJECT);
-            foreach (KeyValuePair<string, JObject> pair in properties)
+            foreach (KeyValuePair<string, JObject> pair in Properties)
             {
                 sb.Append((JObject)pair.Key);
                 sb.Append(NAME_SEPARATOR);
@@ -154,7 +153,7 @@ namespace Neo.IO.Json
                 }
                 sb.Append(VALUE_SEPARATOR);
             }
-            if (properties.Count == 0)
+            if (Properties.Count == 0)
             {
                 sb.Append(END_OBJECT);
             }
