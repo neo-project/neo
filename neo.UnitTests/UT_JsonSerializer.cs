@@ -19,6 +19,9 @@ namespace Neo.UnitTests
             json = "{   }XXXXXXX";
             Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
 
+            json = "[,,,,]";
+            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+
             json = "false,X";
             Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
 
@@ -117,6 +120,11 @@ namespace Neo.UnitTests
             Assert.AreEqual(@"["""",""\b\f\t\n\r\/\\""]", parsed.ToString());
 
             json = @"[""\uD834\uDD1E""]";
+            parsed = JObject.Parse(json);
+
+            Assert.AreEqual(json, parsed.ToString());
+
+            json = @"[""\\x00""]";
             parsed = JObject.Parse(json);
 
             Assert.AreEqual(json, parsed.ToString());
