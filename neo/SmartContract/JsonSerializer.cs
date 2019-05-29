@@ -11,9 +11,6 @@ namespace Neo.SmartContract
 {
     public static class JsonSerializer
     {
-        private static readonly BigInteger MAX_SAFE_INTEGER = BigInteger.Pow(2, 53) - 1;
-        private static readonly BigInteger MIN_SAFE_INTEGER = -MAX_SAFE_INTEGER;
-
         /// <summary>
         /// Convert stack item in json
         /// </summary>
@@ -34,7 +31,7 @@ namespace Neo.SmartContract
                 case Integer num:
                     {
                         var integer = num.GetBigInteger();
-                        if (integer > MAX_SAFE_INTEGER || integer < MIN_SAFE_INTEGER)
+                        if (integer > JNumber.MAX_SAFE_INTEGER || integer < JNumber.MIN_SAFE_INTEGER)
                             return integer.ToString();
                         return (double)num.GetBigInteger();
                     }

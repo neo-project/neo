@@ -7,6 +7,9 @@ namespace Neo.IO.Json
 {
     public class JNumber : JObject
     {
+        public static readonly long MAX_SAFE_INTEGER = (long)Math.Pow(2, 53) - 1;
+        public static readonly long MIN_SAFE_INTEGER = -MAX_SAFE_INTEGER;
+
         public double Value { get; private set; }
 
         public JNumber(double value = 0)
@@ -84,7 +87,13 @@ namespace Neo.IO.Json
                     sb.Append((char)reader.Read());
                 }
             }
-            return new JNumber(double.Parse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture));
+
+            var value = double.Parse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture);
+
+            if (value > MAX_SAFE_INTEGER || value < MIN_SAFE_INTEGER)
+                throw new FormatException();
+
+            return new JNumber(value);
         }
 
         public override string ToString()
