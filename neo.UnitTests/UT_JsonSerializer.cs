@@ -163,6 +163,9 @@ namespace Neo.UnitTests
             json = @"{""a"":}";
             Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
 
+            json = @"{NULL}";
+            Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
+
             json = @"[""a"":]";
             Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
         }
