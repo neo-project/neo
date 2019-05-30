@@ -23,19 +23,22 @@ namespace Neo.Network.P2P.Payloads
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
         private const int MaxTransactionAttributes = 16;
-        private const long VerificationGasLimited = 0_10000000;
 
         public byte Version;
         public uint Nonce;
         public byte[] Script;
         public UInt160 Sender;
+        /// <summary>
+        /// Distributed to NEO holders.
+        /// </summary>
         public long Gas;
+        /// <summary>
+        /// Distributed to consensus nodes.
+        /// </summary>
         public long NetworkFee;
         public uint ValidUntilBlock;
         public TransactionAttribute[] Attributes;
         public Witness Witness { get; set; }
-
-        public long AvailableGas;
 
         /// <summary>
         /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
@@ -213,10 +216,7 @@ namespace Neo.Network.P2P.Payloads
             fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Sum(p => p.Gas + p.NetworkFee);
             if (balance < fee) return false;
 
-            AvailableGas = Gas;
-            var ret = this.VerifyWitness(snapshot, ref AvailableGas);
-
-            return ret;
+            return this.VerifyWitness(snapshot, NetworkFee);
         }
     }
 }
