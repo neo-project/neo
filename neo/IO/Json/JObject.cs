@@ -21,7 +21,7 @@ namespace Neo.IO.Json
         protected const string LITERAL_TRUE = "true";
 
         public static readonly JObject Null = null;
-        public OrderedDictionary<string, JObject> Properties { get; } = new OrderedDictionary<string, JObject>();
+        public IDictionary<string, JObject> Properties { get; } = new OrderedDictionary<string, JObject>();
 
         public JObject this[string name]
         {
