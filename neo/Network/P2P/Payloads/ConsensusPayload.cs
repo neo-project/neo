@@ -109,7 +109,7 @@ namespace Neo.Network.P2P.Payloads
         {
             if (BlockIndex <= snapshot.Height)
                 return false;
-            return this.VerifyWitness(snapshot, 0_02000000L);
+            return this.VerifyWitness(snapshot, 0_02000000);
         }
     }
 }
