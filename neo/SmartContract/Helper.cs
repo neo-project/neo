@@ -248,6 +248,8 @@ namespace Neo.SmartContract
 
         internal static bool VerifyWitness(this IVerifiable verifiable, Snapshot snapshot, long gas)
         {
+            if (gas < 0) return false;
+
             UInt160 hash;
             try
             {
