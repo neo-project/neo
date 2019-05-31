@@ -74,7 +74,6 @@ namespace Neo.UnitTests
             buffer.Count.Should().Be(length);
         }
 
-
         [TestMethod]
         public void Compression()
         {
@@ -111,7 +110,6 @@ namespace Neo.UnitTests
             payloadCopy.Capabilities.Length.Should().Be(1);
             ((ServerCapability)payloadCopy.Capabilities[0]).Type.Should().Be(NodeCapabilityType.TcpServer);
             ((ServerCapability)payloadCopy.Capabilities[0]).Port.Should().Be(25);
-
         }
     }
 }
