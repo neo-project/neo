@@ -78,12 +78,8 @@ namespace Neo.UnitTests
         {
             Header newHeader = new Header();
             UInt256 prevHash = new UInt256(TestUtils.GetByteArray(32, 0x42));
-            UInt256 merkRoot;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            Witness scriptVal;
-            TestUtils.SetupHeaderWithValues(newHeader, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out scriptVal);
-            TestUtils.SetupHeaderWithValues(uut, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out scriptVal);
+            TestUtils.SetupHeaderWithValues(newHeader, prevHash, out _, out _, out _, out _, out _);
+            TestUtils.SetupHeaderWithValues(uut, prevHash, out _, out _, out _, out _, out _);
 
             uut.Equals(newHeader).Should().BeTrue();
         }

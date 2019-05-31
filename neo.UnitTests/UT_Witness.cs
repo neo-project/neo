@@ -71,7 +71,6 @@ namespace Neo.UnitTests
             Assert.IsTrue(json.ContainsProperty("verification"));
             Assert.AreEqual(json["invocation"].AsString(), "2020");
             Assert.AreEqual(json["verification"].AsString(), "202020");
-
         }
     }
 }
