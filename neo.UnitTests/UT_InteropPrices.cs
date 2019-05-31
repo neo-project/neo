@@ -1,9 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
-using Neo.SmartContract.Manifest;
 using Neo.VM;
-using System.Reflection;
 
 namespace Neo.UnitTests
 {
