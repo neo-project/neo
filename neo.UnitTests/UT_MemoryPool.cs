@@ -35,8 +35,6 @@ namespace Neo.UnitTests
             _unit.Count.ShouldBeEquivalentTo(0);
         }
 
-
-
         long LongRandom(long min, long max, Random rand)
         {
             // Only returns positive random long values.

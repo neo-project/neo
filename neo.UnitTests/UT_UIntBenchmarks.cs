@@ -67,14 +67,6 @@ namespace Neo.UnitTests
             return (elapsed, result);
         }
 
-        /* Could do this also so just pass the method to benchmark, but overhead of delegate call might affect benchmark
-        public delegate int ComparisonMethod(byte[] b1, byte[] b2);
-
-        public int BechmarkComparisonMethod(ComparisonMethod compareMethod)
-        {
-        }
-        */
-
         [TestMethod]
         public void Benchmark_CompareTo_UInt256()
         {
