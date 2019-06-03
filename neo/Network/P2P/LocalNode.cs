@@ -30,7 +30,7 @@ namespace Neo.Network.P2P
         public static readonly uint Nonce;
         public static string UserAgent { get; set; }
 
-        private static LocalNode singleton { get; set; }
+        private static LocalNode singleton;
         public static LocalNode Singleton
         {
             get
@@ -58,7 +58,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void BroadcastMessage(string command, ISerializable payload = null)
+        private void BroadcastMessage(MessageCommand command, ISerializable payload = null)
         {
             BroadcastMessage(Message.Create(command, payload));
         }
@@ -126,7 +126,7 @@ namespace Neo.Network.P2P
             count = Math.Max(count, 5);
             if (ConnectedPeers.Count > 0)
             {
-                BroadcastMessage("getaddr");
+                BroadcastMessage(MessageCommand.GetAddr);
             }
             else
             {

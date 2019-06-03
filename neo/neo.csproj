@@ -11,6 +11,7 @@
     <PackageId>Neo</PackageId>
     <PackageTags>NEO;AntShares;Blockchain;Smart Contract</PackageTags>
     <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/neo-project/neo.git</RepositoryUrl>
     <RootNamespace>Neo</RootNamespace>
@@ -21,13 +22,14 @@
 
   <ItemGroup>
     <PackageReference Include="Akka" Version="1.3.11" />
+    <PackageReference Include="K4os.Compression.LZ4" Version="1.1.3" />
     <PackageReference Include="Microsoft.AspNetCore.ResponseCompression" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel.Https" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="2.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.1.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
-    <PackageReference Include="Neo.VM" Version="2.4.1" />
+    <PackageReference Include="Neo.VM" Version="3.0.0-CI00013" />
     <PackageReference Include="System.Text.Encodings.Web" Version="4.5.0" />
   </ItemGroup>
 
