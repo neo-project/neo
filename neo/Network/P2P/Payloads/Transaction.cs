@@ -83,7 +83,7 @@ namespace Neo.Network.P2P.Payloads
             };
             _hash = null;
             long consumed;
-            using (ApplicationEngine engine = ApplicationEngine.Run(Script, this))
+            using (ApplicationEngine engine = ApplicationEngine.Run(Script, this, testMode: true))
             {
                 if (engine.State.HasFlag(VMState.FAULT))
                     throw new InvalidOperationException();
@@ -107,8 +107,32 @@ namespace Neo.Network.P2P.Payloads
             }
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {
+                // Compute verification gas
+
+                byte[] verification = Witness.VerificationScript;
+                if (verification.Length == 0)
+                {
+                    verification = snapshot.Contracts.TryGet(Sender)?.Script;
+                    if (verification is null) return;
+                }
+                else
+                {
+                    if (Sender != Witness.ScriptHash) return;
+                }
+
+                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, this, snapshot, 0, true))
+                {
+                    engine.LoadScript(verification);
+                    engine.LoadScript(Witness.InvocationScript);
+                    if (engine.Execute().HasFlag(VMState.FAULT)) return;
+                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return;
+                    consumed = engine.GasConsumed;
+                }
+
+                // Compute fee per byte
+
                 long feeperbyte = NativeContract.Policy.GetFeePerByte(snapshot);
-                long fee = feeperbyte * Size;
+                long fee = consumed + (feeperbyte * Size);
                 if (fee > NetworkFee)
                     NetworkFee = fee;
             }
