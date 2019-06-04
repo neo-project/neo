@@ -90,7 +90,7 @@ namespace Neo.Network.RPC
             return json;
         }
 
-        private static JObject GetRelayResult(RelayResultReason reason, UInt256 hash)
+        private static JObject GetRelayResult(RelayResultReason reason, string hashName, UInt256 hash)
         {
             switch (reason)
             {
@@ -98,7 +98,7 @@ namespace Neo.Network.RPC
                     {
                         var ret = new JObject();
                         ret["result"] = true;
-                        ret["hash"] = hash.ToString();
+                        ret[hashName] = hash.ToString();
                         return ret;
                     }
                 case RelayResultReason.AlreadyExists:
@@ -611,13 +611,13 @@ namespace Neo.Network.RPC
         private JObject SendRawTransaction(Transaction tx)
         {
             RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
-            return GetRelayResult(reason, tx.Hash);
+            return GetRelayResult(reason, "txid", tx.Hash);
         }
 
         private JObject SubmitBlock(Block block)
         {
             RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(block).Result;
-            return GetRelayResult(reason, block.Hash);
+            return GetRelayResult(reason, "hash", block.Hash);
         }
 
         private JObject ValidateAddress(string address)
