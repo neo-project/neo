@@ -1,10 +1,14 @@
-﻿using Neo.IO;
+﻿#pragma warning disable IDE0060
+
+using Neo.IO;
 using Neo.Ledger;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
@@ -12,6 +16,7 @@ namespace Neo.SmartContract.Native
     public abstract class NativeContract
     {
         private static readonly List<NativeContract> contracts = new List<NativeContract>();
+        private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
 
         public static IReadOnlyCollection<NativeContract> Contracts { get; } = contracts;
         public static NeoToken NEO { get; } = new NeoToken();
@@ -22,7 +27,7 @@ namespace Neo.SmartContract.Native
         public uint ServiceHash { get; }
         public byte[] Script { get; }
         public UInt160 Hash { get; }
-        public virtual ContractPropertyState Properties => ContractPropertyState.NoProperty;
+        public ContractManifest Manifest { get; }
         public virtual string[] SupportedStandards { get; } = { "NEP-10" };
 
         protected NativeContract()
@@ -34,6 +39,30 @@ namespace Neo.SmartContract.Native
                 this.Script = sb.ToArray();
             }
             this.Hash = Script.ToScriptHash();
+            this.Manifest = ContractManifest.CreateDefault(this.Hash);
+            List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
+            List<string> safeMethods = new List<string>();
+            foreach (MethodInfo method in GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+            {
+                ContractMethodAttribute attribute = method.GetCustomAttribute<ContractMethodAttribute>();
+                if (attribute is null) continue;
+                string name = attribute.Name ?? (method.Name.ToLower()[0] + method.Name.Substring(1));
+                descriptors.Add(new ContractMethodDescriptor
+                {
+                    Name = name,
+                    ReturnType = attribute.ReturnType,
+                    Parameters = attribute.ParameterTypes.Zip(attribute.ParameterNames, (t, n) => new ContractParameterDefinition { Type = t, Name = n }).ToArray()
+                });
+                if (attribute.SafeMethod) safeMethods.Add(name);
+                methods.Add(name, new ContractMethodMetadata
+                {
+                    Delegate = (Func<ApplicationEngine, VMArray, StackItem>)method.CreateDelegate(typeof(Func<ApplicationEngine, VMArray, StackItem>), this),
+                    Price = attribute.Price,
+                    AllowedTriggers = attribute.AllowedTriggers
+                });
+            }
+            this.Manifest.Abi.Methods = descriptors.ToArray();
+            this.Manifest.SafeMethods = WildCardContainer<string>.Create(safeMethods.ToArray());
             contracts.Add(this);
         }
 
@@ -61,21 +90,17 @@ namespace Neo.SmartContract.Native
                 return false;
             string operation = engine.CurrentContext.EvaluationStack.Pop().GetString();
             VMArray args = (VMArray)engine.CurrentContext.EvaluationStack.Pop();
-            StackItem result = Main(engine, operation, args);
+            if (!methods.TryGetValue(operation, out ContractMethodMetadata method))
+                return false;
+            if (!method.AllowedTriggers.HasFlag(engine.Trigger)) return false;
+            StackItem result = method.Delegate(engine, args);
             engine.CurrentContext.EvaluationStack.Push(result);
             return true;
         }
 
-        protected virtual StackItem Main(ApplicationEngine engine, string operation, VMArray args)
+        internal long GetPrice(RandomAccessStack<StackItem> stack)
         {
-            switch (operation)
-            {
-                case "onPersist":
-                    return OnPersist(engine);
-                case "supportedStandards":
-                    return SupportedStandards.Select(p => (StackItem)p).ToList();
-            }
-            throw new NotSupportedException();
+            return methods.TryGetValue(stack.Peek().GetString(), out ContractMethodMetadata method) ? method.Price : 0;
         }
 
         internal virtual bool Initialize(ApplicationEngine engine)
@@ -85,11 +110,21 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
+        [ContractMethod(0, ContractParameterType.Boolean, AllowedTriggers = TriggerType.System)]
+        protected StackItem OnPersist(ApplicationEngine engine, VMArray args)
+        {
+            return OnPersist(engine);
+        }
+
         protected virtual bool OnPersist(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.System)
-                throw new InvalidOperationException();
             return true;
+        }
+
+        [ContractMethod(0, ContractParameterType.Array, Name = "supportedStandards", SafeMethod = true)]
+        protected StackItem SupportedStandardsMethod(ApplicationEngine engine, VMArray args)
+        {
+            return SupportedStandards.Select(p => (StackItem)p).ToList();
         }
 
         public ApplicationEngine TestCall(string operation, params object[] args)

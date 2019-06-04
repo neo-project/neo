@@ -1,7 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO.Json;
 using Neo.IO;
+using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
 
 namespace Neo.UnitTests
@@ -55,12 +55,16 @@ namespace Neo.UnitTests
             uut.Script = TestUtils.GetByteArray(32, 0x42);
             uut.Sender = UInt160.Zero;
             uut.Attributes = new TransactionAttribute[0];
-            uut.Witnesses = new Witness[0];
+            uut.Witness = new Witness
+            {
+                InvocationScript = new byte[0],
+                VerificationScript = new byte[0]
+            };
 
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
             uut.Script.GetVarSize().Should().Be(33);
-            uut.Size.Should().Be(80);
+            uut.Size.Should().Be(81);
         }
 
         [TestMethod]
@@ -70,17 +74,19 @@ namespace Neo.UnitTests
             uut.Sender = UInt160.Zero;
             uut.Gas = 4200000000;
             uut.Attributes = new TransactionAttribute[0];
-            uut.Witnesses = new Witness[0];
+            uut.Witness = new Witness
+            {
+                InvocationScript = new byte[0],
+                VerificationScript = new byte[0]
+            };
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
             jObj["txid"].AsString().Should().Be("0x38274692538dfecaae36f8fd518d92bae25607d491c40a8f927cc06bd97ab2c8");
-            jObj["size"].AsNumber().Should().Be(80);
+            jObj["size"].AsNumber().Should().Be(81);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
             jObj["net_fee"].AsString().Should().Be("0");
-            ((JArray)jObj["witnesses"]).Count.Should().Be(0);
-
             jObj["script"].AsString().Should().Be("4220202020202020202020202020202020202020202020202020202020202020");
             jObj["gas"].AsNumber().Should().Be(42);
         }

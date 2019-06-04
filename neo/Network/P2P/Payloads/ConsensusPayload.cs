@@ -17,7 +17,7 @@ namespace Neo.Network.P2P.Payloads
         public uint BlockIndex;
         public ushort ValidatorIndex;
         public byte[] Data;
-        public Witness Witness;
+        public Witness Witness { get; set; }
 
         private ConsensusMessage _deserializedMessage = null;
         public ConsensusMessage ConsensusMessage
@@ -53,14 +53,6 @@ namespace Neo.Network.P2P.Payloads
 
         InventoryType IInventory.InventoryType => InventoryType.Consensus;
 
-        Witness[] IVerifiable.Witnesses
-        {
-            get
-            {
-                return new[] { Witness };
-            }
-        }
-
         public int Size =>
             sizeof(uint) +      //Version
             PrevHash.Size +     //PrevHash
@@ -68,7 +60,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(ushort) +    //ValidatorIndex
             sizeof(uint) +      //Timestamp
             Data.GetVarSize() + //Data
-            1 + Witness.Size;   //Witness
+            Witness.Size;       //Witness
 
         public T GetDeserializedMessage<T>() where T : ConsensusMessage
         {
@@ -78,7 +70,6 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(BinaryReader reader)
         {
             ((IVerifiable)this).DeserializeUnsigned(reader);
-            if (reader.ReadByte() != 1) throw new FormatException();
             Witness = reader.ReadSerializable<Witness>();
         }
 
@@ -91,18 +82,18 @@ namespace Neo.Network.P2P.Payloads
             Data = reader.ReadVarBytes();
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(Snapshot snapshot)
+        UInt160 IVerifiable.GetScriptHashForVerification(Snapshot snapshot)
         {
             ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(snapshot);
             if (validators.Length <= ValidatorIndex)
                 throw new InvalidOperationException();
-            return new[] { Contract.CreateSignatureRedeemScript(validators[ValidatorIndex]).ToScriptHash() };
+            return Contract.CreateSignatureRedeemScript(validators[ValidatorIndex]).ToScriptHash();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
-            writer.Write((byte)1); writer.Write(Witness);
+            writer.Write(Witness);
         }
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
@@ -118,7 +109,7 @@ namespace Neo.Network.P2P.Payloads
         {
             if (BlockIndex <= snapshot.Height)
                 return false;
-            return this.VerifyWitnesses(snapshot);
+            return this.VerifyWitness(snapshot, 0_02000000);
         }
     }
 }

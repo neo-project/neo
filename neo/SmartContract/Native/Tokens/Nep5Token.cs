@@ -1,7 +1,11 @@
-﻿using Neo.Ledger;
+﻿#pragma warning disable IDE0060
+
+using Neo.Ledger;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using VMArray = Neo.VM.Types.Array;
 
@@ -10,7 +14,6 @@ namespace Neo.SmartContract.Native.Tokens
     public abstract class Nep5Token<TState> : NativeContract
         where TState : Nep5AccountState, new()
     {
-        public override ContractPropertyState Properties => ContractPropertyState.HasStorage;
         public override string[] SupportedStandards { get; } = { "NEP-5", "NEP-10" };
         public abstract string Name { get; }
         public abstract string Symbol { get; }
@@ -23,32 +26,42 @@ namespace Neo.SmartContract.Native.Tokens
         protected Nep5Token()
         {
             this.Factor = BigInteger.Pow(10, Decimals);
+
+            Manifest.Features = ContractFeatures.HasStorage;
+
+            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
+            {
+                new ContractMethodDescriptor()
+                {
+                    Name = "Transfer",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "from",
+                            Type = ContractParameterType.Hash160
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "to",
+                            Type = ContractParameterType.Hash160
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "amount",
+                            Type = ContractParameterType.Integer
+                        }
+                    },
+                    ReturnType = ContractParameterType.Boolean
+                }
+            };
+
+            Manifest.Abi.Events = events.ToArray();
         }
 
         protected StorageKey CreateAccountKey(UInt160 account)
         {
             return CreateStorageKey(Prefix_Account, account);
-        }
-
-        protected override StackItem Main(ApplicationEngine engine, string operation, VMArray args)
-        {
-            switch (operation)
-            {
-                case "name":
-                    return Name;
-                case "symbol":
-                    return Symbol;
-                case "decimals":
-                    return (uint)Decimals;
-                case "totalSupply":
-                    return TotalSupply(engine.Snapshot);
-                case "balanceOf":
-                    return BalanceOf(engine.Snapshot, new UInt160(args[0].GetByteArray()));
-                case "transfer":
-                    return Transfer(engine, new UInt160(args[0].GetByteArray()), new UInt160(args[1].GetByteArray()), args[2].GetBigInteger());
-                default:
-                    return base.Main(engine, operation, args);
-            }
         }
 
         internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, BigInteger amount)
@@ -100,11 +113,41 @@ namespace Neo.SmartContract.Native.Tokens
             engine.SendNotification(Hash, new StackItem[] { "Transfer", account.ToArray(), StackItem.Null, amount });
         }
 
+        [ContractMethod(0, ContractParameterType.String, Name = "name", SafeMethod = true)]
+        protected StackItem NameMethod(ApplicationEngine engine, VMArray args)
+        {
+            return Name;
+        }
+
+        [ContractMethod(0, ContractParameterType.String, Name = "symbol", SafeMethod = true)]
+        protected StackItem SymbolMethod(ApplicationEngine engine, VMArray args)
+        {
+            return Symbol;
+        }
+
+        [ContractMethod(0, ContractParameterType.Integer, Name = "decimals", SafeMethod = true)]
+        protected StackItem DecimalsMethod(ApplicationEngine engine, VMArray args)
+        {
+            return (uint)Decimals;
+        }
+
+        [ContractMethod(0_01000000, ContractParameterType.Integer, SafeMethod = true)]
+        protected StackItem TotalSupply(ApplicationEngine engine, VMArray args)
+        {
+            return TotalSupply(engine.Snapshot);
+        }
+
         public virtual BigInteger TotalSupply(Snapshot snapshot)
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
             if (storage is null) return BigInteger.Zero;
             return new BigInteger(storage.Value);
+        }
+
+        [ContractMethod(0_01000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" }, SafeMethod = true)]
+        protected StackItem BalanceOf(ApplicationEngine engine, VMArray args)
+        {
+            return BalanceOf(engine.Snapshot, new UInt160(args[0].GetByteArray()));
         }
 
         public virtual BigInteger BalanceOf(Snapshot snapshot, UInt160 account)
@@ -115,9 +158,17 @@ namespace Neo.SmartContract.Native.Tokens
             return state.Balance;
         }
 
+        [ContractMethod(0_08000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" }, AllowedTriggers = TriggerType.Application)]
+        protected StackItem Transfer(ApplicationEngine engine, VMArray args)
+        {
+            UInt160 from = new UInt160(args[0].GetByteArray());
+            UInt160 to = new UInt160(args[1].GetByteArray());
+            BigInteger amount = args[2].GetBigInteger();
+            return Transfer(engine, from, to, amount);
+        }
+
         protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
         {
-            if (engine.Trigger != TriggerType.Application) throw new InvalidOperationException();
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (!from.Equals(engine.CallingScriptHash) && !InteropService.CheckWitness(engine, from))
                 return false;

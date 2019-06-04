@@ -1,11 +1,13 @@
-﻿using System;
-using System.Linq;
-using System.Numerics;
+﻿#pragma warning disable IDE0051
+
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
+using System;
+using System.Linq;
+using System.Numerics;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native.Tokens
@@ -21,14 +23,6 @@ namespace Neo.SmartContract.Native.Tokens
 
         internal GasToken()
         {
-        }
-
-        protected override StackItem Main(ApplicationEngine engine, string operation, VMArray args)
-        {
-            if (operation == "getSysFeeAmount")
-                return GetSysFeeAmount(engine.Snapshot, (uint)args[0].GetBigInteger());
-            else
-                return base.Main(engine, operation, args);
         }
 
         protected override bool OnPersist(ApplicationEngine engine)
@@ -47,6 +41,13 @@ namespace Neo.SmartContract.Native.Tokens
                 IsConstant = true
             });
             return true;
+        }
+
+        [ContractMethod(0_01000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "index" }, SafeMethod = true)]
+        private StackItem GetSysFeeAmount(ApplicationEngine engine, VMArray args)
+        {
+            uint index = (uint)args[0].GetBigInteger();
+            return GetSysFeeAmount(engine.Snapshot, index);
         }
 
         public BigInteger GetSysFeeAmount(Snapshot snapshot, uint index)

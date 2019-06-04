@@ -1,3 +1,6 @@
+#pragma warning disable IDE0051
+#pragma warning disable IDE0060
+
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
@@ -28,27 +31,6 @@ namespace Neo.SmartContract.Native.Tokens
         internal NeoToken()
         {
             this.TotalAmount = 100000000 * Factor;
-        }
-
-        protected override StackItem Main(ApplicationEngine engine, string operation, VMArray args)
-        {
-            switch (operation)
-            {
-                case "unclaimedGas":
-                    return UnclaimedGas(engine.Snapshot, new UInt160(args[0].GetByteArray()), (uint)args[1].GetBigInteger());
-                case "registerValidator":
-                    return RegisterValidator(engine, args[0].GetByteArray());
-                case "vote":
-                    return Vote(engine, new UInt160(args[0].GetByteArray()), ((VMArray)args[1]).Select(p => p.GetByteArray().AsSerializable<ECPoint>()).ToArray());
-                case "getRegisteredValidators":
-                    return GetRegisteredValidators(engine.Snapshot).Select(p => new Struct(new StackItem[] { p.PublicKey.ToArray(), p.Votes })).ToArray();
-                case "getValidators":
-                    return GetValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToArray();
-                case "getNextBlockValidators":
-                    return GetNextBlockValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToArray();
-                default:
-                    return base.Main(engine, operation, args);
-            }
         }
 
         public override BigInteger TotalSupply(Snapshot snapshot)
@@ -122,7 +104,7 @@ namespace Neo.SmartContract.Native.Tokens
             UInt160 account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1, Blockchain.StandbyValidators).ToScriptHash();
             Mint(engine, account, TotalAmount);
             foreach (ECPoint pubkey in Blockchain.StandbyValidators)
-                RegisterValidator(engine, pubkey.EncodePoint(true));
+                RegisterValidator(engine.Snapshot, pubkey);
             return true;
         }
 
@@ -134,6 +116,14 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
+        [ContractMethod(0_03000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "account", "end" }, SafeMethod = true)]
+        private StackItem UnclaimedGas(ApplicationEngine engine, VMArray args)
+        {
+            UInt160 account = new UInt160(args[0].GetByteArray());
+            uint end = (uint)args[1].GetBigInteger();
+            return UnclaimedGas(engine.Snapshot, account, end);
+        }
+
         public BigInteger UnclaimedGas(Snapshot snapshot, UInt160 account, uint end)
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
@@ -142,21 +132,29 @@ namespace Neo.SmartContract.Native.Tokens
             return CalculateBonus(snapshot, state.Balance, state.BalanceHeight, end);
         }
 
-        private bool RegisterValidator(ApplicationEngine engine, byte[] pubkey)
+        [ContractMethod(0_05000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" }, AllowedTriggers = TriggerType.Application)]
+        private StackItem RegisterValidator(ApplicationEngine engine, VMArray args)
         {
-            if (pubkey.Length != 33 || (pubkey[0] != 0x02 && pubkey[0] != 0x03))
-                throw new ArgumentException();
+            ECPoint pubkey = args[0].GetByteArray().AsSerializable<ECPoint>();
+            return RegisterValidator(engine.Snapshot, pubkey);
+        }
+
+        private bool RegisterValidator(Snapshot snapshot, ECPoint pubkey)
+        {
             StorageKey key = CreateStorageKey(Prefix_Validator, pubkey);
-            if (engine.Snapshot.Storages.TryGet(key) != null) return false;
-            engine.Snapshot.Storages.Add(key, new StorageItem
+            if (snapshot.Storages.TryGet(key) != null) return false;
+            snapshot.Storages.Add(key, new StorageItem
             {
                 Value = new ValidatorState().ToByteArray()
             });
             return true;
         }
 
-        private bool Vote(ApplicationEngine engine, UInt160 account, ECPoint[] pubkeys)
+        [ContractMethod(5_00000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Array }, ParameterNames = new[] { "account", "pubkeys" }, AllowedTriggers = TriggerType.Application)]
+        private StackItem Vote(ApplicationEngine engine, VMArray args)
         {
+            UInt160 account = new UInt160(args[0].GetByteArray());
+            ECPoint[] pubkeys = ((VMArray)args[1]).Select(p => p.GetByteArray().AsSerializable<ECPoint>()).ToArray();
             if (!InteropService.CheckWitness(engine, account)) return false;
             StorageKey key_account = CreateAccountKey(account);
             if (engine.Snapshot.Storages.TryGet(key_account) is null) return false;
@@ -195,6 +193,12 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
+        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        private StackItem GetRegisteredValidators(ApplicationEngine engine, VMArray args)
+        {
+            return GetRegisteredValidators(engine.Snapshot).Select(p => new Struct(new StackItem[] { p.PublicKey.ToArray(), p.Votes })).ToArray();
+        }
+
         public IEnumerable<(ECPoint PublicKey, BigInteger Votes)> GetRegisteredValidators(Snapshot snapshot)
         {
             return snapshot.Storages.Find(new[] { Prefix_Validator }).Select(p =>
@@ -202,6 +206,12 @@ namespace Neo.SmartContract.Native.Tokens
                 p.Key.Key.Skip(1).ToArray().AsSerializable<ECPoint>(),
                 ValidatorState.FromByteArray(p.Value.Value).Votes
             ));
+        }
+
+        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        private StackItem GetValidators(ApplicationEngine engine, VMArray args)
+        {
+            return GetValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToList();
         }
 
         public ECPoint[] GetValidators(Snapshot snapshot)
@@ -221,6 +231,12 @@ namespace Neo.SmartContract.Native.Tokens
             count = Math.Max(count, Blockchain.StandbyValidators.Length);
             HashSet<ECPoint> sv = new HashSet<ECPoint>(Blockchain.StandbyValidators);
             return GetRegisteredValidators(snapshot).Where(p => (p.Votes.Sign > 0) || sv.Contains(p.PublicKey)).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count).OrderBy(p => p).ToArray();
+        }
+
+        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        private StackItem GetNextBlockValidators(ApplicationEngine engine, VMArray args)
+        {
+            return GetNextBlockValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()).ToList();
         }
 
         public ECPoint[] GetNextBlockValidators(Snapshot snapshot)

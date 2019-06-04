@@ -35,8 +35,6 @@ namespace Neo.UnitTests
             _unit.Count.ShouldBeEquivalentTo(0);
         }
 
-
-
         long LongRandom(long min, long max, Random rand)
         {
             // Only returns positive random long values.
@@ -55,7 +53,11 @@ namespace Neo.UnitTests
             mock.Object.Sender = UInt160.Zero;
             mock.Object.NetworkFee = fee;
             mock.Object.Attributes = new TransactionAttribute[0];
-            mock.Object.Witnesses = new Witness[0];
+            mock.Object.Witness = new Witness
+            {
+                InvocationScript = new byte[0],
+                VerificationScript = new byte[0]
+            };
             return mock.Object;
         }
 
@@ -280,7 +282,7 @@ namespace Neo.UnitTests
                 verifiedTxs.Length.ShouldBeEquivalentTo(2);
                 verifiedTxs[0].ShouldBeEquivalentTo(maxHighPriorityTransaction);
                 verifiedTxs[1].ShouldBeEquivalentTo(maxLowPriorityTransaction);
-                var blockWith2Tx = new Block { Transactions = new Transaction[2] { maxHighPriorityTransaction, maxLowPriorityTransaction } };
+                var blockWith2Tx = new Block { Transactions = new[] { maxHighPriorityTransaction, maxLowPriorityTransaction } };
                 // verify and remove the 2 transactions from the verified pool
                 _unit.UpdatePoolForBlockPersisted(blockWith2Tx, Blockchain.Singleton.GetSnapshot());
                 _unit.InvalidateVerifiedTransactions();

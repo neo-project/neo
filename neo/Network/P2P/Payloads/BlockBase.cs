@@ -17,7 +17,7 @@ namespace Neo.Network.P2P.Payloads
         public uint Timestamp;
         public uint Index;
         public UInt160 NextConsensus;
-        public Witness Witness;
+        public Witness Witness { get; set; }
 
         private UInt256 _hash = null;
         public UInt256 Hash
@@ -32,20 +32,11 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        Witness[] IVerifiable.Witnesses
-        {
-            get
-            {
-                return new[] { Witness };
-            }
-        }
-
-        public virtual int Size => sizeof(uint) + PrevHash.Size + MerkleRoot.Size + sizeof(uint) + sizeof(uint) + NextConsensus.Size + 1 + Witness.Size;
+        public virtual int Size => sizeof(uint) + PrevHash.Size + MerkleRoot.Size + sizeof(uint) + sizeof(uint) + NextConsensus.Size + Witness.Size;
 
         public virtual void Deserialize(BinaryReader reader)
         {
             ((IVerifiable)this).DeserializeUnsigned(reader);
-            if (reader.ReadByte() != 1) throw new FormatException();
             Witness = reader.ReadSerializable<Witness>();
         }
 
@@ -59,19 +50,18 @@ namespace Neo.Network.P2P.Payloads
             NextConsensus = reader.ReadSerializable<UInt160>();
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(Snapshot snapshot)
+        UInt160 IVerifiable.GetScriptHashForVerification(Snapshot snapshot)
         {
-            if (PrevHash == UInt256.Zero)
-                return new[] { Witness.ScriptHash };
+            if (PrevHash == UInt256.Zero) return Witness.ScriptHash;
             Header prev_header = snapshot.GetHeader(PrevHash);
             if (prev_header == null) throw new InvalidOperationException();
-            return new UInt160[] { prev_header.NextConsensus };
+            return prev_header.NextConsensus;
         }
 
         public virtual void Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
-            writer.Write((byte)1); writer.Write(Witness);
+            writer.Write(Witness);
         }
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
@@ -95,7 +85,7 @@ namespace Neo.Network.P2P.Payloads
             json["time"] = Timestamp;
             json["index"] = Index;
             json["nextconsensus"] = NextConsensus.ToAddress();
-            json["script"] = Witness.ToJson();
+            json["witness"] = Witness.ToJson();
             return json;
         }
 
@@ -105,7 +95,7 @@ namespace Neo.Network.P2P.Payloads
             if (prev_header == null) return false;
             if (prev_header.Index + 1 != Index) return false;
             if (prev_header.Timestamp >= Timestamp) return false;
-            if (!this.VerifyWitnesses(snapshot)) return false;
+            if (!this.VerifyWitness(snapshot, 1_00000000)) return false;
             return true;
         }
     }

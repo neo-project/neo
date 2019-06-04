@@ -15,22 +15,26 @@ namespace Neo.UnitTests.Extensions
     {
         internal class ManualWitness : IVerifiable
         {
-            private readonly UInt160[] _hashForVerify;
+            private readonly UInt160 _hashForVerify;
 
-            public Witness[] Witnesses => throw new NotImplementedException();
+            public Witness Witness
+            {
+                get => throw new NotImplementedException();
+                set => throw new NotImplementedException();
+            }
 
             public int Size => 0;
 
-            public ManualWitness(UInt160[] hashForVerify)
+            public ManualWitness(UInt160 hashForVerify)
             {
-                _hashForVerify = hashForVerify ?? new UInt160[0];
+                _hashForVerify = hashForVerify;
             }
 
             public void Deserialize(BinaryReader reader) { }
 
             public void DeserializeUnsigned(BinaryReader reader) { }
 
-            public UInt160[] GetScriptHashesForVerifying(Persistence.Snapshot snapshot)
+            public UInt160 GetScriptHashForVerification(Persistence.Snapshot snapshot)
             {
                 return _hashForVerify;
             }
@@ -43,7 +47,7 @@ namespace Neo.UnitTests.Extensions
         public static bool Transfer(this NativeContract contract, Persistence.Snapshot snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)
         {
             var engine = new ApplicationEngine(TriggerType.Application,
-                new ManualWitness(signFrom ? new[] { new UInt160(from) } : null), snapshot, 0, true);
+                new ManualWitness(signFrom ? new UInt160(from) : null), snapshot, 0, true);
 
             engine.LoadScript(contract.Script);
 
@@ -69,7 +73,7 @@ namespace Neo.UnitTests.Extensions
 
         public static string[] SupportedStandards(this NativeContract contract)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0);
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true);
 
             engine.LoadScript(contract.Script);
 
@@ -132,7 +136,7 @@ namespace Neo.UnitTests.Extensions
 
         public static BigInteger Decimals(this NativeContract contract)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0);
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true);
 
             engine.LoadScript(contract.Script);
 
@@ -152,7 +156,7 @@ namespace Neo.UnitTests.Extensions
 
         public static string Symbol(this NativeContract contract)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0);
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true);
 
             engine.LoadScript(contract.Script);
 
@@ -172,7 +176,7 @@ namespace Neo.UnitTests.Extensions
 
         public static string Name(this NativeContract contract)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0);
+            var engine = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true);
 
             engine.LoadScript(contract.Script);
 

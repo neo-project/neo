@@ -85,7 +85,7 @@ namespace Neo.Consensus
                 sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
                 j++;
             }
-            Block.Witness = sc.GetWitnesses()[0];
+            Block.Witness = sc.GetWitness();
             Block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
             return Block;
         }
@@ -95,11 +95,11 @@ namespace Neo.Consensus
             Reset(0);
             if (reader.ReadUInt32() != Block.Version) throw new FormatException();
             if (reader.ReadUInt32() != Block.Index) throw new InvalidOperationException();
-            Block.ConsensusData = reader.ReadSerializable<ConsensusData>();
             Block.Timestamp = reader.ReadUInt32();
             Block.NextConsensus = reader.ReadSerializable<UInt160>();
             if (Block.NextConsensus.Equals(UInt160.Zero))
                 Block.NextConsensus = null;
+            Block.ConsensusData = reader.ReadSerializable<ConsensusData>();
             ViewNumber = reader.ReadByte();
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
             if (TransactionHashes.Length == 0)
@@ -202,7 +202,7 @@ namespace Neo.Consensus
             {
                 return;
             }
-            payload.Witness = sc.GetWitnesses()[0];
+            payload.Witness = sc.GetWitness();
         }
 
         public ConsensusPayload MakePrepareRequest()
@@ -328,9 +328,9 @@ namespace Neo.Consensus
         {
             writer.Write(Block.Version);
             writer.Write(Block.Index);
-            writer.Write(Block.ConsensusData);
             writer.Write(Block.Timestamp);
             writer.Write(Block.NextConsensus ?? UInt160.Zero);
+            writer.Write(Block.ConsensusData);
             writer.Write(ViewNumber);
             writer.Write(TransactionHashes ?? new UInt256[0]);
             writer.Write(Transactions?.Values.ToArray() ?? new Transaction[0]);

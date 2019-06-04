@@ -1,9 +1,9 @@
-﻿using System;
+﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Ledger;
-using FluentAssertions;
 using Neo.Network.P2P.Payloads;
+using System;
 
 namespace Neo.UnitTests
 {
@@ -122,20 +122,17 @@ namespace Neo.UnitTests
                 Sender = UInt160.Zero,
                 NetworkFee = networkFee,
                 Attributes = new TransactionAttribute[0],
-                Witnesses = new[]
+                Witness = new Witness
                 {
-                    new Witness
-                    {
-                        InvocationScript = new byte[0],
-                        VerificationScript = new byte[0]
-                    }
+                    InvocationScript = new byte[0],
+                    VerificationScript = new byte[0]
                 }
             };
 
             int diff = size - tx.Size;
             if (diff < 0) throw new ArgumentException();
             if (diff > 0)
-                tx.Witnesses[0].VerificationScript = new byte[diff];
+                tx.Witness.VerificationScript = new byte[diff];
             return tx;
         }
     }
