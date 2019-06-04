@@ -97,7 +97,7 @@ namespace Neo.Network.RPC
                 case RelayResultReason.Succeed:
                     {
                         var ret = new JObject();
-                        ret["result"] = true;
+                        ret["relayed"] = true;
                         ret["hash"] = hash.ToString();
                         return ret;
                     }
