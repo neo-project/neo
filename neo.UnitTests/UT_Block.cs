@@ -240,12 +240,7 @@ namespace Neo.UnitTests
         public void ToJson()
         {
             UInt256 val256 = UInt256.Zero;
-            UInt256 merkRoot;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out scriptVal, out transactionsVal, 1);
+            TestUtils.SetupBlockWithValues(uut, val256, out var merkRoot, out var val160, out var timestampVal, out var indexVal, out var scriptVal, out var transactionsVal, 1);
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
@@ -264,7 +259,7 @@ namespace Neo.UnitTests
 
             jObj["tx"].Should().NotBeNull();
             JArray txObj = (JArray)jObj["tx"];
-            txObj[0]["txid"].AsString().Should().Be("0x7647acf1ef8a841b87f2369398a0e9f0ccde0ed9e835d980657103da6da59580");
+            txObj[0]["hash"].AsString().Should().Be("0x7647acf1ef8a841b87f2369398a0e9f0ccde0ed9e835d980657103da6da59580");
             txObj[0]["size"].AsNumber().Should().Be(50);
             txObj[0]["version"].AsNumber().Should().Be(0);
             ((JArray)txObj[0]["attributes"]).Count.Should().Be(0);
