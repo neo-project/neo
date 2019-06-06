@@ -205,7 +205,7 @@ namespace Neo.Network.P2P.Payloads
         public JObject ToJson()
         {
             JObject json = new JObject();
-            json["txid"] = Hash.ToString();
+            json["hash"] = Hash.ToString();
             json["size"] = Size;
             json["version"] = Version;
             json["nonce"] = Nonce;
