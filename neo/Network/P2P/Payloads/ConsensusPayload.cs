@@ -18,6 +18,7 @@ namespace Neo.Network.P2P.Payloads
         public ushort ValidatorIndex;
         public byte[] Data;
         public Witness Witness { get; set; }
+        Witness[] IVerifiable.Witnesses => new[] { Witness };
 
         private ConsensusMessage _deserializedMessage = null;
         public ConsensusMessage ConsensusMessage
@@ -82,12 +83,12 @@ namespace Neo.Network.P2P.Payloads
             Data = reader.ReadVarBytes();
         }
 
-        UInt160 IVerifiable.GetScriptHashForVerification(Snapshot snapshot)
+        UInt160[] IVerifiable.GetScriptHashesForVerifying(Snapshot snapshot)
         {
             ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(snapshot);
             if (validators.Length <= ValidatorIndex)
                 throw new InvalidOperationException();
-            return Contract.CreateSignatureRedeemScript(validators[ValidatorIndex]).ToScriptHash();
+            return new UInt160[] { Contract.CreateSignatureRedeemScript(validators[ValidatorIndex]).ToScriptHash() };
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -109,7 +110,7 @@ namespace Neo.Network.P2P.Payloads
         {
             if (BlockIndex <= snapshot.Height)
                 return false;
-            return this.VerifyWitness(snapshot, 0_02000000);
+            return this.VerifyWitnesses(snapshot, 0_02000000);
         }
     }
 }

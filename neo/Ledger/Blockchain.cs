@@ -154,11 +154,11 @@ namespace Neo.Ledger
                 Sender = (new[] { (byte)OpCode.PUSHT }).ToScriptHash(),
                 Gas = 0,
                 Attributes = new TransactionAttribute[0],
-                Witness = new Witness
+                Witnesses = new Witness[]{ new Witness
                 {
                     InvocationScript = new byte[0],
                     VerificationScript = new[] { (byte)OpCode.PUSHT }
-                }
+                } }
             };
         }
 
@@ -280,7 +280,7 @@ namespace Neo.Ledger
                     block_cache_unverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
 
-                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0,(15 - SecondsPerBlock)))) continue;
+                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, (15 - SecondsPerBlock)))) continue;
                     // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
                     // Increase in the rate of 1 block per second in configurations with faster blocks
 

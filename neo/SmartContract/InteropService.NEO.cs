@@ -212,10 +212,16 @@ namespace Neo.SmartContract
             {
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
-                byte[] script = tx.Witness.VerificationScript;
-                if (script.Length == 0)
-                    script = engine.Snapshot.Contracts[tx.Sender].Script;
-                engine.CurrentContext.EvaluationStack.Push(script);
+
+                var array = new VMArray();
+                foreach (var witness in tx.Witnesses)
+                {
+                    byte[] script = witness.VerificationScript;
+                    if (script.Length == 0)
+                        script = engine.Snapshot.Contracts[tx.Sender].Script;
+                    array.Add(script);
+                }
+                engine.CurrentContext.EvaluationStack.Push(array);
                 return true;
             }
             return false;

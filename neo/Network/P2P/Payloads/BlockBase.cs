@@ -19,6 +19,8 @@ namespace Neo.Network.P2P.Payloads
         public UInt160 NextConsensus;
         public Witness Witness { get; set; }
 
+        Witness[] IVerifiable.Witnesses => new[] { Witness };
+
         private UInt256 _hash = null;
         public UInt256 Hash
         {
@@ -50,12 +52,12 @@ namespace Neo.Network.P2P.Payloads
             NextConsensus = reader.ReadSerializable<UInt160>();
         }
 
-        UInt160 IVerifiable.GetScriptHashForVerification(Snapshot snapshot)
+        UInt160[] IVerifiable.GetScriptHashesForVerifying(Snapshot snapshot)
         {
-            if (PrevHash == UInt256.Zero) return Witness.ScriptHash;
+            if (PrevHash == UInt256.Zero) return new UInt160[] { Witness.ScriptHash };
             Header prev_header = snapshot.GetHeader(PrevHash);
             if (prev_header == null) throw new InvalidOperationException();
-            return prev_header.NextConsensus;
+            return new UInt160[] { prev_header.NextConsensus };
         }
 
         public virtual void Serialize(BinaryWriter writer)
@@ -95,7 +97,7 @@ namespace Neo.Network.P2P.Payloads
             if (prev_header == null) return false;
             if (prev_header.Index + 1 != Index) return false;
             if (prev_header.Timestamp >= Timestamp) return false;
-            if (!this.VerifyWitness(snapshot, 1_00000000)) return false;
+            if (!this.VerifyWitnesses(snapshot, 1_00000000)) return false;
             return true;
         }
     }
