@@ -314,7 +314,7 @@ namespace Neo.Network.P2P
 
         protected override bool IsHighPriority(object message)
         {
-            if (!(message is Message msg)) return true;
+            if (!(message is Message msg)) return false;
             switch (msg.Command)
             {
                 case "consensus":
@@ -332,7 +332,7 @@ namespace Neo.Network.P2P
 
         protected override bool ShallDrop(object message, IEnumerable queue)
         {
-            if (!(message is Message msg)) return false;
+            if (!(message is Message msg)) return true;
             switch (msg.Command)
             {
                 case "getaddr":
