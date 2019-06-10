@@ -20,11 +20,11 @@ namespace Neo.Network.P2P
         private readonly WebSocket ws;
         private bool disconnected = false;
         /// <summary>
-        /// connection initial timeout, in seconds, before any package has been accepted
+        /// connection initial timeout (in seconds) before any package has been accepted
         /// </summary>
         private double connectionTimeoutLimitStart = 10;
         /// <summary>
-        /// connection initial timeout, in seconds
+        /// connection timeout (in seconds) after every `OnReceived(ByteString data)` event
         /// </summary>
         private double connectionTimeoutLimit = 60;
 
