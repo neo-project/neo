@@ -105,7 +105,8 @@ namespace Neo.Network.P2P.Payloads
             {
                 // Compute verification gas
 
-                foreach(var witness in Witnesses)
+                consumed = 0;
+                foreach (var witness in Witnesses)
                 {
                     byte[] verification = witness.VerificationScript;
                     if (verification.Length == 0)
@@ -124,7 +125,7 @@ namespace Neo.Network.P2P.Payloads
                         engine.LoadScript(witness.InvocationScript);
                         if (engine.Execute().HasFlag(VMState.FAULT)) return;
                         if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return;
-                        consumed = engine.GasConsumed;
+                        consumed += engine.GasConsumed;
                     }
                 }
 
@@ -159,7 +160,7 @@ namespace Neo.Network.P2P.Payloads
             if (Gas + NetworkFee < Gas) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
-            var cosigners = GetScriptHashesForVerifying(null);
+            var cosigners = Attributes.Where(p => p.Usage == TransactionAttributeUsage.Cosigner).Select(p => new UInt160(p.Data)).ToArray();
             if (cosigners.Distinct().Count() != cosigners.Length) throw new FormatException();
         }
 

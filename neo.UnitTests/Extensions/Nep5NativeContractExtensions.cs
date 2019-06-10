@@ -17,7 +17,11 @@ namespace Neo.UnitTests.Extensions
         {
             private readonly UInt160[] _hashForVerify;
 
-            public Witness[] Witnesses => throw new NotImplementedException();
+            public Witness[] Witnesses
+            {
+                get => throw new NotImplementedException();
+                set => throw new NotImplementedException();
+            }
 
             public int Size => 0;
 

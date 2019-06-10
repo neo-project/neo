@@ -9,7 +9,11 @@ namespace Neo.UnitTests
     {
         private readonly string testStr = "testStr";
 
-        public Witness[] Witnesses { get => throw new NotImplementedException(); }
+        public Witness[] Witnesses
+        {
+            get => throw new NotImplementedException();
+            set => throw new NotImplementedException();
+        }
 
         public int Size => throw new NotImplementedException();
 
