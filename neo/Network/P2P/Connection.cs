@@ -28,6 +28,8 @@ namespace Neo.Network.P2P
         /// </summary>
         private double connectionTimeoutLimit = 60;
 
+        protected bool messageProcessed = false;
+
         protected Connection(object connection, IPEndPoint remote, IPEndPoint local)
         {
             this.Remote = remote;
@@ -88,19 +90,24 @@ namespace Neo.Network.P2P
 
         protected override void OnReceive(object message)
         {
+            messageProcessed = false;
             switch (message)
             {
                 case Timer _:
                     Disconnect(true);
+                    messageProcessed = true;
                     break;
                 case Ack _:
                     OnAck();
+                    messageProcessed = true;
                     break;
                 case Tcp.Received received:
                     OnReceived(received.Data);
+                    messageProcessed = true;
                     break;
                 case Tcp.ConnectionClosed _:
                     Context.Stop(Self);
+                    messageProcessed = true;
                     break;
             }
         }

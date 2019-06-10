@@ -120,30 +120,31 @@ namespace Neo.Network.P2P
         protected override void OnReceive(object message)
         {
             base.OnReceive(message);
-            switch (message)
-            {
-                case Message msg:
-                    EnqueueMessage(msg);
-                    break;
-                case IInventory inventory:
-                    OnSend(inventory);
-                    break;
-                case Relay relay:
-                    OnRelay(relay.Inventory);
-                    break;
-                case VersionPayload payload:
-                    OnVersionPayload(payload);
-                    break;
-                case MessageCommand.Verack:
-                    OnVerack();
-                    break;
-                case ProtocolHandler.SetFilter setFilter:
-                    OnSetFilter(setFilter.Filter);
-                    break;
-                case PingPayload payload:
-                    OnPingPayload(payload);
-                    break;
-            }
+            if(!base.messageProcessed)
+                switch (message)
+                {
+                    case Message msg:
+                        EnqueueMessage(msg);
+                        break;
+                    case IInventory inventory:
+                        OnSend(inventory);
+                        break;
+                    case Relay relay:
+                        OnRelay(relay.Inventory);
+                        break;
+                    case VersionPayload payload:
+                        OnVersionPayload(payload);
+                        break;
+                    case MessageCommand.Verack:
+                        OnVerack();
+                        break;
+                    case ProtocolHandler.SetFilter setFilter:
+                        OnSetFilter(setFilter.Filter);
+                        break;
+                    case PingPayload payload:
+                        OnPingPayload(payload);
+                        break;
+                }
         }
 
         private void OnPingPayload(PingPayload payload)
