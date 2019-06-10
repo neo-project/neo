@@ -1,17 +1,16 @@
 ﻿using Neo.IO;
 using Neo.Persistence;
-using Neo.VM;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public interface IVerifiable : ISerializable, IScriptContainer
+    public interface IVerifiable : ISerializable
     {
-        Witness[] Witnesses { get; }
+        Witness Witness { get; set; }
 
         void DeserializeUnsigned(BinaryReader reader);
 
-        UInt160[] GetScriptHashesForVerifying(Snapshot snapshot);
+        UInt160 GetScriptHashForVerification(Snapshot snapshot);
 
         void SerializeUnsigned(BinaryWriter writer);
     }

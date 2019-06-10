@@ -46,7 +46,7 @@ namespace Neo.Consensus
             CommitMessages = reader.ReadSerializableArray<CommitPayloadCompact>(Blockchain.MaxValidators).ToDictionary(p => (int)p.ValidatorIndex);
         }
 
-        public ConsensusPayload[] GetChangeViewPayloads(IConsensusContext context, ConsensusPayload payload)
+        internal ConsensusPayload[] GetChangeViewPayloads(ConsensusContext context, ConsensusPayload payload)
         {
             return ChangeViewMessages.Values.Select(p => new ConsensusPayload
             {
@@ -67,7 +67,7 @@ namespace Neo.Consensus
             }).ToArray();
         }
 
-        public ConsensusPayload[] GetCommitPayloadsFromRecoveryMessage(IConsensusContext context, ConsensusPayload payload)
+        internal ConsensusPayload[] GetCommitPayloadsFromRecoveryMessage(ConsensusContext context, ConsensusPayload payload)
         {
             return CommitMessages.Values.Select(p => new ConsensusPayload
             {
@@ -88,31 +88,31 @@ namespace Neo.Consensus
             }).ToArray();
         }
 
-        public ConsensusPayload GetPrepareRequestPayload(IConsensusContext context, ConsensusPayload payload)
+        internal ConsensusPayload GetPrepareRequestPayload(ConsensusContext context, ConsensusPayload payload)
         {
             if (PrepareRequestMessage == null) return null;
-            if (!PreparationMessages.TryGetValue((int)context.PrimaryIndex, out RecoveryMessage.PreparationPayloadCompact compact))
+            if (!PreparationMessages.TryGetValue((int)context.Block.ConsensusData.PrimaryIndex, out RecoveryMessage.PreparationPayloadCompact compact))
                 return null;
             return new ConsensusPayload
             {
                 Version = payload.Version,
                 PrevHash = payload.PrevHash,
                 BlockIndex = payload.BlockIndex,
-                ValidatorIndex = (ushort)context.PrimaryIndex,
+                ValidatorIndex = (ushort)context.Block.ConsensusData.PrimaryIndex,
                 ConsensusMessage = PrepareRequestMessage,
                 Witness = new Witness
                 {
                     InvocationScript = compact.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[context.PrimaryIndex])
+                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[context.Block.ConsensusData.PrimaryIndex])
                 }
             };
         }
 
-        public ConsensusPayload[] GetPrepareResponsePayloads(IConsensusContext context, ConsensusPayload payload)
+        internal ConsensusPayload[] GetPrepareResponsePayloads(ConsensusContext context, ConsensusPayload payload)
         {
-            UInt256 preparationHash = PreparationHash ?? context.PreparationPayloads[context.PrimaryIndex]?.Hash;
+            UInt256 preparationHash = PreparationHash ?? context.PreparationPayloads[context.Block.ConsensusData.PrimaryIndex]?.Hash;
             if (preparationHash is null) return new ConsensusPayload[0];
-            return PreparationMessages.Values.Where(p => p.ValidatorIndex != context.PrimaryIndex).Select(p => new ConsensusPayload
+            return PreparationMessages.Values.Where(p => p.ValidatorIndex != context.Block.ConsensusData.PrimaryIndex).Select(p => new ConsensusPayload
             {
                 Version = payload.Version,
                 PrevHash = payload.PrevHash,

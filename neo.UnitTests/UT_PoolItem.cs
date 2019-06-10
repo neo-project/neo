@@ -1,9 +1,9 @@
-﻿using System;
+﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Ledger;
-using FluentAssertions;
 using Neo.Network.P2P.Payloads;
+using System;
 
 namespace Neo.UnitTests
 {
@@ -34,30 +34,17 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void PoolItem_CompareTo_ClaimTx()
-        {
-            var tx1 = GenerateClaimTx();
-            // Non-free low-priority transaction
-            var tx2 = MockGenerateInvocationTx(new Fixed8(99999), 50).Object;
-
-            var poolItem1 = new PoolItem(tx1);
-            var poolItem2 = new PoolItem(tx2);
-            poolItem1.CompareTo(poolItem2).Should().Be(1);
-            poolItem2.CompareTo(poolItem1).Should().Be(-1);
-        }
-
-        [TestMethod]
         public void PoolItem_CompareTo_Fee()
         {
             int size1 = 50;
             int netFeeSatoshi1 = 1;
-            var tx1 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshi1), size1);
+            var tx1 = GenerateTx(netFeeSatoshi1, size1);
             int size2 = 50;
             int netFeeSatoshi2 = 2;
-            var tx2 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshi2), size2);
+            var tx2 = GenerateTx(netFeeSatoshi2, size2);
 
-            PoolItem pitem1 = new PoolItem(tx1.Object);
-            PoolItem pitem2 = new PoolItem(tx2.Object);
+            PoolItem pitem1 = new PoolItem(tx1);
+            PoolItem pitem2 = new PoolItem(tx2);
 
             Console.WriteLine($"item1 time {pitem1.Timestamp} item2 time {pitem2.Timestamp}");
             // pitem1 < pitem2 (fee) => -1
@@ -74,11 +61,11 @@ namespace Neo.UnitTests
 
             for (int testRuns = 0; testRuns < 30; testRuns++)
             {
-                var tx1 = GenerateMockTxWithFirstByteOfHashGreaterThanOrEqualTo(0x80, new Fixed8(netFeeSatoshiFixed), sizeFixed);
-                var tx2 = GenerateMockTxWithFirstByteOfHashLessThanOrEqualTo(0x79,new Fixed8(netFeeSatoshiFixed), sizeFixed);
+                var tx1 = GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(0x80, netFeeSatoshiFixed, sizeFixed);
+                var tx2 = GenerateTxWithFirstByteOfHashLessThanOrEqualTo(0x79, netFeeSatoshiFixed, sizeFixed);
 
-                PoolItem pitem1 = new PoolItem(tx1.Object);
-                PoolItem pitem2 = new PoolItem(tx2.Object);
+                PoolItem pitem1 = new PoolItem(tx1);
+                PoolItem pitem2 = new PoolItem(tx2);
 
                 // pitem2 < pitem1 (fee) => -1
                 pitem2.CompareTo(pitem1).Should().Be(-1);
@@ -86,15 +73,6 @@ namespace Neo.UnitTests
                 // pitem1 > pitem2  (fee) => 1
                 pitem1.CompareTo(pitem2).Should().Be(1);
             }
-
-            // equal hashes should be equal
-            var tx3 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
-            var tx4 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
-            PoolItem pitem3 = new PoolItem(tx3.Object);
-            PoolItem pitem4 = new PoolItem(tx4.Object);
-
-            pitem3.CompareTo(pitem4).Should().Be(0);
-            pitem4.CompareTo(pitem3).Should().Be(0);
         }
 
         [TestMethod]
@@ -102,77 +80,60 @@ namespace Neo.UnitTests
         {
             int sizeFixed = 500;
             int netFeeSatoshiFixed = 10;
-            var tx1 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
-            var tx2 = MockGenerateInvocationTx(new Fixed8(netFeeSatoshiFixed), sizeFixed, new byte[] {0x13, 0x37});
+            var tx = GenerateTx(netFeeSatoshiFixed, sizeFixed, new byte[] { 0x13, 0x37 });
 
-            PoolItem pitem1 = new PoolItem(tx1.Object);
-            PoolItem pitem2 = new PoolItem(tx2.Object);
+            PoolItem pitem1 = new PoolItem(tx);
+            PoolItem pitem2 = new PoolItem(tx);
 
             // pitem1 == pitem2 (fee) => 0
             pitem1.CompareTo(pitem2).Should().Be(0);
             pitem2.CompareTo(pitem1).Should().Be(0);
         }
 
-        public Mock<InvocationTransaction> GenerateMockTxWithFirstByteOfHashGreaterThanOrEqualTo(byte firstHashByte, Fixed8 networkFee, int size)
+        public Transaction GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(byte firstHashByte, long networkFee, int size)
         {
-            Mock<InvocationTransaction> mockTx;
+            Transaction tx;
             do
             {
-                mockTx = MockGenerateInvocationTx(networkFee, size);
-            } while (mockTx.Object.Hash >= new UInt256(TestUtils.GetByteArray(32, firstHashByte)));
+                tx = GenerateTx(networkFee, size);
+            } while (tx.Hash >= new UInt256(TestUtils.GetByteArray(32, firstHashByte)));
 
-            return mockTx;
+            return tx;
         }
 
-        public Mock<InvocationTransaction> GenerateMockTxWithFirstByteOfHashLessThanOrEqualTo(byte firstHashByte, Fixed8 networkFee, int size)
+        public Transaction GenerateTxWithFirstByteOfHashLessThanOrEqualTo(byte firstHashByte, long networkFee, int size)
         {
-            Mock<InvocationTransaction> mockTx;
+            Transaction tx;
             do
             {
-                mockTx = MockGenerateInvocationTx(networkFee, size);
-            } while (mockTx.Object.Hash <= new UInt256(TestUtils.GetByteArray(32, firstHashByte)));
+                tx = GenerateTx(networkFee, size);
+            } while (tx.Hash <= new UInt256(TestUtils.GetByteArray(32, firstHashByte)));
 
-            return mockTx;
+            return tx;
         }
 
-        public static Transaction GenerateClaimTx()
+        // Generate Transaction with different sizes and prices
+        public static Transaction GenerateTx(long networkFee, int size, byte[] overrideScriptBytes = null)
         {
-            var mockTx = new Mock<ClaimTransaction>();
-            mockTx.CallBase = true;
-            mockTx.SetupGet(mr => mr.NetworkFee).Returns(Fixed8.Zero);
-            mockTx.SetupGet(mr => mr.Size).Returns(50);
-            var tx = mockTx.Object;
-            tx.Attributes = new TransactionAttribute[0];
-            tx.Inputs = new CoinReference[0];
-            tx.Outputs = new TransactionOutput[0];
-            tx.Witnesses = new Witness[0];
-            return mockTx.Object;
-        }
-
-        // Generate Mock InvocationTransaction with different sizes and prices
-        public static Mock<InvocationTransaction> MockGenerateInvocationTx(Fixed8 networkFee, int size, byte[] overrideScriptBytes=null)
-        {
-            var mockTx = new Mock<InvocationTransaction>();
-            mockTx.CallBase = true;
-            mockTx.SetupGet(mr => mr.NetworkFee).Returns(networkFee);
-            mockTx.SetupGet(mr => mr.Size).Returns(size);
-
-            var tx = mockTx.Object;
-            // use random bytes in the script to get a different hash since we cannot mock the Hash
-            byte[] randomBytes;
-            if (overrideScriptBytes != null)
-                randomBytes = overrideScriptBytes;
-            else
+            Transaction tx = new Transaction
             {
-                randomBytes = new byte[16];
-                TestRandom.NextBytes(randomBytes);
-            }
-            tx.Script = randomBytes;
-            tx.Attributes = new TransactionAttribute[0];
-            tx.Inputs = new CoinReference[0];
-            tx.Outputs = new TransactionOutput[0];
-            tx.Witnesses = new Witness[0];
-            return mockTx;
+                Nonce = (uint)TestRandom.Next(),
+                Script = overrideScriptBytes ?? new byte[0],
+                Sender = UInt160.Zero,
+                NetworkFee = networkFee,
+                Attributes = new TransactionAttribute[0],
+                Witness = new Witness
+                {
+                    InvocationScript = new byte[0],
+                    VerificationScript = new byte[0]
+                }
+            };
+
+            int diff = size - tx.Size;
+            if (diff < 0) throw new ArgumentException();
+            if (diff > 0)
+                tx.Witness.VerificationScript = new byte[diff];
+            return tx;
         }
     }
 }

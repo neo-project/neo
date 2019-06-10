@@ -126,47 +126,11 @@ namespace Neo
             return new BigInteger(b);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        unsafe internal static bool NotZero(this byte[] x)
+        public static BigInteger Sum(this IEnumerable<BigInteger> source)
         {
-            if (x is null)
-                throw new ArgumentNullException(nameof(x));
-            int len = x.Length;
-            if (len == 0) return false;
-            fixed (byte* xp = x)
-            {
-                long* xlp = (long*)xp;
-                for (; len >= 8; len -= 8)
-                {
-                    if (*xlp != 0) return true;
-                    xlp++;
-                }
-                byte* xbp = (byte*)xlp;
-                for (; len > 0; len--)
-                {
-                    if (*xbp != 0) return true;
-                    xbp++;
-                }
-            }
-            return false;
-        }
-
-        public static Fixed8 Sum(this IEnumerable<Fixed8> source)
-        {
-            long sum = 0;
-            checked
-            {
-                foreach (Fixed8 item in source)
-                {
-                    sum += item.value;
-                }
-            }
-            return new Fixed8(sum);
-        }
-
-        public static Fixed8 Sum<TSource>(this IEnumerable<TSource> source, Func<TSource, Fixed8> selector)
-        {
-            return source.Select(selector).Sum();
+            var sum = BigInteger.Zero;
+            foreach (var bi in source) sum += bi;
+            return sum;
         }
 
         internal static bool TestBit(this BigInteger i, int index)
@@ -256,21 +220,21 @@ namespace Neo
             return new IPEndPoint(endPoint.Address.Unmap(), endPoint.Port);
         }
 
-        internal static long WeightedAverage<T>(this IEnumerable<T> source, Func<T, long> valueSelector, Func<T, long> weightSelector)
+        internal static BigInteger WeightedAverage<T>(this IEnumerable<T> source, Func<T, BigInteger> valueSelector, Func<T, BigInteger> weightSelector)
         {
-            long sum_weight = 0;
-            long sum_value = 0;
+            BigInteger sum_weight = BigInteger.Zero;
+            BigInteger sum_value = BigInteger.Zero;
             foreach (T item in source)
             {
-                long weight = weightSelector(item);
+                BigInteger weight = weightSelector(item);
                 sum_weight += weight;
                 sum_value += valueSelector(item) * weight;
             }
-            if (sum_value == 0) return 0;
+            if (sum_value == BigInteger.Zero) return BigInteger.Zero;
             return sum_value / sum_weight;
         }
 
-        internal static IEnumerable<TResult> WeightedFilter<T, TResult>(this IList<T> source, double start, double end, Func<T, long> weightSelector, Func<T, long, TResult> resultSelector)
+        internal static IEnumerable<TResult> WeightedFilter<T, TResult>(this IList<T> source, double start, double end, Func<T, BigInteger> weightSelector, Func<T, BigInteger, TResult> resultSelector)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (start < 0 || start > 1) throw new ArgumentOutOfRangeException(nameof(start));
@@ -278,16 +242,16 @@ namespace Neo
             if (weightSelector == null) throw new ArgumentNullException(nameof(weightSelector));
             if (resultSelector == null) throw new ArgumentNullException(nameof(resultSelector));
             if (source.Count == 0 || start == end) yield break;
-            double amount = source.Sum(weightSelector);
-            long sum = 0;
+            double amount = (double)source.Select(weightSelector).Sum();
+            BigInteger sum = 0;
             double current = 0;
             foreach (T item in source)
             {
                 if (current >= end) break;
-                long weight = weightSelector(item);
+                BigInteger weight = weightSelector(item);
                 sum += weight;
                 double old = current;
-                current = sum / amount;
+                current = (double)sum / amount;
                 if (current <= start) continue;
                 if (old < start)
                 {

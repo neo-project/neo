@@ -67,7 +67,7 @@ namespace Neo.SmartContract
                     sb.EmitPush(publicKey.EncodePoint(true));
                 }
                 sb.EmitPush(publicKeys.Length);
-                sb.Emit(OpCode.CHECKMULTISIG);
+                sb.EmitSysCall(InteropService.Neo_Crypto_CheckMultiSig);
                 return sb.ToArray();
             }
         }
@@ -86,7 +86,7 @@ namespace Neo.SmartContract
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.EmitPush(publicKey.EncodePoint(true));
-                sb.Emit(OpCode.CHECKSIG);
+                sb.EmitSysCall(InteropService.Neo_Crypto_CheckSig);
                 return sb.ToArray();
             }
         }
