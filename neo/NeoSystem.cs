@@ -8,7 +8,6 @@ using Neo.Plugins;
 using Neo.Wallets;
 using System;
 using System.Net;
-using System.Threading;
 
 namespace Neo
 {
@@ -28,7 +27,7 @@ namespace Neo
         public RpcServer RpcServer { get; private set; }
 
         private readonly Store store;
-        private Peer.Start start_message = null;
+        private ChannelsConfig start_message = null;
         private bool suspend = false;
 
         public NeoSystem(Store store)
@@ -74,17 +73,10 @@ namespace Neo
             Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);
         }
 
-        public void StartNode(int port = 0, int wsPort = 0, int minDesiredConnections = Peer.DefaultMinDesiredConnections,
-            int maxConnections = Peer.DefaultMaxConnections, int maxConnectionsPerAddress = 3)
+        public void StartNode(ChannelsConfig config)
         {
-            start_message = new Peer.Start
-            {
-                Port = port,
-                WsPort = wsPort,
-                MinDesiredConnections = minDesiredConnections,
-                MaxConnections = maxConnections,
-                MaxConnectionsPerAddress = maxConnectionsPerAddress
-            };
+            start_message = config;
+
             if (!suspend)
             {
                 LocalNode.Tell(start_message);
@@ -93,7 +85,7 @@ namespace Neo
         }
 
         public void StartRpc(IPAddress bindAddress, int port, Wallet wallet = null, string sslCert = null, string password = null,
-            string[] trustedAuthorities = null, Fixed8 maxGasInvoke = default(Fixed8))
+            string[] trustedAuthorities = null, long maxGasInvoke = default)
         {
             RpcServer = new RpcServer(this, wallet, maxGasInvoke);
             RpcServer.Start(bindAddress, port, sslCert, password, trustedAuthorities);

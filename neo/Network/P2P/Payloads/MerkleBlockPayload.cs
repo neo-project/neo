@@ -8,7 +8,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public class MerkleBlockPayload : BlockBase
     {
-        public int TxCount;
+        public int ContentCount;
         public UInt256[] Hashes;
         public byte[] Flags;
 
@@ -16,8 +16,7 @@ namespace Neo.Network.P2P.Payloads
 
         public static MerkleBlockPayload Create(Block block, BitArray flags)
         {
-            MerkleTree tree = new MerkleTree(block.Transactions.Select(p => p.Hash).ToArray());
-            tree.Trim(flags);
+            MerkleTree tree = new MerkleTree(new[] { block.ConsensusData.Hash }.Concat(block.Transactions.Select(p => p.Hash)).ToArray());
             byte[] buffer = new byte[(flags.Length + 7) / 8];
             flags.CopyTo(buffer, 0);
             return new MerkleBlockPayload
@@ -27,10 +26,9 @@ namespace Neo.Network.P2P.Payloads
                 MerkleRoot = block.MerkleRoot,
                 Timestamp = block.Timestamp,
                 Index = block.Index,
-                ConsensusData = block.ConsensusData,
                 NextConsensus = block.NextConsensus,
                 Witness = block.Witness,
-                TxCount = block.Transactions.Length,
+                ContentCount = block.Transactions.Length + 1,
                 Hashes = tree.ToHashArray(),
                 Flags = buffer
             };
@@ -39,7 +37,7 @@ namespace Neo.Network.P2P.Payloads
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            TxCount = (int)reader.ReadVarInt(int.MaxValue);
+            ContentCount = (int)reader.ReadVarInt(int.MaxValue);
             Hashes = reader.ReadSerializableArray<UInt256>();
             Flags = reader.ReadVarBytes();
         }
@@ -47,7 +45,7 @@ namespace Neo.Network.P2P.Payloads
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.WriteVarInt(TxCount);
+            writer.WriteVarInt(ContentCount);
             writer.Write(Hashes);
             writer.WriteVarBytes(Flags);
         }

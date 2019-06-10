@@ -5,8 +5,8 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Actors;
 using Neo.Ledger;
+using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -22,14 +22,15 @@ namespace Neo.Network.P2P
         private readonly Queue<Message> message_queue_high = new Queue<Message>();
         private readonly Queue<Message> message_queue_low = new Queue<Message>();
         private ByteString msg_buffer = ByteString.Empty;
-        private bool ack = true;
         private BloomFilter bloom_filter;
+        private bool ack = true;
         private bool verack = false;
 
-        public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerPort);
-        public override int ListenerPort => Version?.Port ?? 0;
+        public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
+        public int ListenerTcpPort { get; private set; } = 0;
         public VersionPayload Version { get; private set; }
-        public uint LastBlockIndex { get; private set; }
+        public uint LastBlockIndex { get; private set; } = 0;
+        public bool IsFullNode { get; private set; } = false;
 
         public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
             : base(connection, remote, local)
@@ -37,19 +38,31 @@ namespace Neo.Network.P2P
             this.system = system;
             this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
-            SendMessage(Message.Create("version", VersionPayload.Create(LocalNode.Singleton.ListenerPort, LocalNode.Nonce, LocalNode.UserAgent, Blockchain.Singleton.Height)));
+
+            var capabilities = new List<NodeCapability>
+            {
+                new FullNodeCapability(Blockchain.Singleton.Height)
+            };
+
+            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
+            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
+
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
 
         private void CheckMessageQueue()
         {
             if (!verack || !ack) return;
             Queue<Message> queue = message_queue_high;
-            if (queue.Count == 0) queue = message_queue_low;
-            if (queue.Count == 0) return;
+            if (queue.Count == 0)
+            {
+                queue = message_queue_low;
+                if (queue.Count == 0) return;
+            }
             SendMessage(queue.Dequeue());
         }
 
-        private void EnqueueMessage(string command, ISerializable payload = null)
+        private void EnqueueMessage(MessageCommand command, ISerializable payload = null)
         {
             EnqueueMessage(Message.Create(command, payload));
         }
@@ -59,26 +72,26 @@ namespace Neo.Network.P2P
             bool is_single = false;
             switch (message.Command)
             {
-                case "addr":
-                case "getaddr":
-                case "getblocks":
-                case "getheaders":
-                case "mempool":
-                case "ping":
-                case "pong":
+                case MessageCommand.Addr:
+                case MessageCommand.GetAddr:
+                case MessageCommand.GetBlocks:
+                case MessageCommand.GetHeaders:
+                case MessageCommand.Mempool:
+                case MessageCommand.Ping:
+                case MessageCommand.Pong:
                     is_single = true;
                     break;
             }
             Queue<Message> message_queue;
             switch (message.Command)
             {
-                case "alert":
-                case "consensus":
-                case "filteradd":
-                case "filterclear":
-                case "filterload":
-                case "getaddr":
-                case "mempool":
+                case MessageCommand.Alert:
+                case MessageCommand.Consensus:
+                case MessageCommand.FilterAdd:
+                case MessageCommand.FilterClear:
+                case MessageCommand.FilterLoad:
+                case MessageCommand.GetAddr:
+                case MessageCommand.Mempool:
                     message_queue = message_queue_high;
                     break;
                 default:
@@ -99,6 +112,7 @@ namespace Neo.Network.P2P
         protected override void OnData(ByteString data)
         {
             msg_buffer = msg_buffer.Concat(data);
+
             for (Message message = TryParseMessage(); message != null; message = TryParseMessage())
                 protocol.Tell(message);
         }
@@ -120,7 +134,7 @@ namespace Neo.Network.P2P
                 case VersionPayload payload:
                     OnVersionPayload(payload);
                     break;
-                case "verack":
+                case MessageCommand.Verack:
                     OnVerack();
                     break;
                 case ProtocolHandler.SetFilter setFilter:
@@ -140,24 +154,24 @@ namespace Neo.Network.P2P
 
         private void OnRelay(IInventory inventory)
         {
-            if (Version?.Relay != true) return;
+            if (!IsFullNode) return;
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                     return;
             }
-            EnqueueMessage("inv", InvPayload.Create(inventory.InventoryType, inventory.Hash));
+            EnqueueMessage(MessageCommand.Inv, InvPayload.Create(inventory.InventoryType, inventory.Hash));
         }
 
         private void OnSend(IInventory inventory)
         {
-            if (Version?.Relay != true) return;
+            if (!IsFullNode) return;
             if (inventory.InventoryType == InventoryType.TX)
             {
                 if (bloom_filter != null && !bloom_filter.Test((Transaction)inventory))
                     return;
             }
-            EnqueueMessage(inventory.InventoryType.ToString().ToLower(), inventory);
+            EnqueueMessage(inventory.InventoryType.ToMessageCommand(), inventory);
         }
 
         private void OnSetFilter(BloomFilter filter)
@@ -174,9 +188,22 @@ namespace Neo.Network.P2P
 
         private void OnVersionPayload(VersionPayload version)
         {
-            this.Version = version;
-            this.LastBlockIndex = Version.StartHeight;
-            if (version.Nonce == LocalNode.Nonce)
+            Version = version;
+            foreach (NodeCapability capability in version.Capabilities)
+            {
+                switch (capability)
+                {
+                    case FullNodeCapability fullNodeCapability:
+                        IsFullNode = true;
+                        LastBlockIndex = fullNodeCapability.StartHeight;
+                        break;
+                    case ServerCapability serverCapability:
+                        if (serverCapability.Type == NodeCapabilityType.TcpServer)
+                            ListenerTcpPort = serverCapability.Port;
+                        break;
+                }
+            }
+            if (version.Nonce == LocalNode.Nonce || version.Magic != ProtocolSettings.Default.Magic)
             {
                 Disconnect(true);
                 return;
@@ -186,7 +213,7 @@ namespace Neo.Network.P2P
                 Disconnect(true);
                 return;
             }
-            SendMessage(Message.Create("verack"));
+            SendMessage(Message.Create(MessageCommand.Verack));
         }
 
         protected override void PostStop()
@@ -217,28 +244,17 @@ namespace Neo.Network.P2P
 
         private Message TryParseMessage()
         {
-            if (msg_buffer.Count < sizeof(uint)) return null;
-            uint magic = msg_buffer.Slice(0, sizeof(uint)).ToArray().ToUInt32(0);
-            if (magic != Message.Magic)
-                throw new FormatException();
-            if (msg_buffer.Count < Message.HeaderSize) return null;
-            int length = msg_buffer.Slice(16, sizeof(int)).ToArray().ToInt32(0);
-            if (length > Message.PayloadMaxSize)
-                throw new FormatException();
-            length += Message.HeaderSize;
-            if (msg_buffer.Count < length) return null;
-            Message message = msg_buffer.Slice(0, length).ToArray().AsSerializable<Message>();
+            var length = Message.TryDeserialize(msg_buffer, out var msg);
+            if (length <= 0) return null;
+
             msg_buffer = msg_buffer.Slice(length).Compact();
-            return message;
+            return msg;
         }
     }
 
     internal class RemoteNodeMailbox : PriorityMailbox
     {
-        public RemoteNodeMailbox(Akka.Actor.Settings settings, Config config)
-            : base(settings, config)
-        {
-        }
+        public RemoteNodeMailbox(Settings settings, Config config) : base(settings, config) { }
 
         protected override bool IsHighPriority(object message)
         {

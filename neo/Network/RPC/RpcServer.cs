@@ -23,6 +23,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
 
@@ -31,12 +32,12 @@ namespace Neo.Network.RPC
     public sealed class RpcServer : IDisposable
     {
         public Wallet Wallet { get; set; }
-        public Fixed8 MaxGasInvoke { get; }
+        public long MaxGasInvoke { get; }
 
         private IWebHost host;
         private readonly NeoSystem system;
 
-        public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8))
+        public RpcServer(NeoSystem system, Wallet wallet = null, long maxGasInvoke = default)
         {
             this.system = system;
             this.Wallet = wallet;
@@ -89,12 +90,16 @@ namespace Neo.Network.RPC
             return json;
         }
 
-        private static JObject GetRelayResult(RelayResultReason reason)
+        private static JObject GetRelayResult(RelayResultReason reason, UInt256 hash)
         {
             switch (reason)
             {
                 case RelayResultReason.Succeed:
-                    return true;
+                    {
+                        var ret = new JObject();
+                        ret["hash"] = hash.ToString();
+                        return ret;
+                    }
                 case RelayResultReason.AlreadyExists:
                     throw new RpcException(-501, "Block or transaction already exists and cannot be sent repeatedly.");
                 case RelayResultReason.OutOfMemory:
@@ -114,16 +119,6 @@ namespace Neo.Network.RPC
         {
             switch (method)
             {
-                case "getaccountstate":
-                    {
-                        UInt160 script_hash = _params[0].AsString().ToScriptHash();
-                        return GetAccountState(script_hash);
-                    }
-                case "getassetstate":
-                    {
-                        UInt256 asset_id = UInt256.Parse(_params[0].AsString());
-                        return GetAssetState(asset_id);
-                    }
                 case "getbestblockhash":
                     {
                         return GetBestBlockHash();
@@ -189,12 +184,6 @@ namespace Neo.Network.RPC
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
                         return GetTransactionHeight(hash);
                     }
-                case "gettxout":
-                    {
-                        UInt256 hash = UInt256.Parse(_params[0].AsString());
-                        ushort index = ushort.Parse(_params[1].AsString());
-                        return GetTxOut(hash, index);
-                    }
                 case "getvalidators":
                     {
                         return GetValidators();
@@ -221,7 +210,7 @@ namespace Neo.Network.RPC
                     }
                 case "sendrawtransaction":
                     {
-                        Transaction tx = Transaction.DeserializeFrom(_params[0].AsString().HexToBytes());
+                        Transaction tx = _params[0].AsString().HexToBytes().AsSerializable<Transaction>();
                         return SendRawTransaction(tx);
                     }
                 case "submitblock":
@@ -392,18 +381,6 @@ namespace Neo.Network.RPC
             host.Start();
         }
 
-        private JObject GetAccountState(UInt160 script_hash)
-        {
-            AccountState account = Blockchain.Singleton.Store.GetAccounts().TryGet(script_hash) ?? new AccountState(script_hash);
-            return account.ToJson();
-        }
-
-        private JObject GetAssetState(UInt256 asset_id)
-        {
-            AssetState asset = Blockchain.Singleton.Store.GetAssets().TryGet(asset_id);
-            return asset?.ToJson() ?? throw new RpcException(-100, "Unknown asset");
-        }
-
         private JObject GetBestBlockHash()
         {
             return Blockchain.Singleton.CurrentBlockHash.ToString();
@@ -482,9 +459,10 @@ namespace Neo.Network.RPC
         private JObject GetBlockSysFee(uint height)
         {
             if (height <= Blockchain.Singleton.Height)
-            {
-                return Blockchain.Singleton.Store.GetSysFeeAmount(height).ToString();
-            }
+                using (ApplicationEngine engine = NativeContract.GAS.TestCall("getSysFeeAmount", height))
+                {
+                    return engine.ResultStack.Peek().GetBigInteger().ToString();
+                }
             throw new RpcException(-100, "Invalid Height");
         }
 
@@ -514,7 +492,7 @@ namespace Neo.Network.RPC
             {
                 JObject peerJson = new JObject();
                 peerJson["address"] = p.Remote.Address.ToString();
-                peerJson["port"] = p.ListenerPort;
+                peerJson["port"] = p.ListenerTcpPort;
                 return peerJson;
             }));
             return json;
@@ -573,17 +551,12 @@ namespace Neo.Network.RPC
             throw new RpcException(-100, "Unknown transaction");
         }
 
-        private JObject GetTxOut(UInt256 hash, ushort index)
-        {
-            return Blockchain.Singleton.Store.GetUnspent(hash, index)?.ToJson(index);
-        }
-
         private JObject GetValidators()
         {
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                var validators = snapshot.GetValidators();
-                return snapshot.GetEnrollments().Select(p =>
+                var validators = NativeContract.NEO.GetValidators(snapshot);
+                return NativeContract.NEO.GetRegisteredValidators(snapshot).Select(p =>
                 {
                     JObject validator = new JObject();
                     validator["publickey"] = p.PublicKey.ToString();
@@ -597,7 +570,8 @@ namespace Neo.Network.RPC
         private JObject GetVersion()
         {
             JObject json = new JObject();
-            json["port"] = LocalNode.Singleton.ListenerPort;
+            json["tcpPort"] = LocalNode.Singleton.ListenerTcpPort;
+            json["wsPort"] = LocalNode.Singleton.ListenerWsPort;
             json["nonce"] = LocalNode.Nonce;
             json["useragent"] = LocalNode.UserAgent;
             return json;
@@ -636,13 +610,13 @@ namespace Neo.Network.RPC
         private JObject SendRawTransaction(Transaction tx)
         {
             RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
-            return GetRelayResult(reason);
+            return GetRelayResult(reason, tx.Hash);
         }
 
         private JObject SubmitBlock(Block block)
         {
             RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(block).Result;
-            return GetRelayResult(reason);
+            return GetRelayResult(reason, block.Hash);
         }
 
         private JObject ValidateAddress(string address)

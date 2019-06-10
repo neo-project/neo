@@ -55,6 +55,7 @@ namespace Neo
         /// </summary>
         public unsafe bool Equals(UInt256 other)
         {
+            if (other is null) return false;
             fixed (byte* px = ToArray(), py = other.ToArray())
             {
                 ulong* lpx = (ulong*)px;

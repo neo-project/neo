@@ -2,125 +2,104 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
-using Neo.VM.Types;
+using System;
+using System.Collections.Generic;
 
 namespace Neo.SmartContract
 {
-    public class ApplicationEngine : ExecutionEngine
+    public partial class ApplicationEngine : ExecutionEngine
     {
-        private const long ratio = 100000;
-        private const long gas_free = 10 * 100000000;
+        public static event EventHandler<NotifyEventArgs> Notify;
+        public static event EventHandler<LogEventArgs> Log;
+
+        public const long GasFree = 0;
         private readonly long gas_amount;
-        private long gas_consumed = 0;
         private readonly bool testMode;
+        private readonly RandomAccessStack<UInt160> hashes = new RandomAccessStack<UInt160>();
+        private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
+        private readonly List<IDisposable> disposables = new List<IDisposable>();
 
-        public Fixed8 GasConsumed => new Fixed8(gas_consumed);
-        public new NeoService Service => (NeoService)base.Service;
+        public TriggerType Trigger { get; }
+        public IVerifiable ScriptContainer { get; }
+        public Snapshot Snapshot { get; }
+        public long GasConsumed { get; private set; } = 0;
+        public UInt160 CurrentScriptHash => hashes.Count > 0 ? hashes.Peek() : null;
+        public UInt160 CallingScriptHash => hashes.Count > 1 ? hashes.Peek(1) : null;
+        public UInt160 EntryScriptHash => hashes.Count > 0 ? hashes.Peek(hashes.Count - 1) : null;
+        public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
 
-        public ApplicationEngine(TriggerType trigger, IScriptContainer container, Snapshot snapshot, Fixed8 gas, bool testMode = false)
-            : base(container, Cryptography.Crypto.Default, new NeoService(trigger, snapshot))
+        public ApplicationEngine(TriggerType trigger, IVerifiable container, Snapshot snapshot, long gas, bool testMode = false)
         {
-            this.gas_amount = gas_free + gas.GetData();
+            this.gas_amount = GasFree + gas;
             this.testMode = testMode;
+            this.Trigger = trigger;
+            this.ScriptContainer = container;
+            this.Snapshot = snapshot;
+            ContextLoaded += ApplicationEngine_ContextLoaded;
+            ContextUnloaded += ApplicationEngine_ContextUnloaded;
+        }
+
+        internal T AddDisposable<T>(T disposable) where T : IDisposable
+        {
+            disposables.Add(disposable);
+            return disposable;
+        }
+
+        private bool AddGas(long gas)
+        {
+            GasConsumed = checked(GasConsumed + gas);
+            return testMode || GasConsumed <= gas_amount;
+        }
+
+        private void ApplicationEngine_ContextLoaded(object sender, ExecutionContext e)
+        {
+            hashes.Push(((byte[])e.Script).ToScriptHash());
+        }
+
+        private void ApplicationEngine_ContextUnloaded(object sender, ExecutionContext e)
+        {
+            hashes.Pop();
         }
 
         public override void Dispose()
         {
+            foreach (IDisposable disposable in disposables)
+                disposable.Dispose();
+            disposables.Clear();
             base.Dispose();
-            Service.Dispose();
         }
 
-        protected virtual long GetPrice()
+        protected override bool OnSysCall(uint method)
         {
-            Instruction instruction = CurrentContext.CurrentInstruction;
-            if (instruction.OpCode <= OpCode.NOP) return 0;
-            switch (instruction.OpCode)
-            {
-                case OpCode.SYSCALL:
-                    return GetPriceForSysCall();
-                case OpCode.SHA1:
-                case OpCode.SHA256:
-                    return 10;
-                case OpCode.HASH160:
-                case OpCode.HASH256:
-                    return 20;
-                case OpCode.CHECKSIG:
-                case OpCode.VERIFY:
-                    return 100;
-                case OpCode.CHECKMULTISIG:
-                    {
-                        if (CurrentContext.EvaluationStack.Count == 0) return 1;
-
-                        var item = CurrentContext.EvaluationStack.Peek();
-
-                        int n;
-                        if (item is Array array) n = array.Count;
-                        else n = (int)item.GetBigInteger();
-
-                        if (n < 1) return 1;
-                        return 100 * n;
-                    }
-                default: return 1;
-            }
-        }
-
-        protected virtual long GetPriceForSysCall()
-        {
-            Instruction instruction = CurrentContext.CurrentInstruction;
-            uint api_hash = instruction.Operand.Length == 4
-                ? instruction.TokenU32
-                : instruction.TokenString.ToInteropMethodHash();
-            long price = Service.GetPrice(api_hash);
-            if (price > 0) return price;
-            if (api_hash == "Neo.Contract.Create".ToInteropMethodHash() ||
-                api_hash == "Neo.Contract.Migrate".ToInteropMethodHash())
-            {
-                long fee = 100L;
-
-                ContractPropertyState contract_properties = (ContractPropertyState)(byte)CurrentContext.EvaluationStack.Peek(3).GetBigInteger();
-
-                if (contract_properties.HasFlag(ContractPropertyState.HasStorage))
-                {
-                    fee += 400L;
-                }
-                if (contract_properties.HasFlag(ContractPropertyState.HasDynamicInvoke))
-                {
-                    fee += 500L;
-                }
-                return fee * 100000000L / ratio;
-            }
-            if (api_hash == "System.Storage.Put".ToInteropMethodHash() ||
-                api_hash == "System.Storage.PutEx".ToInteropMethodHash())
-                return ((CurrentContext.EvaluationStack.Peek(1).GetByteArray().Length + CurrentContext.EvaluationStack.Peek(2).GetByteArray().Length - 1) / 1024 + 1) * 1000;
-            return 1;
+            if (!AddGas(InteropService.GetPrice(method, CurrentContext.EvaluationStack)))
+                return false;
+            return InteropService.Invoke(this, method);
         }
 
         protected override bool PreExecuteInstruction()
         {
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
                 return true;
-            gas_consumed = checked(gas_consumed + GetPrice() * ratio);
-            if (!testMode && gas_consumed > gas_amount) return false;
-            return true;
+            return AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
         }
 
         public static ApplicationEngine Run(byte[] script, Snapshot snapshot,
-            IScriptContainer container = null, Block persistingBlock = null, bool testMode = false, Fixed8 extraGAS = default(Fixed8))
+            IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
         {
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? new Block
             {
                 Version = 0,
                 PrevHash = snapshot.CurrentBlockHash,
                 MerkleRoot = new UInt256(),
-                Timestamp = snapshot.Blocks[snapshot.CurrentBlockHash].TrimmedBlock.Timestamp + Blockchain.SecondsPerBlock,
+                Timestamp = snapshot.Blocks[snapshot.CurrentBlockHash].Timestamp + Blockchain.SecondsPerBlock,
                 Index = snapshot.Height + 1,
-                ConsensusData = 0,
-                NextConsensus = snapshot.Blocks[snapshot.CurrentBlockHash].TrimmedBlock.NextConsensus,
+                NextConsensus = snapshot.Blocks[snapshot.CurrentBlockHash].NextConsensus,
                 Witness = new Witness
                 {
                     InvocationScript = new byte[0],
                     VerificationScript = new byte[0]
                 },
+                ConsensusData = new ConsensusData(),
                 Transactions = new Transaction[0]
             };
             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, extraGAS, testMode);
@@ -129,12 +108,25 @@ namespace Neo.SmartContract
             return engine;
         }
 
-        public static ApplicationEngine Run(byte[] script, IScriptContainer container = null, Block persistingBlock = null, bool testMode = false, Fixed8 extraGAS = default(Fixed8))
+        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, bool testMode = false, long extraGAS = default)
         {
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 return Run(script, snapshot, container, persistingBlock, testMode, extraGAS);
             }
+        }
+
+        internal void SendLog(UInt160 script_hash, string message)
+        {
+            LogEventArgs log = new LogEventArgs(ScriptContainer, script_hash, message);
+            Log?.Invoke(this, log);
+        }
+
+        internal void SendNotification(UInt160 script_hash, StackItem state)
+        {
+            NotifyEventArgs notification = new NotifyEventArgs(ScriptContainer, script_hash, state);
+            Notify?.Invoke(this, notification);
+            notifications.Add(notification);
         }
     }
 }
