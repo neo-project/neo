@@ -41,12 +41,13 @@ namespace Neo.UnitTests
         {
             ISerializable s = null;
             // test priority commands
-            uut.IsHighPriority(Message.Create("consensus", s)).Should().Be(true);
-            uut.IsHighPriority(Message.Create("filteradd", s)).Should().Be(true);
-            uut.IsHighPriority(Message.Create("filterclear", s)).Should().Be(true);
-            uut.IsHighPriority(Message.Create("verack", s)).Should().Be(true);
-            uut.IsHighPriority(Message.Create("version", s)).Should().Be(true);
-            uut.IsHighPriority(Message.Create("alert", s)).Should().Be(true);
+            uut.IsHighPriority(Message.Create(MessageCommand.Consensus, s)).Should().Be(true);
+            uut.IsHighPriority(Message.Create(MessageCommand.FilterAdd, s)).Should().Be(true);
+            uut.IsHighPriority(Message.Create(MessageCommand.FilterClear, s)).Should().Be(true);
+            uut.IsHighPriority(Message.Create(MessageCommand.FilterLoad, s)).Should().Be(true);
+            uut.IsHighPriority(Message.Create(MessageCommand.Verack, s)).Should().Be(true);
+            uut.IsHighPriority(Message.Create(MessageCommand.Version, s)).Should().Be(true);
+            uut.IsHighPriority(Message.Create(MessageCommand.Alert, s)).Should().Be(true);
             // any random command should not have priority
             uut.IsHighPriority(Message.Create("_", s)).Should().Be(false);
             // any random object (non Message) should not have priority
@@ -68,12 +69,12 @@ namespace Neo.UnitTests
             uut.ShallDrop(obj, queue).Should().Be(true);
 
             // test drop for specific commands (empty queue)
-            uut.ShallDrop(Message.Create("getaddr", s), queue).Should().Be(false);
-            uut.ShallDrop(Message.Create("getblocks", s), queue).Should().Be(false);
-            uut.ShallDrop(Message.Create("getdata", s), queue).Should().Be(false);
-            uut.ShallDrop(Message.Create("getheaders", s), queue).Should().Be(false);
-            uut.ShallDrop(Message.Create("version", s), queue).Should().Be(false);
-            uut.ShallDrop(Message.Create("mempool", s), queue).Should().Be(false);
+            uut.ShallDrop(Message.Create(MessageCommand.GetAddr, s), queue).Should().Be(false);
+            uut.ShallDrop(Message.Create(MessageCommand.GetBlocks, s), queue).Should().Be(false);
+            uut.ShallDrop(Message.Create(MessageCommand.GetData, s), queue).Should().Be(false);
+            uut.ShallDrop(Message.Create(MessageCommand.GetHeaders, s), queue).Should().Be(false);
+            uut.ShallDrop(Message.Create(MessageCommand.Version, s), queue).Should().Be(false);
+            uut.ShallDrop(Message.Create(MessageCommand.Mempool, s), queue).Should().Be(false);
             // any random command should not be dropped
             uut.ShallDrop(Message.Create("_", s), queue).Should().Be(false);
         }
