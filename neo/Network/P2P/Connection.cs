@@ -19,12 +19,20 @@ namespace Neo.Network.P2P
         private readonly IActorRef tcp;
         private readonly WebSocket ws;
         private bool disconnected = false;
+        /// <summary>
+        /// connection initial timeout (in seconds) before any package has been accepted
+        /// </summary>
+        private double connectionTimeoutLimitStart = 10;
+        /// <summary>
+        /// connection timeout (in seconds) after every `OnReceived(ByteString data)` event
+        /// </summary>
+        private double connectionTimeoutLimit = 60;
 
         protected Connection(object connection, IPEndPoint remote, IPEndPoint local)
         {
             this.Remote = remote;
             this.Local = local;
-            this.timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(10), Self, Timer.Instance, ActorRefs.NoSender);
+            this.timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(connectionTimeoutLimitStart), Self, Timer.Instance, ActorRefs.NoSender);
             switch (connection)
             {
                 case IActorRef tcp:
@@ -100,7 +108,7 @@ namespace Neo.Network.P2P
         private void OnReceived(ByteString data)
         {
             timer.CancelIfNotNull();
-            timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromMinutes(1), Self, Timer.Instance, ActorRefs.NoSender);
+            timer = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(connectionTimeoutLimit), Self, Timer.Instance, ActorRefs.NoSender);
             try
             {
                 OnData(data);
