@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Neo.IO.Caching;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -7,23 +8,33 @@ namespace Neo.IO.Json
 {
     public class JObject
     {
+        protected const char BEGIN_ARRAY = '[';
+        protected const char BEGIN_OBJECT = '{';
+        protected const char END_ARRAY = ']';
+        protected const char END_OBJECT = '}';
+        protected const char NAME_SEPARATOR = ':';
+        protected const char VALUE_SEPARATOR = ',';
+        protected const char QUOTATION_MARK = '"';
+        protected const string WS = " \t\n\r";
+        protected const string LITERAL_FALSE = "false";
+        protected const string LITERAL_NULL = "null";
+        protected const string LITERAL_TRUE = "true";
+
         public static readonly JObject Null = null;
-        private Dictionary<string, JObject> properties = new Dictionary<string, JObject>();
+        public IDictionary<string, JObject> Properties { get; } = new OrderedDictionary<string, JObject>();
 
         public JObject this[string name]
         {
             get
             {
-                properties.TryGetValue(name, out JObject value);
+                Properties.TryGetValue(name, out JObject value);
                 return value;
             }
             set
             {
-                properties[name] = value;
+                Properties[name] = value;
             }
         }
-
-        public IReadOnlyDictionary<string, JObject> Properties => properties;
 
         public virtual bool AsBoolean()
         {
@@ -37,12 +48,12 @@ namespace Neo.IO.Json
 
         public virtual string AsString()
         {
-            return "[object Object]";
+            return ToString();
         }
 
         public bool ContainsProperty(string key)
         {
-            return properties.ContainsKey(key);
+            return Properties.ContainsKey(key);
         }
 
         public static JObject Parse(TextReader reader, int max_nest = 100)
@@ -50,71 +61,75 @@ namespace Neo.IO.Json
             if (max_nest < 0) throw new FormatException();
             SkipSpace(reader);
             char firstChar = (char)reader.Peek();
-            if (firstChar == '\"' || firstChar == '\'')
-            {
-                return JString.Parse(reader);
-            }
-            if (firstChar == '[')
-            {
-                return JArray.Parse(reader, max_nest);
-            }
-            if ((firstChar >= '0' && firstChar <= '9') || firstChar == '-')
-            {
-                return JNumber.Parse(reader);
-            }
-            if (firstChar == 't' || firstChar == 'f')
-            {
-                return JBoolean.Parse(reader);
-            }
-            if (firstChar == 'n')
-            {
+            if (firstChar == LITERAL_FALSE[0])
+                return JBoolean.ParseFalse(reader);
+            if (firstChar == LITERAL_NULL[0])
                 return ParseNull(reader);
-            }
-            if (reader.Read() != '{') throw new FormatException();
-            SkipSpace(reader);
-            JObject obj = new JObject();
-            while (reader.Peek() != '}')
-            {
-                if (reader.Peek() == ',') reader.Read();
-                SkipSpace(reader);
-                string name = JString.Parse(reader).Value;
-                SkipSpace(reader);
-                if (reader.Read() != ':') throw new FormatException();
-                JObject value = Parse(reader, max_nest - 1);
-                obj.properties.Add(name, value);
-                SkipSpace(reader);
-            }
-            reader.Read();
-            return obj;
+            if (firstChar == LITERAL_TRUE[0])
+                return JBoolean.ParseTrue(reader);
+            if (firstChar == BEGIN_OBJECT)
+                return ParseObject(reader, max_nest);
+            if (firstChar == BEGIN_ARRAY)
+                return JArray.Parse(reader, max_nest);
+            if ((firstChar >= '0' && firstChar <= '9') || firstChar == '-')
+                return JNumber.Parse(reader);
+            if (firstChar == QUOTATION_MARK)
+                return JString.Parse(reader);
+            throw new FormatException();
         }
 
         public static JObject Parse(string value, int max_nest = 100)
         {
             using (StringReader reader = new StringReader(value))
             {
-                return Parse(reader, max_nest);
+                JObject json = Parse(reader, max_nest);
+                SkipSpace(reader);
+                if (reader.Read() != -1) throw new FormatException();
+                return json;
             }
         }
 
         private static JObject ParseNull(TextReader reader)
         {
-            char firstChar = (char)reader.Read();
-            if (firstChar == 'n')
+            for (int i = 0; i < LITERAL_NULL.Length; i++)
+                if ((char)reader.Read() != LITERAL_NULL[i])
+                    throw new FormatException();
+            return null;
+        }
+
+        private static JObject ParseObject(TextReader reader, int max_nest)
+        {
+            SkipSpace(reader);
+            if (reader.Read() != BEGIN_OBJECT) throw new FormatException();
+            JObject obj = new JObject();
+            SkipSpace(reader);
+            if (reader.Peek() != END_OBJECT)
             {
-                int c2 = reader.Read();
-                int c3 = reader.Read();
-                int c4 = reader.Read();
-                if (c2 == 'u' && c3 == 'l' && c4 == 'l')
+                while (true)
                 {
-                    return null;
+                    string name = JString.Parse(reader).Value;
+                    if (obj.Properties.ContainsKey(name)) throw new FormatException();
+                    SkipSpace(reader);
+                    if (reader.Read() != NAME_SEPARATOR) throw new FormatException();
+                    JObject value = Parse(reader, max_nest - 1);
+                    obj.Properties.Add(name, value);
+                    SkipSpace(reader);
+                    char nextchar = (char)reader.Read();
+                    if (nextchar == VALUE_SEPARATOR) continue;
+                    if (nextchar == END_OBJECT) break;
+                    throw new FormatException();
                 }
             }
-            throw new FormatException();
+            else
+            {
+                reader.Read();
+            }
+            return obj;
         }
 
         protected static void SkipSpace(TextReader reader)
         {
-            while (reader.Peek() == ' ' || reader.Peek() == '\t' || reader.Peek() == '\r' || reader.Peek() == '\n')
+            while (WS.IndexOf((char)reader.Peek()) >= 0)
             {
                 reader.Read();
             }
@@ -123,30 +138,28 @@ namespace Neo.IO.Json
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append('{');
-            foreach (KeyValuePair<string, JObject> pair in properties)
+            sb.Append(BEGIN_OBJECT);
+            foreach (KeyValuePair<string, JObject> pair in Properties)
             {
-                sb.Append('"');
-                sb.Append(pair.Key);
-                sb.Append('"');
-                sb.Append(':');
+                sb.Append((JObject)pair.Key);
+                sb.Append(NAME_SEPARATOR);
                 if (pair.Value == null)
                 {
-                    sb.Append("null");
+                    sb.Append(LITERAL_NULL);
                 }
                 else
                 {
                     sb.Append(pair.Value);
                 }
-                sb.Append(',');
+                sb.Append(VALUE_SEPARATOR);
             }
-            if (properties.Count == 0)
+            if (Properties.Count == 0)
             {
-                sb.Append('}');
+                sb.Append(END_OBJECT);
             }
             else
             {
-                sb[sb.Length - 1] = '}';
+                sb[sb.Length - 1] = END_OBJECT;
             }
             return sb.ToString();
         }
