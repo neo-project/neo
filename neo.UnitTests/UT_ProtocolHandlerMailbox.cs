@@ -49,7 +49,7 @@ namespace Neo.UnitTests
             uut.IsHighPriority(Message.Create(MessageCommand.Version, s)).Should().Be(true);
             uut.IsHighPriority(Message.Create(MessageCommand.Alert, s)).Should().Be(true);
             // any random command should not have priority
-            uut.IsHighPriority(Message.Create((byte)'0xff', s)).Should().Be(false);
+            uut.IsHighPriority(Message.Create((MessageCommand)'0xff', s)).Should().Be(false);
             // any random object (non Message) should not have priority
             object obj = null;
             uut.IsHighPriority(obj).Should().Be(false);
@@ -76,7 +76,7 @@ namespace Neo.UnitTests
             uut.ShallDrop(Message.Create(MessageCommand.Version, s), queue).Should().Be(false);
             uut.ShallDrop(Message.Create(MessageCommand.Mempool, s), queue).Should().Be(false);
             // any random command should not be dropped
-            uut.ShallDrop(Message.Create((byte)'0xff', s), queue).Should().Be(false);
+            uut.ShallDrop(Message.Create((MessageCommand)'0xff', s), queue).Should().Be(false);
         }
     }
 }
