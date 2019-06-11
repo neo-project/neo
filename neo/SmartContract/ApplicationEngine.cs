@@ -19,6 +19,7 @@ namespace Neo.SmartContract
         private readonly List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
         private readonly List<IDisposable> disposables = new List<IDisposable>();
 
+        public Dictionary<UInt160, int> InvocationCounter { get; } = new Dictionary<UInt160, int>();
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
         public Snapshot Snapshot { get; }
