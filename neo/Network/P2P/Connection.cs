@@ -28,7 +28,11 @@ namespace Neo.Network.P2P
         /// </summary>
         private double connectionTimeoutLimit = 60;
 
+        /// <summary>
+        /// flag for checking if the last received message was Processed inside the scope of this class
+        /// </summary>
         protected bool messageProcessed = false;
+
 
         protected Connection(object connection, IPEndPoint remote, IPEndPoint local)
         {
