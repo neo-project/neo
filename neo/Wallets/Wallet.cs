@@ -248,11 +248,16 @@ namespace Neo.Wallets
 
         public bool Sign(ContractParametersContext context)
         {
-            WalletAccount account = GetAccount(context.ScriptHash);
-            if (account?.HasKey != true) return false;
-            KeyPair key = account.GetKey();
-            byte[] signature = context.Verifiable.Sign(key);
-            return context.AddSignature(account.Contract, key.PublicKey, signature);
+            bool fSuccess = false;
+            foreach (UInt160 scriptHash in context.ScriptHashes)
+            {
+                WalletAccount account = GetAccount(scriptHash);
+                if (account?.HasKey != true) continue;
+                KeyPair key = account.GetKey();
+                byte[] signature = context.Verifiable.Sign(key);
+                fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
+            }
+            return fSuccess;
         }
 
         public abstract bool VerifyPassword(string password);

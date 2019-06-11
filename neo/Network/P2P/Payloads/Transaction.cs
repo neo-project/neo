@@ -38,7 +38,7 @@ namespace Neo.Network.P2P.Payloads
         public long NetworkFee;
         public uint ValidUntilBlock;
         public TransactionAttribute[] Attributes;
-        public Witness Witness { get; set; }
+        public Witness[] Witnesses { get; set; }
 
         /// <summary>
         /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
@@ -70,17 +70,13 @@ namespace Neo.Network.P2P.Payloads
             sizeof(long) +              //NetworkFee
             sizeof(uint) +              //ValidUntilBlock
             Attributes.GetVarSize() +   //Attributes
-            Witness.Size;               //Witnesses
+            Witnesses.GetVarSize();     //Witnesses
 
         public void CalculateFees()
         {
             if (Sender is null) Sender = UInt160.Zero;
             if (Attributes is null) Attributes = new TransactionAttribute[0];
-            if (Witness is null) Witness = new Witness
-            {
-                InvocationScript = new byte[65],
-                VerificationScript = new byte[39]
-            };
+            if (Witnesses is null) Witnesses = new Witness[0];
             _hash = null;
             long consumed;
             using (ApplicationEngine engine = ApplicationEngine.Run(Script, this, testMode: true))
@@ -109,24 +105,28 @@ namespace Neo.Network.P2P.Payloads
             {
                 // Compute verification gas
 
-                byte[] verification = Witness.VerificationScript;
-                if (verification.Length == 0)
+                consumed = 0;
+                foreach (var witness in Witnesses)
                 {
-                    verification = snapshot.Contracts.TryGet(Sender)?.Script;
-                    if (verification is null) return;
-                }
-                else
-                {
-                    if (Sender != Witness.ScriptHash) return;
-                }
+                    byte[] verification = witness.VerificationScript;
+                    if (verification.Length == 0)
+                    {
+                        verification = snapshot.Contracts.TryGet(Sender)?.Script;
+                        if (verification is null) return;
+                    }
+                    else
+                    {
+                        if (Sender != witness.ScriptHash) return;
+                    }
 
-                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, this, snapshot, 0, true))
-                {
-                    engine.LoadScript(verification);
-                    engine.LoadScript(Witness.InvocationScript);
-                    if (engine.Execute().HasFlag(VMState.FAULT)) return;
-                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return;
-                    consumed = engine.GasConsumed;
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, this, snapshot, 0, true))
+                    {
+                        engine.LoadScript(verification);
+                        engine.LoadScript(witness.InvocationScript);
+                        if (engine.Execute().HasFlag(VMState.FAULT)) return;
+                        if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return;
+                        consumed += engine.GasConsumed;
+                    }
                 }
 
                 // Compute fee per byte
@@ -141,7 +141,7 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(BinaryReader reader)
         {
             DeserializeUnsigned(reader);
-            Witness = reader.ReadSerializable<Witness>();
+            Witnesses = reader.ReadSerializableArray<Witness>();
         }
 
         public void DeserializeUnsigned(BinaryReader reader)
@@ -160,6 +160,8 @@ namespace Neo.Network.P2P.Payloads
             if (Gas + NetworkFee < Gas) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
+            var cosigners = Attributes.Where(p => p.Usage == TransactionAttributeUsage.Cosigner).Select(p => new UInt160(p.Data)).ToArray();
+            if (cosigners.Distinct().Count() != cosigners.Length) throw new FormatException();
         }
 
         public bool Equals(Transaction other)
@@ -179,15 +181,17 @@ namespace Neo.Network.P2P.Payloads
             return Hash.GetHashCode();
         }
 
-        public UInt160 GetScriptHashForVerification(Snapshot snapshot)
+        public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
         {
-            return Sender;
+            var hashes = new HashSet<UInt160> { Sender };
+            hashes.UnionWith(Attributes.Where(p => p.Usage == TransactionAttributeUsage.Cosigner).Select(p => new UInt160(p.Data)));
+            return hashes.OrderBy(p => p).ToArray();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
-            writer.Write(Witness);
+            writer.Write(Witnesses);
         }
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
@@ -215,7 +219,7 @@ namespace Neo.Network.P2P.Payloads
             json["net_fee"] = new BigDecimal(NetworkFee, (byte)NativeContract.GAS.Decimals).ToString();
             json["valid_until_block"] = ValidUntilBlock;
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
-            json["witness"] = Witness.ToJson();
+            json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;
         }
 
@@ -233,14 +237,14 @@ namespace Neo.Network.P2P.Payloads
             var feePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
             if (NetworkFee / size < feePerByte)
                 return false;
-            if (NativeContract.Policy.GetBlockedAccounts(snapshot).Contains(Sender))
+            if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(GetScriptHashesForVerifying(snapshot)).Count() > 0)
                 return false;
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
             var fee = Gas + NetworkFee;
             if (balance < fee) return false;
             fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Sum(p => p.Gas + p.NetworkFee);
             if (balance < fee) return false;
-            return this.VerifyWitness(snapshot, NetworkFee - (size * feePerByte));
+            return this.VerifyWitnesses(snapshot, NetworkFee - (size * feePerByte));
         }
     }
 }
