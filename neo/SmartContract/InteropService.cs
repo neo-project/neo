@@ -217,7 +217,7 @@ namespace Neo.SmartContract
         {
             if (!engine.InvocationCounter.TryGetValue(engine.CurrentScriptHash, out var counter))
             {
-                counter = 1;
+                return false;
             }
 
             engine.CurrentContext.EvaluationStack.Push(counter);
