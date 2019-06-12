@@ -61,6 +61,7 @@ namespace Neo.SmartContract
         public static readonly uint System_Storage_GetCache = Register("System.Storage.GetCache", Storage_GetCache, 0_01000000);
         public static readonly uint System_Storage_Get = Register("System.Storage.Get", Storage_Get, 0_01000000);
         public static readonly uint System_Storage_Put = Register("System.Storage.Put", Storage_Put, GetStoragePrice);
+        public static readonly uint System_Storage_PutCache = Register("System.Storage.PutCache", Storage_PutCache, GetStoragePrice);
         public static readonly uint System_Storage_PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice);
         public static readonly uint System_Storage_Delete = Register("System.Storage.Delete", Storage_Delete, 0_01000000);
         public static readonly uint System_StorageContext_AsReadOnly = Register("System.StorageContext.AsReadOnly", StorageContext_AsReadOnly, 0_00000400);
@@ -565,8 +566,6 @@ namespace Neo.SmartContract
                 Key = key
             };
 
-            // TODO: need to get StorageItem type here first, to know if it's cacheable...
-
             StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
             if (item.IsConstant) return false;
             // only allow writes on Verification if type is IntegerCache
@@ -576,6 +575,43 @@ namespace Neo.SmartContract
             item.IsConstant = flags.HasFlag(StorageFlags.Constant);
             item.IsIntegerCache = flags.HasFlag(StorageFlags.IntegerCache);
             return true;
+        }
+
+        private static bool PutCache(ApplicationEngine engine, StorageContext context, byte[] key, BigInteger value)
+        {
+            if (key.Length > MaxStorageKeySize) return false;
+            // TODO: check big integer
+            //if (value.Length > MaxStorageValueSize) return false;
+            if (context.IsReadOnly) return false;
+            if (!CheckStorageContext(engine, context)) return false;
+            StorageKey skey = new StorageKey
+            {
+                ScriptHash = context.ScriptHash,
+                Key = key
+            };
+
+            // TODO: need to get StorageItem type here first, to know if it's cacheable...
+
+            StorageItem item = engine.Snapshot.MempoolCacheStorages.GetAndChange(skey, () => new StorageItem());
+            if (item.IsConstant) return false;
+            // only allow writes on Verification if type is IntegerCache
+            if ((!item.IsIntegerCache) && (engine.Trigger != TriggerType.Application))
+                return false;
+            item.Value = value;
+            item.IsConstant = flags.HasFlag(StorageFlags.Constant);
+            item.IsIntegerCache = flags.HasFlag(StorageFlags.IntegerCache);
+            return true;
+        }
+
+
+        private static bool Storage_PutCache(ApplicationEngine engine)
+        {
+            if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface))
+                return false;
+            StorageContext context = _interface.GetInterface<StorageContext>();
+            byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            BigInteger value = engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
+            return PutCache(engine, context, key, value);
         }
 
         private static bool Storage_Put(ApplicationEngine engine)
