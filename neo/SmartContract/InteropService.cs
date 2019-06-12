@@ -564,6 +564,9 @@ namespace Neo.SmartContract
                 ScriptHash = context.ScriptHash,
                 Key = key
             };
+
+            // TODO: need to get StorageItem type here first, to know if it's cacheable...
+
             StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
             if (item.IsConstant) return false;
             // only allow writes on Verification if type is IntegerCache
