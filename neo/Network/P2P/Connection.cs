@@ -12,6 +12,15 @@ namespace Neo.Network.P2P
         internal class Timer { public static Timer Instance = new Timer(); }
         internal class Ack : Tcp.Event { public static Ack Instance = new Ack(); }
 
+        /// <summary>
+        /// connection initial timeout (in seconds) before any package has been accepted
+        /// </summary>
+        private const int connectionTimeoutLimitStart = 10;
+        /// <summary>
+        /// connection timeout (in seconds) after every `OnReceived(ByteString data)` event
+        /// </summary>
+        private const int connectionTimeoutLimit = 60;
+
         public IPEndPoint Remote { get; }
         public IPEndPoint Local { get; }
 
@@ -19,15 +28,6 @@ namespace Neo.Network.P2P
         private readonly IActorRef tcp;
         private readonly WebSocket ws;
         private bool disconnected = false;
-        /// <summary>
-        /// connection initial timeout (in seconds) before any package has been accepted
-        /// </summary>
-        private double connectionTimeoutLimitStart = 10;
-        /// <summary>
-        /// connection timeout (in seconds) after every `OnReceived(ByteString data)` event
-        /// </summary>
-        private double connectionTimeoutLimit = 60;
-
         protected Connection(object connection, IPEndPoint remote, IPEndPoint local)
         {
             this.Remote = remote;
