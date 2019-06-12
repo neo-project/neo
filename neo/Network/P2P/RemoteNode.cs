@@ -256,7 +256,7 @@ namespace Neo.Network.P2P
     {
         public RemoteNodeMailbox(Settings settings, Config config) : base(settings, config) { }
 
-        protected override bool IsHighPriority(object message)
+        internal protected override bool IsHighPriority(object message)
         {
             switch (message)
             {
