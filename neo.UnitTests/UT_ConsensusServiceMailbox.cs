@@ -33,11 +33,5 @@ namespace Neo.UnitTests
             var akkaSettings = new Akka.Actor.Settings(system, config);
             uut = new ConsensusServiceMailbox(akkaSettings, config);
         }
-
-        [TestMethod]
-        public void ConsensusServiceMailbox_Test_IsHighPriority()
-        {
-        }
-
     }
 }
