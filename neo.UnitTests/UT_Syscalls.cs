@@ -31,11 +31,11 @@ namespace Neo.UnitTests
             contracts.Add(contractB.ScriptHash, contractB);
             contracts.Add(contractC.ScriptHash, contractC);
 
-            // Call A,A,B,C
+            // Call A,B,B,C
 
             script = new ScriptBuilder();
             script.EmitSysCall(InteropService.System_Contract_Call, contractA.ScriptHash.ToArray(), "dummyMain", 0);
-            script.EmitSysCall(InteropService.System_Contract_Call, contractA.ScriptHash.ToArray(), "dummyMain", 0);
+            script.EmitSysCall(InteropService.System_Contract_Call, contractB.ScriptHash.ToArray(), "dummyMain", 0);
             script.EmitSysCall(InteropService.System_Contract_Call, contractB.ScriptHash.ToArray(), "dummyMain", 0);
             script.EmitSysCall(InteropService.System_Contract_Call, contractC.ScriptHash.ToArray(), "dummyMain", 0);
 
@@ -52,10 +52,10 @@ namespace Neo.UnitTests
                 engine.ResultStack.Select(u => (int)((VM.Types.Integer)u).GetBigInteger()).ToArray(),
                 new int[]
                 {
-                    1, /* C */
-                    2, /* B */
                     1, /* A */
-                    1  /* A */
+                    1, /* B */
+                    2, /* B */
+                    1  /* C */
                 }
                 );
         }
