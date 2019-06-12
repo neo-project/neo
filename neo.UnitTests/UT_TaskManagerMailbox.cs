@@ -34,7 +34,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void Test_IsHighPriority()
+        public void TaskManager_Test_IsHighPriority()
         {
             // high priority
             uut.IsHighPriority(new TaskManager.Register()).Should().Be(true);

@@ -37,7 +37,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void Test_IsHighPriority()
+        public void RemoteNode_Test_IsHighPriority()
         {
             // high priority commands
             uut.IsHighPriority(new Tcp.ConnectionClosed()).Should().Be(true);
