@@ -7,7 +7,6 @@ namespace Neo.Ledger
     {
         public byte[] Value;
         public bool IsConstant;
-        public bool IsIntegerCache;
 
         public int Size => Value.GetVarSize() + sizeof(bool);
 
@@ -16,8 +15,7 @@ namespace Neo.Ledger
             return new StorageItem
             {
                 Value = Value,
-                IsConstant = IsConstant,
-                IsIntegerCache = IsIntegerCache
+                IsConstant = IsConstant
             };
         }
 
@@ -25,21 +23,18 @@ namespace Neo.Ledger
         {
             Value = reader.ReadVarBytes();
             IsConstant = reader.ReadBoolean();
-            IsIntegerCache = reader.ReadBoolean();
         }
 
         void ICloneable<StorageItem>.FromReplica(StorageItem replica)
         {
             Value = replica.Value;
             IsConstant = replica.IsConstant;
-            IsIntegerCache = replica.IsIntegerCache;
         }
 
         public void Serialize(BinaryWriter writer)
         {
             writer.WriteVarBytes(Value);
             writer.Write(IsConstant);
-            writer.Write(IsIntegerCache);
         }
     }
 }

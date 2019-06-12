@@ -556,6 +556,7 @@ namespace Neo.SmartContract
 
         private static bool PutEx(ApplicationEngine engine, StorageContext context, byte[] key, byte[] value, StorageFlags flags)
         {
+            if (engine.Trigger != TriggerType.Application) return false;
             if (key.Length > MaxStorageKeySize) return false;
             if (value.Length > MaxStorageValueSize) return false;
             if (context.IsReadOnly) return false;
@@ -568,12 +569,8 @@ namespace Neo.SmartContract
 
             StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
             if (item.IsConstant) return false;
-            // only allow writes on Verification if type is IntegerCache
-            if ((!item.IsIntegerCache) && (engine.Trigger != TriggerType.Application))
-                return false;
             item.Value = value;
             item.IsConstant = flags.HasFlag(StorageFlags.Constant);
-            item.IsIntegerCache = flags.HasFlag(StorageFlags.IntegerCache);
             return true;
         }
 
