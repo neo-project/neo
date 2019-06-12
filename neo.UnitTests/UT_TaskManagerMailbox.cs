@@ -32,10 +32,5 @@ namespace Neo.UnitTests
             var akkaSettings = new Akka.Actor.Settings(system, config);
             uut = new TaskManagerMailbox(akkaSettings, config);
         }
-
-        [TestMethod]
-        public void Test_IsHighPriority()
-        {
-        }
     }
 }
