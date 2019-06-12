@@ -58,6 +58,7 @@ namespace Neo.SmartContract
         public static readonly uint System_Contract_Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000);
         public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400);
         public static readonly uint System_Storage_GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 0_00000400);
+        public static readonly uint System_Storage_GetCache = Register("System.Storage.GetCache", Storage_GetCache, 0_01000000);
         public static readonly uint System_Storage_Get = Register("System.Storage.Get", Storage_Get, 0_01000000);
         public static readonly uint System_Storage_Put = Register("System.Storage.Put", Storage_Put, GetStoragePrice);
         public static readonly uint System_Storage_PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice);
@@ -446,6 +447,39 @@ namespace Neo.SmartContract
             return true;
         }
 
+        // get first from mempool verification cache, or from persisted value
+        private static bool Storage_GetCache(ApplicationEngine engine)
+        {
+            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                StorageContext context = _interface.GetInterface<StorageContext>();
+                if (!CheckStorageContext(engine, context)) return false;
+                byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+
+                StorageItem item = engine.Snapshot.MempoolCacheStorages.TryGet(new StorageKey
+                {
+                    ScriptHash = context.ScriptHash,
+                    Key = key
+                });
+
+                // if not cached, take persisted value (Storage.Get behavior)
+                if(item == null)
+                {
+                    item = engine.Snapshot.Storages.TryGet(new StorageKey
+                    {
+                        ScriptHash = context.ScriptHash,
+                        Key = key
+                    });
+                }               
+                
+                // if not persisted, return BigInteger zero (caches work with integers only, not allowing unstandard empty bytes here)
+                engine.CurrentContext.EvaluationStack.Push(item?.Value ?? new byte[]{0x00});
+                return true;
+            }
+            return false;
+        }
+
+        // get directly from persisted value
         private static bool Storage_Get(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -453,6 +487,7 @@ namespace Neo.SmartContract
                 StorageContext context = _interface.GetInterface<StorageContext>();
                 if (!CheckStorageContext(engine, context)) return false;
                 byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+
                 StorageItem item = engine.Snapshot.Storages.TryGet(new StorageKey
                 {
                     ScriptHash = context.ScriptHash,
@@ -520,7 +555,6 @@ namespace Neo.SmartContract
 
         private static bool PutEx(ApplicationEngine engine, StorageContext context, byte[] key, byte[] value, StorageFlags flags)
         {
-            if (engine.Trigger != TriggerType.Application) return false;
             if (key.Length > MaxStorageKeySize) return false;
             if (value.Length > MaxStorageValueSize) return false;
             if (context.IsReadOnly) return false;
@@ -532,8 +566,12 @@ namespace Neo.SmartContract
             };
             StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
             if (item.IsConstant) return false;
+            // only allow writes on Verification if type is IntegerCache
+            if ((!item.IsIntegerCache) && (engine.Trigger != TriggerType.Application))
+                return false;
             item.Value = value;
             item.IsConstant = flags.HasFlag(StorageFlags.Constant);
+            item.IsIntegerCache = flags.HasFlag(StorageFlags.IntegerCache);
             return true;
         }
 
