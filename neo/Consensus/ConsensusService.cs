@@ -301,9 +301,9 @@ namespace Neo.Consensus
         private void OnPersistCompleted(Block block)
         {
             Log($"persist block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
-            block_received_time = TimeProvider.Current.UtcNow;
             knownHashes.Clear();
             InitializeConsensus(0);
+            block_received_time = TimeProvider.Current.UtcNow;
         }
 
         private void OnRecoveryMessageReceived(ConsensusPayload payload, RecoveryMessage message)
