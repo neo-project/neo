@@ -27,6 +27,7 @@ namespace Neo.UnitTests
             var contractB = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() };
             var contractC = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() };
 
+            contracts.DeleteWhere((a, b) => true);
             contracts.Add(contractA.ScriptHash, contractA);
             contracts.Add(contractB.ScriptHash, contractB);
             contracts.Add(contractC.ScriptHash, contractC);
