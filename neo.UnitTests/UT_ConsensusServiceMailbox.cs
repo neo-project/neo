@@ -38,5 +38,6 @@ namespace Neo.UnitTests
         public void ConsensusServiceMailbox_Test_IsHighPriority()
         {
         }
+
     }
 }
