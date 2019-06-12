@@ -61,7 +61,7 @@ namespace Neo.SmartContract
         public static readonly uint System_Storage_GetCache = Register("System.Storage.GetCache", Storage_GetCache, 0_01000000);
         public static readonly uint System_Storage_Get = Register("System.Storage.Get", Storage_Get, 0_01000000);
         public static readonly uint System_Storage_Put = Register("System.Storage.Put", Storage_Put, GetStoragePrice);
-        public static readonly uint System_Storage_PutCache = Register("System.Storage.PutCache", Storage_PutCache, GetStoragePrice);
+        public static readonly uint System_Storage_Add = Register("System.Storage.Add", Storage_Add, GetStoragePrice);
         public static readonly uint System_Storage_PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice);
         public static readonly uint System_Storage_Delete = Register("System.Storage.Delete", Storage_Delete, 0_01000000);
         public static readonly uint System_StorageContext_AsReadOnly = Register("System.StorageContext.AsReadOnly", StorageContext_AsReadOnly, 0_00000400);
@@ -577,7 +577,8 @@ namespace Neo.SmartContract
             return true;
         }
 
-        private static bool PutCache(ApplicationEngine engine, StorageContext context, byte[] key, BigInteger value)
+        // adds (or subtracts) value on storage (it may be on cache too)
+        private static bool Add(ApplicationEngine engine, StorageContext context, byte[] key, BigInteger value)
         {
             if (key.Length > MaxStorageKeySize) return false;
             // TODO: check big integer
@@ -603,15 +604,16 @@ namespace Neo.SmartContract
             return true;
         }
 
-
-        private static bool Storage_PutCache(ApplicationEngine engine)
+        // allows caching (value can be negative to)
+        private static bool Storage_Add(ApplicationEngine engine)
         {
             if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface))
                 return false;
             StorageContext context = _interface.GetInterface<StorageContext>();
             byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             BigInteger value = engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
-            return PutCache(engine, context, key, value);
+            // value to add or subtract
+            return Add(engine, context, key, value);
         }
 
         private static bool Storage_Put(ApplicationEngine engine)
