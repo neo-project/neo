@@ -488,7 +488,6 @@ namespace Neo.SmartContract
                 StorageContext context = _interface.GetInterface<StorageContext>();
                 if (!CheckStorageContext(engine, context)) return false;
                 byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-
                 StorageItem item = engine.Snapshot.Storages.TryGet(new StorageKey
                 {
                     ScriptHash = context.ScriptHash,
@@ -566,7 +565,6 @@ namespace Neo.SmartContract
                 ScriptHash = context.ScriptHash,
                 Key = key
             };
-
             StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
             if (item.IsConstant) return false;
             item.Value = value;
