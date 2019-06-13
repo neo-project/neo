@@ -27,6 +27,7 @@ namespace Neo.Consensus
         private readonly IActorRef taskManager;
         private ICancelable timer_token;
         private DateTime block_received_time = TimeProvider.Current.UtcNow;
+        private DateTime preparerequest_recevied_time = TimeProvider.Current.UtcNow;
         private bool started = false;
 
         /// <summary>
@@ -167,11 +168,20 @@ namespace Neo.Consensus
                 }
                 else
                 {
-                    TimeSpan span = TimeProvider.Current.UtcNow - block_received_time;
-                    if (span >= Blockchain.TimePerBlock)
+                    if (0 < viewNumber) {
                         ChangeTimer(TimeSpan.Zero);
-                    else
-                        ChangeTimer(Blockchain.TimePerBlock - span);
+                    } else {
+                        TimeSpan consensussSpan = block_received_time - preparerequest_recevied_time;
+                        TimeSpan waitSpan = Blockchain.TimePerBlock;
+                        if (Blockchain.TimePerBlock <= consensussSpan)
+                            waitSpan = TimeSpan.Zero;
+                        else if (TimeSpan.Zero < consensussSpan)
+                            waitSpan = Blockchain.TimePerBlock - consensussSpan;
+                        else
+                            waitSpan = Blockchain.TimePerBlock;
+                        ChangeTimer(waitSpan);
+                    }
+                    
                 }
             }
             else
@@ -302,8 +312,8 @@ namespace Neo.Consensus
         {
             Log($"persist block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
             knownHashes.Clear();
-            InitializeConsensus(0);
             block_received_time = TimeProvider.Current.UtcNow;
+            InitializeConsensus(0);
         }
 
         private void OnRecoveryMessageReceived(ConsensusPayload payload, RecoveryMessage message)
@@ -412,7 +422,7 @@ namespace Neo.Consensus
             // Timeout extension: prepare request has been received with success
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
             ExtendTimerByFactor(2);
-
+            preparerequest_recevied_time = TimeProvider.Current.UtcNow;
             context.Timestamp = message.Timestamp;
             context.Nonce = message.Nonce;
             context.NextConsensus = message.NextConsensus;
@@ -617,7 +627,7 @@ namespace Neo.Consensus
         {
             Log($"send prepare request: height={context.BlockIndex} view={context.ViewNumber}");
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
-
+            preparerequest_recevied_time = TimeProvider.Current.UtcNow;
             if (context.Validators.Length == 1)
                 CheckPreparations();
 
