@@ -311,8 +311,8 @@ namespace Neo.Consensus
         private void OnPersistCompleted(Block block)
         {
             Log($"persist block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
-            knownHashes.Clear();
             block_received_time = TimeProvider.Current.UtcNow;
+            knownHashes.Clear();
             InitializeConsensus(0);
         }
 
