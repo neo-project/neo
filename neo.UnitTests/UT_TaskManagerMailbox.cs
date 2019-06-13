@@ -36,6 +36,22 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Test_IsHighPriority()
         {
+            // high priority
+            uut.IsHighPriority(new TaskManager.Register()).Should().Be(true);
+            uut.IsHighPriority(new TaskManager.RestartTasks()).Should().Be(true);
+
+            // low priority
+            // -> NewTasks: generic InvPayload
+            uut.IsHighPriority(new TaskManager.NewTasks{ Payload = new InvPayload() }).Should().Be(false);
+
+            // high priority
+            // -> NewTasks: payload Block or Consensus
+            uut.IsHighPriority(new TaskManager.NewTasks{ Payload = new InvPayload{ Type = InventoryType.Block } }).Should().Be(true);
+            uut.IsHighPriority(new TaskManager.NewTasks{ Payload = new InvPayload{ Type = InventoryType.Consensus } }).Should().Be(true);
+
+            // any random object should not have priority
+            object obj = null;
+            uut.IsHighPriority(obj).Should().Be(false);
         }
     }
 }
