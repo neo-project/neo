@@ -554,7 +554,7 @@ namespace Neo.SmartContract
             };
 
             StorageItem item = engine.Snapshot.Storages.TryGet(skey);
-            if (item?.IsConstant == true) return false;
+            if (item?.IsConstant) return false;
 
             if (value.Length == 0)
             {
