@@ -525,11 +525,21 @@ namespace Neo.SmartContract
             if (value.Length > MaxStorageValueSize) return false;
             if (context.IsReadOnly) return false;
             if (!CheckStorageContext(engine, context)) return false;
+
             StorageKey skey = new StorageKey
             {
                 ScriptHash = context.ScriptHash,
                 Key = key
             };
+            if (value.Length == 0)
+            {
+                // If is empty, we try to remove it
+
+                if (engine.Snapshot.Storages.TryGet(skey)?.IsConstant == true) return false;
+                engine.Snapshot.Storages.Delete(skey);
+                return true;
+            }
+
             StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
             if (item.IsConstant) return false;
             item.Value = value;
