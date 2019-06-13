@@ -240,7 +240,7 @@ namespace Neo.Network.P2P.Payloads
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(GetScriptHashesForVerifying(snapshot)).Count() > 0)
                 return false;
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
-            var fee = Gas + NetworkFee;
+            BigInteger fee = Gas + NetworkFee;
             if (balance < fee) return false;
             fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Sum(p => p.Gas + p.NetworkFee);
             if (balance < fee) return false;
