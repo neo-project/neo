@@ -234,17 +234,16 @@ namespace Neo.Network.P2P.Payloads
                 return false;
             int size = Size;
             if (size > MaxTransactionSize) return false;
-            var feePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
-            if (NetworkFee / size < feePerByte)
-                return false;
+            long net_fee = NetworkFee - size * NativeContract.Policy.GetFeePerByte(snapshot);
+            if (net_fee < 0) return false;
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(GetScriptHashesForVerifying(snapshot)).Count() > 0)
                 return false;
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
             BigInteger fee = Gas + NetworkFee;
             if (balance < fee) return false;
-            fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Sum(p => p.Gas + p.NetworkFee);
+            fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Select(p => (BigInteger)(p.Gas + p.NetworkFee)).Sum();
             if (balance < fee) return false;
-            return this.VerifyWitnesses(snapshot, NetworkFee - (size * feePerByte));
+            return this.VerifyWitnesses(snapshot, net_fee);
         }
     }
 }
