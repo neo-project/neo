@@ -528,7 +528,7 @@ namespace Neo.Ledger
         {
         }
 
-        protected override bool IsHighPriority(object message)
+        internal protected override bool IsHighPriority(object message)
         {
             switch (message)
             {
