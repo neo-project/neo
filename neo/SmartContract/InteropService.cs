@@ -553,23 +553,19 @@ namespace Neo.SmartContract
                 Key = key
             };
 
-            StorageItem item = engine.Snapshot.Storages.TryGet(skey);
-            if (item?.IsConstant) return false;
-
+            if (engine.Snapshot.Storages.TryGet(skey)?.IsConstant == true) return false;
+            
+            // If 'value' is empty, we remove it (implicit `Storage.Delete`)
             if (value.Length == 0)
             {
-                // If is empty, we try to remove it
-
                 engine.Snapshot.Storages.Delete(skey);
                 return true;
             }
-            else
-            {
-                item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
-                item.Value = value;
-                item.IsConstant = flags.HasFlag(StorageFlags.Constant);
-                return true;
-            }
+
+            StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
+            item.Value = value;
+            item.IsConstant = flags.HasFlag(StorageFlags.Constant);
+            return true;
         }
 
         private static bool Storage_Put(ApplicationEngine engine)
