@@ -66,16 +66,18 @@ namespace Neo.SmartContract.Native
             contracts.Add(this);
         }
 
-        protected StorageKey CreateStorageKey(byte prefix, byte[] key = null)
+        public static StorageKey CreateStorageKey(byte prefix, byte[] key = null, byte[] suffix = null)
         {
             StorageKey storageKey = new StorageKey
             {
                 ScriptHash = Hash,
-                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
+                Key = new byte[sizeof(byte) + (key?.Length ?? 0) + (suffix == null ? 0 : suffix.Length)]
             };
             storageKey.Key[0] = prefix;
             if (key != null)
                 Buffer.BlockCopy(key, 0, storageKey.Key, 1, key.Length);
+            if (suffix != null)
+                Buffer.BlockCopy(suffix, 0, storageKey.Key, key.Length, key.Length+suffix.Length);
             return storageKey;
         }
 

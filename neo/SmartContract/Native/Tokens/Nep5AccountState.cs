@@ -1,12 +1,20 @@
 ﻿using Neo.VM;
 using Neo.VM.Types;
 using System.Numerics;
+using Neo.Ledger;
 
 namespace Neo.SmartContract.Native.Tokens
 {
     public class Nep5AccountState
     {
         public BigInteger Balance;
+
+        public readonly byte[] balanceSuffix = new byte[1]{ 0x01 };
+
+        public StorageKey CreateAccountBalanceKey(byte Prefix_Account, UInt160 account)
+        {
+            return NativeContract.CreateStorageKey(Prefix_Account, account, balanceSuffix);
+        }
 
         public Nep5AccountState()
         {
