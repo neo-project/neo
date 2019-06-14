@@ -5,6 +5,7 @@ using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Linq;
 
 namespace Neo.Persistence
 {
@@ -22,9 +23,11 @@ namespace Neo.Persistence
         {
             StorageItem sbase = Storages.TryGet(key);
             StorageItem sitem = new StorageItem(); // create new key for return
+            sitem.Value = new byte[0];
             if(sbase != null)
             {
-                sitem.Value = sbase.Value; // TODO: clone other parts
+                sitem.Value = new byte[sbase.Value.Length];
+                sitem.Value = sbase.Value.ToArray(); // TODO: clone other parts
             }
             // get cache int
             if(StorageUpdates.TryGetValue(key, out BigInteger val))
