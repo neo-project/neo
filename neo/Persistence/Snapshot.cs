@@ -3,6 +3,8 @@ using Neo.IO.Wrappers;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
+using System.Collections.Generic;
+using System.Numerics;
 
 namespace Neo.Persistence
 {
@@ -13,7 +15,39 @@ namespace Neo.Persistence
         public abstract DataCache<UInt256, TransactionState> Transactions { get; }
         public abstract DataCache<UInt160, ContractState> Contracts { get; }
         public abstract DataCache<StorageKey, StorageItem> Storages { get; }
-        //public abstract DataCache<StorageKey, StorageItem> MempoolCacheStorages { get; }
+
+        public Dictionary<StorageKey, BigInteger> StorageUpdates = new Dictionary<StorageKey, BigInteger>();
+        // gets a clone of storage item, or creates one (considering StorageUpdates cache)
+        public StorageItem GetStorage(StorageKey key)
+        {
+            StorageItem sbase = Storages.TryGet(key);
+            StorageItem sitem;
+            if(sbase == null)
+                sitem = new StorageItem(); // create new one
+            else
+            {
+                sitem = new StorageItem(); // clone existing one
+                sitem.Value = sbase.Value; // TODO: clone other parts
+            }
+            // get cache int
+            var val = StorageUpdates[key]; // TODO: check if non existing
+            var newval = new BigInteger(sitem.Value) + val;
+            sitem.Value = newval.ToByteArray(); // TODO: update if 0 -> "", not "0x00"
+            return sitem;
+        }
+
+        public void UpdateStorages()
+        {
+            // before Storage commit, cleanup dictionary cache
+            foreach(KeyValuePair<StorageKey, BigInteger> entry in StorageUpdates)
+            {
+                StorageItem updateStore = GetStorage(entry.Key);
+                StorageItem newitem = Storages.GetAndChange(entry.Key, () => new StorageItem());
+                newitem.Value = updateStore.Value;
+                StorageUpdates.Remove(entry.Key); // cleanup cached key
+            }
+        }
+
         public abstract DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
