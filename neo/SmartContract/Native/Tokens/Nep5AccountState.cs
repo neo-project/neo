@@ -12,9 +12,9 @@ namespace Neo.SmartContract.Native.Tokens
 
         public readonly byte[] balanceSuffix = new byte[1]{ 0x01 };
 
-        public StorageKey CreateAccountBalanceKey(byte Prefix_Account, UInt160 account)
+        public StorageKey CreateAccountBalanceKey(UInt160 hash, byte Prefix_Account, UInt160 account)
         {
-            return NativeContract.CreateStorageKey(Prefix_Account, account.ToArray(), balanceSuffix);
+            return NativeContract.CreateStorageKey(hash, Prefix_Account, account.ToArray(), balanceSuffix);
         }
 
         public Nep5AccountState()

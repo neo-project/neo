@@ -65,7 +65,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (amount.IsZero) return;
 
             TState state = new TState();
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(state.CreateAccountBalanceKey(Prefix_Account, account), () => new StorageItem
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(state.CreateAccountBalanceKey(this.Hash, Prefix_Account, account), () => new StorageItem
             {
                 Value = new byte[0]
             });
@@ -74,7 +74,7 @@ namespace Neo.SmartContract.Native.Tokens
             OnBalanceChanging(engine, account, state, amount);
             state.Balance += amount;
             storage.Value = state.ToByteArray();
-            storage = engine.Snapshot.Storages.GetAndChange(NativeContract.CreateStorageKey(Prefix_TotalSupply), () => new StorageItem
+            storage = engine.Snapshot.Storages.GetAndChange(NativeContract.CreateStorageKey(this.Hash, Prefix_TotalSupply), () => new StorageItem
             {
                 Value = BigInteger.Zero.ToByteArray()
             });
@@ -90,7 +90,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (amount.IsZero) return;
 
             TState state = new TState();
-            StorageKey key = state.CreateAccountBalanceKey(Prefix_Account, account);
+            StorageKey key = state.CreateAccountBalanceKey(this.Hash, Prefix_Account, account);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(key);
             
             state.Balance = new BigInteger(storage.Value);
@@ -105,7 +105,7 @@ namespace Neo.SmartContract.Native.Tokens
                 state.Balance -= amount;
                 storage.Value = state.ToByteArray();
             }
-            storage = engine.Snapshot.Storages.GetAndChange(NativeContract.CreateStorageKey(Prefix_TotalSupply));
+            storage = engine.Snapshot.Storages.GetAndChange(NativeContract.CreateStorageKey(this.Hash, Prefix_TotalSupply));
             BigInteger totalSupply = new BigInteger(storage.Value);
             totalSupply -= amount;
             storage.Value = totalSupply.ToByteArray();
@@ -138,7 +138,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public virtual BigInteger TotalSupply(Snapshot snapshot)
         {
-            StorageItem storage = snapshot.Storages.TryGet(NativeContract.CreateStorageKey(Prefix_TotalSupply));
+            StorageItem storage = snapshot.Storages.TryGet(NativeContract.CreateStorageKey(this.Hash, Prefix_TotalSupply));
             if (storage is null) return BigInteger.Zero;
             return new BigInteger(storage.Value);
         }
@@ -152,7 +152,7 @@ namespace Neo.SmartContract.Native.Tokens
         public virtual BigInteger BalanceOf(Snapshot snapshot, UInt160 account)
         {
             TState state = new TState();
-            StorageItem storage = snapshot.Storages.TryGet(state.CreateAccountBalanceKey(Prefix_Account, account));
+            StorageItem storage = snapshot.Storages.TryGet(state.CreateAccountBalanceKey(this.Hash, Prefix_Account, account));
             if (storage is null) return BigInteger.Zero;
             state.Balance = new BigInteger(storage.Value);
             return state.Balance;
@@ -176,7 +176,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (contract_to?.Payable == false) return false;
 
             TState state_from = new TState();
-            StorageKey key_from = state_from.CreateAccountBalanceKey(Prefix_Account, from);
+            StorageKey key_from = state_from.CreateAccountBalanceKey(this.Hash, Prefix_Account, from);
             StorageItem storage_from = engine.Snapshot.Storages.TryGet(key_from);
             if (amount.IsZero)
             {
@@ -211,7 +211,7 @@ namespace Neo.SmartContract.Native.Tokens
                     }
 
                     TState state_to = new TState();
-                    StorageKey key_to = state_to.CreateAccountBalanceKey(Prefix_Account, to);
+                    StorageKey key_to = state_to.CreateAccountBalanceKey(this.Hash, Prefix_Account, to);
                     StorageItem storage_to = engine.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem
                     {
                         Value = new byte[0]{}

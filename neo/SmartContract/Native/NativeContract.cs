@@ -66,11 +66,11 @@ namespace Neo.SmartContract.Native
             contracts.Add(this);
         }
 
-        public static StorageKey CreateStorageKey(byte prefix, byte[] key = null, byte[] suffix = null)
+        public static StorageKey CreateStorageKey(UInt160 hash, byte prefix, byte[] key = null, byte[] suffix = null)
         {
             StorageKey storageKey = new StorageKey
             {
-                ScriptHash = Hash,
+                ScriptHash = hash,
                 Key = new byte[sizeof(byte) + (key?.Length ?? 0) + (suffix == null ? 0 : suffix.Length)]
             };
             storageKey.Key[0] = prefix;
@@ -83,7 +83,7 @@ namespace Neo.SmartContract.Native
 
         protected StorageKey CreateStorageKey(byte prefix, ISerializable key)
         {
-            return CreateStorageKey(prefix, key.ToArray());
+            return CreateStorageKey(this.Hash, prefix, key.ToArray());
         }
 
         internal bool Invoke(ApplicationEngine engine)
