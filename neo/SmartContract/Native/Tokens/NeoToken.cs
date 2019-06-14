@@ -61,7 +61,7 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger gas = CalculateBonus(engine.Snapshot, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
             GAS.Mint(engine, account, gas);
-            engine.Snapshot.Storages.GetAndChange(CreateAccountKey(account)).Value = state.ToByteArray();
+            engine.Snapshot.Storages.GetAndChange(state.CreateAccountBalanceKey(Prefix_Account, account)).Value = state.ToByteArray();
         }
 
         private BigInteger CalculateBonus(Snapshot snapshot, BigInteger value, uint start, uint end)
@@ -126,9 +126,10 @@ namespace Neo.SmartContract.Native.Tokens
 
         public BigInteger UnclaimedGas(Snapshot snapshot, UInt160 account, uint end)
         {
-            StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
+            AccountState state = new AccountState();
+            StorageItem storage = snapshot.Storages.TryGet(state.CreateAccountBalanceKey(Prefix_Account, account));
             if (storage is null) return BigInteger.Zero;
-            AccountState state = new AccountState(storage.Value);
+            state.Balance = new BigInteger(storage.Value);
             return CalculateBonus(snapshot, state.Balance, state.BalanceHeight, end);
         }
 
@@ -156,7 +157,9 @@ namespace Neo.SmartContract.Native.Tokens
             UInt160 account = new UInt160(args[0].GetByteArray());
             ECPoint[] pubkeys = ((VMArray)args[1]).Select(p => p.GetByteArray().AsSerializable<ECPoint>()).ToArray();
             if (!InteropService.CheckWitness(engine, account)) return false;
-            StorageKey key_account = CreateAccountKey(account);
+            
+            Nep5AccountState state1 = new Nep5AccountState(); // TODO: only for next usage
+            StorageKey key_account = state1.CreateAccountBalanceKey(Prefix_Account, account);
             if (engine.Snapshot.Storages.TryGet(key_account) is null) return false;
             StorageItem storage_account = engine.Snapshot.Storages.GetAndChange(key_account);
             AccountState state_account = new AccountState(storage_account.Value);

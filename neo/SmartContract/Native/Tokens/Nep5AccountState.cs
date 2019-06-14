@@ -2,6 +2,7 @@
 using Neo.VM.Types;
 using System.Numerics;
 using Neo.Ledger;
+using Neo.IO;
 
 namespace Neo.SmartContract.Native.Tokens
 {
@@ -13,7 +14,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public StorageKey CreateAccountBalanceKey(byte Prefix_Account, UInt160 account)
         {
-            return NativeContract.CreateStorageKey(Prefix_Account, account, balanceSuffix);
+            return NativeContract.CreateStorageKey(Prefix_Account, account.ToArray(), balanceSuffix);
         }
 
         public Nep5AccountState()

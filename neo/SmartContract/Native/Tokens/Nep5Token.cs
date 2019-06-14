@@ -176,7 +176,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (contract_to?.Payable == false) return false;
 
             TState state_from = new TState();
-            StorageKey key_from = state_from.CreateAccountBalanceKey(from);
+            StorageKey key_from = state_from.CreateAccountBalanceKey(Prefix_Account, from);
             StorageItem storage_from = engine.Snapshot.Storages.TryGet(key_from);
             if (amount.IsZero)
             {
@@ -211,7 +211,7 @@ namespace Neo.SmartContract.Native.Tokens
                     }
 
                     TState state_to = new TState();
-                    StorageKey key_to = state_to.CreateAccountBalanceKey(to);
+                    StorageKey key_to = state_to.CreateAccountBalanceKey(Prefix_Account, to);
                     StorageItem storage_to = engine.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem
                     {
                         Value = new byte[0]{}
