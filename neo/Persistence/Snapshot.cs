@@ -17,6 +17,7 @@ namespace Neo.Persistence
         public abstract DataCache<UInt160, ContractState> Contracts { get; }
         public abstract DataCache<StorageKey, StorageItem> Storages { get; }
 
+        // these updates may have happened on mempool only, so these can affect balance values (for example, avoid re-using spent values)
         public Dictionary<StorageKey, BigInteger> StorageUpdates = new Dictionary<StorageKey, BigInteger>();
         // gets a clone of storage item, or creates one (considering StorageUpdates cache)
         public StorageItem GetStorageFromCache(StorageKey key)
