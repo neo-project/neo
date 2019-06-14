@@ -21,18 +21,17 @@ namespace Neo.Persistence
         public StorageItem GetStorage(StorageKey key)
         {
             StorageItem sbase = Storages.TryGet(key);
-            StorageItem sitem;
-            if(sbase == null)
-                sitem = new StorageItem(); // create new one
-            else
+            StorageItem sitem = new StorageItem(); // create new key for return
+            if(sbase != null)
             {
-                sitem = new StorageItem(); // clone existing one
                 sitem.Value = sbase.Value; // TODO: clone other parts
             }
             // get cache int
-            var val = StorageUpdates[key]; // TODO: check if non existing
-            var newval = new BigInteger(sitem.Value) + val;
-            sitem.Value = newval.ToByteArray(); // TODO: update if 0 -> "", not "0x00"
+            if(StorageUpdates.TryGetValue(key, out BigInteger val))
+            {
+                var newval = new BigInteger(sitem.Value) + val;
+                sitem.Value = newval.ToByteArray(); // TODO: update if 0 -> "", not "0x00"
+            }
             return sitem;
         }
 

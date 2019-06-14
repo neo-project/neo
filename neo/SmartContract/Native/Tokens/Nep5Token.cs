@@ -152,8 +152,8 @@ namespace Neo.SmartContract.Native.Tokens
 
         public virtual BigInteger BalanceOf(Snapshot snapshot, UInt160 account)
         {
-            StorageItem storage = snapshot.Storages.TryGet(CreateAccountKey(account));
-            if (storage is null) return BigInteger.Zero;
+            StorageItem storage = snapshot.GetStorage(CreateAccountKey(account));
+            if (new BigInteger(storage.Value)==0) return BigInteger.Zero; // never null now 
             Nep5AccountState state = new Nep5AccountState(storage.Value);
             return state.Balance;
         }
