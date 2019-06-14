@@ -11,12 +11,30 @@ namespace Neo
         public string[] SeedList { get; }
         public uint SecondsPerBlock { get; }
 
-        public static ProtocolSettings Default { get; }
+        static ProtocolSettings _default;
 
-        static ProtocolSettings()
+        static void UpdateDefault(IConfigurationSection section)
         {
-            IConfigurationSection section = new ConfigurationBuilder().AddJsonFile("protocol.json", true).Build().GetSection("ProtocolConfiguration");
-            Default = new ProtocolSettings(section);
+            System.Threading.Interlocked.CompareExchange(ref _default, new ProtocolSettings(section), null);
+        }
+
+        public static void Initialize(IConfiguration configuration)
+        {
+            UpdateDefault(configuration.GetSection("ProtocolConfiguration"));
+        }
+
+        public static ProtocolSettings Default
+        {
+            get
+            {
+                if (_default == null)
+                {
+                    IConfigurationSection section = new ConfigurationBuilder().AddJsonFile("protocol.json", true).Build().GetSection("ProtocolConfiguration");
+                    UpdateDefault(section);
+                }
+
+                return _default;
+            }
         }
 
         private ProtocolSettings(IConfigurationSection section)
