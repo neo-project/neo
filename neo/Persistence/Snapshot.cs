@@ -19,7 +19,7 @@ namespace Neo.Persistence
 
         public Dictionary<StorageKey, BigInteger> StorageUpdates = new Dictionary<StorageKey, BigInteger>();
         // gets a clone of storage item, or creates one (considering StorageUpdates cache)
-        public StorageItem GetStorage(StorageKey key)
+        public StorageItem GetStorageFromCache(StorageKey key)
         {
             StorageItem sbase = Storages.TryGet(key);
             StorageItem sitem = new StorageItem(); // create new key for return
