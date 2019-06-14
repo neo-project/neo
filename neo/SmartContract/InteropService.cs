@@ -574,18 +574,8 @@ namespace Neo.SmartContract
                 Key = key
             };
 
-            /*
-            // TODO: need to get StorageItem type here first, to know if it's cacheable...
-
-            StorageItem item = engine.Snapshot.MempoolCacheStorages.GetAndChange(skey, () => new StorageItem());
-            if (item.IsConstant) return false;
-            // only allow writes on Verification if type is IntegerCache
-            if ((!item.IsIntegerCache) && (engine.Trigger != TriggerType.Application))
-                return false;
-            item.Value = value;
-            item.IsConstant = flags.HasFlag(StorageFlags.Constant);
-            item.IsIntegerCache = flags.HasFlag(StorageFlags.IntegerCache);
-            */
+            engine.Snapshot.AddToStorageCache(skey, value);
+            
             return true;
         }
 

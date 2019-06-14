@@ -30,13 +30,23 @@ namespace Neo.Persistence
                 sitem.Value = new byte[sbase.Value.Length];
                 sitem.Value = sbase.Value.ToArray(); // TODO: clone other parts
             }
-            // get cache int
+            
             if(StorageUpdates.TryGetValue(key, out BigInteger val))
             {
                 var newval = new BigInteger(sitem.Value) + val;
                 sitem.Value = newval.ToByteArray(); // TODO: update if 0 -> "", not "0x00"
             }
             return sitem;
+        }
+
+        public void AddToStorageCache(StorageKey key, BigInteger value)
+        {
+            if(StorageUpdates.TryGetValue(key, out BigInteger val))
+            {
+                StorageUpdates[key] += value;
+            }
+            else
+                StorageUpdates[key] = value;
         }
 
         /*
