@@ -175,10 +175,10 @@ namespace Neo.SmartContract.Native.Tokens
             ContractState contract_to = engine.Snapshot.Contracts.TryGet(to);
             if (contract_to?.Payable == false) return false;
             StorageKey key_from = CreateAccountKey(from);
-            StorageItem storage_from = engine.Snapshot.Storages.TryGet(key_from);
+            StorageItem storage_from = engine.Snapshot.GetStorageFromCache(key_from);
             if (amount.IsZero)
             {
-                if (storage_from != null)
+                if (new BigInteger(storage_from.Value) != 0)
                 {
                     TState state_from = new TState();
                     state_from.FromByteArray(storage_from.Value);
@@ -187,9 +187,9 @@ namespace Neo.SmartContract.Native.Tokens
             }
             else
             {
-                if (storage_from is null) return false;
+                if (new BigInteger(storage_from.Value) == 0) return false; // never null now
                 TState state_from = new TState();
-                state_from.FromByteArray(storage_from.Value);
+                state_from.FromByteArray(storage_from.Value); // should use TState or BigInt here, not both...
                 if (state_from.Balance < amount) return false;
                 if (from.Equals(to))
                 {
@@ -200,24 +200,29 @@ namespace Neo.SmartContract.Native.Tokens
                     OnBalanceChanging(engine, from, state_from, -amount);
                     if (state_from.Balance == amount)
                     {
+                        // leave this to automatic garbage collection in the future (important)
                         engine.Snapshot.Storages.Delete(key_from);
                     }
                     else
                     {
-                        state_from.Balance -= amount;
-                        storage_from = engine.Snapshot.Storages.GetAndChange(key_from);
-                        storage_from.Value = state_from.ToByteArray();
+                        // use Add cache here
+                        state_from.Balance -= amount;   // TODO: check how to cache update state_from
+                        //storage_from = engine.Snapshot.Storages.GetAndChange(key_from);
+                        //storage_from.Value = state_from.ToByteArray();
+                        engine.Snapshot.AddToStorageCache(key_from, -amount); // cache add
                     }
                     StorageKey key_to = CreateAccountKey(to);
-                    StorageItem storage_to = engine.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem
-                    {
-                        Value = new TState().ToByteArray()
-                    });
+                    //StorageItem storage_to = engine.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem
+                    //{
+                    //    Value = new TState().ToByteArray()
+                    //});
+                    StorageItem storage_to = engine.Snapshot.GetStorageFromCache(key_to);
                     TState state_to = new TState();
-                    state_to.FromByteArray(storage_to.Value);
+                    state_to.FromByteArray(storage_to.Value); // todo: use state or BigInt here, not both
                     OnBalanceChanging(engine, to, state_to, amount);
                     state_to.Balance += amount;
-                    storage_to.Value = state_to.ToByteArray();
+                    //storage_to.Value = state_to.ToByteArray();
+                    engine.Snapshot.AddToStorageCache(key_to, +amount); // cache add
                 }
             }
             engine.SendNotification(Hash, new StackItem[] { "Transfer", from.ToArray(), to.ToArray(), amount });
