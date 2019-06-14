@@ -59,7 +59,6 @@ namespace Neo.SmartContract
         public static readonly uint System_Contract_Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000);
         public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400);
         public static readonly uint System_Storage_GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 0_00000400);
-        public static readonly uint System_Storage_GetCache = Register("System.Storage.GetCache", Storage_GetCache, 0_01000000);
         public static readonly uint System_Storage_Get = Register("System.Storage.Get", Storage_Get, 0_01000000);
         public static readonly uint System_Storage_Put = Register("System.Storage.Put", Storage_Put, GetStoragePrice);
         public static readonly uint System_Storage_Add = Register("System.Storage.Add", Storage_Add, GetStoragePrice);
@@ -460,38 +459,6 @@ namespace Neo.SmartContract
             return true;
         }
 
-        // get first from mempool verification cache, or from persisted value
-        private static bool Storage_GetCache(ApplicationEngine engine)
-        {
-            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-            {
-                StorageContext context = _interface.GetInterface<StorageContext>();
-                if (!CheckStorageContext(engine, context)) return false;
-                byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-
-                StorageItem item = engine.Snapshot.MempoolCacheStorages.TryGet(new StorageKey
-                {
-                    ScriptHash = context.ScriptHash,
-                    Key = key
-                });
-
-                // if not cached, take persisted value (Storage.Get behavior)
-                if(item == null)
-                {
-                    item = engine.Snapshot.Storages.TryGet(new StorageKey
-                    {
-                        ScriptHash = context.ScriptHash,
-                        Key = key
-                    });
-                }               
-                
-                // if not persisted, return BigInteger zero (caches work with integers only, not allowing unstandard empty bytes here)
-                engine.CurrentContext.EvaluationStack.Push(item?.Value ?? new byte[]{0x00});
-                return true;
-            }
-            return false;
-        }
-
         // get directly from persisted value
         private static bool Storage_Get(ApplicationEngine engine)
         {
@@ -607,6 +574,7 @@ namespace Neo.SmartContract
                 Key = key
             };
 
+            /*
             // TODO: need to get StorageItem type here first, to know if it's cacheable...
 
             StorageItem item = engine.Snapshot.MempoolCacheStorages.GetAndChange(skey, () => new StorageItem());
@@ -617,6 +585,7 @@ namespace Neo.SmartContract
             item.Value = value;
             item.IsConstant = flags.HasFlag(StorageFlags.Constant);
             item.IsIntegerCache = flags.HasFlag(StorageFlags.IntegerCache);
+            */
             return true;
         }
 
