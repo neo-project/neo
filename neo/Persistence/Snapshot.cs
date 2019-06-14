@@ -38,6 +38,7 @@ namespace Neo.Persistence
             return sitem;
         }
 
+        /*
         public void UpdateStorages()
         {
             // before Storage commit, cleanup dictionary cache
@@ -49,6 +50,7 @@ namespace Neo.Persistence
                 StorageUpdates.Remove(entry.Key); // cleanup cached key
             }
         }
+        */
 
         public abstract DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
