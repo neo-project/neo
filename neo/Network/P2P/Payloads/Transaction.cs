@@ -95,10 +95,9 @@ namespace Neo.Network.P2P.Payloads
             else
             {
                 long remainder = Gas % d;
-                if (remainder == 0) return;
                 if (remainder > 0)
                     Gas += d - remainder;
-                else
+                else if (remainder < 0)
                     Gas -= remainder;
             }
             using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
@@ -112,19 +111,16 @@ namespace Neo.Network.P2P.Payloads
                     if (verification.Length == 0)
                     {
                         verification = snapshot.Contracts.TryGet(Sender)?.Script;
-                        if (verification is null) return;
-                    }
-                    else
-                    {
-                        if (Sender != witness.ScriptHash) return;
+                        if (verification is null) throw new InvalidOperationException();
                     }
 
                     using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, this, snapshot, 0, true))
                     {
                         engine.LoadScript(verification);
                         engine.LoadScript(witness.InvocationScript);
-                        if (engine.Execute().HasFlag(VMState.FAULT)) return;
-                        if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return;
+                        if (engine.Execute().HasFlag(VMState.FAULT)) throw new InvalidOperationException();
+                        if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean())
+                            throw new InvalidOperationException();
                         consumed += engine.GasConsumed;
                     }
                 }
