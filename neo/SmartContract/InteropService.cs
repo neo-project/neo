@@ -14,6 +14,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
 {
@@ -34,6 +35,7 @@ namespace Neo.SmartContract
         public static readonly uint System_Runtime_Platform = Register("System.Runtime.Platform", Runtime_Platform, 0_00000250);
         public static readonly uint System_Runtime_GetTrigger = Register("System.Runtime.GetTrigger", Runtime_GetTrigger, 0_00000250);
         public static readonly uint System_Runtime_CheckWitness = Register("System.Runtime.CheckWitness", Runtime_CheckWitness, 0_00030000);
+        public static readonly uint System_Runtime_CheckMultiWitness = Register("System.Runtime.CheckMultiWitness", Runtime_CheckMultiWitness, 0_00030000);
         public static readonly uint System_Runtime_Notify = Register("System.Runtime.Notify", Runtime_Notify, 0_00000250);
         public static readonly uint System_Runtime_Log = Register("System.Runtime.Log", Runtime_Log, 0_00300000);
         public static readonly uint System_Runtime_GetTime = Register("System.Runtime.GetTime", Runtime_GetTime, 0_00000250);
@@ -166,6 +168,54 @@ namespace Neo.SmartContract
             else
                 return false;
             engine.CurrentContext.EvaluationStack.Push(result);
+            return true;
+        }
+
+
+        private static bool Runtime_CheckMultiWitness(ApplicationEngine engine)
+        {
+            int n;
+            UInt160[] scripthashes;
+            StackItem item = engine.CurrentContext.EvaluationStack.Pop();
+
+            if (item is VMArray array1)
+            {
+                byte[][] bytes = array1.Select(p => p.GetByteArray()).ToArray();
+                n = bytes.Length;
+                if (n == 0) return false;
+                scripthashes = new UInt160[n];
+                for(var i=0; i<n;i++)
+                    scripthashes[i] = new UInt160(bytes[i]);
+            }
+            else
+            {
+                n = (int)item.GetBigInteger();
+                if (n < 1 || n > engine.CurrentContext.EvaluationStack.Count) return false;
+                scripthashes = new UInt160[n];
+                for (int i = 0; i < n; i++)
+                    scripthashes[i] = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
+            }
+
+            int m = (int)item.GetBigInteger();
+            if (m <= 0) return false;
+        
+            bool fSuccess = true;
+            try
+            {
+                for (int i = 0, j = 0; fSuccess && i < m && j < n;)
+                {
+                    if (CheckWitness(engine, scripthashes[j]))
+                        i++;
+                    j++;
+                    if (m - i > n - j)
+                        fSuccess = false;
+                }
+            }
+            catch (ArgumentException)
+            {
+                fSuccess = false;
+            }
+            engine.CurrentContext.EvaluationStack.Push(fSuccess);
             return true;
         }
 

@@ -102,7 +102,7 @@ namespace Neo.SmartContract
         private static bool Crypto_CheckMultiSig(ApplicationEngine engine)
         {
             int n;
-            byte[][] pubkeys;
+            byte[][] pubkeys; // or scripthashes
             StackItem item = engine.CurrentContext.EvaluationStack.Pop();
 
             if (item is VMArray array1)
