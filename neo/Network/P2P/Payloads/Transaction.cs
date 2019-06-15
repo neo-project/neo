@@ -108,11 +108,7 @@ namespace Neo.Network.P2P.Payloads
                 foreach (var witness in Witnesses)
                 {
                     byte[] verification = witness.VerificationScript;
-                    if (verification.Length == 0)
-                    {
-                        verification = snapshot.Contracts.TryGet(Sender)?.Script;
-                        if (verification is null) throw new InvalidOperationException();
-                    }
+                    if (verification is null) throw new InvalidOperationException();
 
                     using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, this, snapshot, 0, true))
                     {
