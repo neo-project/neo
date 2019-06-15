@@ -21,11 +21,7 @@ namespace Neo.UnitTests
         public void Size_Get()
         {
             UInt256 val256 = UInt256.Zero;
-            UInt256 merkRootVal;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            Witness scriptVal;
-            TestUtils.SetupHeaderWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
+            TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
             // blockbase 4 + 32 + 32 + 4 + 4 + 20 + 3
             // header 1
             uut.Size.Should().Be(100);
@@ -35,11 +31,7 @@ namespace Neo.UnitTests
         public void Deserialize()
         {
             UInt256 val256 = UInt256.Zero;
-            UInt256 merkRoot;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            Witness scriptVal;
-            TestUtils.SetupHeaderWithValues(new Header(), val256, out merkRoot, out val160, out timestampVal, out indexVal, out scriptVal);
+            TestUtils.SetupHeaderWithValues(new Header(), val256, out UInt256 merkRoot, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal);
 
             uut.MerkleRoot = merkRoot; // need to set for deserialise to be valid
 
@@ -65,7 +57,7 @@ namespace Neo.UnitTests
             uut.NextConsensus.Should().Be(val160);
             uut.Witness.InvocationScript.Length.Should().Be(0);
             uut.Witness.Size.Should().Be(scriptVal.Size);
-            uut.Witness.VerificationScript[0].Should().Be(scriptVal.VerificationScript[0]);            
+            uut.Witness.VerificationScript[0].Should().Be(scriptVal.VerificationScript[0]);
         }
 
         [TestMethod]
@@ -80,18 +72,14 @@ namespace Neo.UnitTests
         {
             uut.Equals(uut).Should().BeTrue();
         }
-     
+
         [TestMethod]
         public void Equals_SameHash()
         {
-            Header newHeader = new Header();            
+            Header newHeader = new Header();
             UInt256 prevHash = new UInt256(TestUtils.GetByteArray(32, 0x42));
-            UInt256 merkRoot;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            Witness scriptVal;
-            TestUtils.SetupHeaderWithValues(newHeader, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out scriptVal);
-            TestUtils.SetupHeaderWithValues(uut, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out scriptVal);
+            TestUtils.SetupHeaderWithValues(newHeader, prevHash, out _, out _, out _, out _, out _);
+            TestUtils.SetupHeaderWithValues(uut, prevHash, out _, out _, out _, out _, out _);
 
             uut.Equals(newHeader).Should().BeTrue();
         }
@@ -106,11 +94,7 @@ namespace Neo.UnitTests
         public void Serialize()
         {
             UInt256 val256 = UInt256.Zero;
-            UInt256 merkRootVal;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            Witness scriptVal;
-            TestUtils.SetupHeaderWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
+            TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
 
             byte[] data;
             using (MemoryStream stream = new MemoryStream())
