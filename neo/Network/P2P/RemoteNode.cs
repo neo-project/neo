@@ -149,7 +149,7 @@ namespace Neo.Network.P2P
 
         public void Ping()
         {
-            var ping = new PingPayload();
+            var ping = PingPayload.Create(Blockchain.Singleton.Height);
             lastPingNonce = ping.Nonce;
 
             SendMessage(Message.Create(MessageCommand.Ping, ping));
