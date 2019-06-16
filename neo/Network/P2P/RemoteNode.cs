@@ -25,7 +25,6 @@ namespace Neo.Network.P2P
         private BloomFilter bloom_filter;
         private bool ack = true;
         private bool verack = false;
-        private uint lastPingNonce = 0;
 
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerTcpPort);
         public int ListenerTcpPort { get; private set; } = 0;
@@ -149,15 +148,12 @@ namespace Neo.Network.P2P
 
         public void Ping()
         {
-            var ping = PingPayload.Create(Blockchain.Singleton.Height);
-            lastPingNonce = ping.Nonce;
-
-            SendMessage(Message.Create(MessageCommand.Ping, ping));
+            SendMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
         }
 
         private void OnPingPayload(PingPayload payload)
         {
-            if (payload.Nonce == lastPingNonce && payload.LastBlockIndex > LastBlockIndex)
+            if (payload.LastBlockIndex > LastBlockIndex)
             {
                 LastBlockIndex = payload.LastBlockIndex;
             }
