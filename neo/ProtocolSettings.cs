@@ -20,7 +20,7 @@ namespace Neo
 
         static ProtocolSettings()
         {
-            IConfigurationSection section = new ConfigurationBuilder().AddJsonFile("protocol.json", true).Build().GetSection("ProtocolConfiguration");
+            IConfigurationSection section = Helper.LoadConfig("protocol").GetSection("ProtocolConfiguration");
             Default = new ProtocolSettings(section);
         }
 
