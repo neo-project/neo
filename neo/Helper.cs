@@ -317,7 +317,7 @@ namespace Neo
         /// <returns></returns>
         public static IConfigurationRoot LoadConfig(string config)
         {
-            var fileEnv = Environment.GetEnvironmentVariable("NEO_CONFIG_FILE");
+            var fileEnv = Environment.GetEnvironmentVariable($"NEO_{config.ToUpperInvariant()}_FILE");
             var configFile = string.IsNullOrWhiteSpace(fileEnv) ? $"{config}.json" : fileEnv;
             return new ConfigurationBuilder()
                 .AddJsonFile(configFile, true)
