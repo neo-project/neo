@@ -33,11 +33,11 @@ From 2017 until the middle of 2020 (estimated), NEO 2.x will still be supported 
 
 A link to the essential C# reference implementation can be seen below:
 
-* [neo-core](https://github.com/neo-project/neo/tree/master-2.x)
-* [neo-vm](https://github.com/neo-project/neo-vm/tree/master-2.x)
-* [neo-cli](https://github.com/neo-project/neo-cli/tree/master-2.x)
-* [neo-plugins](https://github.com/neo-project/neo-plugins/tree/master-2.x)
-* [neo-compiler](https://github.com/neo-project/neo-compiler/tree/master-2.x)
+* [neo](https://github.com/neo-project/neo/tree/master-2.x): core implementation (branch `master-2.x`)
+* [neo-vm](https://github.com/neo-project/neo-vm/tree/master-2.x): virtual machine (branch `master-2.x`)
+* [neo-cli](https://github.com/neo-project/neo-cli/tree/master-2.x): command-line interface (branch `master-2.x`)
+* [neo-plugins](https://github.com/neo-project/neo-plugins/tree/master-2.x): plugins (branch `master-2.x`)
+* [neo-devpack-dotnet](https://github.com/neo-project/neo-devpack-dotnet/tree/master-2.x): NeoContract compiler and development pack for .NET (branch `master-2.x`)
 
 NEO 1.x was known as Antshares and the roots of the code can be found historically in this current repository.
 
