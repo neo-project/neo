@@ -52,26 +52,15 @@ namespace Neo.UnitTests.SDK
         }
 
         [TestMethod]
-        public void TestGetAccountState()
+        public void TestGetBlockHex()
         {
             MockResponse(@"{
     ""jsonrpc"": ""2.0"",
     ""id"": 1,
-    ""result"": {
-                ""version"": 0,
-        ""script_hash"": ""0x1179716da2e9523d153a35fb3ad10c561b1e5b1a"",
-        ""frozen"": false,
-        ""votes"": [],
-        ""balances"": [
-            {
-                ""asset"": ""0xc56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"",
-                ""value"": ""94""
-            }
-        ]
-    }
+    ""result"": ""000000002deadfa82cbc4682f5800""
     }");
-            var response = rpc.GetAccountState("AJBENSwajTzQtwyJFkiJSv7MAaaMc7DsRz");
-            Assert.AreEqual("0x1179716da2e9523d153a35fb3ad10c561b1e5b1a", response.ScriptHash);
+            var response = rpc.GetBlockHex("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
+            Assert.AreEqual("000000002deadfa82cbc4682f5800", response);
         }
 
 
