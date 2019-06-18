@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System.Linq;
+using System.Threading;
 
 namespace Neo
 {
@@ -13,14 +14,15 @@ namespace Neo
 
         static ProtocolSettings _default;
 
-        static void UpdateDefault(IConfigurationSection section)
+        static bool UpdateDefault(IConfiguration configuration)
         {
-            System.Threading.Interlocked.CompareExchange(ref _default, new ProtocolSettings(section), null);
+            var settings = new ProtocolSettings(configuration.GetSection("ProtocolConfiguration"));
+            return null == Interlocked.CompareExchange(ref _default, settings, null);
         }
 
-        public static void Initialize(IConfiguration configuration)
+        public static bool Initialize(IConfiguration configuration)
         {
-            UpdateDefault(configuration.GetSection("ProtocolConfiguration"));
+            return UpdateDefault(configuration);
         }
 
         public static ProtocolSettings Default
@@ -29,8 +31,8 @@ namespace Neo
             {
                 if (_default == null)
                 {
-                    IConfigurationSection section = new ConfigurationBuilder().AddJsonFile("protocol.json", true).Build().GetSection("ProtocolConfiguration");
-                    UpdateDefault(section);
+                    var configuration = new ConfigurationBuilder().AddJsonFile("protocol.json", true).Build();
+                    UpdateDefault(configuration);
                 }
 
                 return _default;
