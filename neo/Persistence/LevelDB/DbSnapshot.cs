@@ -16,6 +16,7 @@ namespace Neo.Persistence.LevelDB
         public override DataCache<UInt256, TransactionState> Transactions { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
         public override DataCache<StorageKey, StorageItem> Storages { get; }
+        public override DataCache<StorageKey, StorageItem> ConstantStorages { get; }
         public override DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
@@ -30,6 +31,7 @@ namespace Neo.Persistence.LevelDB
             Transactions = new DbCache<UInt256, TransactionState>(db, options, batch, Prefixes.DATA_Transaction);
             Contracts = new DbCache<UInt160, ContractState>(db, options, batch, Prefixes.ST_Contract);
             Storages = new DbCache<StorageKey, StorageItem>(db, options, batch, Prefixes.ST_Storage);
+            ConstantStorages = new DbCache<StorageKey, StorageItem>(db, options, batch, Prefixes.ST_ConstantStorage);
             HeaderHashList = new DbCache<UInt32Wrapper, HeaderHashList>(db, options, batch, Prefixes.IX_HeaderHashList);
             BlockHashIndex = new DbMetaDataCache<HashIndexState>(db, options, batch, Prefixes.IX_CurrentBlock);
             HeaderHashIndex = new DbMetaDataCache<HashIndexState>(db, options, batch, Prefixes.IX_CurrentHeader);

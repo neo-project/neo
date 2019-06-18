@@ -13,6 +13,7 @@ namespace Neo.Persistence
         public abstract DataCache<UInt256, TransactionState> Transactions { get; }
         public abstract DataCache<UInt160, ContractState> Contracts { get; }
         public abstract DataCache<StorageKey, StorageItem> Storages { get; }
+        public abstract DataCache<StorageKey, StorageItem> ConstantStorages { get; }
         public abstract DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public abstract MetaDataCache<HashIndexState> HeaderHashIndex { get; }
@@ -33,13 +34,12 @@ namespace Neo.Persistence
             Transactions.Commit();
             Contracts.Commit();
             Storages.Commit();
+            ConstantStorages.Commit();
             HeaderHashList.Commit();
             BlockHashIndex.Commit();
             HeaderHashIndex.Commit();
         }
 
-        public virtual void Dispose()
-        {
-        }
+        public virtual void Dispose() { }
     }
 }

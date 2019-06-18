@@ -60,6 +60,7 @@ namespace Neo.SmartContract
         public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400);
         public static readonly uint System_Storage_GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 0_00000400);
         public static readonly uint System_Storage_Get = Register("System.Storage.Get", Storage_Get, 0_01000000);
+        public static readonly uint System_Storage_GetEx = Register("System.Storage.GetEx", Storage_GetEx, 0_01000000);
         public static readonly uint System_Storage_Put = Register("System.Storage.Put", Storage_Put, GetStoragePrice);
         public static readonly uint System_Storage_PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice);
         public static readonly uint System_Storage_Delete = Register("System.Storage.Delete", Storage_Delete, 0_01000000);
@@ -476,6 +477,41 @@ namespace Neo.SmartContract
             return false;
         }
 
+        private static bool Storage_GetEx(ApplicationEngine engine)
+        {
+            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                StorageContext context = _interface.GetInterface<StorageContext>();
+                if (!CheckStorageContext(engine, context)) return false;
+
+                byte[] key = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+                StorageFlags flags = (StorageFlags)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
+
+                StorageItem item;
+
+                if (flags.HasFlag(StorageFlags.Constant))
+                {
+                    item = engine.Snapshot.ConstantStorages.TryGet(new StorageKey
+                    {
+                        ScriptHash = context.ScriptHash,
+                        Key = key
+                    });
+                }
+                else
+                {
+                    item = engine.Snapshot.Storages.TryGet(new StorageKey
+                    {
+                        ScriptHash = context.ScriptHash,
+                        Key = key
+                    });
+                }
+                
+                engine.CurrentContext.EvaluationStack.Push(item?.Value ?? new byte[0]);
+                return true;
+            }
+            return false;
+        }
+
         private static bool StorageContext_AsReadOnly(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
@@ -553,19 +589,27 @@ namespace Neo.SmartContract
                 Key = key
             };
 
-            if (engine.Snapshot.Storages.TryGet(skey)?.IsConstant == true) return false;
-
-            if (value.Length == 0 && !flags.HasFlag(StorageFlags.Constant))
+            if (flags.HasFlag(StorageFlags.Constant))
             {
-                // If put 'value' is empty (and non-const), we remove it (implicit `Storage.Delete`)
-                engine.Snapshot.Storages.Delete(skey);
+                if (engine.Snapshot.ConstantStorages.TryGet(skey) != null) return false;
+
+                StorageItem item = engine.Snapshot.ConstantStorages.GetAndChange(skey, () => new StorageItem());
+                item.Value = value;
             }
             else
             {
-                StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
-                item.Value = value;
-                item.IsConstant = flags.HasFlag(StorageFlags.Constant);
+                if (value.Length == 0)
+                {
+                    // If put 'value' is empty (and non-const), we remove it (implicit `Storage.Delete`)
+                    engine.Snapshot.Storages.Delete(skey);
+                }
+                else
+                {
+                    StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
+                    item.Value = value;
+                }
             }
+
             return true;
         }
 
@@ -603,7 +647,6 @@ namespace Neo.SmartContract
                     ScriptHash = context.ScriptHash,
                     Key = engine.CurrentContext.EvaluationStack.Pop().GetByteArray()
                 };
-                if (engine.Snapshot.Storages.TryGet(key)?.IsConstant == true) return false;
                 engine.Snapshot.Storages.Delete(key);
                 return true;
             }

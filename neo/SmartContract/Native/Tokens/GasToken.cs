@@ -35,10 +35,9 @@ namespace Neo.SmartContract.Native.Tokens
             Mint(engine, primary, engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.NetworkFee));
             BigInteger sys_fee = GetSysFeeAmount(engine.Snapshot, engine.Snapshot.PersistingBlock.Index - 1) + engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.Gas);
             StorageKey key = CreateStorageKey(Prefix_SystemFeeAmount, BitConverter.GetBytes(engine.Snapshot.PersistingBlock.Index));
-            engine.Snapshot.Storages.Add(key, new StorageItem
+            engine.Snapshot.ConstantStorages.Add(key, new StorageItem
             {
                 Value = sys_fee.ToByteArray(),
-                IsConstant = true
             });
             return true;
         }
@@ -54,7 +53,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (index == 0) return Blockchain.GenesisBlock.Transactions.Sum(p => p.Gas);
             StorageKey key = CreateStorageKey(Prefix_SystemFeeAmount, BitConverter.GetBytes(index));
-            StorageItem storage = snapshot.Storages.TryGet(key);
+            StorageItem storage = snapshot.ConstantStorages.TryGet(key);
             if (storage is null) return BigInteger.Zero;
             return new BigInteger(storage.Value);
         }

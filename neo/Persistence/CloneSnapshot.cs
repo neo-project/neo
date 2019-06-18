@@ -10,6 +10,7 @@ namespace Neo.Persistence
         public override DataCache<UInt256, TransactionState> Transactions { get; }
         public override DataCache<UInt160, ContractState> Contracts { get; }
         public override DataCache<StorageKey, StorageItem> Storages { get; }
+        public override DataCache<StorageKey, StorageItem> ConstantStorages { get; }
         public override DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
@@ -21,6 +22,7 @@ namespace Neo.Persistence
             this.Transactions = snapshot.Transactions.CreateSnapshot();
             this.Contracts = snapshot.Contracts.CreateSnapshot();
             this.Storages = snapshot.Storages.CreateSnapshot();
+            this.ConstantStorages = snapshot.ConstantStorages.CreateSnapshot();
             this.HeaderHashList = snapshot.HeaderHashList.CreateSnapshot();
             this.BlockHashIndex = snapshot.BlockHashIndex.CreateSnapshot();
             this.HeaderHashIndex = snapshot.HeaderHashIndex.CreateSnapshot();

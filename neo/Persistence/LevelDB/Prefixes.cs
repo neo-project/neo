@@ -7,6 +7,7 @@
 
         public const byte ST_Contract = 0x50;
         public const byte ST_Storage = 0x70;
+        public const byte ST_ConstantStorage = 0x71;
 
         public const byte IX_HeaderHashList = 0x80;
         public const byte IX_CurrentBlock = 0xc0;

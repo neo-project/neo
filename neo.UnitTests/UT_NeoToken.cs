@@ -339,7 +339,6 @@ namespace Neo.UnitTests
             st.Should().Be(0);
 
             trackable.Key.Key.Should().BeEquivalentTo(new byte[] { 33 }.Concat(eCPoint.EncodePoint(true)));
-            trackable.Item.IsConstant.Should().Be(false);
         }
 
         internal static void CheckBalance(byte[] account, DataCache<StorageKey, StorageItem>.Trackable trackable, BigInteger balance, BigInteger height, ECPoint[] votes)
@@ -354,7 +353,6 @@ namespace Neo.UnitTests
             (st[2].GetByteArray().AsSerializableArray<ECPoint>(Blockchain.MaxValidators)).Should().BeEquivalentTo(votes);  // Votes
 
             trackable.Key.Key.Should().BeEquivalentTo(new byte[] { 20 }.Concat(account));
-            trackable.Item.IsConstant.Should().Be(false);
         }
     }
 }
