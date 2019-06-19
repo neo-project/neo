@@ -12,6 +12,18 @@ namespace Neo.IO
     {
         public const int GroupingSizeInBytes = 16;
 
+        #region Cache
+
+        private readonly static Type _typeISerializable = typeof(ISerializable);
+        private readonly static Type _typeByte = typeof(byte);
+        private readonly static Type _typeSbyte = typeof(sbyte);
+        private readonly static Type _typeShort = typeof(short);
+        private readonly static Type _typeUshort = typeof(ushort);
+        private readonly static Type _typeInt = typeof(int);
+        private readonly static Type _typeUint = typeof(uint);
+
+        #endregion
+
         public static T AsSerializable<T>(this byte[] value, int start = 0) where T : ISerializable, new()
         {
             using (MemoryStream ms = new MemoryStream(value, start, value.Length - start, false))
@@ -23,7 +35,7 @@ namespace Neo.IO
 
         public static ISerializable AsSerializable(this byte[] value, Type type)
         {
-            if (!typeof(ISerializable).GetTypeInfo().IsAssignableFrom(type))
+            if (!_typeISerializable.GetTypeInfo().IsAssignableFrom(type))
                 throw new InvalidCastException();
             ISerializable serializable = (ISerializable)Activator.CreateInstance(type);
             using (MemoryStream ms = new MemoryStream(value, false))
@@ -57,7 +69,7 @@ namespace Neo.IO
         {
             int value_size;
             Type t = typeof(T);
-            if (typeof(ISerializable).IsAssignableFrom(t))
+            if (_typeISerializable.IsAssignableFrom(t))
             {
                 value_size = value.OfType<ISerializable>().Sum(p => p.Size);
             }
@@ -65,11 +77,11 @@ namespace Neo.IO
             {
                 int element_size;
                 Type u = t.GetTypeInfo().GetEnumUnderlyingType();
-                if (u == typeof(sbyte) || u == typeof(byte))
+                if (u == _typeSbyte || u == _typeByte)
                     element_size = 1;
-                else if (u == typeof(short) || u == typeof(ushort))
+                else if (u == _typeShort || u == _typeUshort)
                     element_size = 2;
-                else if (u == typeof(int) || u == typeof(uint))
+                else if (u == _typeInt || u == _typeUint)
                     element_size = 4;
                 else //if (u == typeof(long) || u == typeof(ulong))
                     element_size = 8;
