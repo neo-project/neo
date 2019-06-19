@@ -102,7 +102,7 @@ namespace Neo.SmartContract
 
         public bool AddSignature(Contract contract, ECPoint pubkey, byte[] signature)
         {
-            if (contract.Script.IsMultiSigContract())
+            if (contract.Script.IsMultiSigContract(out _, out _))
             {
                 ContextItem item = CreateItem(contract);
                 if (item == null) return false;
