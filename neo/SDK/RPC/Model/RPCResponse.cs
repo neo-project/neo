@@ -12,7 +12,7 @@ namespace Neo.SDK.RPC.Model
     public class RPCResponse<T>
     {
         [JsonProperty(PropertyName = "id")]
-        public int Id { get; set; }
+        public int? Id { get; set; }
 
         [JsonProperty(PropertyName = "jsonrpc")]
         public string Jsonrpc { get; set; }

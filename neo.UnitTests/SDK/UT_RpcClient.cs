@@ -1,6 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.Protected;
+using Neo.IO.Json;
+using Neo.Network.RPC;
 using Neo.SDK;
 using Neo.SDK.RPC;
 using System;
@@ -52,15 +54,42 @@ namespace Neo.UnitTests.SDK
         }
 
         [TestMethod]
+        public void TestErrorResponse()
+        {
+            JObject response = RpcServer.CreateErrorResponse(null, -32700, "Parse error", "something");
+            MockResponse(response.ToString());
+            try
+            {
+                var result = rpc.GetBlockHex("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
+            }
+            catch (NeoSdkException ex)
+            {
+                Assert.AreEqual(-32700, ex.HResult);
+                Assert.AreEqual("Parse error", ex.Message);
+                Assert.AreEqual("something", ex.Data["data"]);
+            }
+        }
+
+        [TestMethod]
+        public void TestGetBestBlockHash()
+        {
+            JObject response = RpcServer.CreateResponse(1);
+            response["result"] = "000000002deadfa82cbc4682f5800";
+            MockResponse(response.ToString());
+
+            var result = rpc.GetBestBlockHash();
+            Assert.AreEqual("000000002deadfa82cbc4682f5800", result);
+        }
+
+        [TestMethod]
         public void TestGetBlockHex()
         {
-            MockResponse(@"{
-    ""jsonrpc"": ""2.0"",
-    ""id"": 1,
-    ""result"": ""000000002deadfa82cbc4682f5800""
-    }");
-            var response = rpc.GetBlockHex("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
-            Assert.AreEqual("000000002deadfa82cbc4682f5800", response);
+            JObject response = RpcServer.CreateResponse(1);
+            response["result"] = "000000002deadfa82cbc4682f5800";
+            MockResponse(response.ToString());
+
+            var result = rpc.GetBlockHex("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
+            Assert.AreEqual("000000002deadfa82cbc4682f5800", result);
         }
 
 
