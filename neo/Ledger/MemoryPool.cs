@@ -61,7 +61,6 @@ namespace Neo.Ledger
         internal int UnverifiedSortedTxCount => _unverifiedSortedTransactions.Count;
 
         private int _maxTxPerBlock;
-        private long _feePerByte;
 
         /// <summary>
         /// Total maximum capacity of transactions the pool can hold.
@@ -103,7 +102,6 @@ namespace Neo.Ledger
         internal void LoadPolicy(Snapshot snapshot)
         {
             _maxTxPerBlock = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
-            _feePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
         }
 
         /// <summary>
@@ -461,8 +459,7 @@ namespace Neo.Ledger
 
             if (_unverifiedSortedTransactions.Count > 0)
             {
-                // Always leave at least 1 tx for low priority tx
-                int verifyCount = _sortedTransactions.Count > _maxTxPerBlock || maxToVerify == 1 ? 1 : maxToVerify - 1;
+                int verifyCount = _sortedTransactions.Count > _maxTxPerBlock ? 1 : maxToVerify;
                 ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
                     verifyCount, MaxSecondsToReverifyTxPerIdle, snapshot);
             }
