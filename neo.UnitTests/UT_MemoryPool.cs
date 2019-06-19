@@ -109,36 +109,24 @@ namespace Neo.UnitTests
             _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(60);
 
             _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedTxCount.ShouldBeEquivalentTo(9);
-            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(51);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(10);
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(50);
 
             _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedTxCount.ShouldBeEquivalentTo(18);
-            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(42);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(20);
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(40);
 
             _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedTxCount.ShouldBeEquivalentTo(27);
-            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(33);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(30);
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(30);
 
             _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedTxCount.ShouldBeEquivalentTo(36);
-            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(24);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(40);
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(20);
 
             _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedTxCount.ShouldBeEquivalentTo(45);
-            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(15);
-
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedTxCount.ShouldBeEquivalentTo(54);
-            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(6);
-
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedTxCount.ShouldBeEquivalentTo(60);
-            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(0);
-
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedTxCount.ShouldBeEquivalentTo(60);
-            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(0);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(50);
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(10);
 
             _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
             _unit.SortedTxCount.ShouldBeEquivalentTo(60);
@@ -196,7 +184,7 @@ namespace Neo.UnitTests
                 var minTransaction = sortedUnverifiedArray.Last();
 
                 // reverify 1 high priority and 1 low priority transaction
-                _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(2, Blockchain.Singleton.GetSnapshot());
+                _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(1, Blockchain.Singleton.GetSnapshot());
                 var verifiedTxs = _unit.GetSortedVerifiedTransactions().ToArray();
                 verifiedTxs.Length.ShouldBeEquivalentTo(1);
                 verifiedTxs[0].ShouldBeEquivalentTo(maxTransaction);
