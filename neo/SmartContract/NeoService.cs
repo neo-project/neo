@@ -16,6 +16,8 @@ namespace Neo.SmartContract
 {
     public class NeoService : StandardService
     {
+        private CertificateService certificateService;
+
         public NeoService(TriggerType trigger, Snapshot snapshot)
             : base(trigger, snapshot)
         {
@@ -99,6 +101,24 @@ namespace Neo.SmartContract
             Register("Neo.Iterator.Keys", Iterator_Keys, 1);
             Register("Neo.Iterator.Values", Iterator_Values, 1);
             Register("Neo.Iterator.Concat", Iterator_Concat, 1);
+
+
+            #region certificate
+            certificateService = new CertificateService();
+            Register("Neo.Certificate.GetRawTbsCertificate", certificateService.Certificate_GetRawTbsCertificate, 1);
+            Register("Neo.Certificate.GetSignatureAlgorithm", certificateService.Certificate_GetSignatureAlgorithm, 1);
+            Register("Neo.Certificate.GetSignatureValue", certificateService.Certificate_GetSignatureValue, 1);
+            Register("Neo.Certificate.GetVersion", certificateService.Certificate_GetVersion, 1);
+            Register("Neo.Certificate.GetSerialNumber", certificateService.Certificate_GetSerialNumber, 1);
+            Register("Neo.Certificate.GetIssuer", certificateService.Certificate_GetIssuer, 1);
+            Register("Neo.Certificate.GetNotBefore", certificateService.Certificate_GetNotBefore, 1);
+            Register("Neo.Certificate.GetNotAfter", certificateService.Certificate_GetNotAfter, 1);
+            Register("Neo.Certificate.GetSubject", certificateService.Certificate_GetSubject, 1);
+            Register("Neo.Certificate.Decode", certificateService.Certificate_Decode, 10);
+            Register("Neo.Certificate.CheckSignature", certificateService.Certificate_CheckSignature, 100); // refer to OpCode.VERIFY
+            Register("Neo.Certificate.CheckSignatureFrom", certificateService.Certificate_CheckSignatureFrom, 100); // refer to OpCode.VERIFY
+            #endregion
+
 
             #region Aliases
             Register("Neo.Iterator.Next", Enumerator_Next, 1);
