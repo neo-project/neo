@@ -1,4 +1,5 @@
 ﻿using Neo.Cryptography;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -290,18 +291,49 @@ namespace Neo.Wallets
                     ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
                     Attributes = attributes
                 };
-                ContractParametersContext context = new ContractParametersContext(tx);
-                if (!Sign(context)) continue;
-                if (!context.Completed) continue;
-                tx.Witnesses = context.GetWitnesses();
-                try
+                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, tx, testMode: true))
                 {
-                    tx.CalculateFees();
+                    if (engine.State.HasFlag(VMState.FAULT)) return null;
+                    tx.Gas = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
+                    if (tx.Gas > 0)
+                    {
+                        long d = (long)NativeContract.GAS.Factor;
+                        long remainder = tx.Gas % d;
+                        if (remainder > 0)
+                            tx.Gas += d - remainder;
+                        else if (remainder < 0)
+                            tx.Gas -= remainder;
+                    }
                 }
-                catch (InvalidOperationException)
+                UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
+                int size = Transaction.HeaderSize + attributes.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
+                foreach (UInt160 hash in hashes)
                 {
-                    continue;
+                    script = GetAccount(hash)?.Contract?.Script ?? snapshot.Contracts.TryGet(hash)?.Script;
+                    if (script is null) continue;
+                    if (script.IsSignatureContract())
+                    {
+                        size += 66 + script.GetVarSize();
+                        tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] + ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] + InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null);
+                    }
+                    else if (script.IsMultiSigContract(out int m, out int n))
+                    {
+                        int size_inv = 65 * m;
+                        size += IO.Helper.GetVarSize(size_inv) + size_inv + script.GetVarSize();
+                        tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] * m;
+                        using (ScriptBuilder sb = new ScriptBuilder())
+                            tx.NetworkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
+                        tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] * n;
+                        using (ScriptBuilder sb = new ScriptBuilder())
+                            tx.NetworkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
+                        tx.NetworkFee += InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null) * n;
+                    }
+                    else
+                    {
+                        //We can support more contract types in the future.
+                    }
                 }
+                tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
                 if (value >= tx.Gas + tx.NetworkFee) return tx;
             }
             return null;

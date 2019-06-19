@@ -1,11 +1,9 @@
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
-using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -26,7 +24,6 @@ namespace Neo.Network.P2P.Payloads
 
         public byte Version;
         public uint Nonce;
-        public byte[] Script;
         public UInt160 Sender;
         /// <summary>
         /// Distributed to NEO holders.
@@ -38,6 +35,7 @@ namespace Neo.Network.P2P.Payloads
         public long NetworkFee;
         public uint ValidUntilBlock;
         public TransactionAttribute[] Attributes;
+        public byte[] Script;
         public Witness[] Witnesses { get; set; }
 
         /// <summary>
@@ -61,78 +59,18 @@ namespace Neo.Network.P2P.Payloads
 
         InventoryType IInventory.InventoryType => InventoryType.TX;
 
-        public int Size =>
-            sizeof(byte) +              //Version
-            sizeof(uint) +              //Nonce
-            Script.GetVarSize() +       //Script
-            Sender.Size +               //Sender
-            sizeof(long) +              //Gas
-            sizeof(long) +              //NetworkFee
-            sizeof(uint) +              //ValidUntilBlock
+        public const int HeaderSize =
+            sizeof(byte) +  //Version
+            sizeof(uint) +  //Nonce
+            20 +            //Sender
+            sizeof(long) +  //Gas
+            sizeof(long) +  //NetworkFee
+            sizeof(uint);   //ValidUntilBlock
+
+        public int Size => HeaderSize +
             Attributes.GetVarSize() +   //Attributes
+            Script.GetVarSize() +       //Script
             Witnesses.GetVarSize();     //Witnesses
-
-        public void CalculateFees()
-        {
-            if (Sender is null) Sender = UInt160.Zero;
-            if (Attributes is null) Attributes = new TransactionAttribute[0];
-            if (Witnesses is null) Witnesses = new Witness[0];
-            _hash = null;
-            long consumed;
-            using (ApplicationEngine engine = ApplicationEngine.Run(Script, this, testMode: true))
-            {
-                if (engine.State.HasFlag(VMState.FAULT))
-                    throw new InvalidOperationException();
-                consumed = engine.GasConsumed;
-            }
-            _hash = null;
-            long d = (long)NativeContract.GAS.Factor;
-            Gas = consumed - ApplicationEngine.GasFree;
-            if (Gas <= 0)
-            {
-                Gas = 0;
-            }
-            else
-            {
-                long remainder = Gas % d;
-                if (remainder > 0)
-                    Gas += d - remainder;
-                else if (remainder < 0)
-                    Gas -= remainder;
-            }
-            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
-            {
-                // Compute verification gas
-
-                consumed = 0;
-                foreach (var witness in Witnesses)
-                {
-                    byte[] verification = witness.VerificationScript;
-                    if (verification.Length == 0)
-                    {
-                        verification = snapshot.Contracts.TryGet(Sender)?.Script;
-                        if (verification is null) throw new InvalidOperationException();
-                    }
-
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, this, snapshot, 0, true))
-                    {
-                        engine.LoadScript(verification);
-                        engine.LoadScript(witness.InvocationScript);
-                        if (engine.Execute().HasFlag(VMState.FAULT)) throw new InvalidOperationException();
-                        if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean())
-                            throw new InvalidOperationException();
-                        consumed += engine.GasConsumed;
-                    }
-                }
-
-                // Compute fee per byte
-
-                long feeperbyte = NativeContract.Policy.GetFeePerByte(snapshot);
-                long fee = consumed + (feeperbyte * Size);
-                if (fee > NetworkFee)
-                    NetworkFee = fee;
-            }
-        }
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
@@ -145,8 +83,6 @@ namespace Neo.Network.P2P.Payloads
             Version = reader.ReadByte();
             if (Version > 0) throw new FormatException();
             Nonce = reader.ReadUInt32();
-            Script = reader.ReadVarBytes(ushort.MaxValue);
-            if (Script.Length == 0) throw new FormatException();
             Sender = reader.ReadSerializable<UInt160>();
             Gas = reader.ReadInt64();
             if (Gas < 0) throw new FormatException();
@@ -158,6 +94,8 @@ namespace Neo.Network.P2P.Payloads
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
             var cosigners = Attributes.Where(p => p.Usage == TransactionAttributeUsage.Cosigner).Select(p => new UInt160(p.Data)).ToArray();
             if (cosigners.Distinct().Count() != cosigners.Length) throw new FormatException();
+            Script = reader.ReadVarBytes(ushort.MaxValue);
+            if (Script.Length == 0) throw new FormatException();
         }
 
         public bool Equals(Transaction other)
@@ -194,12 +132,12 @@ namespace Neo.Network.P2P.Payloads
         {
             writer.Write(Version);
             writer.Write(Nonce);
-            writer.WriteVarBytes(Script);
             writer.Write(Sender);
             writer.Write(Gas);
             writer.Write(NetworkFee);
             writer.Write(ValidUntilBlock);
             writer.Write(Attributes);
+            writer.WriteVarBytes(Script);
         }
 
         public JObject ToJson()
@@ -209,12 +147,12 @@ namespace Neo.Network.P2P.Payloads
             json["size"] = Size;
             json["version"] = Version;
             json["nonce"] = Nonce;
-            json["script"] = Script.ToHexString();
             json["sender"] = Sender.ToAddress();
             json["gas"] = new BigDecimal(Gas, (byte)NativeContract.GAS.Decimals).ToString();
             json["net_fee"] = new BigDecimal(NetworkFee, (byte)NativeContract.GAS.Decimals).ToString();
             json["valid_until_block"] = ValidUntilBlock;
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
+            json["script"] = Script.ToHexString();
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;
         }

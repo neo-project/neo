@@ -108,9 +108,9 @@ namespace Neo.SmartContract
             return stack_temp.Peek();
         }
 
-        public static bool IsMultiSigContract(this byte[] script)
+        public static bool IsMultiSigContract(this byte[] script, out int m, out int n)
         {
-            int m, n = 0;
+            m = 0; n = 0;
             int i = 0;
             if (script.Length < 41) return false;
             if (script[i] > (byte)OpCode.PUSH16) return false;
@@ -170,7 +170,7 @@ namespace Neo.SmartContract
 
         public static bool IsStandardContract(this byte[] script)
         {
-            return script.IsSignatureContract() || script.IsMultiSigContract();
+            return script.IsSignatureContract() || script.IsMultiSigContract(out _, out _);
         }
 
         public static byte[] Serialize(this StackItem item)
