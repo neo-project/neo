@@ -82,7 +82,7 @@ namespace Neo.UnitTests
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
-            jObj["hash"].AsString().Should().Be("0x38274692538dfecaae36f8fd518d92bae25607d491c40a8f927cc06bd97ab2c8");
+            jObj["hash"].AsString().Should().Be("0xee00d595ccd48a650f62adaccbb9c979e2dc7ef66fb5b1413f0f74d563a2d9c6");
             jObj["size"].AsNumber().Should().Be(82);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
