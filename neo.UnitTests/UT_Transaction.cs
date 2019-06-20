@@ -4,6 +4,7 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
@@ -17,11 +18,13 @@ namespace Neo.UnitTests
     public class UT_Transaction
     {
         Transaction uut;
+        Store store;
 
         [TestInitialize]
         public void TestSetup()
         {
             uut = new Transaction();
+            store = TestBlockchain.GetStore();
         }
 
         [TestMethod]
@@ -77,7 +80,6 @@ namespace Neo.UnitTests
         [TestMethod]
         public void FeeIsSignatureContract()
         {
-            var store = TestBlockchain.GetStore();
             var wallet = new NEP6Wallet("unit-test.json");
             var snapshot = store.GetSnapshot();
 
