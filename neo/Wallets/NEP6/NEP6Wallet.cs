@@ -32,12 +32,8 @@ namespace Neo.Wallets.NEP6
                 using (StreamReader reader = new StreamReader(path))
                 {
                     wallet = JObject.Parse(reader);
-                }
-                this.name = wallet["name"]?.AsString();
-                this.version = Version.Parse(wallet["version"].AsString());
-                this.Scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
-                this.accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p, this)).ToDictionary(p => p.ScriptHash);
-                this.extra = wallet["extra"];
+                }                
+                LoadFromJson(wallet, out ScryptParameters Scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JObject extra);
             }
             else
             {
@@ -47,6 +43,21 @@ namespace Neo.Wallets.NEP6
                 this.accounts = new Dictionary<UInt160, NEP6Account>();
                 this.extra = JObject.Null;
             }
+        }
+
+        public NEP6Wallet(JObject wallet)
+        {
+            this.path = "";
+            LoadFromJson(wallet, out ScryptParameters Scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JObject extra);
+        }
+
+        private void LoadFromJson(JObject wallet, out ScryptParameters Scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JObject extra)
+        {
+            this.name = wallet["name"]?.AsString();
+            this.version = Version.Parse(wallet["version"].AsString());
+            Scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
+            accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p, this)).ToDictionary(p => p.ScriptHash);
+            extra = wallet["extra"];
         }
 
         private void AddAccount(NEP6Account account, bool is_import)
