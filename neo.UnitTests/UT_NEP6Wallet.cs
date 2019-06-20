@@ -35,8 +35,8 @@ namespace Neo.UnitTests
         {
             uut.Name.Should().Be("name");
             uut.Version.Should().Be(new System.Version());
-            //uut.Scrypt.Should().Be(ScryptParameters.Default);
-            uut.Scrypt.Should().Be(null); // TODO: this shouldnt be null
+            uut.Scrypt.Should().NotBeNull(); 
+            uut.Scrypt.N.Should().Be(ScryptParameters.Default.N);
         }
     }
 }
