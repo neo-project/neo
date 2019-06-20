@@ -80,6 +80,7 @@ namespace Neo.UnitTests
         {
             var store = TestBlockchain.GetStore();
             var wallet = new NEP6Wallet("unit-test.json");
+            var snapshot = store.GetSnapshot();
 
             using (var unlock = wallet.Unlock("123"))
             {
@@ -87,8 +88,7 @@ namespace Neo.UnitTests
 
                 // Fake balance
 
-                var key = NativeContract.GAS.CreateAccountKey(acc.ScriptHash);
-                var snapshot = store.GetSnapshot();
+                var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
                 snapshot.Storages.GetAndChange(key, () => new StorageItem
                 {
                     Value = new Nep5AccountState()
@@ -118,7 +118,7 @@ namespace Neo.UnitTests
 
                 // Check
 
-                long executionGas = 0;
+                long verificationGas = 0;
                 using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
                 {
                     engine.LoadScript(tx.Witnesses[0].VerificationScript);
@@ -126,11 +126,11 @@ namespace Neo.UnitTests
                     Assert.AreEqual(VMState.HALT, engine.Execute());
                     Assert.AreEqual(1, engine.ResultStack.Count);
                     Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
-                    executionGas = engine.GasConsumed;
+                    verificationGas = engine.GasConsumed;
                 }
 
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
-                Assert.AreEqual(tx.NetworkFee, executionGas + sizeGas);
+                Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
         }
 

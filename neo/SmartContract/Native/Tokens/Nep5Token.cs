@@ -1,4 +1,4 @@
-﻿#pragma warning disable IDE0060
+#pragma warning disable IDE0060
 
 using Neo.Ledger;
 using Neo.Persistence;
@@ -59,7 +59,7 @@ namespace Neo.SmartContract.Native.Tokens
             Manifest.Abi.Events = events.ToArray();
         }
 
-        internal protected StorageKey CreateAccountKey(UInt160 account)
+        protected StorageKey CreateAccountKey(UInt160 account)
         {
             return CreateStorageKey(Prefix_Account, account);
         }
