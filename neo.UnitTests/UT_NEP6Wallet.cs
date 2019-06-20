@@ -25,6 +25,8 @@ namespace Neo.UnitTests
             wallet["accounts"] = new JArray();
             //accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p, this)).ToDictionary(p => p.ScriptHash);
             wallet["extra"] = new JObject();
+            // check string json
+            wallet.ToString().Should().Be("{\"name\":\"name\",\"version\":\"0.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[],\"extra\":{}}");
             uut = new NEP6Wallet(wallet);
         }
 
