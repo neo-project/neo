@@ -18,9 +18,6 @@ namespace Neo.SDK.RPC.Model
 
         [JsonProperty(PropertyName = "stack")]
         public Stack[] Stack { get; set; }
-
-        [JsonProperty(PropertyName = "tx")]
-        public string Tx { get; set; }
     }
 
     public class Stack

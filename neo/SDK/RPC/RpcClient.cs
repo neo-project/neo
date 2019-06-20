@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Neo.SDK.RPC;
 using Neo.SDK.RPC.Model;
 
@@ -23,31 +24,6 @@ namespace Neo.SDK
                 Params = paraArgs
             };
             return rpcHelper.Send<T>(request);
-        }
-
-        public GetNep5Balances GetNep5Balances(string address)
-        {
-            return RpcSend<GetNep5Balances>("getnep5balances", address);
-        }
-
-        public InvokeRet Invoke(string address, Stack[] stacks)
-        {
-            return RpcSend<InvokeRet>("invoke", address, stacks);
-        }
-
-        public InvokeRet InvokeFunction(string address, string function, Stack[] stacks)
-        {
-            return RpcSend<InvokeRet>("invokefunction", address, function, stacks);
-        }
-
-        public InvokeRet InvokeScript(string script)
-        {
-            return RpcSend<InvokeRet>("invokescript", script);
-        }
-
-        public bool SendRawTransaction(string rawTransaction)
-        {
-            return RpcSend<bool>("sendrawtransaction", rawTransaction);
         }
 
         public string GetBestBlockHash()
@@ -75,97 +51,128 @@ namespace Neo.SDK
 
         public int GetBlockCount()
         {
-            throw new System.NotImplementedException();
+            return RpcSend<int>("getblockcount");
         }
 
         public string GetBlockHash(int index)
         {
-            throw new System.NotImplementedException();
+            return RpcSend<string>("getblockhash", index);
         }
 
         public string GetBlockHeaderHex(string hashOrIndex)
         {
-            throw new System.NotImplementedException();
+            if (int.TryParse(hashOrIndex, out int index))
+            {
+                return RpcSend<string>("getblockheader", index);
+            }
+            return RpcSend<string>("getblockheader", hashOrIndex);
         }
 
         public GetBlockHeader GetBlockHeader(string hashOrIndex)
         {
-            throw new System.NotImplementedException();
+            if (int.TryParse(hashOrIndex, out int index))
+            {
+                return RpcSend<GetBlockHeader>("getblockheader", index, true);
+            }
+            return RpcSend<GetBlockHeader>("getblockheader", hashOrIndex, true);
         }
 
         public string GetBlockSysFee(int height)
         {
-            throw new System.NotImplementedException();
+            return RpcSend<string>("getblocksysfee", height);
         }
 
         public int GetConnectionCount()
         {
-            throw new System.NotImplementedException();
+            return RpcSend<int>("getconnectioncount");
         }
 
         public GetContractState GetContractState(string hash)
         {
-            throw new System.NotImplementedException();
+            return RpcSend<GetContractState>("getcontractstate", hash);
         }
 
         public GetPeers GetPeers()
         {
-            throw new System.NotImplementedException();
+            return RpcSend<GetPeers>("getpeers");
         }
 
         public string[] GetRawMempool()
         {
-            throw new System.NotImplementedException();
+            return RpcSend<string[]>("getrawmempool");
         }
 
-        public GetRawMempool[] GetRawMempoolBoth()
+        public GetRawMempool GetRawMempoolBoth()
         {
-            throw new System.NotImplementedException();
+            return RpcSend<GetRawMempool>("getrawmempool");
         }
 
         public string GetRawTransactionHex(string txid)
         {
-            throw new System.NotImplementedException();
+            return RpcSend<string>("getrawtransaction", txid);
         }
 
-        public TxJson[] GetRawTransaction(string txid)
+        public TxJson GetRawTransaction(string txid)
         {
-            throw new System.NotImplementedException();
+            return RpcSend<TxJson>("getrawtransaction", txid);
         }
 
         public string GetStorage(string script_hash, string key)
         {
-            throw new System.NotImplementedException();
+            return RpcSend<string>("getstorage", script_hash, key);
         }
 
         public uint GetTransactionHeight(string txid)
         {
-            throw new System.NotImplementedException();
+            return RpcSend<uint>("gettransactionheight", txid);
         }
 
-        public GetValidator[] GetValidators()
+        public Validator[] GetValidators()
         {
-            throw new System.NotImplementedException();
+            return RpcSend<Validator[]>("getvalidators");
         }
 
         public GetVersion GetVersion()
         {
-            throw new System.NotImplementedException();
+            return RpcSend<GetVersion>("getversion");
+        }
+
+        public InvokeRet InvokeFunction(string address, string function, Stack[] stacks)
+        {
+            return RpcSend<InvokeRet>("invokefunction", address, function, stacks);
+        }
+
+        public InvokeRet InvokeScript(string script)
+        {
+            return RpcSend<InvokeRet>("invokescript", script);
         }
 
         public List<Plugin> ListPlugins()
         {
-            throw new System.NotImplementedException();
+            return RpcSend<List<Plugin>>("listplugins");
+        }
+
+        public bool SendRawTransaction(string rawTransaction)
+        {
+            return RpcSend<bool>("sendrawtransaction", rawTransaction);
         }
 
         public bool SubmitBlock(string block)
         {
-            throw new System.NotImplementedException();
+            return RpcSend<bool>("submitblock", block);
         }
 
         public ValidateAddress ValidateAddress(string address)
         {
-            throw new System.NotImplementedException();
+            return RpcSend<ValidateAddress>("validateaddress");
         }
+
+        // wait for plugin for neo3.
+        public GetNep5Balances GetNep5Balances(string address)
+        {
+            throw new NotImplementedException();
+            //turn RpcSend<GetNep5Balances>("getnep5balances", address);
+        }
+
     }
 }
