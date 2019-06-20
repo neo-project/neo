@@ -19,6 +19,9 @@ namespace Neo.UnitTests
             wallet["name"] = "name";
             wallet["version"] = new System.Version().ToString();
             wallet["scrypt"] = ScryptParameters.Default.ToJson();
+            // test minimally scryptparameters parsing here
+            ScryptParameters.FromJson(wallet["scrypt"]).Should().NotBeNull();
+            ScryptParameters.FromJson(wallet["scrypt"]).N.Should().Be(ScryptParameters.Default.N);
             wallet["accounts"] = new JArray();
             //accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p, this)).ToDictionary(p => p.ScriptHash);
             wallet["extra"] = new JObject();
