@@ -74,7 +74,7 @@ namespace Neo.SDK.RPC
         /// Obtains the list of unconfirmed transactions in memory.
         /// shouldGetUnverified = true
         /// </summary>
-        GetRawMempool[] GetRawMempoolBoth();
+        GetRawMempool GetRawMempoolBoth();
 
         /// <summary>
         /// Returns the corresponding transaction information, based on the specified hash value.
@@ -85,7 +85,7 @@ namespace Neo.SDK.RPC
         /// Returns the corresponding transaction information, based on the specified hash value.
         /// verbose = true
         /// </summary>
-        TxJson[] GetRawTransaction(string txid);
+        TxJson GetRawTransaction(string txid);
 
         /// <summary>
         /// Returns the stored value, according to the contract script hash and the stored key.
@@ -100,7 +100,7 @@ namespace Neo.SDK.RPC
         /// <summary>
         /// Returns the current NEO consensus nodes information and voting status.
         /// </summary>
-        GetValidator[] GetValidators();
+        Validator[] GetValidators();
 
         /// <summary>
         /// Returns the version information about the queried node.
@@ -143,13 +143,6 @@ namespace Neo.SDK.RPC
         /// Returns the balance of all NEP-5 assets in the specified address.
         /// </summary>
         GetNep5Balances GetNep5Balances(string address);
-
-        /// <summary>
-        /// Returns the result after calling a smart contract at scripthash with the given parameters.
-        /// This method is provided by the plugin RpcWallet.
-        /// This RPC call does not affect the blockchain in any way.
-        /// </summary>
-        InvokeRet Invoke(string address, Stack[] stacks);
 
     }
 }
