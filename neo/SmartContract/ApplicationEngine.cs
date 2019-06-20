@@ -27,6 +27,7 @@ namespace Neo.SmartContract
         public UInt160 CallingScriptHash => hashes.Count > 1 ? hashes.Peek(1) : null;
         public UInt160 EntryScriptHash => hashes.Count > 0 ? hashes.Peek(hashes.Count - 1) : null;
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications;
+        internal Dictionary<UInt160, int> InvocationCounter { get; } = new Dictionary<UInt160, int>();
 
         public ApplicationEngine(TriggerType trigger, IVerifiable container, Snapshot snapshot, long gas, bool testMode = false)
         {
