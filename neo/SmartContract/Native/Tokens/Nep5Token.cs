@@ -59,7 +59,7 @@ namespace Neo.SmartContract.Native.Tokens
             Manifest.Abi.Events = events.ToArray();
         }
 
-        protected StorageKey CreateAccountKey(UInt160 account)
+        internal protected StorageKey CreateAccountKey(UInt160 account)
         {
             return CreateStorageKey(Prefix_Account, account);
         }

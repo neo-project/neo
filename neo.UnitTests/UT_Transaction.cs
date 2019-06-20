@@ -2,7 +2,15 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Tokens;
+using Neo.VM;
+using Neo.Wallets;
+using Neo.Wallets.NEP6;
+using Neo.Wallets.SQLite;
 
 namespace Neo.UnitTests
 {
@@ -65,6 +73,65 @@ namespace Neo.UnitTests
             uut.Script.Length.Should().Be(32);
             uut.Script.GetVarSize().Should().Be(33);
             uut.Size.Should().Be(82);
+        }
+
+        [TestMethod]
+        public void FeeIsSignatureContract()
+        {
+            var store = TestBlockchain.GetStore();
+            var wallet = new NEP6Wallet("unit-test.json");
+
+            using (var unlock = wallet.Unlock("123"))
+            {
+                var acc = wallet.CreateAccount();
+
+                // Fake balance
+
+                var key = NativeContract.GAS.CreateAccountKey(acc.ScriptHash);
+                var snapshot = store.GetSnapshot();
+                snapshot.Storages.GetAndChange(key, () => new StorageItem
+                {
+                    Value = new Nep5AccountState()
+                    {
+                        Balance = 10000 * NativeContract.GAS.Factor
+                    }
+                    .ToByteArray()
+                });
+
+                // Make transaction
+
+                var tx = wallet.MakeTransaction(snapshot, new TransferOutput[]
+                {
+                    new TransferOutput()
+                    {
+                         AssetId = NativeContract.GAS.Hash,
+                         ScriptHash = acc.ScriptHash,
+                         Value = new BigDecimal(1,8)
+                    }
+                }, acc.ScriptHash);
+
+                // Sign
+
+                var data = new ContractParametersContext(tx);
+                Assert.IsTrue(wallet.Sign(data));
+                tx.Witnesses = data.GetWitnesses();
+
+                // Check
+
+                long executionGas = 0;
+                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                {
+                    engine.LoadScript(tx.Witnesses[0].VerificationScript);
+                    engine.LoadScript(tx.Witnesses[0].InvocationScript);
+                    Assert.AreEqual(VMState.HALT, engine.Execute());
+                    Assert.AreEqual(1, engine.ResultStack.Count);
+                    Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+                    executionGas = engine.GasConsumed;
+                }
+
+                var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
+                Assert.AreEqual(tx.NetworkFee, executionGas + sizeGas);
+            }
         }
 
         [TestMethod]
