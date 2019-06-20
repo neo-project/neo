@@ -55,7 +55,7 @@ namespace Neo.Wallets.NEP6
         {
             this.name = wallet["name"]?.AsString();
             this.version = Version.Parse(wallet["version"].AsString());
-            Scrypt = ScryptParameters.Default;//ScryptParameters.FromJson(wallet["scrypt"]);
+            Scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
             accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p, this)).ToDictionary(p => p.ScriptHash);
             extra = wallet["extra"];
         }
