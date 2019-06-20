@@ -154,7 +154,7 @@ namespace Neo.Wallets
             byte[] encryptedkey = new byte[32];
             Buffer.BlockCopy(data, 7, encryptedkey, 0, 32);
             byte[] prikey = XOR(encryptedkey.AES256Decrypt(derivedhalf2), derivedhalf1);
-            Cryptography.ECC.ECPoint pubkey = Cryptography.ECC.ECCurve.Secp256r1.G * prikey;
+            ECPoint pubkey = Cryptography.ECC.ECCurve.Secp256r1.G * prikey;
             UInt160 script_hash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             string address = script_hash.ToAddress();
             if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().Take(4).SequenceEqual(addresshash))
@@ -230,13 +230,15 @@ namespace Neo.Wallets
                         using (ScriptBuilder sb2 = new ScriptBuilder())
                         {
                             sb2.EmitAppCall(assetId, "balanceOf", account);
-                            ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, testMode: true);
-                            if (engine.State.HasFlag(VMState.FAULT))
+                            using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, testMode: true))
                             {
-                                throw new ArgumentException($"Execution for {assetId.ToString()}.balanceOf('{account.ToString()}' fault");
+                                if (engine.State.HasFlag(VMState.FAULT))
+                                {
+                                    throw new ArgumentException($"Execution for {assetId.ToString()}.balanceOf('{account.ToString()}' fault");
+                                }
+                                BigInteger value = engine.ResultStack.Pop().GetBigInteger();
+                                if (value.Sign > 0) balances.Add((account, value));
                             }
-                            BigInteger value = engine.ResultStack.Pop().GetBigInteger();
-                            if (value.Sign > 0) balances.Add((account, value));
                         }
                     BigInteger sum_balance = balances.Select(p => p.Value).Sum();
                     if (sum_balance < sum)
