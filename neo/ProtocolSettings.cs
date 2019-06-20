@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System.Linq;
+using System.Threading;
 
 namespace Neo
 {
@@ -11,12 +12,31 @@ namespace Neo
         public string[] SeedList { get; }
         public uint SecondsPerBlock { get; }
 
-        public static ProtocolSettings Default { get; }
+        static ProtocolSettings _default;
 
-        static ProtocolSettings()
+        static bool UpdateDefault(IConfiguration configuration)
         {
-            IConfigurationSection section = new ConfigurationBuilder().AddJsonFile("protocol.json", true).Build().GetSection("ProtocolConfiguration");
-            Default = new ProtocolSettings(section);
+            var settings = new ProtocolSettings(configuration.GetSection("ProtocolConfiguration"));
+            return null == Interlocked.CompareExchange(ref _default, settings, null);
+        }
+
+        public static bool Initialize(IConfiguration configuration)
+        {
+            return UpdateDefault(configuration);
+        }
+
+        public static ProtocolSettings Default
+        {
+            get
+            {
+                if (_default == null)
+                {
+                    var configuration = new ConfigurationBuilder().AddJsonFile("protocol.json", true).Build();
+                    UpdateDefault(configuration);
+                }
+
+                return _default;
+            }
         }
 
         private ProtocolSettings(IConfigurationSection section)
