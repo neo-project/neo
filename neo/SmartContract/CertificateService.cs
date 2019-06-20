@@ -13,6 +13,9 @@ using Org.BouncyCastle.X509;
 
 namespace Neo.SmartContract
 {
+    /// <summary>
+    /// X509Certificate API
+    /// </summary>
     public class CertificateService
     {
 
