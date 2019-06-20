@@ -10,7 +10,6 @@ using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
-using Neo.Wallets.SQLite;
 
 namespace Neo.UnitTests
 {
@@ -89,14 +88,17 @@ namespace Neo.UnitTests
                 // Fake balance
 
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
-                snapshot.Storages.GetAndChange(key, () => new StorageItem
+
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
                 {
-                    Value = new Nep5AccountState()
-                    {
-                        Balance = 10000 * NativeContract.GAS.Factor
-                    }
-                    .ToByteArray()
+                    Value = new Nep5AccountState().ToByteArray()
                 });
+
+                entry.Value = new Nep5AccountState()
+                {
+                    Balance = 10000 * NativeContract.GAS.Factor
+                }
+                .ToByteArray();
 
                 // Make transaction
 
@@ -109,6 +111,8 @@ namespace Neo.UnitTests
                          Value = new BigDecimal(1,8)
                     }
                 }, acc.ScriptHash);
+
+                Assert.IsNotNull(tx);
 
                 // Sign
 
