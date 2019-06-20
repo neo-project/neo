@@ -150,8 +150,8 @@ namespace Neo.SmartContract
         /// Get the notAfter of certificate in the current evaluation stack
         /// </summary>
         /// <param name="engine"></param>
-        /// <remarks>Evaluation stack input: Certificate</remarks>
-        /// <remarks>Evaluation stack output: Certificate.NotAfter</remarks>
+        /// <remarks>Evaluation stack input: encodedCertValue</remarks>
+        /// <remarks>Evaluation stack output: Certificate</remarks>
         public bool Certificate_Decode(ExecutionEngine engine)
         {
             byte[] encodedCertValue = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
@@ -202,8 +202,8 @@ namespace Neo.SmartContract
         /// Verify the signature of the certificate by its issueCA
         /// </summary>
         /// <param name="engine"></param>
-        /// <remarks>Evaluation stack input: Certificate</remarks>
-        /// <remarks>Evaluation stack output: Certificate.NotAfter</remarks>
+        /// <remarks>Evaluation stack input: Child_Certificate, Parent_Certificate</remarks>
+        /// <remarks>Evaluation stack output: true/false</remarks>
         public bool Certificate_CheckSignatureFrom(ExecutionEngine engine)
         {
             if (!popX509Certificate(engine, out X509Certificate child)) return false;
@@ -276,7 +276,7 @@ namespace Neo.SmartContract
 
             // 2. or the extension is present but the cA boolean is not asserted and path contraints not meet
             if (parent.GetExtensionValue(X509Extensions.BasicConstraints) != null && parent.GetBasicConstraints() < 0)
-            {   //  = isCA ? PathLenConstraint/Int.MaxValue : -1
+            {   //  parent.GetBasicConstraints = isCA ? PathLenConstraint/Int.MaxValue : -1
                 return false;
             }
 
@@ -287,7 +287,7 @@ namespace Neo.SmartContract
                 return false;
             }
 
-            // 4. if certificate has expired or is not yet valid
+            // 4. if the certificate has expired or is not yet valid
             if (!parent.IsValidNow)
             {
                 return false;
