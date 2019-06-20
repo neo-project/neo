@@ -211,7 +211,10 @@ namespace Neo.Wallets
             }
             else
             {
-                if (!Contains(from)) return null;
+                if (!Contains(from))
+                {
+                    throw new ArgumentException($"The address {from.ToString()} was not found in the wallet");
+                }
                 accounts = new[] { from };
             }
 
@@ -228,12 +231,18 @@ namespace Neo.Wallets
                         {
                             sb2.EmitAppCall(assetId, "balanceOf", account);
                             ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, testMode: true);
-                            if (engine.State.HasFlag(VMState.FAULT)) return null;
+                            if (engine.State.HasFlag(VMState.FAULT))
+                            {
+                                throw new ArgumentException($"Execution for {assetId.ToString()}.balanceOf('{account.ToString()}' fault");
+                            }
                             BigInteger value = engine.ResultStack.Pop().GetBigInteger();
                             if (value.Sign > 0) balances.Add((account, value));
                         }
                     BigInteger sum_balance = balances.Select(p => p.Value).Sum();
-                    if (sum_balance < sum) return null;
+                    if (sum_balance < sum)
+                    {
+                        throw new ArgumentException($"It does not have enough balance, expected: {sum.ToString()} found: {sum_balance.ToString()}");
+                    }
                     foreach (TransferOutput output in group)
                     {
                         balances = balances.OrderBy(p => p.Value).ToList();
@@ -265,7 +274,10 @@ namespace Neo.Wallets
             }
             else
             {
-                if (!Contains(sender)) return null;
+                if (!Contains(sender))
+                {
+                    throw new ArgumentException($"The address {sender.ToString()} was not found in the wallet");
+                }
                 accounts = new[] { sender };
             }
 
@@ -289,7 +301,10 @@ namespace Neo.Wallets
                 };
                 using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, tx, testMode: true))
                 {
-                    if (engine.State.HasFlag(VMState.FAULT)) return null;
+                    if (engine.State.HasFlag(VMState.FAULT))
+                    {
+                        throw new ArgumentException($"Failed execution for '{script.ToHexString()}'");
+                    }
                     tx.Gas = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
                     if (tx.Gas > 0)
                     {
