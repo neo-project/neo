@@ -26,8 +26,12 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void Test_NEP6Wallet()
+        public void Test_NEP6Wallet_Json()
         {
+            uut.Name.Should().Be("name");
+            uut.Version.Should().Be(new System.Version());
+            //uut.Scrypt.Should().Be(ScryptParameters.Default);
+            uut.Scrypt.Should().Be(null);
         }
     }
 }
