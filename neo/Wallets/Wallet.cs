@@ -276,6 +276,10 @@ namespace Neo.Wallets
         private Transaction MakeTransaction(Snapshot snapshot, TransactionAttribute[] attributes, byte[] script, List<(UInt160 Account, BigInteger Value)> balances_gas)
         {
             Random rand = new Random();
+            long priceBytes64 = ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64];
+            long priceBytes33 = ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33];
+            long priceCheckSig = InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null);
+
             foreach (var (account, value) in balances_gas)
             {
                 Transaction tx = new Transaction
@@ -310,19 +314,24 @@ namespace Neo.Wallets
                     if (script.IsSignatureContract())
                     {
                         size += 66 + script.GetVarSize();
-                        tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] + ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] + InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null);
+                        tx.NetworkFee += priceBytes64 + priceBytes33 + priceCheckSig;
                     }
                     else if (script.IsMultiSigContract(out int m, out int n))
                     {
+                        long feeM, feeN;
+                        using (ScriptBuilder sb = new ScriptBuilder())
+                        {
+                            feeM = ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
+                            feeN = ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[1]];
+                        }
+
                         int size_inv = 65 * m;
                         size += IO.Helper.GetVarSize(size_inv) + size_inv + script.GetVarSize();
-                        tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] * m;
-                        using (ScriptBuilder sb = new ScriptBuilder())
-                            tx.NetworkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
-                        tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] * n;
-                        using (ScriptBuilder sb = new ScriptBuilder())
-                            tx.NetworkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
-                        tx.NetworkFee += InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null) * n;
+                        tx.NetworkFee += priceBytes64 * m;
+                        tx.NetworkFee += feeM;
+                        tx.NetworkFee += priceBytes33 * n;
+                        tx.NetworkFee += feeN;
+                        tx.NetworkFee += priceCheckSig * n;
                     }
                     else
                     {
