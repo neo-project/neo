@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Numerics;
 using System.Text;
 
-using Neo.VM;
-using Neo.VM.Types;
-
-using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.X509;
 
+using Neo.VM;
+using Neo.VM.Types;
 
 namespace Neo.SmartContract
 {
@@ -202,47 +199,6 @@ namespace Neo.SmartContract
 
 
         /// <summary>
-        /// Verify the signature of the certificate by its issueCA
-        /// </summary>
-        /// <param name="engine"></param>
-        /// <remarks>Evaluation stack input: Child_Certificate, Parent_Certificate</remarks>
-        /// <remarks>Evaluation stack output: true/false</remarks>
-        public bool Certificate_CheckSignatureFrom(ExecutionEngine engine)
-        {
-            if (!popX509Certificate(engine, out X509Certificate child)) return false;
-            if (!popX509Certificate(engine, out X509Certificate parent)) return false;
-
-            try
-            {
-                bool valid = CheckSignatureFrom(child, parent);
-                engine.CurrentContext.EvaluationStack.Push(valid);
-                return true;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-
-        private bool popX509Certificate(ExecutionEngine engine, out X509Certificate x509)
-        {
-            x509 = null;
-            if (engine.CurrentContext.EvaluationStack.Count == 0) return false;
-            if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)) return false;
-
-            x509 = _interface.GetInterface<X509Certificate>();
-            if (x509 == null) return false;
-
-            return true;
-        }
-
-
-        /// <summary>
         /// Verify the signature with the certificate publicKey
         /// </summary>
         /// <param name="certificate"></param>
@@ -262,41 +218,16 @@ namespace Neo.SmartContract
         }
 
 
-        /// <summary>
-        /// check sigature by parent certificate
-        /// </summary>
-        /// <param name="child"></param>
-        /// <param name="parent"></param>
-        /// <exception cref="System.ArgumentException"></exception>
-        /// <exception cref="System.Exception"></exception>
-        private bool CheckSignatureFrom(X509Certificate child, X509Certificate parent)
+        private bool popX509Certificate(ExecutionEngine engine, out X509Certificate x509)
         {
-            // 1.If the basic constraints extension is not present in a version 3 certificate
-            if (parent.Version == 3 && parent.GetExtensionValue(X509Extensions.BasicConstraints) == null)
-            {
-                return false;
-            }
+            x509 = null;
+            if (engine.CurrentContext.EvaluationStack.Count == 0) return false;
+            if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)) return false;
 
-            // 2. or the extension is present but the cA boolean is not asserted and path contraints not meet
-            if (parent.GetExtensionValue(X509Extensions.BasicConstraints) != null && parent.GetBasicConstraints() < 0)
-            {   //  parent.GetBasicConstraints = isCA ? PathLenConstraint/Int.MaxValue : -1
-                return false;
-            }
+            x509 = _interface.GetInterface<X509Certificate>();
+            if (x509 == null) return false;
 
-            // 3. If it's not used for signing
-            bool[] keyUsage = parent.GetKeyUsage();
-            if (keyUsage != null && keyUsage.Length > 0 && (!(keyUsage[5] || keyUsage[6])))
-            {// 5 is the index of KeyCertSign, 6 is the index of CRLSign
-                return false;
-            }
-
-            // 4. if the certificate has expired or is not yet valid
-            if (!parent.IsValidNow)
-            {
-                return false;
-            }
-
-            return CheckSignature(parent, child.SigAlgName, child.GetSignature(), child.GetTbsCertificate());
+            return true;
         }
 
     }

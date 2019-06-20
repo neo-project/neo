@@ -1,14 +1,21 @@
 ﻿using System;
-using System.IO;
+using System.Collections;
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Org.BouncyCastle.X509;
 
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Asn1;
+using Org.BouncyCastle.Crypto.Operators;
+
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
-using System.Numerics;
 
 namespace Neo.UnitTests
 {
@@ -17,26 +24,68 @@ namespace Neo.UnitTests
     {
         CertificateService certificateService;
 
-        // rootCA ----> level2CA ---> level3CA --> level4CA
+        // rootCA(selfCA) ----> subCA
         X509Certificate rootCA;
-        X509Certificate level2CA;
-        X509Certificate level3CA;
-        X509Certificate level4CA;
-        X509Certificate selfSignCA;
-
+        X509Certificate subCA;
 
         [TestInitialize]
         public void TestSetup()
         {
             certificateService = new CertificateService();
-
-            rootCA = LoadX509("./cert/root_ca.crt");
-            level2CA = LoadX509("./cert/level2_ca.crt");
-            level3CA = LoadX509("./cert/level3_ca.crt");
-            level4CA = LoadX509("./cert/level4_ca.crt");
-            selfSignCA = rootCA;  
+            buildCertifacteChain();
         }
 
+
+        private void buildCertifacteChain()
+        {
+            var rootKey = genKey();
+            rootCA = buildsCertificate("Subject001", rootKey.Public, rootKey.Private);
+
+            var subKey = genKey();
+            subCA = buildsCertificate("Subject002", subKey.Public, rootKey.Private);
+        }
+
+        public AsymmetricCipherKeyPair genKey()
+        {
+            var kpgen = new RsaKeyPairGenerator();
+            kpgen.Init(new KeyGenerationParameters(new SecureRandom(), 1024));
+            var kp = kpgen.GenerateKeyPair();
+            return kp;
+        }
+
+
+        private X509Certificate buildsCertificate(string subjectName,AsymmetricKeyParameter publicKey, AsymmetricKeyParameter signPrivateKey)
+        {
+            var gen = new X509V3CertificateGenerator();
+            var CN = new X509Name("CN=" + subjectName);
+            var SN = BigInteger.ProbablePrime(120, new Random());
+
+            gen.SetSerialNumber(SN);
+            gen.SetSubjectDN(CN);
+            gen.SetIssuerDN(CN);
+            gen.SetNotAfter(DateTime.Now.AddYears(1));
+            gen.SetNotBefore(DateTime.Now.Subtract(new TimeSpan(7, 0, 0, 0)));
+            gen.SetPublicKey(publicKey);
+            gen.AddExtension(
+                X509Extensions.AuthorityKeyIdentifier.Id,
+                false,
+                new AuthorityKeyIdentifier(
+                    SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(publicKey),
+                    new GeneralNames(new GeneralName(CN)),
+                    SN
+                ));
+            gen.AddExtension(
+                X509Extensions.ExtendedKeyUsage.Id,
+                false,
+                new ExtendedKeyUsage(new ArrayList()
+                {
+                new DerObjectIdentifier("1.3.6.1.5.5.7.3.1")
+                }));
+
+            ISignatureFactory signatureFactory = new Asn1SignatureFactory("SHA256WITHRSA", signPrivateKey);
+            X509Certificate cert = gen.Generate(signatureFactory);
+            return cert;
+        }
 
 
         [TestMethod]
@@ -45,13 +94,13 @@ namespace Neo.UnitTests
             ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
             executionEngine.LoadScript(new byte[] { }, 0);
 
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level2CA));
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
 
             bool optSuccess = certificateService.Certificate_GetRawTbsCertificate(executionEngine);
             byte[] rawTbs = executionEngine.CurrentContext.EvaluationStack.Pop().GetByteArray();
 
             optSuccess.Should().BeTrue();
-            rawTbs.Should().Equal(level2CA.GetTbsCertificate());
+            rawTbs.Should().Equal(rootCA.GetTbsCertificate());
         }
 
         [TestMethod]
@@ -60,13 +109,14 @@ namespace Neo.UnitTests
             ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
             executionEngine.LoadScript(new byte[] { }, 0);
 
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level2CA));
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
 
             bool optSuccess = certificateService.Certificate_GetSignatureAlgorithm(executionEngine);
             string signatureAlg = executionEngine.CurrentContext.EvaluationStack.Pop().GetString();
 
             optSuccess.Should().BeTrue();
-            signatureAlg.Should().Equals(level2CA.SigAlgName);
+            signatureAlg.Should().Equals(rootCA.SigAlgName);
+            signatureAlg.Should().Equals("SHA256WITHRSA");
         }
 
         [TestMethod]
@@ -75,13 +125,13 @@ namespace Neo.UnitTests
             ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
             executionEngine.LoadScript(new byte[] { }, 0);
 
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level2CA));
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
 
             bool optSuccess = certificateService.Certificate_GetSignatureValue(executionEngine);
             byte[] signatureValue = executionEngine.CurrentContext.EvaluationStack.Pop().GetByteArray();
 
             optSuccess.Should().BeTrue();
-            signatureValue.Should().Equals(level2CA.GetSignature());
+            signatureValue.Should().Equals(rootCA.GetSignature());
         }
 
         [TestMethod]
@@ -90,13 +140,13 @@ namespace Neo.UnitTests
             ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
             executionEngine.LoadScript(new byte[] { }, 0);
 
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level2CA));
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
 
             bool optSuccess = certificateService.Certificate_GetVersion(executionEngine);
             int version = (int) executionEngine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
 
             optSuccess.Should().BeTrue();
-            version.Should().Equals(level2CA.Version);
+            version.Should().Equals(rootCA.Version);
         }
 
         [TestMethod]
@@ -105,11 +155,11 @@ namespace Neo.UnitTests
             ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
             executionEngine.LoadScript(new byte[] { }, 0);
 
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level2CA));
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
 
             bool optSuccess = certificateService.Certificate_GetSerialNumber(executionEngine);
             string serialNumber = executionEngine.CurrentContext.EvaluationStack.Pop().GetString();
-            string serialNumberStr = level2CA.SerialNumber.ToByteArray().ToHexString();
+            string serialNumberStr = rootCA.SerialNumber.ToByteArray().ToHexString();
 
             optSuccess.Should().BeTrue();
             serialNumber.Should().Equals(serialNumberStr);
@@ -121,13 +171,13 @@ namespace Neo.UnitTests
             ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
             executionEngine.LoadScript(new byte[] { }, 0);
 
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level2CA));
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
 
             bool optSuccess = certificateService.Certificate_GetIssuer(executionEngine);
             string issuer = executionEngine.CurrentContext.EvaluationStack.Pop().GetString();
 
             optSuccess.Should().BeTrue();
-            issuer.Should().Equals(level2CA.IssuerDN.ToString());
+            issuer.Should().Equals(rootCA.IssuerDN.ToString());
         }
 
         [TestMethod]
@@ -136,13 +186,13 @@ namespace Neo.UnitTests
             ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
             executionEngine.LoadScript(new byte[] { }, 0);
 
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level2CA));
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
 
             bool optSuccess = certificateService.Certificate_GetNotBefore(executionEngine);
             long notBefore = (long) executionEngine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
 
             optSuccess.Should().BeTrue();
-            notBefore.Should().Equals(new DateTimeOffset(level2CA.NotBefore).ToUnixTimeSeconds());
+            notBefore.Should().Equals(new DateTimeOffset(rootCA.NotBefore).ToUnixTimeSeconds());
         }
 
 
@@ -152,13 +202,13 @@ namespace Neo.UnitTests
             ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
             executionEngine.LoadScript(new byte[] { }, 0);
 
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level2CA));
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
 
             bool optSuccess = certificateService.Certificate_GetNotAfter(executionEngine);
             long notBefore = (long)executionEngine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
 
             optSuccess.Should().BeTrue();
-            notBefore.Should().Equals(new DateTimeOffset(level2CA.NotAfter).ToUnixTimeSeconds());
+            notBefore.Should().Equals(new DateTimeOffset(rootCA.NotAfter).ToUnixTimeSeconds());
         }
 
 
@@ -168,13 +218,13 @@ namespace Neo.UnitTests
             ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
             executionEngine.LoadScript(new byte[] { }, 0);
 
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level2CA));
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
 
             bool optSuccess = certificateService.Certificate_GetSubject(executionEngine);
             string subject = executionEngine.CurrentContext.EvaluationStack.Pop().GetString();
 
             optSuccess.Should().BeTrue();
-            subject.Should().Equals(level2CA.SubjectDN.ToString());
+            subject.Should().Equals(rootCA.SubjectDN.ToString());
         }
 
 
@@ -184,23 +234,23 @@ namespace Neo.UnitTests
             ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
             executionEngine.LoadScript(new byte[] { }, 0);
 
-            executionEngine.CurrentContext.EvaluationStack.Push(level2CA.GetEncoded());
+            executionEngine.CurrentContext.EvaluationStack.Push(rootCA.GetEncoded());
 
             bool optSuccess = certificateService.Certificate_Decode(executionEngine);
             InteropInterface _interface =  (InteropInterface) executionEngine.CurrentContext.EvaluationStack.Pop();
             X509Certificate cerficate  = _interface.GetInterface<X509Certificate>();
 
             optSuccess.Should().BeTrue();
-            cerficate.GetTbsCertificate().Should().Equals(level2CA.GetTbsCertificate());
+            cerficate.GetTbsCertificate().Should().Equals(rootCA.GetTbsCertificate());
         }
 
 
         [TestMethod]
-        public void CheckSignature()
+        public void CheckSignature_RootCA()
         {
-            string sigAlgName =  level3CA.SigAlgName;
-            byte[] signature = level3CA.GetSignature();
-            byte[] signedData = level3CA.GetTbsCertificate();
+            string sigAlgName =  rootCA.SigAlgName;
+            byte[] signature = rootCA.GetSignature();
+            byte[] signedData = rootCA.GetTbsCertificate();
 
             ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
             executionEngine.LoadScript(new byte[] { }, 0);
@@ -208,21 +258,44 @@ namespace Neo.UnitTests
             executionEngine.CurrentContext.EvaluationStack.Push(signedData);
             executionEngine.CurrentContext.EvaluationStack.Push(signature);
             executionEngine.CurrentContext.EvaluationStack.Push(sigAlgName);
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level2CA));
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
 
             bool optSuccess = certificateService.Certificate_CheckSignature(executionEngine);
             bool checkSignature = executionEngine.CurrentContext.EvaluationStack.Pop().GetBoolean();
 
             optSuccess.Should().BeTrue();
             checkSignature.Should().BeTrue();
-        } 
+        }
+
+        [TestMethod]
+        public void CheckSignature_SubCA()
+        {
+            string sigAlgName = subCA.SigAlgName;
+            byte[] signature = subCA.GetSignature();
+            byte[] signedData = subCA.GetTbsCertificate();
+
+            ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
+            executionEngine.LoadScript(new byte[] { }, 0);
+
+            executionEngine.CurrentContext.EvaluationStack.Push(signedData);
+            executionEngine.CurrentContext.EvaluationStack.Push(signature);
+            executionEngine.CurrentContext.EvaluationStack.Push(sigAlgName);
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
+
+            bool optSuccess = certificateService.Certificate_CheckSignature(executionEngine);
+            bool checkSignature = executionEngine.CurrentContext.EvaluationStack.Pop().GetBoolean();
+
+            optSuccess.Should().BeTrue();
+            checkSignature.Should().BeTrue();
+        }
+
 
         [TestMethod]
         public void CheckSignature_Failure()
         {
-            string sigAlgName = level3CA.SigAlgName;
-            byte[] signature = level3CA.GetSignature();
-            byte[] signedData = level3CA.GetTbsCertificate();
+            string sigAlgName = rootCA.SigAlgName;
+            byte[] signature = rootCA.GetSignature();
+            byte[] signedData = rootCA.GetTbsCertificate();
 
             ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
             executionEngine.LoadScript(new byte[] { }, 0);
@@ -234,7 +307,7 @@ namespace Neo.UnitTests
             executionEngine.CurrentContext.EvaluationStack.Push(signedData);
             executionEngine.CurrentContext.EvaluationStack.Push(signature);
             executionEngine.CurrentContext.EvaluationStack.Push(sigAlgName);
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level2CA));
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
 
             bool optSuccess = certificateService.Certificate_CheckSignature(executionEngine);
             bool checkSignature = executionEngine.CurrentContext.EvaluationStack.Pop().GetBoolean();
@@ -242,124 +315,6 @@ namespace Neo.UnitTests
             optSuccess.Should().BeTrue();
             checkSignature.Should().BeFalse();
         }
-
-        [TestMethod]
-        public void CheckSignatureFrom_level2CAAndRootCA()
-        {
-            ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
-            executionEngine.LoadScript(new byte[] { }, 0);
-
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level2CA));
-
-            bool optSuccess = certificateService.Certificate_CheckSignatureFrom(executionEngine);
-            bool checkSignature = executionEngine.CurrentContext.EvaluationStack.Pop().GetBoolean();
-
-            optSuccess.Should().BeTrue();
-            checkSignature.Should().BeTrue();
-        }
-
-
-        [TestMethod]
-        public void CheckSignatureFrom_level3CAAndLevel2CA()
-        {
-            ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
-            executionEngine.LoadScript(new byte[] { }, 0);
-
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level2CA));
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level3CA));
-
-            bool optSuccess = certificateService.Certificate_CheckSignatureFrom(executionEngine);
-            bool checkSignature = executionEngine.CurrentContext.EvaluationStack.Pop().GetBoolean();
-
-            optSuccess.Should().BeTrue();
-            checkSignature.Should().BeTrue();
-        }
-
-
-        [TestMethod]
-        public void CheckSignatureFrom_level4CAAndLevel3CA()
-        {
-            ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
-            executionEngine.LoadScript(new byte[] { }, 0);
-
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level3CA));
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level4CA));
-
-            bool optSuccess = certificateService.Certificate_CheckSignatureFrom(executionEngine);
-            bool checkSignature = executionEngine.CurrentContext.EvaluationStack.Pop().GetBoolean();
-
-            optSuccess.Should().BeTrue();
-            checkSignature.Should().BeTrue();
-        }
-
-        [TestMethod]
-        public void CheckSignatureFrom_level3CAAndRootCA()
-        {
-            ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
-            executionEngine.LoadScript(new byte[] { }, 0);
-
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(level3CA));
-
-            bool optSuccess = certificateService.Certificate_CheckSignatureFrom(executionEngine);
-            bool checkSignature = executionEngine.CurrentContext.EvaluationStack.Pop().GetBoolean();
-
-            optSuccess.Should().BeTrue();
-            checkSignature.Should().BeFalse();
-        }
-
-
-       [TestMethod]
-       public void CheckSignatureFrom_SelfSignCA()
-        {
-            ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
-            executionEngine.LoadScript(new byte[] { }, 0);
-
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(selfSignCA));
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(selfSignCA));
-
-            bool optSuccess = certificateService.Certificate_CheckSignatureFrom(executionEngine);
-            bool checkSignature = executionEngine.CurrentContext.EvaluationStack.Pop().GetBoolean();
-
-            optSuccess.Should().BeTrue();
-            checkSignature.Should().BeTrue();
-        }
-
-        [TestMethod]
-        public void CheckSignatureFrom_Loss_CA()
-        {
-            ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
-            executionEngine.LoadScript(new byte[] { }, 0);
-
-            certificateService.Certificate_CheckSignatureFrom(executionEngine).Should().BeFalse();
-            executionEngine.CurrentContext.EvaluationStack.Count.Should().Be(0);
-
-            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
-            certificateService.Certificate_CheckSignatureFrom(executionEngine).Should().BeFalse();
-            executionEngine.CurrentContext.EvaluationStack.Count.Should().Be(0);
-        }
-
-
-        [TestMethod]
-        public void CheckSignatureFrom_Param_Isnot_CA()
-        {
-            ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
-            executionEngine.LoadScript(new byte[] { }, 0);
-
-            executionEngine.CurrentContext.EvaluationStack.Push(true);
-            certificateService.Certificate_CheckSignatureFrom(executionEngine).Should().BeFalse();
-            executionEngine.CurrentContext.EvaluationStack.Count.Should().Be(0);
-        }
-
-
-        private static X509Certificate LoadX509(string path)
-        {
-            using (Stream stream = new FileStream(path, FileMode.Open))
-            {
-                X509CertificateParser x509CertificateParser = new X509CertificateParser();
-                return x509CertificateParser.ReadCertificate(stream);
-            }
-        }
+       
     }
 }

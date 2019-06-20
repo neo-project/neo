@@ -116,7 +116,6 @@ namespace Neo.SmartContract
             Register("Neo.Certificate.GetSubject", certificateService.Certificate_GetSubject, 1);
             Register("Neo.Certificate.Decode", certificateService.Certificate_Decode, 10);
             Register("Neo.Certificate.CheckSignature", certificateService.Certificate_CheckSignature, 100); // refer to OpCode.VERIFY
-            Register("Neo.Certificate.CheckSignatureFrom", certificateService.Certificate_CheckSignatureFrom, 100); // refer to OpCode.VERIFY
             #endregion
 
 
