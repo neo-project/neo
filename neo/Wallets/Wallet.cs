@@ -241,11 +241,8 @@ namespace Neo.Wallets
                         cosigners.UnionWith(balances_used.Select(p => p.Account));
                         foreach (var (account, value) in balances_used)
                         {
-                            if (account != output.ScriptHash)
-                            {
-                                sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value);
-                                sb.Emit(OpCode.THROWIFNOT);
-                            }
+                            sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value);
+                            sb.Emit(OpCode.THROWIFNOT);
                         }
                     }
                     if (assetId.Equals(NativeContract.GAS.Hash))
