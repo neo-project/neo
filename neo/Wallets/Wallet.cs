@@ -212,12 +212,9 @@ namespace Neo.Wallets
             else
             {
                 if (!Contains(from))
-                {
                     throw new ArgumentException($"The address {from.ToString()} was not found in the wallet");
-                }
                 accounts = new[] { from };
             }
-
             HashSet<UInt160> cosigners = new HashSet<UInt160>();
             byte[] script;
             List<(UInt160 Account, BigInteger Value)> balances_gas = null;
@@ -233,18 +230,14 @@ namespace Neo.Wallets
                             using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, testMode: true))
                             {
                                 if (engine.State.HasFlag(VMState.FAULT))
-                                {
-                                    throw new ArgumentException($"Execution for {assetId.ToString()}.balanceOf('{account.ToString()}' fault");
-                                }
+                                    throw new InvalidOperationException($"Execution for {assetId.ToString()}.balanceOf('{account.ToString()}' fault");
                                 BigInteger value = engine.ResultStack.Pop().GetBigInteger();
                                 if (value.Sign > 0) balances.Add((account, value));
                             }
                         }
                     BigInteger sum_balance = balances.Select(p => p.Value).Sum();
                     if (sum_balance < sum)
-                    {
-                        throw new ArgumentException($"It does not have enough balance, expected: {sum.ToString()} found: {sum_balance.ToString()}");
-                    }
+                        throw new InvalidOperationException($"It does not have enough balance, expected: {sum.ToString()} found: {sum_balance.ToString()}");
                     foreach (TransferOutput output in group)
                     {
                         balances = balances.OrderBy(p => p.Value).ToList();
@@ -277,12 +270,9 @@ namespace Neo.Wallets
             else
             {
                 if (!Contains(sender))
-                {
                     throw new ArgumentException($"The address {sender.ToString()} was not found in the wallet");
-                }
                 accounts = new[] { sender };
             }
-
             var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
             return MakeTransaction(snapshot, attributes, script, balances_gas);
         }
@@ -304,9 +294,7 @@ namespace Neo.Wallets
                 using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, tx, testMode: true))
                 {
                     if (engine.State.HasFlag(VMState.FAULT))
-                    {
-                        throw new ArgumentException($"Failed execution for '{script.ToHexString()}'");
-                    }
+                        throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
                     tx.Gas = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
                     if (tx.Gas > 0)
                     {
@@ -349,7 +337,7 @@ namespace Neo.Wallets
                 tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
                 if (value >= tx.Gas + tx.NetworkFee) return tx;
             }
-            return null;
+            throw new InvalidOperationException("Insufficient GAS");
         }
 
         public bool Sign(ContractParametersContext context)
