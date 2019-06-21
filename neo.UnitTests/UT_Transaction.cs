@@ -81,12 +81,24 @@ namespace Neo.UnitTests
             uut.Size.Should().Be(82);
         }
 
+        private NEP6Wallet GenerateTestWallet()
+        {
+            JObject wallet = new JObject();
+            wallet["name"] = "noname";
+            wallet["version"] = new System.Version().ToString();
+            wallet["scrypt"] = ScryptParameters.Default.ToJson();
+            wallet["accounts"] = new JArray();
+            wallet["extra"] = null;
+            wallet.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"0.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[],\"extra\":null}");
+            return new NEP6Wallet(wallet);
+        }
+
         [TestMethod]
         public void FeeIsMultiSigContract()
         {
             var store = TestBlockchain.GetStore();
-            var walletA = new NEP6Wallet("unit-test-A.json");
-            var walletB = new NEP6Wallet("unit-test-B.json");
+            var walletA = GenerateTestWallet();
+            var walletB = GenerateTestWallet();
             var snapshot = store.GetSnapshot();
 
             using (var unlockA = walletA.Unlock("123"))
@@ -170,7 +182,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void FeeIsSignatureContract()
         {
-            var wallet = new NEP6Wallet("unit-test.json");
+            var wallet = GenerateTestWallet();
             var snapshot = store.GetSnapshot();
 
             using (var unlock = wallet.Unlock("123"))
