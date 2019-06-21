@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Neo.SDK.RPC.Model
 {
-    public class GetValidator
+    public class Validator
     {
         [JsonProperty(PropertyName = "publickey")]
         public string PublicKey { get; set; }

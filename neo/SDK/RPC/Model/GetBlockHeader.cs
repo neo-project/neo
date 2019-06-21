@@ -32,7 +32,7 @@ namespace Neo.SDK.RPC.Model
         public string NextConsensus { get; set; }
 
         [JsonProperty(PropertyName = "witness")]
-        public WitnessJson[] Witness { get; set; }
+        public WitnessJson Witness { get; set; }
 
         [JsonProperty(PropertyName = "confirmations")]
         public int Confirmations { get; set; }

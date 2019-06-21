@@ -32,10 +32,10 @@ namespace Neo.SDK.RPC.Model
         public string NextConsensus { get; set; }
 
         [JsonProperty(PropertyName = "witness")]
-        public WitnessJson[] Witness { get; set; }
+        public WitnessJson Witness { get; set; }
 
         [JsonProperty(PropertyName = "consensus_data")]
-        public ConsensusData[] ConsensusData { get; set; }
+        public ConsensusData ConsensusData { get; set; }
 
         [JsonProperty(PropertyName = "tx")]
         public TxJson[] Tx { get; set; }
@@ -99,7 +99,7 @@ namespace Neo.SDK.RPC.Model
         public AttrJson[] Attributes { get; set; }
 
         [JsonProperty(PropertyName = "witness")]
-        public WitnessJson[] Witness { get; set; }
+        public WitnessJson Witness { get; set; }
     }
 
     public class AttrJson

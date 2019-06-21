@@ -17,7 +17,7 @@ namespace Neo.SDK.RPC.Model
         public uint Nonce { get; set; }
 
         [JsonProperty(PropertyName = "useragent")]
-        public string Useragent { get; set; }
+        public string UserAgent { get; set; }
     }
 
 }
