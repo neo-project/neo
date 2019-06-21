@@ -39,6 +39,7 @@ namespace Neo.SmartContract
         public static readonly uint System_Runtime_GetTime = Register("System.Runtime.GetTime", Runtime_GetTime, 0_00000250);
         public static readonly uint System_Runtime_Serialize = Register("System.Runtime.Serialize", Runtime_Serialize, 0_00100000);
         public static readonly uint System_Runtime_Deserialize = Register("System.Runtime.Deserialize", Runtime_Deserialize, 0_00500000);
+        public static readonly uint System_Runtime_GetInvocationCounter = Register("System.Runtime.GetInvocationCounter", Runtime_GetInvocationCounter, 0_00000400);
         public static readonly uint System_Crypto_Verify = Register("System.Crypto.Verify", Crypto_Verify, 0_01000000);
         public static readonly uint System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", Blockchain_GetHeight, 0_00000400);
         public static readonly uint System_Blockchain_GetHeader = Register("System.Blockchain.GetHeader", Blockchain_GetHeader, 0_00007000);
@@ -209,6 +210,17 @@ namespace Neo.SmartContract
             if (serialized.Length > engine.MaxItemSize)
                 return false;
             engine.CurrentContext.EvaluationStack.Push(serialized);
+            return true;
+        }
+
+        private static bool Runtime_GetInvocationCounter(ApplicationEngine engine)
+        {
+            if (!engine.InvocationCounter.TryGetValue(engine.CurrentScriptHash, out var counter))
+            {
+                return false;
+            }
+
+            engine.CurrentContext.EvaluationStack.Push(counter);
             return true;
         }
 
@@ -499,6 +511,15 @@ namespace Neo.SmartContract
             if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method.GetString()))
                 return false;
 
+            if (engine.InvocationCounter.TryGetValue(contract.ScriptHash, out var counter))
+            {
+                engine.InvocationCounter[contract.ScriptHash] = counter + 1;
+            }
+            else
+            {
+                engine.InvocationCounter[contract.ScriptHash] = 1;
+            }
+
             ExecutionContext context_new = engine.LoadScript(contract.Script, 1);
             context_new.EvaluationStack.Push(args);
             context_new.EvaluationStack.Push(method);
@@ -525,15 +546,26 @@ namespace Neo.SmartContract
             if (value.Length > MaxStorageValueSize) return false;
             if (context.IsReadOnly) return false;
             if (!CheckStorageContext(engine, context)) return false;
+
             StorageKey skey = new StorageKey
             {
                 ScriptHash = context.ScriptHash,
                 Key = key
             };
-            StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
-            if (item.IsConstant) return false;
-            item.Value = value;
-            item.IsConstant = flags.HasFlag(StorageFlags.Constant);
+
+            if (engine.Snapshot.Storages.TryGet(skey)?.IsConstant == true) return false;
+
+            if (value.Length == 0 && !flags.HasFlag(StorageFlags.Constant))
+            {
+                // If put 'value' is empty (and non-const), we remove it (implicit `Storage.Delete`)
+                engine.Snapshot.Storages.Delete(skey);
+            }
+            else
+            {
+                StorageItem item = engine.Snapshot.Storages.GetAndChange(skey, () => new StorageItem());
+                item.Value = value;
+                item.IsConstant = flags.HasFlag(StorageFlags.Constant);
+            }
             return true;
         }
 
