@@ -93,7 +93,7 @@ namespace Neo.UnitTests
                 var a = walletA.CreateAccount();
                 var b = walletB.CreateAccount();
 
-                var multiSignContract = Contract.CreateMultiSigContract(1,
+                var multiSignContract = Contract.CreateMultiSigContract(2,
                     new ECPoint[]
                     {
                         a.GetKey().PublicKey,
@@ -134,17 +134,16 @@ namespace Neo.UnitTests
 
                 // Sign
 
-                var dataA = new ContractParametersContext(tx);
-                Assert.IsTrue(walletA.Sign(dataA));
+                var data = new ContractParametersContext(tx);
+                Assert.IsTrue(walletA.Sign(data));
+                Assert.IsTrue(walletB.Sign(data));
+                Assert.IsTrue(data.Completed);
 
-                var dataB = new ContractParametersContext(tx);
-                Assert.IsTrue(walletB.Sign(dataB));
-
-                tx.Witnesses = dataA.GetWitnesses().Concat(dataB.GetWitnesses()).ToArray();
+                tx.Witnesses = data.GetWitnesses();
 
                 // Fast check
 
-                // Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
 
                 // Check
 
