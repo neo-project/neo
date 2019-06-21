@@ -8,6 +8,8 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Configuration;
+using Neo.Plugins;
 
 namespace Neo
 {
@@ -270,6 +272,21 @@ namespace Neo
                 }
                 yield return resultSelector(item, weight);
             }
+        }
+
+        /// <summary>
+        /// load configuration with different Environment Variable
+        /// </summary>
+        /// <param name="config"></param>
+        /// <returns></returns>
+        public static IConfigurationRoot LoadConfig(string config)
+        {
+            var env = Environment.GetEnvironmentVariable("NEO_NETWORK");
+            var configFile = string.IsNullOrWhiteSpace(env) ? $"{config}.json" : $"{config}.{env}.json";
+            Plugin.Log(nameof(LoadConfig), LogLevel.Info, $"Config loading:{configFile}");
+            return new ConfigurationBuilder()
+                .AddJsonFile(configFile, true)
+                .Build();
         }
     }
 }
