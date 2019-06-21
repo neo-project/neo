@@ -1,7 +1,6 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
-using Neo.Network.P2P.Payloads;
 using Neo.Wallets.NEP6;
 using System;
 
@@ -34,8 +33,8 @@ namespace Neo.UnitTests
         public void Test_NEP6Wallet_Json()
         {
             uut.Name.Should().Be("name");
-            uut.Version.Should().Be(new System.Version());
-            uut.Scrypt.Should().NotBeNull(); 
+            uut.Version.Should().Be(new Version());
+            uut.Scrypt.Should().NotBeNull();
             uut.Scrypt.N.Should().Be(ScryptParameters.Default.N);
         }
     }

@@ -32,7 +32,7 @@ namespace Neo.Wallets.NEP6
                 using (StreamReader reader = new StreamReader(path))
                 {
                     wallet = JObject.Parse(reader);
-                }                
+                }
                 LoadFromJson(wallet, out Scrypt, out accounts, out extra);
             }
             else

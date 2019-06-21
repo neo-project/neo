@@ -1,9 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
-using Neo.Network.P2P.Payloads;
 using Neo.Wallets.NEP6;
-using System;
 
 namespace Neo.UnitTests
 {
@@ -46,7 +44,7 @@ namespace Neo.UnitTests
             ScryptParameters uut2 = ScryptParameters.FromJson(json);
             uut2.N.Should().Be(ScryptParameters.Default.N);
             uut2.R.Should().Be(ScryptParameters.Default.R);
-            uut2.P.Should().Be(ScryptParameters.Default.P);           
+            uut2.P.Should().Be(ScryptParameters.Default.P);
         }
     }
 }
