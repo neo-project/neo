@@ -218,14 +218,17 @@ namespace Neo.UnitTests
                 // Check
 
                 long verificationGas = 0;
-                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                foreach (var witness in tx.Witnesses)
                 {
-                    engine.LoadScript(tx.Witnesses[0].VerificationScript);
-                    engine.LoadScript(tx.Witnesses[0].InvocationScript);
-                    Assert.AreEqual(VMState.HALT, engine.Execute());
-                    Assert.AreEqual(1, engine.ResultStack.Count);
-                    Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
-                    verificationGas = engine.GasConsumed;
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    {
+                        engine.LoadScript(witness.VerificationScript);
+                        engine.LoadScript(witness.InvocationScript);
+                        Assert.AreEqual(VMState.HALT, engine.Execute());
+                        Assert.AreEqual(1, engine.ResultStack.Count);
+                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+                        verificationGas += engine.GasConsumed;
+                    }
                 }
 
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
