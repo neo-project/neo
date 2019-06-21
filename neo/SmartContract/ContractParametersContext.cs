@@ -183,7 +183,10 @@ namespace Neo.SmartContract
 
         public static ContractParametersContext FromJson(JObject json)
         {
-            if (!(typeof(ContractParametersContext).GetTypeInfo().Assembly.CreateInstance(json["type"].AsString()) is IVerifiable verifiable)) throw new FormatException();
+            var type = typeof(ContractParametersContext).GetTypeInfo().Assembly.GetType(json["type"].AsString());
+            if (!typeof(IVerifiable).IsAssignableFrom(type)) throw new FormatException();
+
+            var verifiable = (IVerifiable)Activator.CreateInstance(type);
             using (MemoryStream ms = new MemoryStream(json["hex"].AsString().HexToBytes(), false))
             using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
             {
