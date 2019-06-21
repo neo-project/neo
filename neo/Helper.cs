@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
+using Neo.Plugins;
 
 namespace Neo
 {
@@ -319,7 +320,7 @@ namespace Neo
         {
             var env = Environment.GetEnvironmentVariable("NEO_NETWORK");
             var configFile = string.IsNullOrWhiteSpace(env) ? $"{config}.json" : $"{config}.{env}.json";
-            Console.WriteLine($"Config loading:{configFile}");
+            Plugin.Log(nameof(LoadConfig),LogLevel.Info, $"Config loading:{configFile}");
             return new ConfigurationBuilder()
                 .AddJsonFile(configFile, true)
                 .Build();
