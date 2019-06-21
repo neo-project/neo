@@ -111,7 +111,7 @@ namespace Neo.SDK.RPC
         /// Returns the result after calling a smart contract at scripthash with the given operation and parameters.
         /// This RPC call does not affect the blockchain in any way.
         /// </summary>
-        InvokeRet InvokeFunction(string address, string function, Stack[] stacks);
+        InvokeRet InvokeFunction(string address, string function, StackJson[] stacks);
 
         /// <summary>
         /// Returns the result after passing a script through the VM.

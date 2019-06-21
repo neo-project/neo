@@ -137,7 +137,7 @@ namespace Neo.SDK
             return RpcSend<GetVersion>("getversion");
         }
 
-        public InvokeRet InvokeFunction(string address, string function, Stack[] stacks)
+        public InvokeRet InvokeFunction(string address, string function, StackJson[] stacks)
         {
             return RpcSend<InvokeRet>("invokefunction", address, function, stacks);
         }

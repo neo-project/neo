@@ -17,10 +17,10 @@ namespace Neo.SDK.RPC.Model
         public string GasConsumed { get; set; }
 
         [JsonProperty(PropertyName = "stack")]
-        public Stack[] Stack { get; set; }
+        public StackJson[] Stack { get; set; }
     }
 
-    public class Stack
+    public class StackJson
     {
         [JsonProperty(PropertyName = "type")]
         public string Type { get; set; }

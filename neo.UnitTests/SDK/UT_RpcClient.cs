@@ -420,7 +420,7 @@ namespace Neo.UnitTests.SDK
             response["result"] = json;
             MockResponse(response.ToString());
 
-            var result = rpc.InvokeFunction("af7c7328eee5a275a3bcaee2bf0cf662b5e739be", "balanceOf", new[] { new Stack { Type = "Hash160", Value = "91b83e96f2a7c4fdf0c1688441ec61986c7cae26" } });
+            var result = rpc.InvokeFunction("af7c7328eee5a275a3bcaee2bf0cf662b5e739be", "balanceOf", new[] { new StackJson { Type = "Hash160", Value = "91b83e96f2a7c4fdf0c1688441ec61986c7cae26" } });
             Assert.AreEqual(json.ToString(), JsonConvert.SerializeObject(result));
         }
 
