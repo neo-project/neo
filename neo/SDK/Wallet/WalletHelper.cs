@@ -11,10 +11,21 @@ namespace Neo.SDK.Wallet
         public const string DefaultLabel = "NeoSdkAccount";
         public const string DefaultWalletName = "NeoSdkWallet";
         public const string DefaultVersion = "1.0";
+        public const string DefaultPassword = "NeoSdkPassword";
 
         public const int ScryptN = 16384;
         public const int ScryptR = 8;
         public const int ScryptP = 8;
+
+        private readonly Account account;
+
+        // in case the user is too lazy to setup a password
+        public WalletHelper(string password = null)
+        {
+            if (password == null || password.Length == 0) password = DefaultPassword;
+            var keyPair = CreateKeyPair();
+            this.account = CreateAccount(password, keyPair);
+        }
 
         public KeyPair CreateKeyPair()
         {
@@ -70,6 +81,9 @@ namespace Neo.SDK.Wallet
             return CreateWallet(DefaultWalletName, DefaultVersion, ScryptN, ScryptR, ScryptP);
         }
 
+        public bool Sign(ContractParametersContext context)
+        {
 
+        }
     }
 }

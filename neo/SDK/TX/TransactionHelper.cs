@@ -60,8 +60,8 @@ namespace Neo.SDK.TX
                 if (balance_gas <= 0) return null;
             }
 
-            byte[] script = this.GenerateScript(assetId, "transfer", from, to, amount);
-            Transaction tx = this.CreateTransaction(script, from);
+            byte[] script = this.GenerateTransactionScript(assetId, "transfer", from, to, amount);
+            Transaction tx = this.CreateTransaction(script);
             BigInteger fee = tx.Gas + tx.NetworkFee;
             if (balance_gas == BigInteger.Zero)
                 balance_gas = GetTokenBalance(NativeContract.GAS.Hash, from);
@@ -71,38 +71,55 @@ namespace Neo.SDK.TX
 
         public Transaction BalanceOf(UInt160 assetId, UInt160 account)
         {
-            byte[] script = this.GenerateScript(assetId, "balanceOf", account);
-            Transaction tx = this.CreateTransaction(script, _sender);
+            byte[] script = this.GenerateTransactionScript(assetId, "balanceOf", account);
+            Transaction tx = this.CreateTransaction(script);
             return tx;
         }
 
 
-        //deploy contract
 
 
-        //invoke contract
 
-
-        public Transaction CreateTransaction(byte[] script, UInt160 sender, IEnumerable<TransactionAttribute> attributes = null)
+        public Transaction CreateTransaction(byte[] script, IEnumerable<TransactionAttribute> attributes = null)
         {
             TransactionAttribute[] attr = attributes != null ? attributes.ToArray() : new TransactionAttribute[0];
             Transaction tx = new Transaction
             {
                 Script = script,
-                Sender = sender,
                 Attributes = attr
             };
-            tx = this.FillTransactionHelper(tx, sender);
+            tx = this.FillTransactionHelper(tx);
             return tx;
         }
 
-        public byte[] GenerateScript(UInt160 scriptHash, string operation, params object[] args)
+        public byte[] GenerateTransactionScript(UInt160 scriptHash, string operation, params object[] args)
         {
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.EmitAppCall(scriptHash, operation, args);
                 return sb.ToArray();
             }
+        }
+
+        private Transaction FillTransactionHelper(Transaction tx)
+        {
+            if (tx.Version != 0)
+                tx.Version = 0;
+            if (tx.Nonce == 0)
+                tx.Nonce = (uint)rand.Next();
+            if (tx.ValidUntilBlock == 0)
+                tx.ValidUntilBlock = GetBlockHeight() + Transaction.MaxValidUntilBlockIncrement;
+
+            this.CalculateFeesHelper(tx);
+            BigInteger fee = tx.Gas + tx.NetworkFee;
+            BigInteger balance = GetTokenBalance(NativeContract.GAS.Hash, _sender);
+            if (balance >= fee)
+            {
+                tx.Sender = _sender;
+                return tx;
+            }
+            
+            throw new InvalidOperationException();
         }
 
         private void CalculateFeesHelper(Transaction tx)
@@ -145,25 +162,7 @@ namespace Neo.SDK.TX
                 tx.NetworkFee = fee;
         }
 
-        private Transaction FillTransactionHelper(Transaction tx, UInt160 sender)
-        {
-            if (tx.Version != 0)
-                tx.Version = 0;
-            if (tx.Nonce == 0)
-                tx.Nonce = (uint)rand.Next();
-            if (tx.ValidUntilBlock == 0)
-                tx.ValidUntilBlock = GetBlockHeight() + Transaction.MaxValidUntilBlockIncrement;
-
-            this.CalculateFeesHelper(tx);
-            BigInteger fee = tx.Gas + tx.NetworkFee;
-            BigInteger balance = GetTokenBalance(NativeContract.GAS.Hash, sender);
-            if (balance >= fee)
-            {
-                tx.Sender = sender;
-                return tx;
-            }
-            
-            throw new InvalidOperationException();
-        }
+        // serialize
+        // deserialize
     }
 }
