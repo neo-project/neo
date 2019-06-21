@@ -120,7 +120,7 @@ namespace Neo.UnitTests
 
                 // Make transaction
 
-                var tx = walletA.MakeTransaction(snapshot, new TransferOutput[]
+                var tx = walletA.MakeTransaction(new TransferOutput[]
                 {
                     new TransferOutput()
                     {
@@ -193,7 +193,7 @@ namespace Neo.UnitTests
 
                 // Make transaction
 
-                var tx = wallet.MakeTransaction(snapshot, new TransferOutput[]
+                var tx = wallet.MakeTransaction(new TransferOutput[]
                 {
                     new TransferOutput()
                     {
