@@ -16,10 +16,10 @@ namespace Neo.Wallets.NEP6
         private string password;
         private string name;
         private Version version;
-        public readonly ScryptParameters Scrypt;
         private readonly Dictionary<UInt160, NEP6Account> accounts;
         private readonly JObject extra;
 
+        public readonly ScryptParameters Scrypt;
         public override string Name => name;
         public override Version Version => version;
 
@@ -51,11 +51,11 @@ namespace Neo.Wallets.NEP6
             LoadFromJson(wallet, out Scrypt, out accounts, out extra);
         }
 
-        private void LoadFromJson(JObject wallet, out ScryptParameters Scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JObject extra)
+        private void LoadFromJson(JObject wallet, out ScryptParameters scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JObject extra)
         {
             this.name = wallet["name"]?.AsString();
             this.version = Version.Parse(wallet["version"].AsString());
-            Scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
+            scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
             accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p, this)).ToDictionary(p => p.ScriptHash);
             extra = wallet["extra"];
         }
