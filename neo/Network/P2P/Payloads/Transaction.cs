@@ -28,7 +28,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Distributed to NEO holders.
         /// </summary>
-        public long Gas;
+        public long SystemFee;
         /// <summary>
         /// Distributed to consensus nodes.
         /// </summary>
@@ -84,12 +84,12 @@ namespace Neo.Network.P2P.Payloads
             if (Version > 0) throw new FormatException();
             Nonce = reader.ReadUInt32();
             Sender = reader.ReadSerializable<UInt160>();
-            Gas = reader.ReadInt64();
-            if (Gas < 0) throw new FormatException();
-            if (Gas % NativeContract.GAS.Factor != 0) throw new FormatException();
+            SystemFee = reader.ReadInt64();
+            if (SystemFee < 0) throw new FormatException();
+            if (SystemFee % NativeContract.GAS.Factor != 0) throw new FormatException();
             NetworkFee = reader.ReadInt64();
             if (NetworkFee < 0) throw new FormatException();
-            if (Gas + NetworkFee < Gas) throw new FormatException();
+            if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
             Attributes = reader.ReadSerializableArray<TransactionAttribute>(MaxTransactionAttributes);
             var cosigners = Attributes.Where(p => p.Usage == TransactionAttributeUsage.Cosigner).Select(p => new UInt160(p.Data)).ToArray();
@@ -133,7 +133,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(Version);
             writer.Write(Nonce);
             writer.Write(Sender);
-            writer.Write(Gas);
+            writer.Write(SystemFee);
             writer.Write(NetworkFee);
             writer.Write(ValidUntilBlock);
             writer.Write(Attributes);
@@ -148,8 +148,8 @@ namespace Neo.Network.P2P.Payloads
             json["version"] = Version;
             json["nonce"] = Nonce;
             json["sender"] = Sender.ToAddress();
-            json["gas"] = new BigDecimal(Gas, (byte)NativeContract.GAS.Decimals).ToString();
-            json["net_fee"] = new BigDecimal(NetworkFee, (byte)NativeContract.GAS.Decimals).ToString();
+            json["sys_fee"] = new BigDecimal(SystemFee, NativeContract.GAS.Decimals).ToString();
+            json["net_fee"] = new BigDecimal(NetworkFee, NativeContract.GAS.Decimals).ToString();
             json["valid_until_block"] = ValidUntilBlock;
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
             json["script"] = Script.ToHexString();
@@ -173,9 +173,9 @@ namespace Neo.Network.P2P.Payloads
             if (NativeContract.Policy.GetBlockedAccounts(snapshot).Intersect(GetScriptHashesForVerifying(snapshot)).Count() > 0)
                 return false;
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, Sender);
-            BigInteger fee = Gas + NetworkFee;
+            BigInteger fee = SystemFee + NetworkFee;
             if (balance < fee) return false;
-            fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Select(p => (BigInteger)(p.Gas + p.NetworkFee)).Sum();
+            fee += mempool.Where(p => p != this && p.Sender.Equals(Sender)).Select(p => (BigInteger)(p.SystemFee + p.NetworkFee)).Sum();
             if (balance < fee) return false;
             return this.VerifyWitnesses(snapshot, net_fee);
         }

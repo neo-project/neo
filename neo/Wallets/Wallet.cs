@@ -301,15 +301,15 @@ namespace Neo.Wallets
                 {
                     if (engine.State.HasFlag(VMState.FAULT))
                         throw new InvalidOperationException($"Failed execution for '{script.ToHexString()}'");
-                    tx.Gas = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
-                    if (tx.Gas > 0)
+                    tx.SystemFee = Math.Max(engine.GasConsumed - ApplicationEngine.GasFree, 0);
+                    if (tx.SystemFee > 0)
                     {
                         long d = (long)NativeContract.GAS.Factor;
-                        long remainder = tx.Gas % d;
+                        long remainder = tx.SystemFee % d;
                         if (remainder > 0)
-                            tx.Gas += d - remainder;
+                            tx.SystemFee += d - remainder;
                         else if (remainder < 0)
-                            tx.Gas -= remainder;
+                            tx.SystemFee -= remainder;
                     }
                 }
                 UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
@@ -341,7 +341,7 @@ namespace Neo.Wallets
                     }
                 }
                 tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
-                if (value >= tx.Gas + tx.NetworkFee) return tx;
+                if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
             throw new InvalidOperationException("Insufficient GAS");
         }

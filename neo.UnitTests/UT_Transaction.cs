@@ -50,15 +50,15 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Gas_Get()
         {
-            uut.Gas.Should().Be(0);
+            uut.SystemFee.Should().Be(0);
         }
 
         [TestMethod]
         public void Gas_Set()
         {
             long val = 4200000000;
-            uut.Gas = val;
-            uut.Gas.Should().Be(val);
+            uut.SystemFee = val;
+            uut.SystemFee.Should().Be(val);
         }
 
         [TestMethod]
@@ -241,7 +241,7 @@ namespace Neo.UnitTests
         {
             uut.Script = TestUtils.GetByteArray(32, 0x42);
             uut.Sender = UInt160.Zero;
-            uut.Gas = 4200000000;
+            uut.SystemFee = 4200000000;
             uut.Attributes = new TransactionAttribute[0];
             uut.Witnesses = new Witness[]{ new Witness
             {
@@ -257,7 +257,7 @@ namespace Neo.UnitTests
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
             jObj["net_fee"].AsString().Should().Be("0");
             jObj["script"].AsString().Should().Be("4220202020202020202020202020202020202020202020202020202020202020");
-            jObj["gas"].AsNumber().Should().Be(42);
+            jObj["sys_fee"].AsNumber().Should().Be(42);
         }
     }
 }

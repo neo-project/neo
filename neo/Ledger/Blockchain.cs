@@ -152,7 +152,7 @@ namespace Neo.Ledger
                 Version = 0,
                 Script = script,
                 Sender = (new[] { (byte)OpCode.PUSHT }).ToScriptHash(),
-                Gas = 0,
+                SystemFee = 0,
                 Attributes = new TransactionAttribute[0],
                 Witnesses = new[]
                 {
@@ -436,7 +436,7 @@ namespace Neo.Ledger
                         BlockIndex = block.Index,
                         Transaction = tx
                     });
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.Gas))
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.SystemFee))
                     {
                         engine.LoadScript(tx.Script);
                         if (!engine.Execute().HasFlag(VMState.FAULT))
