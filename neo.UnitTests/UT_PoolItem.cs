@@ -122,11 +122,14 @@ namespace Neo.UnitTests
                 Sender = UInt160.Zero,
                 NetworkFee = networkFee,
                 Attributes = new TransactionAttribute[0],
-                Witnesses = new Witness[]{ new Witness
+                Witnesses = new[]
                 {
-                    InvocationScript = new byte[0],
-                    VerificationScript = new byte[0]
-                } }
+                    new Witness
+                    {
+                        InvocationScript = new byte[0],
+                        VerificationScript = new byte[0]
+                    }
+                }
             };
 
             int diff = size - tx.Size;

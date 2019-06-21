@@ -12,7 +12,6 @@ using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
-using System.Linq;
 
 namespace Neo.UnitTests
 {
@@ -67,11 +66,14 @@ namespace Neo.UnitTests
             uut.Script = TestUtils.GetByteArray(32, 0x42);
             uut.Sender = UInt160.Zero;
             uut.Attributes = new TransactionAttribute[0];
-            uut.Witnesses = new Witness[]{ new Witness
+            uut.Witnesses = new[]
             {
-                InvocationScript = new byte[0],
-                VerificationScript = new byte[0]
-            } };
+                new Witness
+                {
+                    InvocationScript = new byte[0],
+                    VerificationScript = new byte[0]
+                }
+            };
 
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
@@ -98,8 +100,7 @@ namespace Neo.UnitTests
                     {
                         a.GetKey().PublicKey,
                         b.GetKey().PublicKey
-                    }
-                    );
+                    });
 
                 var acc = walletA.CreateAccount(multiSignContract, a.GetKey());
                 acc = walletB.CreateAccount(multiSignContract, b.GetKey());
@@ -243,11 +244,14 @@ namespace Neo.UnitTests
             uut.Sender = UInt160.Zero;
             uut.SystemFee = 4200000000;
             uut.Attributes = new TransactionAttribute[0];
-            uut.Witnesses = new Witness[]{ new Witness
+            uut.Witnesses = new[]
             {
-                InvocationScript = new byte[0],
-                VerificationScript = new byte[0]
-            } };
+                new Witness
+                {
+                    InvocationScript = new byte[0],
+                    VerificationScript = new byte[0]
+                }
+            };
 
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();

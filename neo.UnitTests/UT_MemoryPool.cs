@@ -53,11 +53,14 @@ namespace Neo.UnitTests
             mock.Object.Sender = UInt160.Zero;
             mock.Object.NetworkFee = fee;
             mock.Object.Attributes = new TransactionAttribute[0];
-            mock.Object.Witnesses = new Witness[]{ new Witness
+            mock.Object.Witnesses = new[]
             {
-                InvocationScript = new byte[0],
-                VerificationScript = new byte[0]
-            } };
+                new Witness
+                {
+                    InvocationScript = new byte[0],
+                    VerificationScript = new byte[0]
+                }
+            };
             return mock.Object;
         }
 
