@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
@@ -75,6 +76,90 @@ namespace Neo.UnitTests
             uut.Script.Length.Should().Be(32);
             uut.Script.GetVarSize().Should().Be(33);
             uut.Size.Should().Be(82);
+        }
+
+        [TestMethod]
+        public void FeeIsMultiSigContract()
+        {
+            var store = TestBlockchain.GetStore();
+            var walletA = new NEP6Wallet("unit-test-A.json");
+            var walletB = new NEP6Wallet("unit-test-B.json");
+            var walletC = new NEP6Wallet("unit-test-C.json");
+            var snapshot = store.GetSnapshot();
+
+            using (var unlockA = walletA.Unlock("123"))
+            using (var unlockB = walletB.Unlock("123"))
+            using (var unlockC = walletC.Unlock("123"))
+            {
+                var a = walletA.CreateAccount();
+                var b = walletB.CreateAccount();
+
+                var multiSignContract = Contract.CreateMultiSigContract(1,
+                    new ECPoint[]
+                    {
+                        a.GetKey().PublicKey,
+                        b.GetKey().PublicKey
+                    }
+                    );
+
+                var acc = walletC.CreateAccount(multiSignContract);
+
+                // Fake balance
+
+                var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
+                var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem
+                {
+                    Value = new Nep5AccountState().ToByteArray()
+                });
+
+                entry.Value = new Nep5AccountState()
+                {
+                    Balance = 10000 * NativeContract.GAS.Factor
+                }
+                .ToByteArray();
+
+                // Make transaction
+
+                var tx = walletC.MakeTransaction(snapshot, new TransferOutput[]
+                {
+                    new TransferOutput()
+                    {
+                         AssetId = NativeContract.GAS.Hash,
+                         ScriptHash = acc.ScriptHash,
+                         Value = new BigDecimal(1,8)
+                    }
+                }, acc.ScriptHash);
+
+                Assert.IsNotNull(tx);
+
+                // Sign
+
+                // TODO: multi sign transaction
+
+                var data = new ContractParametersContext(tx);
+                Assert.IsTrue(walletA.Sign(data));
+                Assert.IsTrue(walletB.Sign(data));
+                tx.Witnesses = data.GetWitnesses();
+
+                // Check
+
+                long verificationGas = 0;
+                foreach (var witness in tx.Witnesses)
+                {
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, tx, snapshot, tx.NetworkFee, false))
+                    {
+                        engine.LoadScript(witness.VerificationScript);
+                        engine.LoadScript(witness.InvocationScript);
+                        Assert.AreEqual(VMState.HALT, engine.Execute());
+                        Assert.AreEqual(1, engine.ResultStack.Count);
+                        Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+                        verificationGas += engine.GasConsumed;
+                    }
+                }
+
+                var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
+                Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
+            }
         }
 
         [TestMethod]
