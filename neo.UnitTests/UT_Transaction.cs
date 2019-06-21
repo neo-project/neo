@@ -12,6 +12,7 @@ using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
+using System.Linq;
 
 namespace Neo.UnitTests
 {
@@ -84,12 +85,10 @@ namespace Neo.UnitTests
             var store = TestBlockchain.GetStore();
             var walletA = new NEP6Wallet("unit-test-A.json");
             var walletB = new NEP6Wallet("unit-test-B.json");
-            var walletC = new NEP6Wallet("unit-test-C.json");
             var snapshot = store.GetSnapshot();
 
             using (var unlockA = walletA.Unlock("123"))
             using (var unlockB = walletB.Unlock("123"))
-            using (var unlockC = walletC.Unlock("123"))
             {
                 var a = walletA.CreateAccount();
                 var b = walletB.CreateAccount();
@@ -102,7 +101,8 @@ namespace Neo.UnitTests
                     }
                     );
 
-                var acc = walletC.CreateAccount(multiSignContract);
+                var acc = walletA.CreateAccount(multiSignContract, a.GetKey());
+                acc = walletB.CreateAccount(multiSignContract, b.GetKey());
 
                 // Fake balance
 
@@ -120,7 +120,7 @@ namespace Neo.UnitTests
 
                 // Make transaction
 
-                var tx = walletC.MakeTransaction(snapshot, new TransferOutput[]
+                var tx = walletA.MakeTransaction(snapshot, new TransferOutput[]
                 {
                     new TransferOutput()
                     {
@@ -134,12 +134,17 @@ namespace Neo.UnitTests
 
                 // Sign
 
-                // TODO: multi sign transaction
+                var dataA = new ContractParametersContext(tx);
+                Assert.IsTrue(walletA.Sign(dataA));
 
-                var data = new ContractParametersContext(tx);
-                Assert.IsTrue(walletA.Sign(data));
-                Assert.IsTrue(walletB.Sign(data));
-                tx.Witnesses = data.GetWitnesses();
+                var dataB = new ContractParametersContext(tx);
+                Assert.IsTrue(walletB.Sign(dataB));
+
+                tx.Witnesses = dataA.GetWitnesses().Concat(dataB.GetWitnesses()).ToArray();
+
+                // Fast check
+
+                // Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
 
                 // Check
 
@@ -206,6 +211,10 @@ namespace Neo.UnitTests
                 var data = new ContractParametersContext(tx);
                 Assert.IsTrue(wallet.Sign(data));
                 tx.Witnesses = data.GetWitnesses();
+
+                // Fast check
+
+                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
 
                 // Check
 
