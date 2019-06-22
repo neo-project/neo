@@ -283,7 +283,6 @@ namespace Neo
         {
             var env = Environment.GetEnvironmentVariable("NEO_NETWORK");
             var configFile = string.IsNullOrWhiteSpace(env) ? $"{config}.json" : $"{config}.{env}.json";
-            Plugin.Log(nameof(LoadConfig), LogLevel.Info, $"Config loading:{configFile}");
             return new ConfigurationBuilder()
                 .AddJsonFile(configFile, true)
                 .Build();
