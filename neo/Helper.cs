@@ -275,10 +275,10 @@ namespace Neo
         }
 
         /// <summary>
-        /// load configuration with different Environment Variable
+        /// Load configuration with different Environment Variable
         /// </summary>
-        /// <param name="config"></param>
-        /// <returns></returns>
+        /// <param name="config">Configuration</param>
+        /// <returns>IConfigurationRoot</returns>
         public static IConfigurationRoot LoadConfig(string config)
         {
             var env = Environment.GetEnvironmentVariable("NEO_NETWORK");
