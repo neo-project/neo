@@ -25,7 +25,8 @@ namespace Neo.SmartContract
         public static readonly uint Neo_Header_GetMerkleRoot = Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot, 0_00000400);
         public static readonly uint Neo_Header_GetNextConsensus = Register("Neo.Header.GetNextConsensus", Header_GetNextConsensus, 0_00000400);
         public static readonly uint Neo_Transaction_GetScript = Register("Neo.Transaction.GetScript", Transaction_GetScript, 0_00000400);
-        public static readonly uint Neo_Transaction_GetWitnessScript = Register("Neo.Transaction.GetWitnessScript", Transaction_GetWitnessScript, 0_00000400);
+        public static readonly uint Neo_Transaction_GetWitnesses = Register("Neo.Transaction.GetWitnesses", Transaction_GetWitnesses, 0_00010000);
+        public static readonly uint Neo_Witness_GetVerificationScript = Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript, 0_00000400);
         public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 0_00030000);
         public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, GetDeploymentPrice);
         public static readonly uint Neo_Contract_Update = Register("Neo.Contract.Update", Contract_Update, GetDeploymentPrice);
@@ -206,16 +207,27 @@ namespace Neo.SmartContract
             return false;
         }
 
-        private static bool Transaction_GetWitnessScript(ApplicationEngine engine)
+        private static bool Transaction_GetWitnesses(ApplicationEngine engine)
         {
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
                 Transaction tx = _interface.GetInterface<Transaction>();
                 if (tx == null) return false;
-                byte[] script = tx.Witness.VerificationScript;
-                if (script.Length == 0)
-                    script = engine.Snapshot.Contracts[tx.Sender].Script;
-                engine.CurrentContext.EvaluationStack.Push(script);
+                if (tx.Witnesses.Length > engine.MaxArraySize)
+                    return false;
+                engine.CurrentContext.EvaluationStack.Push(WitnessWrapper.Create(tx, engine.Snapshot).Select(p => StackItem.FromInterface(p)).ToArray());
+                return true;
+            }
+            return false;
+        }
+
+        private static bool Witness_GetVerificationScript(ApplicationEngine engine)
+        {
+            if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
+            {
+                WitnessWrapper witness = _interface.GetInterface<WitnessWrapper>();
+                if (witness == null) return false;
+                engine.CurrentContext.EvaluationStack.Push(witness.VerificationScript);
                 return true;
             }
             return false;

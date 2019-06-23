@@ -28,11 +28,11 @@ namespace Neo.UnitTests
                 Script = new byte[1],
                 Sender = UInt160.Zero,
                 Attributes = new TransactionAttribute[0],
-                Witness = new Witness
+                Witnesses = new Witness[]{ new Witness
                 {
                     InvocationScript = new byte[0],
                     VerificationScript = new byte[0]
-                }
+                } }
             };
         }
 
@@ -61,7 +61,8 @@ namespace Neo.UnitTests
         private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal)
         {
             bb.PrevHash = val256;
-            merkRootVal = new UInt256(new byte[] { 242, 128, 130, 9, 63, 13, 149, 96, 141, 161, 52, 196, 148, 141, 241, 126, 172, 102, 108, 194, 91, 50, 128, 91, 64, 116, 127, 40, 58, 171, 158, 197 });
+            merkRootVal = UInt256.Parse("0xd841af3d6bd7adb4bca24306725f9aec363edb10de3cafc5f8cca948d7b0290f");
+
             bb.MerkleRoot = merkRootVal;
             timestampVal = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp();
             bb.Timestamp = timestampVal;
@@ -86,10 +87,13 @@ namespace Neo.UnitTests
                 Script = randomBytes,
                 Sender = UInt160.Zero,
                 Attributes = new TransactionAttribute[0],
-                Witness = new Witness
+                Witnesses = new[]
                 {
-                    InvocationScript = new byte[0],
-                    VerificationScript = new byte[0]
+                    new Witness
+                    {
+                        InvocationScript = new byte[0],
+                        VerificationScript = new byte[0]
+                    }
                 }
             };
         }

@@ -152,12 +152,15 @@ namespace Neo.Ledger
                 Version = 0,
                 Script = script,
                 Sender = (new[] { (byte)OpCode.PUSHT }).ToScriptHash(),
-                Gas = 0,
+                SystemFee = 0,
                 Attributes = new TransactionAttribute[0],
-                Witness = new Witness
+                Witnesses = new[]
                 {
-                    InvocationScript = new byte[0],
-                    VerificationScript = new[] { (byte)OpCode.PUSHT }
+                    new Witness
+                    {
+                        InvocationScript = new byte[0],
+                        VerificationScript = new[] { (byte)OpCode.PUSHT }
+                    }
                 }
             };
         }
@@ -280,7 +283,7 @@ namespace Neo.Ledger
                     block_cache_unverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
 
-                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0,(15 - SecondsPerBlock)))) continue;
+                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, (15 - SecondsPerBlock)))) continue;
                     // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
                     // Increase in the rate of 1 block per second in configurations with faster blocks
 
@@ -433,7 +436,7 @@ namespace Neo.Ledger
                         BlockIndex = block.Index,
                         Transaction = tx
                     });
-                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.Gas))
+                    using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.SystemFee))
                     {
                         engine.LoadScript(tx.Script);
                         if (!engine.Execute().HasFlag(VMState.FAULT))

@@ -117,7 +117,8 @@ namespace Neo.Cryptography
         internal static bool Test(this BloomFilter filter, Transaction tx)
         {
             if (filter.Check(tx.Hash.ToArray())) return true;
-            if (filter.Check(tx.Sender.ToArray())) return true;
+            if (tx.Witnesses.Any(p => filter.Check(p.ScriptHash.ToArray())))
+                return true;
             return false;
         }
 

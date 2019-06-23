@@ -53,173 +53,87 @@ namespace Neo.UnitTests
             mock.Object.Sender = UInt160.Zero;
             mock.Object.NetworkFee = fee;
             mock.Object.Attributes = new TransactionAttribute[0];
-            mock.Object.Witness = new Witness
+            mock.Object.Witnesses = new[]
             {
-                InvocationScript = new byte[0],
-                VerificationScript = new byte[0]
+                new Witness
+                {
+                    InvocationScript = new byte[0],
+                    VerificationScript = new byte[0]
+                }
             };
             return mock.Object;
         }
 
-        private Transaction CreateHighPriorityTransaction()
+        private Transaction CreateTransaction()
         {
             return CreateTransactionWithFee(LongRandom(100000, 100000000, TestUtils.TestRandom));
         }
 
-        private Transaction CreateLowPriorityTransaction()
-        {
-            long rNetFee = LongRandom(0, 10000, TestUtils.TestRandom);
-            // [0,0.001] GAS a fee lower than the threshold of 0.001 GAS (not enough to be a high priority TX)
-            return CreateTransactionWithFee(rNetFee);
-        }
-
-        private bool IsLowPriority(Transaction tx)
-        {
-            return tx.FeePerByte < 1000;
-        }
-
-        private void AddTransactions(int count, bool isHighPriority = false)
+        private void AddTransactions(int count)
         {
             for (int i = 0; i < count; i++)
             {
-                var txToAdd = isHighPriority ? CreateHighPriorityTransaction() : CreateLowPriorityTransaction();
+                var txToAdd = CreateTransaction();
                 Console.WriteLine($"created tx: {txToAdd.Hash}");
                 _unit.TryAdd(txToAdd.Hash, txToAdd);
             }
         }
 
-        private void AddLowPriorityTransactions(int count) => AddTransactions(count);
-        public void AddHighPriorityTransactions(int count) => AddTransactions(count, true);
 
         [TestMethod]
-        public void LowPriorityCapacityTest()
+        public void CapacityTest()
         {
             // Add over the capacity items, verify that the verified count increases each time
-            AddLowPriorityTransactions(50);
-            _unit.VerifiedCount.ShouldBeEquivalentTo(50);
-            AddLowPriorityTransactions(51);
-            Console.WriteLine($"VerifiedCount: {_unit.VerifiedCount}  LowPrioCount {_unit.SortedLowPrioTxCount}  HighPrioCount {_unit.SortedHighPrioTxCount}");
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(100);
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(0);
+            AddTransactions(101);
 
+            Console.WriteLine($"VerifiedCount: {_unit.VerifiedCount} Count {_unit.SortedTxCount}");
+
+            _unit.SortedTxCount.ShouldBeEquivalentTo(100);
             _unit.VerifiedCount.ShouldBeEquivalentTo(100);
             _unit.UnVerifiedCount.ShouldBeEquivalentTo(0);
-            _unit.Count.ShouldBeEquivalentTo(100);
-        }
-
-        [TestMethod]
-        public void HighPriorityCapacityTest()
-        {
-            // Add over the capacity items, verify that the verified count increases each time
-            AddHighPriorityTransactions(101);
-
-            Console.WriteLine($"VerifiedCount: {_unit.VerifiedCount}  LowPrioCount {_unit.SortedLowPrioTxCount}  HighPrioCount {_unit.SortedHighPrioTxCount}");
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(0);
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(100);
-
-            _unit.VerifiedCount.ShouldBeEquivalentTo(100);
-            _unit.UnVerifiedCount.ShouldBeEquivalentTo(0);
-            _unit.Count.ShouldBeEquivalentTo(100);
-        }
-
-        [TestMethod]
-        public void HighPriorityPushesOutLowPriority()
-        {
-            // Add over the capacity items, verify that the verified count increases each time
-            AddLowPriorityTransactions(70);
-            AddHighPriorityTransactions(40);
-
-            Console.WriteLine($"VerifiedCount: {_unit.VerifiedCount}  LowPrioCount {_unit.SortedLowPrioTxCount}  HighPrioCount {_unit.SortedHighPrioTxCount}");
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(60);
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(40);
-            _unit.Count.ShouldBeEquivalentTo(100);
-        }
-
-        [TestMethod]
-        public void LowPriorityDoesNotPushOutHighPrority()
-        {
-            AddHighPriorityTransactions(70);
-            AddLowPriorityTransactions(40);
-
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(30);
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(70);
             _unit.Count.ShouldBeEquivalentTo(100);
         }
 
         [TestMethod]
         public void BlockPersistMovesTxToUnverifiedAndReverification()
         {
-            AddHighPriorityTransactions(70);
-            AddLowPriorityTransactions(30);
+            AddTransactions(70);
 
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(70);
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(30);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(70);
 
             var block = new Block
             {
                 Transactions = _unit.GetSortedVerifiedTransactions().Take(10)
-                    .Concat(_unit.GetSortedVerifiedTransactions().Where(x => IsLowPriority(x)).Take(5)).ToArray()
+                    .Concat(_unit.GetSortedVerifiedTransactions().Take(5)).ToArray()
             };
             _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
             _unit.InvalidateVerifiedTransactions();
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(0);
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(0);
-            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(60);
-            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(25);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(0);
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(60);
 
             _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(9);
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(1);
-            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(51);
-            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(24);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(10);
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(50);
 
             _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(18);
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(2);
-            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(42);
-            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(23);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(20);
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(40);
 
             _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(27);
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(3);
-            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(33);
-            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(22);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(30);
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(30);
 
             _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(36);
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(4);
-            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(24);
-            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(21);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(40);
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(20);
 
             _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(45);
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(5);
-            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(15);
-            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(20);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(50);
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(10);
 
             _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(54);
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(6);
-            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(6);
-            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(19);
-
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(60);
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(10);
-            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(0);
-            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(15);
-
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(60);
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(20);
-            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(0);
-            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(5);
-
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(60);
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(25);
-            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(0);
-            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(0);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(60);
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(0);
         }
 
         private void verifyTransactionsSortedDescending(IEnumerable<Transaction> transactions)
@@ -248,8 +162,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void VerifySortOrderAndThatHighetFeeTransactionsAreReverifiedFirst()
         {
-            AddLowPriorityTransactions(50);
-            AddHighPriorityTransactions(50);
+            AddTransactions(100);
 
             var sortedVerifiedTxs = _unit.GetSortedVerifiedTransactions().ToList();
             // verify all 100 transactions are returned in sorted order
@@ -260,37 +173,31 @@ namespace Neo.UnitTests
             var block = new Block { Transactions = new Transaction[0] };
             _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
             _unit.InvalidateVerifiedTransactions();
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(0);
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(0);
-            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(50);
-            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(50);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(0);
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(100);
 
             // We can verify the order they are re-verified by reverifying 2 at a time
             while (_unit.UnVerifiedCount > 0)
             {
-                _unit.GetVerifiedAndUnverifiedTransactions(out IEnumerable<Transaction> sortedVerifiedTransactions,
-                    out IEnumerable<Transaction> sortedUnverifiedTransactions);
+                _unit.GetVerifiedAndUnverifiedTransactions(out var sortedVerifiedTransactions, out var sortedUnverifiedTransactions);
                 sortedVerifiedTransactions.Count().ShouldBeEquivalentTo(0);
                 var sortedUnverifiedArray = sortedUnverifiedTransactions.ToArray();
                 verifyTransactionsSortedDescending(sortedUnverifiedArray);
-                var maxHighPriorityTransaction = sortedUnverifiedArray.First();
-                var maxLowPriorityTransaction = sortedUnverifiedArray.First(tx => IsLowPriority(tx));
+                var maxTransaction = sortedUnverifiedArray.First();
+                var minTransaction = sortedUnverifiedArray.Last();
 
                 // reverify 1 high priority and 1 low priority transaction
-                _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(2, Blockchain.Singleton.GetSnapshot());
+                _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(1, Blockchain.Singleton.GetSnapshot());
                 var verifiedTxs = _unit.GetSortedVerifiedTransactions().ToArray();
-                verifiedTxs.Length.ShouldBeEquivalentTo(2);
-                verifiedTxs[0].ShouldBeEquivalentTo(maxHighPriorityTransaction);
-                verifiedTxs[1].ShouldBeEquivalentTo(maxLowPriorityTransaction);
-                var blockWith2Tx = new Block { Transactions = new[] { maxHighPriorityTransaction, maxLowPriorityTransaction } };
+                verifiedTxs.Length.ShouldBeEquivalentTo(1);
+                verifiedTxs[0].ShouldBeEquivalentTo(maxTransaction);
+                var blockWith2Tx = new Block { Transactions = new[] { maxTransaction, minTransaction } };
                 // verify and remove the 2 transactions from the verified pool
                 _unit.UpdatePoolForBlockPersisted(blockWith2Tx, Blockchain.Singleton.GetSnapshot());
                 _unit.InvalidateVerifiedTransactions();
-                _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(0);
-                _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(0);
+                _unit.SortedTxCount.ShouldBeEquivalentTo(0);
             }
-            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(0);
-            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(0);
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(0);
         }
 
         void VerifyCapacityThresholdForAttemptingToAddATransaction()
@@ -306,11 +213,11 @@ namespace Neo.UnitTests
         [TestMethod]
         public void VerifyCanTransactionFitInPoolWorksAsIntended()
         {
-            AddLowPriorityTransactions(100);
+            AddTransactions(100);
             VerifyCapacityThresholdForAttemptingToAddATransaction();
-            AddHighPriorityTransactions(50);
+            AddTransactions(50);
             VerifyCapacityThresholdForAttemptingToAddATransaction();
-            AddHighPriorityTransactions(50);
+            AddTransactions(50);
             VerifyCapacityThresholdForAttemptingToAddATransaction();
         }
 
@@ -321,31 +228,27 @@ namespace Neo.UnitTests
             // low priority transactions
 
             // Fill pool with high priority transactions
-            AddHighPriorityTransactions(99);
+            AddTransactions(99);
 
             // move all to unverified
             var block = new Block { Transactions = new Transaction[0] };
             _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
 
-            _unit.CanTransactionFitInPool(CreateLowPriorityTransaction()).ShouldBeEquivalentTo(true);
-            AddHighPriorityTransactions(1);
-            _unit.CanTransactionFitInPool(CreateLowPriorityTransaction()).ShouldBeEquivalentTo(false);
+            _unit.CanTransactionFitInPool(CreateTransaction()).ShouldBeEquivalentTo(true);
+            AddTransactions(1);
+            _unit.CanTransactionFitInPool(CreateTransactionWithFee(0)).ShouldBeEquivalentTo(false);
         }
 
         [TestMethod]
         public void TestInvalidateAll()
         {
-            AddHighPriorityTransactions(30);
-            AddLowPriorityTransactions(60);
-            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(0);
-            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(0);
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(30);
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(60);
+            AddTransactions(30);
+
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(0);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(30);
             _unit.InvalidateAllTransactions();
-            _unit.UnverifiedSortedHighPrioTxCount.ShouldBeEquivalentTo(30);
-            _unit.UnverifiedSortedLowPrioTxCount.ShouldBeEquivalentTo(60);
-            _unit.SortedHighPrioTxCount.ShouldBeEquivalentTo(0);
-            _unit.SortedLowPrioTxCount.ShouldBeEquivalentTo(0);
+            _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(30);
+            _unit.SortedTxCount.ShouldBeEquivalentTo(0);
         }
     }
 }
