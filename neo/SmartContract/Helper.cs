@@ -108,9 +108,9 @@ namespace Neo.SmartContract
             return stack_temp.Peek();
         }
 
-        public static bool IsMultiSigContract(this byte[] script)
+        public static bool IsMultiSigContract(this byte[] script, out int m, out int n)
         {
-            int m, n = 0;
+            m = 0; n = 0;
             int i = 0;
             if (script.Length < 41) return false;
             if (script[i] > (byte)OpCode.PUSH16) return false;
@@ -170,7 +170,7 @@ namespace Neo.SmartContract
 
         public static bool IsStandardContract(this byte[] script)
         {
-            return script.IsSignatureContract() || script.IsMultiSigContract();
+            return script.IsSignatureContract() || script.IsMultiSigContract(out _, out _);
         }
 
         public static byte[] Serialize(this StackItem item)
@@ -246,33 +246,39 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Default.Hash160(script));
         }
 
-        internal static bool VerifyWitness(this IVerifiable verifiable, Snapshot snapshot, long gas)
+        internal static bool VerifyWitnesses(this IVerifiable verifiable, Snapshot snapshot, long gas)
         {
-            UInt160 hash;
+            if (gas < 0) return false;
+
+            UInt160[] hashes;
             try
             {
-                hash = verifiable.GetScriptHashForVerification(snapshot);
+                hashes = verifiable.GetScriptHashesForVerifying(snapshot);
             }
             catch (InvalidOperationException)
             {
                 return false;
             }
-            byte[] verification = verifiable.Witness.VerificationScript;
-            if (verification.Length == 0)
+            if (hashes.Length != verifiable.Witnesses.Length) return false;
+            for (int i = 0; i < hashes.Length; i++)
             {
-                verification = snapshot.Contracts.TryGet(hash)?.Script;
-                if (verification is null) return false;
-            }
-            else
-            {
-                if (hash != verifiable.Witness.ScriptHash) return false;
-            }
-            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
-            {
-                engine.LoadScript(verification);
-                engine.LoadScript(verifiable.Witness.InvocationScript);
-                if (engine.Execute().HasFlag(VMState.FAULT)) return false;
-                if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
+                byte[] verification = verifiable.Witnesses[i].VerificationScript;
+                if (verification.Length == 0)
+                {
+                    verification = snapshot.Contracts.TryGet(hashes[i])?.Script;
+                    if (verification is null) return false;
+                }
+                else
+                {
+                    if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
+                }
+                using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
+                {
+                    engine.LoadScript(verification);
+                    engine.LoadScript(verifiable.Witnesses[i].InvocationScript);
+                    if (engine.Execute().HasFlag(VMState.FAULT)) return false;
+                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
+                }
             }
             return true;
         }
