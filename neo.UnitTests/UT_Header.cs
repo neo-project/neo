@@ -45,10 +45,10 @@ namespace Neo.UnitTests
                 }
             }
 
-            assertStandardHeaderTestVals(val256, merkRoot, val160, timestampVal, indexVal, scriptVal);
+            AssertStandardHeaderTestVals(val256, merkRoot, val160, timestampVal, indexVal, scriptVal);
         }
 
-        private void assertStandardHeaderTestVals(UInt256 val256, UInt256 merkRoot, UInt160 val160, uint timestampVal, uint indexVal, Witness scriptVal)
+        private void AssertStandardHeaderTestVals(UInt256 val256, UInt256 merkRoot, UInt160 val160, uint timestampVal, uint indexVal, Witness scriptVal)
         {
             uut.PrevHash.Should().Be(val256);
             uut.MerkleRoot.Should().Be(merkRoot);

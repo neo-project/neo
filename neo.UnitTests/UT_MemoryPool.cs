@@ -21,10 +21,10 @@ namespace Neo.UnitTests
             // protect against external changes on TimeProvider
             TimeProvider.ResetToDefault();
 
-            NeoSystem TheNeoSystem = TestBlockchain.InitializeMockNeoSystem();
+            NeoSystem theNeoSystem = TestBlockchain.InitializeMockNeoSystem();
 
             // Create a MemoryPool with capacity of 100
-            _unit = new MemoryPool(TheNeoSystem, 100);
+            _unit = new MemoryPool(theNeoSystem, 100);
             _unit.LoadPolicy(TestBlockchain.GetStore().GetSnapshot());
 
             // Verify capacity equals the amount specified

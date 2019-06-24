@@ -9,6 +9,7 @@ namespace Neo.UnitTests
     public class UT_UIntBenchmarks
     {
         private const int MAX_TESTS = 1000;
+        private const int SEED = 123456789;
 
         byte[][] base_32_1;
         byte[][] base_32_2;
@@ -20,7 +21,6 @@ namespace Neo.UnitTests
         [TestInitialize]
         public void TestSetup()
         {
-            int SEED = 123456789;
             random = new Random(SEED);
 
             base_32_1 = new byte[MAX_TESTS][];

@@ -12,26 +12,26 @@ namespace Neo.UnitTests
         public void ApplicationEngineFixedPrices()
         {
             // System.Runtime.CheckWitness: f827ec8c (price is 200)
-            byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
+            byte[] syscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
-                ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
+                ae.LoadScript(syscallSystemRuntimeCheckWitnessHash);
                 InteropService.GetPrice(InteropService.System_Runtime_CheckWitness, ae.CurrentContext.EvaluationStack).Should().Be(0_00030000L);
             }
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
-            byte[] SyscallSystemStorageGetContextHash = new byte[] { 0x68, 0x9b, 0xf6, 0x67, 0xce };
+            byte[] syscallSystemStorageGetContextHash = new byte[] { 0x68, 0x9b, 0xf6, 0x67, 0xce };
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
-                ae.LoadScript(SyscallSystemStorageGetContextHash);
+                ae.LoadScript(syscallSystemStorageGetContextHash);
                 InteropService.GetPrice(InteropService.System_Storage_GetContext, ae.CurrentContext.EvaluationStack).Should().Be(0_00000400L);
             }
 
             // System.Storage.Get: 925de831 (price is 100)
-            byte[] SyscallSystemStorageGetHash = new byte[] { 0x68, 0x92, 0x5d, 0xe8, 0x31 };
+            byte[] syscallSystemStorageGetHash = new byte[] { 0x68, 0x92, 0x5d, 0xe8, 0x31 };
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0))
             {
-                ae.LoadScript(SyscallSystemStorageGetHash);
+                ae.LoadScript(syscallSystemStorageGetHash);
                 InteropService.GetPrice(InteropService.System_Storage_Get, ae.CurrentContext.EvaluationStack).Should().Be(0_01000000L);
             }
         }
@@ -40,22 +40,22 @@ namespace Neo.UnitTests
         public void ApplicationEngineVariablePrices()
         {
             // Neo.Contract.Create: f66ca56e (requires push properties on fourth position)
-            byte[] SyscallContractCreateHash00 = new byte[] { 0x01, 0x00, 0x02, 0x00, 0x00, 0x68, 0xf6, 0x6c, 0xa5, 0x6e };
+            byte[] syscallContractCreateHash00 = new byte[] { 0x01, 0x00, 0x02, 0x00, 0x00, 0x68, 0xf6, 0x6c, 0xa5, 0x6e };
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
-                ae.LoadScript(SyscallContractCreateHash00);
+                ae.LoadScript(syscallContractCreateHash00);
                 debugger.StepInto(); // PUSHBYTES1
                 debugger.StepInto(); // PUSHBYTES2
                 InteropService.GetPrice(InteropService.Neo_Contract_Create, ae.CurrentContext.EvaluationStack).Should().Be(0_00300000L);
             }
 
             // System.Storage.Put: e63f1884 (requires push key and value)
-            byte[] SyscallStoragePutHash = new byte[] { 0x53, 0x53, 0x00, 0x68, 0xe6, 0x3f, 0x18, 0x84 };
+            byte[] syscallStoragePutHash = new byte[] { 0x53, 0x53, 0x00, 0x68, 0xe6, 0x3f, 0x18, 0x84 };
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
-                ae.LoadScript(SyscallStoragePutHash);
+                ae.LoadScript(syscallStoragePutHash);
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00
@@ -63,11 +63,11 @@ namespace Neo.UnitTests
             }
 
             // System.Storage.PutEx: 73e19b3a (requires push key and value)
-            byte[] SyscallStoragePutExHash = new byte[] { 0x53, 0x53, 0x00, 0x68, 0x73, 0xe1, 0x9b, 0x3a };
+            byte[] syscallStoragePutExHash = new byte[] { 0x53, 0x53, 0x00, 0x68, 0x73, 0xe1, 0x9b, 0x3a };
             using (ApplicationEngine ae = new ApplicationEngine(TriggerType.Application, null, null, 0, testMode: true))
             {
                 Debugger debugger = new Debugger(ae);
-                ae.LoadScript(SyscallStoragePutExHash);
+                ae.LoadScript(syscallStoragePutExHash);
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 03 (length 1)
                 debugger.StepInto(); // push 00

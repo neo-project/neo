@@ -12,13 +12,13 @@ namespace Neo.UnitTests
     [TestClass]
     public class UT_Policy
     {
-        Store Store;
+        Store store;
 
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
-            Store = TestBlockchain.GetStore();
+            store = TestBlockchain.GetStore();
         }
 
         [TestMethod]
@@ -27,7 +27,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Check_Initialize()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = store.GetSnapshot().Clone();
             var keyCount = snapshot.Storages.GetChangeSet().Count();
 
             NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0)).Should().BeTrue();
@@ -50,7 +50,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Check_SetMaxTransactionsPerBlock()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = store.GetSnapshot().Clone();
 
             // Fake blockchain
 
@@ -85,7 +85,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Check_SetFeePerByte()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = store.GetSnapshot().Clone();
 
             // Fake blockchain
 
@@ -120,7 +120,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Check_Block_UnblockAccount()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = store.GetSnapshot().Clone();
 
             // Fake blockchain
 
