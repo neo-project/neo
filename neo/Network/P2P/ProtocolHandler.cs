@@ -26,15 +26,24 @@ namespace Neo.Network.P2P
         private VersionPayload version;
         private bool verack = false;
         private BloomFilter bloom_filter;
+		private IActorRef parent;
 
-        public ProtocolHandler(NeoSystem system)
-        {
-            this.system = system;
-            this.knownHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
-            this.sentHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
-        }
+        
 
-        protected override void OnReceive(object message)
+		public ProtocolHandler(NeoSystem system)
+		{
+			this.system = system;
+			this.knownHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
+			this.sentHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
+			this.parent = Context.Parent;
+		}
+
+		public ProtocolHandler(NeoSystem system, IActorRef parent) : this(system)
+		{
+			this.parent = parent;
+		}
+
+		protected override void OnReceive(object message)
         {
             if (!(message is Message msg)) return;
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
@@ -133,13 +142,13 @@ namespace Neo.Network.P2P
         private void OnFilterClearMessageReceived()
         {
             bloom_filter = null;
-            Context.Parent.Tell(new SetFilter { Filter = null });
+            parent.Tell(new SetFilter { Filter = null });
         }
 
         private void OnFilterLoadMessageReceived(FilterLoadPayload payload)
         {
             bloom_filter = new BloomFilter(payload.Filter.Length * 8, payload.K, payload.Tweak, payload.Filter);
-            Context.Parent.Tell(new SetFilter { Filter = bloom_filter });
+            parent.Tell(new SetFilter { Filter = bloom_filter });
         }
 
         private void OnGetAddrMessageReceived()
@@ -152,7 +161,7 @@ namespace Neo.Network.P2P
                 .Take(AddrPayload.MaxCountToSend);
             NetworkAddressWithTime[] networkAddresses = peers.Select(p => NetworkAddressWithTime.Create(p.Listener.Address, p.Version.Timestamp, p.Version.Capabilities)).ToArray();
             if (networkAddresses.Length == 0) return;
-            Context.Parent.Tell(Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses)));
+            parent.Tell(Message.Create(MessageCommand.Addr, AddrPayload.Create(networkAddresses)));
         }
 
         private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
@@ -172,7 +181,7 @@ namespace Neo.Network.P2P
                 hashes.Add(hash);
             }
             if (hashes.Count == 0) return;
-            Context.Parent.Tell(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
+            parent.Tell(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
         }
 
         private void OnGetDataMessageReceived(InvPayload payload)
@@ -187,7 +196,7 @@ namespace Neo.Network.P2P
                         if (inventory == null)
                             inventory = Blockchain.Singleton.GetTransaction(hash);
                         if (inventory is Transaction)
-                            Context.Parent.Tell(Message.Create(MessageCommand.Transaction, inventory));
+                            parent.Tell(Message.Create(MessageCommand.Transaction, inventory));
                         break;
                     case InventoryType.Block:
                         if (inventory == null)
@@ -196,18 +205,18 @@ namespace Neo.Network.P2P
                         {
                             if (bloom_filter == null)
                             {
-                                Context.Parent.Tell(Message.Create(MessageCommand.Block, inventory));
+                                parent.Tell(Message.Create(MessageCommand.Block, inventory));
                             }
                             else
                             {
                                 BitArray flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
-                                Context.Parent.Tell(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
+                                parent.Tell(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
                             }
                         }
                         break;
                     case InventoryType.Consensus:
                         if (inventory != null)
-                            Context.Parent.Tell(Message.Create(MessageCommand.Consensus, inventory));
+                            parent.Tell(Message.Create(MessageCommand.Consensus, inventory));
                         break;
                 }
             }
@@ -231,7 +240,7 @@ namespace Neo.Network.P2P
                 headers.Add(header);
             }
             if (headers.Count == 0) return;
-            Context.Parent.Tell(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers)));
+            parent.Tell(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers)));
         }
 
         private void OnHeadersMessageReceived(HeadersPayload payload)
@@ -268,30 +277,30 @@ namespace Neo.Network.P2P
         private void OnMemPoolMessageReceived()
         {
             foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
-                Context.Parent.Tell(Message.Create(MessageCommand.Inv, payload));
+                parent.Tell(Message.Create(MessageCommand.Inv, payload));
         }
 
         private void OnPingMessageReceived(PingPayload payload)
         {
-            Context.Parent.Tell(payload);
-            Context.Parent.Tell(Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
+            parent.Tell(payload);
+            parent.Tell(Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
         }
 
         private void OnPongMessageReceived(PingPayload payload)
         {
-            Context.Parent.Tell(payload);
+            parent.Tell(payload);
         }
 
         private void OnVerackMessageReceived()
         {
             verack = true;
-            Context.Parent.Tell(MessageCommand.Verack);
+            parent.Tell(MessageCommand.Verack);
         }
 
         private void OnVersionMessageReceived(VersionPayload payload)
         {
             version = payload;
-            Context.Parent.Tell(payload);
+            parent.Tell(payload);
         }
 
         public static Props Props(NeoSystem system)

@@ -32,12 +32,12 @@ namespace Neo.Network.P2P
         public uint LastBlockIndex { get; private set; } = 0;
         public bool IsFullNode { get; private set; } = false;
 
-        public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
+        public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local, IActorRefFactory protocolFactory)
             : base(connection, remote, local)
         {
             this.system = system;
-            this.protocol = Context.ActorOf(ProtocolHandler.Props(system));
-            LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
+            this.protocol = protocolFactory.ActorOf(ProtocolHandler.Props(system));
+			LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
 
             var capabilities = new List<NodeCapability>
             {
@@ -50,7 +50,7 @@ namespace Neo.Network.P2P
             SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
 
-        private void CheckMessageQueue()
+		private void CheckMessageQueue()
         {
             if (!verack || !ack) return;
             Queue<Message> queue = message_queue_high;
@@ -224,7 +224,7 @@ namespace Neo.Network.P2P
 
         internal static Props Props(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
         {
-            return Akka.Actor.Props.Create(() => new RemoteNode(system, connection, remote, local)).WithMailbox("remote-node-mailbox");
+            return Akka.Actor.Props.Create(() => new RemoteNode(system, connection, remote, local, new ProtocolActorFactory(Context))).WithMailbox("remote-node-mailbox");
         }
 
         private void SendMessage(Message message)
@@ -269,4 +269,30 @@ namespace Neo.Network.P2P
             }
         }
     }
+
+	internal class ProtocolActorFactory : IActorRefFactory
+	{
+		private IUntypedActorContext context;
+
+		public ProtocolActorFactory(IUntypedActorContext context)
+		{
+			this.context = context;
+		}
+		
+		public IActorRef ActorOf(Props props, string name = null)
+		{
+			return context.ActorOf(props);
+		}
+
+		public ActorSelection ActorSelection(ActorPath actorPath)
+		{
+			throw new System.NotImplementedException();
+		}
+
+		public ActorSelection ActorSelection(string actorPath)
+		{
+			throw new System.NotImplementedException();
+		}
+	}
+
 }
