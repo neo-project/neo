@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-     <CodeAnalysisRuleSet>$(SolutionDir)StyleCop.ruleset</CodeAnalysisRuleSet>
+     <CodeAnalysisRuleSet>$(ProjectDir)StyleCop.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
