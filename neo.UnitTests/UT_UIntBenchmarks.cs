@@ -108,7 +108,7 @@ namespace Neo.UnitTests
                 var checksum = 0;
                 for (var i = 0; i < MAX_TESTS; i++)
                 {
-                    checksum += code1_UInt256CompareTo(base_32_1[i], base_32_2[i]);
+                    checksum += Code1_UInt256CompareTo(base_32_1[i], base_32_2[i]);
                 }
 
                 return checksum;
@@ -119,7 +119,7 @@ namespace Neo.UnitTests
                 var checksum = 0;
                 for (var i = 0; i < MAX_TESTS; i++)
                 {
-                    checksum += code2_UInt256CompareTo(base_32_1[i], base_32_2[i]);
+                    checksum += Code2_UInt256CompareTo(base_32_1[i], base_32_2[i]);
                 }
 
                 return checksum;
@@ -130,7 +130,7 @@ namespace Neo.UnitTests
                 var checksum = 0;
                 for (var i = 0; i < MAX_TESTS; i++)
                 {
-                    checksum += code3_UInt256CompareTo(base_32_1[i], base_32_2[i]);
+                    checksum += Code3_UInt256CompareTo(base_32_1[i], base_32_2[i]);
                 }
 
                 return checksum;
@@ -170,7 +170,7 @@ namespace Neo.UnitTests
                 var checksum = 0;
                 for (var i = 0; i < MAX_TESTS; i++)
                 {
-                    checksum += code1_UInt160CompareTo(base_20_1[i], base_20_2[i]);
+                    checksum += Code1_UInt160CompareTo(base_20_1[i], base_20_2[i]);
                 }
 
                 return checksum;
@@ -181,7 +181,7 @@ namespace Neo.UnitTests
                 var checksum = 0;
                 for (var i = 0; i < MAX_TESTS; i++)
                 {
-                    checksum += code2_UInt160CompareTo(base_20_1[i], base_20_2[i]);
+                    checksum += Code2_UInt160CompareTo(base_20_1[i], base_20_2[i]);
                 }
 
                 return checksum;
@@ -192,7 +192,7 @@ namespace Neo.UnitTests
                 var checksum = 0;
                 for (var i = 0; i < MAX_TESTS; i++)
                 {
-                    checksum += code3_UInt160CompareTo(base_20_1[i], base_20_2[i]);
+                    checksum += Code3_UInt160CompareTo(base_20_1[i], base_20_2[i]);
                 }
 
                 return checksum;
@@ -208,16 +208,16 @@ namespace Neo.UnitTests
         {
             for (var i = 0; i < MAX_TESTS; i++)
             {
-                code1_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
-                code2_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
-                code3_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
-                code1_UInt256CompareTo(base_32_1[i], base_32_1[i]).Should().Be(0);
-                code2_UInt256CompareTo(base_32_1[i], base_32_1[i]).Should().Be(0);
-                code3_UInt256CompareTo(base_32_1[i], base_32_1[i]).Should().Be(0);
+                Code1_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
+                Code2_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
+                Code3_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
+                Code1_UInt256CompareTo(base_32_1[i], base_32_1[i]).Should().Be(0);
+                Code2_UInt256CompareTo(base_32_1[i], base_32_1[i]).Should().Be(0);
+                Code3_UInt256CompareTo(base_32_1[i], base_32_1[i]).Should().Be(0);
             }
         }
 
-        private int code1_UInt256CompareTo(byte[] b1, byte[] b2)
+        private int Code1_UInt256CompareTo(byte[] b1, byte[] b2)
         {
             byte[] x = b1;
             byte[] y = b2;
@@ -231,7 +231,7 @@ namespace Neo.UnitTests
             return 0;
         }
 
-        private unsafe int code2_UInt256CompareTo(byte[] b1, byte[] b2)
+        private unsafe int Code2_UInt256CompareTo(byte[] b1, byte[] b2)
         {
             fixed (byte* px = b1, py = b2)
             {
@@ -248,7 +248,7 @@ namespace Neo.UnitTests
             return 0;
         }
 
-        private unsafe int code3_UInt256CompareTo(byte[] b1, byte[] b2)
+        private unsafe int Code3_UInt256CompareTo(byte[] b1, byte[] b2)
         {
             fixed (byte* px = b1, py = b2)
             {
@@ -264,7 +264,7 @@ namespace Neo.UnitTests
             }
             return 0;
         }
-        private int code1_UInt160CompareTo(byte[] b1, byte[] b2)
+        private int Code1_UInt160CompareTo(byte[] b1, byte[] b2)
         {
             byte[] x = b1;
             byte[] y = b2;
@@ -278,7 +278,7 @@ namespace Neo.UnitTests
             return 0;
         }
 
-        private unsafe int code2_UInt160CompareTo(byte[] b1, byte[] b2)
+        private unsafe int Code2_UInt160CompareTo(byte[] b1, byte[] b2)
         {
             fixed (byte* px = b1, py = b2)
             {
@@ -295,7 +295,7 @@ namespace Neo.UnitTests
             return 0;
         }
 
-        private unsafe int code3_UInt160CompareTo(byte[] b1, byte[] b2)
+        private unsafe int Code3_UInt160CompareTo(byte[] b1, byte[] b2)
         {
             // LSB -----------------> MSB
             // --------------------------

@@ -31,7 +31,7 @@ namespace Neo.UnitTests
             Assert.AreEqual(uut.InvocationScript.ToHexString(), "002020142020");
         }
 
-        private void setupWitnessWithValues(Witness uut, int lenghtInvocation, int lengthVerification, out byte[] invocationScript, out byte[] verificationScript)
+        private void SetupWitnessWithValues(Witness uut, int lenghtInvocation, int lengthVerification, out byte[] invocationScript, out byte[] verificationScript)
         {
             invocationScript = TestUtils.GetByteArray(lenghtInvocation, 0x20);
             verificationScript = TestUtils.GetByteArray(lengthVerification, 0x20);
@@ -44,7 +44,7 @@ namespace Neo.UnitTests
         {
             byte[] invocationScript;
             byte[] verificationScript;
-            setupWitnessWithValues(uut, 252, 253, out invocationScript, out verificationScript);
+            SetupWitnessWithValues(uut, 252, 253, out invocationScript, out verificationScript);
 
             uut.Size.Should().Be(509); // (1 + 252*1) + (1 + 2 + 253*1)
         }
@@ -54,7 +54,7 @@ namespace Neo.UnitTests
         {
             byte[] invocationScript;
             byte[] verificationScript;
-            setupWitnessWithValues(uut, 65535, 65536, out invocationScript, out verificationScript);
+            SetupWitnessWithValues(uut, 65535, 65536, out invocationScript, out verificationScript);
 
             uut.Size.Should().Be(131079); // (1 + 2 + 65535*1) + (1 + 4 + 65536*1)
         }
@@ -64,7 +64,7 @@ namespace Neo.UnitTests
         {
             byte[] invocationScript;
             byte[] verificationScript;
-            setupWitnessWithValues(uut, 2, 3, out invocationScript, out verificationScript);
+            SetupWitnessWithValues(uut, 2, 3, out invocationScript, out verificationScript);
 
             JObject json = uut.ToJson();
             Assert.IsTrue(json.ContainsProperty("invocation"));

@@ -38,12 +38,12 @@ namespace Neo.UnitTests
 
         public static void SetupHeaderWithValues(Header header, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal)
         {
-            setupBlockBaseWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
+            SetupBlockBaseWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
         }
 
         public static void SetupBlockWithValues(Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
         {
-            setupBlockBaseWithValues(block, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
+            SetupBlockBaseWithValues(block, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
 
             transactionsVal = new Transaction[numberOfTransactions];
             if (numberOfTransactions > 0)
@@ -58,7 +58,7 @@ namespace Neo.UnitTests
             block.Transactions = transactionsVal;
         }
 
-        private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal)
+        private static void SetupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal)
         {
             bb.PrevHash = val256;
             merkRootVal = UInt256.Parse("0xd841af3d6bd7adb4bca24306725f9aec363edb10de3cafc5f8cca948d7b0290f");
