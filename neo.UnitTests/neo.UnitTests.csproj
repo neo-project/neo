@@ -25,6 +25,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- <PackageReference Include="StyleCop.MSBuild" Version="6.1.0" /> -->
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" />
+    <AdditionalFiles Include="stylecop.json" Link="stylecop.json" />
+  </ItemGroup>
+
+  <PropertyGroup>
+     <CodeAnalysisRuleSet>$(SolutionDir)StyleCop.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\neo\neo.csproj" />
   </ItemGroup>
 
