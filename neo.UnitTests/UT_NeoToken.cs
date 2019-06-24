@@ -351,7 +351,7 @@ namespace Neo.UnitTests
 
             st[0].GetBigInteger().Should().Be(balance); // Balance
             st[1].GetBigInteger().Should().Be(height);  // BalanceHeight
-            (st[2].GetByteArray().AsSerializableArray<ECPoint>(Blockchain.MaxValidators)).Should().BeEquivalentTo(votes);  // Votes
+            st[2].GetByteArray().AsSerializableArray<ECPoint>(Blockchain.MaxValidators).Should().BeEquivalentTo(votes);  // Votes
 
             trackable.Key.Key.Should().BeEquivalentTo(new byte[] { 20 }.Concat(account));
             trackable.Item.IsConstant.Should().Be(false);
