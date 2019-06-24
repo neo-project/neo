@@ -15,7 +15,6 @@
     <Rule Id="CA1063" Action="Warning" />
     <Rule Id="CA1065" Action="Warning" />
     <Rule Id="CA1301" Action="Warning" />
-    <Rule Id="CA1400" Action="Warning" />
     <Rule Id="CA1401" Action="Warning" />
     <Rule Id="CA1403" Action="Warning" />
     <Rule Id="CA1404" Action="Warning" />
@@ -71,6 +70,7 @@
   <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers">
     <Rule Id="SA1005" Action="None" /> <!-- Single line comment should begin with a space. -->
     <Rule Id="SA1310" Action="None" /> <!-- Field should not contain an underscore -->
+    <Rule Id="SA1400" Action="None" /> <!-- Element should declare an access modifier -->
     <Rule Id="SA1600" Action="None" /> <!-- Elements should be documented -->
     <Rule Id="SA1633" Action="None" /> <!-- File should have header -->
     <Rule Id="SA0001" Action="None" /> <!-- XML comments -->
