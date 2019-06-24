@@ -66,9 +66,15 @@ namespace Neo.UnitTests
             gen.SetNotAfter(DateTime.Now.AddYears(1));
             gen.SetNotBefore(DateTime.Now.Subtract(new TimeSpan(7, 0, 0, 0)));
             gen.SetPublicKey(publicKey);
+
+            gen.AddExtension(
+                X509Extensions.KeyUsage.Id,
+                true,
+                new KeyUsage(3)
+                );
             gen.AddExtension(
                 X509Extensions.AuthorityKeyIdentifier.Id,
-                false,
+                true,
                 new AuthorityKeyIdentifier(
                     SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(publicKey),
                     new GeneralNames(new GeneralName(CN)),
@@ -100,7 +106,7 @@ namespace Neo.UnitTests
             byte[] rawTbs = executionEngine.CurrentContext.EvaluationStack.Pop().GetByteArray();
 
             optSuccess.Should().BeTrue();
-            rawTbs.Should().Equal(rootCA.GetTbsCertificate());
+            rawTbs.ShouldBeEquivalentTo(rootCA.GetTbsCertificate());
         }
 
         [TestMethod]
@@ -115,8 +121,7 @@ namespace Neo.UnitTests
             string signatureAlg = executionEngine.CurrentContext.EvaluationStack.Pop().GetString();
 
             optSuccess.Should().BeTrue();
-            signatureAlg.Should().Equals(rootCA.SigAlgName);
-            signatureAlg.Should().Equals("SHA256WITHRSA");
+            signatureAlg.ShouldBeEquivalentTo(rootCA.SigAlgName);
         }
 
         [TestMethod]
@@ -131,7 +136,7 @@ namespace Neo.UnitTests
             byte[] signatureValue = executionEngine.CurrentContext.EvaluationStack.Pop().GetByteArray();
 
             optSuccess.Should().BeTrue();
-            signatureValue.Should().Equals(rootCA.GetSignature());
+            signatureValue.ShouldBeEquivalentTo(rootCA.GetSignature());
         }
 
         [TestMethod]
@@ -146,7 +151,7 @@ namespace Neo.UnitTests
             int version = (int) executionEngine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
 
             optSuccess.Should().BeTrue();
-            version.Should().Equals(rootCA.Version);
+            version.ShouldBeEquivalentTo(rootCA.Version);
         }
 
         [TestMethod]
@@ -162,7 +167,7 @@ namespace Neo.UnitTests
             string serialNumberStr = rootCA.SerialNumber.ToByteArray().ToHexString();
 
             optSuccess.Should().BeTrue();
-            serialNumber.Should().Equals(serialNumberStr);
+            serialNumber.ShouldBeEquivalentTo(serialNumberStr);
         }
 
         [TestMethod]
@@ -177,7 +182,7 @@ namespace Neo.UnitTests
             string issuer = executionEngine.CurrentContext.EvaluationStack.Pop().GetString();
 
             optSuccess.Should().BeTrue();
-            issuer.Should().Equals(rootCA.IssuerDN.ToString());
+            issuer.ShouldBeEquivalentTo(rootCA.IssuerDN.ToString());
         }
 
         [TestMethod]
@@ -192,7 +197,7 @@ namespace Neo.UnitTests
             long notBefore = (long) executionEngine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
 
             optSuccess.Should().BeTrue();
-            notBefore.Should().Equals(new DateTimeOffset(rootCA.NotBefore).ToUnixTimeSeconds());
+            notBefore.ShouldBeEquivalentTo(new DateTimeOffset(rootCA.NotBefore).ToUnixTimeSeconds());
         }
 
 
@@ -208,7 +213,7 @@ namespace Neo.UnitTests
             long notBefore = (long)executionEngine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
 
             optSuccess.Should().BeTrue();
-            notBefore.Should().Equals(new DateTimeOffset(rootCA.NotAfter).ToUnixTimeSeconds());
+            notBefore.ShouldBeEquivalentTo(new DateTimeOffset(rootCA.NotAfter).ToUnixTimeSeconds());
         }
 
 
@@ -224,7 +229,7 @@ namespace Neo.UnitTests
             string subject = executionEngine.CurrentContext.EvaluationStack.Pop().GetString();
 
             optSuccess.Should().BeTrue();
-            subject.Should().Equals(rootCA.SubjectDN.ToString());
+            subject.ShouldBeEquivalentTo(rootCA.SubjectDN.ToString());
         }
 
 
@@ -241,7 +246,88 @@ namespace Neo.UnitTests
             X509Certificate cerficate  = _interface.GetInterface<X509Certificate>();
 
             optSuccess.Should().BeTrue();
-            cerficate.GetTbsCertificate().Should().Equals(rootCA.GetTbsCertificate());
+            cerficate.GetTbsCertificate().ShouldBeEquivalentTo(rootCA.GetTbsCertificate());
+        }
+
+        [TestMethod]
+        public void Certificate_GetBasicConstraints()
+        {
+            ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
+            executionEngine.LoadScript(new byte[] { }, 0);
+
+            string authorityKeyId = X509Extensions.AuthorityKeyIdentifier.Id;
+            executionEngine.CurrentContext.EvaluationStack.Push(authorityKeyId);
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
+
+            bool optSuccess = certificateService.Certificate_GetBasicConstraints(executionEngine);
+            System.Numerics.BigInteger path = executionEngine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
+
+            optSuccess.Should().BeTrue();
+            path.Should().Be(-1);
+        }
+
+
+        [TestMethod]
+        public void Certificate_GetKeyUsage()
+        {
+            ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
+            executionEngine.LoadScript(new byte[] { }, 0);
+
+            string keyUsage = X509Extensions.KeyUsage.Id;
+            executionEngine.CurrentContext.EvaluationStack.Push(keyUsage);
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
+
+            bool optSuccess = certificateService.Certificate_GetKeyUsage(executionEngine);
+            VM.Types.Array array = (VM.Types.Array)executionEngine.CurrentContext.EvaluationStack.Pop();
+
+            optSuccess.Should().BeTrue();
+            array.Count.Should().Be(9);
+        }
+
+
+        [TestMethod]
+        public void Certificate_GetExtensionValue()
+        {
+            ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
+            executionEngine.LoadScript(new byte[] { }, 0);
+
+            string authorityKeyId = X509Extensions.AuthorityKeyIdentifier.Id;
+            executionEngine.CurrentContext.EvaluationStack.Push(authorityKeyId);
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
+
+            bool optSuccess = certificateService.Certificate_GetExtensionValue(executionEngine);
+            Map map = (Map)executionEngine.CurrentContext.EvaluationStack.Pop();
+
+            optSuccess.Should().BeTrue();
+
+            map.ContainsKey("Id").Should().BeTrue();
+            map.ContainsKey("Critical").Should().BeTrue();
+            map.ContainsKey("Value").Should().BeTrue();
+
+            map.TryGetValue("Id", out StackItem id);
+            id.GetString().ShouldBeEquivalentTo(authorityKeyId);
+
+            map.TryGetValue("Critical", out StackItem critical);
+            critical.GetBoolean().Should().BeTrue();
+
+            map.TryGetValue("Value", out StackItem value);
+            byte[] rootValue = rootCA.GetExtensionValue(new DerObjectIdentifier(authorityKeyId)).GetOctets() ;
+            value.GetByteArray().ShouldBeEquivalentTo(rootValue);
+        }
+
+
+        [TestMethod]
+        public void Certificate_GetExtensionValue_NotExit_Id()
+        {
+            ExecutionEngine executionEngine = new ExecutionEngine(null, null, null, null);
+            executionEngine.LoadScript(new byte[] { }, 0);
+
+            string authorityKeyId = "2.19.2.2";
+            executionEngine.CurrentContext.EvaluationStack.Push(authorityKeyId);
+            executionEngine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(rootCA));
+
+            bool optSuccess = certificateService.Certificate_GetExtensionValue(executionEngine);
+            optSuccess.Should().BeFalse();
         }
 
 

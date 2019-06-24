@@ -7,6 +7,7 @@ using Org.BouncyCastle.X509;
 
 using Neo.VM;
 using Neo.VM.Types;
+using Org.BouncyCastle.Asn1;
 
 namespace Neo.SmartContract
 {
@@ -162,6 +163,74 @@ namespace Neo.SmartContract
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(x509));
             return true;
         }
+
+
+        /// <summary>
+        /// Get the basicConstraints of certificate in the current evaluation stack
+        /// </summary>
+        /// <param name="engine"></param>
+        /// <remarks>Evaluation stack input: X509Certificate</remarks>
+        /// <remarks>Evaluation stack output: basicConstraints(int)</remarks>
+        public bool Certificate_GetBasicConstraints(ExecutionEngine engine)
+        {
+            if (!popX509Certificate(engine, out X509Certificate certificate)) return false;
+
+            int path = certificate.GetBasicConstraints();
+            engine.CurrentContext.EvaluationStack.Push(path);
+            return true;
+        }
+
+
+        /// <summary>
+        /// Get the keyUsage of certificate in the current evaluation stack
+        /// </summary>
+        /// <param name="engine"></param>
+        /// <remarks>Evaluation stack input: X509Certificate</remarks>
+        /// <remarks>Evaluation stack output: bool array</remarks>
+        public bool Certificate_GetKeyUsage(ExecutionEngine engine)
+        {
+            if (!popX509Certificate(engine, out X509Certificate certificate)) return false;
+
+            bool[] keyUsage = certificate.GetKeyUsage();
+            VM.Types.Array array = new VM.Types.Array();
+            for (int i = 0; keyUsage != null && i < keyUsage.Length; i++)
+            {
+                array.Add(keyUsage[i]);
+            }
+            engine.CurrentContext.EvaluationStack.Push(array);
+            return true;
+        }
+
+
+        /// <summary>
+        /// Get extension value by id
+        /// </summary>
+        /// <param name="engine"></param>
+        /// <remarks>Evaluation stack input: Certificate, extension id </remarks>
+        /// <remarks>Evaluation stack output: a map contains `Id`, `Critical` and `Value` field</remarks>
+        public bool Certificate_GetExtensionValue(ExecutionEngine engine)
+        {
+            if (!popX509Certificate(engine, out X509Certificate certificate)) return false;
+
+            string oid = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
+            Asn1OctetString oidValue = certificate.GetExtensionValue(new DerObjectIdentifier(oid));
+            if (oidValue == null)
+            { 
+                return false;
+            }
+            byte[] value = oidValue.GetOctets();
+            bool critical = certificate.GetCriticalExtensionOids().Contains(oid);
+
+            Map map = new Map();
+            map.Add("Id", oid);
+            map.Add("Critical", critical);
+            map.Add("Value", value);
+
+            engine.CurrentContext.EvaluationStack.Push(map);
+            return true;
+        }
+
+
 
 
         /// <summary>
