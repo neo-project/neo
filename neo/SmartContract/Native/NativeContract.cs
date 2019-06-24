@@ -79,7 +79,7 @@ namespace Neo.SmartContract.Native
             return storageKey;
         }
 
-        protected StorageKey CreateStorageKey(byte prefix, ISerializable key)
+        internal protected StorageKey CreateStorageKey(byte prefix, ISerializable key)
         {
             return CreateStorageKey(prefix, key.ToArray());
         }
