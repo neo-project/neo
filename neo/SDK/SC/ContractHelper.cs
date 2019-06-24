@@ -54,6 +54,7 @@ namespace Neo.SDK.SC
 
             // use send raw transaction
 
+            throw new NotImplementedException();
         }
 
         //invoke contract

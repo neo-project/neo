@@ -80,10 +80,6 @@ namespace Neo.SDK.Wallet
         {
             return CreateWallet(DefaultWalletName, DefaultVersion, ScryptN, ScryptR, ScryptP);
         }
-
-        public bool Sign(ContractParametersContext context)
-        {
-
-        }
+        
     }
 }

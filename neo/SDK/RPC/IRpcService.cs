@@ -1,11 +1,12 @@
-﻿using System.Threading.Tasks;
+﻿using Neo.IO.Json;
+using System.Threading.Tasks;
 
 namespace Neo.SDK.RPC
 {
     public interface IRpcService
     {
-        Task<T> SendAsync<T>(object request);
+        Task<JObject> SendAsync(object request);
 
-        T Send<T>(object request);
+        JObject Send(object request);
     }
 }

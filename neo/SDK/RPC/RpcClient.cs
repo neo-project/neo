@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using Neo.IO.Json;
 using Neo.SDK.RPC;
 using Neo.SDK.RPC.Model;
 
@@ -14,21 +16,26 @@ namespace Neo.SDK
             rpcHelper = rpc;
         }
 
-        private T RpcSend<T>(string method, params object[] paraArgs)
+        private JObject RpcSend(string method, params object[] paraArgs)
         {
             var request = new RPCRequest
             {
                 Id = 1,
                 Jsonrpc = "2.0",
                 Method = method,
-                Params = paraArgs
+                Params = paraArgs.Select(p => (JObject)p).ToArray()
             };
-            return rpcHelper.Send<T>(request);
+            return rpcHelper.Send(request);
+        }
+
+        private T RpcSend<T>(string method, params object[] paraArgs)
+        {
+            throw new NotImplementedException();
         }
 
         public string GetBestBlockHash()
         {
-            return RpcSend<string>("getbestblockhash");
+            return RpcSend("getbestblockhash").AsString();
         }
 
         public string GetBlockHex(string hashOrIndex)
