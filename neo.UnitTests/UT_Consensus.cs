@@ -313,7 +313,7 @@ namespace Neo.UnitTests
             // msg.MinerTransaction = (MinerTransaction) null;
             msg.PrepareRequestMessage.Should().Be(null);
 
-            var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage()); ;
+            var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage());
 
             copiedMsg.ChangeViewMessages.ShouldAllBeEquivalentTo(msg.ChangeViewMessages);
             copiedMsg.PreparationHash.Should().Be(msg.PreparationHash);
@@ -407,7 +407,7 @@ namespace Neo.UnitTests
                 CommitMessages = new Dictionary<int, RecoveryMessage.CommitPayloadCompact>()
             };
 
-            var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage()); ;
+            var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage());
 
             copiedMsg.ChangeViewMessages.ShouldAllBeEquivalentTo(msg.ChangeViewMessages);
             copiedMsg.PrepareRequestMessage.ShouldBeEquivalentTo(msg.PrepareRequestMessage);
@@ -467,7 +467,7 @@ namespace Neo.UnitTests
                 CommitMessages = new Dictionary<int, RecoveryMessage.CommitPayloadCompact>()
             };
 
-            var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage()); ;
+            var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage());
 
             copiedMsg.ChangeViewMessages.Count.Should().Be(0);
             copiedMsg.PrepareRequestMessage.ShouldBeEquivalentTo(msg.PrepareRequestMessage);
@@ -547,7 +547,7 @@ namespace Neo.UnitTests
                 }
             };
 
-            var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage()); ;
+            var copiedMsg = TestUtils.CopyMsgBySerialization(msg, new RecoveryMessage());
 
             copiedMsg.ChangeViewMessages.Count.Should().Be(0);
             copiedMsg.PrepareRequestMessage.ShouldBeEquivalentTo(msg.PrepareRequestMessage);
