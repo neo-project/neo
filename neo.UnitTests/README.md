@@ -8,7 +8,7 @@ Please note that we are aware that we are not using proper isolation / dependenc
 Structure
 ====================
 
-We use built in Visual Studio functionality with MSTest and the Microsoft.VisualStudio.TestPlatform.TestFramework package. 
+We use built in Visual Studio functionality with MSTest and the Microsoft.VisualStudio.TestPlatform.TestFramework package.
 
 To run the tests, build the solution to discover tests, then view and run the tests from the 'Test Explorer' window within Visual Studio.
 OR
@@ -24,3 +24,12 @@ Coverage
 * StorageKey.cs
 * Transaction.cs
 * Witness.cs
+
+Code Style
+====================
+
+Code style is enforced by StyleCop package. It will issue warnings on build, when certain code quality demands are not met.
+
+To ensure formatting, you can use a dotnet formatter (or IDE formatter).
+To install it on dotnet environment: `dotnet tool install -g dotnet-format`.
+Just run `dotnet format` on project folder, before code is submitted.
