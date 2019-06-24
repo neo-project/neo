@@ -29,7 +29,6 @@ namespace Neo.Network.P2P
         private IActorRef parent;
 
 
-
         public ProtocolHandler(NeoSystem system)
         {
             this.system = system;
