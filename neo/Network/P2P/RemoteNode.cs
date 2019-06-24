@@ -37,7 +37,7 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.protocol = protocolFactory.ActorOf(ProtocolHandler.Props(system));
-			LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
+            LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
 
             var capabilities = new List<NodeCapability>
             {
@@ -50,7 +50,7 @@ namespace Neo.Network.P2P
             SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
 
-		private void CheckMessageQueue()
+        private void CheckMessageQueue()
         {
             if (!verack || !ack) return;
             Queue<Message> queue = message_queue_high;
@@ -270,29 +270,29 @@ namespace Neo.Network.P2P
         }
     }
 
-	internal class ProtocolActorFactory : IActorRefFactory
-	{
-		private IUntypedActorContext context;
+    internal class ProtocolActorFactory : IActorRefFactory
+    {
+        private IUntypedActorContext context;
 
-		public ProtocolActorFactory(IUntypedActorContext context)
-		{
-			this.context = context;
-		}
-		
-		public IActorRef ActorOf(Props props, string name = null)
-		{
-			return context.ActorOf(props);
-		}
+        public ProtocolActorFactory(IUntypedActorContext context)
+        {
+            this.context = context;
+        }
 
-		public ActorSelection ActorSelection(ActorPath actorPath)
-		{
-			throw new System.NotImplementedException();
-		}
+        public IActorRef ActorOf(Props props, string name = null)
+        {
+            return context.ActorOf(props);
+        }
 
-		public ActorSelection ActorSelection(string actorPath)
-		{
-			throw new System.NotImplementedException();
-		}
-	}
+        public ActorSelection ActorSelection(ActorPath actorPath)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public ActorSelection ActorSelection(string actorPath)
+        {
+            throw new System.NotImplementedException();
+        }
+    }
 
 }
