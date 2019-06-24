@@ -69,6 +69,7 @@
   </Rules>
   <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers">
     <Rule Id="SA1005" Action="None" /> <!-- Single line comment should begin with a space. -->
+    <Rule Id="SA1208" Action="None" /> <!--  Using directive for 'X' should appear before directive for 'Y'  -->
     <Rule Id="SA1310" Action="None" /> <!-- Field should not contain an underscore -->
     <Rule Id="SA1400" Action="None" /> <!-- Element should declare an access modifier -->
     <Rule Id="SA1503" Action="None" /> <!-- The opening and closing curly brackets for a C# statement have been omitted. -->
