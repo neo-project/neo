@@ -38,7 +38,7 @@ namespace Neo.UnitTests
             var cultures = new string[] { "en-US", "zh-CN", "de-DE", "ko-KR", "ja-JP" };
             var originalUICulture = CultureInfo.CurrentCulture;
             var emtpyObjArray = new object[] { };
-			var testContext = new object[] { new UnitTestContext() };
+            var testContext = new object[] { new UnitTestContext() };
 
             // run all the tests, varying the culture each time.
             try
@@ -81,22 +81,22 @@ namespace Neo.UnitTests
         }
     }
 
-	public class UnitTestContext : TestContext
-	{
-		public override IDictionary<string, object> Properties => throw new NotImplementedException();
+    public class UnitTestContext : TestContext
+    {
+        public override IDictionary<string, object> Properties => throw new NotImplementedException();
 
-		public override void WriteLine(string message)
-		{
-			Console.WriteLine(message);
-		}
+        public override void WriteLine(string message)
+        {
+            Console.WriteLine(message);
+        }
 
-		public override void WriteLine(string format, params object[] args)
-		{
-			Console.WriteLine(format, args);
-		}
-	}
+        public override void WriteLine(string format, params object[] args)
+        {
+            Console.WriteLine(format, args);
+        }
+    }
 
-	public class NotReRunnableAttribute : Attribute
+    public class NotReRunnableAttribute : Attribute
     {
 
     }

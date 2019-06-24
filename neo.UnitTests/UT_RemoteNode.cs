@@ -12,104 +12,104 @@ using System.Text;
 
 namespace Neo.UnitTests
 {
-	[TestClass]
-	public class UT_RemoteNode : TestKit
-	{
-		private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
+    [TestClass]
+    public class UT_RemoteNode : TestKit
+    {
+        private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
 
-		private static NeoSystem testBlockchain;
-		
+        private static NeoSystem testBlockchain;
 
-		[ClassInitialize]
-		public static void TestSetup(TestContext ctx)
-		{
-			testBlockchain = TestBlockchain.InitializeMockNeoSystem();
-		}
 
-		[TestMethod]
-		public void RemoteNode_Test_Abort_DifferentMagic()
-		{
-			var testProbe = CreateTestProbe();
-			var connectionTestProbe = CreateTestProbe();
-			var protocolActor = ActorOfAsTestActorRef<ProtocolHandler>(() => new ProtocolHandler(testBlockchain));
-			var protocolFactory = new TestProtocolFactory(protocolActor);
-			var remoteNodeActor = ActorOfAsTestActorRef<RemoteNode>(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null, protocolFactory));
+        [ClassInitialize]
+        public static void TestSetup(TestContext ctx)
+        {
+            testBlockchain = TestBlockchain.InitializeMockNeoSystem();
+        }
 
-			connectionTestProbe.ExpectMsg<Tcp.Write>();
+        [TestMethod]
+        public void RemoteNode_Test_Abort_DifferentMagic()
+        {
+            var testProbe = CreateTestProbe();
+            var connectionTestProbe = CreateTestProbe();
+            var protocolActor = ActorOfAsTestActorRef<ProtocolHandler>(() => new ProtocolHandler(testBlockchain));
+            var protocolFactory = new TestProtocolFactory(protocolActor);
+            var remoteNodeActor = ActorOfAsTestActorRef<RemoteNode>(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null, protocolFactory));
 
-			var payload = new VersionPayload()
-			{
-				UserAgent = "".PadLeft(1024, '0'),
-				Nonce = 1,
-				Magic = 2,
-				Timestamp = 5,
-				Version = 6,
-				Capabilities = new NodeCapability[]
-				{
-					new ServerCapability(NodeCapabilityType.TcpServer, 25)
-				}
-			};
-			
-			testProbe.Send(remoteNodeActor, payload);
+            connectionTestProbe.ExpectMsg<Tcp.Write>();
 
-			connectionTestProbe.ExpectMsg<Tcp.Abort>();
-		}
+            var payload = new VersionPayload()
+            {
+                UserAgent = "".PadLeft(1024, '0'),
+                Nonce = 1,
+                Magic = 2,
+                Timestamp = 5,
+                Version = 6,
+                Capabilities = new NodeCapability[]
+                {
+                    new ServerCapability(NodeCapabilityType.TcpServer, 25)
+                }
+            };
 
-		[TestMethod]
-		public void RemoteNode_Test_Accept_IfSameMagic()
-		{
-			var testProbe = CreateTestProbe();
-			var connectionTestProbe = CreateTestProbe();
-			var protocolActor = ActorOfAsTestActorRef<ProtocolHandler>(() => new ProtocolHandler(testBlockchain));
-			var protocolFactory = new TestProtocolFactory(protocolActor);
-			var remoteNodeActor = ActorOfAsTestActorRef<RemoteNode>(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null, protocolFactory));
+            testProbe.Send(remoteNodeActor, payload);
 
-			connectionTestProbe.ExpectMsg<Tcp.Write>();
+            connectionTestProbe.ExpectMsg<Tcp.Abort>();
+        }
 
-			var payload = new VersionPayload()
-			{
-				UserAgent = "Unit Test".PadLeft(1024, '0'),
-				Nonce = 1,
-				Magic = ProtocolSettings.Default.Magic,
-				Timestamp = 5,
-				Version = 6,
-				Capabilities = new NodeCapability[]
-				{
-					new ServerCapability(NodeCapabilityType.TcpServer, 25)
-				}
-			};
+        [TestMethod]
+        public void RemoteNode_Test_Accept_IfSameMagic()
+        {
+            var testProbe = CreateTestProbe();
+            var connectionTestProbe = CreateTestProbe();
+            var protocolActor = ActorOfAsTestActorRef<ProtocolHandler>(() => new ProtocolHandler(testBlockchain));
+            var protocolFactory = new TestProtocolFactory(protocolActor);
+            var remoteNodeActor = ActorOfAsTestActorRef<RemoteNode>(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null, protocolFactory));
 
-			testProbe.Send(remoteNodeActor, payload);
+            connectionTestProbe.ExpectMsg<Tcp.Write>();
 
-			var verackMessage = connectionTestProbe.ExpectMsg<Tcp.Write>();
+            var payload = new VersionPayload()
+            {
+                UserAgent = "Unit Test".PadLeft(1024, '0'),
+                Nonce = 1,
+                Magic = ProtocolSettings.Default.Magic,
+                Timestamp = 5,
+                Version = 6,
+                Capabilities = new NodeCapability[]
+                {
+                    new ServerCapability(NodeCapabilityType.TcpServer, 25)
+                }
+            };
 
-			//Verack
-			verackMessage.Data.Count.Should().Be(3);
-		}
-	}
+            testProbe.Send(remoteNodeActor, payload);
 
-	internal class TestProtocolFactory : IActorRefFactory
-	{
-		private IActorRef protocolRef;
+            var verackMessage = connectionTestProbe.ExpectMsg<Tcp.Write>();
 
-		public TestProtocolFactory(IActorRef protocolRef)
-		{
-			this.protocolRef = protocolRef;
-		}
+            //Verack
+            verackMessage.Data.Count.Should().Be(3);
+        }
+    }
 
-		public IActorRef ActorOf(Props props, string name = null)
-		{
-			return protocolRef;
-		}
+    internal class TestProtocolFactory : IActorRefFactory
+    {
+        private IActorRef protocolRef;
 
-		public ActorSelection ActorSelection(ActorPath actorPath)
-		{
-			throw new NotImplementedException();
-		}
+        public TestProtocolFactory(IActorRef protocolRef)
+        {
+            this.protocolRef = protocolRef;
+        }
 
-		public ActorSelection ActorSelection(string actorPath)
-		{
-			throw new NotImplementedException();
-		}
-	}
+        public IActorRef ActorOf(Props props, string name = null)
+        {
+            return protocolRef;
+        }
+
+        public ActorSelection ActorSelection(ActorPath actorPath)
+        {
+            throw new NotImplementedException();
+        }
+
+        public ActorSelection ActorSelection(string actorPath)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
