@@ -139,7 +139,7 @@ namespace Neo.UnitTests
                     {
                          AssetId = NativeContract.GAS.Hash,
                          ScriptHash = acc.ScriptHash,
-                         Value = new BigDecimal(1,8)
+                         Value = new BigDecimal(1, 8)
                     }
                 }, acc.ScriptHash);
 
@@ -212,7 +212,7 @@ namespace Neo.UnitTests
                     {
                          AssetId = NativeContract.GAS.Hash,
                          ScriptHash = acc.ScriptHash,
-                         Value = new BigDecimal(1,8)
+                         Value = new BigDecimal(1, 8)
                     }
                 }, acc.ScriptHash);
 
