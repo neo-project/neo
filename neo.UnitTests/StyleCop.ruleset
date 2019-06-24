@@ -73,6 +73,7 @@
     <Rule Id="SA1400" Action="None" /> <!-- Element should declare an access modifier -->
     <Rule Id="SA1503" Action="None" /> <!-- The opening and closing curly brackets for a C# statement have been omitted. -->
     <Rule Id="SA1505" Action="None" /> <!-- An opening brace should not be followed by a blank line. -->
+    <Rule Id="SA1508" Action="None" /> <!-- A closing brace should not be preceded by a blank line -->
     <Rule Id="SA1600" Action="None" /> <!-- Elements should be documented -->
     <Rule Id="SA1633" Action="None" /> <!-- File should have header -->
     <Rule Id="SA0001" Action="None" /> <!-- XML comments -->
