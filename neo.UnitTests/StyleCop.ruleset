@@ -70,6 +70,7 @@
   <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers">
     <Rule Id="SA1005" Action="None" /> <!-- Single line comment should begin with a space. -->
     <Rule Id="SA1009" Action="None" /> <!-- Closing parenthesis should not be preceded by a space. -->
+    <Rule Id="SA1111" Action="None" /> <!-- Closing parenthesis should be on line of last parameter -->    
     <Rule Id="SA1208" Action="None" /> <!-- Using directive for 'X' should appear before directive for 'Y' -->
     <Rule Id="SA1210" Action="None" /> <!-- Using directives should be ordered alphabetically by the namespaces. -->
     <Rule Id="SA1310" Action="None" /> <!-- Field should not contain an underscore -->
