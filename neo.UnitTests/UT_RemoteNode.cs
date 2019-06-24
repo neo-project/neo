@@ -17,18 +17,12 @@ namespace Neo.UnitTests
 	{
 		private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
 
-		private NeoSystem testBlockchain;
+		private static NeoSystem testBlockchain;
+		
 
-		[TestCleanup]
-		public void Cleanup()
+		[ClassInitialize]
+		public static void TestSetup(TestContext ctx)
 		{
-			Shutdown();
-		}
-
-		[TestInitialize]
-		public void TestSetup()
-		{
-			Akka.Actor.ActorSystem system = Sys;
 			testBlockchain = TestBlockchain.InitializeMockNeoSystem();
 		}
 

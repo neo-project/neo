@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
@@ -37,6 +38,7 @@ namespace Neo.UnitTests
             var cultures = new string[] { "en-US", "zh-CN", "de-DE", "ko-KR", "ja-JP" };
             var originalUICulture = CultureInfo.CurrentCulture;
             var emtpyObjArray = new object[] { };
+			var testContext = new object[] { new UnitTestContext() };
 
             // run all the tests, varying the culture each time.
             try
@@ -50,7 +52,7 @@ namespace Neo.UnitTests
                         var instance = c.Constructor.Invoke(emtpyObjArray);
                         if (c.ClassInit != null)
                         {
-                            c.ClassInit.Invoke(instance, emtpyObjArray);
+                            c.ClassInit.Invoke(instance, testContext);
                         }
                         foreach (var m in c.TestMethods)
                         {
@@ -79,7 +81,22 @@ namespace Neo.UnitTests
         }
     }
 
-    public class NotReRunnableAttribute : Attribute
+	public class UnitTestContext : TestContext
+	{
+		public override IDictionary<string, object> Properties => throw new NotImplementedException();
+
+		public override void WriteLine(string message)
+		{
+			Console.WriteLine(message);
+		}
+
+		public override void WriteLine(string format, params object[] args)
+		{
+			Console.WriteLine(format, args);
+		}
+	}
+
+	public class NotReRunnableAttribute : Attribute
     {
 
     }
