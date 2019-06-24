@@ -115,7 +115,10 @@ namespace Neo.SmartContract
             Register("Neo.Certificate.GetNotAfter", certificateService.Certificate_GetNotAfter, 1);
             Register("Neo.Certificate.GetSubject", certificateService.Certificate_GetSubject, 1);
             Register("Neo.Certificate.Decode", certificateService.Certificate_Decode, 10);
-            Register("Neo.Certificate.CheckSignature", certificateService.Certificate_CheckSignature, 100); // refer to OpCode.VERIFY
+            Register("Neo.Certificate.GetBasicConstraints", certificateService.Certificate_GetBasicConstraints, 1);
+            Register("Neo.Certificate.GetKeyUsage", certificateService.Certificate_GetKeyUsage, 1);
+            Register("Neo.Certificate.GetExtensionValue", certificateService.Certificate_GetExtensionValue, 1);
+            Register("Neo.Certificate.CheckSignature", certificateService.Certificate_CheckSignature, 100); // equals to OpCode.VERIFY
             #endregion
 
 
