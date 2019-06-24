@@ -137,7 +137,7 @@ namespace Neo.UnitTests
             _unit.UnverifiedSortedTxCount.ShouldBeEquivalentTo(0);
         }
 
-        private void verifyTransactionsSortedDescending(IEnumerable<Transaction> transactions)
+        private void VerifyTransactionsSortedDescending(IEnumerable<Transaction> transactions)
         {
             Transaction lastTransaction = null;
             foreach (var tx in transactions)
@@ -168,7 +168,7 @@ namespace Neo.UnitTests
             var sortedVerifiedTxs = _unit.GetSortedVerifiedTransactions().ToList();
             // verify all 100 transactions are returned in sorted order
             sortedVerifiedTxs.Count.ShouldBeEquivalentTo(100);
-            verifyTransactionsSortedDescending(sortedVerifiedTxs);
+            VerifyTransactionsSortedDescending(sortedVerifiedTxs);
 
             // move all to unverified
             var block = new Block { Transactions = new Transaction[0] };
@@ -183,7 +183,7 @@ namespace Neo.UnitTests
                 _unit.GetVerifiedAndUnverifiedTransactions(out var sortedVerifiedTransactions, out var sortedUnverifiedTransactions);
                 sortedVerifiedTransactions.Count().ShouldBeEquivalentTo(0);
                 var sortedUnverifiedArray = sortedUnverifiedTransactions.ToArray();
-                verifyTransactionsSortedDescending(sortedUnverifiedArray);
+                VerifyTransactionsSortedDescending(sortedUnverifiedArray);
                 var maxTransaction = sortedUnverifiedArray.First();
                 var minTransaction = sortedUnverifiedArray.Last();
 

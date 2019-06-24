@@ -50,8 +50,7 @@ namespace Neo.UnitTests
 
             // Check the results
 
-            CollectionAssert.AreEqual
-                (
+            CollectionAssert.AreEqual(
                 engine.ResultStack.Select(u => (int)((VM.Types.Integer)u).GetBigInteger()).ToArray(),
                 new int[]
                 {
@@ -60,7 +59,7 @@ namespace Neo.UnitTests
                     2, /* B */
                     1  /* C */
                 }
-                );
+            );
         }
     }
 }
