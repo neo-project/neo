@@ -26,24 +26,23 @@ namespace Neo.Network.P2P
         private VersionPayload version;
         private bool verack = false;
         private BloomFilter bloom_filter;
-		private IActorRef parent;
+        private IActorRef parent;
 
-        
 
-		public ProtocolHandler(NeoSystem system)
-		{
-			this.system = system;
-			this.knownHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
-			this.sentHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
-			this.parent = Context.Parent;
-		}
+        public ProtocolHandler(NeoSystem system)
+        {
+            this.system = system;
+            this.knownHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
+            this.sentHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
+            this.parent = Context.Parent;
+        }
 
-		public ProtocolHandler(NeoSystem system, IActorRef parent) : this(system)
-		{
-			this.parent = parent;
-		}
+        public ProtocolHandler(NeoSystem system, IActorRef parent) : this(system)
+        {
+            this.parent = parent;
+        }
 
-		protected override void OnReceive(object message)
+        protected override void OnReceive(object message)
         {
             if (!(message is Message msg)) return;
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
