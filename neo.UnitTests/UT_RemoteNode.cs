@@ -7,115 +7,111 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Neo.UnitTests
 {
-	[TestClass]
-	public class UT_RemoteNode : TestKit
-	{
-		private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
+    [TestClass]
+    public class UT_RemoteNode : TestKit
+    {
+        private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
 
-		private NeoSystem testBlockchain;
+        private NeoSystem testBlockchain;
 
-		[TestCleanup]
-		public void Cleanup()
-		{
-			Shutdown();
-		}
+        [TestCleanup]
+        public void Cleanup()
+        {
+            Shutdown();
+        }
 
-		[TestInitialize]
-		public void TestSetup()
-		{
-			Akka.Actor.ActorSystem system = Sys;
-			testBlockchain = TestBlockchain.InitializeMockNeoSystem();
-		}
+        [TestInitialize]
+        public void TestSetup()
+        {
+            Akka.Actor.ActorSystem system = Sys;
+            testBlockchain = TestBlockchain.InitializeMockNeoSystem();
+        }
 
-		[TestMethod]
-		public void RemoteNode_Test_Abort_DifferentMagic()
-		{
-			var testProbe = CreateTestProbe();
-			var connectionTestProbe = CreateTestProbe();
-			var protocolActor = ActorOfAsTestActorRef<ProtocolHandler>(() => new ProtocolHandler(testBlockchain));
-			var protocolFactory = new TestProtocolFactory(protocolActor);
-			var remoteNodeActor = ActorOfAsTestActorRef<RemoteNode>(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null, protocolFactory));
+        [TestMethod]
+        public void RemoteNode_Test_Abort_DifferentMagic()
+        {
+            var testProbe = CreateTestProbe();
+            var connectionTestProbe = CreateTestProbe();
+            var protocolActor = ActorOfAsTestActorRef<ProtocolHandler>(() => new ProtocolHandler(testBlockchain));
+            var protocolFactory = new TestProtocolFactory(protocolActor);
+            var remoteNodeActor = ActorOfAsTestActorRef<RemoteNode>(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null, protocolFactory));
 
-			connectionTestProbe.ExpectMsg<Tcp.Write>();
+            connectionTestProbe.ExpectMsg<Tcp.Write>();
 
-			var payload = new VersionPayload()
-			{
-				UserAgent = "".PadLeft(1024, '0'),
-				Nonce = 1,
-				Magic = 2,
-				Timestamp = 5,
-				Version = 6,
-				Capabilities = new NodeCapability[]
-				{
-					new ServerCapability(NodeCapabilityType.TcpServer, 25)
-				}
-			};
-			
-			testProbe.Send(remoteNodeActor, payload);
+            var payload = new VersionPayload()
+            {
+                UserAgent = "".PadLeft(1024, '0'),
+                Nonce = 1,
+                Magic = 2,
+                Timestamp = 5,
+                Version = 6,
+                Capabilities = new NodeCapability[]
+                {
+                    new ServerCapability(NodeCapabilityType.TcpServer, 25)
+                }
+            };
 
-			connectionTestProbe.ExpectMsg<Tcp.Abort>();
-		}
+            testProbe.Send(remoteNodeActor, payload);
+            connectionTestProbe.ExpectMsg<Tcp.Abort>();
+        }
 
-		[TestMethod]
-		public void RemoteNode_Test_Accept_IfSameMagic()
-		{
-			var testProbe = CreateTestProbe();
-			var connectionTestProbe = CreateTestProbe();
-			var protocolActor = ActorOfAsTestActorRef<ProtocolHandler>(() => new ProtocolHandler(testBlockchain));
-			var protocolFactory = new TestProtocolFactory(protocolActor);
-			var remoteNodeActor = ActorOfAsTestActorRef<RemoteNode>(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null, protocolFactory));
+        [TestMethod]
+        public void RemoteNode_Test_Accept_IfSameMagic()
+        {
+            var testProbe = CreateTestProbe();
+            var connectionTestProbe = CreateTestProbe();
+            var protocolActor = ActorOfAsTestActorRef<ProtocolHandler>(() => new ProtocolHandler(testBlockchain));
+            var protocolFactory = new TestProtocolFactory(protocolActor);
+            var remoteNodeActor = ActorOfAsTestActorRef<RemoteNode>(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null, protocolFactory));
 
-			connectionTestProbe.ExpectMsg<Tcp.Write>();
+            connectionTestProbe.ExpectMsg<Tcp.Write>();
 
-			var payload = new VersionPayload()
-			{
-				UserAgent = "Unit Test".PadLeft(1024, '0'),
-				Nonce = 1,
-				Magic = ProtocolSettings.Default.Magic,
-				Timestamp = 5,
-				Version = 6,
-				Capabilities = new NodeCapability[]
-				{
-					new ServerCapability(NodeCapabilityType.TcpServer, 25)
-				}
-			};
+            var payload = new VersionPayload()
+            {
+                UserAgent = "Unit Test".PadLeft(1024, '0'),
+                Nonce = 1,
+                Magic = ProtocolSettings.Default.Magic,
+                Timestamp = 5,
+                Version = 6,
+                Capabilities = new NodeCapability[]
+                {
+                    new ServerCapability(NodeCapabilityType.TcpServer, 25)
+                }
+            };
 
-			testProbe.Send(remoteNodeActor, payload);
+            testProbe.Send(remoteNodeActor, payload);
+            var verackMessage = connectionTestProbe.ExpectMsg<Tcp.Write>();
 
-			var verackMessage = connectionTestProbe.ExpectMsg<Tcp.Write>();
+            //Verack
+            verackMessage.Data.Count.Should().Be(3);
+        }
+    }
 
-			//Verack
-			verackMessage.Data.Count.Should().Be(3);
-		}
-	}
+    internal class TestProtocolFactory : IActorRefFactory
+    {
+        private IActorRef protocolRef;
 
-	internal class TestProtocolFactory : IActorRefFactory
-	{
-		private IActorRef protocolRef;
+        public TestProtocolFactory(IActorRef protocolRef)
+        {
+            this.protocolRef = protocolRef;
+        }
 
-		public TestProtocolFactory(IActorRef protocolRef)
-		{
-			this.protocolRef = protocolRef;
-		}
+        public IActorRef ActorOf(Props props, string name = null)
+        {
+            return protocolRef;
+        }
 
-		public IActorRef ActorOf(Props props, string name = null)
-		{
-			return protocolRef;
-		}
+        public ActorSelection ActorSelection(ActorPath actorPath)
+        {
+            throw new NotImplementedException();
+        }
 
-		public ActorSelection ActorSelection(ActorPath actorPath)
-		{
-			throw new NotImplementedException();
-		}
-
-		public ActorSelection ActorSelection(string actorPath)
-		{
-			throw new NotImplementedException();
-		}
-	}
+        public ActorSelection ActorSelection(string actorPath)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
