@@ -8,18 +8,18 @@ namespace Neo.UnitTests
 {
     public static class TestBlockchain
     {
-        private static NeoSystem TheNeoSystem;
-        private static Mock<Store> _Store;
+        private static NeoSystem theNeoSystem;
+        private static Mock<Store> store;
 
         public static Store GetStore()
         {
-            if (_Store == null) InitializeMockNeoSystem();
-            return _Store.Object;
+            if (store == null) InitializeMockNeoSystem();
+            return store.Object;
         }
 
         public static NeoSystem InitializeMockNeoSystem()
         {
-            if (TheNeoSystem == null)
+            if (theNeoSystem == null)
             {
                 var mockSnapshot = new Mock<Snapshot>();
                 mockSnapshot.SetupGet(p => p.Blocks).Returns(new TestDataCache<UInt256, TrimmedBlock>());
@@ -30,33 +30,33 @@ namespace Neo.UnitTests
                 mockSnapshot.SetupGet(p => p.BlockHashIndex).Returns(new TestMetaDataCache<HashIndexState>());
                 mockSnapshot.SetupGet(p => p.HeaderHashIndex).Returns(new TestMetaDataCache<HashIndexState>());
 
-                _Store = new Mock<Store>();
+                store = new Mock<Store>();
 
                 var defaultTx = TestUtils.CreateRandomHashTransaction();
-                _Store.Setup(p => p.GetBlocks()).Returns(new TestDataCache<UInt256, TrimmedBlock>());
-                _Store.Setup(p => p.GetTransactions()).Returns(new TestDataCache<UInt256, TransactionState>(
+                store.Setup(p => p.GetBlocks()).Returns(new TestDataCache<UInt256, TrimmedBlock>());
+                store.Setup(p => p.GetTransactions()).Returns(new TestDataCache<UInt256, TransactionState>(
                     new TransactionState
                     {
                         BlockIndex = 1,
                         Transaction = defaultTx
                     }));
 
-                _Store.Setup(p => p.GetContracts()).Returns(new TestDataCache<UInt160, ContractState>());
-                _Store.Setup(p => p.GetStorages()).Returns(new TestDataCache<StorageKey, StorageItem>());
-                _Store.Setup(p => p.GetHeaderHashList()).Returns(new TestDataCache<UInt32Wrapper, HeaderHashList>());
-                _Store.Setup(p => p.GetBlockHashIndex()).Returns(new TestMetaDataCache<HashIndexState>());
-                _Store.Setup(p => p.GetHeaderHashIndex()).Returns(new TestMetaDataCache<HashIndexState>());
-                _Store.Setup(p => p.GetSnapshot()).Returns(mockSnapshot.Object);
+                store.Setup(p => p.GetContracts()).Returns(new TestDataCache<UInt160, ContractState>());
+                store.Setup(p => p.GetStorages()).Returns(new TestDataCache<StorageKey, StorageItem>());
+                store.Setup(p => p.GetHeaderHashList()).Returns(new TestDataCache<UInt32Wrapper, HeaderHashList>());
+                store.Setup(p => p.GetBlockHashIndex()).Returns(new TestMetaDataCache<HashIndexState>());
+                store.Setup(p => p.GetHeaderHashIndex()).Returns(new TestMetaDataCache<HashIndexState>());
+                store.Setup(p => p.GetSnapshot()).Returns(mockSnapshot.Object);
 
                 Console.WriteLine("initialize NeoSystem");
-                TheNeoSystem = new NeoSystem(_Store.Object); // new Mock<NeoSystem>(mockStore.Object);
+                theNeoSystem = new NeoSystem(store.Object); // new Mock<NeoSystem>(mockStore.Object);
 
                 // Ensure that blockchain is loaded
 
                 var blockchain = Blockchain.Singleton;
             }
 
-            return TheNeoSystem;
+            return theNeoSystem;
         }
     }
 }

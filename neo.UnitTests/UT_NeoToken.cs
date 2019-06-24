@@ -20,13 +20,13 @@ namespace Neo.UnitTests
     [TestClass]
     public class UT_NeoToken
     {
-        private Store Store;
+        private Store store;
 
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
-            Store = TestBlockchain.GetStore();
+            store = TestBlockchain.GetStore();
         }
 
         [TestMethod]
@@ -44,7 +44,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Check_Vote()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = store.GetSnapshot().Clone();
             snapshot.PersistingBlock = new Block() { Index = 1000 };
 
             byte[] from = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
@@ -84,7 +84,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Check_UnclaimedGas()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = store.GetSnapshot().Clone();
             snapshot.PersistingBlock = new Block() { Index = 1000 };
 
             byte[] from = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
@@ -102,7 +102,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Check_RegisterValidator()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = store.GetSnapshot().Clone();
 
             var ret = Check_RegisterValidator(snapshot, new byte[0]);
             ret.State.Should().BeFalse();
@@ -133,7 +133,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Check_Transfer()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = store.GetSnapshot().Clone();
             snapshot.PersistingBlock = new Block() { Index = 1000 };
 
             byte[] from = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
@@ -186,7 +186,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Check_BalanceOf()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = store.GetSnapshot().Clone();
             byte[] account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1,
                 Blockchain.StandbyValidators).ToScriptHash().ToArray();
 
@@ -200,7 +200,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Check_Initialize()
         {
-            var snapshot = Store.GetSnapshot().Clone();
+            var snapshot = store.GetSnapshot().Clone();
 
             // StandbyValidators
 
@@ -225,7 +225,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Check_BadScript()
         {
-            var engine = new ApplicationEngine(TriggerType.Application, null, Store.GetSnapshot(), 0);
+            var engine = new ApplicationEngine(TriggerType.Application, null, store.GetSnapshot(), 0);
 
             var script = new ScriptBuilder();
             script.Emit(OpCode.NOP);
