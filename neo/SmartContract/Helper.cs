@@ -262,19 +262,10 @@ namespace Neo.SmartContract
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
-                byte[] verification = verifiable.Witnesses[i].VerificationScript;
-                if (verification.Length == 0)
-                {
-                    verification = snapshot.Contracts.TryGet(hashes[i])?.Script;
-                    if (verification is null) return false;
-                }
-                else
-                {
-                    if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
-                }
+                if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
                 using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, gas))
                 {
-                    engine.LoadScript(verification);
+                    engine.LoadScript(verifiable.Witnesses[i].VerificationScript);
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript);
                     if (engine.Execute().HasFlag(VMState.FAULT)) return false;
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;

@@ -23,47 +23,45 @@ namespace Neo.SmartContract
         public const int MaxStorageKeySize = 64;
         public const int MaxStorageValueSize = ushort.MaxValue;
 
-        private static readonly Dictionary<uint, Func<ApplicationEngine, bool>> methods = new Dictionary<uint, Func<ApplicationEngine, bool>>();
-        private static readonly Dictionary<uint, long> prices = new Dictionary<uint, long>();
-        private static readonly Dictionary<uint, Func<RandomAccessStack<StackItem>, long>> priceCalculators = new Dictionary<uint, Func<RandomAccessStack<StackItem>, long>>();
+        private static readonly Dictionary<uint, InteropDescriptor> methods = new Dictionary<uint, InteropDescriptor>();
 
-        public static readonly uint System_ExecutionEngine_GetScriptContainer = Register("System.ExecutionEngine.GetScriptContainer", ExecutionEngine_GetScriptContainer, 0_00000250);
-        public static readonly uint System_ExecutionEngine_GetExecutingScriptHash = Register("System.ExecutionEngine.GetExecutingScriptHash", ExecutionEngine_GetExecutingScriptHash, 0_00000400);
-        public static readonly uint System_ExecutionEngine_GetCallingScriptHash = Register("System.ExecutionEngine.GetCallingScriptHash", ExecutionEngine_GetCallingScriptHash, 0_00000400);
-        public static readonly uint System_ExecutionEngine_GetEntryScriptHash = Register("System.ExecutionEngine.GetEntryScriptHash", ExecutionEngine_GetEntryScriptHash, 0_00000400);
-        public static readonly uint System_Runtime_Platform = Register("System.Runtime.Platform", Runtime_Platform, 0_00000250);
-        public static readonly uint System_Runtime_GetTrigger = Register("System.Runtime.GetTrigger", Runtime_GetTrigger, 0_00000250);
-        public static readonly uint System_Runtime_CheckWitness = Register("System.Runtime.CheckWitness", Runtime_CheckWitness, 0_00030000);
-        public static readonly uint System_Runtime_Notify = Register("System.Runtime.Notify", Runtime_Notify, 0_00000250);
-        public static readonly uint System_Runtime_Log = Register("System.Runtime.Log", Runtime_Log, 0_00300000);
-        public static readonly uint System_Runtime_GetTime = Register("System.Runtime.GetTime", Runtime_GetTime, 0_00000250);
-        public static readonly uint System_Runtime_Serialize = Register("System.Runtime.Serialize", Runtime_Serialize, 0_00100000);
-        public static readonly uint System_Runtime_Deserialize = Register("System.Runtime.Deserialize", Runtime_Deserialize, 0_00500000);
-        public static readonly uint System_Runtime_GetInvocationCounter = Register("System.Runtime.GetInvocationCounter", Runtime_GetInvocationCounter, 0_00000400);
-        public static readonly uint System_Crypto_Verify = Register("System.Crypto.Verify", Crypto_Verify, 0_01000000);
-        public static readonly uint System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", Blockchain_GetHeight, 0_00000400);
-        public static readonly uint System_Blockchain_GetHeader = Register("System.Blockchain.GetHeader", Blockchain_GetHeader, 0_00007000);
-        public static readonly uint System_Blockchain_GetBlock = Register("System.Blockchain.GetBlock", Blockchain_GetBlock, 0_02500000);
-        public static readonly uint System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", Blockchain_GetTransaction, 0_01000000);
-        public static readonly uint System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight, 0_01000000);
-        public static readonly uint System_Blockchain_GetContract = Register("System.Blockchain.GetContract", Blockchain_GetContract, 0_01000000);
-        public static readonly uint System_Header_GetIndex = Register("System.Header.GetIndex", Header_GetIndex, 0_00000400);
-        public static readonly uint System_Header_GetHash = Register("System.Header.GetHash", Header_GetHash, 0_00000400);
-        public static readonly uint System_Header_GetPrevHash = Register("System.Header.GetPrevHash", Header_GetPrevHash, 0_00000400);
-        public static readonly uint System_Header_GetTimestamp = Register("System.Header.GetTimestamp", Header_GetTimestamp, 0_00000400);
-        public static readonly uint System_Block_GetTransactionCount = Register("System.Block.GetTransactionCount", Block_GetTransactionCount, 0_00000400);
-        public static readonly uint System_Block_GetTransactions = Register("System.Block.GetTransactions", Block_GetTransactions, 0_00010000);
-        public static readonly uint System_Block_GetTransaction = Register("System.Block.GetTransaction", Block_GetTransaction, 0_00000400);
-        public static readonly uint System_Transaction_GetHash = Register("System.Transaction.GetHash", Transaction_GetHash, 0_00000400);
-        public static readonly uint System_Contract_Call = Register("System.Contract.Call", Contract_Call, 0_01000000);
-        public static readonly uint System_Contract_Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000);
-        public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400);
-        public static readonly uint System_Storage_GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 0_00000400);
-        public static readonly uint System_Storage_Get = Register("System.Storage.Get", Storage_Get, 0_01000000);
-        public static readonly uint System_Storage_Put = Register("System.Storage.Put", Storage_Put, GetStoragePrice);
-        public static readonly uint System_Storage_PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice);
-        public static readonly uint System_Storage_Delete = Register("System.Storage.Delete", Storage_Delete, 0_01000000);
-        public static readonly uint System_StorageContext_AsReadOnly = Register("System.StorageContext.AsReadOnly", StorageContext_AsReadOnly, 0_00000400);
+        public static readonly uint System_ExecutionEngine_GetScriptContainer = Register("System.ExecutionEngine.GetScriptContainer", ExecutionEngine_GetScriptContainer, 0_00000250, TriggerType.All);
+        public static readonly uint System_ExecutionEngine_GetExecutingScriptHash = Register("System.ExecutionEngine.GetExecutingScriptHash", ExecutionEngine_GetExecutingScriptHash, 0_00000400, TriggerType.All);
+        public static readonly uint System_ExecutionEngine_GetCallingScriptHash = Register("System.ExecutionEngine.GetCallingScriptHash", ExecutionEngine_GetCallingScriptHash, 0_00000400, TriggerType.All);
+        public static readonly uint System_ExecutionEngine_GetEntryScriptHash = Register("System.ExecutionEngine.GetEntryScriptHash", ExecutionEngine_GetEntryScriptHash, 0_00000400, TriggerType.All);
+        public static readonly uint System_Runtime_Platform = Register("System.Runtime.Platform", Runtime_Platform, 0_00000250, TriggerType.All);
+        public static readonly uint System_Runtime_GetTrigger = Register("System.Runtime.GetTrigger", Runtime_GetTrigger, 0_00000250, TriggerType.All);
+        public static readonly uint System_Runtime_CheckWitness = Register("System.Runtime.CheckWitness", Runtime_CheckWitness, 0_00030000, TriggerType.All);
+        public static readonly uint System_Runtime_Notify = Register("System.Runtime.Notify", Runtime_Notify, 0_00000250, TriggerType.All);
+        public static readonly uint System_Runtime_Log = Register("System.Runtime.Log", Runtime_Log, 0_00300000, TriggerType.All);
+        public static readonly uint System_Runtime_GetTime = Register("System.Runtime.GetTime", Runtime_GetTime, 0_00000250, TriggerType.Application);
+        public static readonly uint System_Runtime_Serialize = Register("System.Runtime.Serialize", Runtime_Serialize, 0_00100000, TriggerType.All);
+        public static readonly uint System_Runtime_Deserialize = Register("System.Runtime.Deserialize", Runtime_Deserialize, 0_00500000, TriggerType.All);
+        public static readonly uint System_Runtime_GetInvocationCounter = Register("System.Runtime.GetInvocationCounter", Runtime_GetInvocationCounter, 0_00000400, TriggerType.All);
+        public static readonly uint System_Crypto_Verify = Register("System.Crypto.Verify", Crypto_Verify, 0_01000000, TriggerType.All);
+        public static readonly uint System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", Blockchain_GetHeight, 0_00000400, TriggerType.Application);
+        public static readonly uint System_Blockchain_GetHeader = Register("System.Blockchain.GetHeader", Blockchain_GetHeader, 0_00007000, TriggerType.Application);
+        public static readonly uint System_Blockchain_GetBlock = Register("System.Blockchain.GetBlock", Blockchain_GetBlock, 0_02500000, TriggerType.Application);
+        public static readonly uint System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", Blockchain_GetTransaction, 0_01000000, TriggerType.Application);
+        public static readonly uint System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight, 0_01000000, TriggerType.Application);
+        public static readonly uint System_Blockchain_GetContract = Register("System.Blockchain.GetContract", Blockchain_GetContract, 0_01000000, TriggerType.Application);
+        public static readonly uint System_Header_GetIndex = Register("System.Header.GetIndex", Header_GetIndex, 0_00000400, TriggerType.Application);
+        public static readonly uint System_Header_GetHash = Register("System.Header.GetHash", Header_GetHash, 0_00000400, TriggerType.Application);
+        public static readonly uint System_Header_GetPrevHash = Register("System.Header.GetPrevHash", Header_GetPrevHash, 0_00000400, TriggerType.Application);
+        public static readonly uint System_Header_GetTimestamp = Register("System.Header.GetTimestamp", Header_GetTimestamp, 0_00000400, TriggerType.Application);
+        public static readonly uint System_Block_GetTransactionCount = Register("System.Block.GetTransactionCount", Block_GetTransactionCount, 0_00000400, TriggerType.Application);
+        public static readonly uint System_Block_GetTransactions = Register("System.Block.GetTransactions", Block_GetTransactions, 0_00010000, TriggerType.Application);
+        public static readonly uint System_Block_GetTransaction = Register("System.Block.GetTransaction", Block_GetTransaction, 0_00000400, TriggerType.Application);
+        public static readonly uint System_Transaction_GetHash = Register("System.Transaction.GetHash", Transaction_GetHash, 0_00000400, TriggerType.All);
+        public static readonly uint System_Contract_Call = Register("System.Contract.Call", Contract_Call, 0_01000000, TriggerType.Application);
+        public static readonly uint System_Contract_Destroy = Register("System.Contract.Destroy", Contract_Destroy, 0_01000000, TriggerType.Application);
+        public static readonly uint System_Storage_GetContext = Register("System.Storage.GetContext", Storage_GetContext, 0_00000400, TriggerType.Application);
+        public static readonly uint System_Storage_GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 0_00000400, TriggerType.Application);
+        public static readonly uint System_Storage_Get = Register("System.Storage.Get", Storage_Get, 0_01000000, TriggerType.Application);
+        public static readonly uint System_Storage_Put = Register("System.Storage.Put", Storage_Put, GetStoragePrice, TriggerType.Application);
+        public static readonly uint System_Storage_PutEx = Register("System.Storage.PutEx", Storage_PutEx, GetStoragePrice, TriggerType.Application);
+        public static readonly uint System_Storage_Delete = Register("System.Storage.Delete", Storage_Delete, 0_01000000, TriggerType.Application);
+        public static readonly uint System_StorageContext_AsReadOnly = Register("System.StorageContext.AsReadOnly", StorageContext_AsReadOnly, 0_00000400, TriggerType.Application);
 
         private static bool CheckStorageContext(ApplicationEngine engine, StorageContext context)
         {
@@ -75,10 +73,7 @@ namespace Neo.SmartContract
 
         public static long GetPrice(uint hash, RandomAccessStack<StackItem> stack)
         {
-            if (prices.TryGetValue(hash, out long price))
-                return price;
-            else
-                return priceCalculators[hash](stack);
+            return methods[hash].GetPrice(stack);
         }
 
         private static long GetStoragePrice(RandomAccessStack<StackItem> stack)
@@ -88,25 +83,25 @@ namespace Neo.SmartContract
 
         internal static bool Invoke(ApplicationEngine engine, uint method)
         {
-            if (!methods.TryGetValue(method, out Func<ApplicationEngine, bool> func))
+            if (!methods.TryGetValue(method, out InteropDescriptor descriptor))
                 return false;
-            return func(engine);
+            if (!descriptor.AllowedTriggers.HasFlag(engine.Trigger))
+                return false;
+            return descriptor.Handler(engine);
         }
 
-        private static uint Register(string method, Func<ApplicationEngine, bool> handler, long price)
+        private static uint Register(string method, Func<ApplicationEngine, bool> handler, long price, TriggerType allowedTriggers)
         {
-            uint hash = method.ToInteropMethodHash();
-            methods.Add(hash, handler);
-            prices.Add(hash, price);
-            return hash;
+            InteropDescriptor descriptor = new InteropDescriptor(method, handler, price, allowedTriggers);
+            methods.Add(descriptor.Hash, descriptor);
+            return descriptor.Hash;
         }
 
-        private static uint Register(string method, Func<ApplicationEngine, bool> handler, Func<RandomAccessStack<StackItem>, long> priceCalculator)
+        private static uint Register(string method, Func<ApplicationEngine, bool> handler, Func<RandomAccessStack<StackItem>, long> priceCalculator, TriggerType allowedTriggers)
         {
-            uint hash = method.ToInteropMethodHash();
-            methods.Add(hash, handler);
-            priceCalculators.Add(hash, priceCalculator);
-            return hash;
+            InteropDescriptor descriptor = new InteropDescriptor(method, handler, priceCalculator, allowedTriggers);
+            methods.Add(descriptor.Hash, descriptor);
+            return descriptor.Hash;
         }
 
         private static bool ExecutionEngine_GetScriptContainer(ApplicationEngine engine)
@@ -185,15 +180,7 @@ namespace Neo.SmartContract
 
         private static bool Runtime_GetTime(ApplicationEngine engine)
         {
-            if (engine.Snapshot.PersistingBlock == null)
-            {
-                Header header = engine.Snapshot.GetHeader(engine.Snapshot.CurrentBlockHash);
-                engine.CurrentContext.EvaluationStack.Push(header.Timestamp + Blockchain.SecondsPerBlock);
-            }
-            else
-            {
-                engine.CurrentContext.EvaluationStack.Push(engine.Snapshot.PersistingBlock.Timestamp);
-            }
+            engine.CurrentContext.EvaluationStack.Push(engine.Snapshot.PersistingBlock.Timestamp);
             return true;
         }
 
@@ -529,7 +516,6 @@ namespace Neo.SmartContract
 
         private static bool Contract_Destroy(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.Application) return false;
             UInt160 hash = engine.CurrentScriptHash;
             ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
             if (contract == null) return true;
@@ -542,7 +528,6 @@ namespace Neo.SmartContract
 
         private static bool PutEx(ApplicationEngine engine, StorageContext context, byte[] key, byte[] value, StorageFlags flags)
         {
-            if (engine.Trigger != TriggerType.Application) return false;
             if (key.Length > MaxStorageKeySize) return false;
             if (value.Length > MaxStorageValueSize) return false;
             if (context.IsReadOnly) return false;
@@ -593,7 +578,6 @@ namespace Neo.SmartContract
 
         private static bool Storage_Delete(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.Application) return false;
             if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
             {
                 StorageContext context = _interface.GetInterface<StorageContext>();
