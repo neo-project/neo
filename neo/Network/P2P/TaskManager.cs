@@ -118,10 +118,22 @@ namespace Neo.Network.P2P
             RequestTasks(session);
         }
 
+        private static void RemoveFirstKnownHashByValue<TKey, TValue>(Dictionary<TKey, TValue> dictionary, TValue someValue)
+        {
+            foreach (var pair in dictionary)
+            {
+                if (pair.Value.Equals(someValue))
+                {
+                    dictionary.Remove(pair.Key);
+                    break;
+                }
+            }
+        }
+
         private void OnRestartTasks(InvPayload payload)
         {
-            // TODO remove hashes by value
-            knownHashes.ExceptWith(payload.Hashes);
+            foreach (var hashToTryToRemove in payload.Hashes)
+                RemoveFirstKnownHashByValue(knownHashes, hashToTryToRemove);
 
             foreach (UInt256 hash in payload.Hashes)
                 globalTasks.Remove(hash);
