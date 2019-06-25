@@ -92,7 +92,7 @@ namespace Neo.UnitTests
                     new Witness
                     {
                         InvocationScript = new byte[0],
-                        VerificationScript = new byte[1]
+                        VerificationScript = new byte[0]
                     }
                 }
             };
