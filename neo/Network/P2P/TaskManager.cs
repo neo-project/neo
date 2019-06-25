@@ -143,13 +143,13 @@ namespace Neo.Network.P2P
 
         private void OnTaskCompleted(UInt256 hash)
         {
-            if (knownHashes.Count >= MaxConncurrentTasks)
+            if (knownHashes.Count >= MaxCachedHashes)
             {
                 knownHashes.Remove(fifoKey);
                 knownHashes[fifoKey] = hash;
                 fifoKey = fifoKey == MaxConncurrentTasks ? 0 : fifoKey + 1;
-            }
-            knownHashes[knownHashes.Count] = hash;
+            }else
+                knownHashes[knownHashes.Count] = hash;
 
             globalTasks.Remove(hash);
             foreach (TaskSession ms in sessions.Values)
