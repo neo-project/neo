@@ -26,8 +26,11 @@ namespace Neo.Network.P2P
         private const int MaxConncurrentTasks = 3;
 
         private readonly Dictionary<int, UInt256> knownHashes = new Dictionary<int, UInt256>();
-        // todo - calibrate this values
-        private const int MaxCachedHashes = 1024;
+        /// <summary>
+        /// Max GetBlocks and Headers are limmited to 500 each
+        /// Blockchain.Singleton.MemPool.Capacity * 2 was the same value used in ProtocolHandler
+        /// </summary>
+        private int MaxCachedHashes = Blockchain.Singleton.MemPool.Capacity * 2;
         private int fifoKey = 0;
 
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
@@ -121,20 +124,17 @@ namespace Neo.Network.P2P
         private static void RemoveFirstKnownHashByValue<TKey, TValue>(Dictionary<TKey, TValue> dictionary, TValue someValue)
         {
             foreach (var pair in dictionary)
-            {
                 if (pair.Value.Equals(someValue))
                 {
                     dictionary.Remove(pair.Key);
                     break;
                 }
-            }
         }
 
         private void OnRestartTasks(InvPayload payload)
         {
             foreach (var hashToTryToRemove in payload.Hashes)
                 RemoveFirstKnownHashByValue(knownHashes, hashToTryToRemove);
-
             foreach (UInt256 hash in payload.Hashes)
                 globalTasks.Remove(hash);
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
@@ -150,7 +150,6 @@ namespace Neo.Network.P2P
                 fifoKey = fifoKey == MaxConncurrentTasks ? 0 : fifoKey + 1;
             }
             knownHashes[knownHashes.Count] = hash;
-
 
             globalTasks.Remove(hash);
             foreach (TaskSession ms in sessions.Values)
