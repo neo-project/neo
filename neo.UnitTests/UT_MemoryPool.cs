@@ -48,6 +48,7 @@ namespace Neo.UnitTests
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
+            mock.Setup(p => p.Reverify(It.IsAny<Snapshot>(), It.IsAny<IEnumerable<Transaction>>())).Returns(true);
             mock.Setup(p => p.Verify(It.IsAny<Snapshot>(), It.IsAny<IEnumerable<Transaction>>())).Returns(true);
             mock.Object.Script = randomBytes;
             mock.Object.Sender = UInt160.Zero;
