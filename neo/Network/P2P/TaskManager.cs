@@ -24,7 +24,12 @@ namespace Neo.Network.P2P
 
         private readonly NeoSystem system;
         private const int MaxConncurrentTasks = 3;
-        private readonly HashSet<UInt256> knownHashes = new HashSet<UInt256>();
+
+        private readonly Dictionary<int, UInt256> knownHashes = new Dictionary<int, UInt256>();
+        // todo - calibrate this values
+        private const int MaxCachedHashes = 1024;
+        private int fifoKey = 0;
+
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
@@ -56,7 +61,7 @@ namespace Neo.Network.P2P
                 return;
             }
             HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
-            hashes.ExceptWith(knownHashes);
+            hashes.ExceptWith(knownHashes.Values);
             if (payload.Type == InventoryType.Block)
                 session.AvailableTasks.UnionWith(hashes.Where(p => globalTasks.ContainsKey(p)));
 
@@ -115,7 +120,9 @@ namespace Neo.Network.P2P
 
         private void OnRestartTasks(InvPayload payload)
         {
+            // TODO remove hashes by value
             knownHashes.ExceptWith(payload.Hashes);
+
             foreach (UInt256 hash in payload.Hashes)
                 globalTasks.Remove(hash);
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
@@ -124,7 +131,15 @@ namespace Neo.Network.P2P
 
         private void OnTaskCompleted(UInt256 hash)
         {
-            knownHashes.Add(hash);
+            if (knownHashes.Count >= MaxConncurrentTasks)
+            {
+                knownHashes.Remove(fifoKey);
+                knownHashes[fifoKey] = hash;
+                fifoKey = fifoKey == MaxConncurrentTasks ? 0 : fifoKey + 1;
+            }
+            knownHashes[knownHashes.Count] = hash;
+
+
             globalTasks.Remove(hash);
             foreach (TaskSession ms in sessions.Values)
                 ms.AvailableTasks.Remove(hash);
@@ -201,7 +216,7 @@ namespace Neo.Network.P2P
             if (session.HasTask) return;
             if (session.AvailableTasks.Count > 0)
             {
-                session.AvailableTasks.ExceptWith(knownHashes);
+                session.AvailableTasks.ExceptWith(knownHashes.Values);
                 session.AvailableTasks.RemoveWhere(p => Blockchain.Singleton.ContainsBlock(p));
                 HashSet<UInt256> hashes = new HashSet<UInt256>(session.AvailableTasks);
                 if (hashes.Count > 0)
