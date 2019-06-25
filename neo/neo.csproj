@@ -37,4 +37,13 @@
     <PackageReference Include="Replicon.Cryptography.SCrypt" Version="1.1.6.13" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" />
+    <AdditionalFiles Include="stylecop.json" Link="stylecop.json" />
+  </ItemGroup>
+
+  <PropertyGroup>
+     <CodeAnalysisRuleSet>$(ProjectDir)StyleCop.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
 </Project>
