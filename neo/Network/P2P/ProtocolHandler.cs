@@ -34,6 +34,12 @@ namespace Neo.Network.P2P
             this.sentHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
         }
 
+        public void FlushHashes()
+        {
+            knownHashes.Clear();
+            sentHashes.Clear();
+        }
+
         protected override void OnReceive(object message)
         {
             if (!(message is Message msg)) return;

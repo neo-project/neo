@@ -19,6 +19,11 @@ namespace Neo.IO.Caching
             this.dictionary = new OrderedDictionary(maxCapacity);
         }
 
+        public void Clear()
+        {
+            dictionary.Clear();
+        }
+
         public bool Add(T item)
         {
             if (dictionary.Contains(item)) return false;
