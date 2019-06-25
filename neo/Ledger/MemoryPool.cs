@@ -200,6 +200,21 @@ namespace Neo.Ledger
             }
         }
 
+        /// <summary>
+        /// Clear mem pool
+        /// </summary>
+        public void Clear()
+        {
+            _txRwLock.EnterReadLock();
+
+            _sortedTransactions.Clear();
+            _unsortedTransactions.Clear();
+            _unverifiedSortedTransactions.Clear();
+            _unverifiedTransactions.Clear();
+
+            _txRwLock.ExitReadLock();
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private PoolItem GetLowestFeeTransaction(SortedSet<PoolItem> verifiedTxSorted,
             SortedSet<PoolItem> unverifiedTxSorted, out SortedSet<PoolItem> sortedPool)
