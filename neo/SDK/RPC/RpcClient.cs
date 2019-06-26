@@ -1,5 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using Neo.IO.Json;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
+using Neo.Network.RPC;
 using Neo.SDK.RPC;
 using Neo.SDK.RPC.Model;
 
@@ -7,171 +12,170 @@ namespace Neo.SDK
 {
     public class RpcClient : IRpcClient
     {
-        private readonly IRpcService rpcHelper;
+        private readonly HttpService rpcHelper;
 
-        public RpcClient(IRpcService rpc)
+        public RpcClient(HttpService rpc)
         {
             rpcHelper = rpc;
         }
 
-        private T RpcSend<T>(string method, params object[] paraArgs)
+        private JObject RpcSend(string method, params JObject[] paraArgs)
         {
             var request = new RPCRequest
             {
                 Id = 1,
                 Jsonrpc = "2.0",
                 Method = method,
-                Params = paraArgs
+                Params = paraArgs.Select(p => p).ToArray()
             };
-            return rpcHelper.Send<T>(request);
+            return rpcHelper.Send(request);
         }
 
         public string GetBestBlockHash()
         {
-            return RpcSend<string>("getbestblockhash");
+            return RpcSend("getbestblockhash").AsString();
         }
 
         public string GetBlockHex(string hashOrIndex)
         {
             if (int.TryParse(hashOrIndex, out int index))
             {
-                return RpcSend<string>("getblock", index);
+                return RpcSend("getblock", index).AsString();
             }
-            return RpcSend<string>("getblock", hashOrIndex);
+            return RpcSend("getblock", hashOrIndex).AsString();
         }
 
-        public GetBlock GetBlock(string hashOrIndex)
+        public SDK_Block GetBlock(string hashOrIndex)
         {
             if (int.TryParse(hashOrIndex, out int index))
             {
-                return RpcSend<GetBlock>("getblock", index, true);
+                return SDK_Block.FromJson(RpcSend("getblock", index, true));
             }
-            return RpcSend<GetBlock>("getblock", hashOrIndex, true);
+            return SDK_Block.FromJson(RpcSend("getblock", hashOrIndex, true));
         }
 
         public int GetBlockCount()
         {
-            return RpcSend<int>("getblockcount");
+            return (int)RpcSend("getblockcount").AsNumber();
         }
 
         public string GetBlockHash(int index)
         {
-            return RpcSend<string>("getblockhash", index);
+            return RpcSend("getblockhash", index).AsString();
         }
 
         public string GetBlockHeaderHex(string hashOrIndex)
         {
             if (int.TryParse(hashOrIndex, out int index))
             {
-                return RpcSend<string>("getblockheader", index);
+                return RpcSend("getblockheader", index).AsString();
             }
-            return RpcSend<string>("getblockheader", hashOrIndex);
+            return RpcSend("getblockheader", hashOrIndex).AsString();
         }
 
-        public GetBlockHeader GetBlockHeader(string hashOrIndex)
+        public SDK_BlockHeader GetBlockHeader(string hashOrIndex)
         {
             if (int.TryParse(hashOrIndex, out int index))
             {
-                return RpcSend<GetBlockHeader>("getblockheader", index, true);
+                return SDK_BlockHeader.FromJson(RpcSend("getblockheader", index, true));
             }
-            return RpcSend<GetBlockHeader>("getblockheader", hashOrIndex, true);
+            return SDK_BlockHeader.FromJson(RpcSend("getblockheader", hashOrIndex, true));
         }
 
         public string GetBlockSysFee(int height)
         {
-            return RpcSend<string>("getblocksysfee", height);
+            return RpcSend("getblocksysfee", height).AsString();
         }
 
         public int GetConnectionCount()
         {
-            return RpcSend<int>("getconnectioncount");
+            return (int)RpcSend("getconnectioncount").AsNumber();
         }
 
-        public GetContractState GetContractState(string hash)
+        public ContractState GetContractState(string hash)
         {
-            return RpcSend<GetContractState>("getcontractstate", hash);
+            return ContractState.FromJson(RpcSend("getcontractstate", hash));
         }
 
-        public GetPeers GetPeers()
+        public SDK_GetPeersResult GetPeers()
         {
-            return RpcSend<GetPeers>("getpeers");
+            return SDK_GetPeersResult.FromJson(RpcSend("getpeers"));
         }
 
         public string[] GetRawMempool()
         {
-            return RpcSend<string[]>("getrawmempool");
+            return ((JArray)RpcSend("getrawmempool")).Select(p => p.AsString()).ToArray();
         }
 
-        public GetRawMempool GetRawMempoolBoth()
+        public SDK_RawMemPool GetRawMempoolBoth()
         {
-            return RpcSend<GetRawMempool>("getrawmempool");
+            return SDK_RawMemPool.FromJson(RpcSend("getrawmempool"));
         }
 
         public string GetRawTransactionHex(string txid)
         {
-            return RpcSend<string>("getrawtransaction", txid);
+            return RpcSend("getrawtransaction", txid).AsString();
         }
 
-        public TxJson GetRawTransaction(string txid)
+        public Transaction GetRawTransaction(string txid)
         {
-            return RpcSend<TxJson>("getrawtransaction", txid);
+            // verbose = true;
+            return Transaction.FromJson(RpcSend("getrawtransaction", txid, true));
         }
 
         public string GetStorage(string script_hash, string key)
         {
-            return RpcSend<string>("getstorage", script_hash, key);
+            return RpcSend("getstorage", script_hash, key).AsString();
         }
 
         public uint GetTransactionHeight(string txid)
         {
-            return RpcSend<uint>("gettransactionheight", txid);
+            return uint.Parse(RpcSend("gettransactionheight", txid).AsString());
         }
 
-        public Validator[] GetValidators()
+        public SDK_Validator[] GetValidators()
         {
-            return RpcSend<Validator[]>("getvalidators");
+            return ((JArray)RpcSend("getvalidators")).Select(p => SDK_Validator.FromJson(p)).ToArray();
         }
 
-        public GetVersion GetVersion()
+        public SDK_Version GetVersion()
         {
-            return RpcSend<GetVersion>("getversion");
+            return SDK_Version.FromJson(RpcSend("getversion"));
         }
 
-        public InvokeRet InvokeFunction(string address, string function, StackJson[] stacks)
+        public SDK_InvokeScriptResult InvokeFunction(string address, string function, SDK_StackJson[] stacks)
         {
-            return RpcSend<InvokeRet>("invokefunction", address, function, stacks);
+            return SDK_InvokeScriptResult.FromJson(RpcSend("invokefunction", address, function, stacks.Select(p => p.ToJson()).ToArray()));
         }
 
-        public InvokeRet InvokeScript(string script)
+        public SDK_InvokeScriptResult InvokeScript(string script)
         {
-            return RpcSend<InvokeRet>("invokescript", script);
+            return SDK_InvokeScriptResult.FromJson(RpcSend("invokescript", script));
         }
 
-        public List<Plugin> ListPlugins()
+        public SDK_Plugin[] ListPlugins()
         {
-            return RpcSend<List<Plugin>>("listplugins");
+            return ((JArray)RpcSend("listplugins")).Select(p=>SDK_Plugin.FromJson(p)).ToArray();
         }
 
         public bool SendRawTransaction(string rawTransaction)
         {
-            return RpcSend<bool>("sendrawtransaction", rawTransaction);
+            return RpcSend("sendrawtransaction", rawTransaction).AsBoolean();
         }
 
         public bool SubmitBlock(string block)
         {
-            return RpcSend<bool>("submitblock", block);
+            return RpcSend("submitblock", block).AsBoolean();
         }
 
-        public ValidateAddress ValidateAddress(string address)
+        public SDK_ValidateAddressResult ValidateAddress(string address)
         {
-            return RpcSend<ValidateAddress>("validateaddress");
+            return SDK_ValidateAddressResult.FromJson(RpcSend("validateaddress", address));
         }
 
-        // wait for plugin for neo3.
-        public GetNep5Balances GetNep5Balances(string address)
+        public SDK_Nep5Balances GetNep5Balances(string address)
         {
-            throw new NotImplementedException();
-            //turn RpcSend<GetNep5Balances>("getnep5balances", address);
+            return SDK_Nep5Balances.FromJson(RpcSend("getnep5balances", address));
         }
 
     }
