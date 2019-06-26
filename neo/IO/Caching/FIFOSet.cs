@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 
 namespace Neo.IO.Caching
 {
-    internal class FIFOSet<T> where T : IEquatable<T>
+    internal class FIFOSet<T> : IEnumerable<T> where T : IEquatable<T>
     {
         private readonly int maxCapacity;
         private readonly int removeCount;
@@ -37,5 +40,21 @@ namespace Neo.IO.Caching
             dictionary.Add(item, null);
             return true;
         }
+
+        public void ExceptWith(IEnumerable<UInt256> hashes)
+        {
+            foreach (var hash in hashes)
+            {
+                dictionary.Remove(hash);
+            }
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            var entries = dictionary.Values.Cast<T>().ToArray();
+            foreach (var entry in entries) yield return entry;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
