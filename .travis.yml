@@ -23,8 +23,10 @@ after_success:
   # After all tests OK, Send CodeDov report
   - echo "Test Success - Branch($TRAVIS_BRANCH) Pull Request($TRAVIS_PULL_REQUEST) Tag($TRAVIS_TAG)"
   - bash <(curl -s https://codecov.io/bash) -v
-  - ls -lah
-  - cd ..
-  - dotnet test --verbosity n neo.Benchmarks/neo.Benchmarks.csproj
-  - ls -lah
-  - (cd /opt/neo/neo.Benchmarks && dotnet run -c Release -- --job short --runtimes clr core)
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
+      ls -lah
+      cd ..
+      dotnet test --verbosity n neo.Benchmarks/neo.Benchmarks.csproj
+      ls -lah
+      (cd /opt/neo/neo.Benchmarks && dotnet run -c Release -- --job short --runtimes clr core)
+    fi
