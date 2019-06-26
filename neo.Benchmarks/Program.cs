@@ -13,7 +13,7 @@ namespace Neo.Benchmarks
                 typeof(BenchmarkUInt256)
             })
             {
-                var summary = BenchmarkRunner.Run(type); 
+                var summary = BenchmarkRunner.Run(type, new AllowNonOptimized()); 
 
                 Console.WriteLine(type.Name);
                 Console.ReadLine();

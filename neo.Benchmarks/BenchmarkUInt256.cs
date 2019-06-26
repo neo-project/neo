@@ -7,10 +7,11 @@ using BenchmarkDotNet.Attributes;
 
 namespace Neo.Benchmarks
 {
-    [TestClass]
+    //[TestClass, MinWarmupCount(3), MaxWarmupCount(5)]
+    [TestClass, SimpleJob(launchCount: 3, warmupCount: 5, targetCount: 5)]
     public class BenchmarkUInt256 : BenchmarkBase
     {
-        private const int MAX_TESTS = 10;
+        private const int MAX_TESTS = 4;
 
         byte[][] base_32_1;
         byte[][] base_32_2;
