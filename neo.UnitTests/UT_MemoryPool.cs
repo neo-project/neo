@@ -74,9 +74,10 @@ namespace Neo.UnitTests
             for (int i = 0; i < count; i++)
             {
                 var txToAdd = CreateTransaction();
-                Console.WriteLine($"created tx: {txToAdd.Hash}");
                 _unit.TryAdd(txToAdd.Hash, txToAdd);
             }
+
+            Console.WriteLine($"created {count} tx");
         }
 
 
