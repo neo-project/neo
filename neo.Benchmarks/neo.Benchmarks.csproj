@@ -6,12 +6,17 @@
     <AssemblyName>Neo.Benchmarks</AssemblyName>
     <RootNamespace>Neo.Benchmarks</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
 
   <ItemGroup>
     <None Update="protocol.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.11.1" />
   </ItemGroup>
 
   <ItemGroup>

@@ -3,10 +3,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Diagnostics;
 
+using BenchmarkDotNet.Attributes;
+
 namespace Neo.Benchmarks
 {
     [TestClass]
-    public class UT_UIntBenchmarks
+    public class BenchmarkUInt : BenchmarkBase
     {
         private const int MAX_TESTS = 1000;
 
@@ -19,6 +21,14 @@ namespace Neo.Benchmarks
 
         [TestInitialize]
         public void TestSetup()
+        {
+            // this is a Test class and also Benchmark class
+            // it is supposed to run and verify unit tests, but also provide benchmarking
+            Setup();
+        }
+
+        [GlobalSetup]
+        public override void Setup()
         {
             int SEED = 123456789;
             random = new Random(SEED);
@@ -45,6 +55,8 @@ namespace Neo.Benchmarks
                     Buffer.BlockCopy(base_20_1[i], 0, base_20_2[i], 0, 20);
                 }
             }
+            
+            base.Setup();
         }
 
         private byte[] RandomBytes(int count)
