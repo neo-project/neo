@@ -1,4 +1,4 @@
-﻿using Neo.Ledger;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC;
 using Neo.SDK.RPC.Model;
@@ -115,7 +115,7 @@ namespace Neo.SDK.RPC
         /// This RPC call does not affect the blockchain in any way.
         /// </summary>
         SDK_InvokeScriptResult InvokeFunction(string address, string function, SDK_StackJson[] stacks);
-
+      
         /// <summary>
         /// Returns the result after passing a script through the VM.
         /// This RPC call does not affect the blockchain in any way.
