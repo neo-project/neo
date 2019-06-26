@@ -434,8 +434,7 @@ namespace Neo.Ledger
                     var state = new TransactionState
                     {
                         BlockIndex = block.Index,
-                        Transaction = tx,
-                        Result = VMState.NONE
+                        Transaction = tx
                     };
 
                     snapshot.Transactions.Add(tx.Hash, state);
@@ -443,8 +442,8 @@ namespace Neo.Ledger
                     using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.SystemFee))
                     {
                         engine.LoadScript(tx.Script);
-                        state.Result = engine.Execute();
-                        if (state.Result == VMState.HALT)
+                        state.VMState = engine.Execute();
+                        if (state.VMState == VMState.HALT)
                         {
                             engine.Snapshot.Commit();
                         }
