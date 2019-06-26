@@ -34,7 +34,7 @@ namespace Neo.UnitTests
         {
             var senderProbe = CreateTestProbe();
             var parent = CreateTestProbe();
-            var protocolActor = ActorOfAsTestActorRef<ProtocolHandler>(() => new ProtocolHandler(testBlockchain, parent));
+            var protocolActor = ActorOfAsTestActorRef(() => new ProtocolHandler(testBlockchain), parent);
 
             var payload = new VersionPayload()
             {

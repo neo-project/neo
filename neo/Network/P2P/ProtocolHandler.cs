@@ -37,11 +37,6 @@ namespace Neo.Network.P2P
             this.parent = Context.Parent;
         }
 
-        public ProtocolHandler(NeoSystem system, IActorRef parent) : this(system)
-        {
-            this.parent = parent;
-        }
-
         protected override void OnReceive(object message)
         {
             if (!(message is Message msg)) return;
