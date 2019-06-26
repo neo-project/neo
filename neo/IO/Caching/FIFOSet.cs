@@ -24,45 +24,35 @@ namespace Neo.IO.Caching
 
         public bool Add(T item)
         {
-            lock (dictionary)
+            if (dictionary.Contains(item)) return false;
+            if (dictionary.Count >= maxCapacity)
             {
-                if (dictionary.Contains(item)) return false;
-                if (dictionary.Count >= maxCapacity)
+                if (removeCount == maxCapacity)
                 {
-                    if (removeCount == maxCapacity)
-                    {
-                        dictionary.Clear();
-                    }
-                    else
-                    {
-                        for (int i = 0; i < removeCount; i++)
-                            dictionary.RemoveAt(0);
-                    }
+                    dictionary.Clear();
                 }
-                dictionary.Add(item, null);
+                else
+                {
+                    for (int i = 0; i < removeCount; i++)
+                        dictionary.RemoveAt(0);
+                }
             }
+            dictionary.Add(item, null);
 
             return true;
         }
 
         public IEnumerator<T> GetEnumerator()
         {
-            T[] entries;
-
-            // Snapshot
-            lock (dictionary) { entries = dictionary.Values.Cast<T>().ToArray(); }
-
+            var entries = dictionary.Values.Cast<T>().ToArray();
             foreach (var entry in entries) yield return entry;
         }
 
         public void Remove(params UInt256[] hashes)
         {
-            lock (dictionary)
+            foreach (var hash in hashes)
             {
-                foreach (var hash in hashes)
-                {
-                    dictionary.Remove(hash);
-                }
+                dictionary.Remove(hash);
             }
         }
 
