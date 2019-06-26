@@ -123,7 +123,7 @@ namespace Neo.Network.P2P
 
         private void OnRestartTasks(InvPayload payload)
         {
-            knownHashes.Remove(payload.Hashes);
+            knownHashes.ExceptWith(payload.Hashes);
             foreach (UInt256 hash in payload.Hashes)
                 globalTasks.Remove(hash);
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, payload.Hashes))

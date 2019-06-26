@@ -41,18 +41,18 @@ namespace Neo.IO.Caching
             return true;
         }
 
-        public IEnumerator<T> GetEnumerator()
-        {
-            var entries = dictionary.Values.Cast<T>().ToArray();
-            foreach (var entry in entries) yield return entry;
-        }
-
-        public void Remove(params UInt256[] hashes)
+        public void ExceptWith(IEnumerable<UInt256> hashes)
         {
             foreach (var hash in hashes)
             {
                 dictionary.Remove(hash);
             }
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            var entries = dictionary.Values.Cast<T>().ToArray();
+            foreach (var entry in entries) yield return entry;
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
