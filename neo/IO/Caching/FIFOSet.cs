@@ -38,7 +38,6 @@ namespace Neo.IO.Caching
                 }
             }
             dictionary.Add(item, null);
-
             return true;
         }
 
