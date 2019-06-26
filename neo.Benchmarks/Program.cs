@@ -15,8 +15,8 @@ namespace Neo.Benchmarks
             {
                 var summary = BenchmarkRunner.Run(type, new AllowNonOptimized()); 
 
-                Console.WriteLine(type.Name);
-                Console.ReadLine();
+                //Console.WriteLine(type.Name);
+                //Console.ReadLine();
             }
         }
     }

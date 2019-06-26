@@ -26,5 +26,5 @@ after_success:
   - if [[ "$TRAVIS_TAG" != "" ]]; then 
       cd ../neo.Benchmarks ;
       dotnet test --verbosity n neo.Benchmarks.csproj ;
-      dotnet run -c Release -- --job short --runtimes clr core ;
+      dotnet run -c Release ;
     fi
