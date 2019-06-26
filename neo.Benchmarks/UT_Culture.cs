@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 
-namespace Neo.UnitTests
+namespace Neo.Benchmarks
 {
     [TestClass]
     public class UT_Culture

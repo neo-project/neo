@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Diagnostics;
 
-namespace Neo.UnitTests
+namespace Neo.Benchmarks
 {
     [TestClass]
     public class UT_UIntBenchmarks
@@ -45,18 +45,6 @@ namespace Neo.UnitTests
                     Buffer.BlockCopy(base_20_1[i], 0, base_20_2[i], 0, 20);
                 }
             }
-        }
-
-        [TestMethod]
-        public void Test_UInt160_Parse()
-        {
-            string uint160strbig = "0x0001020304050607080900010203040506070809";
-            UInt160 num1 = UInt160.Parse(uint160strbig);
-            num1.ToString().Should().Be("0x0001020304050607080900010203040506070809");
-
-            string uint160strbig2 = "0X0001020304050607080900010203040506070809";
-            UInt160 num2 = UInt160.Parse(uint160strbig2);
-            num2.ToString().Should().Be("0x0001020304050607080900010203040506070809");
         }
 
         private byte[] RandomBytes(int count)
