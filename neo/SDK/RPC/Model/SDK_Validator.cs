@@ -1,21 +1,14 @@
 ﻿using Neo.IO.Json;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
 
 namespace Neo.SDK.RPC.Model
 {
     public class SDK_Validator
     {
-        [JsonProperty(PropertyName = "publickey")]
         public string PublicKey { get; set; }
 
-        [JsonProperty(PropertyName = "votes")]
         public BigInteger Votes { get; set; }
 
-        [JsonProperty(PropertyName = "active")]
         public bool Active { get; set; }
 
         public JObject ToJson()
@@ -23,7 +16,7 @@ namespace Neo.SDK.RPC.Model
             JObject json = new JObject();
             json["publickey"] = PublicKey;
             json["votes"] = Votes.ToString();
-            json["active"] = Active.ToString();
+            json["active"] = Active;
             return json;
         }
 

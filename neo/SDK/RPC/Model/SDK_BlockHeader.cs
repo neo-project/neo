@@ -1,20 +1,14 @@
 ﻿using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Neo.SDK.RPC.Model
 {
     public class SDK_BlockHeader
     {
         public Header Header { get; set; }
-
-        [JsonProperty(PropertyName = "confirmations")]
+        
         public int Confirmations { get; set; }
-
-        [JsonProperty(PropertyName = "nextblockhash")]
+        
         public UInt256 NextBlockHash { get; set; }
 
         public JObject ToJson()

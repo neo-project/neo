@@ -1,8 +1,4 @@
 ﻿using Neo.IO.Json;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Neo.SDK.RPC.Model
 {
@@ -11,16 +7,12 @@ namespace Neo.SDK.RPC.Model
     /// </summary>
     public class RPCResponse
     {
-        [JsonProperty(PropertyName = "id")]
         public int? Id { get; set; }
-
-        [JsonProperty(PropertyName = "jsonrpc")]
+        
         public string Jsonrpc { get; set; }
-
-        [JsonProperty(PropertyName = "error")]
+        
         public RPCResponseError Error { get; set; }
-
-        [JsonProperty(PropertyName = "result")]
+        
         public JObject Result { get; set; }
 
         /// <summary>
@@ -56,13 +48,10 @@ namespace Neo.SDK.RPC.Model
 
     public class RPCResponseError
     {
-        [JsonProperty(PropertyName = "code")]
         public int Code { get; set; }
-
-        [JsonProperty(PropertyName = "message")]
+        
         public string Message { get; set; }
-
-        [JsonProperty(PropertyName = "data")]
+        
         public JObject Data { get; set; }
 
         /// <summary>
@@ -87,6 +76,4 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
     }
-
-
 }

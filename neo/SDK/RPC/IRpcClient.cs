@@ -125,7 +125,7 @@ namespace Neo.SDK.RPC
         /// <summary>
         /// Returns a list of plugins loaded by the node.
         /// </summary>
-        SDK_Plugin ListPlugins();
+        SDK_Plugin[] ListPlugins();
 
         /// <summary>
         /// Broadcasts a transaction over the NEO network.

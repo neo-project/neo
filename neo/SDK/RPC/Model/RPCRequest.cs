@@ -1,21 +1,16 @@
 ﻿using Neo.IO.Json;
-using Newtonsoft.Json;
 using System.Linq;
 
 namespace Neo.SDK.RPC.Model
 {
     public class RPCRequest
     {
-        [JsonProperty(PropertyName = "id")]
         public int Id { get; set; }
-
-        [JsonProperty(PropertyName = "jsonrpc")]
+        
         public string Jsonrpc { get; set; }
-
-        [JsonProperty(PropertyName = "method")]
+        
         public string Method { get; set; }
-
-        [JsonProperty(PropertyName = "params")]
+        
         public JObject[] Params { get; set; }
 
         /// <summary>
@@ -41,7 +36,5 @@ namespace Neo.SDK.RPC.Model
             json["params"] = new JArray(Params);
             return json;
         }
-
     }
-
 }

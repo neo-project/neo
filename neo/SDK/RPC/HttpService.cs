@@ -1,6 +1,5 @@
 ﻿using Neo.IO.Json;
 using Neo.SDK.RPC.Model;
-using Newtonsoft.Json;
 using System;
 using System.Net.Http;
 using System.Text;

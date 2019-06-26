@@ -94,104 +94,88 @@ namespace Neo.SDK
 
         public ContractState GetContractState(string hash)
         {
-            var json = RpcSend("getcontractstate", hash);
-            return ContractState.FromJson(json["result"]);
+            return ContractState.FromJson(RpcSend("getcontractstate", hash));
         }
 
         public SDK_GetPeersResult GetPeers()
         {
-            var json = RpcSend("getpeers");
-            return SDK_GetPeersResult.FromJson(json["result"]);
+            return SDK_GetPeersResult.FromJson(RpcSend("getpeers"));
         }
 
         public string[] GetRawMempool()
         {
-            var json = RpcSend("getrawmempool");
-            return ((JArray)json["result"]).Select(p => p.AsString()).ToArray();
+            return ((JArray)RpcSend("getrawmempool")).Select(p => p.AsString()).ToArray();
         }
 
         public SDK_RawMemPool GetRawMempoolBoth()
         {
-            var json = RpcSend("getrawmempool");
-            return SDK_RawMemPool.FromJson(json["result"]);
+            return SDK_RawMemPool.FromJson(RpcSend("getrawmempool"));
         }
 
         public string GetRawTransactionHex(string txid)
         {
-            var json = RpcSend("getrawtransaction", txid);
-            return json["result"].AsString();
+            return RpcSend("getrawtransaction", txid).AsString();
         }
 
         public Transaction GetRawTransaction(string txid)
         {
-            var json = RpcSend("getrawtransaction", txid, true); // verbose = true;
-            return Transaction.FromJson(json["result"]);
+            // verbose = true;
+            return Transaction.FromJson(RpcSend("getrawtransaction", txid, true));
         }
 
         public string GetStorage(string script_hash, string key)
         {
-            var json = RpcSend("getstorage", script_hash, key);
-            return json["result"].AsString();
+            return RpcSend("getstorage", script_hash, key).AsString();
         }
 
         public uint GetTransactionHeight(string txid)
         {
-            var json = RpcSend("gettransactionheight", txid);
-            return uint.Parse(json["result"].AsString());
+            return uint.Parse(RpcSend("gettransactionheight", txid).AsString());
         }
 
         public SDK_Validator[] GetValidators()
         {
-            var json = RpcSend("getvalidators");
-            return ((JArray)json["result"]).Select(p => SDK_Validator.FromJson(p)).ToArray();
+            return ((JArray)RpcSend("getvalidators")).Select(p => SDK_Validator.FromJson(p)).ToArray();
         }
 
         public SDK_Version GetVersion()
         {
-            var json = RpcSend("getversion");
-            return SDK_Version.FromJson(json["result"]);
+            return SDK_Version.FromJson(RpcSend("getversion"));
         }
 
         public SDK_InvokeScriptResult InvokeFunction(string address, string function, SDK_StackJson[] stacks)
         {
-            var json = RpcSend("invokefunction", address, function, stacks.Select(p => p.ToJson()).ToArray());
-            return SDK_InvokeScriptResult.FromJson(json["result"]);
+            return SDK_InvokeScriptResult.FromJson(RpcSend("invokefunction", address, function, stacks.Select(p => p.ToJson()).ToArray()));
         }
 
         public SDK_InvokeScriptResult InvokeScript(string script)
         {
-            var json = RpcSend("invokescript", script);
-            return SDK_InvokeScriptResult.FromJson(json["result"]);
+            return SDK_InvokeScriptResult.FromJson(RpcSend("invokescript", script));
         }
 
-        public SDK_Plugin ListPlugins()
+        public SDK_Plugin[] ListPlugins()
         {
-            var json = RpcSend("listplugins");
-            return SDK_Plugin.FromJson(json["result"]);
+            return ((JArray)RpcSend("listplugins")).Select(p=>SDK_Plugin.FromJson(p)).ToArray();
         }
 
         public bool SendRawTransaction(string rawTransaction)
         {
-            var json = RpcSend("sendrawtransaction", rawTransaction);
-            return json["result"].AsBoolean();
+            return RpcSend("sendrawtransaction", rawTransaction).AsBoolean();
         }
 
         public bool SubmitBlock(string block)
         {
-            var json = RpcSend("submitblock", block);
-            return json["result"].AsBoolean();
+            return RpcSend("submitblock", block).AsBoolean();
         }
 
         public SDK_ValidateAddressResult ValidateAddress(string address)
         {
-            var json = RpcSend("validateaddress", address);
-            return SDK_ValidateAddressResult.FromJson(json["result"]);
+            return SDK_ValidateAddressResult.FromJson(RpcSend("validateaddress", address));
         }
 
         public SDK_Nep5Balances GetNep5Balances(string address)
         {
-            var json = RpcSend("getnep5balances", address);
-            return SDK_Nep5Balances.FromJson(json["result"]);
+            return SDK_Nep5Balances.FromJson(RpcSend("getnep5balances", address));
         }
 
     }

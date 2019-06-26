@@ -213,12 +213,12 @@ namespace Neo.UnitTests.SDK
         [TestMethod]
         public void TestGetContractState()
         {
-            var script = new ScriptBuilder();
-            script.EmitSysCall(InteropService.System_Runtime_GetInvocationCounter);
+            var sb = new ScriptBuilder();
+            sb.EmitSysCall(InteropService.System_Runtime_GetInvocationCounter);
 
             ContractState state = new ContractState
             {
-                Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script.ToArray()).ToArray(),
+                Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(sb.ToArray()).ToArray(),
                 Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
             };
 
@@ -226,9 +226,9 @@ namespace Neo.UnitTests.SDK
             response["result"] = state.ToJson();
             MockResponse(response.ToString());
 
-            var result = rpc.GetContractState("hash");
+            var result = rpc.GetContractState("17694b31cc7ee215cea2ded146e0b2b28768fc46");
 
-            Assert.AreEqual(state.Script.ToHexString(), result.Script);
+            Assert.AreEqual(state.Script.ToHexString(), result.Script.ToHexString());
             Assert.AreEqual(state.Manifest.Abi.EntryPoint.Name, result.Manifest.Abi.EntryPoint.Name);
         }
 
@@ -237,32 +237,32 @@ namespace Neo.UnitTests.SDK
         {
             JObject response = RpcServer.CreateResponse(1);
             response["result"] = JObject.Parse(@"{
-        ""unconnected"": [
-            {
-                ""address"": ""::ffff:70.73.16.236"",
-                ""port"": 10333
-            },
-            {
-                ""address"": ""::ffff:82.95.77.148"",
-                ""port"": 10333
-            },
-            {
-                ""address"": ""::ffff:49.50.215.166"",
-                ""port"": 10333
-            }
-        ],
-        ""bad"": [],
-        ""connected"": [
-            {
-                ""address"": ""::ffff:139.219.106.33"",
-                ""port"": 10333
-            },
-            {
-                ""address"": ""::ffff:47.88.53.224"",
-                ""port"": 10333
-            }
-        ]
-    }");
+                                                    ""unconnected"": [
+                                                        {
+                                                            ""address"": ""::ffff:70.73.16.236"",
+                                                            ""port"": 10333
+                                                        },
+                                                        {
+                                                            ""address"": ""::ffff:82.95.77.148"",
+                                                            ""port"": 10333
+                                                        },
+                                                        {
+                                                            ""address"": ""::ffff:49.50.215.166"",
+                                                            ""port"": 10333
+                                                        }
+                                                    ],
+                                                    ""bad"": [],
+                                                    ""connected"": [
+                                                        {
+                                                            ""address"": ""::ffff:139.219.106.33"",
+                                                            ""port"": 10333
+                                                        },
+                                                        {
+                                                            ""address"": ""::ffff:47.88.53.224"",
+                                                            ""port"": 10333
+                                                        }
+                                                    ]
+                                                }");
             MockResponse(response.ToString());
 
             var result = rpc.GetPeers();
@@ -275,10 +275,10 @@ namespace Neo.UnitTests.SDK
         {
             JObject response = RpcServer.CreateResponse(1);
             response["result"] = JObject.Parse(@"[
-        ""0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e"",
-        ""0xb488ad25eb474f89d5ca3f985cc047ca96bc7373a6d3da8c0f192722896c1cd7"",
-        ""0xf86f6f2c08fbf766ebe59dc84bc3b8829f1053f0a01deb26bf7960d99fa86cd6""
-    ]");
+                                                    ""0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e"",
+                                                    ""0xb488ad25eb474f89d5ca3f985cc047ca96bc7373a6d3da8c0f192722896c1cd7"",
+                                                    ""0xf86f6f2c08fbf766ebe59dc84bc3b8829f1053f0a01deb26bf7960d99fa86cd6""
+                                                ]");
             MockResponse(response.ToString());
 
             var result = rpc.GetRawMempool();
@@ -300,6 +300,7 @@ namespace Neo.UnitTests.SDK
             var result = rpc.GetRawMempoolBoth();
             Assert.AreEqual((uint)65535, result.Height);
             Assert.AreEqual("0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e", result.Verified[0]);
+            Assert.AreEqual("0xf86f6f2c08fbf766ebe59dc84bc3b8829f1053f0a01deb26bf7960d99fa86cd6", result.UnVerified[1]);
         }
 
         [TestMethod]
@@ -311,7 +312,8 @@ namespace Neo.UnitTests.SDK
             response["result"] = json;
             MockResponse(response.ToString());
 
-            var result = rpc.GetRawTransactionHex("0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e");
+            //var result = rpc.GetRawTransactionHex("0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e");
+            var result = rpc.GetRawTransactionHex(TestUtils.GetTransaction().Hash.ToString());
             Assert.AreEqual(json, result);
         }
 
@@ -325,8 +327,8 @@ namespace Neo.UnitTests.SDK
             MockResponse(response.ToString());
 
             var result = rpc.GetRawTransaction("0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e");
-            Assert.AreEqual(transaction.Hash.ToString(), result.Hash);
-            Assert.AreEqual(json.ToString(), JsonConvert.SerializeObject(result));
+            Assert.AreEqual(transaction.Hash, result.Hash);
+            Assert.AreEqual(json.ToString(), result.ToJson().ToString());
         }
 
         [TestMethod]
@@ -357,22 +359,23 @@ namespace Neo.UnitTests.SDK
         public void TestGetValidators()
         {
             JObject json = JObject.Parse(@"[
-        {
-            ""publickey"": ""02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70"",
-            ""votes"": ""46632420"",
-            ""active"": true
-        },
-        {
-            ""publickey"": ""024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d"",
-            ""votes"": ""46632420"",
-            ""active"": true
-        }]");
+                                                {
+                                                    ""publickey"": ""02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70"",
+                                                    ""votes"": ""46632420"",
+                                                    ""active"": true
+                                                },
+                                                {
+                                                    ""publickey"": ""024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d"",
+                                                    ""votes"": ""46632420"",
+                                                    ""active"": true
+                                                }
+                                            ]");
             JObject response = RpcServer.CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
             var result = rpc.GetValidators();
-            Assert.AreEqual(json.ToString(), JsonConvert.SerializeObject(result));
+            Assert.AreEqual(((JArray)json)[0].ToString(), (result[0]).ToJson().ToString());
         }
 
         [TestMethod]
@@ -385,11 +388,11 @@ namespace Neo.UnitTests.SDK
             json["useragent"] = "/NEO:2.7.5/";
 
             var json1 = JObject.Parse(@"{
-                ""tcpPort"": 30001,
-                ""wsPort"": 30002,
-                ""nonce"": 1546258664,
-                ""useragent"": ""/NEO:2.7.5/""
-            }");
+                                            ""tcpPort"": 30001,
+                                            ""wsPort"": 30002,
+                                            ""nonce"": 1546258664,
+                                            ""useragent"": ""/NEO:2.7.5/""
+                                        }");
             Assert.AreEqual(json.ToString(), json1.ToString());
 
             JObject response = RpcServer.CreateResponse(1);
@@ -414,14 +417,15 @@ namespace Neo.UnitTests.SDK
                         ""type"": ""ByteArray"",
                         ""value"": ""262bec084432""
                     }
-                ]
+                ],
+                ""tx"":""d101361426ae7c6c9861ec418468c1f0fdc4a7f2963eb89151c10962616c616e63654f6667be39e7b562f60cbfe2aebca375a2e5ee28737caf000000000000000000000000""
             }");
             JObject response = RpcServer.CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
             var result = rpc.InvokeFunction("af7c7328eee5a275a3bcaee2bf0cf662b5e739be", "balanceOf", new[] { new SDK_StackJson { Type = "Hash160", Value = "91b83e96f2a7c4fdf0c1688441ec61986c7cae26" } });
-            Assert.AreEqual(json.ToString(), JsonConvert.SerializeObject(result));
+            Assert.AreEqual(json.ToString(), result.ToJson().ToString());
         }
 
         [TestMethod]
@@ -437,14 +441,15 @@ namespace Neo.UnitTests.SDK
                         ""type"": ""ByteArray"",
                         ""value"": ""262bec084432""
                     }
-                ]
+                ],
+                ""tx"":""d101361426ae7c6c9861ec418468c1f0fdc4a7f2963eb89151c10962616c616e63654f6667be39e7b562f60cbfe2aebca375a2e5ee28737caf000000000000000000000000""
             }");
             JObject response = RpcServer.CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
             var result = rpc.InvokeScript("00046e616d656724058e5e1b6008847cd662728549088a9ee82191");
-            Assert.AreEqual(json.ToString(), JsonConvert.SerializeObject(result));
+            Assert.AreEqual(json.ToString(), result.ToJson().ToString());
         }
 
         [TestMethod]
@@ -463,7 +468,7 @@ namespace Neo.UnitTests.SDK
             MockResponse(response.ToString());
 
             var result = rpc.ListPlugins();
-            Assert.AreEqual(json.ToString(), JsonConvert.SerializeObject(result));
+            Assert.AreEqual(((JArray)json)[0].ToString(), result[0].ToJson().ToString());
         }
 
         [TestMethod]
@@ -475,7 +480,7 @@ namespace Neo.UnitTests.SDK
             MockResponse(response.ToString());
 
             var result = rpc.SendRawTransaction("80000001195876cb34364dc38b730077156c6bc3a7fc570044a66fbfeeea56f71327e8ab0000029b7cffdaa674beae0f930ebe6085af9093e5fe56b34a5c220ccdcf6efc336fc500c65eaf440000000f9a23e06f74cf86b8827a9108ec2e0f89ad956c9b7cffdaa674beae0f930ebe6085af9093e5fe56b34a5c220ccdcf6efc336fc50092e14b5e00000030aab52ad93f6ce17ca07fa88fc191828c58cb71014140915467ecd359684b2dc358024ca750609591aa731a0b309c7fb3cab5cd0836ad3992aa0a24da431f43b68883ea5651d548feb6bd3c8e16376e6e426f91f84c58232103322f35c7819267e721335948d385fae5be66e7ba8c748ac15467dcca0693692dac");
-            Assert.AreEqual(json.ToString(), JsonConvert.SerializeObject(result));
+            Assert.AreEqual(json.ToString(), ((JObject)result).ToString());
         }
 
         [TestMethod]
@@ -487,7 +492,7 @@ namespace Neo.UnitTests.SDK
             MockResponse(response.ToString());
 
             var result = rpc.SubmitBlock("03febccf81ac85e3d795bc5cbd4e84e907812aa3");
-            Assert.AreEqual(json.ToString(), JsonConvert.SerializeObject(result));
+            Assert.AreEqual(json.ToString(), ((JObject)result).ToString());
         }
 
         [TestMethod]
@@ -501,11 +506,7 @@ namespace Neo.UnitTests.SDK
             MockResponse(response.ToString());
 
             var result = rpc.ValidateAddress("AQVh2pG732YvtNaxEGkQUei3YA4cvo7d2i");
-            Assert.AreEqual(json.ToString(), JsonConvert.SerializeObject(result));
+            Assert.AreEqual(json.ToString(), result.ToJson().ToString());
         }
-
     }
-
-
-
 }

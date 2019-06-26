@@ -1,9 +1,6 @@
 ﻿using Neo.IO.Json;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Neo.SDK.RPC.Model
 {
@@ -24,6 +21,17 @@ namespace Neo.SDK.RPC.Model
         [JsonProperty(PropertyName = "tx")]
         public string Tx { get; set; }
 
+        public JObject ToJson()
+        {
+            JObject json = new JObject();
+            json["script"] = Script;
+            json["state"] = State;
+            json["gas_consumed"] = GasConsumed;
+            json["stack"] = new JArray(Stack.Select(p => p.ToJson()));
+            json["tx"] = Tx;
+            return json;
+        }
+
         public static SDK_InvokeScriptResult FromJson(JObject json)
         {
             SDK_InvokeScriptResult invokeScriptResult = new SDK_InvokeScriptResult();
@@ -38,10 +46,8 @@ namespace Neo.SDK.RPC.Model
 
     public class SDK_StackJson
     {
-        [JsonProperty(PropertyName = "type")]
         public string Type { get; set; }
-
-        [JsonProperty(PropertyName = "value")]
+        
         public string Value { get; set; }
 
         public JObject ToJson()

@@ -1,19 +1,13 @@
 ﻿using Neo.IO.Json;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Text;
 
 namespace Neo.SDK.RPC.Model
 {
     public class SDK_Nep5Balances
     {
-        [JsonProperty(PropertyName = "address")]
         public string Address { get; set; }
-
-        [JsonProperty(PropertyName = "balance")]
+        
         public SDK_Nep5Balance[] Balances { get; set; }
 
         public JObject ToJson()
@@ -36,13 +30,10 @@ namespace Neo.SDK.RPC.Model
 
     public class SDK_Nep5Balance
     {
-        [JsonProperty(PropertyName = "asset_hash")]
         public UInt160 AssetHash { get; set; }
-
-        [JsonProperty(PropertyName = "amount")]
+        
         public BigInteger Amount { get; set; }
-
-        [JsonProperty(PropertyName = "last_updated_block")]
+        
         public uint LastUpdatedBlock { get; set; }
 
         public JObject ToJson()

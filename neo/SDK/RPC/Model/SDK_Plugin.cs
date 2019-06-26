@@ -1,24 +1,24 @@
 ﻿using Neo.IO.Json;
-using Newtonsoft.Json;
 using System.Linq;
 
 namespace Neo.SDK.RPC.Model
 {
     public class SDK_Plugin
     {
-        [JsonProperty(PropertyName = "name")]
         public string Name { get; set; }
-
-        [JsonProperty(PropertyName = "version")]
+        
         public string Version { get; set; }
-
-        [JsonProperty(PropertyName = "interfaces")]
+        
         public string[] Interfaces { get; set; }
 
-        //public JObject ToJson()
-        //{
-
-        //}
+        public JObject ToJson()
+        {
+            JObject json = new JObject();
+            json["name"] = Name;
+            json["version"] = Version;
+            json["interfaces"] = new JArray(Interfaces.Select(p => (JObject)p));
+            return json;
+        }
 
         public static SDK_Plugin FromJson(JObject json)
         {
@@ -29,5 +29,4 @@ namespace Neo.SDK.RPC.Model
             return plugin;
         }
     }
-
 }
