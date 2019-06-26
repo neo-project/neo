@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 
 namespace Neo.IO.Caching
 {
-    internal class FIFOSet<T> where T : IEquatable<T>
+    internal class FIFOSet<T> : IEnumerable<T> where T : IEquatable<T>
     {
         private readonly int maxCapacity;
         private readonly int removeCount;
@@ -21,21 +24,52 @@ namespace Neo.IO.Caching
 
         public bool Add(T item)
         {
-            if (dictionary.Contains(item)) return false;
-            if (dictionary.Count >= maxCapacity)
+            lock (dictionary)
             {
-                if (removeCount == maxCapacity)
+                if (dictionary.Contains(item)) return false;
+                if (dictionary.Count >= maxCapacity)
                 {
-                    dictionary.Clear();
+                    if (removeCount == maxCapacity)
+                    {
+                        dictionary.Clear();
+                    }
+                    else
+                    {
+                        for (int i = 0; i < removeCount; i++)
+                            dictionary.RemoveAt(0);
+                    }
                 }
-                else
-                {
-                    for (int i = 0; i < removeCount; i++)
-                        dictionary.RemoveAt(0);
-                }
+                dictionary.Add(item, null);
             }
-            dictionary.Add(item, null);
+
             return true;
         }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            T[] entries;
+
+            lock (dictionary)
+            {
+                // Snapshot
+
+                entries = dictionary.Values.Cast<T>().ToArray();
+            }
+
+            foreach (var entry in entries) yield return entry;
+        }
+
+        public void Remove(params UInt256[] hashes)
+        {
+            lock (dictionary)
+            {
+                foreach (var hash in hashes)
+                {
+                    dictionary.Remove(hash);
+                }
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
