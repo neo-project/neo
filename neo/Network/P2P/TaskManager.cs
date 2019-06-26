@@ -44,6 +44,11 @@ namespace Neo.Network.P2P
         {
             this.system = system;
         }
+        
+        private void FlushHashes()
+        {
+            knownHashes.Clear();
+        }
 
         private void OnHeaderTaskCompleted()
         {
@@ -107,6 +112,9 @@ namespace Neo.Network.P2P
                 case Timer _:
                     OnTimer();
                     break;
+                case Flush _:
+                    FlushHashes();
+                    break;                    
                 case Terminated terminated:
                     OnTerminated(terminated.ActorRef);
                     break;
