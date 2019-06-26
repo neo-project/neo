@@ -7,7 +7,6 @@ namespace Neo.Benchmarks
     [RPlotExporter, RankColumn(NumeralSystem.Arabic)]
     public abstract class BenchmarkBase
     {
-       
         public virtual void Setup()
         {
         }

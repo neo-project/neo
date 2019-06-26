@@ -55,7 +55,7 @@ namespace Neo.Benchmarks
                     Buffer.BlockCopy(base_20_1[i], 0, base_20_2[i], 0, 20);
                 }
             }
-            
+
             base.Setup();
         }
 
