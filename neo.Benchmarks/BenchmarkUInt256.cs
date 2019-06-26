@@ -8,14 +8,12 @@ using BenchmarkDotNet.Attributes;
 namespace Neo.Benchmarks
 {
     [TestClass]
-    public class BenchmarkUInt : BenchmarkBase
+    public class BenchmarkUInt256 : BenchmarkBase
     {
-        private const int MAX_TESTS = 1000;
+        private const int MAX_TESTS = 10;
 
         byte[][] base_32_1;
         byte[][] base_32_2;
-        byte[][] base_20_1;
-        byte[][] base_20_2;
 
         private Random random;
 
@@ -35,24 +33,18 @@ namespace Neo.Benchmarks
 
             base_32_1 = new byte[MAX_TESTS][];
             base_32_2 = new byte[MAX_TESTS][];
-            base_20_1 = new byte[MAX_TESTS][];
-            base_20_2 = new byte[MAX_TESTS][];
 
             for (var i = 0; i < MAX_TESTS; i++)
             {
                 base_32_1[i] = RandomBytes(32);
-                base_20_1[i] = RandomBytes(20);
                 if (i % 2 == 0)
                 {
                     base_32_2[i] = RandomBytes(32);
-                    base_20_2[i] = RandomBytes(20);
                 }
                 else
                 {
                     base_32_2[i] = new byte[32];
                     Buffer.BlockCopy(base_32_1[i], 0, base_32_2[i], 0, 32);
-                    base_20_2[i] = new byte[20];
-                    Buffer.BlockCopy(base_20_1[i], 0, base_20_2[i], 0, 20);
                 }
             }
 
@@ -66,21 +58,8 @@ namespace Neo.Benchmarks
             return randomBytes;
         }
 
-        public delegate object BenchmarkMethod();
-
-        public (TimeSpan, object) LocalBenchmark(BenchmarkMethod method)
-        {
-            Stopwatch sw0 = new Stopwatch();
-            sw0.Start();
-            var result = method();
-            sw0.Stop();
-            TimeSpan elapsed = sw0.Elapsed;
-            Console.WriteLine($"Elapsed={elapsed} Sum={result}");
-            return (elapsed, result);
-        }
-
-        [Benchmark]
-        public void Benchmark_CompareTo_UInt256()
+        [Benchmark(Baseline = true)]
+        public void Benchmark_Official_UInt256()
         {
             // testing "official UInt256 version"
             UInt256[] uut_32_1 = new UInt256[MAX_TESTS];
@@ -92,125 +71,75 @@ namespace Neo.Benchmarks
                 uut_32_2[i] = new UInt256(base_32_2[i]);
             }
 
-            var checksum0 = LocalBenchmark(() =>
+            for (var i = 0; i < MAX_TESTS; i++)
             {
-                var checksum = 0;
-                for (var i = 0; i < MAX_TESTS; i++)
-                {
-                    checksum += uut_32_1[i].CompareTo(uut_32_2[i]);
-                }
-
-                return checksum;
-            }).Item2;
-
-            var checksum1 = LocalBenchmark(() =>
-            {
-                var checksum = 0;
-                for (var i = 0; i < MAX_TESTS; i++)
-                {
-                    checksum += code1_UInt256CompareTo(base_32_1[i], base_32_2[i]);
-                }
-
-                return checksum;
-            }).Item2;
-
-            var checksum2 = LocalBenchmark(() =>
-            {
-                var checksum = 0;
-                for (var i = 0; i < MAX_TESTS; i++)
-                {
-                    checksum += code2_UInt256CompareTo(base_32_1[i], base_32_2[i]);
-                }
-
-                return checksum;
-            }).Item2;
-
-            var checksum3 = LocalBenchmark(() =>
-            {
-                var checksum = 0;
-                for (var i = 0; i < MAX_TESTS; i++)
-                {
-                    checksum += code3_UInt256CompareTo(base_32_1[i], base_32_2[i]);
-                }
-
-                return checksum;
-            }).Item2;
-
-            //checksum0.Should().Be(checksum1);
-            //checksum0.Should().Be(checksum2);
-            //checksum0.Should().Be(checksum3);
+                uut_32_1[i].CompareTo(uut_32_2[i]);
+            }
         }
 
         [Benchmark]
-        public void Benchmark_CompareTo_UInt160()
+        public void Benchmark_Code1_UInt256()
         {
-            // testing "official UInt160 version"
-            UInt160[] uut_20_1 = new UInt160[MAX_TESTS];
-            UInt160[] uut_20_2 = new UInt160[MAX_TESTS];
+            // testing "official UInt256 version"
+            UInt256[] uut_32_1 = new UInt256[MAX_TESTS];
+            UInt256[] uut_32_2 = new UInt256[MAX_TESTS];
 
             for (var i = 0; i < MAX_TESTS; i++)
             {
-                uut_20_1[i] = new UInt160(base_20_1[i]);
-                uut_20_2[i] = new UInt160(base_20_2[i]);
+                uut_32_1[i] = new UInt256(base_32_1[i]);
+                uut_32_2[i] = new UInt256(base_32_2[i]);
             }
 
-            var checksum0 = LocalBenchmark(() =>
+            for (var i = 0; i < MAX_TESTS; i++)
             {
-                var checksum = 0;
-                for (var i = 0; i < MAX_TESTS; i++)
-                {
-                    checksum += uut_20_1[i].CompareTo(uut_20_2[i]);
-                }
-
-                return checksum;
-            }).Item2;
-
-            var checksum1 = LocalBenchmark(() =>
-            {
-                var checksum = 0;
-                for (var i = 0; i < MAX_TESTS; i++)
-                {
-                    checksum += code1_UInt160CompareTo(base_20_1[i], base_20_2[i]);
-                }
-
-                return checksum;
-            }).Item2;
-
-            var checksum2 = LocalBenchmark(() =>
-            {
-                var checksum = 0;
-                for (var i = 0; i < MAX_TESTS; i++)
-                {
-                    checksum += code2_UInt160CompareTo(base_20_1[i], base_20_2[i]);
-                }
-
-                return checksum;
-            }).Item2;
-
-            var checksum3 = LocalBenchmark(() =>
-            {
-                var checksum = 0;
-                for (var i = 0; i < MAX_TESTS; i++)
-                {
-                    checksum += code3_UInt160CompareTo(base_20_1[i], base_20_2[i]);
-                }
-
-                return checksum;
-            }).Item2;
-
-            //checksum0.Should().Be(checksum1);
-            //checksum0.Should().Be(checksum2);
-            //checksum0.Should().Be(checksum3);
+                code1_UInt256CompareTo(base_32_1[i], base_32_2[i]);
+            }
         }
 
+        [Benchmark]
+        public void Benchmark_Code2_UInt256()
+        {
+            // testing "official UInt256 version"
+            UInt256[] uut_32_1 = new UInt256[MAX_TESTS];
+            UInt256[] uut_32_2 = new UInt256[MAX_TESTS];
+
+            for (var i = 0; i < MAX_TESTS; i++)
+            {
+                uut_32_1[i] = new UInt256(base_32_1[i]);
+                uut_32_2[i] = new UInt256(base_32_2[i]);
+            }
+
+            for (var i = 0; i < MAX_TESTS; i++)
+            {
+                code2_UInt256CompareTo(base_32_1[i], base_32_2[i]);
+            }
+        }
+
+        [Benchmark]
+        public void Benchmark_Code3_UInt256()
+        {
+            // testing "official UInt256 version"
+            UInt256[] uut_32_1 = new UInt256[MAX_TESTS];
+            UInt256[] uut_32_2 = new UInt256[MAX_TESTS];
+
+            for (var i = 0; i < MAX_TESTS; i++)
+            {
+                uut_32_1[i] = new UInt256(base_32_1[i]);
+                uut_32_2[i] = new UInt256(base_32_2[i]);
+            }
+
+            for (var i = 0; i < MAX_TESTS; i++)
+            {
+                code3_UInt256CompareTo(base_32_1[i], base_32_2[i]);
+            }
+        }
+
+
         [TestMethod]
-        public void Benchmark_UInt_IsCorrect_Self_CompareTo()
+        public void Benchmark_UInt256_IsCorrect_Self_CompareTo()
         {
             for (var i = 0; i < MAX_TESTS; i++)
             {
-                code1_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
-                code2_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
-                code3_UInt160CompareTo(base_20_1[i], base_20_1[i]).Should().Be(0);
                 code1_UInt256CompareTo(base_32_1[i], base_32_1[i]).Should().Be(0);
                 code2_UInt256CompareTo(base_32_1[i], base_32_1[i]).Should().Be(0);
                 code3_UInt256CompareTo(base_32_1[i], base_32_1[i]).Should().Be(0);

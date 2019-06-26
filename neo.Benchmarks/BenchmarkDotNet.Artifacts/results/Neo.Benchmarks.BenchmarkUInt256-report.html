@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>Neo.Benchmarks.BenchmarkUInt256</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet=v0.11.1, OS=ubuntu 18.04
+Intel Core i5-4210U CPU 1.70GHz (Haswell), 1 CPU, 4 logical and 2 physical cores
+.NET Core SDK=2.2.300
+  [Host]     : .NET Core 2.2.5 (CoreCLR 4.6.27617.05, CoreFX 4.6.27618.01), 64bit RyuJIT
+  DefaultJob : .NET Core 2.2.5 (CoreCLR 4.6.27617.05, CoreFX 4.6.27618.01), 64bit RyuJIT
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+<thead><tr><th>              Method</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Median</th><th>Min</th><th>Max</th><th>Scaled</th><th>ScaledSD</th><th>Rank</th>
+</tr>
+</thead><tbody><tr><td>Benchmark_Official_UInt256</td><td>56.72 us</td><td>1.226 us</td><td>3.537 us</td><td>55.59 us</td><td>52.67 us</td><td>66.44 us</td><td>1.00</td><td>0.00</td><td>2</td>
+</tr><tr><td>Benchmark_Code1_UInt256</td><td>72.52 us</td><td>1.387 us</td><td>1.362 us</td><td>72.15 us</td><td>71.09 us</td><td>75.74 us</td><td>1.28</td><td>0.08</td><td>4</td>
+</tr><tr><td>Benchmark_Code2_UInt256</td><td>57.98 us</td><td>1.210 us</td><td>2.990 us</td><td>57.27 us</td><td>53.39 us</td><td>66.63 us</td><td>1.03</td><td>0.08</td><td>3</td>
+</tr><tr><td>Benchmark_Code3_UInt256</td><td>54.41 us</td><td>1.231 us</td><td>3.551 us</td><td>53.53 us</td><td>48.85 us</td><td>63.87 us</td><td>0.96</td><td>0.08</td><td>1</td>
+</tr></tbody></table>
+</body>
+</html>

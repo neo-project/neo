@@ -9,7 +9,7 @@ namespace Neo.Benchmarks
         {
             foreach (var type in new Type[]
             {
-                typeof(BenchmarkUInt),
+                typeof(BenchmarkUInt160),
                 typeof(BenchmarkUInt256)
             })
             {
