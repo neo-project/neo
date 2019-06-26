@@ -211,7 +211,7 @@ namespace Neo.Ledger
         /// </summary>
         public void Clear()
         {
-            _txRwLock.EnterReadLock();
+            _txRwLock.EnterWriteLock();
 
             _sortedHighPrioTransactions.Clear();
             _sortedLowPrioTransactions.Clear();
@@ -220,7 +220,7 @@ namespace Neo.Ledger
             _unverifiedSortedLowPriorityTransactions.Clear();
             _unverifiedTransactions.Clear();
 
-            _txRwLock.ExitReadLock();
+            _txRwLock.ExitWriteLock();
         }
 
         public IEnumerable<Transaction> GetSortedVerifiedTransactions()
