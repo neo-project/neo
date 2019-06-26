@@ -205,14 +205,14 @@ namespace Neo.Ledger
         /// </summary>
         public void Clear()
         {
-            _txRwLock.EnterReadLock();
+            _txRwLock.EnterWriteLock();
 
             _sortedTransactions.Clear();
             _unsortedTransactions.Clear();
             _unverifiedSortedTransactions.Clear();
             _unverifiedTransactions.Clear();
 
-            _txRwLock.ExitReadLock();
+            _txRwLock.ExitWriteLock();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
