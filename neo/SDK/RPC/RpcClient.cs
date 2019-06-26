@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Neo.IO.Json;
+using Neo.Network.P2P.Payloads;
+using Neo.Network.RPC;
 using Neo.SDK.RPC;
 using Neo.SDK.RPC.Model;
 
@@ -116,69 +118,80 @@ namespace Neo.SDK
 
         public string GetRawTransactionHex(string txid)
         {
+
             return RpcSend<string>("getrawtransaction", txid);
         }
 
-        public TxJson GetRawTransaction(string txid)
+        public Transaction GetRawTransaction(string txid)
         {
-            return RpcSend<TxJson>("getrawtransaction", txid);
+            var json = RpcSend("getrawtransaction", txid);
+            return Transaction.FromJson(json["result"]);
         }
 
         public string GetStorage(string script_hash, string key)
         {
-            return RpcSend<string>("getstorage", script_hash, key);
+            var json = RpcSend("getstorage", script_hash, key);
+            return json["result"].AsString();
         }
 
         public uint GetTransactionHeight(string txid)
         {
-            return RpcSend<uint>("gettransactionheight", txid);
+            var json = RpcSend("gettransactionheight", txid);
+            return uint.Parse(json["result"].AsString());
         }
 
-        public Validator[] GetValidators()
+        public SDK_Validator[] GetValidators()
         {
-            return RpcSend<Validator[]>("getvalidators");
+            var json = RpcSend("getvalidators");
+            return ((JArray)json["result"]).Select(p => SDK_Validator.FromJson(p)).ToArray();
         }
 
-        public GetVersion GetVersion()
+        public SDK_Version GetVersion()
         {
-            return RpcSend<GetVersion>("getversion");
+            var json = RpcSend("getversion");
+            return SDK_Version.FromJson(json["result"]);
         }
 
-        public InvokeRet InvokeFunction(string address, string function, StackJson[] stacks)
+        public SDK_InvokeScriptResult InvokeFunction(string address, string function, SDK_StackJson[] stacks)
         {
-            return RpcSend<InvokeRet>("invokefunction", address, function, stacks);
+            var json = RpcSend("invokefunction", address, function, stacks);
+            return SDK_InvokeScriptResult.FromJson(json["result"]);
         }
 
-        public InvokeRet InvokeScript(string script)
+        public SDK_InvokeScriptResult InvokeScript(string script)
         {
-            return RpcSend<InvokeRet>("invokescript", script);
+            var json = RpcSend("invokescript", script);
+            return SDK_InvokeScriptResult.FromJson(json["result"]);
         }
 
-        public List<Plugin> ListPlugins()
+        public SDK_Plugin ListPlugins()
         {
-            return RpcSend<List<Plugin>>("listplugins");
+            var json = RpcSend("listplugins");
+            return SDK_Plugin.FromJson(json["result"]);
         }
 
         public bool SendRawTransaction(string rawTransaction)
         {
-            return RpcSend<bool>("sendrawtransaction", rawTransaction);
+            var json = RpcSend("sendrawtransaction", rawTransaction);
+            return json["result"].AsBoolean();
         }
 
         public bool SubmitBlock(string block)
         {
-            return RpcSend<bool>("submitblock", block);
+            var json = RpcSend("submitblock", block);
+            return json["result"].AsBoolean();
         }
 
-        public ValidateAddress ValidateAddress(string address)
+        public SDK_ValidateAddress ValidateAddress(string address)
         {
-            return RpcSend<ValidateAddress>("validateaddress");
+            var json = RpcSend("validateaddress", address);
+            return SDK_ValidateAddress.FromJson(json["result"]);
         }
 
-        // wait for plugin for neo3.
-        public GetNep5Balances GetNep5Balances(string address)
+        public SDK_Nep5Balances GetNep5Balances(string address)
         {
-            throw new NotImplementedException();
-            //turn RpcSend<GetNep5Balances>("getnep5balances", address);
+            var json = RpcSend("getnep5balances", address);
+            return SDK_Nep5Balances.FromJson(json["result"]);
         }
 
     }

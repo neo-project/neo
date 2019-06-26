@@ -1,4 +1,6 @@
-﻿using Neo.SDK.RPC.Model;
+﻿using Neo.Network.P2P.Payloads;
+using Neo.Network.RPC;
+using Neo.SDK.RPC.Model;
 using System.Collections.Generic;
 
 namespace Neo.SDK.RPC
@@ -85,7 +87,7 @@ namespace Neo.SDK.RPC
         /// Returns the corresponding transaction information, based on the specified hash value.
         /// verbose = true
         /// </summary>
-        TxJson GetRawTransaction(string txid);
+        Transaction GetRawTransaction(string txid);
 
         /// <summary>
         /// Returns the stored value, according to the contract script hash and the stored key.
@@ -100,29 +102,29 @@ namespace Neo.SDK.RPC
         /// <summary>
         /// Returns the current NEO consensus nodes information and voting status.
         /// </summary>
-        Validator[] GetValidators();
+        SDK_Validator[] GetValidators();
 
         /// <summary>
         /// Returns the version information about the queried node.
         /// </summary>
-        GetVersion GetVersion();
+        SDK_Version GetVersion();
 
         /// <summary>
         /// Returns the result after calling a smart contract at scripthash with the given operation and parameters.
         /// This RPC call does not affect the blockchain in any way.
         /// </summary>
-        InvokeRet InvokeFunction(string address, string function, StackJson[] stacks);
+        SDK_InvokeScriptResult InvokeFunction(string address, string function, SDK_StackJson[] stacks);
 
         /// <summary>
         /// Returns the result after passing a script through the VM.
         /// This RPC call does not affect the blockchain in any way.
         /// </summary>
-        InvokeRet InvokeScript(string script);
+        SDK_InvokeScriptResult InvokeScript(string script);
 
         /// <summary>
         /// Returns a list of plugins loaded by the node.
         /// </summary>
-        List<Plugin> ListPlugins();
+        SDK_Plugin ListPlugins();
 
         /// <summary>
         /// Broadcasts a transaction over the NEO network.
@@ -137,12 +139,12 @@ namespace Neo.SDK.RPC
         /// <summary>
         /// Verifies that the address is a correct NEO address.
         /// </summary>
-        ValidateAddress ValidateAddress(string address);
+        SDK_ValidateAddress ValidateAddress(string address);
 
         /// <summary>
         /// Returns the balance of all NEP-5 assets in the specified address.
         /// </summary>
-        GetNep5Balances GetNep5Balances(string address);
+        SDK_Nep5Balances GetNep5Balances(string address);
 
     }
 }

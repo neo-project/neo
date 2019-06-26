@@ -1,6 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Neo.IO.Json;
+using Neo.Network.P2P.Payloads;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Neo.SDK.RPC.Model
@@ -32,13 +35,13 @@ namespace Neo.SDK.RPC.Model
         public string NextConsensus { get; set; }
 
         [JsonProperty(PropertyName = "witness")]
-        public WitnessJson Witness { get; set; }
+        public SDK_Witness Witness { get; set; }
 
         [JsonProperty(PropertyName = "consensus_data")]
         public ConsensusData ConsensusData { get; set; }
 
         [JsonProperty(PropertyName = "tx")]
-        public TxJson[] Tx { get; set; }
+        public SDK_Transaction[] Tx { get; set; }
 
         [JsonProperty(PropertyName = "confirmations")]
         public int Confirmations { get; set; }
@@ -48,14 +51,6 @@ namespace Neo.SDK.RPC.Model
 
     }
 
-    public class WitnessJson
-    {
-        [JsonProperty(PropertyName = "invocation")]
-        public string Invocation { get; set; }
-
-        [JsonProperty(PropertyName = "verification")]
-        public string Verification { get; set; }
-    }
 
     public class ConsensusData
     {
@@ -66,49 +61,6 @@ namespace Neo.SDK.RPC.Model
         public string Nonce { get; set; }
     }
 
-    public class TxJson
-    {
-        [JsonProperty(PropertyName = "hash")]
-        public string Hash { get; set; }
 
-        [JsonProperty(PropertyName = "size")]
-        public uint Size { get; set; }
-
-        [JsonProperty(PropertyName = "version")]
-        public uint Version { get; set; }
-
-        [JsonProperty(PropertyName = "nonce")]
-        public uint Nonce { get; set; }
-
-        [JsonProperty(PropertyName = "script")]
-        public string Script { get; set; }
-
-        [JsonProperty(PropertyName = "sender")]
-        public string Sender { get; set; }
-
-        [JsonProperty(PropertyName = "gas")]
-        public string Gas { get; set; }
-
-        [JsonProperty(PropertyName = "net_fee")]
-        public string NetFee { get; set; }
-
-        [JsonProperty(PropertyName = "valid_until_block")]
-        public uint ValidUntilBlock { get; set; }
-
-        [JsonProperty(PropertyName = "attributes")]
-        public AttrJson[] Attributes { get; set; }
-
-        [JsonProperty(PropertyName = "witness")]
-        public WitnessJson Witness { get; set; }
-    }
-
-    public class AttrJson
-    {
-        [JsonProperty(PropertyName = "usage")]
-        public byte Usage { get; set; }
-
-        [JsonProperty(PropertyName = "data")]
-        public string Data { get; set; }
-    }
 
 }
