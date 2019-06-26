@@ -19,6 +19,7 @@ namespace Neo.Network.P2P
     internal class ProtocolHandler : UntypedActor
     {
         public class SetFilter { public BloomFilter Filter; }
+        public class Flush { }
 
         private readonly NeoSystem system;
         private readonly FIFOSet<UInt256> knownHashes;
@@ -34,7 +35,7 @@ namespace Neo.Network.P2P
             this.sentHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
         }
 
-        public void FlushHashes()
+        private void FlushHashes()
         {
             knownHashes.Clear();
             sentHashes.Clear();
@@ -42,7 +43,15 @@ namespace Neo.Network.P2P
 
         protected override void OnReceive(object message)
         {
-            if (!(message is Message msg)) return;
+            if (!(message is Message msg))
+            {
+                switch (message)
+                {
+                    case Flush _: FlushHashes(); break;
+                }
+                return;
+            }
+
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
                 if (!plugin.OnP2PMessage(msg))
                     return;
