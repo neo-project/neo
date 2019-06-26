@@ -20,6 +20,16 @@ namespace Neo.SDK.RPC.Model
         [JsonProperty(PropertyName = "useragent")]
         public string UserAgent { get; set; }
 
+        public JObject ToJson()
+        {
+            JObject json = new JObject();
+            json["topPort"] = TcpPort.ToString();
+            json["wsPort"] = WsPort.ToString();
+            json["nonce"] = Nonce.ToString();
+            json["useragent"] = UserAgent;
+            return json;
+        }
+
         public static SDK_Version FromJson(JObject json)
         {
             SDK_Version version = new SDK_Version();
@@ -30,5 +40,4 @@ namespace Neo.SDK.RPC.Model
             return version;
         }
     }
-
 }

@@ -18,6 +18,15 @@ namespace Neo.SDK.RPC.Model
         [JsonProperty(PropertyName = "active")]
         public bool Active { get; set; }
 
+        public JObject ToJson()
+        {
+            JObject json = new JObject();
+            json["publickey"] = PublicKey;
+            json["votes"] = Votes.ToString();
+            json["active"] = Active.ToString();
+            return json;
+        }
+
         public static SDK_Validator FromJson(JObject json)
         {
             SDK_Validator validator = new SDK_Validator();

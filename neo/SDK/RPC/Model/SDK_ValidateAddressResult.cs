@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Neo.SDK.RPC.Model
 {
-    public class SDK_ValidateAddress
+    public class SDK_ValidateAddressResult
     {
         [JsonProperty(PropertyName = "address")]
         public string Address { get; set; }
@@ -14,9 +14,17 @@ namespace Neo.SDK.RPC.Model
         [JsonProperty(PropertyName = "isvalid")]
         public bool IsValid { get; set; }
 
-        public static SDK_ValidateAddress FromJson(JObject json)
+        public JObject ToJson()
         {
-            SDK_ValidateAddress validateAddress = new SDK_ValidateAddress();
+            JObject json = new JObject();
+            json["address"] = Address;
+            json["isvalid"] = IsValid.ToString();
+            return json;
+        }
+
+        public static SDK_ValidateAddressResult FromJson(JObject json)
+        {
+            SDK_ValidateAddressResult validateAddress = new SDK_ValidateAddressResult();
             validateAddress.Address = json["address"].AsString();
             validateAddress.IsValid = json["isvalid"].AsBoolean();
             return validateAddress;

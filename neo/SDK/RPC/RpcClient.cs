@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Neo.IO.Json;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC;
 using Neo.SDK.RPC;
@@ -93,38 +94,43 @@ namespace Neo.SDK
 
         public int GetConnectionCount()
         {
-            return RpcSend<int>("getconnectioncount");
+            var json = RpcSend("getconnectioncount");
+            return int.Parse(json["result"].AsString());
         }
 
-        public GetContractState GetContractState(string hash)
+        public ContractState GetContractState(string hash)
         {
-            return RpcSend<GetContractState>("getcontractstate", hash);
+            var json = RpcSend("getcontractstate", hash);
+            return ContractState.FromJson(json["result"]);
         }
 
-        public GetPeers GetPeers()
+        public SDK_GetPeersResult GetPeers()
         {
-            return RpcSend<GetPeers>("getpeers");
+            var json = RpcSend("getpeers");
+            return SDK_GetPeersResult.FromJson(json["result"]);
         }
 
         public string[] GetRawMempool()
         {
-            return RpcSend<string[]>("getrawmempool");
+            var json = RpcSend("getrawmempool");
+            return ((JArray)json["result"]).Select(p => p.AsString()).ToArray();
         }
 
-        public GetRawMempool GetRawMempoolBoth()
+        public SDK_RawMemPool GetRawMempoolBoth()
         {
-            return RpcSend<GetRawMempool>("getrawmempool");
+            var json = RpcSend("getrawmempool");
+            return SDK_RawMemPool.FromJson(json["result"]);
         }
 
         public string GetRawTransactionHex(string txid)
         {
-
-            return RpcSend<string>("getrawtransaction", txid);
+            var json = RpcSend("getrawtransaction", txid);
+            return json["result"].AsString();
         }
 
         public Transaction GetRawTransaction(string txid)
         {
-            var json = RpcSend("getrawtransaction", txid);
+            var json = RpcSend("getrawtransaction", txid, true); // verbose = true;
             return Transaction.FromJson(json["result"]);
         }
 
@@ -182,10 +188,10 @@ namespace Neo.SDK
             return json["result"].AsBoolean();
         }
 
-        public SDK_ValidateAddress ValidateAddress(string address)
+        public SDK_ValidateAddressResult ValidateAddress(string address)
         {
             var json = RpcSend("validateaddress", address);
-            return SDK_ValidateAddress.FromJson(json["result"]);
+            return SDK_ValidateAddressResult.FromJson(json["result"]);
         }
 
         public SDK_Nep5Balances GetNep5Balances(string address)

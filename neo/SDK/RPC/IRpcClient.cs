@@ -1,4 +1,5 @@
-﻿using Neo.Network.P2P.Payloads;
+﻿using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC;
 using Neo.SDK.RPC.Model;
 using System.Collections.Generic;
@@ -60,12 +61,12 @@ namespace Neo.SDK.RPC
         /// <summary>
         /// Queries contract information, according to the contract script hash.
         /// </summary>
-        GetContractState GetContractState(string hash);
+        ContractState GetContractState(string hash);
 
         /// <summary>
         /// Gets the list of nodes that the node is currently connected/disconnected from.
         /// </summary>
-        GetPeers GetPeers();
+        SDK_GetPeersResult GetPeers();
 
         /// <summary>
         /// Obtains the list of unconfirmed transactions in memory.
@@ -76,7 +77,7 @@ namespace Neo.SDK.RPC
         /// Obtains the list of unconfirmed transactions in memory.
         /// shouldGetUnverified = true
         /// </summary>
-        GetRawMempool GetRawMempoolBoth();
+        SDK_RawMemPool GetRawMempoolBoth();
 
         /// <summary>
         /// Returns the corresponding transaction information, based on the specified hash value.
@@ -139,7 +140,7 @@ namespace Neo.SDK.RPC
         /// <summary>
         /// Verifies that the address is a correct NEO address.
         /// </summary>
-        SDK_ValidateAddress ValidateAddress(string address);
+        SDK_ValidateAddressResult ValidateAddress(string address);
 
         /// <summary>
         /// Returns the balance of all NEP-5 assets in the specified address.

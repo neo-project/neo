@@ -16,6 +16,14 @@ namespace Neo.SDK.RPC.Model
         [JsonProperty(PropertyName = "balance")]
         public SDK_Nep5Balance[] Balances { get; set; }
 
+        public JObject ToJson()
+        {
+            JObject json = new JObject();
+            json["address"] = Address;
+            json["balance"] = Balances.Select(p => p.ToJson()).ToArray();
+            return json;
+        }
+
         public static SDK_Nep5Balances FromJson(JObject json)
         {
             SDK_Nep5Balances nep5Balance = new SDK_Nep5Balances();
@@ -37,6 +45,15 @@ namespace Neo.SDK.RPC.Model
         [JsonProperty(PropertyName = "last_updated_block")]
         public uint LastUpdatedBlock { get; set; }
 
+        public JObject ToJson()
+        {
+            JObject json = new JObject();
+            json["asset_hash"] = AssetHash.ToArray().ToHexString();
+            json["amount"] = Amount.ToString();
+            json["last_updated_block"] = LastUpdatedBlock.ToString();
+            return json;
+        }
+
         public static SDK_Nep5Balance FromJson(JObject json)
         {
             SDK_Nep5Balance balance = new SDK_Nep5Balance();
@@ -46,6 +63,4 @@ namespace Neo.SDK.RPC.Model
             return balance;
         }
     }
-
-
 }

@@ -15,6 +15,11 @@ namespace Neo.SDK.RPC.Model
         [JsonProperty(PropertyName = "interfaces")]
         public string[] Interfaces { get; set; }
 
+        //public JObject ToJson()
+        //{
+
+        //}
+
         public static SDK_Plugin FromJson(JObject json)
         {
             SDK_Plugin plugin = new SDK_Plugin();

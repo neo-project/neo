@@ -160,7 +160,7 @@ namespace Neo.Network.P2P.Payloads
         public static Transaction FromJson(JObject json)
         {
             Transaction tx = new Transaction();
-            tx._hash = UInt256.Parse(json["hash"].AsString());
+            //tx._hash = UInt256.Parse(json["hash"].AsString());
             //tx.Size = int.Parse(json["size"].AsString());
             tx.Version = byte.Parse(json["version"].AsString());
             tx.Nonce = uint.Parse(json["nonce"].AsString());
