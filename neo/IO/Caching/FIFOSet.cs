@@ -49,12 +49,8 @@ namespace Neo.IO.Caching
         {
             T[] entries;
 
-            lock (dictionary)
-            {
-                // Snapshot
-
-                entries = dictionary.Values.Cast<T>().ToArray();
-            }
+            // Snapshot
+            lock (dictionary) { entries = dictionary.Values.Cast<T>().ToArray(); }
 
             foreach (var entry in entries) yield return entry;
         }
