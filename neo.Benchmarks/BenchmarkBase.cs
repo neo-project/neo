@@ -5,7 +5,7 @@ namespace Neo.Benchmarks
 {
     [MinColumn, MaxColumn, MeanColumn]
     //[RPlotExporter, RankColumn(NumeralSystem.Arabic)]
-    //[RankColumn(NumeralSystem.Arabic)]
+    [RankColumn(NumeralSystem.Arabic)]
     public abstract class BenchmarkBase
     {
         public virtual void Setup()
