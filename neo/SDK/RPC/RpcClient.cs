@@ -12,28 +12,23 @@ namespace Neo.SDK
 {
     public class RpcClient : IRpcClient
     {
-        private readonly IRpcService rpcHelper;
+        private readonly HttpService rpcHelper;
 
-        public RpcClient(IRpcService rpc)
+        public RpcClient(HttpService rpc)
         {
             rpcHelper = rpc;
         }
 
-        private JObject RpcSend(string method, params object[] paraArgs)
+        private JObject RpcSend(string method, params JObject[] paraArgs)
         {
             var request = new RPCRequest
             {
                 Id = 1,
                 Jsonrpc = "2.0",
                 Method = method,
-                Params = paraArgs.Select(p => (JObject)p).ToArray()
+                Params = paraArgs.Select(p => p).ToArray()
             };
             return rpcHelper.Send(request);
-        }
-
-        private T RpcSend<T>(string method, params object[] paraArgs)
-        {
-            throw new NotImplementedException();
         }
 
         public string GetBestBlockHash()
@@ -45,57 +40,56 @@ namespace Neo.SDK
         {
             if (int.TryParse(hashOrIndex, out int index))
             {
-                return RpcSend<string>("getblock", index);
+                return RpcSend("getblock", index).AsString();
             }
-            return RpcSend<string>("getblock", hashOrIndex);
+            return RpcSend("getblock", hashOrIndex).AsString();
         }
 
-        public GetBlock GetBlock(string hashOrIndex)
+        public SDK_Block GetBlock(string hashOrIndex)
         {
             if (int.TryParse(hashOrIndex, out int index))
             {
-                return RpcSend<GetBlock>("getblock", index, true);
+                return SDK_Block.FromJson(RpcSend("getblock", index, true));
             }
-            return RpcSend<GetBlock>("getblock", hashOrIndex, true);
+            return SDK_Block.FromJson(RpcSend("getblock", hashOrIndex, true));
         }
 
         public int GetBlockCount()
         {
-            return RpcSend<int>("getblockcount");
+            return (int)RpcSend("getblockcount").AsNumber();
         }
 
         public string GetBlockHash(int index)
         {
-            return RpcSend<string>("getblockhash", index);
+            return RpcSend("getblockhash", index).AsString();
         }
 
         public string GetBlockHeaderHex(string hashOrIndex)
         {
             if (int.TryParse(hashOrIndex, out int index))
             {
-                return RpcSend<string>("getblockheader", index);
+                return RpcSend("getblockheader", index).AsString();
             }
-            return RpcSend<string>("getblockheader", hashOrIndex);
+            return RpcSend("getblockheader", hashOrIndex).AsString();
         }
 
-        public GetBlockHeader GetBlockHeader(string hashOrIndex)
+        public SDK_BlockHeader GetBlockHeader(string hashOrIndex)
         {
             if (int.TryParse(hashOrIndex, out int index))
             {
-                return RpcSend<GetBlockHeader>("getblockheader", index, true);
+                return SDK_BlockHeader.FromJson(RpcSend("getblockheader", index, true));
             }
-            return RpcSend<GetBlockHeader>("getblockheader", hashOrIndex, true);
+            return SDK_BlockHeader.FromJson(RpcSend("getblockheader", hashOrIndex, true));
         }
 
         public string GetBlockSysFee(int height)
         {
-            return RpcSend<string>("getblocksysfee", height);
+            return RpcSend("getblocksysfee", height).AsString();
         }
 
         public int GetConnectionCount()
         {
-            var json = RpcSend("getconnectioncount");
-            return int.Parse(json["result"].AsString());
+            return (int)RpcSend("getconnectioncount").AsNumber();
         }
 
         public ContractState GetContractState(string hash)
@@ -160,7 +154,7 @@ namespace Neo.SDK
 
         public SDK_InvokeScriptResult InvokeFunction(string address, string function, SDK_StackJson[] stacks)
         {
-            var json = RpcSend("invokefunction", address, function, stacks);
+            var json = RpcSend("invokefunction", address, function, stacks.Select(p => p.ToJson()).ToArray());
             return SDK_InvokeScriptResult.FromJson(json["result"]);
         }
 

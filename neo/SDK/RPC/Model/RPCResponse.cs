@@ -30,7 +30,7 @@ namespace Neo.SDK.RPC.Model
         {
             var response = new RPCResponse
             {
-                Id = (int)json["id"].AsNumber(),
+                Id = (int?)json["id"]?.AsNumber(),
                 Jsonrpc = json["jsonrpc"].AsString(),
                 Result = json["result"]
             };

@@ -26,7 +26,7 @@ namespace Neo.SDK.RPC
         /// <summary>
         /// Returns the hash of the tallest block in the main chain.
         /// </summary>
-        GetBlock GetBlock(string hashOrIndex);
+        SDK_Block GetBlock(string hashOrIndex);
 
         /// <summary>
         /// Gets the number of blocks in the main chain.
@@ -46,7 +46,7 @@ namespace Neo.SDK.RPC
         /// <summary>
         /// Returns the corresponding block header information according to the specified script hash.
         /// </summary>
-        GetBlockHeader GetBlockHeader(string hashOrIndex);
+        SDK_BlockHeader GetBlockHeader(string hashOrIndex);
 
         /// <summary>
         /// Returns the system fees of the block, based on the specified index.

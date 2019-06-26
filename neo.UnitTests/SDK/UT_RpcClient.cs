@@ -74,7 +74,7 @@ namespace Neo.UnitTests.SDK
             {
                 Assert.AreEqual(-32700, ex.HResult);
                 Assert.AreEqual("Parse error", ex.Message);
-                Assert.AreEqual("something", ex.Data["data"]);
+                Assert.AreEqual("something", ((JObject)ex.Data["data"]).AsString());
             }
         }
 
@@ -122,17 +122,17 @@ namespace Neo.UnitTests.SDK
 
             JObject json = block.ToJson();
             json["confirmations"] = 20;
-            json["nextblockhash"] = "nexthash";
+            json["nextblockhash"] = "773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e";
 
             JObject response = RpcServer.CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
             var result = rpc.GetBlock("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
-            Assert.AreEqual(block.Hash.ToString(), result.Hash);
+            Assert.AreEqual(block.Hash.ToString(), result.Block.Hash.ToString());
             Assert.AreEqual(20, result.Confirmations);
-            Assert.AreEqual(block.Transactions.Length, result.Tx.Length);
-            Assert.AreEqual(block.Transactions[0].Hash.ToString(), result.Tx[0].Hash);
+            Assert.AreEqual(block.Transactions.Length, result.Block.Transactions.Length);
+            Assert.AreEqual(block.Transactions[0].Hash.ToString(), result.Block.Transactions[0].Hash.ToString());
         }
 
         [TestMethod]
@@ -176,7 +176,7 @@ namespace Neo.UnitTests.SDK
 
             JObject json = header.ToJson();
             json["confirmations"] = 20;
-            json["nextblockhash"] = "nexthash";
+            json["nextblockhash"] = "4c1e879872344349067c3b1a30781eeb4f9040d3795db7922f513f6f9660b9b2";
 
             JObject response = RpcServer.CreateResponse(1);
             response["result"] = json;
@@ -184,7 +184,7 @@ namespace Neo.UnitTests.SDK
 
             var result = rpc.GetBlockHeader("100");
 
-            Assert.AreEqual(header.Hash.ToString(), result.Hash);
+            Assert.AreEqual(header.Hash.ToString(), result.Header.Hash.ToString());
             Assert.AreEqual(20, result.Confirmations);
         }
 
@@ -420,7 +420,7 @@ namespace Neo.UnitTests.SDK
             response["result"] = json;
             MockResponse(response.ToString());
 
-            var result = rpc.InvokeFunction("af7c7328eee5a275a3bcaee2bf0cf662b5e739be", "balanceOf", new[] { new StackJson { Type = "Hash160", Value = "91b83e96f2a7c4fdf0c1688441ec61986c7cae26" } });
+            var result = rpc.InvokeFunction("af7c7328eee5a275a3bcaee2bf0cf662b5e739be", "balanceOf", new[] { new SDK_StackJson { Type = "Hash160", Value = "91b83e96f2a7c4fdf0c1688441ec61986c7cae26" } });
             Assert.AreEqual(json.ToString(), JsonConvert.SerializeObject(result));
         }
 

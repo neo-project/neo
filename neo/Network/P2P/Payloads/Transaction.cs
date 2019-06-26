@@ -164,7 +164,7 @@ namespace Neo.Network.P2P.Payloads
             //tx.Size = int.Parse(json["size"].AsString());
             tx.Version = byte.Parse(json["version"].AsString());
             tx.Nonce = uint.Parse(json["nonce"].AsString());
-            tx.Sender = UInt160.Parse(json["sender"].AsString());
+            tx.Sender = json["sender"].AsString().ToScriptHash();
             tx.SystemFee = long.Parse(json["sys_fee"].AsString());
             tx.NetworkFee = long.Parse(json["net_fee"].AsString());
             tx.ValidUntilBlock = uint.Parse(json["valid_until_block"].AsString());

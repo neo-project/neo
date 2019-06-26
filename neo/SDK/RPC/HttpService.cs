@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Neo.SDK.RPC
 {
-    public class HttpService : IRpcService
+    public class HttpService
     {
         private readonly HttpClient httpClient;
 
@@ -22,9 +22,9 @@ namespace Neo.SDK.RPC
             httpClient = client;
         }
 
-        public async Task<JObject> SendAsync(object request)
+        public async Task<JObject> SendAsync(RPCRequest request)
         {
-            var requestJson = JsonConvert.SerializeObject(request);
+            var requestJson = request.ToJson().ToString();
             var result = await httpClient.PostAsync(httpClient.BaseAddress, new StringContent(requestJson, Encoding.UTF8));
             var content = await result.Content.ReadAsStringAsync();
             var response = RPCResponse.FromJson(JObject.Parse(content));
@@ -37,7 +37,7 @@ namespace Neo.SDK.RPC
             return response.Result;
         }
 
-        public JObject Send(object request)
+        public JObject Send(RPCRequest request)
         {
             try
             {

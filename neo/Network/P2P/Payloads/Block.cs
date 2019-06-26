@@ -2,6 +2,7 @@
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -104,6 +105,15 @@ namespace Neo.Network.P2P.Payloads
             json["consensus_data"] = ConsensusData.ToJson();
             json["tx"] = Transactions.Select(p => p.ToJson()).ToArray();
             return json;
+        }
+
+        public static Block FromJson(JObject json)
+        {
+            Block block = new Block();
+            block.PraseFromJson(json);
+            block.ConsensusData = ConsensusData.FromJson(json["consensus_data"]);
+            block.Transactions = ((JArray)json["tx"]).Select(p => Transaction.FromJson(p)).ToArray();
+            return block;
         }
 
         public TrimmedBlock Trim()

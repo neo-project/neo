@@ -44,6 +44,14 @@ namespace Neo.SDK.RPC.Model
         [JsonProperty(PropertyName = "value")]
         public string Value { get; set; }
 
+        public JObject ToJson()
+        {
+            JObject json = new JObject();
+            json["type"] = Type;
+            json["value"] = Value;
+            return json;
+        }
+
         public static SDK_StackJson FromJson(JObject json)
         {
             SDK_StackJson stackJson = new SDK_StackJson();
