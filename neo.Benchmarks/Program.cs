@@ -9,7 +9,8 @@ namespace Neo.Benchmarks
         {
             foreach (var type in new Type[]
             {
-                typeof(BenchmarkUInt)
+                typeof(BenchmarkUInt),
+                typeof(BenchmarkUInt256)
             })
             {
                 var summary = BenchmarkRunner.Run(type); 
