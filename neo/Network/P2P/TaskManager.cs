@@ -19,6 +19,7 @@ namespace Neo.Network.P2P
         public class HeaderTaskCompleted { }
         public class RestartTasks { public InvPayload Payload; }
         private class Timer { }
+        public class Flush { }
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
