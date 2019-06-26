@@ -17,7 +17,7 @@ namespace Neo.SmartContract
 {
     public static class Helper
     {
-        public static StackItem DeserializeStackItem(this byte[] data, uint maxArraySize, uint maxItemSize = 1024 * 1024)
+        public static StackItem DeserializeStackItem(this byte[] data, uint maxArraySize, uint maxItemSize)
         {
             using (MemoryStream ms = new MemoryStream(data, false))
             using (BinaryReader reader = new BinaryReader(ms))
@@ -26,7 +26,7 @@ namespace Neo.SmartContract
             }
         }
 
-        private static StackItem DeserializeStackItem(BinaryReader reader, uint maxArraySize, uint maxItemSize = 1024 * 1024)
+        private static StackItem DeserializeStackItem(BinaryReader reader, uint maxArraySize, uint maxItemSize)
         {
             Stack<StackItem> deserialized = new Stack<StackItem>();
             int undeserialized = 1;
