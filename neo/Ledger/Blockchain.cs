@@ -431,15 +431,19 @@ namespace Neo.Ledger
                 snapshot.Blocks.Add(block.Hash, block.Trim());
                 foreach (Transaction tx in block.Transactions)
                 {
-                    snapshot.Transactions.Add(tx.Hash, new TransactionState
+                    var state = new TransactionState
                     {
                         BlockIndex = block.Index,
                         Transaction = tx
-                    });
+                    };
+
+                    snapshot.Transactions.Add(tx.Hash, state);
+
                     using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx, snapshot.Clone(), tx.SystemFee))
                     {
                         engine.LoadScript(tx.Script);
-                        if (!engine.Execute().HasFlag(VMState.FAULT))
+                        state.VMState = engine.Execute();
+                        if (state.VMState == VMState.HALT)
                         {
                             engine.Snapshot.Commit();
                         }
