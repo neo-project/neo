@@ -4,7 +4,8 @@ using BenchmarkDotNet.Mathematics;
 namespace Neo.Benchmarks
 {
     [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-    [RPlotExporter, RankColumn(NumeralSystem.Arabic)]
+    //[RPlotExporter, RankColumn(NumeralSystem.Arabic)]
+    [RankColumn(NumeralSystem.Arabic)]
     public abstract class BenchmarkBase
     {
         public virtual void Setup()

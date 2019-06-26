@@ -68,7 +68,7 @@ namespace Neo.Benchmarks
 
         public delegate object BenchmarkMethod();
 
-        public (TimeSpan, object) Benchmark(BenchmarkMethod method)
+        public (TimeSpan, object) LocalBenchmark(BenchmarkMethod method)
         {
             Stopwatch sw0 = new Stopwatch();
             sw0.Start();
@@ -79,7 +79,7 @@ namespace Neo.Benchmarks
             return (elapsed, result);
         }
 
-        [TestMethod]
+        [Benchmark]
         public void Benchmark_CompareTo_UInt256()
         {
             // testing "official UInt256 version"
@@ -92,7 +92,7 @@ namespace Neo.Benchmarks
                 uut_32_2[i] = new UInt256(base_32_2[i]);
             }
 
-            var checksum0 = Benchmark(() =>
+            var checksum0 = LocalBenchmark(() =>
             {
                 var checksum = 0;
                 for (var i = 0; i < MAX_TESTS; i++)
@@ -103,7 +103,7 @@ namespace Neo.Benchmarks
                 return checksum;
             }).Item2;
 
-            var checksum1 = Benchmark(() =>
+            var checksum1 = LocalBenchmark(() =>
             {
                 var checksum = 0;
                 for (var i = 0; i < MAX_TESTS; i++)
@@ -114,7 +114,7 @@ namespace Neo.Benchmarks
                 return checksum;
             }).Item2;
 
-            var checksum2 = Benchmark(() =>
+            var checksum2 = LocalBenchmark(() =>
             {
                 var checksum = 0;
                 for (var i = 0; i < MAX_TESTS; i++)
@@ -125,7 +125,7 @@ namespace Neo.Benchmarks
                 return checksum;
             }).Item2;
 
-            var checksum3 = Benchmark(() =>
+            var checksum3 = LocalBenchmark(() =>
             {
                 var checksum = 0;
                 for (var i = 0; i < MAX_TESTS; i++)
@@ -136,12 +136,12 @@ namespace Neo.Benchmarks
                 return checksum;
             }).Item2;
 
-            checksum0.Should().Be(checksum1);
-            checksum0.Should().Be(checksum2);
-            checksum0.Should().Be(checksum3);
+            //checksum0.Should().Be(checksum1);
+            //checksum0.Should().Be(checksum2);
+            //checksum0.Should().Be(checksum3);
         }
 
-        [TestMethod]
+        [Benchmark]
         public void Benchmark_CompareTo_UInt160()
         {
             // testing "official UInt160 version"
@@ -154,7 +154,7 @@ namespace Neo.Benchmarks
                 uut_20_2[i] = new UInt160(base_20_2[i]);
             }
 
-            var checksum0 = Benchmark(() =>
+            var checksum0 = LocalBenchmark(() =>
             {
                 var checksum = 0;
                 for (var i = 0; i < MAX_TESTS; i++)
@@ -165,7 +165,7 @@ namespace Neo.Benchmarks
                 return checksum;
             }).Item2;
 
-            var checksum1 = Benchmark(() =>
+            var checksum1 = LocalBenchmark(() =>
             {
                 var checksum = 0;
                 for (var i = 0; i < MAX_TESTS; i++)
@@ -176,7 +176,7 @@ namespace Neo.Benchmarks
                 return checksum;
             }).Item2;
 
-            var checksum2 = Benchmark(() =>
+            var checksum2 = LocalBenchmark(() =>
             {
                 var checksum = 0;
                 for (var i = 0; i < MAX_TESTS; i++)
@@ -187,7 +187,7 @@ namespace Neo.Benchmarks
                 return checksum;
             }).Item2;
 
-            var checksum3 = Benchmark(() =>
+            var checksum3 = LocalBenchmark(() =>
             {
                 var checksum = 0;
                 for (var i = 0; i < MAX_TESTS; i++)
@@ -198,9 +198,9 @@ namespace Neo.Benchmarks
                 return checksum;
             }).Item2;
 
-            checksum0.Should().Be(checksum1);
-            checksum0.Should().Be(checksum2);
-            checksum0.Should().Be(checksum3);
+            //checksum0.Should().Be(checksum1);
+            //checksum0.Should().Be(checksum2);
+            //checksum0.Should().Be(checksum3);
         }
 
         [TestMethod]
