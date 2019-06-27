@@ -10,28 +10,37 @@ namespace Neo.Persistence.LevelDB
     public class LevelDBStore : Store, IDisposable
     {
         private readonly DB db;
+        private readonly ReadOptions options;
+        private readonly WriteOptions writeSync;
 
         public LevelDBStore(string path)
         {
-            this.db = DB.Open(path, new Options { CreateIfMissing = true });
+            db = DB.Open(path, Options.Default);
             if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(Prefixes.SYS_Version), out Slice value) && Version.TryParse(value.ToString(), out Version version) && version >= Version.Parse("2.9.1"))
                 return;
-            WriteBatch batch = new WriteBatch();
-            ReadOptions options = new ReadOptions { FillCache = false };
-            using (Iterator it = db.NewIterator(options))
+
+            options = new ReadOptions { FillCache = false };
+            writeSync = new WriteOptions { Sync = true };
+
+            using (WriteBatch batch = new WriteBatch())
             {
-                for (it.SeekToFirst(); it.Valid(); it.Next())
+                using (Iterator it = db.NewIterator(options))
                 {
-                    batch.Delete(it.Key());
+                    for (it.SeekToFirst(); it.Valid(); it.Next())
+                    {
+                        batch.Delete(it.Key());
+                    }
                 }
+                db.Put(WriteOptions.Default, SliceBuilder.Begin(Prefixes.SYS_Version), Assembly.GetExecutingAssembly().GetName().Version.ToString());
+                db.Write(WriteOptions.Default, batch);
             }
-            db.Put(WriteOptions.Default, SliceBuilder.Begin(Prefixes.SYS_Version), Assembly.GetExecutingAssembly().GetName().Version.ToString());
-            db.Write(WriteOptions.Default, batch);
         }
 
         public void Dispose()
         {
             db.Dispose();
+            options.Dispose();
+            writeSync.Dispose();
         }
 
         public override byte[] Get(byte prefix, byte[] key)
@@ -88,7 +97,7 @@ namespace Neo.Persistence.LevelDB
 
         public override void PutSync(byte prefix, byte[] key, byte[] value)
         {
-            db.Put(new WriteOptions { Sync = true }, SliceBuilder.Begin(prefix).Add(key), value);
+            db.Put(writeSync, SliceBuilder.Begin(prefix).Add(key), value);
         }
     }
 }

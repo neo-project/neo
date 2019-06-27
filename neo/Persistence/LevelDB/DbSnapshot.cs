@@ -11,6 +11,7 @@ namespace Neo.Persistence.LevelDB
         private readonly DB db;
         private readonly LSnapshot snapshot;
         private readonly WriteBatch batch;
+        private readonly ReadOptions options;
 
         public override DataCache<UInt256, TrimmedBlock> Blocks { get; }
         public override DataCache<UInt256, TransactionState> Transactions { get; }
@@ -23,9 +24,9 @@ namespace Neo.Persistence.LevelDB
         public DbSnapshot(DB db)
         {
             this.db = db;
-            this.snapshot = db.GetSnapshot();
-            this.batch = new WriteBatch();
-            ReadOptions options = new ReadOptions { FillCache = false, Snapshot = snapshot };
+            snapshot = db.GetSnapshot();
+            batch = new WriteBatch();
+            options = new ReadOptions { FillCache = false, Snapshot = snapshot };
             Blocks = new DbCache<UInt256, TrimmedBlock>(db, options, batch, Prefixes.DATA_Block);
             Transactions = new DbCache<UInt256, TransactionState>(db, options, batch, Prefixes.DATA_Transaction);
             Contracts = new DbCache<UInt160, ContractState>(db, options, batch, Prefixes.ST_Contract);
@@ -44,6 +45,8 @@ namespace Neo.Persistence.LevelDB
         public override void Dispose()
         {
             snapshot.Dispose();
+            options.Dispose();
+            batch.Dispose();
         }
     }
 }

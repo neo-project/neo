@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Neo.IO.Data.LevelDB
 {
@@ -28,7 +28,7 @@ namespace Neo.IO.Data.LevelDB
         public void Delete(WriteOptions options, Slice key)
         {
             IntPtr error;
-            Native.leveldb_delete(handle, options.handle, key.buffer, (UIntPtr)key.buffer.Length, out error);
+            Native.leveldb_delete(handle, options.Handle, key.buffer, (UIntPtr)key.buffer.Length, out error);
             NativeHelper.CheckError(error);
         }
 
@@ -36,7 +36,7 @@ namespace Neo.IO.Data.LevelDB
         {
             UIntPtr length;
             IntPtr error;
-            IntPtr value = Native.leveldb_get(handle, options.handle, key.buffer, (UIntPtr)key.buffer.Length, out length, out error);
+            IntPtr value = Native.leveldb_get(handle, options.Handle, key.buffer, (UIntPtr)key.buffer.Length, out length, out error);
             try
             {
                 NativeHelper.CheckError(error);
@@ -57,7 +57,7 @@ namespace Neo.IO.Data.LevelDB
 
         public Iterator NewIterator(ReadOptions options)
         {
-            return new Iterator(Native.leveldb_create_iterator(handle, options.handle));
+            return new Iterator(Native.leveldb_create_iterator(handle, options.Handle));
         }
 
         public static DB Open(string name)
@@ -68,7 +68,7 @@ namespace Neo.IO.Data.LevelDB
         public static DB Open(string name, Options options)
         {
             IntPtr error;
-            IntPtr handle = Native.leveldb_open(options.handle, name, out error);
+            IntPtr handle = Native.leveldb_open(options.Handle, name, out error);
             NativeHelper.CheckError(error);
             return new DB(handle);
         }
@@ -76,7 +76,7 @@ namespace Neo.IO.Data.LevelDB
         public void Put(WriteOptions options, Slice key, Slice value)
         {
             IntPtr error;
-            Native.leveldb_put(handle, options.handle, key.buffer, (UIntPtr)key.buffer.Length, value.buffer, (UIntPtr)value.buffer.Length, out error);
+            Native.leveldb_put(handle, options.Handle, key.buffer, (UIntPtr)key.buffer.Length, value.buffer, (UIntPtr)value.buffer.Length, out error);
             NativeHelper.CheckError(error);
         }
 
@@ -84,7 +84,7 @@ namespace Neo.IO.Data.LevelDB
         {
             UIntPtr length;
             IntPtr error;
-            IntPtr v = Native.leveldb_get(handle, options.handle, key.buffer, (UIntPtr)key.buffer.Length, out length, out error);
+            IntPtr v = Native.leveldb_get(handle, options.Handle, key.buffer, (UIntPtr)key.buffer.Length, out length, out error);
             if (error != IntPtr.Zero)
             {
                 Native.leveldb_free(error);
@@ -113,7 +113,7 @@ namespace Neo.IO.Data.LevelDB
                 try
                 {
                     IntPtr error;
-                    Native.leveldb_write(handle, options.handle, write_batch.handle, out error);
+                    Native.leveldb_write(handle, options.Handle, write_batch.Handle, out error);
                     NativeHelper.CheckError(error);
                     break;
                 }

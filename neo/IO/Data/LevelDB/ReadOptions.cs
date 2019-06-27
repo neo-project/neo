@@ -2,16 +2,25 @@
 
 namespace Neo.IO.Data.LevelDB
 {
-    public class ReadOptions
+    public class ReadOptions : IDisposable
     {
         public static readonly ReadOptions Default = new ReadOptions();
-        internal readonly IntPtr handle = Native.leveldb_readoptions_create();
+        
+        /// <summary>
+        /// Return true if haven't got valid handle
+        /// </summary>
+        public bool IsDisposed => Handle == IntPtr.Zero;
+
+        /// <summary>
+        /// Handle
+        /// </summary>
+        internal IntPtr Handle { get; private set; }
 
         public bool VerifyChecksums
         {
             set
             {
-                Native.leveldb_readoptions_set_verify_checksums(handle, value);
+                Native.leveldb_readoptions_set_verify_checksums(Handle, value);
             }
         }
 
@@ -19,7 +28,7 @@ namespace Neo.IO.Data.LevelDB
         {
             set
             {
-                Native.leveldb_readoptions_set_fill_cache(handle, value);
+                Native.leveldb_readoptions_set_fill_cache(Handle, value);
             }
         }
 
@@ -27,13 +36,22 @@ namespace Neo.IO.Data.LevelDB
         {
             set
             {
-                Native.leveldb_readoptions_set_snapshot(handle, value.handle);
+                Native.leveldb_readoptions_set_snapshot(Handle, value.Handle);
             }
         }
 
-        ~ReadOptions()
+        public ReadOptions()
         {
-            Native.leveldb_readoptions_destroy(handle);
+            Handle = Native.leveldb_readoptions_create();
+        }
+
+        public void Dispose()
+        {
+            if (Handle != IntPtr.Zero)
+            {
+                Native.leveldb_options_destroy(Handle);
+                Handle = IntPtr.Zero;
+            }
         }
     }
 }
