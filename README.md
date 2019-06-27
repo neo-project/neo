@@ -14,7 +14,9 @@
   <a href="https://github.com/neo-project/neo/blob/master/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg">
   </a>
-  <img src="https://badge.fury.io/gh/neo-project%2Fneo.svg">
+  <a href="https://github.com/neo-project/neo/releases">
+    <img src="https://badge.fury.io/gh/neo-project%2Fneo.svg">
+  </a>
 </p>
 
 NEO 3.0 (under development): A distributed network for the Smart Economy
