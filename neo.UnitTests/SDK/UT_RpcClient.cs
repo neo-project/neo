@@ -105,13 +105,7 @@ namespace Neo.UnitTests.SDK
         {
             // create block
             var block = new Block();
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRootVal;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(block, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal, out transactionsVal, 0);
+            TestUtils.SetupBlockWithValues(block, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, 0);
 
             block.Transactions = new[]
             {
@@ -121,14 +115,21 @@ namespace Neo.UnitTests.SDK
             };
 
             JObject json = block.ToJson();
-            json["confirmations"] = 20;
-            json["nextblockhash"] = "773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e";
-
             JObject response = RpcServer.CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
             var result = rpc.GetBlock("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
+            Assert.AreEqual(block.Hash.ToString(), result.Block.Hash.ToString());
+            Assert.IsNull(result.Confirmations);
+            Assert.AreEqual(block.Transactions.Length, result.Block.Transactions.Length);
+            Assert.AreEqual(block.Transactions[0].Hash.ToString(), result.Block.Transactions[0].Hash.ToString());
+
+            // verbose with confirmations
+            json["confirmations"] = 20;
+            json["nextblockhash"] = "773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e";
+            MockResponse(response.ToString());
+            result = rpc.GetBlock("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
             Assert.AreEqual(block.Hash.ToString(), result.Block.Hash.ToString());
             Assert.AreEqual(20, result.Confirmations);
             Assert.AreEqual(block.Transactions.Length, result.Block.Transactions.Length);
@@ -175,15 +176,18 @@ namespace Neo.UnitTests.SDK
             TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal);
 
             JObject json = header.ToJson();
-            json["confirmations"] = 20;
-            json["nextblockhash"] = "4c1e879872344349067c3b1a30781eeb4f9040d3795db7922f513f6f9660b9b2";
-
             JObject response = RpcServer.CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
             var result = rpc.GetBlockHeader("100");
+            Assert.AreEqual(header.Hash.ToString(), result.Header.Hash.ToString());
+            Assert.IsNull(result.Confirmations);
 
+            json["confirmations"] = 20;
+            json["nextblockhash"] = "4c1e879872344349067c3b1a30781eeb4f9040d3795db7922f513f6f9660b9b2";
+            MockResponse(response.ToString());
+            result = rpc.GetBlockHeader("100");
             Assert.AreEqual(header.Hash.ToString(), result.Header.Hash.ToString());
             Assert.AreEqual(20, result.Confirmations);
         }
@@ -327,7 +331,17 @@ namespace Neo.UnitTests.SDK
             MockResponse(response.ToString());
 
             var result = rpc.GetRawTransaction("0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e");
-            Assert.AreEqual(transaction.Hash, result.Hash);
+            Assert.AreEqual(transaction.Hash, result.Transaction.Hash);
+            Assert.AreEqual(json.ToString(), result.ToJson().ToString());
+
+            json["blockhash"] = UInt256.Zero.ToString();
+            json["confirmations"] = 100;
+            json["blocktime"] = 10;
+            MockResponse(response.ToString());
+
+            result = rpc.GetRawTransaction("0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e");
+            Assert.AreEqual(transaction.Hash, result.Transaction.Hash);
+            Assert.AreEqual(100, result.Confirmations);
             Assert.AreEqual(json.ToString(), result.ToJson().ToString());
         }
 

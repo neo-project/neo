@@ -117,10 +117,10 @@ namespace Neo.SDK
             return RpcSend("getrawtransaction", txid).AsString();
         }
 
-        public Transaction GetRawTransaction(string txid)
+        public SDK_Transaction GetRawTransaction(string txid)
         {
             // verbose = true;
-            return Transaction.FromJson(RpcSend("getrawtransaction", txid, true));
+            return SDK_Transaction.FromJson(RpcSend("getrawtransaction", txid, true));
         }
 
         public string GetStorage(string script_hash, string key)
@@ -155,7 +155,7 @@ namespace Neo.SDK
 
         public SDK_Plugin[] ListPlugins()
         {
-            return ((JArray)RpcSend("listplugins")).Select(p=>SDK_Plugin.FromJson(p)).ToArray();
+            return ((JArray)RpcSend("listplugins")).Select(p => SDK_Plugin.FromJson(p)).ToArray();
         }
 
         public bool SendRawTransaction(string rawTransaction)

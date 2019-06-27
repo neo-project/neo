@@ -88,7 +88,7 @@ namespace Neo.SDK.RPC
         /// Returns the corresponding transaction information, based on the specified hash value.
         /// verbose = true
         /// </summary>
-        Transaction GetRawTransaction(string txid);
+        SDK_Transaction GetRawTransaction(string txid);
 
         /// <summary>
         /// Returns the stored value, according to the contract script hash and the stored key.
