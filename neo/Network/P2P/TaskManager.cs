@@ -25,13 +25,7 @@ namespace Neo.Network.P2P
 
         private readonly NeoSystem system;
         private const int MaxConncurrentTasks = 3;
-
-        /// <summary>
-        /// The limit `Blockchain.Singleton.MemPool.Capacity * 2` was the same value used in ProtocolHandler
-        /// </summary>
-        private static readonly int MaxCachedHashes = Blockchain.Singleton.MemPool.Capacity * 2;
-        private readonly FIFOSet<UInt256> knownHashes = new FIFOSet<UInt256>(MaxCachedHashes);
-
+        private readonly FIFOSet<UInt256> knownHashes;
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
@@ -42,6 +36,7 @@ namespace Neo.Network.P2P
         public TaskManager(NeoSystem system)
         {
             this.system = system;
+            this.knownHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
         }
 
         private void OnHeaderTaskCompleted()
