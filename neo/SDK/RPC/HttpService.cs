@@ -1,4 +1,4 @@
-using Neo.IO.Json;
+﻿using Neo.IO.Json;
 using Neo.SDK.RPC.Model;
 using System;
 using System.Net.Http;

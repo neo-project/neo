@@ -17,16 +17,16 @@ namespace Neo.SmartContract
 {
     public static class Helper
     {
-        public static StackItem DeserializeStackItem(this byte[] data, uint maxArraySize)
+        public static StackItem DeserializeStackItem(this byte[] data, uint maxArraySize, uint maxItemSize)
         {
             using (MemoryStream ms = new MemoryStream(data, false))
             using (BinaryReader reader = new BinaryReader(ms))
             {
-                return DeserializeStackItem(reader, maxArraySize);
+                return DeserializeStackItem(reader, maxArraySize, maxItemSize);
             }
         }
 
-        private static StackItem DeserializeStackItem(BinaryReader reader, uint maxArraySize)
+        private static StackItem DeserializeStackItem(BinaryReader reader, uint maxArraySize, uint maxItemSize)
         {
             Stack<StackItem> deserialized = new Stack<StackItem>();
             int undeserialized = 1;
@@ -36,13 +36,13 @@ namespace Neo.SmartContract
                 switch (type)
                 {
                     case StackItemType.ByteArray:
-                        deserialized.Push(new ByteArray(reader.ReadVarBytes()));
+                        deserialized.Push(new ByteArray(reader.ReadVarBytes((int)maxItemSize)));
                         break;
                     case StackItemType.Boolean:
                         deserialized.Push(new VMBoolean(reader.ReadBoolean()));
                         break;
                     case StackItemType.Integer:
-                        deserialized.Push(new Integer(new BigInteger(reader.ReadVarBytes())));
+                        deserialized.Push(new Integer(new BigInteger(reader.ReadVarBytes(ExecutionEngine.MaxSizeForBigInteger))));
                         break;
                     case StackItemType.Array:
                     case StackItemType.Struct:

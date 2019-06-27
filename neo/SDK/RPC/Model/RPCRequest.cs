@@ -1,4 +1,4 @@
-using Neo.IO.Json;
+﻿using Neo.IO.Json;
 using System.Linq;
 
 namespace Neo.SDK.RPC.Model
