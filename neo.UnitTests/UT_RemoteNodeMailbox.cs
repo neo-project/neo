@@ -15,7 +15,7 @@ using Akka.IO;
 namespace Neo.UnitTests
 {
     [TestClass]
-    public class UT_RemoteNodeMailbox  : TestKit
+    public class UT_RemoteNodeMailbox : TestKit
     {
         private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
 
