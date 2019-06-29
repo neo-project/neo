@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Neo
 {
-    
+
     /// <summary>
     /// Base class for little-endian unsigned integers. Two classes inherit from this: UInt160 and UInt256.
     /// Only basic comparison/serialization are proposed for these classes. For arithmetic purposes, use BigInteger class.
