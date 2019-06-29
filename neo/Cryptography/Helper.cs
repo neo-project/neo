@@ -79,7 +79,9 @@ namespace Neo.Cryptography
             byte[] checksum = buffer.Sha256(0, buffer.Length - 4).Sha256();
             if (!buffer.Skip(buffer.Length - 4).SequenceEqual(checksum.Take(4)))
                 throw new FormatException();
-            return buffer.Take(buffer.Length - 4).ToArray();
+            var ret = buffer.Take(buffer.Length - 4).ToArray();
+            Array.Clear(buffer, 0, buffer.Length);
+            return ret;
         }
 
         public static string Base58CheckEncode(this byte[] data)
@@ -88,7 +90,9 @@ namespace Neo.Cryptography
             byte[] buffer = new byte[data.Length + 4];
             Buffer.BlockCopy(data, 0, buffer, 0, data.Length);
             Buffer.BlockCopy(checksum, 0, buffer, data.Length, 4);
-            return Base58.Encode(buffer);
+            var ret = Base58.Encode(buffer);
+            Array.Clear(buffer, 0, buffer.Length);
+            return ret;
         }
 
         public static byte[] RIPEMD160(this IEnumerable<byte> value)

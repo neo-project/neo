@@ -217,7 +217,7 @@ namespace Neo.SmartContract
             StackItem item;
             try
             {
-                item = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().DeserializeStackItem(engine.MaxArraySize);
+                item = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().DeserializeStackItem(engine.MaxArraySize, engine.MaxItemSize);
             }
             catch (FormatException)
             {
