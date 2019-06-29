@@ -37,7 +37,7 @@ namespace Neo.UnitTests
 
             var cultures = new string[] { "en-US", "zh-CN", "de-DE", "ko-KR", "ja-JP" };
             var originalUICulture = CultureInfo.CurrentCulture;
-            var emtpyObjArray = new object[] { };
+            var emptyObjArray = new object[] { };
             var testContext = new object[] { new UnitTestContext() };
 
             // run all the tests, varying the culture each time.
@@ -49,7 +49,7 @@ namespace Neo.UnitTests
 
                     foreach (var c in testClasses)
                     {
-                        var instance = c.Constructor.Invoke(emtpyObjArray);
+                        var instance = c.Constructor.Invoke(emptyObjArray);
                         if (c.ClassInit != null)
                         {
                             c.ClassInit.Invoke(instance, testContext);
@@ -58,17 +58,17 @@ namespace Neo.UnitTests
                         {
                             if (c.TestInit != null)
                             {
-                                c.TestInit.Invoke(instance, emtpyObjArray);
+                                c.TestInit.Invoke(instance, emptyObjArray);
                             }
-                            m.Invoke(instance, emtpyObjArray);
+                            m.Invoke(instance, emptyObjArray);
                             if (c.TestCleanup != null)
                             {
-                                c.TestCleanup.Invoke(instance, emtpyObjArray);
+                                c.TestCleanup.Invoke(instance, emptyObjArray);
                             }
                         }
                         if (c.ClassCleanup != null)
                         {
-                            c.ClassCleanup.Invoke(instance, emtpyObjArray);
+                            c.ClassCleanup.Invoke(instance, emptyObjArray);
                         }
                     }
                 }
