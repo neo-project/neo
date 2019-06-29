@@ -85,29 +85,4 @@ namespace Neo.UnitTests
             verackMessage.Data.Count.Should().Be(3);
         }
     }
-
-    internal class TestProtocolFactory : IActorRefFactory
-    {
-        private IActorRef protocolRef;
-
-        public TestProtocolFactory(IActorRef protocolRef)
-        {
-            this.protocolRef = protocolRef;
-        }
-
-        public IActorRef ActorOf(Props props, string name = null)
-        {
-            return protocolRef;
-        }
-
-        public ActorSelection ActorSelection(ActorPath actorPath)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ActorSelection ActorSelection(string actorPath)
-        {
-            throw new NotImplementedException();
-        }
-    }
 }
