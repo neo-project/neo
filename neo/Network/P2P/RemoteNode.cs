@@ -32,11 +32,11 @@ namespace Neo.Network.P2P
         public uint LastBlockIndex { get; private set; } = 0;
         public bool IsFullNode { get; private set; } = false;
 
-        public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local, IActorRefFactory protocolFactory)
+        public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local, IActorRef protocolHandler)
             : base(connection, remote, local)
         {
             this.system = system;
-            this.protocol = protocolFactory.ActorOf(ProtocolHandler.Props(system));
+            this.protocol = protocolHandler;
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
 
             var capabilities = new List<NodeCapability>
@@ -224,7 +224,8 @@ namespace Neo.Network.P2P
 
         internal static Props Props(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
         {
-            return Akka.Actor.Props.Create(() => new RemoteNode(system, connection, remote, local, new ProtocolActorFactory(Context))).WithMailbox("remote-node-mailbox");
+            IActorRef protocol = system.ActorSystem.ActorOf(ProtocolHandler.Props(system));
+            return Akka.Actor.Props.Create(() => new RemoteNode(system, connection, remote, local, protocol)).WithMailbox("remote-node-mailbox");
         }
 
         private void SendMessage(Message message)
@@ -269,30 +270,4 @@ namespace Neo.Network.P2P
             }
         }
     }
-
-    internal class ProtocolActorFactory : IActorRefFactory
-    {
-        private IUntypedActorContext context;
-
-        public ProtocolActorFactory(IUntypedActorContext context)
-        {
-            this.context = context;
-        }
-
-        public IActorRef ActorOf(Props props, string name = null)
-        {
-            return context.ActorOf(props);
-        }
-
-        public ActorSelection ActorSelection(ActorPath actorPath)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public ActorSelection ActorSelection(string actorPath)
-        {
-            throw new System.NotImplementedException();
-        }
-    }
-
 }
