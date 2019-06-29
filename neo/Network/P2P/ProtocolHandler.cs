@@ -27,7 +27,6 @@ namespace Neo.Network.P2P
         private bool verack = false;
         private BloomFilter bloom_filter;
 
-
         public ProtocolHandler(NeoSystem system)
         {
             this.system = system;

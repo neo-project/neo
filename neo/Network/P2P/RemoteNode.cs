@@ -224,7 +224,7 @@ namespace Neo.Network.P2P
 
         internal static Props Props(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
         {
-            IActorRef protocol = system.ActorSystem.ActorOf(ProtocolHandler.Props(system));
+            var protocol = system.ActorSystem.ActorOf(ProtocolHandler.Props(system));
             return Akka.Actor.Props.Create(() => new RemoteNode(system, connection, remote, local, protocol)).WithMailbox("remote-node-mailbox");
         }
 
