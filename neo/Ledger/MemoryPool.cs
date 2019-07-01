@@ -61,6 +61,8 @@ namespace Neo.Ledger
         internal int UnverifiedSortedTxCount => _unverifiedSortedTransactions.Count;
 
         private int _maxTxPerBlock;
+        private long _feePerByte;
+        private bool _policyChanged;
 
         /// <summary>
         /// Total maximum capacity of transactions the pool can hold.
@@ -102,6 +104,9 @@ namespace Neo.Ledger
         internal void LoadPolicy(Snapshot snapshot)
         {
             _maxTxPerBlock = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
+            long newFeePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
+            _policyChanged = newFeePerByte > _feePerByte;
+            _feePerByte = newFeePerByte;
         }
 
         /// <summary>
@@ -337,18 +342,30 @@ namespace Neo.Ledger
         // Note: this must only be called from a single thread (the Blockchain actor)
         internal void UpdatePoolForBlockPersisted(Block block, Snapshot snapshot)
         {
+            LoadPolicy(snapshot);
+
             _txRwLock.EnterWriteLock();
             try
             {
-                // First remove the transactions verified in the block.
-                foreach (Transaction tx in block.Transactions)
+                if (_policyChanged)
                 {
-                    if (TryRemoveVerified(tx.Hash, out _)) continue;
-                    TryRemoveUnVerified(tx.Hash, out _);
+                    _unsortedTransactions.Clear();
+                    _sortedTransactions.Clear();
+                    _unverifiedTransactions.Clear();
+                    _unverifiedSortedTransactions.Clear();
                 }
+                else
+                {
+                    // First remove the transactions verified in the block.
+                    foreach (Transaction tx in block.Transactions)
+                    {
+                        if (TryRemoveVerified(tx.Hash, out _)) continue;
+                        TryRemoveUnVerified(tx.Hash, out _);
+                    }
 
-                // Add all the previously verified transactions back to the unverified transactions
-                InvalidateVerifiedTransactions();
+                    // Add all the previously verified transactions back to the unverified transactions
+                    InvalidateVerifiedTransactions();
+                }
             }
             finally
             {
@@ -357,10 +374,9 @@ namespace Neo.Ledger
 
             // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
             // until we get caught up.
-            if (block.Index > 0 && block.Index < Blockchain.Singleton.HeaderHeight)
+            if (block.Index > 0 && block.Index < Blockchain.Singleton.HeaderHeight || _policyChanged)
                 return;
 
-            LoadPolicy(snapshot);
             ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
                 _maxTxPerBlock, MaxSecondsToReverifyTx, snapshot);
         }
