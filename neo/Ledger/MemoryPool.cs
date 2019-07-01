@@ -62,7 +62,6 @@ namespace Neo.Ledger
 
         private int _maxTxPerBlock;
         private long _feePerByte;
-        private bool _policyChanged;
 
         /// <summary>
         /// Total maximum capacity of transactions the pool can hold.
@@ -101,12 +100,13 @@ namespace Neo.Ledger
             Capacity = capacity;
         }
 
-        internal void LoadPolicy(Snapshot snapshot)
+        internal bool LoadPolicy(Snapshot snapshot)
         {
             _maxTxPerBlock = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
             long newFeePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
-            _policyChanged = newFeePerByte > _feePerByte;
+            bool policyChanged = newFeePerByte > _feePerByte;
             _feePerByte = newFeePerByte;
+            return policyChanged;
         }
 
         /// <summary>
@@ -342,12 +342,12 @@ namespace Neo.Ledger
         // Note: this must only be called from a single thread (the Blockchain actor)
         internal void UpdatePoolForBlockPersisted(Block block, Snapshot snapshot)
         {
-            LoadPolicy(snapshot);
+            bool policyChanged = LoadPolicy(snapshot);
 
             _txRwLock.EnterWriteLock();
             try
             {
-                if (_policyChanged)
+                if (policyChanged)
                 {
                     _unsortedTransactions.Clear();
                     _sortedTransactions.Clear();
@@ -374,7 +374,7 @@ namespace Neo.Ledger
 
             // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
             // until we get caught up.
-            if (block.Index > 0 && block.Index < Blockchain.Singleton.HeaderHeight || _policyChanged)
+            if (block.Index > 0 && block.Index < Blockchain.Singleton.HeaderHeight || policyChanged)
                 return;
 
             ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
