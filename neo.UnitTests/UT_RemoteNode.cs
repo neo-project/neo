@@ -1,5 +1,4 @@
-﻿using Akka.Actor;
-using Akka.IO;
+﻿using Akka.IO;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -7,8 +6,6 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Neo.UnitTests
 {
@@ -19,6 +16,11 @@ namespace Neo.UnitTests
 
         private static NeoSystem testBlockchain;
 
+        public UT_RemoteNode()
+            : base($"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}" +
+                $"protocol-handler-mailbox {{ mailbox-type: \"{typeof(ProtocolHandlerMailbox).AssemblyQualifiedName}\" }}")
+        {
+        }
 
         [ClassInitialize]
         public static void TestSetup(TestContext ctx)
