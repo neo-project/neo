@@ -495,7 +495,7 @@ namespace Neo.Ledger
 
         public static Props Props(NeoSystem system, Store store)
         {
-            return Akka.Actor.Props.Create(() => new Blockchain(system, store));
+            return Akka.Actor.Props.Create(() => new Blockchain(system, store)).WithMailbox("blockchain-mailbox");
         }
 
         private void SaveHeaderHashList(Snapshot snapshot = null)

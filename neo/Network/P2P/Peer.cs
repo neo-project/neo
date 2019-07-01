@@ -24,8 +24,6 @@ namespace Neo.Network.P2P
         private class Timer { }
         private class WsConnected { public WebSocket Socket; public IPEndPoint Remote; public IPEndPoint Local; }
 
-        public NeoSystem neoSystem; // TODO: initialize
-
         public const int DefaultMinDesiredConnections = 10;
         public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
 
@@ -193,7 +191,7 @@ namespace Neo.Network.P2P
             else
             {
                 ConnectedAddresses[remote.Address] = count + 1;
-                IActorRef connection = ProtocolActor(neoSystem, $"connection_{Guid.NewGuid()}", Sender, remote, local);
+                IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
                 Context.Watch(connection);
                 Sender.Tell(new Tcp.Register(connection));
                 ConnectedPeers.TryAdd(connection, remote);
@@ -246,7 +244,7 @@ namespace Neo.Network.P2P
             else
             {
                 ConnectedAddresses[remote.Address] = count + 1;
-                ProtocolActor(neoSystem, $"connection_{Guid.NewGuid()}", ws, remote, local);
+                Context.ActorOf(ProtocolProps(ws, remote, local), $"connection_{Guid.NewGuid()}");
             }
         }
 
@@ -270,6 +268,6 @@ namespace Neo.Network.P2P
             });
         }
 
-        protected abstract IActorRef ProtocolActor(NeoSystem system, string actorName, object connection, IPEndPoint remote, IPEndPoint local);
+        protected abstract Props ProtocolProps(object connection, IPEndPoint remote, IPEndPoint local);
     }
 }

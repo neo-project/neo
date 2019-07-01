@@ -572,7 +572,7 @@ namespace Neo.Consensus
 
         public static Props Props(IActorRef localNode, IActorRef taskManager, Store store, Wallet wallet)
         {
-            return Akka.Actor.Props.Create(() => new ConsensusService(localNode, taskManager, store, wallet));
+            return Akka.Actor.Props.Create(() => new ConsensusService(localNode, taskManager, store, wallet)).WithMailbox("consensus-service-mailbox");
         }
 
         private void RequestChangeView()

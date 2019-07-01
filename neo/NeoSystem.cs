@@ -1,6 +1,4 @@
 ﻿using Akka.Actor;
-using Akka.Configuration;
-using Akka.IO;
 using Neo.Consensus;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -10,8 +8,6 @@ using Neo.Plugins;
 using Neo.Wallets;
 using System;
 using System.Net;
-using System.Linq;
-using System.Linq.Expressions;
 
 namespace Neo
 {
@@ -30,16 +26,6 @@ namespace Neo
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
 
-        public IActorRef CreateActor(Props props, string mailbox = null, string actorName = null)
-        {
-            if(mailbox != null)
-                props = props.WithMailbox(mailbox);
-            if(actorName != null)
-                return this.ActorSystem.ActorOf(props, actorName);
-            else
-                return this.ActorSystem.ActorOf(props);
-        }
-        
         private readonly Store store;
         private ChannelsConfig start_message = null;
         private bool suspend = false;
@@ -48,9 +34,9 @@ namespace Neo
         {
             this.store = store;
             Plugin.LoadPlugins(this);
-            this.Blockchain = CreateActor(Ledger.Blockchain.Props(this, store), "blockchain-mailbox");
-            this.LocalNode = CreateActor(Network.P2P.LocalNode.Props(this));
-            this.TaskManager = CreateActor(Network.P2P.TaskManager.Props(this), "task-manager-mailbox");
+            this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
+            this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
+            this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             Plugin.NotifyPluginsLoadedAfterSystemConstructed();
         }
 
@@ -83,7 +69,7 @@ namespace Neo
 
         public void StartConsensus(Wallet wallet, Store consensus_store = null, bool ignoreRecoveryLogs = false)
         {
-            Consensus = CreateActor(ConsensusService.Props(this.LocalNode, this.TaskManager, consensus_store ?? store, wallet), "consensus-service-mailbox");
+            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, consensus_store ?? store, wallet));
             Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);
         }
 
