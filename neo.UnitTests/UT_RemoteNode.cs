@@ -32,7 +32,8 @@ namespace Neo.UnitTests
             var testProbe = CreateTestProbe();
             var connectionTestProbe = CreateTestProbe();
             var protocolActor = ActorOfAsTestActorRef<ProtocolHandler>(() => new ProtocolHandler(testBlockchain));
-            var remoteNodeActor = ActorOfAsTestActorRef<RemoteNode>(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null, protocolActor));
+            // TODO: setup 'testBlockchain' mock CreateActor to return desired 'protocolActor' (using ActorOfAsTestActorRef)
+            var remoteNodeActor = ActorOfAsTestActorRef<RemoteNode>(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
 
             connectionTestProbe.ExpectMsg<Tcp.Write>();
 
@@ -60,7 +61,8 @@ namespace Neo.UnitTests
             var testProbe = CreateTestProbe();
             var connectionTestProbe = CreateTestProbe();
             var protocolActor = ActorOfAsTestActorRef<ProtocolHandler>(() => new ProtocolHandler(testBlockchain));
-            var remoteNodeActor = ActorOfAsTestActorRef<RemoteNode>(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null, protocolActor));
+            // TODO: setup 'testBlockchain' mock CreateActor to return desired 'protocolActor' (using ActorOfAsTestActorRef)
+            var remoteNodeActor = ActorOfAsTestActorRef<RemoteNode>(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
 
             connectionTestProbe.ExpectMsg<Tcp.Write>();
 

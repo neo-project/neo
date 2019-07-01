@@ -296,7 +296,7 @@ namespace Neo.Network.P2P
 
         public static Props Props(NeoSystem system)
         {
-            return Akka.Actor.Props.Create(() => new ProtocolHandler(system)).WithMailbox("protocol-handler-mailbox");
+            return Akka.Actor.Props.Create(() => new ProtocolHandler(system));
         }
     }
 

@@ -32,11 +32,11 @@ namespace Neo.Network.P2P
         public uint LastBlockIndex { get; private set; } = 0;
         public bool IsFullNode { get; private set; } = false;
 
-        public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local, IActorRef protocolHandler)
+        public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
             : base(connection, remote, local)
         {
             this.system = system;
-            this.protocol = protocolHandler;
+            this.protocol = system.CreateActor(ProtocolHandler.Props(system), "protocol-handler-mailbox");
             LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
 
             var capabilities = new List<NodeCapability>
@@ -224,8 +224,7 @@ namespace Neo.Network.P2P
 
         internal static Props Props(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
         {
-            var protocol = system.ActorSystem.ActorOf(ProtocolHandler.Props(system));
-            return Akka.Actor.Props.Create(() => new RemoteNode(system, connection, remote, local, protocol)).WithMailbox("remote-node-mailbox");
+            return Akka.Actor.Props.Create(() => new RemoteNode(system, connection, remote, local));
         }
 
         private void SendMessage(Message message)
