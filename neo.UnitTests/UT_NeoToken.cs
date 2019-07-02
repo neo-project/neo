@@ -30,6 +30,15 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        public void Check_AssetDescription()
+        {
+            var descriptor = new Wallets.AssetDescriptor(NativeContract.NEO.Hash);
+            descriptor.AssetId.Should().Be(NativeContract.NEO.Hash);
+            descriptor.AssetName.Should().Be("NEO");
+            descriptor.Decimals.Should().Be(0);
+        }
+
+        [TestMethod]
         public void Check_Name() => NativeContract.NEO.Name().Should().Be("NEO");
 
         [TestMethod]
