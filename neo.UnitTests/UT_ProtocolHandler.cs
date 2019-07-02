@@ -10,8 +10,6 @@ namespace Neo.UnitTests
     [TestClass]
     public class UT_ProtocolHandler : TestKit
     {
-        private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
-
         private NeoSystem testBlockchain;
 
         [TestCleanup]
@@ -23,9 +21,6 @@ namespace Neo.UnitTests
         [TestInitialize]
         public void TestSetup()
         {
-            Akka.Actor.ActorSystem system = Sys;
-            var config = TestKit.DefaultConfig;
-            var akkaSettings = new Akka.Actor.Settings(system, config);
             testBlockchain = TestBlockchain.InitializeMockNeoSystem();
         }
 
