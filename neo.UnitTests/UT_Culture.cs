@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
@@ -36,7 +37,8 @@ namespace Neo.UnitTests
 
             var cultures = new string[] { "en-US", "zh-CN", "de-DE", "ko-KR", "ja-JP" };
             var originalUICulture = CultureInfo.CurrentCulture;
-            var emtpyObjArray = new object[] { };
+            var emptyObjArray = new object[] { };
+            var testContext = new object[] { new UnitTestContext() };
 
             // run all the tests, varying the culture each time.
             try
@@ -47,26 +49,26 @@ namespace Neo.UnitTests
 
                     foreach (var c in testClasses)
                     {
-                        var instance = c.Constructor.Invoke(emtpyObjArray);
+                        var instance = c.Constructor.Invoke(emptyObjArray);
                         if (c.ClassInit != null)
                         {
-                            c.ClassInit.Invoke(instance, emtpyObjArray);
+                            c.ClassInit.Invoke(instance, testContext);
                         }
                         foreach (var m in c.TestMethods)
                         {
                             if (c.TestInit != null)
                             {
-                                c.TestInit.Invoke(instance, emtpyObjArray);
+                                c.TestInit.Invoke(instance, emptyObjArray);
                             }
-                            m.Invoke(instance, emtpyObjArray);
+                            m.Invoke(instance, emptyObjArray);
                             if (c.TestCleanup != null)
                             {
-                                c.TestCleanup.Invoke(instance, emtpyObjArray);
+                                c.TestCleanup.Invoke(instance, emptyObjArray);
                             }
                         }
                         if (c.ClassCleanup != null)
                         {
-                            c.ClassCleanup.Invoke(instance, emtpyObjArray);
+                            c.ClassCleanup.Invoke(instance, emptyObjArray);
                         }
                     }
                 }
@@ -76,6 +78,21 @@ namespace Neo.UnitTests
                 CultureInfo.CurrentCulture = originalUICulture;
             }
 
+        }
+    }
+
+    public class UnitTestContext : TestContext
+    {
+        public override IDictionary<string, object> Properties => throw new NotImplementedException();
+
+        public override void WriteLine(string message)
+        {
+            Console.WriteLine(message);
+        }
+
+        public override void WriteLine(string format, params object[] args)
+        {
+            Console.WriteLine(format, args);
         }
     }
 
