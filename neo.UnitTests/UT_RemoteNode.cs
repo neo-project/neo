@@ -5,7 +5,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
-using System;
 
 namespace Neo.UnitTests
 {
@@ -30,7 +29,7 @@ namespace Neo.UnitTests
         public void RemoteNode_Test_Abort_DifferentMagic()
         {
             var connectionTestProbe = CreateTestProbe();
-            var remoteNodeActor = ActorOfAsTestActorRef<RemoteNode>(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
+            var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
 
             connectionTestProbe.ExpectMsg<Tcp.Write>();
 
@@ -57,7 +56,7 @@ namespace Neo.UnitTests
         public void RemoteNode_Test_Accept_IfSameMagic()
         {
             var connectionTestProbe = CreateTestProbe();
-            var remoteNodeActor = ActorOfAsTestActorRef<RemoteNode>(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
+            var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, connectionTestProbe, null, null));
 
             connectionTestProbe.ExpectMsg<Tcp.Write>();
 
