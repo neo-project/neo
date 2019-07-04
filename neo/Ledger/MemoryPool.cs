@@ -1,3 +1,4 @@
+using Akka.Actor;
 using Akka.Util.Internal;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -347,24 +348,22 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
+                // First remove the transactions verified in the block.
+                foreach (Transaction tx in block.Transactions)
+                {
+                    if (TryRemoveVerified(tx.Hash, out _)) continue;
+                    TryRemoveUnVerified(tx.Hash, out _);
+                }
+
+                // Add all the previously verified transactions back to the unverified transactions
+                InvalidateVerifiedTransactions();
+
                 if (policyChanged)
                 {
-                    _unsortedTransactions.Clear();
-                    _sortedTransactions.Clear();
+                    foreach (PoolItem item in _unverifiedSortedTransactions.Reverse())
+                        _system.Blockchain.Tell(item.Tx, ActorRefs.NoSender);
                     _unverifiedTransactions.Clear();
                     _unverifiedSortedTransactions.Clear();
-                }
-                else
-                {
-                    // First remove the transactions verified in the block.
-                    foreach (Transaction tx in block.Transactions)
-                    {
-                        if (TryRemoveVerified(tx.Hash, out _)) continue;
-                        TryRemoveUnVerified(tx.Hash, out _);
-                    }
-
-                    // Add all the previously verified transactions back to the unverified transactions
-                    InvalidateVerifiedTransactions();
                 }
             }
             finally
