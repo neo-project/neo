@@ -132,7 +132,7 @@ namespace Neo.SmartContract.Native.Tokens
             return CalculateBonus(snapshot, state.Balance, state.BalanceHeight, end);
         }
 
-        [ContractMethod(0_05000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" }, AllowedTriggers = TriggerType.Application)]
+        [ContractMethod(0_05000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" })]
         private StackItem RegisterValidator(ApplicationEngine engine, VMArray args)
         {
             ECPoint pubkey = args[0].GetByteArray().AsSerializable<ECPoint>();
@@ -150,7 +150,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(5_00000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Array }, ParameterNames = new[] { "account", "pubkeys" }, AllowedTriggers = TriggerType.Application)]
+        [ContractMethod(5_00000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Array }, ParameterNames = new[] { "account", "pubkeys" })]
         private StackItem Vote(ApplicationEngine engine, VMArray args)
         {
             UInt160 account = new UInt160(args[0].GetByteArray());
