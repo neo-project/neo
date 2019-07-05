@@ -20,7 +20,7 @@ script:
  - dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
  - cd ..
  - echo "Reporting number of lines with cloc"
- - apt install cloc & cloc .
+ - sudo apt install cloc & cloc .
   
 after_success:
   # After all tests OK, Send CodeDov report
