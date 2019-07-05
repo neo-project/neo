@@ -16,8 +16,8 @@ namespace Neo.UnitTests
             var derivedkey = SCrypt.DeriveKey(new byte[] { 0x01, 0x02, 0x03 }, new byte[] { 0x04, 0x05, 0x06 }, N, r, p, 64).ToHexString();
             var elapsed = (DateTime.UtcNow - date);
 
-            Assert.AreEqual("f278f54e4a97e639c34d5f7e376d0ccd4a8c04bb8bad055d1f66a42c52c056a917ba0f4490c29209a410d9702c7e350309de8b102a617c8526a12bb16853c39a", derivedkey);
-            Assert.IsTrue(elapsed.TotalSeconds > 3);
+            Assert.AreEqual("2bb9c7bb9c392f0dd37821b76e42b01944902520f48d00946a51e72c960fba0a3c62a87d835c9df10a8ad66a04cdf02fbb10b9d7396c20959f28d6cb3ddfdffb", derivedkey);
+            Assert.IsTrue(elapsed.TotalSeconds > 1);
         }
     }
 }
