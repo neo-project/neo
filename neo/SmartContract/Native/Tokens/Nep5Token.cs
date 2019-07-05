@@ -158,7 +158,7 @@ namespace Neo.SmartContract.Native.Tokens
             return state.Balance;
         }
 
-        [ContractMethod(0_08000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" }, AllowedTriggers = TriggerType.Application)]
+        [ContractMethod(0_08000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "from", "to", "amount" })]
         protected StackItem Transfer(ApplicationEngine engine, VMArray args)
         {
             UInt160 from = new UInt160(args[0].GetByteArray());

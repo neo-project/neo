@@ -7,7 +7,6 @@ namespace Neo.SmartContract.Native
     {
         public string Name { get; set; }
         public long Price { get; }
-        public TriggerType AllowedTriggers { get; set; } = TriggerType.All;
         public ContractParameterType ReturnType { get; }
         public ContractParameterType[] ParameterTypes { get; set; } = new ContractParameterType[0];
         public string[] ParameterNames { get; set; } = new string[0];
