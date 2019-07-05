@@ -18,11 +18,9 @@ script:
  - dotnet restore
  - find * -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
  - dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
- - pwd
  - cd ..
- - ls
  - echo "Reporting number of lines with cloc"
- - cloc .
+ - apt install cloc & cloc .
   
 after_success:
   # After all tests OK, Send CodeDov report
