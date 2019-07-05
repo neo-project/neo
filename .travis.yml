@@ -11,8 +11,8 @@ mono: none
 dotnet: 2.2.300
 
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]; sudo apt install cloc
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]; brew install cloc
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; sudo apt install cloc; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; brew install cloc; fi
   - cd neo.UnitTests
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 2048; fi
 
