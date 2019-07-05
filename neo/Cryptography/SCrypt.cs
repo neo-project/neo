@@ -5,6 +5,11 @@ namespace Neo.Cryptography
 {
     public static class SCrypt
     {
+        /// <summary>
+        /// https://pages.nist.gov/800-63-3/sp800-63b.html#sec5 Recomended 10K or more
+        /// </summary>
+        private const int PBKDF2_Iterations = 10_000;
+
         private unsafe static void BulkCopy(void* dst, void* src, int len)
         {
             var d = (byte*)dst;
@@ -261,7 +266,7 @@ namespace Neo.Cryptography
             var mac = new HMACSHA256(password);
 
             /* 1: (B_0 ... B_{p-1}) <-- PBKDF2(P, S, 1, p * MFLen) */
-            PBKDF2_SHA256(mac, password, salt, salt.Length, 1, Ba, p * 128 * r);
+            PBKDF2_SHA256(mac, password, salt, salt.Length, PBKDF2_Iterations, Ba, p * 128 * r);
 
             fixed (byte* B = Ba)
             fixed (void* V = Va)
@@ -276,7 +281,7 @@ namespace Neo.Cryptography
             }
 
             /* 5: DK <-- PBKDF2(P, B, 1, dkLen) */
-            PBKDF2_SHA256(mac, password, Ba, p * 128 * r, 1, buf, buf.Length);
+            PBKDF2_SHA256(mac, password, Ba, p * 128 * r, PBKDF2_Iterations, buf, buf.Length);
 
             return buf;
         }
