@@ -20,7 +20,7 @@ namespace Neo.SmartContract
         private readonly List<IDisposable> disposables = new List<IDisposable>();
 
         public TriggerType Trigger { get; }
-        public IVerifiable ScriptContainer { get; }
+        public ConsumableWitnesses ScriptContainer { get; }
         public Snapshot Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
         public UInt160 CurrentScriptHash => hashes.Count > 0 ? hashes.Peek() : null;
@@ -34,7 +34,7 @@ namespace Neo.SmartContract
             this.gas_amount = GasFree + gas;
             this.testMode = testMode;
             this.Trigger = trigger;
-            this.ScriptContainer = container;
+            this.ScriptContainer = new ConsumableWitnesses(container);
             this.Snapshot = snapshot;
             ContextLoaded += ApplicationEngine_ContextLoaded;
             ContextUnloaded += ApplicationEngine_ContextUnloaded;
