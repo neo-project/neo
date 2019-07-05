@@ -11,6 +11,7 @@ mono: none
 dotnet: 2.2.300
 
 before_install:
+  - sudo apt install cloc
   - cd neo.UnitTests
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 2048; fi
 
@@ -18,9 +19,8 @@ script:
  - dotnet restore
  - find * -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
  - dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
- - cd ..
  - echo "Reporting number of lines with cloc"
- - sudo apt install cloc & cloc .
+ - cloc ..
   
 after_success:
   # After all tests OK, Send CodeDov report
