@@ -1,9 +1,10 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using System.Numerics;
 
 namespace Neo.Cryptography.ECC
 {
-    public class ECCurve
+    public class ECCurve : IEquatable<ECCurve>
     {
         internal readonly BigInteger Q;
         internal readonly ECFieldElement A;
@@ -20,6 +21,28 @@ namespace Neo.Cryptography.ECC
             this.N = N;
             this.Infinity = new ECPoint(null, null, this);
             this.G = ECPoint.DecodePoint(G, this);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is ECCurve other)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            return Equals(other);
+        }
+
+        public bool Equals(ECCurve other)
+        {
+            return Q.Equals(other.Q) &&
+                A.Equals(other.A) &&
+                B.Equals(other.B) &&
+                N.Equals(other.N) &&
+                Infinity.Equals(other.Infinity) &&
+                G.Equals(other.G);
+        }
+
+        public override int GetHashCode()
+        {
+            return Q.GetHashCode() +  A.GetHashCode() + B.GetHashCode() + N.GetHashCode() + Infinity.GetHashCode() + G.GetHashCode();
         }
 
         public static readonly ECCurve Secp256k1 = new ECCurve

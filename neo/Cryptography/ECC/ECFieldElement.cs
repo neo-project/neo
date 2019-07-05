@@ -26,20 +26,14 @@ namespace Neo.Cryptography.ECC
 
         public override bool Equals(object obj)
         {
-            if (obj == this)
-                return true;
-
-            ECFieldElement other = obj as ECFieldElement;
-
-            if (other == null)
-                return false;
-
+            if (!(obj is ECFieldElement other)) return false;
+            if (ReferenceEquals(this, obj)) return true;
             return Equals(other);
         }
 
         public bool Equals(ECFieldElement other)
         {
-            return Value.Equals(other.Value);
+            return Value.Equals(other.Value) && curve.Equals(other.curve);
         }
 
         private static BigInteger[] FastLucasSequence(BigInteger p, BigInteger P, BigInteger Q, BigInteger k)

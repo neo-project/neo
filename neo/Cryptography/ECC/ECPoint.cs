@@ -146,10 +146,10 @@ namespace Neo.Cryptography.ECC
         public bool Equals(ECPoint other)
         {
             if (ReferenceEquals(this, other)) return true;
-            if (ReferenceEquals(null, other)) return false;
+            if (other is null) return false;
             if (IsInfinity && other.IsInfinity) return true;
             if (IsInfinity || other.IsInfinity) return false;
-            return X.Equals(other.X) && Y.Equals(other.Y);
+            return X.Equals(other.X) && Y.Equals(other.Y) && Curve.Equals(other.Curve);
         }
 
         public override bool Equals(object obj)
