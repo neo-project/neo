@@ -8,6 +8,5 @@ namespace Neo.SmartContract.Native
     {
         public Func<ApplicationEngine, VMArray, StackItem> Delegate;
         public long Price;
-        public TriggerType AllowedTriggers;
     }
 }
