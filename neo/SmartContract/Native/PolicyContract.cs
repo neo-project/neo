@@ -84,7 +84,7 @@ namespace Neo.SmartContract.Native
             return snapshot.Storages[CreateStorageKey(Prefix_BlockedAccounts)].Value.AsSerializableArray<UInt160>();
         }
 
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" }, AllowedTriggers = TriggerType.Application)]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
         private StackItem SetMaxTransactionsPerBlock(ApplicationEngine engine, VMArray args)
         {
             if (!CheckValidators(engine)) return false;
@@ -94,7 +94,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" }, AllowedTriggers = TriggerType.Application)]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Integer }, ParameterNames = new[] { "value" })]
         private StackItem SetFeePerByte(ApplicationEngine engine, VMArray args)
         {
             if (!CheckValidators(engine)) return false;
@@ -104,7 +104,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" }, AllowedTriggers = TriggerType.Application)]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
         private StackItem BlockAccount(ApplicationEngine engine, VMArray args)
         {
             if (!CheckValidators(engine)) return false;
@@ -118,7 +118,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" }, AllowedTriggers = TriggerType.Application)]
+        [ContractMethod(0_03000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160 }, ParameterNames = new[] { "account" })]
         private StackItem UnblockAccount(ApplicationEngine engine, VMArray args)
         {
             if (!CheckValidators(engine)) return false;

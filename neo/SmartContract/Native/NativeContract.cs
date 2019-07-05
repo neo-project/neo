@@ -57,8 +57,7 @@ namespace Neo.SmartContract.Native
                 methods.Add(name, new ContractMethodMetadata
                 {
                     Delegate = (Func<ApplicationEngine, VMArray, StackItem>)method.CreateDelegate(typeof(Func<ApplicationEngine, VMArray, StackItem>), this),
-                    Price = attribute.Price,
-                    AllowedTriggers = attribute.AllowedTriggers
+                    Price = attribute.Price
                 });
             }
             this.Manifest.Abi.Methods = descriptors.ToArray();
@@ -92,7 +91,6 @@ namespace Neo.SmartContract.Native
             VMArray args = (VMArray)engine.CurrentContext.EvaluationStack.Pop();
             if (!methods.TryGetValue(operation, out ContractMethodMetadata method))
                 return false;
-            if (!method.AllowedTriggers.HasFlag(engine.Trigger)) return false;
             StackItem result = method.Delegate(engine, args);
             engine.CurrentContext.EvaluationStack.Push(result);
             return true;
@@ -110,9 +108,10 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0, ContractParameterType.Boolean, AllowedTriggers = TriggerType.System)]
+        [ContractMethod(0, ContractParameterType.Boolean)]
         protected StackItem OnPersist(ApplicationEngine engine, VMArray args)
         {
+            if (engine.Trigger != TriggerType.System) return false;
             return OnPersist(engine);
         }
 
