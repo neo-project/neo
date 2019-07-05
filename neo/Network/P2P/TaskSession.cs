@@ -15,7 +15,6 @@ namespace Neo.Network.P2P
         public readonly HashSet<UInt256> AvailableTasks = new HashSet<UInt256>();
 
         public bool HasTask => Tasks.Count > 0;
-        public bool HeaderTask => Tasks.ContainsKey(UInt256.Zero);
         public uint StartHeight { get; }
 
         public TaskSession(IActorRef node, VersionPayload version)

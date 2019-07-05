@@ -77,7 +77,7 @@ namespace Neo
         {
             if (value == null)
                 throw new ArgumentNullException();
-            if (value.StartsWith("0x"))
+            if (value.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
                 value = value.Substring(2);
             if (value.Length != 40)
                 throw new FormatException();
@@ -95,7 +95,7 @@ namespace Neo
                 result = null;
                 return false;
             }
-            if (s.StartsWith("0x"))
+            if (s.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
                 s = s.Substring(2);
             if (s.Length != 40)
             {

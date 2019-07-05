@@ -29,11 +29,11 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (!base.OnPersist(engine)) return false;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
-                Burn(engine, tx.Sender, tx.Gas + tx.NetworkFee);
+                Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
             Mint(engine, primary, engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.NetworkFee));
-            BigInteger sys_fee = GetSysFeeAmount(engine.Snapshot, engine.Snapshot.PersistingBlock.Index - 1) + engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.Gas);
+            BigInteger sys_fee = GetSysFeeAmount(engine.Snapshot, engine.Snapshot.PersistingBlock.Index - 1) + engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.SystemFee);
             StorageKey key = CreateStorageKey(Prefix_SystemFeeAmount, BitConverter.GetBytes(engine.Snapshot.PersistingBlock.Index));
             engine.Snapshot.Storages.Add(key, new StorageItem
             {
@@ -52,7 +52,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public BigInteger GetSysFeeAmount(Snapshot snapshot, uint index)
         {
-            if (index == 0) return Blockchain.GenesisBlock.Transactions.Sum(p => p.Gas);
+            if (index == 0) return Blockchain.GenesisBlock.Transactions.Sum(p => p.SystemFee);
             StorageKey key = CreateStorageKey(Prefix_SystemFeeAmount, BitConverter.GetBytes(index));
             StorageItem storage = snapshot.Storages.TryGet(key);
             if (storage is null) return BigInteger.Zero;
