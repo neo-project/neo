@@ -360,8 +360,9 @@ namespace Neo.Ledger
 
                 if (policyChanged)
                 {
+                    long newFeePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
                     foreach (PoolItem item in _unverifiedSortedTransactions.Reverse())
-                        if(item.Tx.FeePerByte <= NativeContract.Policy.GetFeePerByte(snapshot))
+                        if(item.Tx.FeePerByte <= newFeePerByte)
                             _system.Blockchain.Tell(item.Tx, ActorRefs.NoSender);
                     _unverifiedTransactions.Clear();
                     _unverifiedSortedTransactions.Clear();
