@@ -386,7 +386,9 @@ namespace Neo.Cryptography.ECC
             {
                 if (x.Y.Equals(y.Y))
                     return x.Twice();
+#if DEBUG
                 Debug.Assert(x.Y.Equals(-y.Y));
+#endif
                 return x.Curve.Infinity;
             }
             ECFieldElement gamma = (y.Y - x.Y) / (y.X - x.X);
