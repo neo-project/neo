@@ -32,6 +32,7 @@ namespace Neo.SmartContract
         public static readonly uint System_Runtime_Platform = Register("System.Runtime.Platform", Runtime_Platform, 0_00000250, TriggerType.All);
         public static readonly uint System_Runtime_GetTrigger = Register("System.Runtime.GetTrigger", Runtime_GetTrigger, 0_00000250, TriggerType.All);
         public static readonly uint System_Runtime_CheckWitness = Register("System.Runtime.CheckWitness", Runtime_CheckWitness, 0_00030000, TriggerType.All);
+        public static readonly uint System_Runtime_ConsumeWitness = Register("System.Runtime.ConsumeWitness", Runtime_ConsumeWitness, 0_00030000, TriggerType.All);
         public static readonly uint System_Runtime_Notify = Register("System.Runtime.Notify", Runtime_Notify, 0_00000250, TriggerType.All);
         public static readonly uint System_Runtime_Log = Register("System.Runtime.Log", Runtime_Log, 0_00300000, TriggerType.All);
         public static readonly uint System_Runtime_GetTime = Register("System.Runtime.GetTime", Runtime_GetTime, 0_00000250, TriggerType.Application);
@@ -142,12 +143,27 @@ namespace Neo.SmartContract
 
         internal static bool CheckWitness(ApplicationEngine engine, UInt160 hash)
         {
-            return engine.ScriptContainer.ConsumeScriptHash(hash);
+            var _hashes_for_verifying = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot);
+            return _hashes_for_verifying.Contains(hash);
         }
 
         private static bool CheckWitness(ApplicationEngine engine, ECPoint pubkey)
         {
             return CheckWitness(engine, Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash());
+        }
+
+        private static bool ConsumeWitness(ApplicationEngine engine)
+        {
+            byte[] hashOrPubkey = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            bool result;
+            if (hashOrPubkey.Length == 20)
+                result = engine.ScriptContainer.ConsumeScriptHash(new UInt160(hashOrPubkey));
+            else if (hashOrPubkey.Length == 33)
+                result = engine.ScriptContainer.ConsumeScriptHash(ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1));
+            else
+                return false;
+            engine.CurrentContext.EvaluationStack.Push(result);
+            return true;
         }
 
         private static bool Runtime_CheckWitness(ApplicationEngine engine)

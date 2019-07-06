@@ -36,7 +36,9 @@ namespace Neo.SmartContract
 
         public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
         {
-            return _witnesses.ToArray();
+            // Original witnesses
+
+            return ((IVerifiable)this).Witnesses.Select(u => u.ScriptHash).ToArray();
         }
 
         public bool ConsumeScriptHash(UInt160 hash)
