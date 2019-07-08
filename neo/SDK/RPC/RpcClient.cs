@@ -10,13 +10,18 @@ using Neo.SDK.RPC.Model;
 
 namespace Neo.SDK
 {
-    public class RpcClient : IRpcClient
+    public class RpcClient : IRpcClient, IDisposable
     {
         private readonly HttpService rpcHelper;
 
         public RpcClient(HttpService rpc)
         {
             rpcHelper = rpc;
+        }
+
+        public void Dispose()
+        {
+            rpcHelper?.Dispose();
         }
 
         private JObject RpcSend(string method, params JObject[] paraArgs)

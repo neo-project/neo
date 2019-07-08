@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Neo.SDK.RPC
 {
-    public class HttpService
+    public class HttpService : IDisposable
     {
         private readonly HttpClient httpClient;
 
@@ -19,6 +19,11 @@ namespace Neo.SDK.RPC
         public HttpService(HttpClient client)
         {
             httpClient = client;
+        }
+
+        public void Dispose()
+        {
+            httpClient?.Dispose();
         }
 
         public async Task<JObject> SendAsync(RPCRequest request)
