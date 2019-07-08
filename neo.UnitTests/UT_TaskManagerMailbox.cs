@@ -12,7 +12,7 @@ using Akka.Configuration;
 namespace Neo.UnitTests
 {
     [TestClass]
-    public class UT_TaskManagerMailbox  : TestKit
+    public class UT_TaskManagerMailbox : TestKit
     {
         private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
 
@@ -42,12 +42,12 @@ namespace Neo.UnitTests
 
             // low priority
             // -> NewTasks: generic InvPayload
-            uut.IsHighPriority(new TaskManager.NewTasks{ Payload = new InvPayload() }).Should().Be(false);
+            uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload() }).Should().Be(false);
 
             // high priority
             // -> NewTasks: payload Block or Consensus
-            uut.IsHighPriority(new TaskManager.NewTasks{ Payload = new InvPayload{ Type = InventoryType.Block } }).Should().Be(true);
-            uut.IsHighPriority(new TaskManager.NewTasks{ Payload = new InvPayload{ Type = InventoryType.Consensus } }).Should().Be(true);
+            uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload { Type = InventoryType.Block } }).Should().Be(true);
+            uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload { Type = InventoryType.Consensus } }).Should().Be(true);
 
             // any random object should not have priority
             object obj = null;

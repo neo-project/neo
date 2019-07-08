@@ -18,37 +18,37 @@ namespace Neo.SmartContract
 {
     static partial class InteropService
     {
-        public static readonly uint Neo_Native_Deploy = Register("Neo.Native.Deploy", Native_Deploy, 0);
-        public static readonly uint Neo_Crypto_CheckSig = Register("Neo.Crypto.CheckSig", Crypto_CheckSig, 0_01000000);
-        public static readonly uint Neo_Crypto_CheckMultiSig = Register("Neo.Crypto.CheckMultiSig", Crypto_CheckMultiSig, GetCheckMultiSigPrice);
-        public static readonly uint Neo_Header_GetVersion = Register("Neo.Header.GetVersion", Header_GetVersion, 0_00000400);
-        public static readonly uint Neo_Header_GetMerkleRoot = Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot, 0_00000400);
-        public static readonly uint Neo_Header_GetNextConsensus = Register("Neo.Header.GetNextConsensus", Header_GetNextConsensus, 0_00000400);
-        public static readonly uint Neo_Transaction_GetScript = Register("Neo.Transaction.GetScript", Transaction_GetScript, 0_00000400);
-        public static readonly uint Neo_Transaction_GetWitnesses = Register("Neo.Transaction.GetWitnesses", Transaction_GetWitnesses, 0_00010000);
-        public static readonly uint Neo_Witness_GetVerificationScript = Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript, 0_00000400);
-        public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 0_00030000);
-        public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, GetDeploymentPrice);
-        public static readonly uint Neo_Contract_Update = Register("Neo.Contract.Update", Contract_Update, GetDeploymentPrice);
-        public static readonly uint Neo_Contract_GetScript = Register("Neo.Contract.GetScript", Contract_GetScript, 0_00000400);
-        public static readonly uint Neo_Contract_IsPayable = Register("Neo.Contract.IsPayable", Contract_IsPayable, 0_00000400);
-        public static readonly uint Neo_Storage_Find = Register("Neo.Storage.Find", Storage_Find, 0_01000000);
-        public static readonly uint Neo_Enumerator_Create = Register("Neo.Enumerator.Create", Enumerator_Create, 0_00000400);
-        public static readonly uint Neo_Enumerator_Next = Register("Neo.Enumerator.Next", Enumerator_Next, 0_01000000);
-        public static readonly uint Neo_Enumerator_Value = Register("Neo.Enumerator.Value", Enumerator_Value, 0_00000400);
-        public static readonly uint Neo_Enumerator_Concat = Register("Neo.Enumerator.Concat", Enumerator_Concat, 0_00000400);
-        public static readonly uint Neo_Iterator_Create = Register("Neo.Iterator.Create", Iterator_Create, 0_00000400);
-        public static readonly uint Neo_Iterator_Key = Register("Neo.Iterator.Key", Iterator_Key, 0_00000400);
-        public static readonly uint Neo_Iterator_Keys = Register("Neo.Iterator.Keys", Iterator_Keys, 0_00000400);
-        public static readonly uint Neo_Iterator_Values = Register("Neo.Iterator.Values", Iterator_Values, 0_00000400);
-        public static readonly uint Neo_Iterator_Concat = Register("Neo.Iterator.Concat", Iterator_Concat, 0_00000400);
-        public static readonly uint Neo_Json_Serialize = Register("Neo.Json.Serialize", Json_Serialize, 0_00100000);
-        public static readonly uint Neo_Json_Deserialize = Register("Neo.Json.Deserialize", Json_Deserialize, 0_00500000);
+        public static readonly uint Neo_Native_Deploy = Register("Neo.Native.Deploy", Native_Deploy, 0, TriggerType.Application);
+        public static readonly uint Neo_Crypto_CheckSig = Register("Neo.Crypto.CheckSig", Crypto_CheckSig, 0_01000000, TriggerType.All);
+        public static readonly uint Neo_Crypto_CheckMultiSig = Register("Neo.Crypto.CheckMultiSig", Crypto_CheckMultiSig, GetCheckMultiSigPrice, TriggerType.All);
+        public static readonly uint Neo_Header_GetVersion = Register("Neo.Header.GetVersion", Header_GetVersion, 0_00000400, TriggerType.Application);
+        public static readonly uint Neo_Header_GetMerkleRoot = Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot, 0_00000400, TriggerType.Application);
+        public static readonly uint Neo_Header_GetNextConsensus = Register("Neo.Header.GetNextConsensus", Header_GetNextConsensus, 0_00000400, TriggerType.Application);
+        public static readonly uint Neo_Transaction_GetScript = Register("Neo.Transaction.GetScript", Transaction_GetScript, 0_00000400, TriggerType.All);
+        public static readonly uint Neo_Transaction_GetWitnesses = Register("Neo.Transaction.GetWitnesses", Transaction_GetWitnesses, 0_00010000, TriggerType.All);
+        public static readonly uint Neo_Witness_GetVerificationScript = Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript, 0_00000400, TriggerType.All);
+        public static readonly uint Neo_Account_IsStandard = Register("Neo.Account.IsStandard", Account_IsStandard, 0_00030000, TriggerType.All);
+        public static readonly uint Neo_Contract_Create = Register("Neo.Contract.Create", Contract_Create, GetDeploymentPrice, TriggerType.Application);
+        public static readonly uint Neo_Contract_Update = Register("Neo.Contract.Update", Contract_Update, GetDeploymentPrice, TriggerType.Application);
+        public static readonly uint Neo_Contract_GetScript = Register("Neo.Contract.GetScript", Contract_GetScript, 0_00000400, TriggerType.Application);
+        public static readonly uint Neo_Contract_IsPayable = Register("Neo.Contract.IsPayable", Contract_IsPayable, 0_00000400, TriggerType.Application);
+        public static readonly uint Neo_Storage_Find = Register("Neo.Storage.Find", Storage_Find, 0_01000000, TriggerType.Application);
+        public static readonly uint Neo_Enumerator_Create = Register("Neo.Enumerator.Create", Enumerator_Create, 0_00000400, TriggerType.All);
+        public static readonly uint Neo_Enumerator_Next = Register("Neo.Enumerator.Next", Enumerator_Next, 0_01000000, TriggerType.All);
+        public static readonly uint Neo_Enumerator_Value = Register("Neo.Enumerator.Value", Enumerator_Value, 0_00000400, TriggerType.All);
+        public static readonly uint Neo_Enumerator_Concat = Register("Neo.Enumerator.Concat", Enumerator_Concat, 0_00000400, TriggerType.All);
+        public static readonly uint Neo_Iterator_Create = Register("Neo.Iterator.Create", Iterator_Create, 0_00000400, TriggerType.All);
+        public static readonly uint Neo_Iterator_Key = Register("Neo.Iterator.Key", Iterator_Key, 0_00000400, TriggerType.All);
+        public static readonly uint Neo_Iterator_Keys = Register("Neo.Iterator.Keys", Iterator_Keys, 0_00000400, TriggerType.All);
+        public static readonly uint Neo_Iterator_Values = Register("Neo.Iterator.Values", Iterator_Values, 0_00000400, TriggerType.All);
+        public static readonly uint Neo_Iterator_Concat = Register("Neo.Iterator.Concat", Iterator_Concat, 0_00000400, TriggerType.All);
+        public static readonly uint Neo_Json_Serialize = Register("Neo.Json.Serialize", Json_Serialize, 0_00100000, TriggerType.All);
+        public static readonly uint Neo_Json_Deserialize = Register("Neo.Json.Deserialize", Json_Deserialize, 0_00500000, TriggerType.All);
 
         static InteropService()
         {
             foreach (NativeContract contract in NativeContract.Contracts)
-                Register(contract.ServiceName, contract.Invoke, contract.GetPrice);
+                Register(contract.ServiceName, contract.Invoke, contract.GetPrice, TriggerType.System | TriggerType.Application);
         }
 
         private static long GetCheckMultiSigPrice(RandomAccessStack<StackItem> stack)
@@ -70,7 +70,6 @@ namespace Neo.SmartContract
 
         private static bool Native_Deploy(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.Application) return false;
             if (engine.Snapshot.PersistingBlock.Index != 0) return false;
             foreach (NativeContract contract in NativeContract.Contracts)
             {
@@ -244,7 +243,6 @@ namespace Neo.SmartContract
 
         private static bool Contract_Create(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.Application) return false;
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
 
@@ -269,8 +267,6 @@ namespace Neo.SmartContract
 
         private static bool Contract_Update(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.Application) return false;
-
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (script.Length > 1024 * 1024) return false;
             var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
