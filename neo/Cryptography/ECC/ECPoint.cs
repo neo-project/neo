@@ -1,6 +1,5 @@
 ﻿using Neo.IO;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -386,7 +385,6 @@ namespace Neo.Cryptography.ECC
             {
                 if (x.Y.Equals(y.Y))
                     return x.Twice();
-                Debug.Assert(x.Y.Equals(-y.Y));
                 return x.Curve.Infinity;
             }
             ECFieldElement gamma = (y.Y - x.Y) / (y.X - x.X);
