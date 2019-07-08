@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 
@@ -46,10 +45,6 @@ namespace Neo.Cryptography.ECC
         {
             int n = k.GetBitLength();
             int s = k.GetLowestSetBit();
-
-#if DEBUG
-            Debug.Assert(k.TestBit(s));
-#endif
 
             BigInteger Uh = 1;
             BigInteger Vl = 2;
@@ -133,9 +128,6 @@ namespace Neo.Cryptography.ECC
                         V += curve.Q;
                     }
                     V >>= 1;
-#if DEBUG
-                    Debug.Assert((V * V).Mod(curve.Q) == Value);
-#endif
                     return new ECFieldElement(V, curve);
                 }
             }
