@@ -33,7 +33,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestCommit() {
+        public void TestCommitAndDispose() {
 
             Transaction tx = new Transaction();
             tx.Script = TestUtils.GetByteArray(32, 0x42);
@@ -56,16 +56,12 @@ namespace Neo.UnitTests
             dbSnapshot.Commit();
             Snapshot newSanpshot = store.GetSnapshot();
             Transaction internalTx = newSanpshot.GetTransaction(tx.Hash);
+            newSanpshot.Dispose();
             Assert.AreEqual(tx,internalTx);
 
         }
 
-        [TestMethod]
-        public void TestOnetoOne() {
-            Assert.AreEqual(1, 1);
-        }
         
-
         [ClassCleanup]
         public static void DeleteDir()
         {
