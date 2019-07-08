@@ -17,6 +17,9 @@
   <a href="https://github.com/neo-project/neo/releases">
     <img src="https://badge.fury.io/gh/neo-project%2Fneo.svg" alt="Current neo version.">
   </a>
+  <a href="https://github.com/neo-project/neo">
+    <img src="https://tokei.rs/b1/github/neo-project/neo?category=lines" alt="total lines.">
+  </a>	
 </p>
 
 NEO 3.0 (under development): A distributed network for the Smart Economy
