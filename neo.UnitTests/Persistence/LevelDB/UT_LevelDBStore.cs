@@ -171,7 +171,7 @@ namespace Neo.UnitTests
             state.Hash = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             state.Index = 10;
             snapshot.Commit();
-            HashIndexState storeState = cache.Get();
+            HashIndexState storeState = store.GetBlockHashIndex().Get();
             Assert.AreEqual(state.Hash, storeState.Hash);
             Assert.AreEqual(state.Index, storeState.Index);
         }
@@ -185,7 +185,7 @@ namespace Neo.UnitTests
             state.Hash = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             state.Index = 100;
             snapshot.Commit();
-            HashIndexState storeState = cache.Get();
+            HashIndexState storeState = store.GetHeaderHashIndex().Get();
             Assert.AreEqual(state.Hash, storeState.Hash);
             Assert.AreEqual(state.Index, storeState.Index);
         }
@@ -206,6 +206,12 @@ namespace Neo.UnitTests
             store.PutSync(0x02, new byte[] { 0x01, 0x02, 0x03, 0x04 }, new byte[] { 0x00, 0xff, 0x00, 0xff });
             var value = store.Get(0x02, new byte[] { 0x01, 0x02, 0x03, 0x04 });
             Assert.AreEqual(value.ToHexString(), new byte[] { 0x00, 0xff, 0x00, 0xff }.ToHexString());
+        }
+
+        [TestMethod]
+        public void TestGetNull()
+        {
+            Assert.IsNull(store.Get(0x03, new byte[] { 0x01, 0x02, 0x03, 0x04 }));
         }
 
         [ClassCleanup]
