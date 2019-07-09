@@ -17,12 +17,14 @@ namespace Neo.UnitTests
 
         private LevelDBStore store;
 
+        private static string DbPath => Path.GetFullPath(string.Format("Chain_{0}", 123456.ToString("X8")));
+
         [TestInitialize]
         public void TestSetup()
         {
             if (store == null)
             {
-                store = new LevelDBStore(Path.GetFullPath(string.Format("Chain_{0}", 123456.ToString("X8"))));
+                store = new LevelDBStore(DbPath);
             }
             dbSnapshot = store.GetSnapshot();
         }
@@ -65,29 +67,7 @@ namespace Neo.UnitTests
         [ClassCleanup]
         public static void DeleteDir()
         {
-            string file = Path.GetFullPath(string.Format("Chain_{0}", 123456.ToString("X8")));
-            DeleteFile(file);
-        }
-
-        private static void DeleteFile(string file) {
-            System.IO.DirectoryInfo fileInfo = new DirectoryInfo(file);
-            fileInfo.Attributes = FileAttributes.Normal & FileAttributes.Directory;
-            System.IO.File.SetAttributes(file, System.IO.FileAttributes.Normal);
-            if (Directory.Exists(file))
-            {
-                foreach (string f in Directory.GetFileSystemEntries(file))
-                {
-                    if (File.Exists(f))
-                    {
-                        File.Delete(f);
-                    }
-                    else
-                    {
-                        DeleteFile(f);
-                    }
-                }
-                Directory.Delete(file);
-            }
+            TestUtils.DeleteFile(DbPath);
         }
     }
 }
