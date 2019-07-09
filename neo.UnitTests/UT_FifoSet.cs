@@ -36,7 +36,7 @@ namespace Neo.UnitTests
             });
                         
             Assert.IsTrue(set.Add(d));            
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a, b, d });
+            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a, c, d });
             
             var e = new UInt256(new byte[32] {
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
@@ -46,7 +46,7 @@ namespace Neo.UnitTests
             });
             
             Assert.IsTrue(set.Add(e));            
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { b, d, e });
+            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { c, d, e });
         }
     }
 }
