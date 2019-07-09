@@ -208,8 +208,12 @@ namespace Neo.SmartContract
             if (data.Length != UInt160.Length) return false;
 
             var hash = new UInt160(data);
-
-            engine.CurrentContext.EvaluationStack.Push(new VM.Types.Array(engine.Notifications.Where(u => u.ScriptHash == hash).Select(u => u.State)));
+            engine.CurrentContext.EvaluationStack.Push
+                (
+                new VM.Types.Array(engine.Notifications
+                .Where(u => hash == UInt160.Zero || u.ScriptHash == hash)
+                .Select(u => u.State))
+                );
             return true;
         }
 
