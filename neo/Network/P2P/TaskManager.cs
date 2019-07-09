@@ -56,8 +56,11 @@ namespace Neo.Network.P2P
 
         private void OnNewTasks(InvPayload payload)
         {
+            Random randGen = new Random();
+            int random = randGen.Next();
+
             if (payload.Type == InventoryType.Consensus)
-                Console.WriteLine($"OnNewTasks(TM)-Begin");
+                Console.WriteLine($"OnNewTasks(TM)-Begin-{random}");
 
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
@@ -86,9 +89,9 @@ namespace Neo.Network.P2P
 
             if (payload.Type == InventoryType.Consensus)
             {
-                Console.WriteLine($"OnNewTasks(TM):");
+                Console.WriteLine($"OnNewTasks(TM)-{random}:");
                 foreach (UInt256 hashToPrint in hashes)
-                    Console.WriteLine($"       NewTaskHashesOnTM(TM): {hashToPrint}");
+                    Console.WriteLine($"       NewTaskHashesOnTM(TM)-{random}: {hashToPrint}");
             }
             
             //Return to ProtocolHandler with GetData 
