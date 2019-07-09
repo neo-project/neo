@@ -224,9 +224,9 @@ namespace Neo.Network.P2P
             }
             if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks)
                 && (Blockchain.Singleton.HeaderHeight < session.StartHeight
-                    || Blockchain.Singleton.HeaderHeight == session.StartHeight
+                    || (Blockchain.Singleton.HeaderHeight == session.StartHeight
                         && Blockchain.Singleton.HeaderHeight == sessions.Select(x => x.Value.StartHeight).Max()
-                        && TimeProvider.Current.UtcNow.ToTimestamp() - 60 >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentHeaderHash)?.Timestamp))
+                        && TimeProvider.Current.UtcNow.ToTimestamp() - 60 >= Blockchain.Singleton.GetBlock(Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)))
             {
                 session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
