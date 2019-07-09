@@ -8,7 +8,7 @@ namespace Neo.UnitTests
     public class UT_FifoSet
     {
         [TestMethod]
-        public void FifoSet()
+        public void FifoSetTest()
         {
             var a = UInt256.Zero;
             var b = new UInt256();
