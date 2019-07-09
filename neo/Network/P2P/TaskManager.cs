@@ -275,6 +275,7 @@ namespace Neo.Network.P2P
         internal protected override bool ShallDrop(object message, IEnumerable queue)
         {
             if (!(message is TaskManager.NewTasks tasks)) return false;
+            // Remove duplicate tasks
             if (queue.OfType<TaskManager.NewTasks>().Any(x => x.Payload.Type == tasks.Payload.Type && x.Payload.Hashes.SequenceEqual(tasks.Payload.Hashes))) return true;
             return false;
         }
