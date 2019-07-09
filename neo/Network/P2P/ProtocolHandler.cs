@@ -63,6 +63,7 @@ namespace Neo.Network.P2P
                     OnInventoryReceived(msg.GetPayload<Block>());
                     break;
                 case "consensus":
+                    Console.WriteLine($"OnReceive-Consensus(PH): {msg.GetPayload<ConsensusPayload>().Hash}");
                     OnInventoryReceived(msg.GetPayload<ConsensusPayload>());
                     break;
                 case "filteradd":
@@ -209,6 +210,7 @@ namespace Neo.Network.P2P
                         }
                         break;
                     case InventoryType.Consensus:
+                        Console.WriteLine($"OnGetDataMessageReceived(PH): {inventory.Hash}");
                         if (inventory != null)
                             Context.Parent.Tell(Message.Create("consensus", inventory));
                         break;
@@ -267,6 +269,18 @@ namespace Neo.Network.P2P
                     break;
             }
             if (hashes.Length == 0) return;
+
+
+            if (payload.Type == InventoryType.Consensus)
+            {
+                Console.WriteLine($"OnInvMessageReceived(PH):");
+                foreach(UInt256 hashToPrint in payload.Hashes)
+                    Console.WriteLine($"      printingPayloadHashes(PH): {hashToPrint}");
+                foreach (UInt256 hashToPrint in hashes)
+                    Console.WriteLine($"      printingHashesFiltered(PH): {hashToPrint}");
+            }
+
+
             system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) }, Context.Parent);
         }
 
@@ -315,6 +329,8 @@ namespace Neo.Network.P2P
         internal protected override bool IsHighPriority(object message)
         {
             if (!(message is Message msg)) return false;
+            if(msg.Command == "consensus")
+                Console.WriteLine($"PH-IHP: Consensus...");
             switch (msg.Command)
             {
                 case "consensus":

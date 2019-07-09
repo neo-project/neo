@@ -160,6 +160,10 @@ namespace Neo.Network.P2P
         {
             if (inventory is Transaction transaction)
                 system.Consensus?.Tell(transaction);
+
+            if (inventory is ConsensusPayload)
+                Console.WriteLine($"OnRelay(LN): {inventory.Hash}");
+            
             system.Blockchain.Tell(inventory);
         }
 

@@ -196,7 +196,7 @@ namespace Neo.Consensus
             if (message.NewViewNumber <= expectedView)
                 return;
 
-            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
+            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber} hash={payload.Hash}");
             context.ChangeViewPayloads[payload.ValidatorIndex] = payload;
             CheckExpectedView(message.NewViewNumber);
         }
@@ -217,7 +217,7 @@ namespace Neo.Consensus
 
             if (commit.ViewNumber == context.ViewNumber)
             {
-                Log($"{nameof(OnCommitReceived)}: height={payload.BlockIndex} view={commit.ViewNumber} index={payload.ValidatorIndex} nc={context.CountCommitted()} nf={context.CountFailed()}");
+                Log($"{nameof(OnCommitReceived)}: height={payload.BlockIndex} view={commit.ViewNumber} index={payload.ValidatorIndex} nc={context.CountCommitted()} nf={context.CountFailed()} hash={payload.Hash}");
 
                 byte[] hashData = context.MakeHeader()?.GetHashData();
                 if (hashData == null)
@@ -247,6 +247,7 @@ namespace Neo.Consensus
 
         private void OnConsensusPayload(ConsensusPayload payload)
         {
+            Log($"OnConsensusPayload hash={payload.Hash}", LogLevel.Warning);
             if (context.BlockSent()) return;
             if (payload.Version != ConsensusContext.Version) return;
             if (payload.PrevHash != context.PrevHash || payload.BlockIndex != context.BlockIndex)
@@ -313,7 +314,7 @@ namespace Neo.Consensus
             int validChangeViews = 0, totalChangeViews = 0, validPrepReq = 0, totalPrepReq = 0;
             int validPrepResponses = 0, totalPrepResponses = 0, validCommits = 0, totalCommits = 0;
 
-            Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+            Log($"{nameof(OnRecoveryMessageReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} hash={payload.Hash}");
             try
             {
                 if (message.ViewNumber > context.ViewNumber)
@@ -372,7 +373,7 @@ namespace Neo.Consensus
             // additional recovery message response.
             if (!knownHashes.Add(payload.Hash)) return;
 
-            Log($"On{payload.ConsensusMessage.GetType().Name}Received: height={payload.BlockIndex} index={payload.ValidatorIndex} view={payload.ConsensusMessage.ViewNumber}");
+            Log($"On{payload.ConsensusMessage.GetType().Name}Received: height={payload.BlockIndex} index={payload.ValidatorIndex} view={payload.ConsensusMessage.ViewNumber} hash={payload.Hash}");
             if (context.WatchOnly()) return;
             if (!context.CommitSent())
             {
@@ -389,7 +390,7 @@ namespace Neo.Consensus
 
                 if (!shouldSendRecovery) return;
             }
-            Log($"send recovery: view={context.ViewNumber}");
+            Log($"send recovery: view={context.ViewNumber} ");
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
         }
 
@@ -468,7 +469,7 @@ namespace Neo.Consensus
             // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
             ExtendTimerByFactor(2);
 
-            Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex}");
+            Log($"{nameof(OnPrepareResponseReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} hash={payload.Hash}");
             context.PreparationPayloads[payload.ValidatorIndex] = payload;
             if (context.WatchOnly() || context.CommitSent()) return;
             if (context.RequestSentOrReceived())

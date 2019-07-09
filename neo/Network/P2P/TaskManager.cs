@@ -73,6 +73,14 @@ namespace Neo.Network.P2P
                 session.Tasks[hash] = DateTime.UtcNow;
             }
 
+            if (payload.Type == InventoryType.Consensus)
+            {
+                Console.WriteLine($"OnNewTasks(TM):");
+                foreach (UInt256 hashToPrint in hashes)
+                    Console.WriteLine($"       NewTaskHashesOnTM(TM): {hashToPrint}");
+            }
+            
+            //Return to ProtocolHandler with GetData 
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, hashes.ToArray()))
                 Sender.Tell(Message.Create("getdata", group));
         }
@@ -257,6 +265,8 @@ namespace Neo.Network.P2P
                 case TaskManager.RestartTasks _:
                     return true;
                 case TaskManager.NewTasks tasks:
+                    if (tasks.Payload.Type == InventoryType.Consensus)
+                        Console.WriteLine($"TM-IHP: Consensus I AM...");
                     if (tasks.Payload.Type == InventoryType.Block || tasks.Payload.Type == InventoryType.Consensus)
                         return true;
                     return false;
