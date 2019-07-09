@@ -1,6 +1,7 @@
 ﻿using Akka.Actor;
 using Akka.Configuration;
 using Neo.IO.Actors;
+using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
@@ -24,7 +25,14 @@ namespace Neo.Network.P2P
 
         private readonly NeoSystem system;
         private const int MaxConncurrentTasks = 3;
-        private readonly HashSet<UInt256> knownHashes = new HashSet<UInt256>();
+
+        /// <summary>
+        /// Max GetBlocks and Headers are limmited to 500 each
+        /// Blockchain.Singleton.MemPool.Capacity * 2 was the same value used in ProtocolHandler
+        /// </summary>
+        private static readonly int MaxCachedHashes = Blockchain.Singleton.MemPool.Capacity * 2;
+        private readonly FIFOSet<UInt256> knownHashes = new FIFOSet<UInt256>(MaxCachedHashes);
+
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
