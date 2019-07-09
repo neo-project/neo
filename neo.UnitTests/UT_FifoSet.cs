@@ -48,6 +48,10 @@ namespace Neo.UnitTests
             Assert.IsTrue(set.Add(e));            
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { c, d, e });
             
+            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { c, e, d });
+            
+            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { c, b, e });
+            
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { b, d, e });
             
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { c, b, e });
