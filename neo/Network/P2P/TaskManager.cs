@@ -56,6 +56,9 @@ namespace Neo.Network.P2P
 
         private void OnNewTasks(InvPayload payload)
         {
+            if (payload.Type == InventoryType.Consensus)
+                Console.WriteLine($"OnNewTasks(TM)-Begin");
+
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
             if (payload.Type == InventoryType.TX && Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)

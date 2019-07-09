@@ -63,7 +63,7 @@ namespace Neo.Network.P2P
                     OnInventoryReceived(msg.GetPayload<Block>());
                     break;
                 case "consensus":
-                    Console.WriteLine($"OnReceive-Consensus(PH): {msg.GetPayload<ConsensusPayload>().Hash}");
+                    Console.WriteLine($"OnReceive-ConsensusPayload(PH): {msg.GetPayload<ConsensusPayload>().Hash}");
                     OnInventoryReceived(msg.GetPayload<ConsensusPayload>());
                     break;
                 case "filteradd":
@@ -82,6 +82,7 @@ namespace Neo.Network.P2P
                     OnGetBlocksMessageReceived(msg.GetPayload<GetBlocksPayload>());
                     break;
                 case "getdata":
+                    Console.WriteLine($"OnReceive-GetData(PH):");
                     OnGetDataMessageReceived(msg.GetPayload<InvPayload>());
                     break;
                 case "getheaders":
@@ -273,14 +274,16 @@ namespace Neo.Network.P2P
 
             if (payload.Type == InventoryType.Consensus)
             {
+                Random randGen = new Random();
+                int random = randGen.Next();
                 Console.WriteLine($"OnInvMessageReceived(PH):");
                 foreach(UInt256 hashToPrint in payload.Hashes)
-                    Console.WriteLine($"      printingPayloadHashes(PH): {hashToPrint}");
+                    Console.WriteLine($"      printingPayloadHashes(PH)-{random}: {hashToPrint}");
                 foreach (UInt256 hashToPrint in hashes)
-                    Console.WriteLine($"      printingHashesFiltered(PH): {hashToPrint}");
+                    Console.WriteLine($"      printingHashesFiltered(PH)-{random}: {hashToPrint}");
             }
 
-
+            // Go to OnNewTasks On TaskManager
             system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) }, Context.Parent);
         }
 
