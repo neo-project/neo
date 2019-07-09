@@ -112,11 +112,21 @@ namespace Neo.Cryptography.ECC
             {
                 case 0x02:
                 case 0x03:
-                    reader.Read(buffer, 1, expectedLength);
-                    return DecodePoint(buffer.Take(1 + expectedLength).ToArray(), curve);
+                    {
+                        if (reader.Read(buffer, 1, expectedLength) != expectedLength)
+                        {
+                            throw new FormatException();
+                        }
+                        return DecodePoint(buffer.Take(1 + expectedLength).ToArray(), curve);
+                    }
                 case 0x04:
-                    reader.Read(buffer, 1, expectedLength * 2);
-                    return DecodePoint(buffer, curve);
+                    {
+                        if (reader.Read(buffer, 1, expectedLength * 2) != expectedLength * 2)
+                        {
+                            throw new FormatException();
+                        }
+                        return DecodePoint(buffer, curve);
+                    }
                 default:
                     throw new FormatException("Invalid point encoding " + buffer[0]);
             }

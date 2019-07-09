@@ -5,7 +5,6 @@ using System.Linq;
 
 namespace Neo
 {
-
     /// <summary>
     /// Base class for little-endian unsigned integers. Two classes inherit from this: UInt160 and UInt256.
     /// Only basic comparison/serialization are proposed for these classes. For arithmetic purposes, use BigInteger class.
@@ -15,7 +14,7 @@ namespace Neo
         /// <summary>
         /// Storing unsigned int in a little-endian byte array.
         /// </summary>
-        private byte[] data_bytes;
+        private readonly byte[] data_bytes;
 
         /// <summary>
         /// Number of bytes of the unsigned int.
@@ -44,7 +43,10 @@ namespace Neo
         /// </summary>
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            reader.Read(data_bytes, 0, data_bytes.Length);
+            if (reader.Read(data_bytes, 0, data_bytes.Length) != data_bytes.Length)
+            {
+                throw new FormatException();
+            }
         }
 
         /// <summary>
@@ -53,7 +55,7 @@ namespace Neo
         /// </summary>
         public bool Equals(UIntBase other)
         {
-            if (ReferenceEquals(other, null))
+            if (other is null)
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
@@ -68,7 +70,7 @@ namespace Neo
         /// </summary>
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(obj, null))
+            if (obj is null)
                 return false;
             if (!(obj is UIntBase))
                 return false;
