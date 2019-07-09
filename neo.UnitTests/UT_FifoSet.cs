@@ -19,7 +19,7 @@ namespace Neo.UnitTests
                 0x01, 0x01
             });
 
-            FIFOSet<UInt256> set = new FIFOSet<UInt256>(3);
+            var set = new FIFOSet<UInt256>(3);
 
             Assert.IsTrue(set.Add(a));
             Assert.IsFalse(set.Add(a));
