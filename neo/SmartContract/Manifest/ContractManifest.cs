@@ -1,5 +1,6 @@
 ﻿using Neo.IO;
 using Neo.IO.Json;
+using System;
 using System.IO;
 using System.Linq;
 
@@ -73,7 +74,13 @@ namespace Neo.SmartContract.Manifest
                     Hash = hash,
                     EntryPoint = ContractMethodDescriptor.DefaultEntryPoint,
                     Events = new ContractEventDescriptor[0],
-                    Methods = new ContractMethodDescriptor[0]
+                    Methods = new ContractMethodDescriptor[0],
+                    ScriptHeader = new ScriptHeader()
+                    {
+                        Compiler = "",
+                        Engine = ScriptHeader.ScriptEngine.NeoVM,
+                        Version = new Version(),
+                    }
                 },
                 Features = ContractFeatures.NoProperty,
                 Groups = new ContractGroup[0],
