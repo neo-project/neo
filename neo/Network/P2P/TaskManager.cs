@@ -60,7 +60,7 @@ namespace Neo.Network.P2P
             int random = randGen.Next();
 
             if (payload.Type == InventoryType.Consensus)
-                Console.WriteLine($"OnNewTasks(TM)-Begin-{random}");
+                Console.WriteLine($"OnNewTasks(TM)-BGN-{random}");
 
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
@@ -70,17 +70,34 @@ namespace Neo.Network.P2P
                 return;
             }
             HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
+
+            if (payload.Type == InventoryType.Consensus)
+            {
+                Console.WriteLine($"OnNewTasks(TM)-BKS-{random}:");
+                foreach (UInt256 hashToPrint in hashes)
+                    Console.WriteLine($"       NewTaskHashesOnTM(TM)-{random}: {hashToPrint}");
+            }
+
             hashes.ExceptWith(knownHashes);
+
+            if (payload.Type == InventoryType.Consensus)
+                Console.WriteLine($"OnNewTasks(TM)-AKS-{random}-count: {hashes.Count}");
+            
             if (payload.Type == InventoryType.Block)
                 session.AvailableTasks.UnionWith(hashes.Where(p => globalTasks.ContainsKey(p)));
 
             hashes.ExceptWith(globalTasks.Keys);
+
+            if (payload.Type == InventoryType.Consensus)
+                Console.WriteLine($"OnNewTasks(TM)-AGT-{random}-count: {hashes.Count}");
+            
             if (hashes.Count == 0)
             {
                 RequestTasks(session);
                 return;
             }
 
+            
             foreach (UInt256 hash in hashes)
             {
                 IncrementGlobalTask(hash);
@@ -88,11 +105,7 @@ namespace Neo.Network.P2P
             }
 
             if (payload.Type == InventoryType.Consensus)
-            {
-                Console.WriteLine($"OnNewTasks(TM)-{random}:");
-                foreach (UInt256 hashToPrint in hashes)
-                    Console.WriteLine($"       NewTaskHashesOnTM(TM)-{random}: {hashToPrint}");
-            }
+                Console.WriteLine($"OnNewTasks(TM)-END-{random}:");
             
             //Return to ProtocolHandler with GetData 
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, hashes.ToArray()))
