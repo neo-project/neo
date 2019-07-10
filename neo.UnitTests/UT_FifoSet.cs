@@ -27,35 +27,7 @@ namespace Neo.UnitTests
             Assert.IsTrue(set.Add(c));
 
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a, c });
-            
-            var d = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x02
-            });
-                        
-            Assert.IsTrue(set.Add(d));            
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a, c, d });
-            
-            var e = new UInt256(new byte[32] {
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x03
-            });
-            
-            Assert.IsTrue(set.Add(e));            
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { c, d, e });
-            
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { c, e, d });
-            
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { c, b, e });
-            
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { b, d, e });
-            
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { c, b, e });
-            
         }
     }
 }
+
