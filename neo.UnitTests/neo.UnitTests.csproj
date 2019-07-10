@@ -32,8 +32,10 @@
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="Copy  &quot;$(ProjectDir)lib\libleveldb.dll&quot;  &quot;$(ProjectDir)$(OutDir)&quot;" />
-  </Target>
+  <ItemGroup>
+    <None Update="./libleveldb.dll">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	</None>
+  </ItemGroup>
 
 </Project>

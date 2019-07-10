@@ -10,6 +10,7 @@ using Neo.Ledger;
 using Neo.IO.Caching;
 using Neo.SmartContract.Manifest;
 
+
 namespace Neo.UnitTests
 {
     [TestClass]
@@ -32,7 +33,8 @@ namespace Neo.UnitTests
         }
 
         [TestCleanup]
-        public void TestEnd() {
+        public void TestEnd()
+        {
             store.Dispose();
         }
 
@@ -43,18 +45,16 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestDeleteInternal() {
+        public void TestDeleteInternal()
+        {
             Snapshot snapshot = store.GetSnapshot();
-            ContractState state = new ContractState
-            {
-                Script = new byte[] { 0x01, 0x02, 0x03, 0x04 },
-                Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
-            };
+            ContractState state = CreateTestContractState();
 
             snapshot.Contracts.Add(state.ScriptHash, state);
             snapshot.Commit();
             DataCache<UInt160, ContractState> contracts = store.GetContracts();
-            //delete doesn't work because batch is null
+            //delete doesn't work because snapshot not commit
+            snapshot.Contracts.Delete(state.ScriptHash);
             contracts.DeleteInternal(state.ScriptHash);
             Assert.IsNotNull(contracts.TryGet(state.ScriptHash));
 
@@ -64,8 +64,70 @@ namespace Neo.UnitTests
             snapshot.Commit();
             contracts = store.GetContracts();
             Assert.IsNull(contracts.TryGet(state.ScriptHash));
-
-
         }
+
+       
+
+        [TestMethod]
+        public void TestGetInternal()
+        {
+            Snapshot snapshot = store.GetSnapshot();
+            ContractState state = CreateTestContractState();
+
+            snapshot.Contracts.Add(state.ScriptHash, state);
+            snapshot.Commit();
+            DataCache<UInt160, ContractState> contracts = store.GetContracts();
+            var contractState = contracts[state.ScriptHash];
+            Assert.AreEqual(state.Script.ToHexString(), contractState.Script.ToHexString());
+            Assert.AreEqual(state.Manifest.Abi.Hash, contractState.Manifest.Abi.Hash);
+            Assert.AreEqual(state.Manifest.ToString(), contractState.Manifest.ToString());
+
+            //test key not found
+            ContractState state2 = new ContractState
+            {
+                Script = new byte[] { 0x04, 0x03, 0x02, 0x01 },
+                Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
+            };
+            try
+            {
+                var contractState2 = contracts[state2.ScriptHash];
+            }
+            catch (IO.Data.LevelDB.LevelDBException) { }
+        }
+
+        [TestMethod]
+        public void TestTryGetInternal()
+        {
+            Snapshot snapshot = store.GetSnapshot();
+            ContractState state = CreateTestContractState();
+
+            snapshot.Contracts.Add(state.ScriptHash, state);
+            snapshot.Commit();
+            DataCache<UInt160, ContractState> contracts = store.GetContracts();
+            var contractState = contracts.TryGet(state.ScriptHash);
+            Assert.AreEqual(state.Script.ToHexString(), contractState.Script.ToHexString());
+            Assert.AreEqual(state.Manifest.Abi.Hash, contractState.Manifest.Abi.Hash);
+            Assert.AreEqual(state.Manifest.ToString(), contractState.Manifest.ToString());
+
+            //test key not found
+            ContractState state2 = new ContractState
+            {
+                Script = new byte[] { 0x04, 0x03, 0x02, 0x01 },
+                Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
+            };
+            var contractState2 = contracts.TryGet(state2.ScriptHash);
+            Assert.IsNull(contractState2);
+        }
+
+
+        private static ContractState CreateTestContractState()
+        {
+            return new ContractState
+            {
+                Script = new byte[] { 0x01, 0x02, 0x03, 0x04 },
+                Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
+            };
+        }
+
     }
 }
