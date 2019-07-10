@@ -34,7 +34,7 @@ namespace Neo.UnitTests.IO.Caching
     public class UT_Cache
     {
         MyCache cache;
-        int max_capacity = 4;
+        readonly int max_capacity = 4;
 
         [TestInitialize]
         public void init()
