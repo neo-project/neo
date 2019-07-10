@@ -107,6 +107,8 @@ namespace Neo.UnitTests
             {
                 var ta = new Task<WalletAccount>(() => walletA.CreateAccount());
                 var tb = new Task<WalletAccount>(() => walletA.CreateAccount());
+                ta.Start();
+                tb.Start();
                 Task.WaitAll(ta, tb);
 
                 var a = ta.Result;
@@ -121,6 +123,8 @@ namespace Neo.UnitTests
 
                 ta = new Task<WalletAccount>(() => walletA.CreateAccount(multiSignContract, a.GetKey()));
                 tb = new Task<WalletAccount>(() => walletB.CreateAccount(multiSignContract, b.GetKey()));
+                ta.Start();
+                tb.Start();
                 Task.WaitAll(ta, tb);
 
                 var acc = tb.Result;
