@@ -25,7 +25,8 @@ namespace Neo.UnitTests.IO.Caching
 
         public IEnumerator MyGetEnumerator()
         {
-            return this.GetEnumerator();
+            IEnumerable enumerable = this;
+            return enumerable.GetEnumerator();
         }
     }
 
