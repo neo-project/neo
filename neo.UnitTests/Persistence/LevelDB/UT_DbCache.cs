@@ -20,7 +20,7 @@ namespace Neo.UnitTests
 
         private LevelDBStore store;
 
-        private static string DbPath => Path.GetFullPath(string.Format("Chain_{0}", 123456.ToString("X8")));
+        private static string DbPath => Path.GetFullPath(nameof(UT_DbCache) + string.Format("_Chain_{0}", 123456.ToString("X8")));
 
         [TestInitialize]
         public void TestSetup()
