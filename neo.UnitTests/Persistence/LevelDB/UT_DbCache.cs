@@ -61,6 +61,7 @@ namespace Neo.UnitTests
             //delete should work because batch isn't null
             snapshot.Contracts.Delete(state.ScriptHash);
             snapshot.Contracts.DeleteInternal(state.ScriptHash);
+            snapshot.Commit();
             contracts = store.GetContracts();
             Assert.IsNull(contracts.TryGet(state.ScriptHash));
 
