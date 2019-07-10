@@ -119,6 +119,44 @@ namespace Neo.UnitTests
             Assert.IsNull(contractState2);
         }
 
+        [TestMethod]
+        public void TestFindInternal()
+        { 
+            Snapshot snapshot = store.GetSnapshot();
+            ContractState state = CreateTestContractState();
+            snapshot.Contracts.Add(state.ScriptHash, state);
+            snapshot.Commit();
+            DataCache<UInt160, ContractState> contracts = store.GetContracts();
+            var ret = contracts.Find();
+            foreach (var pair in ret) {
+                Assert.AreEqual(pair.Key, state.ScriptHash);
+                Assert.AreEqual(pair.Value.Script.ToHexString(), state.Script.ToHexString());
+                Assert.AreEqual(pair.Value.Manifest.ToString(), state.Manifest.ToString());
+            }
+        }
+
+
+        [TestMethod]
+        public void TestUpdateInternal()
+        {
+            Snapshot snapshot = store.GetSnapshot();
+            ContractState state = CreateTestContractState();
+            snapshot.Contracts.Add(state.ScriptHash, state);
+            snapshot.Commit();
+            DataCache<UInt160, ContractState> contracts = store.GetContracts();
+            snapshot = store.GetSnapshot();
+            var storeState  = snapshot.Contracts.GetAndChange(state.ScriptHash);
+            storeState.Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff11"));
+            snapshot.Commit();
+            DataCache<UInt160, ContractState> contracts2 = store.GetContracts();
+            var updatedState = contracts2.TryGet(state.ScriptHash);
+            Assert.AreEqual(updatedState.Manifest.ToString(), storeState.Manifest.ToString());
+            Assert.AreEqual(updatedState.Script.ToHexString(), storeState.Script.ToHexString());
+
+        }
+
+
+
 
         private static ContractState CreateTestContractState()
         {
