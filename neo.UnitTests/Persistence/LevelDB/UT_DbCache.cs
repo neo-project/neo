@@ -91,6 +91,7 @@ namespace Neo.UnitTests
             try
             {
                 var contractState2 = contracts[state2.ScriptHash];
+                Assert.Fail();
             }
             catch (IO.Data.LevelDB.LevelDBException) { }
         }
