@@ -2,7 +2,7 @@
 using Neo.IO.Caching;
 using System.Linq;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests.IO.Caching
 {
     [TestClass]
     public class UT_FifoSet

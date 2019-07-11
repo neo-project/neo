@@ -125,7 +125,7 @@ namespace Neo.UnitTests.IO.Caching
             try
             {
                 cache.CopyTo(null, 1);
-                false.Should().BeFalse();
+                false.Should().BeTrue();
             }
             catch (ArgumentNullException e)
             {
@@ -135,7 +135,7 @@ namespace Neo.UnitTests.IO.Caching
             try
             {
                 cache.CopyTo(temp, -1);
-                false.Should().BeFalse();
+                false.Should().BeTrue();
             }
             catch (ArgumentOutOfRangeException e)
             {
@@ -145,7 +145,7 @@ namespace Neo.UnitTests.IO.Caching
             try
             {
                 cache.CopyTo(temp, 1);
-                false.Should().BeFalse();
+                false.Should().BeTrue();
             }
             catch (ArgumentException e)
             {
@@ -242,7 +242,7 @@ namespace Neo.UnitTests.IO.Caching
                 cache.Add(i.ToString());
             }
 
-            cache.Add(i.ToString());    // the first one will be deleted 
+            cache.Add(i.ToString());    // The first one will be deleted 
             cache.Contains(1.ToString()).Should().BeFalse();
 
             for (i = 2; i <= max_capacity + 1; i++)
