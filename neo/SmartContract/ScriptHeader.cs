@@ -32,7 +32,7 @@ namespace Neo.SmartContract
         public byte[] Script { get; set; }
 
         /// <summary>
-        /// Version
+        /// Script Hash
         /// </summary>
         public UInt160 ScriptHash { get; set; }
 
@@ -80,7 +80,6 @@ namespace Neo.SmartContract
 
             if (Script.ToScriptHash() != ScriptHash)
             {
-                // CRC Fail
                 throw new FormatException("CRC verification fail");
             }
         }
