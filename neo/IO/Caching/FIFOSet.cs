@@ -51,7 +51,7 @@ namespace Neo.IO.Caching
 
         public IEnumerator<T> GetEnumerator()
         {
-            var entries = dictionary.Values.Cast<T>().ToArray();
+            var entries = dictionary.Keys.Cast<T>().ToArray();
             foreach (var entry in entries) yield return entry;
         }
 
