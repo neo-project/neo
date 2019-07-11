@@ -206,6 +206,7 @@ namespace Neo.SmartContract
         {
             var data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             if (data.Length != UInt160.Length) return false;
+            if (!engine.CheckArraySize(engine.Notifications.Count)) return false;
 
             var hash = new UInt160(data);
             engine.CurrentContext.EvaluationStack.Push
