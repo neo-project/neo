@@ -41,8 +41,6 @@ namespace Neo.UnitTests
             TestUtils.DeleteFile(dbPath);
         }
 
-
-
         [TestMethod]
         public void TestGetBlocks()
         {
@@ -79,7 +77,7 @@ namespace Neo.UnitTests
             Assert.AreEqual(block.PrevHash, storeBlock.PrevHash);
             Assert.AreEqual(block.Index, storeBlock.Index);
             Assert.AreEqual(block.Hashes[0].ToString(), storeBlock.Hashes[0].ToString());
-            
+
             blocks.Delete(block.Hash);
             Assert.IsNull(blocks.TryGet(block.Hash));
             Assert.IsNull(blocks.TryGet(UInt256.Zero));
@@ -90,7 +88,8 @@ namespace Neo.UnitTests
         public void TestGetContracts()
         {
             Snapshot snapshot = store.GetSnapshot();
-            ContractState state = new ContractState {
+            ContractState state = new ContractState
+            {
                 Script = new byte[] { 0x01, 0x02, 0x03, 0x04 },
                 Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
             };
@@ -108,8 +107,9 @@ namespace Neo.UnitTests
         public void TestGetHeaderHashList()
         {
             Snapshot snapshot = store.GetSnapshot();
-            HeaderHashList headerHashList = new HeaderHashList {
-                Hashes = new UInt256[] { UInt256.Zero}
+            HeaderHashList headerHashList = new HeaderHashList
+            {
+                Hashes = new UInt256[] { UInt256.Zero }
             };
             UInt32Wrapper uInt32Wrapper = 123;
             snapshot.HeaderHashList.Add(uInt32Wrapper, headerHashList);
@@ -139,7 +139,7 @@ namespace Neo.UnitTests
             TransactionState txState = new TransactionState();
             txState.Transaction = tx;
             txState.BlockIndex = 10;
-            snapshot.Transactions.Add(tx.Hash,txState);
+            snapshot.Transactions.Add(tx.Hash, txState);
             snapshot.Commit();
             var transactions = store.GetTransactions();
             var storeTransaction = transactions.TryGet(tx.Hash);
@@ -165,8 +165,8 @@ namespace Neo.UnitTests
             snapshot.Storages.Add(key, storageItem);
             snapshot.Commit();
             var storeStorageItem = store.GetStorages().TryGet(key);
-            Assert.AreEqual(storeStorageItem.Value.ToHexString(),storageItem.Value.ToHexString());
-            Assert.AreEqual(storeStorageItem.IsConstant,storageItem.IsConstant);
+            Assert.AreEqual(storeStorageItem.Value.ToHexString(), storageItem.Value.ToHexString());
+            Assert.AreEqual(storeStorageItem.IsConstant, storageItem.IsConstant);
 
         }
 
@@ -198,8 +198,6 @@ namespace Neo.UnitTests
             Assert.AreEqual(state.Index, storeState.Index);
         }
 
-       
-
         [TestMethod]
         public void TestPutAndGet()
         {
@@ -221,9 +219,5 @@ namespace Neo.UnitTests
         {
             Assert.IsNull(store.Get(0x03, new byte[] { 0x01, 0x02, 0x03, 0x04 }));
         }
-
-    
-
-        
     }
 }

@@ -16,8 +16,6 @@ namespace Neo.UnitTests
     [TestClass]
     public class UT_DbCache
     {
-        private Snapshot dbSnapshot;
-
         private LevelDBStore store;
 
         private string dbPath;
@@ -62,8 +60,6 @@ namespace Neo.UnitTests
             contracts = store.GetContracts();
             Assert.IsNull(contracts.TryGet(state.ScriptHash));
         }
-
-       
 
         [TestMethod]
         public void TestGetInternal()
@@ -119,20 +115,20 @@ namespace Neo.UnitTests
 
         [TestMethod]
         public void TestFindInternal()
-        { 
+        {
             Snapshot snapshot = store.GetSnapshot();
             ContractState state = CreateTestContractState();
             snapshot.Contracts.Add(state.ScriptHash, state);
             snapshot.Commit();
             DataCache<UInt160, ContractState> contracts = store.GetContracts();
             var ret = contracts.Find();
-            foreach (var pair in ret) {
+            foreach (var pair in ret)
+            {
                 Assert.AreEqual(pair.Key, state.ScriptHash);
                 Assert.AreEqual(pair.Value.Script.ToHexString(), state.Script.ToHexString());
                 Assert.AreEqual(pair.Value.Manifest.ToString(), state.Manifest.ToString());
             }
         }
-
 
         [TestMethod]
         public void TestUpdateInternal()
@@ -143,7 +139,7 @@ namespace Neo.UnitTests
             snapshot.Commit();
             DataCache<UInt160, ContractState> contracts = store.GetContracts();
             snapshot = store.GetSnapshot();
-            var storeState  = snapshot.Contracts.GetAndChange(state.ScriptHash);
+            var storeState = snapshot.Contracts.GetAndChange(state.ScriptHash);
             storeState.Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff11"));
             snapshot.Commit();
             DataCache<UInt160, ContractState> contracts2 = store.GetContracts();
@@ -153,9 +149,6 @@ namespace Neo.UnitTests
 
         }
 
-
-
-
         private static ContractState CreateTestContractState()
         {
             return new ContractState
@@ -164,6 +157,5 @@ namespace Neo.UnitTests
                 Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
             };
         }
-
     }
 }

@@ -45,7 +45,6 @@ namespace Neo.UnitTests
         public void TestGetBlocks()
         {
             Snapshot snapshot = store.GetSnapshot();
-
             TrimmedBlock block = new TrimmedBlock();
             block.ConsensusData = new ConsensusData();
             block.MerkleRoot = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02");
@@ -63,7 +62,6 @@ namespace Neo.UnitTests
             snapshot.Blocks.Add(block.Hash, block);
             snapshot.Commit();
             DataCache<UInt256, TrimmedBlock> blocks = ((IPersistence)store).Blocks;
-
             TrimmedBlock storeBlock = blocks.TryGet(block.Hash);
             Assert.AreEqual(block.MerkleRoot, storeBlock.MerkleRoot);
             Assert.AreEqual(block.Timestamp, storeBlock.Timestamp);
@@ -136,6 +134,7 @@ namespace Neo.UnitTests
             Assert.AreEqual(storeTransaction.Transaction.Sender, tx.Sender);
             Assert.AreEqual(storeTransaction.Transaction.SystemFee, tx.SystemFee);
         }
+
         [TestMethod]
         public void TestGetStorages()
         {
@@ -155,7 +154,6 @@ namespace Neo.UnitTests
             var storeStorageItem = ((IPersistence)store).Storages.TryGet(key);
             Assert.AreEqual(storeStorageItem.Value.ToHexString(), storageItem.Value.ToHexString());
             Assert.AreEqual(storeStorageItem.IsConstant, storageItem.IsConstant);
-
         }
 
         [TestMethod]
@@ -185,8 +183,5 @@ namespace Neo.UnitTests
             Assert.AreEqual(state.Hash, storeState.Hash);
             Assert.AreEqual(state.Index, storeState.Index);
         }
-
-
-
     }
 }

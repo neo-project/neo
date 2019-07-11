@@ -40,7 +40,8 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestCommitAndDispose() {
+        public void TestCommitAndDispose()
+        {
             dbSnapshot = store.GetSnapshot();
 
             Transaction tx = new Transaction();
@@ -60,16 +61,12 @@ namespace Neo.UnitTests
             TransactionState txState = new TransactionState();
             txState.Transaction = tx;
             txState.BlockIndex = 10;
-            dbSnapshot.Transactions.Add(tx.Hash,txState);
+            dbSnapshot.Transactions.Add(tx.Hash, txState);
             dbSnapshot.Commit();
             Snapshot newSanpshot = store.GetSnapshot();
             Transaction internalTx = newSanpshot.GetTransaction(tx.Hash);
             newSanpshot.Dispose();
-            Assert.AreEqual(tx,internalTx);
-
+            Assert.AreEqual(tx, internalTx);
         }
-
-        
-      
     }
 }

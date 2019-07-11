@@ -42,7 +42,6 @@ namespace Neo.UnitTests.IO.Caching
             cache = new MyCache(max_capacity);
         }
 
-
         [TestMethod]
         public void TestCount()
         {
@@ -56,13 +55,11 @@ namespace Neo.UnitTests.IO.Caching
             cache.Count.Should().Be(1);
         }
 
-
         [TestMethod]
         public void TestIsReadOnly()
         {
             cache.IsReadOnly.Should().BeFalse();
         }
-
 
         [TestMethod]
         public void TestAddAndAddInternal()
@@ -70,7 +67,6 @@ namespace Neo.UnitTests.IO.Caching
             cache.Add("hello");
             cache.Contains("hello").Should().BeTrue();
             cache.Contains("world").Should().BeFalse();
-
             cache.Add("hello");
             cache.Count.Should().Be(1);
         }
@@ -80,7 +76,6 @@ namespace Neo.UnitTests.IO.Caching
         {
             string[] range = { "hello", "world" };
             cache.AddRange(range);
-
             cache.Count.Should().Be(2);
             cache.Contains("hello").Should().BeTrue();
             cache.Contains("world").Should().BeTrue();
@@ -92,7 +87,6 @@ namespace Neo.UnitTests.IO.Caching
         {
             cache.Add("hello");
             cache.Add("world");
-
             cache.Count.Should().Be(2);
             cache.Clear();
             cache.Count.Should().Be(0);
@@ -119,9 +113,7 @@ namespace Neo.UnitTests.IO.Caching
         {
             cache.Add("hello");
             cache.Add("world");
-
             string[] temp = new string[2];
-
             try
             {
                 cache.CopyTo(null, 1);
@@ -162,7 +154,6 @@ namespace Neo.UnitTests.IO.Caching
         public void TestRemoveKey()
         {
             cache.Add("hello");
-
             cache.Remove("hello".GetHashCode()).Should().BeTrue();
             cache.Remove("world".GetHashCode()).Should().BeFalse();
             cache.Contains("hello").Should().BeFalse();
@@ -172,10 +163,8 @@ namespace Neo.UnitTests.IO.Caching
         public void TestRemoveValue()
         {
             cache.Add("hello");
-
             cache.Remove("hello").Should().BeTrue();
             cache.Remove("world").Should().BeFalse();
-
             cache.Contains("hello").Should().BeFalse();
         }
 
@@ -184,10 +173,8 @@ namespace Neo.UnitTests.IO.Caching
         public void TestTryGet()
         {
             cache.Add("hello");
-
             cache.TryGet("hello".GetHashCode(), out string output).Should().BeTrue();
             output.Should().Be("hello");
-
             cache.TryGet("world".GetHashCode(), out string output2).Should().BeFalse();
             output2.Should().NotBe("world");
             output2.Should().BeNull();
@@ -199,16 +186,15 @@ namespace Neo.UnitTests.IO.Caching
         {
             cache.Add("hello");
             cache.Add("world");
-
             cache["hello".GetHashCode()].Should().Be("hello");
             cache["world".GetHashCode()].Should().Be("world");
-
 
             try
             {
                 string temp = cache["non exist string".GetHashCode()];
                 false.Should().BeTrue();
-            }catch(KeyNotFoundException e)
+            }
+            catch (KeyNotFoundException e)
             {
                 e.Should().NotBeNull();
             }
@@ -219,34 +205,29 @@ namespace Neo.UnitTests.IO.Caching
         {
             cache.Add("hello");
             cache.Add("world");
-
             int i = 0;
-            foreach(string item in cache)
+            foreach (string item in cache)
             {
                 if (i == 0) item.Should().Be("hello");
                 if (i == 1) item.Should().Be("world");
                 i++;
             }
             i.Should().Be(2);
-
             cache.MyGetEnumerator().Should().NotBeNull();
         }
-
 
         [TestMethod]
         public void TestOverMaxCapacity()
         {
             int i = 1;
-            for(; i <= max_capacity; i++)
+            for (; i <= max_capacity; i++)
             {
                 cache.Add(i.ToString());
             }
-
             cache.Add(i.ToString());    // The first one will be deleted 
             cache.Count.Should().Be(max_capacity);
             cache.Contains((max_capacity + 1).ToString()).Should().BeTrue();
         }
-
 
         [TestMethod]
         public void TestDispose()
@@ -254,12 +235,12 @@ namespace Neo.UnitTests.IO.Caching
             cache.Add("hello");
             cache.Add("world");
             cache.Dispose();
-
             try
             {
                 int count = cache.Count;
                 false.Should().BeTrue();
-            }catch(ObjectDisposedException e)
+            }
+            catch (ObjectDisposedException e)
             {
                 e.Should().NotBeNull();
             }

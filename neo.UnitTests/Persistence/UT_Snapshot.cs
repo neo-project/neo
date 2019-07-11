@@ -31,11 +31,13 @@ namespace Neo.UnitTests
 
         public override MetaDataCache<HashIndexState> HeaderHashIndex => throw new NotImplementedException();
 
-        public void SetPersistingBlock(Block block) {
+        public void SetPersistingBlock(Block block)
+        {
             PersistingBlock = block;
         }
 
-        public Block GetPersistingBlock() {
+        public Block GetPersistingBlock()
+        {
             return PersistingBlock;
         }
     }
@@ -117,7 +119,7 @@ namespace Neo.UnitTests
             };
             mySnapshot.PersistingBlock = block;
             Block setblock = mySnapshot.PersistingBlock;
-            Assert.AreEqual(block.MerkleRoot.ToString(),setblock.MerkleRoot.ToString());
+            Assert.AreEqual(block.MerkleRoot.ToString(), setblock.MerkleRoot.ToString());
             Assert.AreEqual(block.Timestamp, setblock.Timestamp);
             Assert.AreEqual(block.PrevHash, setblock.PrevHash);
             Assert.AreEqual(block.Index, setblock.Index);
