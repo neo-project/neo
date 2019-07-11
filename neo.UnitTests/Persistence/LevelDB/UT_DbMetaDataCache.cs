@@ -4,6 +4,8 @@ using Neo.IO;
 using Neo.IO.Data.LevelDB;
 using Neo.Persistence.LevelDB;
 using Neo.Ledger;
+using System.Threading;
+using System;
 
 namespace Neo.UnitTests
 {
@@ -11,20 +13,14 @@ namespace Neo.UnitTests
     public class UT_DbMetaDataCache
     {
         private DB db;
-        private static string DbPath => Path.GetFullPath(nameof(UT_DbMetaDataCache) + string.Format("_Chain_{0}", 123456.ToString("X8")));
-        [ClassInitialize]
-        public static void ClassSetUp(TestContext testcontext) {
-        }
-        [ClassCleanup]
-        public static void ClassCleanUp() {
-
-        }
+        private string DbPath ;
         [TestInitialize]
         public void TestSetUp() {
+            string threadName = Thread.CurrentThread.ManagedThreadId.ToString();
             var options = new Options();
             options.CreateIfMissing = true;
+            DbPath = Path.GetFullPath(nameof(UT_DbCache) + string.Format("_Chain_{0}", new Random().Next(1, 1000000).ToString("X8")) + threadName);
             db = DB.Open(DbPath, options);
-
         }
         [TestCleanup]
         public void TestCleanUp() {
