@@ -249,8 +249,7 @@ namespace Neo.SmartContract
             var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
             if (manifest.Length > ContractManifest.MaxLength) return false;
 
-            UInt160 hash = script.ToScriptHash();
-            ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
+            ContractState contract = engine.Snapshot.Contracts.TryGet(header.ScriptHash);
             if (contract != null) return false;
             contract = new ContractState
             {
@@ -258,9 +257,9 @@ namespace Neo.SmartContract
                 Manifest = ContractManifest.Parse(manifest)
             };
 
-            if (!contract.Manifest.IsValid(hash)) return false;
+            if (!contract.Manifest.IsValid(header.ScriptHash)) return false;
 
-            engine.Snapshot.Contracts.Add(hash, contract);
+            engine.Snapshot.Contracts.Add(header.ScriptHash, contract);
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
             return true;
         }
