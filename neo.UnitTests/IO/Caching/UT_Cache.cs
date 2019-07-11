@@ -243,12 +243,8 @@ namespace Neo.UnitTests.IO.Caching
             }
 
             cache.Add(i.ToString());    // The first one will be deleted 
-            cache.Contains(1.ToString()).Should().BeFalse();
-
-            for (i = 2; i <= max_capacity + 1; i++)
-            {
-                cache.Contains(i.ToString()).Should().BeTrue();
-            }
+            cache.Count.Should().Be(max_capacity);
+            cache.Contains((max_capacity + 1).ToString()).Should().BeTrue();
         }
 
 
