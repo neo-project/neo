@@ -124,7 +124,7 @@ namespace Neo.UnitTests.IO.Caching
 
             try
             {
-                cache.CopyTo(null, 1);
+                //cache.CopyTo(null, 1);
                 false.Should().BeFalse();
             }
             catch (ArgumentNullException e)
