@@ -244,7 +244,7 @@ namespace Neo.SmartContract
         private static bool Contract_Create(ApplicationEngine engine)
         {
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            var header = ScriptHeader.FromByteArray(script);
+            var header = ScriptFile.FromByteArray(script);
 
             var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
             if (manifest.Length > ContractManifest.MaxLength) return false;
@@ -276,7 +276,7 @@ namespace Neo.SmartContract
 
             if (script.Length > 0)
             {
-                var header = ScriptHeader.FromByteArray(script);
+                var header = ScriptFile.FromByteArray(script);
 
                 if (header.ScriptHash.Equals(engine.CurrentScriptHash)) return false;
                 if (engine.Snapshot.Contracts.TryGet(header.ScriptHash) != null) return false;

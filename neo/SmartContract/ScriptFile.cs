@@ -4,11 +4,11 @@ using System.IO;
 
 namespace Neo.SmartContract
 {
-    public class ScriptHeader : ISerializable
+    public class ScriptFile : ISerializable
     {
-        public enum ScriptEngine : byte
+        public enum ScriptEngine : int
         {
-            NeoVM = 0x01
+            NeoVM = 0x4E454F00 // NEO\0
         }
 
         /// <summary>
@@ -48,12 +48,12 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="script">Script</param>
         /// <returns>Return script header</returns>
-        public static ScriptHeader FromByteArray(byte[] script)
+        public static ScriptFile FromByteArray(byte[] script)
         {
             using (var stream = new MemoryStream(script))
             using (var reader = new BinaryReader(stream))
             {
-                return reader.ReadSerializable<ScriptHeader>();
+                return reader.ReadSerializable<ScriptFile>();
             }
         }
 
