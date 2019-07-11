@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Manifest
                 Hash = UInt160.Parse(json["hash"].AsString()),
                 EntryPoint = ContractMethodDescriptor.FromJson(json["entryPoint"]),
                 Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.FromJson(u)).ToArray(),
-                Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray(),
+                Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray()
             };
         }
 
