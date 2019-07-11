@@ -499,26 +499,19 @@ namespace Neo.SmartContract
             if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method.GetString()))
                 return false;
 
-            switch (currentManifest.Abi.ScriptHeader.Engine)
+            if (engine.InvocationCounter.TryGetValue(contract.ScriptHash, out var counter))
             {
-                case ScriptHeader.ScriptEngine.NeoVM:
-                    {
-                        if (engine.InvocationCounter.TryGetValue(contract.ScriptHash, out var counter))
-                        {
-                            engine.InvocationCounter[contract.ScriptHash] = counter + 1;
-                        }
-                        else
-                        {
-                            engine.InvocationCounter[contract.ScriptHash] = 1;
-                        }
-
-                        ExecutionContext context_new = engine.LoadScript(contract.Script, 1);
-                        context_new.EvaluationStack.Push(args);
-                        context_new.EvaluationStack.Push(method);
-                        return true;
-                    }
-                default: return false;
+                engine.InvocationCounter[contract.ScriptHash] = counter + 1;
             }
+            else
+            {
+                engine.InvocationCounter[contract.ScriptHash] = 1;
+            }
+
+            ExecutionContext context_new = engine.LoadScript(contract.Script, 1);
+            context_new.EvaluationStack.Push(args);
+            context_new.EvaluationStack.Push(method);
+            return true;
         }
 
         private static bool Contract_Destroy(ApplicationEngine engine)

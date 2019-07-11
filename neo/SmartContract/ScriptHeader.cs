@@ -1,14 +1,20 @@
-﻿using Neo.IO.Json;
+﻿using Neo.IO;
 using System;
+using System.IO;
 
 namespace Neo.SmartContract
 {
-    public class ScriptHeader
+    public class ScriptHeader : ISerializable
     {
         public enum ScriptEngine : byte
         {
             NeoVM = 0x01
         }
+
+        /// <summary>
+        /// Engine
+        /// </summary>
+        public ScriptEngine Engine { get; set; }
 
         /// <summary>
         /// Compiler
@@ -21,35 +27,62 @@ namespace Neo.SmartContract
         public Version Version { get; set; }
 
         /// <summary>
-        /// Engine
+        /// Script
         /// </summary>
-        public ScriptEngine Engine { get; set; }
+        public byte[] Script { get; set; }
 
         /// <summary>
-        /// Parse ScriptHeader from json
+        /// Version
         /// </summary>
-        /// <param name="json">Json</param>
-        /// <returns>Return ScriptHeader</returns>
-        public static ScriptHeader FromJson(JObject json)
+        public UInt160 ScriptHash { get; set; }
+
+        public int Size =>
+            sizeof(ScriptEngine) +              // Engine
+            Compiler.GetVarSize() +             // Compiler
+            Version.ToString().GetVarSize() +   // Version
+            Script.GetVarSize() +               // Script
+            ScriptHash.Size;                    // ScriptHash (CRC)
+
+        /// <summary>
+        /// Read Script Header from a binary
+        /// </summary>
+        /// <param name="script">Script</param>
+        /// <returns>Return script header</returns>
+        public static ScriptHeader FromByteArray(byte[] script)
         {
-            return new ScriptHeader
+            using (var stream = new MemoryStream(script))
+            using (var reader = new BinaryReader(stream))
             {
-                Compiler = json["compiler"].AsString(),
-                Version = Version.Parse(json["version"].AsString()),
-                Engine = (ScriptEngine)Enum.Parse(typeof(ScriptEngine), json["engine"].AsString())
-            };
+                return reader.ReadSerializable<ScriptHeader>();
+            }
         }
 
-        /// <summary
-        /// To json
-        /// </summary>
-        public JObject ToJson()
+        public void Serialize(BinaryWriter writer)
         {
-            var json = new JObject();
-            json["version"] = Version.ToString();
-            json["compiler"] = Compiler;
-            json["engine"] = Engine.ToString();
-            return json;
+            writer.Write((byte)Engine);
+            writer.WriteVarString(Compiler);
+            writer.WriteVarString(Version.ToString());
+            writer.WriteVarBytes(Script);
+            writer.Write(ScriptHash);
+        }
+
+        public void Deserialize(BinaryReader reader)
+        {
+            Engine = (ScriptEngine)reader.ReadByte();
+            Compiler = reader.ReadVarString(byte.MaxValue);
+            if (!Version.TryParse(reader.ReadVarString(byte.MaxValue), out var v))
+            {
+                throw new FormatException("Wrong version format");
+            }
+            Version = v;
+            Script = reader.ReadVarBytes(1024 * 1024);
+            ScriptHash = reader.ReadSerializable<UInt160>();
+
+            if (Script.ToScriptHash() != ScriptHash)
+            {
+                // CRC Fail
+                throw new FormatException("CRC verification fail");
+            }
         }
     }
 }

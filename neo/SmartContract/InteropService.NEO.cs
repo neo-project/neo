@@ -244,7 +244,7 @@ namespace Neo.SmartContract
         private static bool Contract_Create(ApplicationEngine engine)
         {
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            if (script.Length > 1024 * 1024) return false;
+            var header = ScriptHeader.FromByteArray(script);
 
             var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
             if (manifest.Length > ContractManifest.MaxLength) return false;
@@ -254,7 +254,7 @@ namespace Neo.SmartContract
             if (contract != null) return false;
             contract = new ContractState
             {
-                Script = script,
+                Script = header.Script,
                 Manifest = ContractManifest.Parse(manifest)
             };
 
@@ -268,7 +268,6 @@ namespace Neo.SmartContract
         private static bool Contract_Update(ApplicationEngine engine)
         {
             byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            if (script.Length > 1024 * 1024) return false;
             var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
             if (manifest.Length > ContractManifest.MaxLength) return false;
 
@@ -277,23 +276,24 @@ namespace Neo.SmartContract
 
             if (script.Length > 0)
             {
-                UInt160 hash_new = script.ToScriptHash();
-                if (hash_new.Equals(engine.CurrentScriptHash)) return false;
-                if (engine.Snapshot.Contracts.TryGet(hash_new) != null) return false;
+                var header = ScriptHeader.FromByteArray(script);
+
+                if (header.ScriptHash.Equals(engine.CurrentScriptHash)) return false;
+                if (engine.Snapshot.Contracts.TryGet(header.ScriptHash) != null) return false;
                 contract = new ContractState
                 {
-                    Script = script,
+                    Script = header.Script,
                     Manifest = contract.Manifest
                 };
-                contract.Manifest.Abi.Hash = hash_new;
-                engine.Snapshot.Contracts.Add(hash_new, contract);
+                contract.Manifest.Abi.Hash = header.ScriptHash;
+                engine.Snapshot.Contracts.Add(header.ScriptHash, contract);
                 if (contract.HasStorage)
                 {
                     foreach (var pair in engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).ToArray())
                     {
                         engine.Snapshot.Storages.Add(new StorageKey
                         {
-                            ScriptHash = hash_new,
+                            ScriptHash = header.ScriptHash,
                             Key = pair.Key.Key
                         }, new StorageItem
                         {

@@ -74,13 +74,7 @@ namespace Neo.SmartContract.Manifest
                     Hash = hash,
                     EntryPoint = ContractMethodDescriptor.DefaultEntryPoint,
                     Events = new ContractEventDescriptor[0],
-                    Methods = new ContractMethodDescriptor[0],
-                    ScriptHeader = new ScriptHeader()
-                    {
-                        Compiler = "",
-                        Engine = ScriptHeader.ScriptEngine.NeoVM,
-                        Version = new Version(),
-                    }
+                    Methods = new ContractMethodDescriptor[0]
                 },
                 Features = ContractFeatures.NoProperty,
                 Groups = new ContractGroup[0],

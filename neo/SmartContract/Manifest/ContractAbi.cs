@@ -29,11 +29,6 @@ namespace Neo.SmartContract.Manifest
         public ContractEventDescriptor[] Events { get; set; }
 
         /// <summary>
-        /// Header for the script
-        /// </summary>
-        public ScriptHeader ScriptHeader { get; set; }
-
-        /// <summary>
         /// Parse ContractAbi from json
         /// </summary>
         /// <param name="json">Json</param>
@@ -46,7 +41,6 @@ namespace Neo.SmartContract.Manifest
                 EntryPoint = ContractMethodDescriptor.FromJson(json["entryPoint"]),
                 Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.FromJson(u)).ToArray(),
                 Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray(),
-                ScriptHeader = ScriptHeader.FromJson(json["scriptHeader"])
             };
         }
 
@@ -57,7 +51,6 @@ namespace Neo.SmartContract.Manifest
             json["entryPoint"] = EntryPoint.ToJson();
             json["methods"] = new JArray(Methods.Select(u => u.ToJson()).ToArray());
             json["events"] = new JArray(Events.Select(u => u.ToJson()).ToArray());
-            json["scriptHeader"] = ScriptHeader.ToJson();
             return json;
         }
     }
