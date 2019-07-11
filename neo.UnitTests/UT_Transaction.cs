@@ -106,7 +106,7 @@ namespace Neo.UnitTests
             using (var unlockB = walletB.Unlock("123"))
             {
                 var ta = new Task<WalletAccount>(() => walletA.CreateAccount());
-                var tb = new Task<WalletAccount>(() => walletA.CreateAccount());
+                var tb = new Task<WalletAccount>(() => walletB.CreateAccount());
                 ta.Start();
                 tb.Start();
                 Task.WaitAll(ta, tb);
