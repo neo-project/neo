@@ -11,38 +11,36 @@ using Neo.IO.Caching;
 using Neo.SmartContract.Manifest;
 using Neo.IO.Wrappers;
 using Neo.VM;
+using System.Threading;
 
 namespace Neo.UnitTests
 {
     [TestClass]
     public class UT_Store
     {
-        private Snapshot dbSnapshot;
-
         private LevelDBStore store;
 
-        private static string DbPath => Path.GetFullPath(nameof(UT_Store) + string.Format("_Chain_{0}", 123456.ToString("X8")));
+        private string dbPath;
 
         [TestInitialize]
         public void TestSetup()
         {
+            string threadName = Thread.CurrentThread.ManagedThreadId.ToString();
+            dbPath = Path.GetFullPath(nameof(UT_Store) + string.Format("_Chain_{0}", new Random().Next(1, 1000000).ToString("X8")) + threadName);
             if (store == null)
             {
-                store = new LevelDBStore(DbPath);
+                store = new LevelDBStore(dbPath);
             }
         }
 
         [TestCleanup]
-        public void TestEnd()
+        public void DeleteDir()
         {
             store.Dispose();
+            store = null;
+            TestUtils.DeleteFile(dbPath);
         }
 
-        [ClassCleanup]
-        public static void DeleteDir()
-        {
-            TestUtils.DeleteFile(DbPath);
-        }
         [TestMethod]
         public void TestGetBlocks()
         {

@@ -11,6 +11,7 @@ using Neo.VM;
 using Neo.IO.Caching;
 using Neo.SmartContract.Manifest;
 using Neo.IO.Wrappers;
+using System.Threading;
 
 namespace Neo.UnitTests
 {
@@ -19,22 +20,28 @@ namespace Neo.UnitTests
     {
         private LevelDBStore store;
 
-        private static string DbPath => Path.GetFullPath(nameof(UT_LevelDBStore) + string.Format("_Chain_{0}", 123456.ToString("X8")));
+        private string dbPath;
 
         [TestInitialize]
         public void TestSetup()
         {
+            string threadName = Thread.CurrentThread.ManagedThreadId.ToString();
+            dbPath = Path.GetFullPath(nameof(UT_LevelDBStore) + string.Format("_Chain_{0}", new Random().Next(1, 1000000).ToString("X8")) + threadName);
             if (store == null)
             {
-                store = new LevelDBStore(DbPath);
+                store = new LevelDBStore(dbPath);
             }
         }
 
         [TestCleanup]
-        public void TestEnd()
+        public void DeleteDir()
         {
             store.Dispose();
+            store = null;
+            TestUtils.DeleteFile(dbPath);
         }
+
+
 
         [TestMethod]
         public void TestGetBlocks()
@@ -76,6 +83,7 @@ namespace Neo.UnitTests
             blocks.Delete(block.Hash);
             Assert.IsNull(blocks.TryGet(block.Hash));
             Assert.IsNull(blocks.TryGet(UInt256.Zero));
+
         }
 
         [TestMethod]
@@ -214,11 +222,7 @@ namespace Neo.UnitTests
             Assert.IsNull(store.Get(0x03, new byte[] { 0x01, 0x02, 0x03, 0x04 }));
         }
 
-        [ClassCleanup]
-        public static void DeleteDir()
-        {
-            TestUtils.DeleteFile(DbPath);
-        }
+    
 
         
     }
