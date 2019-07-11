@@ -13,6 +13,8 @@ dotnet: 2.2.300
 before_install:
   - cd neo.UnitTests
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 2048; fi
+  - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then apt-get install libleveldb-dev sqlite3 libsqlite3-dev; fi
+
 
 script:
  - dotnet restore
