@@ -21,10 +21,10 @@ namespace Neo.Ledger
         private const int BlocksTillRebroadcastHighPriorityPoolTx = 10;
         private int RebroadcastMultiplierThreshold => Capacity / 10;
 
-        private static readonly double MaxMillisecondsToReverifyTx = (double)Blockchain.MilliSecondsPerBlock / 3;
+        private static readonly double MaxMillisecondsToReverifyTx = (double)Blockchain.MillisecondsPerBlock / 3;
 
         // These two are not expected to be hit, they are just safegaurds.
-        private static readonly double MaxMillisecondsToReverifyTxPerIdle = (double)Blockchain.MilliSecondsPerBlock / 15;
+        private static readonly double MaxMillisecondsToReverifyTxPerIdle = (double)Blockchain.MillisecondsPerBlock / 15;
 
         private readonly NeoSystem _system;
 
@@ -422,7 +422,7 @@ namespace Neo.Ledger
                     blocksTillRebroadcast = blocksTillRebroadcast * Count / RebroadcastMultiplierThreshold;
 
                 var rebroadcastCutOffTime = DateTime.UtcNow.AddMilliseconds(
-                    -Blockchain.MilliSecondsPerBlock * blocksTillRebroadcast);
+                    -Blockchain.MillisecondsPerBlock * blocksTillRebroadcast);
                 foreach (PoolItem item in reverifiedItems)
                 {
                     if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))

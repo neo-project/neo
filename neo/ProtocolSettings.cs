@@ -69,7 +69,7 @@ namespace Neo
                     "seed4.neo.org:10333",
                     "seed5.neo.org:10333"
                 };
-            this.MilliSecondsPerBlock = section.GetValue("SecondsPerBlock", 15000u);
+            this.MillisecondsPerBlock = section.GetValue("SecondsPerBlock", 15000u);
         }
     }
 }

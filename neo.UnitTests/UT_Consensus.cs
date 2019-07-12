@@ -48,7 +48,7 @@ namespace Neo.UnitTests
             var timeValues = new[] {
               //new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For tests here
               new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc),  // For receiving block
-              new DateTime(1968, 06, 01, 0, 0, (int) Blockchain.MilliSecondsPerBlock / 1000, DateTimeKind.Utc), // For Initialize
+              new DateTime(1968, 06, 01, 0, 0, (int) Blockchain.MillisecondsPerBlock / 1000, DateTimeKind.Utc), // For Initialize
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // unused
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc)  // unused
             };

@@ -27,11 +27,11 @@ namespace Neo.Ledger
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
 
-        public static readonly uint MilliSecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
+        public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public const uint DecrementInterval = 2000000;
         public const int MaxValidators = 1024;
         public static readonly uint[] GenerationAmount = { 8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-        public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MilliSecondsPerBlock);
+        public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
         public static readonly ECPoint[] StandbyValidators = ProtocolSettings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
 
         public static readonly Block GenesisBlock = new Block
@@ -284,7 +284,7 @@ namespace Neo.Ledger
                     Persist(blockToPersist);
 
                     // 15000 is the default among of seconds per block, while MilliSecondsPerBlock is the current
-                    uint extraBlocks = (15000 - MilliSecondsPerBlock) / 1000;
+                    uint extraBlocks = (15000 - MillisecondsPerBlock) / 1000;
 
                     if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, extraBlocks))) continue;
                     // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
