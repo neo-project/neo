@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using System.IO;
+using System;
 using System.Text;
 
 namespace Neo.UnitTests
@@ -35,9 +36,10 @@ namespace Neo.UnitTests
 
             uut.MerkleRoot = merkRoot; // need to set for deserialise to be valid
 
-            byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 41, 176, 215, 72, 169, 204, 248, 197, 175, 60, 222, 16, 219, 62, 54, 236, 154, 95, 114, 6, 67, 162, 188, 180, 173, 215, 107, 61, 175, 65, 216, 128, 171, 4, 253, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 0 };
+            byte[] requiredData = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 41, 176, 215, 72, 169, 204, 248, 197, 175, 60, 222, 16, 219, 62, 54, 236, 154, 95, 114, 6, 67, 162, 188, 180, 173, 215, 107, 61, 175, 65, 216, 0, 236, 61, 90, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 0 };
+
             int index = 0;
-            using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
+            using (MemoryStream ms = new MemoryStream(requiredData, index, requiredData.Length - index, false))
             {
                 using (BinaryReader reader = new BinaryReader(ms))
                 {
@@ -106,9 +108,10 @@ namespace Neo.UnitTests
                 }
             }
 
-            byte[] requiredData = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 41, 176, 215, 72, 169, 204, 248, 197, 175, 60, 222, 16, 219, 62, 54, 236, 154, 95, 114, 6, 67, 162, 188, 180, 173, 215, 107, 61, 175, 65, 216, 128, 171, 4, 253, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 0 };
+            byte[] requiredData = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 41, 176, 215, 72, 169, 204, 248, 197, 175, 60, 222, 16, 219, 62, 54, 236, 154, 95, 114, 6, 67, 162, 188, 180, 173, 215, 107, 61, 175, 65, 216, 0, 236, 61, 90, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 0 };
 
             data.Length.Should().Be(requiredData.Length);
+            
             for (int i = 0; i < data.Length; i++)
             {
                 data[i].Should().Be(requiredData[i]);
