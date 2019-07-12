@@ -12,6 +12,7 @@ using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
+using System.Threading.Tasks;
 
 namespace Neo.UnitTests
 {
@@ -104,8 +105,14 @@ namespace Neo.UnitTests
             using (var unlockA = walletA.Unlock("123"))
             using (var unlockB = walletB.Unlock("123"))
             {
-                var a = walletA.CreateAccount();
-                var b = walletB.CreateAccount();
+                var ta = new Task<WalletAccount>(() => walletA.CreateAccount());
+                var tb = new Task<WalletAccount>(() => walletB.CreateAccount());
+                ta.Start();
+                tb.Start();
+                Task.WaitAll(ta, tb);
+
+                var a = ta.Result;
+                var b = tb.Result;
 
                 var multiSignContract = Contract.CreateMultiSigContract(2,
                     new ECPoint[]
@@ -114,8 +121,13 @@ namespace Neo.UnitTests
                         b.GetKey().PublicKey
                     });
 
-                var acc = walletA.CreateAccount(multiSignContract, a.GetKey());
-                acc = walletB.CreateAccount(multiSignContract, b.GetKey());
+                ta = new Task<WalletAccount>(() => walletA.CreateAccount(multiSignContract, a.GetKey()));
+                tb = new Task<WalletAccount>(() => walletB.CreateAccount(multiSignContract, b.GetKey()));
+                ta.Start();
+                tb.Start();
+                Task.WaitAll(ta, tb);
+
+                var acc = tb.Result;
 
                 // Fake balance
 
