@@ -140,11 +140,13 @@ namespace Neo
             return (i & (BigInteger.One << index)) > BigInteger.Zero;
         }
 
+        // TODO - WHO USES THIS?
         public static DateTime ToDateTime(this uint timestamp)
         {
             return unixEpoch.AddSeconds(timestamp).ToLocalTime();
         }
 
+        // TODO - WHO USES THIS?
         public static DateTime ToDateTime(this ulong timestamp)
         {
             return unixEpoch.AddSeconds(timestamp).ToLocalTime();
@@ -179,6 +181,11 @@ namespace Neo
         public static uint ToTimestamp(this DateTime time)
         {
             return (uint)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
+        }
+
+        public static uint ToTimestampMS(this DateTime time)
+        {
+            return (uint)(time.ToUniversalTime() - unixEpoch).TotalMilliseconds;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

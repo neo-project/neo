@@ -163,7 +163,7 @@ namespace Neo.Consensus
         {
             return ChangeViewPayloads[MyIndex] = MakeSignedPayload(new ChangeView
             {
-                Timestamp = TimeProvider.Current.UtcNow.ToTimestamp()
+                Timestamp = TimeProvider.Current.UtcNow.ToTimestampMS()
             });
         }
 
@@ -215,7 +215,7 @@ namespace Neo.Consensus
             List<Transaction> transactions = memoryPoolTransactions.ToList();
             TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             Transactions = transactions.ToDictionary(p => p.Hash);
-            Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), PrevHeader.Timestamp + 1);
+            Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestampMS(), PrevHeader.Timestamp + 1);
             Block.ConsensusData.Nonce = BitConverter.ToUInt64(buffer, 0);
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareRequest
             {
@@ -229,7 +229,7 @@ namespace Neo.Consensus
         {
             return MakeSignedPayload(new RecoveryRequest
             {
-                Timestamp = TimeProvider.Current.UtcNow.ToTimestamp()
+                Timestamp = TimeProvider.Current.UtcNow.ToTimestampMS()
             });
         }
 

@@ -155,7 +155,6 @@ namespace Neo.Consensus
             {
                 if (isRecovering)
                 {
-                    //TODO - Check this shift operation for milliseconds
                     ChangeTimer(TimeSpan.FromMilliseconds(Blockchain.MilliSecondsPerBlock << (viewNumber + 1)));
                 }
                 else
@@ -169,7 +168,6 @@ namespace Neo.Consensus
             }
             else
             {
-                // TODO - Check shift operation
                 ChangeTimer(TimeSpan.FromMilliseconds(Blockchain.MilliSecondsPerBlock << (viewNumber + 1)));
             }
         }
@@ -231,10 +229,10 @@ namespace Neo.Consensus
             existingCommitPayload = payload;
         }
 
-        // this function increases existing timer (never decreases) with a value proportional to `maxDelayInBlockTimes`*`Blockchain.SecondsPerBlock`
+        // this function increases existing timer (never decreases) with a value proportional to `maxDelayInBlockTimes`*`Blockchain.MilliSecondsPerBlock`
         private void ExtendTimerByFactor(int maxDelayInBlockTimes)
         {
-            TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(maxDelayInBlockTimes * Blockchain.SecondsPerBlock * 1000.0 / context.M);
+            TimeSpan nextDelay = expected_delay - (TimeProvider.Current.UtcNow - clock_started) + TimeSpan.FromMilliseconds(maxDelayInBlockTimes * Blockchain.MilliSecondsPerBlock / context.M);
             if (!context.WatchOnly && !context.ViewChanging && !context.CommitSent && (nextDelay > TimeSpan.Zero))
                 ChangeTimer(nextDelay);
         }
@@ -392,7 +390,7 @@ namespace Neo.Consensus
             if (context.RequestSentOrReceived || context.NotAcceptingPayloadsDueToViewChanging) return;
             if (payload.ValidatorIndex != context.Block.ConsensusData.PrimaryIndex || message.ViewNumber != context.ViewNumber) return;
             Log($"{nameof(OnPrepareRequestReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} tx={message.TransactionHashes.Length}");
-            if (message.Timestamp <= context.PrevHeader.Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMinutes(10).ToTimestamp())
+            if (message.Timestamp <= context.PrevHeader.Timestamp || message.Timestamp > TimeProvider.Current.UtcNow.AddMinutes(10).ToTimestampMS())
             {
                 Log($"Timestamp incorrect: {message.Timestamp}", LogLevel.Warning);
                 return;
@@ -545,7 +543,6 @@ namespace Neo.Consensus
                     // Re-send commit periodically by sending recover message in case of a network issue.
                     Log($"send recovery to resend commit");
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
-                    // TODO - Check shift operation
                     ChangeTimer(TimeSpan.FromMilliseconds(Blockchain.MilliSecondsPerBlock << 1));
                 }
                 else
@@ -586,7 +583,6 @@ namespace Neo.Consensus
             // The latter may happen by nodes in higher views with, at least, `M` proofs
             byte expectedView = context.ViewNumber;
             expectedView++;
-            // TODO - Check shift operation
             ChangeTimer(TimeSpan.FromMilliseconds(Blockchain.MilliSecondsPerBlock << (expectedView + 1)));
             if ((context.CountCommitted + context.CountFailed) > context.F)
             {
@@ -619,7 +615,6 @@ namespace Neo.Consensus
                 foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes))
                     localNode.Tell(Message.Create(MessageCommand.Inv, payload));
             }
-            // TODO - Check shift operation
             ChangeTimer(TimeSpan.FromMilliseconds((Blockchain.MilliSecondsPerBlock << (context.ViewNumber + 1)) - (context.ViewNumber == 0 ? Blockchain.MilliSecondsPerBlock : 0)));
         }
     }

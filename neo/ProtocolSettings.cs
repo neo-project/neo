@@ -11,7 +11,6 @@ namespace Neo
         public string[] StandbyValidators { get; }
         public string[] SeedList { get; }
         public uint MilliSecondsPerBlock { get; }
-        public uint SecondsPerBlock { get; }
 
         static ProtocolSettings _default;
 

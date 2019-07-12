@@ -27,7 +27,7 @@ namespace Neo.Ledger
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
 
-        public static readonly uint MilliSecondsPerBlock = ProtocolSettings.Default.MilliSecondsPerBlock;
+        public static readonly uint MilliSecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public const uint DecrementInterval = 2000000;
         public const int MaxValidators = 1024;
         public static readonly uint[] GenerationAmount = { 8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
