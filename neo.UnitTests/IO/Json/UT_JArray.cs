@@ -2,9 +2,7 @@
 using Neo.IO.Json;
 using FluentAssertions;
 using System;
-using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace Neo.UnitTests.IO.Json
 {

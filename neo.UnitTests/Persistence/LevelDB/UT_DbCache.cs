@@ -2,10 +2,7 @@
 using Neo.Persistence.LevelDB;
 using Neo.Persistence;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using Neo.Network.P2P.Payloads;
 using Neo.Ledger;
 using Neo.IO.Caching;
 using Neo.SmartContract.Manifest;

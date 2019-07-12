@@ -9,9 +9,7 @@ namespace Neo.UnitTests.IO.Caching
 {
     class MyCache : Cache<int, string>
     {
-        public MyCache(int max_capacity) : base(max_capacity)
-        {
-        }
+        public MyCache(int max_capacity) : base(max_capacity) {  }
 
         protected override int GetKeyForItem(string item)
         {
