@@ -37,11 +37,11 @@ namespace Neo.SmartContract
         public UInt160 ScriptHash { get; set; }
 
         public int Size =>
-            sizeof(ScriptEngine) +              // Engine
-            Compiler.GetVarSize() +             // Compiler
-            Version.ToString().GetVarSize() +   // Version
-            Script.GetVarSize() +               // Script
-            ScriptHash.Size;                    // ScriptHash (CRC)
+            sizeof(ScriptEngine) +      // Engine
+            Compiler.GetVarSize() +     // Compiler
+            (sizeof(int) * 4) +         // Version
+            Script.GetVarSize() +       // Script
+            ScriptHash.Size;            // ScriptHash (CRC)
 
         /// <summary>
         /// Read Script Header from a binary
@@ -59,22 +59,24 @@ namespace Neo.SmartContract
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write((byte)Engine);
+            writer.Write((int)Engine);
             writer.WriteVarString(Compiler);
-            writer.WriteVarString(Version.ToString());
+            
+            // Version
+            writer.Write(Version.Major);
+            writer.Write(Version.Minor);
+            writer.Write(Version.Build);
+            writer.Write(Version.Revision);
+
             writer.WriteVarBytes(Script);
             writer.Write(ScriptHash);
         }
 
         public void Deserialize(BinaryReader reader)
         {
-            Engine = (ScriptEngine)reader.ReadByte();
+            Engine = (ScriptEngine)reader.ReadInt32();
             Compiler = reader.ReadVarString(byte.MaxValue);
-            if (!Version.TryParse(reader.ReadVarString(byte.MaxValue), out var v))
-            {
-                throw new FormatException("Wrong version format");
-            }
-            Version = v;
+            Version = new Version(reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32());
             Script = reader.ReadVarBytes(1024 * 1024);
             ScriptHash = reader.ReadSerializable<UInt160>();
 
