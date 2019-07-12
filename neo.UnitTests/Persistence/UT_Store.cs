@@ -1,22 +1,22 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Persistence.LevelDB;
+using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Neo.Persistence;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.VM;
+using Neo.Ledger;
 using Neo.IO.Caching;
 using Neo.SmartContract.Manifest;
 using Neo.IO.Wrappers;
+using Neo.VM;
 using System.Threading;
 
 namespace Neo.UnitTests
 {
     [TestClass]
-    public class UT_LevelDBStore
+    public class UT_Store
     {
         private LevelDBStore store;
 
@@ -26,7 +26,7 @@ namespace Neo.UnitTests
         public void TestSetup()
         {
             string threadName = Thread.CurrentThread.ManagedThreadId.ToString();
-            dbPath = Path.GetFullPath(nameof(UT_LevelDBStore) + string.Format("_Chain_{0}", new Random().Next(1, 1000000).ToString("X8")) + threadName);
+            dbPath = Path.GetFullPath(nameof(UT_Store) + string.Format("_Chain_{0}", new Random().Next(1, 1000000).ToString("X8")) + threadName);
             if (store == null)
             {
                 store = new LevelDBStore(dbPath);
@@ -45,7 +45,6 @@ namespace Neo.UnitTests
         public void TestGetBlocks()
         {
             Snapshot snapshot = store.GetSnapshot();
-
             TrimmedBlock block = new TrimmedBlock();
             block.ConsensusData = new ConsensusData();
             block.MerkleRoot = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02");
@@ -62,25 +61,13 @@ namespace Neo.UnitTests
 
             snapshot.Blocks.Add(block.Hash, block);
             snapshot.Commit();
-            DataCache<UInt256, TrimmedBlock> blocks = store.GetBlocks();
-            //get block from internal
+            DataCache<UInt256, TrimmedBlock> blocks = ((IPersistence)store).Blocks;
             TrimmedBlock storeBlock = blocks.TryGet(block.Hash);
             Assert.AreEqual(block.MerkleRoot, storeBlock.MerkleRoot);
             Assert.AreEqual(block.Timestamp, storeBlock.Timestamp);
             Assert.AreEqual(block.PrevHash, storeBlock.PrevHash);
             Assert.AreEqual(block.Index, storeBlock.Index);
             Assert.AreEqual(block.Hashes[0].ToString(), storeBlock.Hashes[0].ToString());
-            //get block from cache
-            storeBlock = blocks.TryGet(block.Hash);
-            Assert.AreEqual(block.MerkleRoot, storeBlock.MerkleRoot);
-            Assert.AreEqual(block.Timestamp, storeBlock.Timestamp);
-            Assert.AreEqual(block.PrevHash, storeBlock.PrevHash);
-            Assert.AreEqual(block.Index, storeBlock.Index);
-            Assert.AreEqual(block.Hashes[0].ToString(), storeBlock.Hashes[0].ToString());
-
-            blocks.Delete(block.Hash);
-            Assert.IsNull(blocks.TryGet(block.Hash));
-            Assert.IsNull(blocks.TryGet(UInt256.Zero));
 
         }
 
@@ -96,7 +83,7 @@ namespace Neo.UnitTests
 
             snapshot.Contracts.Add(state.ScriptHash, state);
             snapshot.Commit();
-            DataCache<UInt160, ContractState> contracts = store.GetContracts();
+            DataCache<UInt160, ContractState> contracts = ((IPersistence)store).Contracts;
             ContractState storeState = contracts.TryGet(state.ScriptHash);
             Assert.AreEqual(storeState.Script.ToHexString(), state.Script.ToHexString());
             Assert.AreEqual(storeState.Manifest.Abi.Hash, state.Manifest.Abi.Hash);
@@ -114,7 +101,7 @@ namespace Neo.UnitTests
             UInt32Wrapper uInt32Wrapper = 123;
             snapshot.HeaderHashList.Add(uInt32Wrapper, headerHashList);
             snapshot.Commit();
-            var headerHashLists = store.GetHeaderHashList();
+            var headerHashLists = ((IPersistence)store).HeaderHashList;
             var storeHeaderHashList = headerHashLists.TryGet(uInt32Wrapper);
             Assert.AreEqual(storeHeaderHashList.Hashes[0], headerHashList.Hashes[0]);
         }
@@ -141,7 +128,7 @@ namespace Neo.UnitTests
             txState.BlockIndex = 10;
             snapshot.Transactions.Add(tx.Hash, txState);
             snapshot.Commit();
-            var transactions = store.GetTransactions();
+            var transactions = ((IPersistence)store).Transactions;
             var storeTransaction = transactions.TryGet(tx.Hash);
             Assert.AreEqual(storeTransaction.Transaction.Script.ToHexString(), tx.Script.ToHexString());
             Assert.AreEqual(storeTransaction.Transaction.Sender, tx.Sender);
@@ -164,10 +151,9 @@ namespace Neo.UnitTests
             };
             snapshot.Storages.Add(key, storageItem);
             snapshot.Commit();
-            var storeStorageItem = store.GetStorages().TryGet(key);
+            var storeStorageItem = ((IPersistence)store).Storages.TryGet(key);
             Assert.AreEqual(storeStorageItem.Value.ToHexString(), storageItem.Value.ToHexString());
             Assert.AreEqual(storeStorageItem.IsConstant, storageItem.IsConstant);
-
         }
 
         [TestMethod]
@@ -179,7 +165,7 @@ namespace Neo.UnitTests
             state.Hash = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             state.Index = 10;
             snapshot.Commit();
-            HashIndexState storeState = store.GetBlockHashIndex().Get();
+            HashIndexState storeState = ((IPersistence)store).BlockHashIndex.Get();
             Assert.AreEqual(state.Hash, storeState.Hash);
             Assert.AreEqual(state.Index, storeState.Index);
         }
@@ -193,31 +179,9 @@ namespace Neo.UnitTests
             state.Hash = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             state.Index = 100;
             snapshot.Commit();
-            HashIndexState storeState = store.GetHeaderHashIndex().Get();
+            HashIndexState storeState = ((IPersistence)store).HeaderHashIndex.Get();
             Assert.AreEqual(state.Hash, storeState.Hash);
             Assert.AreEqual(state.Index, storeState.Index);
-        }
-
-        [TestMethod]
-        public void TestPutAndGet()
-        {
-            store.Put(0x01, new byte[] { 0x01, 0x02, 0x03, 0x04 }, new byte[] { 0x00, 0xff, 0x00, 0xff });
-            var value = store.Get(0x01, new byte[] { 0x01, 0x02, 0x03, 0x04 });
-            Assert.AreEqual(value.ToHexString(), new byte[] { 0x00, 0xff, 0x00, 0xff }.ToHexString());
-        }
-
-        [TestMethod]
-        public void TestPutSyncAndGet()
-        {
-            store.PutSync(0x02, new byte[] { 0x01, 0x02, 0x03, 0x04 }, new byte[] { 0x00, 0xff, 0x00, 0xff });
-            var value = store.Get(0x02, new byte[] { 0x01, 0x02, 0x03, 0x04 });
-            Assert.AreEqual(value.ToHexString(), new byte[] { 0x00, 0xff, 0x00, 0xff }.ToHexString());
-        }
-
-        [TestMethod]
-        public void TestGetNull()
-        {
-            Assert.IsNull(store.Get(0x03, new byte[] { 0x01, 0x02, 0x03, 0x04 }));
         }
     }
 }
