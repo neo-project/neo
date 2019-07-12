@@ -6,7 +6,7 @@ using Neo.Persistence;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
-using Moq;
+using System.Threading;
 
 namespace Neo.UnitTests
 {
@@ -15,22 +15,26 @@ namespace Neo.UnitTests
     {
         private LevelDBStore store;
 
-        private static string DbPath => Path.GetFullPath(string.Format("Chain_{0}", 123456.ToString("X8")));
+        private string dbPath;
 
         [TestInitialize]
         public void TestSetup()
         {
+            string threadName = Thread.CurrentThread.ManagedThreadId.ToString();
+            dbPath = Path.GetFullPath(nameof(UT_DbCache) + string.Format("_Chain_{0}", new Random().Next(1, 1000000).ToString("X8")) + threadName);
             if (store == null)
             {
-                store = new LevelDBStore(DbPath);
-                //testBlockchain = TestBlockchain.InitializeMockNeoSystem();
+                store = new LevelDBStore(dbPath);
             }
         }
 
+
         [TestCleanup]
-        public void TestEnd()
+        public void DeleteDir()
         {
             store.Dispose();
+            store = null;
+            TestUtils.DeleteFile(dbPath);
         }
 
         [TestMethod]
