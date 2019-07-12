@@ -76,7 +76,7 @@ namespace Neo.UnitTests.IO.Json
             jArray[0] = bob;
             Assert.AreEqual(jArray[0], bob);
 
-            Action action = ()=>jArray[1] = alice;
+            Action action = () => jArray[1] = alice;
             action.ShouldThrow<ArgumentOutOfRangeException>();
         }
 
@@ -214,7 +214,8 @@ namespace Neo.UnitTests.IO.Json
         }
 
         [TestMethod]
-        public void TestGetEnumerator() {
+        public void TestGetEnumerator()
+        {
             var jArray = new JArray
             {
                 alice,
@@ -223,7 +224,8 @@ namespace Neo.UnitTests.IO.Json
                 bob
             };
             int i = 0;
-            foreach (var item in jArray) {
+            foreach (var item in jArray)
+            {
                 if (i % 2 == 0) item.Should().Be(alice);
                 if (i % 2 != 0) item.Should().Be(bob);
                 i++;
@@ -239,7 +241,7 @@ namespace Neo.UnitTests.IO.Json
                 bob,
             };
             var s = jArray.AsString();
-            Assert.AreEqual(s,"{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}");
+            Assert.AreEqual(s, "{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}");
         }
     }
 }

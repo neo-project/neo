@@ -1,7 +1,7 @@
-﻿using FluentAssertions;
+﻿using System;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
-using System;
 
 namespace Neo.UnitTests.Cryptography
 {
@@ -46,7 +46,7 @@ namespace Neo.UnitTests.Cryptography
             filter.K.Should().Be(n);
             filter.Tweak.Should().Be(nTweak);
 
-            byte[] longerElements = { 0, 1, 2, 3, 4, 5, 6 ,7, 8, 9};
+            byte[] longerElements = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             filter = new BloomFilter(m, n, nTweak, longerElements);
             filter.M.Should().Be(m);
             filter.K.Should().Be(n);

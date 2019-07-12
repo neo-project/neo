@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Threading;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using Neo.IO.Wrappers;
@@ -12,6 +7,9 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Persistence.LevelDB;
 using Neo.VM;
+using System;
+using System.IO;
+using System.Threading;
 
 namespace Neo.UnitTests.Persistence
 {

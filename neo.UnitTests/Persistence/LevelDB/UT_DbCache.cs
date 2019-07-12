@@ -14,7 +14,6 @@ namespace Neo.UnitTests.Persistence.LevelDB
     public class UT_DbCache
     {
         private LevelDBStore store;
-
         private string dbPath;
 
         [TestInitialize]
@@ -143,7 +142,6 @@ namespace Neo.UnitTests.Persistence.LevelDB
             var updatedState = contracts2.TryGet(state.ScriptHash);
             Assert.AreEqual(updatedState.Manifest.ToString(), storeState.Manifest.ToString());
             Assert.AreEqual(updatedState.Script.ToHexString(), storeState.Script.ToHexString());
-
         }
 
         private static ContractState CreateTestContractState()

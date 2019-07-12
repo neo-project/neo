@@ -9,17 +9,14 @@ namespace Neo.UnitTests.IO.Caching
 {
     class MyCache : Cache<int, string>
     {
-        public MyCache(int max_capacity) : base(max_capacity) {  }
+        public MyCache(int max_capacity) : base(max_capacity) { }
 
         protected override int GetKeyForItem(string item)
         {
             return item.GetHashCode();
         }
 
-        protected override void OnAccess(CacheItem item)
-        {
-            true.Should().BeTrue();
-        }
+        protected override void OnAccess(CacheItem item) { }
 
         public IEnumerator MyGetEnumerator()
         {
@@ -147,7 +144,6 @@ namespace Neo.UnitTests.IO.Caching
             temp[1].Should().Be("world");
         }
 
-
         [TestMethod]
         public void TestRemoveKey()
         {
@@ -166,7 +162,6 @@ namespace Neo.UnitTests.IO.Caching
             cache.Contains("hello").Should().BeFalse();
         }
 
-
         [TestMethod]
         public void TestTryGet()
         {
@@ -177,7 +172,6 @@ namespace Neo.UnitTests.IO.Caching
             output2.Should().NotBe("world");
             output2.Should().BeNull();
         }
-
 
         [TestMethod]
         public void TestArrayIndexAccess()
