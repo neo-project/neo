@@ -13,7 +13,7 @@ using Neo.IO.Wrappers;
 using Neo.VM;
 using System.Threading;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests.Persistence
 {
     [TestClass]
     public class UT_Store

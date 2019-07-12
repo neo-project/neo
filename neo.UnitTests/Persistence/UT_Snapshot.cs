@@ -13,7 +13,7 @@ using Neo.Persistence;
 using Neo.Persistence.LevelDB;
 using Neo.VM;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests.Persistence
 {
     class MySnapshot : Snapshot
     {

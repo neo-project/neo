@@ -9,7 +9,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Ledger;
 using System.Threading;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests.Persistence.LevelDB
 {
     [TestClass]
     public class UT_DbSnapshot

@@ -8,7 +8,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using System.Threading;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests.Persistence
 {
     [TestClass]
     public class UT_P_Helper
@@ -21,7 +21,7 @@ namespace Neo.UnitTests
         public void TestSetup()
         {
             string threadName = Thread.CurrentThread.ManagedThreadId.ToString();
-            dbPath = Path.GetFullPath(nameof(UT_DbCache) + string.Format("_Chain_{0}", new Random().Next(1, 1000000).ToString("X8")) + threadName);
+            dbPath = Path.GetFullPath(nameof(UT_P_Helper) + string.Format("_Chain_{0}", new Random().Next(1, 1000000).ToString("X8")) + threadName);
             if (store == null)
             {
                 store = new LevelDBStore(dbPath);

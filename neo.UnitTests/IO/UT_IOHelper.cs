@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests.IO
 {
     [TestClass]
     public class UT_IOHelper

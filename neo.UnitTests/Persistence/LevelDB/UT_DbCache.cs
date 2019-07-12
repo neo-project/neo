@@ -11,7 +11,7 @@ using Neo.IO.Caching;
 using Neo.SmartContract.Manifest;
 using System.Threading;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests.Persistence.LevelDB
 {
     [TestClass]
     public class UT_DbCache
