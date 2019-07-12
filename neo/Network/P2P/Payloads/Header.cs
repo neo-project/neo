@@ -55,10 +55,10 @@ namespace Neo.Network.P2P.Payloads
             };
         }
 
-        public static Header FromJson(JObject json)
+        public new static Header FromJson(JObject json)
         {
             Header header = new Header();
-            header.PraseFromJson(json);
+            (header as BlockBase).FromJson(json);
             return header;
         }
 

@@ -26,22 +26,23 @@ namespace Neo.SDK.RPC
             httpClient?.Dispose();
         }
 
-        public async Task<JObject> SendAsync(RPCRequest request)
+        public async Task<RPCResponse> SendAsync(RPCRequest request)
         {
             var requestJson = request.ToJson().ToString();
             var result = await httpClient.PostAsync(httpClient.BaseAddress, new StringContent(requestJson, Encoding.UTF8));
             var content = await result.Content.ReadAsStringAsync();
             var response = RPCResponse.FromJson(JObject.Parse(content));
+            response.RawResponse = content;
 
             if (response.Error != null)
             {
                 throw new NeoSdkException(response.Error.Code, response.Error.Message, response.Error.Data);
             }
 
-            return response.Result;
+            return response;
         }
 
-        public JObject Send(RPCRequest request)
+        public RPCResponse Send(RPCRequest request)
         {
             try
             {

@@ -16,7 +16,7 @@ namespace Neo.SDK.RPC.Model
         public string GasConsumed { get; set; }
 
         [JsonProperty(PropertyName = "stack")]
-        public SDK_StackJson[] Stack { get; set; }
+        public SDK_Stack[] Stack { get; set; }
 
         [JsonProperty(PropertyName = "tx")]
         public string Tx { get; set; }
@@ -39,12 +39,12 @@ namespace Neo.SDK.RPC.Model
             invokeScriptResult.State = json["state"].AsString();
             invokeScriptResult.GasConsumed = json["gas_consumed"].AsString();
             invokeScriptResult.Tx = json["tx"].AsString();
-            invokeScriptResult.Stack = ((JArray)json["stack"]).Select(p => SDK_StackJson.FromJson(p)).ToArray();
+            invokeScriptResult.Stack = ((JArray)json["stack"]).Select(p => SDK_Stack.FromJson(p)).ToArray();
             return invokeScriptResult;
         }
     }
 
-    public class SDK_StackJson
+    public class SDK_Stack
     {
         public string Type { get; set; }
         
@@ -58,9 +58,9 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
 
-        public static SDK_StackJson FromJson(JObject json)
+        public static SDK_Stack FromJson(JObject json)
         {
-            SDK_StackJson stackJson = new SDK_StackJson();
+            SDK_Stack stackJson = new SDK_Stack();
             stackJson.Type = json["type"].AsString();
             stackJson.Value = json["value"].AsString();
             return stackJson;

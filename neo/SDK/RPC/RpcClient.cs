@@ -33,7 +33,7 @@ namespace Neo.SDK
                 Method = method,
                 Params = paraArgs.Select(p => p).ToArray()
             };
-            return rpcHelper.Send(request);
+            return rpcHelper.Send(request).Result;
         }
 
         public string GetBestBlockHash()
@@ -148,7 +148,7 @@ namespace Neo.SDK
             return SDK_Version.FromJson(RpcSend("getversion"));
         }
 
-        public SDK_InvokeScriptResult InvokeFunction(string address, string function, SDK_StackJson[] stacks)
+        public SDK_InvokeScriptResult InvokeFunction(string address, string function, SDK_Stack[] stacks)
         {
             return SDK_InvokeScriptResult.FromJson(RpcSend("invokefunction", address, function, stacks.Select(p => p.ToJson()).ToArray()));
         }
@@ -176,11 +176,6 @@ namespace Neo.SDK
         public SDK_ValidateAddressResult ValidateAddress(string address)
         {
             return SDK_ValidateAddressResult.FromJson(RpcSend("validateaddress", address));
-        }
-
-        public SDK_Nep5Balances GetNep5Balances(string address)
-        {
-            return SDK_Nep5Balances.FromJson(RpcSend("getnep5balances", address));
         }
 
     }

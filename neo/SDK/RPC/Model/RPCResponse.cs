@@ -8,12 +8,14 @@ namespace Neo.SDK.RPC.Model
     public class RPCResponse
     {
         public int? Id { get; set; }
-        
+
         public string Jsonrpc { get; set; }
-        
+
         public RPCResponseError Error { get; set; }
-        
+
         public JObject Result { get; set; }
+
+        public string RawResponse { get; set; }
 
         /// <summary>
         /// Parse from json
@@ -49,9 +51,9 @@ namespace Neo.SDK.RPC.Model
     public class RPCResponseError
     {
         public int Code { get; set; }
-        
+
         public string Message { get; set; }
-        
+
         public JObject Data { get; set; }
 
         /// <summary>
