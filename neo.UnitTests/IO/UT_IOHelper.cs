@@ -10,42 +10,24 @@ namespace Neo.UnitTests
     public class UT_IOHelper
     {
 
-
-
-        [TestMethod]
-        public void TestReadVarBytes()
-        {
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
-            //writer.Write();
-            BinaryReader reader = new BinaryReader(stream);
-
-            byte[] byteArray = Neo.IO.Helper.ReadVarBytes(reader,100);
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x00,0x00,0x00,0x00,0x00,
-                                         0x00,0x00,0x00,0x00,0x00,
-                                         0x00,0x00,0x00,0x00,0x00,
-                                         0x00,0x00,0x00,0x00,0x00}), Encoding.Default.GetString(byteArray));
-        }
-
         [TestMethod]
         public void TestReadVarInt()
         {
             for (int i = 0; i < 5; i++)
             {
-
                 if (i == 0)
                 {
-/*                    MemoryStream stream = new MemoryStream();
+                    MemoryStream stream = new MemoryStream();
                     BinaryWriter writer = new BinaryWriter(stream);
 
                     Neo.IO.Helper.WriteVarInt(writer, 0xFFFF);
-
+                    stream.Seek(0, SeekOrigin.Begin);
                     BinaryReader reader = new BinaryReader(stream);
 
                     ulong result = Neo.IO.Helper.ReadVarInt(reader, 0xFFFF);
-                    Assert.AreEqual(0xFFFF, result);*/
+                    Assert.AreEqual((ulong)0xFFFF, result);
                 }
-                /*else if (i == 1)
+                else if (i == 1)
                 {
                     MemoryStream stream = new MemoryStream();
                     BinaryWriter writer = new BinaryWriter(stream);
@@ -57,50 +39,8 @@ namespace Neo.UnitTests
                     Assert.AreEqual(0xFE, byteArray[0]);
                     Assert.AreEqual(0xFFFFFFFF, BitConverter.ToUInt32(byteArray, 1));
                 }
-                else
-                {
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
-
-                    Neo.IO.Helper.WriteVarInt(writer, 0xAEFFFFFFFF);
-                    stream.Seek(0, SeekOrigin.Begin);
-                    byte[] byteArray = new byte[stream.Length];
-                    stream.Read(byteArray, 0, (int)stream.Length);
-                    Assert.AreEqual(0xFF, byteArray[0]);
-                    //long value has 8 bytes
-                    Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00 }), Encoding.Default.GetString(byteArray.Skip(1).Take(byteArray.Length - 1).ToArray()));
-
-                }*/
             }
         }
-
-
-        [TestMethod]
-        public void TestReadVarString()
-        {
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
-            //writer.Write();
-            BinaryReader reader = new BinaryReader(stream);
-
-            String result = Neo.IO.Helper.ReadVarString(reader, 100);
-            byte[] byteArray = Neo.IO.Helper.ToArray(UInt160.Zero);
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x00,0x00,0x00,0x00,0x00,
-                                         0x00,0x00,0x00,0x00,0x00,
-                                         0x00,0x00,0x00,0x00,0x00,
-                                         0x00,0x00,0x00,0x00,0x00}), Encoding.Default.GetString(byteArray));
-        }
-
-
-
-
-
-
-
-
-
-
-
 
         [TestMethod]
         public void TestToArray()
