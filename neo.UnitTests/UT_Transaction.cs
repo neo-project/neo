@@ -87,10 +87,10 @@ namespace Neo.UnitTests
             JObject wallet = new JObject();
             wallet["name"] = "noname";
             wallet["version"] = new System.Version().ToString();
-            wallet["scrypt"] = ScryptParameters.Default.ToJson();
+            wallet["scrypt"] = new ScryptParameters(0, 0, 0).ToJson();
             wallet["accounts"] = new JArray();
             wallet["extra"] = null;
-            wallet.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"0.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[],\"extra\":null}");
+            wallet.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"0.0\",\"scrypt\":{\"n\":0,\"r\":0,\"p\":0},\"accounts\":[],\"extra\":null}");
             return new NEP6Wallet(wallet);
         }
 
