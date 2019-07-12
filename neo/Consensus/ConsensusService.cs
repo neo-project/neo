@@ -139,7 +139,7 @@ namespace Neo.Consensus
                 context.Save();
                 localNode.Tell(new LocalNode.SendDirectly { Inventory = payload });
                 // Set timer, so we will resend the commit in case of a networking issue
-                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock));
+                ChangeTimer(TimeSpan.FromMilliseconds(Blockchain.MilliSecondsPerBlock));
                 CheckCommits();
             }
         }
@@ -155,7 +155,8 @@ namespace Neo.Consensus
             {
                 if (isRecovering)
                 {
-                    ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (viewNumber + 1)));
+                    //TODO - Check this shift operation for milliseconds
+                    ChangeTimer(TimeSpan.FromMilliseconds(Blockchain.MilliSecondsPerBlock << (viewNumber + 1)));
                 }
                 else
                 {
@@ -168,7 +169,8 @@ namespace Neo.Consensus
             }
             else
             {
-                ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (viewNumber + 1)));
+                // TODO - Check shift operation
+                ChangeTimer(TimeSpan.FromMilliseconds(Blockchain.MilliSecondsPerBlock << (viewNumber + 1)));
             }
         }
 
@@ -543,7 +545,8 @@ namespace Neo.Consensus
                     // Re-send commit periodically by sending recover message in case of a network issue.
                     Log($"send recovery to resend commit");
                     localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
-                    ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << 1));
+                    // TODO - Check shift operation
+                    ChangeTimer(TimeSpan.FromMilliseconds(Blockchain.MilliSecondsPerBlock << 1));
                 }
                 else
                 {
@@ -583,7 +586,8 @@ namespace Neo.Consensus
             // The latter may happen by nodes in higher views with, at least, `M` proofs
             byte expectedView = context.ViewNumber;
             expectedView++;
-            ChangeTimer(TimeSpan.FromSeconds(Blockchain.SecondsPerBlock << (expectedView + 1)));
+            // TODO - Check shift operation
+            ChangeTimer(TimeSpan.FromMilliseconds(Blockchain.MilliSecondsPerBlock << (expectedView + 1)));
             if ((context.CountCommitted + context.CountFailed) > context.F)
             {
                 Log($"Skip requesting change view to nv={expectedView} because nc={context.CountCommitted} nf={context.CountFailed}");
@@ -615,7 +619,8 @@ namespace Neo.Consensus
                 foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, context.TransactionHashes))
                     localNode.Tell(Message.Create(MessageCommand.Inv, payload));
             }
-            ChangeTimer(TimeSpan.FromSeconds((Blockchain.SecondsPerBlock << (context.ViewNumber + 1)) - (context.ViewNumber == 0 ? Blockchain.SecondsPerBlock : 0)));
+            // TODO - Check shift operation
+            ChangeTimer(TimeSpan.FromMilliseconds((Blockchain.MilliSecondsPerBlock << (context.ViewNumber + 1)) - (context.ViewNumber == 0 ? Blockchain.MilliSecondsPerBlock : 0)));
         }
     }
 

@@ -101,6 +101,7 @@ namespace Neo.IO.Json
             return AsString();
         }
 
+        // TODO - WHO USES THIS?
         public DateTime ToTimestamp()
         {
             if (Value < 0 || Value > ulong.MaxValue)

@@ -64,7 +64,7 @@ namespace Neo.UnitTests
             merkRootVal = UInt256.Parse("0xd841af3d6bd7adb4bca24306725f9aec363edb10de3cafc5f8cca948d7b0290f");
 
             bb.MerkleRoot = merkRootVal;
-            timestampVal = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp();
+            timestampVal = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestampMS();
             bb.Timestamp = timestampVal;
             indexVal = 0;
             bb.Index = indexVal;

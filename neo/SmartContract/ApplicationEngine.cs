@@ -92,7 +92,8 @@ namespace Neo.SmartContract
                 Version = 0,
                 PrevHash = snapshot.CurrentBlockHash,
                 MerkleRoot = new UInt256(),
-                Timestamp = snapshot.Blocks[snapshot.CurrentBlockHash].Timestamp + Blockchain.SecondsPerBlock,
+                // TODO - Check this sum
+                Timestamp = snapshot.Blocks[snapshot.CurrentBlockHash].Timestamp + Blockchain.MilliSecondsPerBlock,
                 Index = snapshot.Height + 1,
                 NextConsensus = snapshot.Blocks[snapshot.CurrentBlockHash].NextConsensus,
                 Witness = new Witness

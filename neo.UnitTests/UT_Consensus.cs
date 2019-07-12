@@ -48,7 +48,7 @@ namespace Neo.UnitTests
             var timeValues = new[] {
               //new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For tests here
               new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc),  // For receiving block
-              new DateTime(1968, 06, 01, 0, 0, (int) Blockchain.SecondsPerBlock, DateTimeKind.Utc), // For Initialize
+              new DateTime(1968, 06, 01, 0, 0, (int) Blockchain.MilliSecondsPerBlock / 1000, DateTimeKind.Utc), // For Initialize
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // unused
               new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc)  // unused
             };
@@ -197,7 +197,7 @@ namespace Neo.UnitTests
                 consensusContext.CommitPayloads[6] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx2.Hash.ToArray()) }, 3, new[] { (byte)'6', (byte)'7' });
             }
 
-            consensusContext.Block.Timestamp = TimeProvider.Current.UtcNow.ToTimestamp();
+            consensusContext.Block.Timestamp = TimeProvider.Current.UtcNow.ToTimestampMS();
 
             consensusContext.ChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
             consensusContext.ChangeViewPayloads[0] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = 6 }, 0, new[] { (byte)'A' });
