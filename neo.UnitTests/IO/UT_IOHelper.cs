@@ -4,12 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests.IO
 {
     [TestClass]
     public class UT_IOHelper
     {
-
         [TestMethod]
         public void TestReadVarInt()
         {
@@ -122,7 +121,6 @@ namespace Neo.UnitTests
         {
             for (int i = 0; i < 5; i++)
             {
-
                 if (i == 0)
                 {
                     try
@@ -179,8 +177,6 @@ namespace Neo.UnitTests
                     byte[] newArray = new byte[Encoding.UTF8.GetBytes("AA").Length + 1];
                     Encoding.UTF8.GetBytes("AA").CopyTo(newArray, 0);
                     Assert.AreEqual(Encoding.Default.GetString(newArray), Encoding.Default.GetString(byteArray));
-
-
                 }
             }
         }
@@ -203,7 +199,6 @@ namespace Neo.UnitTests
         {
             for (int i = 0; i < 5; i++)
             {
-
                 if (i == 0)
                 {
                     try
@@ -265,7 +260,6 @@ namespace Neo.UnitTests
                     Assert.AreEqual(0xFF, byteArray[0]);
                     //long value has 8 bytes
                     Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00 }), Encoding.Default.GetString(byteArray.Skip(1).Take(byteArray.Length - 1).ToArray()));
-
                 }
             }
         }
@@ -281,8 +275,6 @@ namespace Neo.UnitTests
             stream.Read(byteArray, 0, (int)stream.Length);
             Assert.AreEqual(0x01, byteArray[0]);
             Assert.AreEqual(0x61, byteArray[1]);
-
         }
-
     }
 }

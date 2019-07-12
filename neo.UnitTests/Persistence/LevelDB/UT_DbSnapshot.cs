@@ -1,15 +1,13 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Persistence.LevelDB;
-using Neo.Persistence;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using Neo.Network.P2P.Payloads;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.Persistence.LevelDB;
+using System;
+using System.IO;
 using System.Threading;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests.Persistence.LevelDB
 {
     [TestClass]
     public class UT_DbSnapshot

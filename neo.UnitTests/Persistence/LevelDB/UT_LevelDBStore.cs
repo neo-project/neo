@@ -1,19 +1,17 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Persistence.LevelDB;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using Neo.Persistence;
+using Neo.IO.Caching;
+using Neo.IO.Wrappers;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.VM;
-using Neo.IO.Caching;
+using Neo.Persistence;
+using Neo.Persistence.LevelDB;
 using Neo.SmartContract.Manifest;
-using Neo.IO.Wrappers;
+using Neo.VM;
+using System;
+using System.IO;
 using System.Threading;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests.Persistence.LevelDB
 {
     [TestClass]
     public class UT_LevelDBStore

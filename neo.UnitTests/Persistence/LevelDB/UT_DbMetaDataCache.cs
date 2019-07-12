@@ -7,7 +7,7 @@ using Neo.Ledger;
 using System.Threading;
 using System;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests.Persistence.LevelDB
 {
     [TestClass]
     public class UT_DbMetaDataCache
