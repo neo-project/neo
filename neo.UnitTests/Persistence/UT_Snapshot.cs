@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Threading;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using Neo.IO.Wrappers;
@@ -12,23 +7,20 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Persistence.LevelDB;
 using Neo.VM;
+using System;
+using System.IO;
+using System.Threading;
 
 namespace Neo.UnitTests
 {
     class MySnapshot : Snapshot
     {
         public override DataCache<UInt256, TrimmedBlock> Blocks => throw new NotImplementedException();
-
         public override DataCache<UInt256, TransactionState> Transactions => throw new NotImplementedException();
-
         public override DataCache<UInt160, ContractState> Contracts => throw new NotImplementedException();
-
         public override DataCache<StorageKey, StorageItem> Storages => throw new NotImplementedException();
-
         public override DataCache<UInt32Wrapper, HeaderHashList> HeaderHashList => throw new NotImplementedException();
-
         public override MetaDataCache<HashIndexState> BlockHashIndex => throw new NotImplementedException();
-
         public override MetaDataCache<HashIndexState> HeaderHashIndex => throw new NotImplementedException();
 
         public void SetPersistingBlock(Block block)
@@ -46,9 +38,7 @@ namespace Neo.UnitTests
     public class UT_Snapshot
     {
         private Snapshot snapshot;
-
         private LevelDBStore store;
-
         private string dbPath;
 
         [TestInitialize]
@@ -69,7 +59,6 @@ namespace Neo.UnitTests
             store = null;
             TestUtils.DeleteFile(dbPath);
         }
-
 
         [TestMethod]
         public void TestGetCurrentHeaderHash()

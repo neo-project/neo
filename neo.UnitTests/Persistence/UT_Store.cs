@@ -1,16 +1,14 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Persistence.LevelDB;
-using Neo.Persistence;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using Neo.Network.P2P.Payloads;
-using Neo.Ledger;
 using Neo.IO.Caching;
-using Neo.SmartContract.Manifest;
 using Neo.IO.Wrappers;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.Persistence.LevelDB;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
+using System;
+using System.IO;
 using System.Threading;
 
 namespace Neo.UnitTests
@@ -19,7 +17,6 @@ namespace Neo.UnitTests
     public class UT_Store
     {
         private LevelDBStore store;
-
         private string dbPath;
 
         [TestInitialize]
@@ -68,7 +65,6 @@ namespace Neo.UnitTests
             Assert.AreEqual(block.PrevHash, storeBlock.PrevHash);
             Assert.AreEqual(block.Index, storeBlock.Index);
             Assert.AreEqual(block.Hashes[0].ToString(), storeBlock.Hashes[0].ToString());
-
         }
 
         [TestMethod]
