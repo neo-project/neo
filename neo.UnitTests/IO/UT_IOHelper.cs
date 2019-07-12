@@ -15,7 +15,6 @@ namespace Neo.UnitTests
         {
             for (int i = 0; i < 5; i++)
             {
-
                 if (i == 0)
                 {
                     MemoryStream stream = new MemoryStream();
@@ -27,7 +26,8 @@ namespace Neo.UnitTests
 
                     ulong result = Neo.IO.Helper.ReadVarInt(reader, 0xFFFF);
                     Assert.AreEqual((ulong)0xFFFF, result);
-                }else if (i == 1)
+                }
+                else if (i == 1)
                 {
                     MemoryStream stream = new MemoryStream();
                     BinaryWriter writer = new BinaryWriter(stream);

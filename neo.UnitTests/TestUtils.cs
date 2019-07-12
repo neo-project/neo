@@ -108,8 +108,8 @@ namespace Neo.UnitTests
 
             return newObj;
         }
-		
-		public static void DeleteFile(string file)
+
+        public static void DeleteFile(string file)
         {
             System.IO.DirectoryInfo fileInfo = new DirectoryInfo(file);
             fileInfo.Attributes = FileAttributes.Normal & FileAttributes.Directory;
