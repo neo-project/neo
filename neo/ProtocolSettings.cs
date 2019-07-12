@@ -10,7 +10,7 @@ namespace Neo
         public byte AddressVersion { get; }
         public string[] StandbyValidators { get; }
         public string[] SeedList { get; }
-        public uint MilliSecondsPerBlock { get; }
+        public uint MillisecondsPerBlock { get; }
 
         static ProtocolSettings _default;
 
