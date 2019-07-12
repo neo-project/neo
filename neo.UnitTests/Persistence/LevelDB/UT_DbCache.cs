@@ -1,14 +1,11 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Persistence.LevelDB;
-using Neo.Persistence;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using Neo.Network.P2P.Payloads;
-using Neo.Ledger;
 using Neo.IO.Caching;
+using Neo.Ledger;
+using Neo.Persistence;
+using Neo.Persistence.LevelDB;
 using Neo.SmartContract.Manifest;
+using System;
+using System.IO;
 using System.Threading;
 
 namespace Neo.UnitTests
@@ -17,7 +14,6 @@ namespace Neo.UnitTests
     public class UT_DbCache
     {
         private LevelDBStore store;
-
         private string dbPath;
 
         [TestInitialize]
@@ -146,7 +142,6 @@ namespace Neo.UnitTests
             var updatedState = contracts2.TryGet(state.ScriptHash);
             Assert.AreEqual(updatedState.Manifest.ToString(), storeState.Manifest.ToString());
             Assert.AreEqual(updatedState.Script.ToHexString(), storeState.Script.ToHexString());
-
         }
 
         private static ContractState CreateTestContractState()

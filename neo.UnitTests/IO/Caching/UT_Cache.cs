@@ -149,7 +149,6 @@ namespace Neo.UnitTests.IO.Caching
             temp[1].Should().Be("world");
         }
 
-
         [TestMethod]
         public void TestRemoveKey()
         {
@@ -168,7 +167,6 @@ namespace Neo.UnitTests.IO.Caching
             cache.Contains("hello").Should().BeFalse();
         }
 
-
         [TestMethod]
         public void TestTryGet()
         {
@@ -179,7 +177,6 @@ namespace Neo.UnitTests.IO.Caching
             output2.Should().NotBe("world");
             output2.Should().BeNull();
         }
-
 
         [TestMethod]
         public void TestArrayIndexAccess()
