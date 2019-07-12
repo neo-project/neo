@@ -37,7 +37,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestgetDecimals()
+        public void TestGetDecimals()
         {
             BigDecimal value = new BigDecimal(new BigInteger(45600), 7);
             value.Sign.Should().Be(1);
@@ -48,7 +48,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestgetSign()
+        public void TestGetSign()
         {
             BigDecimal value = new BigDecimal(new BigInteger(45600), 7);
             value.Sign.Should().Be(1);
