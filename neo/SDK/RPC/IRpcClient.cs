@@ -114,7 +114,7 @@ namespace Neo.SDK.RPC
         /// Returns the result after calling a smart contract at scripthash with the given operation and parameters.
         /// This RPC call does not affect the blockchain in any way.
         /// </summary>
-        SDK_InvokeScriptResult InvokeFunction(string address, string function, SDK_StackJson[] stacks);
+        SDK_InvokeScriptResult InvokeFunction(string address, string function, SDK_Stack[] stacks);
 
         /// <summary>
         /// Returns the result after passing a script through the VM.
@@ -141,11 +141,6 @@ namespace Neo.SDK.RPC
         /// Verifies that the address is a correct NEO address.
         /// </summary>
         SDK_ValidateAddressResult ValidateAddress(string address);
-
-        /// <summary>
-        /// Returns the balance of all NEP-5 assets in the specified address.
-        /// </summary>
-        SDK_Nep5Balances GetNep5Balances(string address);
-
+        
     }
 }

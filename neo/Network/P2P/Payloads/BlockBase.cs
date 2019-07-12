@@ -104,7 +104,7 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        public void PraseFromJson(JObject json)
+        public void FromJson(JObject json)
         {
             Version = (uint)json["version"].AsNumber();
             PrevHash = UInt256.Parse(json["previousblockhash"].AsString());
