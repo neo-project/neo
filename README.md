@@ -5,21 +5,21 @@
 </p>
 
 <p align="center">
-  <a href="https://coveralls.io/github/neo-project/neo?branch=master">
-    <img src="https://coveralls.io/repos/github/neo-project/neo/badge.svg?branch=master" alt="Current Coverage Status" />
-  </a>
   <a href="https://travis-ci.org/neo-project/neo">
     <img src="https://travis-ci.org/neo-project/neo.svg?branch=master" alt="Current TravisCI build status.">
-  </a>
-  <a href="https://github.com/neo-project/neo/blob/master/LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
   </a>
   <a href="https://github.com/neo-project/neo/releases">
     <img src="https://badge.fury.io/gh/neo-project%2Fneo.svg" alt="Current neo version.">
   </a>
+  <a href="https://codecov.io/github/neo-project/neo/branch/master/graph/badge.svg">
+    <img src="https://codecov.io/github/neo-project/neo/branch/master/graph/badge.svg" alt="Current Coverage Status." />
+  </a>
   <a href="https://github.com/neo-project/neo">
-    <img src="https://tokei.rs/b1/github/neo-project/neo?category=lines" alt="total lines.">
+    <img src="https://tokei.rs/b1/github/neo-project/neo?category=lines" alt="Current total lines.">
   </a>	
+  <a href="https://github.com/neo-project/neo/blob/master/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License.">
+  </a>
 </p>
 
 NEO 3.0 (under development): A distributed network for the Smart Economy
