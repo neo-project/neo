@@ -40,7 +40,7 @@ namespace Neo.SmartContract
         public UInt160 ScriptHash { get; set; }
 
         public int Size =>
-            sizeof(ScriptMagic) +      // Engine
+            sizeof(ScriptMagic) +       // Engine
             Compiler.GetVarSize() +     // Compiler
             (sizeof(int) * 4) +         // Version
             Script.GetVarSize() +       // Script
