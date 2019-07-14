@@ -209,12 +209,11 @@ namespace Neo.SmartContract
             if (!engine.CheckArraySize(engine.Notifications.Count)) return false;
 
             var hash = new UInt160(data);
-            engine.CurrentContext.EvaluationStack.Push
-                (
-                new VM.Types.Array(engine.Notifications
-                .Where(u => hash == UInt160.Zero || u.ScriptHash == hash)
-                .Select(u => u.State))
-                );
+            IEnumerable<NotifyEventArgs> notifications = engine.Notifications;
+            if (!hash.Equals(UInt160.Zero))
+                notifications = notifications.Where(p => p.ScriptHash == hash);
+
+            engine.CurrentContext.EvaluationStack.Push(notifications.Select(u => u.State).ToArray());
             return true;
         }
 
