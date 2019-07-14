@@ -78,6 +78,12 @@ namespace Neo.SmartContract
         public void Deserialize(BinaryReader reader)
         {
             Magic = (ScriptMagic)reader.ReadInt32();
+
+            if (Magic != ScriptMagic.NEF3)
+            {
+                throw new FormatException("Wrong magic");
+            }
+
             Compiler = reader.ReadFixedString(64);
             Version = new Version(reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32());
             Script = reader.ReadVarBytes(1024 * 1024);
