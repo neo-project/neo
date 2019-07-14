@@ -266,33 +266,33 @@ namespace Neo.SmartContract
 
         private static bool Contract_Update(ApplicationEngine engine)
         {
-            byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            byte[] binary = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
             var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
             if (manifest.Length > ContractManifest.MaxLength) return false;
 
             var contract = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash);
             if (contract is null) return false;
 
-            if (script.Length > 0)
+            if (binary.Length > 0)
             {
-                var header = ScriptFile.FromByteArray(script);
+                var script = ScriptFile.FromByteArray(binary);
 
-                if (header.ScriptHash.Equals(engine.CurrentScriptHash)) return false;
-                if (engine.Snapshot.Contracts.TryGet(header.ScriptHash) != null) return false;
+                if (script.ScriptHash.Equals(engine.CurrentScriptHash)) return false;
+                if (engine.Snapshot.Contracts.TryGet(script.ScriptHash) != null) return false;
                 contract = new ContractState
                 {
-                    Script = header.Script,
+                    Script = script.Script,
                     Manifest = contract.Manifest
                 };
-                contract.Manifest.Abi.Hash = header.ScriptHash;
-                engine.Snapshot.Contracts.Add(header.ScriptHash, contract);
+                contract.Manifest.Abi.Hash = script.ScriptHash;
+                engine.Snapshot.Contracts.Add(script.ScriptHash, contract);
                 if (contract.HasStorage)
                 {
                     foreach (var pair in engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).ToArray())
                     {
                         engine.Snapshot.Storages.Add(new StorageKey
                         {
-                            ScriptHash = header.ScriptHash,
+                            ScriptHash = script.ScriptHash,
                             Key = pair.Key.Key
                         }, new StorageItem
                         {
