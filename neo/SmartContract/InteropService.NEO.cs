@@ -243,23 +243,23 @@ namespace Neo.SmartContract
 
         private static bool Contract_Create(ApplicationEngine engine)
         {
-            byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-            var header = ScriptFile.FromByteArray(script);
+            byte[] binary = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+            var script = ScriptFile.FromByteArray(binary);
 
             var manifest = engine.CurrentContext.EvaluationStack.Pop().GetString();
             if (manifest.Length > ContractManifest.MaxLength) return false;
 
-            ContractState contract = engine.Snapshot.Contracts.TryGet(header.ScriptHash);
+            ContractState contract = engine.Snapshot.Contracts.TryGet(script.ScriptHash);
             if (contract != null) return false;
             contract = new ContractState
             {
-                Script = header.Script,
+                Script = script.Script,
                 Manifest = ContractManifest.Parse(manifest)
             };
 
-            if (!contract.Manifest.IsValid(header.ScriptHash)) return false;
+            if (!contract.Manifest.IsValid(script.ScriptHash)) return false;
 
-            engine.Snapshot.Contracts.Add(header.ScriptHash, contract);
+            engine.Snapshot.Contracts.Add(script.ScriptHash, contract);
             engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
             return true;
         }

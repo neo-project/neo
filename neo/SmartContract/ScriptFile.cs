@@ -6,15 +6,18 @@ namespace Neo.SmartContract
 {
     public class ScriptFile : ISerializable
     {
-        public enum ScriptEngine : int
+        public enum ScriptMagic : int
         {
-            NeoVM = 0x4E454F00 // NEO\0
+            /// <summary>
+            /// NEO Executable Format 3
+            /// </summary>
+            NEF3 = 0x4E454633
         }
 
         /// <summary>
-        /// Engine
+        /// Magic
         /// </summary>
-        public ScriptEngine Engine { get; set; }
+        public ScriptMagic Magic { get; set; }
 
         /// <summary>
         /// Compiler
@@ -37,7 +40,7 @@ namespace Neo.SmartContract
         public UInt160 ScriptHash { get; set; }
 
         public int Size =>
-            sizeof(ScriptEngine) +      // Engine
+            sizeof(ScriptMagic) +      // Engine
             Compiler.GetVarSize() +     // Compiler
             (sizeof(int) * 4) +         // Version
             Script.GetVarSize() +       // Script
@@ -59,9 +62,9 @@ namespace Neo.SmartContract
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write((int)Engine);
-            writer.WriteVarString(Compiler);
-            
+            writer.Write((int)Magic);
+            writer.WriteFixedString(Compiler, 64);
+
             // Version
             writer.Write(Version.Major);
             writer.Write(Version.Minor);
@@ -74,8 +77,8 @@ namespace Neo.SmartContract
 
         public void Deserialize(BinaryReader reader)
         {
-            Engine = (ScriptEngine)reader.ReadInt32();
-            Compiler = reader.ReadVarString(byte.MaxValue);
+            Magic = (ScriptMagic)reader.ReadInt32();
+            Compiler = reader.ReadFixedString(64);
             Version = new Version(reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32());
             Script = reader.ReadVarBytes(1024 * 1024);
             ScriptHash = reader.ReadSerializable<UInt160>();
