@@ -38,7 +38,7 @@ namespace Neo.SmartContract
         public static readonly uint System_Runtime_Serialize = Register("System.Runtime.Serialize", Runtime_Serialize, 0_00100000, TriggerType.All);
         public static readonly uint System_Runtime_Deserialize = Register("System.Runtime.Deserialize", Runtime_Deserialize, 0_00500000, TriggerType.All);
         public static readonly uint System_Runtime_GetInvocationCounter = Register("System.Runtime.GetInvocationCounter", Runtime_GetInvocationCounter, 0_00000400, TriggerType.All);
-        public static readonly uint System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", Runtime_GetNotifications, 1000_00000000/*TODO*/, TriggerType.All);
+        public static readonly uint System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", Runtime_GetNotifications, 0_00010000, TriggerType.All);
         public static readonly uint System_Crypto_Verify = Register("System.Crypto.Verify", Crypto_Verify, 0_01000000, TriggerType.All);
         public static readonly uint System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", Blockchain_GetHeight, 0_00000400, TriggerType.Application);
         public static readonly uint System_Blockchain_GetHeader = Register("System.Blockchain.GetHeader", Blockchain_GetHeader, 0_00007000, TriggerType.Application);
