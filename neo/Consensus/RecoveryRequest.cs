@@ -9,10 +9,10 @@ namespace Neo.Consensus
         /// they only respond once to a specific RecoveryRequest request.
         /// In this sense, it prevents replay of the RecoveryRequest message from the repeatedly broadcast of Recovery's messages.
         /// </summary>
-        public uint Timestamp;
+        public long Timestamp;
 
         public override int Size => base.Size
-            + sizeof(uint); //Timestamp
+            + sizeof(long); //Timestamp
 
         public RecoveryRequest() : base(ConsensusMessageType.RecoveryRequest) { }
 

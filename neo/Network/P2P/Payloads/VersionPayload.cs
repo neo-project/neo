@@ -31,7 +31,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 Magic = ProtocolSettings.Default.Magic,
                 Version = LocalNode.ProtocolVersion,
-                Timestamp = DateTime.Now.ToTimestampMS(),
+                Timestamp = DateTime.Now.ToTimestamp(),
                 Nonce = nonce,
                 UserAgent = userAgent,
                 Capabilities = capabilities,

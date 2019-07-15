@@ -13,10 +13,10 @@ namespace Neo.Consensus
         /// they only respond once to a specific ChangeView request (it thus prevents replay of the ChangeView
         /// message from repeatedly broadcasting RecoveryMessages).
         /// </summary>
-        public uint Timestamp;
+        public long Timestamp;
 
         public override int Size => base.Size
-            + sizeof(uint); //Timestamp
+            + sizeof(long); //Timestamp
 
         public ChangeView() : base(ConsensusMessageType.ChangeView) { }
 
