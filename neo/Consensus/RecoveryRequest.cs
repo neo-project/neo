@@ -19,7 +19,7 @@ namespace Neo.Consensus
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Timestamp = reader.ReadUInt32();
+            Timestamp = reader.ReadInt64();
         }
 
         public override void Serialize(BinaryWriter writer)

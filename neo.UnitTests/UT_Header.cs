@@ -2,7 +2,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using System.IO;
-using System;
 using System.Text;
 
 namespace Neo.UnitTests
