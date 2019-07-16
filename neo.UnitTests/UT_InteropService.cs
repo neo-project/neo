@@ -1,3 +1,4 @@
+using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
@@ -103,8 +104,8 @@ namespace Neo.UnitTests
 
                 // Check syscall result
 
-                Assert.AreEqual("test", array[1].GetString());
-                Assert.AreEqual(13, array[0].GetBigInteger());
+                AssertNotification(array[1], scriptHash2, "test");
+                AssertNotification(array[0], currentScriptHash, 13);
 
                 // Check notifications
 
@@ -153,7 +154,7 @@ namespace Neo.UnitTests
 
                 // Check syscall result
 
-                Assert.AreEqual("test", array[0].GetString());
+                AssertNotification(array[0], scriptHash2, "test");
 
                 // Check notifications
 
@@ -167,6 +168,26 @@ namespace Neo.UnitTests
             // Clean storage
 
             snapshot.Contracts.Delete(scriptHash2);
+        }
+
+        private void AssertNotification(StackItem stackItem, UInt160 scriptHash, string notification)
+        {
+            Assert.IsInstanceOfType(stackItem, typeof(VM.Types.Array));
+
+            var array = (VM.Types.Array)stackItem;
+            Assert.AreEqual(2, array.Count);
+            CollectionAssert.AreEqual(scriptHash.ToArray(), array[0].GetByteArray());
+            Assert.AreEqual(notification, array[1].GetString());
+        }
+
+        private void AssertNotification(StackItem stackItem, UInt160 scriptHash, int notification)
+        {
+            Assert.IsInstanceOfType(stackItem, typeof(VM.Types.Array));
+
+            var array = (VM.Types.Array)stackItem;
+            Assert.AreEqual(2, array.Count);
+            CollectionAssert.AreEqual(scriptHash.ToArray(), array[0].GetByteArray());
+            Assert.AreEqual(notification, array[1].GetBigInteger());
         }
     }
 }

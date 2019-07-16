@@ -213,7 +213,7 @@ namespace Neo.SmartContract
             if (!hash.Equals(UInt160.Zero))
                 notifications = notifications.Where(p => p.ScriptHash == hash);
 
-            engine.CurrentContext.EvaluationStack.Push(notifications.Select(u => u.State).ToArray());
+            engine.CurrentContext.EvaluationStack.Push(notifications.Select(u => new VM.Types.Array(new StackItem[] { u.ScriptHash.ToArray(), u.State })).ToArray());
             return true;
         }
 
