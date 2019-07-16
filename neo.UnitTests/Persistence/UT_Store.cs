@@ -1,19 +1,17 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Persistence.LevelDB;
-using Neo.Persistence;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using Neo.Network.P2P.Payloads;
-using Neo.Ledger;
 using Neo.IO.Caching;
-using Neo.SmartContract.Manifest;
 using Neo.IO.Wrappers;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.Persistence.LevelDB;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
+using System;
+using System.IO;
 using System.Threading;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests.Persistence
 {
     [TestClass]
     public class UT_Store
@@ -55,7 +53,8 @@ namespace Neo.UnitTests
             block.Witness = new Witness
             {
                 InvocationScript = new byte[0],
-                VerificationScript = new[] { (byte)OpCode.PUSHT }
+                VerificationScript = new[] {
+                (byte) OpCode.PUSHT }
             };
             block.Hashes = new UInt256[] { TestUtils.GetTransaction().Hash };
 
@@ -115,12 +114,10 @@ namespace Neo.UnitTests
             tx.Sender = UInt160.Zero;
             tx.SystemFee = 4200000000;
             tx.Attributes = new TransactionAttribute[0];
-            tx.Witnesses = new[]
-            {
-                new Witness
-                {
-                    InvocationScript = new byte[0],
-                    VerificationScript = new byte[0]
+            tx.Witnesses = new[] {
+                new Witness {
+                InvocationScript = new byte[0],
+                VerificationScript = new byte[0]
                 }
             };
             TransactionState txState = new TransactionState();

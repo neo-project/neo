@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests.IO
 {
     [TestClass]
     public class UT_IOHelper
@@ -119,7 +119,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestGetVarSizeGeneric()
         {
-            for (int i = 0; i <9; i++)
+            for (int i = 0; i < 9; i++)
             {
                 if (i == 0)
                 {
@@ -243,10 +243,6 @@ namespace Neo.UnitTests
                     }
                 }
             }
-
-
-
-
         }
 
         [TestMethod]
@@ -322,16 +318,6 @@ namespace Neo.UnitTests
                     BinaryReader reader = new BinaryReader(stream);
                     ulong result = Neo.IO.Helper.ReadVarInt(reader, 0xFFFFFFFF);
                     Assert.AreEqual((ulong)0xFFFFFFFF, result);
-                }
-                else if (i == 2)
-                {
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
-                    Neo.IO.Helper.WriteVarInt(writer, 0xFFFFFFFFFF);
-                    stream.Seek(0, SeekOrigin.Begin);
-                    BinaryReader reader = new BinaryReader(stream);
-                    ulong result = Neo.IO.Helper.ReadVarInt(reader, 0xFFFFFFFFFF);
-                    Assert.AreEqual((ulong)0xFFFFFFFFFF, result);
                 }
                 else
                 {
@@ -589,7 +575,6 @@ namespace Neo.UnitTests
             stream.Read(byteArray, 0, (int)stream.Length);
             Assert.AreEqual(0x01, byteArray[0]);
             Assert.AreEqual(0x61, byteArray[1]);
-
         }
     }
 }
