@@ -70,7 +70,7 @@ namespace Neo.UnitTests.IO.Json
         [TestMethod]
         public void TestParseObject()
         {
-            Action action1 = () => JObject.Parse(new StringReader("{\"k1\":\"v1\",\"k1\":\"v2\"}"),100);
+            Action action1 = () => JObject.Parse(new StringReader("{\"k1\":\"v1\",\"k1\":\"v2\"}"), 100);
             action1.ShouldThrow<FormatException>();
 
             Action action2 = () => JObject.Parse(new StringReader("{\"k1\",\"k1\"}"), 100);
@@ -78,6 +78,9 @@ namespace Neo.UnitTests.IO.Json
 
             Action action3 = () => JObject.Parse(new StringReader("{\"k1\":\"v1\""), 100);
             action3.ShouldThrow<FormatException>();
+
+            Action action4 = () => JObject.Parse(new StringReader("aaa"), 100);
+            action4.ShouldThrow<FormatException>();
 
             JObject.Parse(new StringReader("{\"k1\":\"v1\"}"), 100).ToString().Should().Be("{\"k1\":\"v1\"}");
         }
@@ -96,5 +99,21 @@ namespace Neo.UnitTests.IO.Json
             obj.AsString().Should().Be("Tom");
         }
 
+        [TestMethod]
+        public void TestOpImplicitString()
+        {
+            var obj = new JObject();
+            obj = null;
+            obj.Should().BeNull();
+
+            obj = "{\"aaa\":\"111\"}";
+            obj.AsString().Should().Be("{\"aaa\":\"111\"}");
+        }
+
+        [TestMethod]
+        public void TestGetNull()
+        {
+            JObject.Null.Should().BeNull();
+        }
     }
 }

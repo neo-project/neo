@@ -66,7 +66,7 @@ namespace Neo.UnitTests.IO.Json
             ret1.AsBoolean().Should().BeTrue();
 
             TextReader tr2 = new StringReader("aaa");
-            Action action = () => JBoolean.ParseFalse(tr2);
+            Action action = () => JBoolean.ParseTrue(tr2);
             action.ShouldThrow<FormatException>();
 
             TextReader tr3 = new StringReader(" true");
