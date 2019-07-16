@@ -57,7 +57,7 @@ namespace Neo.UnitTests.IO
             tr = new StringReader("\"a");
             Assert.ThrowsException<FormatException>(() => JString.Parse(tr));
 
-            byte[] byteArray = new byte[]{0x22, 0x01, 0x22};
+            byte[] byteArray = new byte[] { 0x22, 0x01, 0x22 };
             tr = new StringReader(System.Text.Encoding.ASCII.GetString(byteArray));
             Assert.ThrowsException<FormatException>(() => JString.Parse(tr));
         }

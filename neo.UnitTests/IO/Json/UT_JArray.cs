@@ -3,6 +3,7 @@ using Neo.IO.Json;
 using FluentAssertions;
 using System;
 using System.Linq;
+using System.Collections;
 
 namespace Neo.UnitTests.IO.Json
 {
@@ -230,6 +231,7 @@ namespace Neo.UnitTests.IO.Json
                 if (i % 2 != 0) item.Should().Be(bob);
                 i++;
             }
+            Assert.IsNotNull(((IEnumerable)jArray).GetEnumerator());
         }
 
         [TestMethod]
