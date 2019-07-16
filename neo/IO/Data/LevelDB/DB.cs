@@ -16,7 +16,7 @@ namespace Neo.IO.Data.LevelDB
             this.handle = handle;
         }
 
-        public void Dispose()
+        public virtual void Dispose()
         {
             if (handle != IntPtr.Zero)
             {
@@ -25,14 +25,14 @@ namespace Neo.IO.Data.LevelDB
             }
         }
 
-        public void Delete(WriteOptions options, Slice key)
+        public virtual void Delete(WriteOptions options, Slice key)
         {
             IntPtr error;
             Native.leveldb_delete(handle, options.handle, key.buffer, (UIntPtr)key.buffer.Length, out error);
             NativeHelper.CheckError(error);
         }
 
-        public Slice Get(ReadOptions options, Slice key)
+        public virtual Slice Get(ReadOptions options, Slice key)
         {
             UIntPtr length;
             IntPtr error;
@@ -50,12 +50,12 @@ namespace Neo.IO.Data.LevelDB
             }
         }
 
-        public Snapshot GetSnapshot()
+        public virtual Snapshot GetSnapshot()
         {
             return new Snapshot(handle);
         }
 
-        public Iterator NewIterator(ReadOptions options)
+        public virtual Iterator NewIterator(ReadOptions options)
         {
             return new Iterator(Native.leveldb_create_iterator(handle, options.handle));
         }
@@ -73,14 +73,14 @@ namespace Neo.IO.Data.LevelDB
             return new DB(handle);
         }
 
-        public void Put(WriteOptions options, Slice key, Slice value)
+        public virtual void Put(WriteOptions options, Slice key, Slice value)
         {
             IntPtr error;
             Native.leveldb_put(handle, options.handle, key.buffer, (UIntPtr)key.buffer.Length, value.buffer, (UIntPtr)value.buffer.Length, out error);
             NativeHelper.CheckError(error);
         }
 
-        public bool TryGet(ReadOptions options, Slice key, out Slice value)
+        public virtual bool TryGet(ReadOptions options, Slice key, out Slice value)
         {
             UIntPtr length;
             IntPtr error;
@@ -101,7 +101,7 @@ namespace Neo.IO.Data.LevelDB
             return true;
         }
 
-        public void Write(WriteOptions options, WriteBatch write_batch)
+        public virtual void Write(WriteOptions options, WriteBatch write_batch)
         {
             // There's a bug in .Net Core.
             // When calling DB.Write(), it will throw LevelDBException sometimes.
