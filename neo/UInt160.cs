@@ -9,6 +9,7 @@ namespace Neo
     /// </summary>
     public class UInt160 : UIntBase, IComparable<UInt160>, IEquatable<UInt160>
     {
+        public const int Length = 20;
         public static readonly UInt160 Zero = new UInt160();
 
         /// <summary>
@@ -23,7 +24,7 @@ namespace Neo
         /// The byte[] constructor invokes base class UIntBase constructor for 20 bytes
         /// </summary>
         public UInt160(byte[] value)
-            : base(20, value)
+            : base(Length, value)
         {
         }
 
@@ -79,7 +80,7 @@ namespace Neo
                 throw new ArgumentNullException();
             if (value.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
                 value = value.Substring(2);
-            if (value.Length != 40)
+            if (value.Length != Length * 2)
                 throw new FormatException();
             return new UInt160(value.HexToBytes().Reverse().ToArray());
         }
@@ -97,13 +98,13 @@ namespace Neo
             }
             if (s.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
                 s = s.Substring(2);
-            if (s.Length != 40)
+            if (s.Length != Length * 2)
             {
                 result = null;
                 return false;
             }
-            byte[] data = new byte[20];
-            for (int i = 0; i < 20; i++)
+            byte[] data = new byte[Length];
+            for (int i = 0; i < Length; i++)
                 if (!byte.TryParse(s.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out data[i]))
                 {
                     result = null;
