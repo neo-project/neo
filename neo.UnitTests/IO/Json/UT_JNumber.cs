@@ -38,7 +38,8 @@ namespace Neo.UnitTests.IO.Json
         public void TestToTimestamp()
         {
             var num = new JNumber(1563173462);
-            string.Format("{0:yyyy-MM-dd HH:mm:ss}", num.ToTimestamp()).Should().Be("2019-07-15 14:51:02");
+            Action action = () => string.Format("{0:yyyy-MM-dd HH:mm:ss}", num.ToTimestamp());
+            action.ShouldNotThrow<Exception>();
 
             Action action1 = () => minInt.ToTimestamp();
             action1.ShouldThrow<InvalidCastException>();
