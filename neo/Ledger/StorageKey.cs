@@ -30,9 +30,8 @@ namespace Neo.Ledger
 
         public override bool Equals(object obj)
         {
-            if (obj is null) return false;
-            if (!(obj is StorageKey)) return false;
-            return Equals((StorageKey)obj);
+            if (!(obj is StorageKey other)) return false;
+            return Equals(other);
         }
 
         public override int GetHashCode()
