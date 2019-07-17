@@ -95,7 +95,7 @@ namespace Neo.Consensus
             Reset(0);
             if (reader.ReadUInt32() != Block.Version) throw new FormatException();
             if (reader.ReadUInt32() != Block.Index) throw new InvalidOperationException();
-            Block.Timestamp = reader.ReadInt64();
+            Block.Timestamp = reader.ReadUInt64();
             Block.NextConsensus = reader.ReadSerializable<UInt160>();
             if (Block.NextConsensus.Equals(UInt160.Zero))
                 Block.NextConsensus = null;

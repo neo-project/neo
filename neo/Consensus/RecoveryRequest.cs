@@ -9,17 +9,17 @@ namespace Neo.Consensus
         /// they only respond once to a specific RecoveryRequest request.
         /// In this sense, it prevents replay of the RecoveryRequest message from the repeatedly broadcast of Recovery's messages.
         /// </summary>
-        public long Timestamp;
+        public ulong Timestamp;
 
         public override int Size => base.Size
-            + sizeof(long); //Timestamp
+            + sizeof(ulong); //Timestamp
 
         public RecoveryRequest() : base(ConsensusMessageType.RecoveryRequest) { }
 
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Timestamp = reader.ReadInt64();
+            Timestamp = reader.ReadUInt64();
         }
 
         public override void Serialize(BinaryWriter writer)

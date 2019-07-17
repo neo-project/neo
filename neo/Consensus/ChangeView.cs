@@ -13,17 +13,17 @@ namespace Neo.Consensus
         /// they only respond once to a specific ChangeView request (it thus prevents replay of the ChangeView
         /// message from repeatedly broadcasting RecoveryMessages).
         /// </summary>
-        public long Timestamp;
+        public ulong Timestamp;
 
         public override int Size => base.Size
-            + sizeof(long); //Timestamp
+            + sizeof(ulong); //Timestamp
 
         public ChangeView() : base(ConsensusMessageType.ChangeView) { }
 
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Timestamp = reader.ReadInt64();
+            Timestamp = reader.ReadUInt64();
         }
 
         public override void Serialize(BinaryWriter writer)

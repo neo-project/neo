@@ -31,7 +31,7 @@ namespace Neo.UnitTests
         public void Deserialize()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupHeaderWithValues(new Header(), val256, out UInt256 merkRoot, out UInt160 val160, out long timestampVal, out uint indexVal, out Witness scriptVal);
+            TestUtils.SetupHeaderWithValues(new Header(), val256, out UInt256 merkRoot, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
 
             uut.MerkleRoot = merkRoot; // need to set for deserialise to be valid
 
@@ -49,7 +49,7 @@ namespace Neo.UnitTests
             assertStandardHeaderTestVals(val256, merkRoot, val160, timestampVal, indexVal, scriptVal);
         }
 
-        private void assertStandardHeaderTestVals(UInt256 val256, UInt256 merkRoot, UInt160 val160, long timestampVal, uint indexVal, Witness scriptVal)
+        private void assertStandardHeaderTestVals(UInt256 val256, UInt256 merkRoot, UInt160 val160, ulong timestampVal, uint indexVal, Witness scriptVal)
         {
             uut.PrevHash.Should().Be(val256);
             uut.MerkleRoot.Should().Be(merkRoot);

@@ -14,7 +14,7 @@ namespace Neo.Network.P2P.Payloads
         public uint Version;
         public UInt256 PrevHash;
         public UInt256 MerkleRoot;
-        public long Timestamp;
+        public ulong Timestamp;
         public uint Index;
         public UInt160 NextConsensus;
         public Witness Witness;
@@ -36,7 +36,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(uint) +       //Version
             PrevHash.Size +      //PrevHash
             MerkleRoot.Size +    //MerkleRoot
-            sizeof(long) +       //Timestamp
+            sizeof(ulong) +      //Timestamp
             sizeof(uint) +       //Index
             NextConsensus.Size + //NextConsensus
             1 +                  //
@@ -67,7 +67,7 @@ namespace Neo.Network.P2P.Payloads
             Version = reader.ReadUInt32();
             PrevHash = reader.ReadSerializable<UInt256>();
             MerkleRoot = reader.ReadSerializable<UInt256>();
-            Timestamp = reader.ReadInt64();
+            Timestamp = reader.ReadUInt64();
             Index = reader.ReadUInt32();
             NextConsensus = reader.ReadSerializable<UInt160>();
         }

@@ -172,9 +172,9 @@ namespace Neo
             return (uint)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
         }
 
-        public static long ToTimestampMS(this DateTime time)
+        public static ulong ToTimestampMS(this DateTime time)
         {
-            return (long)(time.ToUniversalTime() - unixEpoch.ToUniversalTime()).TotalMilliseconds;
+            return (ulong)(time.ToUniversalTime() - unixEpoch.ToUniversalTime()).TotalMilliseconds;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
