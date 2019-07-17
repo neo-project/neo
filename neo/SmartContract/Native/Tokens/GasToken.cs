@@ -25,6 +25,15 @@ namespace Neo.SmartContract.Native.Tokens
         {
         }
 
+        internal override bool Initialize(ApplicationEngine engine)
+        {
+            if (!base.Initialize(engine)) return false;
+            if (TotalSupply(engine.Snapshot) != BigInteger.Zero) return false;
+            UInt160 account = Contract.CreateMultiSigRedeemScript(Blockchain.StandbyValidators.Length / 2 + 1, Blockchain.StandbyValidators).ToScriptHash();
+            Mint(engine, account, 30_000_000 * Factor);
+            return true;
+        }
+
         protected override bool OnPersist(ApplicationEngine engine)
         {
             if (!base.OnPersist(engine)) return false;

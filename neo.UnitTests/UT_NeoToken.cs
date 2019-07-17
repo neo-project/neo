@@ -91,7 +91,7 @@ namespace Neo.UnitTests
                 Blockchain.StandbyValidators).ToScriptHash().ToArray();
 
             var unclaim = Check_UnclaimedGas(snapshot, from);
-            unclaim.Value.Should().Be(new BigInteger(800000000000));
+            unclaim.Value.Should().Be(new BigInteger(600000000000));
             unclaim.State.Should().BeTrue();
 
             unclaim = Check_UnclaimedGas(snapshot, new byte[19]);
@@ -146,7 +146,7 @@ namespace Neo.UnitTests
             // Check unclaim
 
             var unclaim = Check_UnclaimedGas(snapshot, from);
-            unclaim.Value.Should().Be(new BigInteger(800000000000));
+            unclaim.Value.Should().Be(new BigInteger(600000000000));
             unclaim.State.Should().BeTrue();
 
             // Transfer
