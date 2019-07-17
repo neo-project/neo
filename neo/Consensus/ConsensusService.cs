@@ -63,13 +63,13 @@ namespace Neo.Consensus
             if (verify && !tx.Verify(context.Snapshot, context.Transactions.Values))
             {
                 Log($"Invalid transaction: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
-                RequestChangeView(ChangeView.ChangeViewReason.TxInvalid);
+                RequestChangeView(ChangeViewReason.TxInvalid);
                 return false;
             }
             if (!Plugin.CheckPolicy(tx))
             {
                 Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
-                RequestChangeView(ChangeView.ChangeViewReason.TxRejectedByPolicy);
+                RequestChangeView(ChangeViewReason.TxRejectedByPolicy);
                 return false;
             }
             context.Transactions[tx.Hash] = tx;
@@ -124,7 +124,7 @@ namespace Neo.Consensus
                     // Communicate the network about my agreement to move to `viewNumber`
                     // if my last change view payload, `message`, has NewViewNumber lower than current view to change
                     if (message is null || message.NewViewNumber < viewNumber)
-                        localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(ChangeView.ChangeViewReason.WrongExpectedView) });
+                        localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(ChangeViewReason.WrongExpectedView) });
                 }
                 InitializeConsensus(viewNumber);
             }
@@ -547,11 +547,11 @@ namespace Neo.Consensus
                 }
                 else
                 {
-                    var reason = ChangeView.ChangeViewReason.Timeout;
+                    var reason = ChangeViewReason.Timeout;
 
                     if (context.Block != null && context.TransactionHashes.Count() > context.Transactions.Count)
                     {
-                        reason = ChangeView.ChangeViewReason.TxNotFound;
+                        reason = ChangeViewReason.TxNotFound;
                     }
 
                     RequestChangeView(reason);
@@ -582,7 +582,7 @@ namespace Neo.Consensus
             return Akka.Actor.Props.Create(() => new ConsensusService(localNode, taskManager, store, wallet)).WithMailbox("consensus-service-mailbox");
         }
 
-        private void RequestChangeView(ChangeView.ChangeViewReason reason)
+        private void RequestChangeView(ChangeViewReason reason)
         {
             if (context.WatchOnly) return;
             // Request for next view is always one view more than the current context.ViewNumber

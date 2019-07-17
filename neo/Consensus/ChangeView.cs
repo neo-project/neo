@@ -4,15 +4,6 @@ namespace Neo.Consensus
 {
     public class ChangeView : ConsensusMessage
     {
-        public enum ChangeViewReason : byte
-        {
-            Timeout = 0x0,
-            WrongExpectedView = 0x1,
-            TxNotFound = 0x2,
-            TxRejectedByPolicy = 0x3,
-            TxInvalid = 0x4,
-        }
-
         /// <summary>
         /// NewViewNumber is always set to the current ViewNumber asking changeview + 1
         /// </summary>
