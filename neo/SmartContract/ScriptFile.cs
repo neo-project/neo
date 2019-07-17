@@ -63,7 +63,7 @@ namespace Neo.SmartContract
         public void Serialize(BinaryWriter writer)
         {
             writer.Write((int)Magic);
-            writer.WriteFixedString(Compiler, 64);
+            writer.WriteFixedString(Compiler, 32);
 
             // Version
             writer.Write(Version.Major);
@@ -84,7 +84,7 @@ namespace Neo.SmartContract
                 throw new FormatException("Wrong magic");
             }
 
-            Compiler = reader.ReadFixedString(64);
+            Compiler = reader.ReadFixedString(32);
             Version = new Version(reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32());
             Script = reader.ReadVarBytes(1024 * 1024);
             ScriptHash = reader.ReadSerializable<UInt160>();

@@ -15,7 +15,7 @@ namespace Neo.UnitTests
             var script = new ScriptFile()
             {
                 Magic = ScriptFile.ScriptMagic.NEF3,
-                Compiler = "".PadLeft(64, ' '),
+                Compiler = "".PadLeft(32, ' '),
                 Version = new Version(1, 2, 3, 4),
                 Script = new byte[] { 0x01, 0x02, 0x03 }
             };
@@ -26,7 +26,7 @@ namespace Neo.UnitTests
             script = ScriptFile.FromByteArray(data);
 
             Assert.AreEqual(ScriptFile.ScriptMagic.NEF3, script.Magic);
-            Assert.AreEqual("".PadLeft(64, ' '), script.Compiler);
+            Assert.AreEqual("".PadLeft(32, ' '), script.Compiler);
             Assert.AreEqual(new Version(1, 2, 3, 4), script.Version);
             Assert.AreEqual(script.Script.ToScriptHash(), script.ScriptHash);
             CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, script.Script);
