@@ -3,13 +3,13 @@ using System.Linq;
 
 namespace Neo.SDK.RPC.Model
 {
-    public class SDK_GetPeersResult
+    public class RpcPeers
     {
-        public SDK_Peer[] Unconnected { get; set; }
-        
-        public SDK_Peer[] Bad { get; set; }
-        
-        public SDK_Peer[] Connected { get; set; }
+        public RpcPeer[] Unconnected { get; set; }
+
+        public RpcPeer[] Bad { get; set; }
+
+        public RpcPeer[] Connected { get; set; }
 
         public JObject ToJson()
         {
@@ -20,20 +20,20 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
 
-        public static SDK_GetPeersResult FromJson(JObject json)
+        public static RpcPeers FromJson(JObject json)
         {
-            SDK_GetPeersResult result = new SDK_GetPeersResult();
-            result.Unconnected = ((JArray)json["unconnected"]).Select(p => SDK_Peer.FromJson(p)).ToArray();
-            result.Bad = ((JArray)json["bad"]).Select(p => SDK_Peer.FromJson(p)).ToArray();
-            result.Connected = ((JArray)json["connected"]).Select(p => SDK_Peer.FromJson(p)).ToArray();
+            RpcPeers result = new RpcPeers();
+            result.Unconnected = ((JArray)json["unconnected"]).Select(p => RpcPeer.FromJson(p)).ToArray();
+            result.Bad = ((JArray)json["bad"]).Select(p => RpcPeer.FromJson(p)).ToArray();
+            result.Connected = ((JArray)json["connected"]).Select(p => RpcPeer.FromJson(p)).ToArray();
             return result;
         }
     }
 
-    public class SDK_Peer
+    public class RpcPeer
     {
         public string Address { get; set; }
-        
+
         public int Port { get; set; }
 
         public JObject ToJson()
@@ -44,9 +44,9 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
 
-        public static SDK_Peer FromJson(JObject json)
+        public static RpcPeer FromJson(JObject json)
         {
-            SDK_Peer peer = new SDK_Peer();
+            RpcPeer peer = new RpcPeer();
             peer.Address = json["address"].AsString();
             peer.Port = int.Parse(json["port"].AsString());
             return peer;

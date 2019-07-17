@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Neo.SDK.RPC.Model
 {
-    public class SDK_InvokeScriptResult
+    public class RpcInvokeResult
     {
         [JsonProperty(PropertyName = "script")]
         public string Script { get; set; }
@@ -16,7 +16,7 @@ namespace Neo.SDK.RPC.Model
         public string GasConsumed { get; set; }
 
         [JsonProperty(PropertyName = "stack")]
-        public SDK_Stack[] Stack { get; set; }
+        public RpcStack[] Stack { get; set; }
 
         [JsonProperty(PropertyName = "tx")]
         public string Tx { get; set; }
@@ -32,19 +32,19 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
 
-        public static SDK_InvokeScriptResult FromJson(JObject json)
+        public static RpcInvokeResult FromJson(JObject json)
         {
-            SDK_InvokeScriptResult invokeScriptResult = new SDK_InvokeScriptResult();
+            RpcInvokeResult invokeScriptResult = new RpcInvokeResult();
             invokeScriptResult.Script = json["script"].AsString();
             invokeScriptResult.State = json["state"].AsString();
             invokeScriptResult.GasConsumed = json["gas_consumed"].AsString();
             invokeScriptResult.Tx = json["tx"].AsString();
-            invokeScriptResult.Stack = ((JArray)json["stack"]).Select(p => SDK_Stack.FromJson(p)).ToArray();
+            invokeScriptResult.Stack = ((JArray)json["stack"]).Select(p => RpcStack.FromJson(p)).ToArray();
             return invokeScriptResult;
         }
     }
 
-    public class SDK_Stack
+    public class RpcStack
     {
         public string Type { get; set; }
         
@@ -58,9 +58,9 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
 
-        public static SDK_Stack FromJson(JObject json)
+        public static RpcStack FromJson(JObject json)
         {
-            SDK_Stack stackJson = new SDK_Stack();
+            RpcStack stackJson = new RpcStack();
             stackJson.Type = json["type"].AsString();
             stackJson.Value = json["value"].AsString();
             return stackJson;

@@ -3,7 +3,7 @@ using Neo.Network.P2P.Payloads;
 
 namespace Neo.SDK.RPC.Model
 {
-    public class SDK_BlockHeader
+    public class RpcBlockHeader
     {
         public Header Header { get; set; }
 
@@ -22,9 +22,9 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
 
-        public static SDK_BlockHeader FromJson(JObject json)
+        public static RpcBlockHeader FromJson(JObject json)
         {
-            SDK_BlockHeader block = new SDK_BlockHeader();
+            RpcBlockHeader block = new RpcBlockHeader();
             block.Header = Header.FromJson(json);
             if (json["confirmations"] != null)
             {

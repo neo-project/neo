@@ -4,11 +4,11 @@ using System.Numerics;
 
 namespace Neo.SDK.RPC.Model
 {
-    public class SDK_Nep5Balances
+    public class RpcNep5Balances
     {
         public string Address { get; set; }
         
-        public SDK_Nep5Balance[] Balances { get; set; }
+        public RpcNep5Balance[] Balances { get; set; }
 
         public JObject ToJson()
         {
@@ -18,17 +18,17 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
 
-        public static SDK_Nep5Balances FromJson(JObject json)
+        public static RpcNep5Balances FromJson(JObject json)
         {
-            SDK_Nep5Balances nep5Balance = new SDK_Nep5Balances();
+            RpcNep5Balances nep5Balance = new RpcNep5Balances();
             nep5Balance.Address = json["address"].AsString();
             //List<Balance> listBalance = new List<Balance>();
-            nep5Balance.Balances = ((JArray)json["balance"]).Select(p => SDK_Nep5Balance.FromJson(p)).ToArray();
+            nep5Balance.Balances = ((JArray)json["balance"]).Select(p => RpcNep5Balance.FromJson(p)).ToArray();
             return nep5Balance;
         }
     }
 
-    public class SDK_Nep5Balance
+    public class RpcNep5Balance
     {
         public UInt160 AssetHash { get; set; }
         
@@ -45,9 +45,9 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
 
-        public static SDK_Nep5Balance FromJson(JObject json)
+        public static RpcNep5Balance FromJson(JObject json)
         {
-            SDK_Nep5Balance balance = new SDK_Nep5Balance();
+            RpcNep5Balance balance = new RpcNep5Balance();
             balance.AssetHash = UInt160.Parse(json["asset_hash"].AsString());
             balance.Amount = BigInteger.Parse(json["amount"].AsString());
             balance.LastUpdatedBlock = uint.Parse(json["last_updated_block"].AsString());

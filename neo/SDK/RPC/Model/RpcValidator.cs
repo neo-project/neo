@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace Neo.SDK.RPC.Model
 {
-    public class SDK_Validator
+    public class RpcValidator
     {
         public string PublicKey { get; set; }
 
@@ -20,9 +20,9 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
 
-        public static SDK_Validator FromJson(JObject json)
+        public static RpcValidator FromJson(JObject json)
         {
-            SDK_Validator validator = new SDK_Validator();
+            RpcValidator validator = new RpcValidator();
             validator.PublicKey = json["publickey"].AsString();
             validator.Votes = BigInteger.Parse(json["votes"].AsString());
             validator.Active = json["active"].AsBoolean();

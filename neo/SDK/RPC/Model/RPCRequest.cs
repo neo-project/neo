@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Neo.SDK.RPC.Model
 {
-    public class RPCRequest
+    public class RpcRequest
     {
         public int Id { get; set; }
         
@@ -13,12 +13,9 @@ namespace Neo.SDK.RPC.Model
         
         public JObject[] Params { get; set; }
 
-        /// <summary>
-        /// Parse from json
-        /// </summary>
-        public static RPCRequest FromJson(JObject json)
+        public static RpcRequest FromJson(JObject json)
         {
-            return new RPCRequest
+            return new RpcRequest
             {
                 Id = (int)json["id"].AsNumber(),
                 Jsonrpc = json["jsonrpc"].AsString(),

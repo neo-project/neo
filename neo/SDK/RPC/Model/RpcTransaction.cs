@@ -3,7 +3,7 @@ using Neo.Network.P2P.Payloads;
 
 namespace Neo.SDK.RPC.Model
 {
-    public class SDK_Transaction
+    public class RpcTransaction
     {
         public Transaction Transaction { get; set; }
 
@@ -25,9 +25,9 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
 
-        public static SDK_Transaction FromJson(JObject json)
+        public static RpcTransaction FromJson(JObject json)
         {
-            SDK_Transaction transaction = new SDK_Transaction();
+            RpcTransaction transaction = new RpcTransaction();
             transaction.Transaction = Transaction.FromJson(json);
             if (json["confirmations"] != null)
             {
