@@ -4,9 +4,9 @@ using System.IO;
 
 namespace Neo.SmartContract
 {
-    public class ScriptFile : ISerializable
+    public class NefFile : ISerializable
     {
-        public enum ScriptMagic : int
+        public enum NefMagic : int
         {
             /// <summary>
             /// NEO Executable Format 3
@@ -17,7 +17,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Magic
         /// </summary>
-        public ScriptMagic Magic { get; set; }
+        public NefMagic Magic { get; set; }
 
         /// <summary>
         /// Compiler
@@ -40,7 +40,7 @@ namespace Neo.SmartContract
         public UInt160 ScriptHash { get; set; }
 
         public int Size =>
-            sizeof(ScriptMagic) +       // Engine
+            sizeof(NefMagic) +       // Engine
             Compiler.GetVarSize() +     // Compiler
             (sizeof(int) * 4) +         // Version
             Script.GetVarSize() +       // Script
@@ -51,12 +51,12 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="script">Script</param>
         /// <returns>Return script header</returns>
-        public static ScriptFile FromByteArray(byte[] script)
+        public static NefFile FromByteArray(byte[] script)
         {
             using (var stream = new MemoryStream(script))
             using (var reader = new BinaryReader(stream))
             {
-                return reader.ReadSerializable<ScriptFile>();
+                return reader.ReadSerializable<NefFile>();
             }
         }
 
@@ -77,9 +77,9 @@ namespace Neo.SmartContract
 
         public void Deserialize(BinaryReader reader)
         {
-            Magic = (ScriptMagic)reader.ReadInt32();
+            Magic = (NefMagic)reader.ReadInt32();
 
-            if (Magic != ScriptMagic.NEF3)
+            if (Magic != NefMagic.NEF3)
             {
                 throw new FormatException("Wrong magic");
             }

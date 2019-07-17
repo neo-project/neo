@@ -7,14 +7,14 @@ using System;
 namespace Neo.UnitTests
 {
     [TestClass]
-    public class UT_ScriptFile
+    public class UT_NefFile
     {
         [TestMethod]
         public void ParseTest()
         {
-            var script = new ScriptFile()
+            var script = new NefFile()
             {
-                Magic = ScriptFile.ScriptMagic.NEF3,
+                Magic = NefFile.NefMagic.NEF3,
                 Compiler = "".PadLeft(32, ' '),
                 Version = new Version(1, 2, 3, 4),
                 Script = new byte[] { 0x01, 0x02, 0x03 }
@@ -23,9 +23,9 @@ namespace Neo.UnitTests
             script.ScriptHash = script.Script.ToScriptHash();
 
             var data = script.ToArray();
-            script = ScriptFile.FromByteArray(data);
+            script = NefFile.FromByteArray(data);
 
-            Assert.AreEqual(ScriptFile.ScriptMagic.NEF3, script.Magic);
+            Assert.AreEqual(NefFile.NefMagic.NEF3, script.Magic);
             Assert.AreEqual("".PadLeft(32, ' '), script.Compiler);
             Assert.AreEqual(new Version(1, 2, 3, 4), script.Version);
             Assert.AreEqual(script.Script.ToScriptHash(), script.ScriptHash);
@@ -35,9 +35,9 @@ namespace Neo.UnitTests
         [TestMethod]
         public void LimitTest()
         {
-            var script = new ScriptFile()
+            var script = new NefFile()
             {
-                Magic = ScriptFile.ScriptMagic.NEF3,
+                Magic = NefFile.NefMagic.NEF3,
                 Compiler = "".PadLeft(byte.MaxValue, ' '),
                 Version = new Version(1, 2, 3, 4),
                 Script = new byte[1024 * 1024],
@@ -55,14 +55,14 @@ namespace Neo.UnitTests
             script.ScriptHash = script.Script.ToScriptHash();
             var data = script.ToArray();
 
-            Assert.ThrowsException<FormatException>(() => ScriptFile.FromByteArray(data));
+            Assert.ThrowsException<FormatException>(() => NefFile.FromByteArray(data));
 
             // Wrong script hash
 
             script.Script = new byte[1024 * 1024];
             data = script.ToArray();
 
-            Assert.ThrowsException<FormatException>(() => ScriptFile.FromByteArray(data));
+            Assert.ThrowsException<FormatException>(() => NefFile.FromByteArray(data));
         }
     }
 }
