@@ -12,6 +12,7 @@ using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -289,7 +290,7 @@ namespace Neo.SmartContract
                 engine.Snapshot.Contracts.Add(hash_new, contract);
                 if (contract.HasStorage)
                 {
-                    foreach (var pair in engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).ToArray())
+                    if (!Parallel.ForEach(engine.Snapshot.Storages.Find(engine.CurrentScriptHash.ToArray()).ToArray(), (pair) =>
                     {
                         engine.Snapshot.Storages.Add(new StorageKey
                         {
@@ -300,6 +301,9 @@ namespace Neo.SmartContract
                             Value = pair.Value.Value,
                             IsConstant = false
                         });
+                    }).IsCompleted)
+                    {
+                        return false;
                     }
                 }
                 Contract_Destroy(engine);

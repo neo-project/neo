@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Neo.IO.Caching
 {
@@ -62,7 +63,8 @@ namespace Neo.IO.Caching
 
         public void Commit()
         {
-            foreach (Trackable trackable in GetChangeSet())
+            Parallel.ForEach(GetChangeSet(), (trackable) =>
+            {
                 switch (trackable.State)
                 {
                     case TrackState.Added:
@@ -75,6 +77,7 @@ namespace Neo.IO.Caching
                         DeleteInternal(trackable.Key);
                         break;
                 }
+            });
         }
 
         public DataCache<TKey, TValue> CreateSnapshot()
