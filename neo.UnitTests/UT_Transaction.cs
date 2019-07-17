@@ -78,7 +78,7 @@ namespace Neo.UnitTests
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
             uut.Script.GetVarSize().Should().Be(33);
-            uut.Size.Should().Be(82);
+            uut.Size.Should().Be(83);
         }
 
         private NEP6Wallet GenerateTestWallet()
@@ -148,8 +148,8 @@ namespace Neo.UnitTests
                 // Sign
 
                 var data = new ContractParametersContext(tx);
-                Assert.IsTrue(walletA.Sign(data));
-                Assert.IsTrue(walletB.Sign(data));
+                Assert.IsTrue(walletA.Sign(data, WitnessScope.Global, UInt160.Zero));
+                Assert.IsTrue(walletB.Sign(data, WitnessScope.Global, UInt160.Zero));
                 Assert.IsTrue(data.Completed);
 
                 tx.Witnesses = data.GetWitnesses();
@@ -221,7 +221,7 @@ namespace Neo.UnitTests
                 // Sign
 
                 var data = new ContractParametersContext(tx);
-                Assert.IsTrue(wallet.Sign(data));
+                Assert.IsTrue(wallet.Sign(data, WitnessScope.Global, UInt160.Zero));
                 tx.Witnesses = data.GetWitnesses();
 
                 // Fast check
@@ -268,7 +268,7 @@ namespace Neo.UnitTests
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
             jObj["hash"].AsString().Should().Be("0xee00d595ccd48a650f62adaccbb9c979e2dc7ef66fb5b1413f0f74d563a2d9c6");
-            jObj["size"].AsNumber().Should().Be(82);
+            jObj["size"].AsNumber().Should().Be(83);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
             jObj["net_fee"].AsString().Should().Be("0");

@@ -75,7 +75,7 @@ namespace Neo.UnitTests
             // Creating proposed block
             Header header = new Header();
             TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal);
-            header.Size.Should().Be(101);
+            header.Size.Should().Be(102);
 
             Console.WriteLine($"header {header} hash {header.Hash} timstamp {timestampVal}");
 
@@ -221,7 +221,7 @@ namespace Neo.UnitTests
             copiedContext.Block.Timestamp.Should().Be(consensusContext.Block.Timestamp);
             copiedContext.Block.NextConsensus.Should().Be(consensusContext.Block.NextConsensus);
             copiedContext.TransactionHashes.ShouldAllBeEquivalentTo(consensusContext.TransactionHashes);
-            copiedContext.Transactions.ShouldAllBeEquivalentTo(consensusContext.Transactions);
+            copiedContext.Transactions.Keys.ShouldAllBeEquivalentTo(consensusContext.Transactions.Keys);
             copiedContext.Transactions.Values.ShouldAllBeEquivalentTo(consensusContext.Transactions.Values);
             copiedContext.PreparationPayloads.ShouldAllBeEquivalentTo(consensusContext.PreparationPayloads);
             copiedContext.CommitPayloads.ShouldAllBeEquivalentTo(consensusContext.CommitPayloads);
@@ -567,6 +567,8 @@ namespace Neo.UnitTests
                 ConsensusMessage = message,
                 Witness = new Witness
                 {
+                    Scope = WitnessScope.Global,
+                    ScopedHash = UInt160.Zero,
                     InvocationScript = witnessInvocationScript,
                     VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[validatorIndex])
                 }
