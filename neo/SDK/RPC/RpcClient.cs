@@ -26,7 +26,7 @@ namespace Neo.SDK
 
         private JObject RpcSend(string method, params JObject[] paraArgs)
         {
-            var request = new RPCRequest
+            var request = new RpcRequest
             {
                 Id = 1,
                 Jsonrpc = "2.0",
@@ -50,13 +50,13 @@ namespace Neo.SDK
             return RpcSend("getblock", hashOrIndex).AsString();
         }
 
-        public SDK_Block GetBlock(string hashOrIndex)
+        public RpcBlock GetBlock(string hashOrIndex)
         {
             if (int.TryParse(hashOrIndex, out int index))
             {
-                return SDK_Block.FromJson(RpcSend("getblock", index, true));
+                return RpcBlock.FromJson(RpcSend("getblock", index, true));
             }
-            return SDK_Block.FromJson(RpcSend("getblock", hashOrIndex, true));
+            return RpcBlock.FromJson(RpcSend("getblock", hashOrIndex, true));
         }
 
         public int GetBlockCount()
@@ -78,13 +78,13 @@ namespace Neo.SDK
             return RpcSend("getblockheader", hashOrIndex).AsString();
         }
 
-        public SDK_BlockHeader GetBlockHeader(string hashOrIndex)
+        public RpcBlockHeader GetBlockHeader(string hashOrIndex)
         {
             if (int.TryParse(hashOrIndex, out int index))
             {
-                return SDK_BlockHeader.FromJson(RpcSend("getblockheader", index, true));
+                return RpcBlockHeader.FromJson(RpcSend("getblockheader", index, true));
             }
-            return SDK_BlockHeader.FromJson(RpcSend("getblockheader", hashOrIndex, true));
+            return RpcBlockHeader.FromJson(RpcSend("getblockheader", hashOrIndex, true));
         }
 
         public string GetBlockSysFee(int height)
@@ -102,9 +102,9 @@ namespace Neo.SDK
             return ContractState.FromJson(RpcSend("getcontractstate", hash));
         }
 
-        public SDK_GetPeersResult GetPeers()
+        public RpcPeers GetPeers()
         {
-            return SDK_GetPeersResult.FromJson(RpcSend("getpeers"));
+            return RpcPeers.FromJson(RpcSend("getpeers"));
         }
 
         public string[] GetRawMempool()
@@ -112,9 +112,9 @@ namespace Neo.SDK
             return ((JArray)RpcSend("getrawmempool")).Select(p => p.AsString()).ToArray();
         }
 
-        public SDK_RawMemPool GetRawMempoolBoth()
+        public RpcRawMemPool GetRawMempoolBoth()
         {
-            return SDK_RawMemPool.FromJson(RpcSend("getrawmempool"));
+            return RpcRawMemPool.FromJson(RpcSend("getrawmempool"));
         }
 
         public string GetRawTransactionHex(string txid)
@@ -122,10 +122,9 @@ namespace Neo.SDK
             return RpcSend("getrawtransaction", txid).AsString();
         }
 
-        public SDK_Transaction GetRawTransaction(string txid)
+        public RpcTransaction GetRawTransaction(string txid)
         {
-            // verbose = true;
-            return SDK_Transaction.FromJson(RpcSend("getrawtransaction", txid, true));
+            return RpcTransaction.FromJson(RpcSend("getrawtransaction", txid, true));
         }
 
         public string GetStorage(string script_hash, string key)
@@ -138,29 +137,29 @@ namespace Neo.SDK
             return uint.Parse(RpcSend("gettransactionheight", txid).AsString());
         }
 
-        public SDK_Validator[] GetValidators()
+        public RpcValidator[] GetValidators()
         {
-            return ((JArray)RpcSend("getvalidators")).Select(p => SDK_Validator.FromJson(p)).ToArray();
+            return ((JArray)RpcSend("getvalidators")).Select(p => RpcValidator.FromJson(p)).ToArray();
         }
 
-        public SDK_Version GetVersion()
+        public RpcVersion GetVersion()
         {
-            return SDK_Version.FromJson(RpcSend("getversion"));
+            return RpcVersion.FromJson(RpcSend("getversion"));
         }
 
-        public SDK_InvokeScriptResult InvokeFunction(string address, string function, SDK_Stack[] stacks)
+        public RpcInvokeResult InvokeFunction(string address, string function, RpcStack[] stacks)
         {
-            return SDK_InvokeScriptResult.FromJson(RpcSend("invokefunction", address, function, stacks.Select(p => p.ToJson()).ToArray()));
+            return RpcInvokeResult.FromJson(RpcSend("invokefunction", address, function, stacks.Select(p => p.ToJson()).ToArray()));
         }
 
-        public SDK_InvokeScriptResult InvokeScript(string script)
+        public RpcInvokeResult InvokeScript(string script)
         {
-            return SDK_InvokeScriptResult.FromJson(RpcSend("invokescript", script));
+            return RpcInvokeResult.FromJson(RpcSend("invokescript", script));
         }
 
-        public SDK_Plugin[] ListPlugins()
+        public RpcPlugin[] ListPlugins()
         {
-            return ((JArray)RpcSend("listplugins")).Select(p => SDK_Plugin.FromJson(p)).ToArray();
+            return ((JArray)RpcSend("listplugins")).Select(p => RpcPlugin.FromJson(p)).ToArray();
         }
 
         public bool SendRawTransaction(string rawTransaction)
@@ -173,9 +172,9 @@ namespace Neo.SDK
             return RpcSend("submitblock", block).AsBoolean();
         }
 
-        public SDK_ValidateAddressResult ValidateAddress(string address)
+        public RpcValidateAddressResult ValidateAddress(string address)
         {
-            return SDK_ValidateAddressResult.FromJson(RpcSend("validateaddress", address));
+            return RpcValidateAddressResult.FromJson(RpcSend("validateaddress", address));
         }
 
     }

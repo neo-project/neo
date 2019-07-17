@@ -2,7 +2,7 @@
 
 namespace Neo.SDK.RPC.Model
 {
-    public class SDK_Version
+    public class RpcVersion
     {
         public int TcpPort { get; set; }
 
@@ -22,9 +22,9 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
 
-        public static SDK_Version FromJson(JObject json)
+        public static RpcVersion FromJson(JObject json)
         {
-            SDK_Version version = new SDK_Version();
+            RpcVersion version = new RpcVersion();
             version.TcpPort = int.Parse(json["tcpPort"].AsString());
             version.WsPort = int.Parse(json["wsPort"].AsString());
             version.Nonce = uint.Parse(json["nonce"].AsString());

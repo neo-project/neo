@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Neo.SDK.RPC.Model
 {
-    public class SDK_Plugin
+    public class RpcPlugin
     {
         public string Name { get; set; }
         
@@ -20,9 +20,9 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
 
-        public static SDK_Plugin FromJson(JObject json)
+        public static RpcPlugin FromJson(JObject json)
         {
-            SDK_Plugin plugin = new SDK_Plugin();
+            RpcPlugin plugin = new RpcPlugin();
             plugin.Name = json["name"].AsString();
             plugin.Version = json["version"].AsString();
             plugin.Interfaces = ((JArray)json["interfaces"]).Select(p => p.AsString()).ToArray();

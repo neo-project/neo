@@ -5,24 +5,21 @@ namespace Neo.SDK.RPC.Model
     /// <summary>
     /// RPC Response from rpc server
     /// </summary>
-    public class RPCResponse
+    public class RpcResponse
     {
         public int? Id { get; set; }
 
         public string Jsonrpc { get; set; }
 
-        public RPCResponseError Error { get; set; }
+        public RpcResponseError Error { get; set; }
 
         public JObject Result { get; set; }
 
         public string RawResponse { get; set; }
 
-        /// <summary>
-        /// Parse from json
-        /// </summary>
-        public static RPCResponse FromJson(JObject json)
+        public static RpcResponse FromJson(JObject json)
         {
-            var response = new RPCResponse
+            var response = new RpcResponse
             {
                 Id = (int?)json["id"]?.AsNumber(),
                 Jsonrpc = json["jsonrpc"].AsString(),
@@ -31,7 +28,7 @@ namespace Neo.SDK.RPC.Model
 
             if (json["error"] != null)
             {
-                response.Error = RPCResponseError.FromJson(json["error"]);
+                response.Error = RpcResponseError.FromJson(json["error"]);
             }
 
             return response;
@@ -48,7 +45,7 @@ namespace Neo.SDK.RPC.Model
         }
     }
 
-    public class RPCResponseError
+    public class RpcResponseError
     {
         public int Code { get; set; }
 
@@ -56,12 +53,9 @@ namespace Neo.SDK.RPC.Model
 
         public JObject Data { get; set; }
 
-        /// <summary>
-        /// Parse from json
-        /// </summary>
-        public static RPCResponseError FromJson(JObject json)
+        public static RpcResponseError FromJson(JObject json)
         {
-            return new RPCResponseError
+            return new RpcResponseError
             {
                 Code = (int)json["code"].AsNumber(),
                 Message = json["message"].AsString(),

@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Neo.SDK.RPC.Model
 {
-    public class SDK_RawMemPool
+    public class RpcRawMemPool
     {
         public uint Height { get; set; }
         
@@ -20,9 +20,9 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
 
-        public static SDK_RawMemPool FromJson(JObject json)
+        public static RpcRawMemPool FromJson(JObject json)
         {
-            SDK_RawMemPool rawMemPool = new SDK_RawMemPool();
+            RpcRawMemPool rawMemPool = new RpcRawMemPool();
             rawMemPool.Height = uint.Parse(json["height"].AsString());
             rawMemPool.Verified = ((JArray)json["verified"]).Select(p => p.AsString()).ToArray();
             rawMemPool.UnVerified = ((JArray)json["unverified"]).Select(p => p.AsString()).ToArray();

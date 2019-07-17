@@ -2,7 +2,7 @@
 
 namespace Neo.SDK.RPC.Model
 {
-    public class SDK_ValidateAddressResult
+    public class RpcValidateAddressResult
     {
         public string Address { get; set; }
         
@@ -16,9 +16,9 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
 
-        public static SDK_ValidateAddressResult FromJson(JObject json)
+        public static RpcValidateAddressResult FromJson(JObject json)
         {
-            SDK_ValidateAddressResult validateAddress = new SDK_ValidateAddressResult();
+            RpcValidateAddressResult validateAddress = new RpcValidateAddressResult();
             validateAddress.Address = json["address"].AsString();
             validateAddress.IsValid = json["isvalid"].AsBoolean();
             return validateAddress;

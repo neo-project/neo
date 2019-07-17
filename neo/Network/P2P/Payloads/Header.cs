@@ -58,7 +58,8 @@ namespace Neo.Network.P2P.Payloads
         public new static Header FromJson(JObject json)
         {
             Header header = new Header();
-            (header as BlockBase).FromJson(json);
+            BlockBase blockBase = header;
+            blockBase.FromJson(json);
             return header;
         }
 
