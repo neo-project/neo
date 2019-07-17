@@ -72,6 +72,16 @@ namespace Neo.UnitTests.IO.Caching
             items.ElementAt(0).Value.Should().Be(new MyValue("value1"));
             items.Count().Should().Be(1);
 
+            items = cloneCache.Find(new MyKey("key2").ToArray());
+            items.ElementAt(0).Key.Should().Be(new MyKey("key2"));
+            items.ElementAt(0).Value.Should().Be(new MyValue("value2"));
+            items.Count().Should().Be(1);
+
+            items = cloneCache.Find(new MyKey("key3").ToArray());
+            items.ElementAt(0).Key.Should().Be(new MyKey("key3"));
+            items.ElementAt(0).Value.Should().Be(new MyValue("value3"));
+            items.Count().Should().Be(1);
+
             items = cloneCache.Find(new MyKey("key4").ToArray());
             items.Count().Should().Be(0);
         }

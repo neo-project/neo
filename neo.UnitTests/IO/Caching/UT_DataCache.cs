@@ -350,14 +350,30 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Delete(new MyKey("key4"));      // trackable.State = TrackState.Deleted 
 
             var items = myDataCache.GetChangeSet();
-            int i = 1;
+            int i = 0;
             foreach (var item in items)
             {
+                i++;
                 item.Key.Should().Be(new MyKey("key" + i));
                 item.Item.Should().Be(new MyValue("value" + i));
-                i++;
             }
+            i.Should().Be(4);
         }
+
+        [TestMethod]
+        public void TestGetAndChange()
+        {
+            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));                  //  trackable.State = TrackState.Added 
+            myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
+            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
+            myDataCache.Delete(new MyKey("key3"));                                      //  trackable.State = TrackState.Deleted 
+
+            myDataCache.GetAndChange(new MyKey("key1"), () => new MyValue("value_bk_1")).Should().Be(new MyValue("value1"));
+            myDataCache.GetAndChange(new MyKey("key2"), () => new MyValue("value_bk_2")).Should().Be(new MyValue("value2"));
+            myDataCache.GetAndChange(new MyKey("key3"), () => new MyValue("value_bk_3")).Should().Be(new MyValue("value_bk_3"));
+            myDataCache.GetAndChange(new MyKey("key4"), () => new MyValue("value_bk_4")).Should().Be(new MyValue("value_bk_4"));
+        }
+
 
         [TestMethod]
         public void TestGetOrAdd()
