@@ -13,13 +13,23 @@ namespace Neo.UnitTests.Extensions
 {
     public static class Nep5NativeContractExtensions
     {
+        internal class UtWitness : Witness
+        {
+            private UInt160 _ScriptHash;
+            public override UInt160 ScriptHash => _ScriptHash;
+            public UtWitness(UInt160 scriptHash)
+            {
+                _ScriptHash = scriptHash;
+            }
+        }
+
         internal class ManualWitness : IVerifiable
         {
             private readonly UInt160[] _hashForVerify;
 
             public Witness[] Witnesses
             {
-                get => throw new NotImplementedException();
+                get => _hashForVerify.Select(u => new UtWitness(u) { Scope = WitnessScope.Global }).ToArray();
                 set => throw new NotImplementedException();
             }
 

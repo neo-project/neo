@@ -30,6 +30,8 @@ namespace Neo.UnitTests
                 Attributes = new TransactionAttribute[0],
                 Witnesses = new Witness[]{ new Witness
                 {
+                    Scope = WitnessScope.Global,
+                    ScopedHash = UInt160.Zero,
                     InvocationScript = new byte[0],
                     VerificationScript = new byte[0]
                 } }
@@ -90,6 +92,8 @@ namespace Neo.UnitTests
                 {
                     new Witness
                     {
+                        Scope = WitnessScope.Global,
+                        ScopedHash = UInt160.Zero,
                         InvocationScript = new byte[0],
                         VerificationScript = new byte[0]
                     }
