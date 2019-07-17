@@ -1,4 +1,3 @@
-using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
@@ -42,7 +41,7 @@ namespace Neo.UnitTests
                 scriptHash2 = script.ToArray().ToScriptHash();
 
                 snapshot.Contracts.Delete(scriptHash2);
-                snapshot.Contracts.Add(scriptHash2, new Ledger.ContractState()
+                snapshot.Contracts.Add(scriptHash2, new Neo.Ledger.ContractState()
                 {
                     Script = script.ToArray(),
                     Manifest = ContractManifest.CreateDefault(scriptHash2),
