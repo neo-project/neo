@@ -1,10 +1,7 @@
-﻿using Neo.IO;
-using Neo.IO.Caching;
-using Neo.Ledger;
-
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
+using Neo.IO;
+using Neo.IO.Caching;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,7 +16,7 @@ namespace Neo.UnitTests.IO.Caching
 
         public int Size => Key.Length;
 
-        public MyKey() {}
+        public MyKey() { }
 
         public MyKey(string val)
         {
@@ -61,7 +58,7 @@ namespace Neo.UnitTests.IO.Caching
         public int Size => Value.Length;
 
 
-        public MyValue() {}
+        public MyValue() { }
 
 
         public MyValue(string val)
@@ -236,7 +233,7 @@ namespace Neo.UnitTests.IO.Caching
                 myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
                 false.Should().BeTrue();
             }
-            catch(ArgumentException e)
+            catch (ArgumentException e)
             {
                 e.Should().NotBeNull();
             }
@@ -272,7 +269,6 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.InnerDict[new MyKey("key1")].Should().Be(new MyValue("value1"));
             myDataCache.InnerDict.ContainsKey(new MyKey("key2")).Should().BeFalse();
             myDataCache.InnerDict[new MyKey("key3")].Should().Be(new MyValue("value4"));
-
 
             //try
             //{   // This case canot be accessed.
@@ -312,13 +308,13 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
             myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
 
-            myDataCache.DeleteWhere((k,v) => k.Key.StartsWith("key"));
+            myDataCache.DeleteWhere((k, v) => k.Key.StartsWith("key"));
             myDataCache.Commit();
             myDataCache.TryGet(new MyKey("key1")).Should().BeNull();
             myDataCache.TryGet(new MyKey("key2")).Should().BeNull();
             myDataCache.InnerDict.ContainsKey(new MyKey("key1")).Should().BeFalse();
             myDataCache.InnerDict.ContainsKey(new MyKey("key2")).Should().BeFalse();
-            
+
             //This case canot be accessed.
             //myDataCache.InnerDict.ContainsKey(new MyKey("key3")).Should().BeFalse();
             //myDataCache.InnerDict.ContainsKey(new MyKey("key4")).Should().BeFalse();
@@ -367,13 +363,13 @@ namespace Neo.UnitTests.IO.Caching
         public void TestGetOrAdd()
         {
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));                  //  trackable.State = TrackState.Added 
-            myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));        
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));        
+            myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
+            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
             myDataCache.Delete(new MyKey("key3"));                                      //  trackable.State = TrackState.Deleted 
 
-            myDataCache.GetOrAdd(new MyKey("key1"), ()=> new MyValue("value_bk_1")).Should().Be(new MyValue("value1"));
-            myDataCache.GetOrAdd(new MyKey("key2"), ()=> new MyValue("value_bk_2")).Should().Be(new MyValue("value2"));
-            myDataCache.GetOrAdd(new MyKey("key3"), ()=> new MyValue("value_bk_3")).Should().Be(new MyValue("value_bk_3"));
+            myDataCache.GetOrAdd(new MyKey("key1"), () => new MyValue("value_bk_1")).Should().Be(new MyValue("value1"));
+            myDataCache.GetOrAdd(new MyKey("key2"), () => new MyValue("value_bk_2")).Should().Be(new MyValue("value2"));
+            myDataCache.GetOrAdd(new MyKey("key3"), () => new MyValue("value_bk_3")).Should().Be(new MyValue("value_bk_3"));
             myDataCache.GetOrAdd(new MyKey("key4"), () => new MyValue("value_bk_4")).Should().Be(new MyValue("value_bk_4"));
         }
 

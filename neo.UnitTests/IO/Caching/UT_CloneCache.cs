@@ -1,9 +1,7 @@
-﻿using Neo.IO;
-using Neo.IO.Caching;
-
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
+using Neo.IO;
+using Neo.IO.Caching;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -53,7 +51,6 @@ namespace Neo.UnitTests.IO.Caching
             cloneCache.TryGet(new MyKey("key1")).Should().BeNull();
             myDataCache.TryGet(new MyKey("key1")).Should().BeNull();
 
-
             // This case cannot be access.
             //myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
             //cloneCache.Delete(new MyKey("key2"));   //  trackable.State = TrackState.Deleted 
@@ -91,11 +88,12 @@ namespace Neo.UnitTests.IO.Caching
             cloneCache[new MyKey("key2")].Should().Be(new MyValue("value2"));
             cloneCache[new MyKey("key3")].Should().Be(new MyValue("value3"));
 
-            try {
+            try
+            {
                 var item = cloneCache[new MyKey("key4")];
                 false.Should().BeTrue();
             }
-            catch(KeyNotFoundException e)
+            catch (KeyNotFoundException e)
             {
                 e.Should().NotBeNull();
             }
@@ -131,7 +129,7 @@ namespace Neo.UnitTests.IO.Caching
             cloneCache[new MyKey("key2")].Should().Be(new MyValue("value_new_2"));
             cloneCache[new MyKey("key3")].Should().Be(new MyValue("value_new_3"));
             myDataCache[new MyKey("key2")].Should().Be(new MyValue("value_new_2"));
-            
+
             // This case cannot be access
             // myDataCache.InnerDict[new MyKey("key3")].Should().Be(new MyValue("value_new_3"));
         }
