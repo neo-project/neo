@@ -90,12 +90,16 @@ namespace Neo.Network.RPC
             return json;
         }
 
-        private static JObject GetRelayResult(RelayResultReason reason)
+        private static JObject GetRelayResult(RelayResultReason reason, UInt256 hash)
         {
             switch (reason)
             {
                 case RelayResultReason.Succeed:
-                    return true;
+                    {
+                        var ret = new JObject();
+                        ret["hash"] = hash.ToString();
+                        return ret;
+                    }
                 case RelayResultReason.AlreadyExists:
                     throw new RpcException(-501, "Block or transaction already exists and cannot be sent repeatedly.");
                 case RelayResultReason.OutOfMemory:
@@ -606,13 +610,13 @@ namespace Neo.Network.RPC
         private JObject SendRawTransaction(Transaction tx)
         {
             RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
-            return GetRelayResult(reason);
+            return GetRelayResult(reason, tx.Hash);
         }
 
         private JObject SubmitBlock(Block block)
         {
             RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(block).Result;
-            return GetRelayResult(reason);
+            return GetRelayResult(reason, block.Hash);
         }
 
         private JObject ValidateAddress(string address)

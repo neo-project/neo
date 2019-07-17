@@ -15,9 +15,9 @@ namespace Neo.UnitTests.Extensions
     {
         internal class ManualWitness : IVerifiable
         {
-            private readonly UInt160 _hashForVerify;
+            private readonly UInt160[] _hashForVerify;
 
-            public Witness Witness
+            public Witness[] Witnesses
             {
                 get => throw new NotImplementedException();
                 set => throw new NotImplementedException();
@@ -25,19 +25,16 @@ namespace Neo.UnitTests.Extensions
 
             public int Size => 0;
 
-            public ManualWitness(UInt160 hashForVerify)
+            public ManualWitness(params UInt160[] hashForVerify)
             {
-                _hashForVerify = hashForVerify;
+                _hashForVerify = hashForVerify ?? new UInt160[0];
             }
 
             public void Deserialize(BinaryReader reader) { }
 
             public void DeserializeUnsigned(BinaryReader reader) { }
 
-            public UInt160 GetScriptHashForVerification(Persistence.Snapshot snapshot)
-            {
-                return _hashForVerify;
-            }
+            public UInt160[] GetScriptHashesForVerifying(Persistence.Snapshot snapshot) => _hashForVerify;
 
             public void Serialize(BinaryWriter writer) { }
 

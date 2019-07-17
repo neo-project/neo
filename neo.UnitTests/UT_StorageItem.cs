@@ -27,7 +27,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Value_Set()
         {
-            byte[] val = new byte[] { 0x42, 0x32};
+            byte[] val = new byte[] { 0x42, 0x32 };
             uut.Value = val;
             uut.Value.Length.Should().Be(2);
             uut.Value[0].Should().Be(val[0]);
@@ -56,7 +56,7 @@ namespace Neo.UnitTests
             StorageItem newSi = ((ICloneable<StorageItem>)uut).Clone();
             newSi.Value.Length.Should().Be(10);
             newSi.Value[0].Should().Be(0x42);
-            for (int i=1; i<10; i++)
+            for (int i = 1; i < 10; i++)
             {
                 newSi.Value[i].Should().Be(0x20);
             }
