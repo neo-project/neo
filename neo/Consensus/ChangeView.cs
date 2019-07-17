@@ -31,23 +31,23 @@ namespace Neo.Consensus
         public uint Timestamp;
 
         public override int Size => base.Size +
-            sizeof(ChangeViewReason) +  // Reason
-            sizeof(uint);               // Timestamp
+            sizeof(uint) +              // Timestamp
+            sizeof(ChangeViewReason);   // Reason
 
         public ChangeView() : base(ConsensusMessageType.ChangeView) { }
 
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Reason = (ChangeViewReason)reader.ReadByte();
             Timestamp = reader.ReadUInt32();
+            Reason = (ChangeViewReason)reader.ReadByte();
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.Write((byte)Reason);
             writer.Write(Timestamp);
+            writer.Write((byte)Reason);
         }
     }
 }
