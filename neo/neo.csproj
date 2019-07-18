@@ -37,4 +37,10 @@
     <PackageReference Include="Replicon.Cryptography.SCrypt" Version="1.1.6.13" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="SDK\SC\" />
+    <Folder Include="SDK\TX\" />
+    <Folder Include="SDK\Wallet\" />
+  </ItemGroup>
+
 </Project>
