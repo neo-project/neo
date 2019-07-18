@@ -174,7 +174,7 @@ namespace Neo
 
         public static ulong ToTimestampMS(this DateTime time)
         {
-            return (ulong)(time.ToUniversalTime() - unixEpoch.ToUniversalTime()).TotalMilliseconds;
+            return (ulong)(time.ToUniversalTime() - unixEpoch).TotalMilliseconds;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
