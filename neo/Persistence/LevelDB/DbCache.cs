@@ -1,4 +1,5 @@
-﻿using Neo.IO;
+﻿using LevelDB;
+using Neo.IO;
 using Neo.IO.Caching;
 using Neo.IO.Data.LevelDB;
 using System;
@@ -18,19 +19,19 @@ namespace Neo.Persistence.LevelDB
         public DbCache(DB db, ReadOptions options, WriteBatch batch, byte prefix)
         {
             this.db = db;
-            this.options = options ?? ReadOptions.Default;
+            this.options = options ?? new ReadOptions();
             this.batch = batch;
             this.prefix = prefix;
         }
 
         protected override void AddInternal(TKey key, TValue value)
         {
-            batch?.Put(prefix, key, value);
+            batch?.Put(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), value.ToArray());
         }
 
         public override void DeleteInternal(TKey key)
         {
-            batch?.Delete(prefix, key);
+            batch?.Delete(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray());
         }
 
         protected override IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix)
@@ -50,7 +51,7 @@ namespace Neo.Persistence.LevelDB
 
         protected override void UpdateInternal(TKey key, TValue value)
         {
-            batch?.Put(prefix, key, value);
+            batch?.Put(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), value.ToArray());
         }
     }
 }

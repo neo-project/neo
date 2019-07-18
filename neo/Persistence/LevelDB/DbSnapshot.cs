@@ -1,8 +1,8 @@
-﻿using Neo.IO.Caching;
-using Neo.IO.Data.LevelDB;
+﻿using LevelDB;
+using Neo.IO.Caching;
 using Neo.IO.Wrappers;
 using Neo.Ledger;
-using LSnapshot = Neo.IO.Data.LevelDB.Snapshot;
+using LSnapshot = LevelDB.SnapShot;
 
 namespace Neo.Persistence.LevelDB
 {
@@ -23,7 +23,7 @@ namespace Neo.Persistence.LevelDB
         public DbSnapshot(DB db)
         {
             this.db = db;
-            this.snapshot = db.GetSnapshot();
+            this.snapshot = db.CreateSnapshot();
             this.batch = new WriteBatch();
             ReadOptions options = new ReadOptions { FillCache = false, Snapshot = snapshot };
             Blocks = new DbCache<UInt256, TrimmedBlock>(db, options, batch, Prefixes.DATA_Block);
@@ -38,7 +38,7 @@ namespace Neo.Persistence.LevelDB
         public override void Commit()
         {
             base.Commit();
-            db.Write(WriteOptions.Default, batch);
+            db.Write(batch, new WriteOptions());
         }
 
         public override void Dispose()

@@ -1,6 +1,6 @@
-﻿using Neo.IO;
+﻿using LevelDB;
+using Neo.IO;
 using Neo.IO.Caching;
-using Neo.IO.Data.LevelDB;
 using System;
 
 namespace Neo.Persistence.LevelDB
@@ -17,26 +17,25 @@ namespace Neo.Persistence.LevelDB
             : base(factory)
         {
             this.db = db;
-            this.options = options ?? ReadOptions.Default;
+            this.options = options ?? new ReadOptions();
             this.batch = batch;
             this.prefix = prefix;
         }
 
         protected override void AddInternal(T item)
         {
-            batch?.Put(prefix, item.ToArray());
+            batch?.Put(new byte[] { prefix }, item.ToArray());
         }
 
         protected override T TryGetInternal()
         {
-            if (!db.TryGet(options, prefix, out Slice slice))
-                return null;
-            return slice.ToArray().AsSerializable<T>();
+            var value = db.Get(new byte[] { prefix }, options);
+            return value?.AsSerializable<T>();
         }
 
         protected override void UpdateInternal(T item)
         {
-            batch?.Put(prefix, item.ToArray());
+            batch?.Put(new byte[] { prefix }, item.ToArray());
         }
     }
 }

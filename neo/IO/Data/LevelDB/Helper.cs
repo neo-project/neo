@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LevelDB;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,7 +9,7 @@ namespace Neo.IO.Data.LevelDB
     {
         public static void Delete(this WriteBatch batch, byte prefix, ISerializable key)
         {
-            batch.Delete(SliceBuilder.Begin(prefix).Add(key));
+            batch.Delete(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray());
         }
 
         public static IEnumerable<T> Find<T>(this DB db, ReadOptions options, byte prefix) where T : class, ISerializable, new()
@@ -18,9 +19,9 @@ namespace Neo.IO.Data.LevelDB
 
         public static IEnumerable<T> Find<T>(this DB db, ReadOptions options, Slice prefix, Func<Slice, Slice, T> resultSelector)
         {
-            using (Iterator it = db.NewIterator(options))
+            using (Iterator it = db.CreateIterator(options))
             {
-                for (it.Seek(prefix); it.Valid(); it.Next())
+                for (it.Seek(prefix.ToArray()); it.IsValid(); it.Next())
                 {
                     Slice key = it.Key();
                     byte[] x = key.ToArray();
@@ -34,33 +35,29 @@ namespace Neo.IO.Data.LevelDB
 
         public static T Get<T>(this DB db, ReadOptions options, byte prefix, ISerializable key) where T : class, ISerializable, new()
         {
-            return db.Get(options, SliceBuilder.Begin(prefix).Add(key)).ToArray().AsSerializable<T>();
+            return db.Get(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), options).ToArray().AsSerializable<T>();
         }
 
         public static T Get<T>(this DB db, ReadOptions options, byte prefix, ISerializable key, Func<Slice, T> resultSelector)
         {
-            return resultSelector(db.Get(options, SliceBuilder.Begin(prefix).Add(key)));
+            return resultSelector(db.Get(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), options));
         }
 
         public static void Put(this WriteBatch batch, byte prefix, ISerializable key, ISerializable value)
         {
-            batch.Put(SliceBuilder.Begin(prefix).Add(key), value.ToArray());
+            batch.Put(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), value.ToArray());
         }
 
         public static T TryGet<T>(this DB db, ReadOptions options, byte prefix, ISerializable key) where T : class, ISerializable, new()
         {
-            Slice slice;
-            if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out slice))
-                return null;
-            return slice.ToArray().AsSerializable<T>();
+            var value = db.Get(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), options);
+            return value?.AsSerializable<T>();
         }
 
         public static T TryGet<T>(this DB db, ReadOptions options, byte prefix, ISerializable key, Func<Slice, T> resultSelector) where T : class
         {
-            Slice slice;
-            if (!db.TryGet(options, SliceBuilder.Begin(prefix).Add(key), out slice))
-                return null;
-            return resultSelector(slice);
+            var value = db.Get(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), options);
+            return value == null ? null : resultSelector(value);
         }
     }
 }
