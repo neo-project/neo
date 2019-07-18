@@ -1,12 +1,8 @@
 ﻿using Neo.Ledger;
-using Neo.Network.P2P.Payloads;
-using Neo.Network.RPC;
-using Neo.SDK.RPC.Model;
-using System.Collections.Generic;
+using Neo.Network.RPC.Model;
 
-namespace Neo.SDK.RPC
+namespace Neo.Network.RPC
 {
-
     /// <summary>
     /// Wrappar of NEO RPC APIs
     /// </summary>

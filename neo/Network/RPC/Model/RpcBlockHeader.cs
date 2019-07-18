@@ -1,11 +1,11 @@
 ﻿using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
 
-namespace Neo.SDK.RPC.Model
+namespace Neo.Network.RPC.Model
 {
-    public class RpcBlock
+    public class RpcBlockHeader
     {
-        public Block Block { get; set; }
+        public Header Header { get; set; }
 
         public int? Confirmations { get; set; }
 
@@ -13,7 +13,7 @@ namespace Neo.SDK.RPC.Model
 
         public JObject ToJson()
         {
-            JObject json = Block.ToJson();
+            JObject json = Header.ToJson();
             if (Confirmations != null)
             {
                 json["confirmations"] = Confirmations;
@@ -22,10 +22,10 @@ namespace Neo.SDK.RPC.Model
             return json;
         }
 
-        public static RpcBlock FromJson(JObject json)
+        public static RpcBlockHeader FromJson(JObject json)
         {
-            RpcBlock block = new RpcBlock();
-            block.Block = Block.FromJson(json);
+            RpcBlockHeader block = new RpcBlockHeader();
+            block.Header = Header.FromJson(json);
             if (json["confirmations"] != null)
             {
                 block.Confirmations = (int)json["confirmations"].AsNumber();
@@ -34,6 +34,4 @@ namespace Neo.SDK.RPC.Model
             return block;
         }
     }
-
-
 }

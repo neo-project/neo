@@ -6,13 +6,10 @@ using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC;
-using Neo.SDK;
-using Neo.SDK.RPC;
-using Neo.SDK.RPC.Model;
+using Neo.Network.RPC.Model;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
-using Newtonsoft.Json;
 using System;
 using System.Linq;
 using System.Net;
@@ -64,17 +61,16 @@ namespace Neo.UnitTests.SDK
         [TestMethod]
         public void TestErrorResponse()
         {
-            JObject response = RpcServer.CreateErrorResponse(null, -32700, "Parse error", "something");
+            JObject response = RpcServer.CreateErrorResponse(null, -32700, "Parse error");
             MockResponse(response.ToString());
             try
             {
                 var result = rpc.GetBlockHex("773dd2dae4a9c9275290f89b56e67d7363ea4826dfd4fc13cc01cf73a44b0d0e");
             }
-            catch (NeoSdkException ex)
+            catch (RpcException ex)
             {
                 Assert.AreEqual(-32700, ex.HResult);
                 Assert.AreEqual("Parse error", ex.Message);
-                Assert.AreEqual("something", ((JObject)ex.Data["data"]).AsString());
             }
         }
 
