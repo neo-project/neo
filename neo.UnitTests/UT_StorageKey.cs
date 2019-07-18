@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Ledger;
 
 namespace Neo.UnitTests
@@ -19,6 +20,19 @@ namespace Neo.UnitTests
         public void ScriptHash_Get()
         {
             uut.ScriptHash.Should().BeNull();
+        }
+
+        [TestMethod]
+        public void Size()
+        {
+            var ut = new StorageKey() { Key = new byte[17], ScriptHash = UInt160.Zero };
+            ut.ToArray().Length.Should().Be(((ISerializable)ut).Size);
+
+            ut = new StorageKey() { Key = new byte[0], ScriptHash = UInt160.Zero };
+            ut.ToArray().Length.Should().Be(((ISerializable)ut).Size);
+
+            ut = new StorageKey() { Key = new byte[16], ScriptHash = UInt160.Zero };
+            ut.ToArray().Length.Should().Be(((ISerializable)ut).Size);
         }
 
         [TestMethod]
@@ -113,6 +127,5 @@ namespace Neo.UnitTests
             uut.Key = TestUtils.GetByteArray(10, 0x42);
             uut.GetHashCode().Should().Be(806209853);
         }
-
     }
 }
