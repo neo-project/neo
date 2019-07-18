@@ -1,11 +1,14 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Persistence.LevelDB;
 using Neo.VM;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Threading;
 
 namespace Neo.UnitTests.Persistence
@@ -14,8 +17,8 @@ namespace Neo.UnitTests.Persistence
     public class UT_P_Helper
     {
         private LevelDBStore store;
-
         private string dbPath;
+        private static readonly object locker = new object();
 
         [TestInitialize]
         public void TestSetup()
@@ -65,6 +68,139 @@ namespace Neo.UnitTests.Persistence
         }
 
         [TestMethod]
+        public void TestAsSequence() {
+            lock (locker)
+            {
+                var neoSystem = new NeoSystem(store);
+                var blockchain = Blockchain.Singleton;
+                TestGetBlockByIndex(blockchain);
+                TestGetHeaderByIndex(blockchain);
+                TestGetNexBlockHash(blockchain);
+            }
+        }
+
+        public void TestGetBlockByIndex(Blockchain blockchain)
+        {
+            Snapshot snapshot = store.GetSnapshot();
+            TrimmedBlock block = new TrimmedBlock();
+            block.ConsensusData = new ConsensusData();
+            block.MerkleRoot = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02");
+            block.PrevHash = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
+            block.Timestamp = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp();
+            block.Index = 11;
+            block.NextConsensus = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
+            block.Witness = new Witness
+            {
+                InvocationScript = new byte[0],
+                VerificationScript = new[] { (byte)OpCode.PUSHT }
+            };
+            block.Hashes = new UInt256[] { TestUtils.GetTransaction().Hash };
+            snapshot.Blocks.Add(block.Hash, block);
+            snapshot.Commit();
+            Type type = blockchain.GetType();
+            FieldInfo info = type.GetField("header_index", BindingFlags.NonPublic | BindingFlags.Instance);
+            var header_index = (List<UInt256>)info.GetValue(blockchain);
+            header_index.Add(block.Hash);
+            Block storeBlock = snapshot.GetBlock(1);
+            header_index.RemoveAt(1);
+            Assert.AreEqual(block.MerkleRoot, storeBlock.MerkleRoot);
+            Assert.AreEqual(block.Timestamp, storeBlock.Timestamp);
+            Assert.AreEqual(block.PrevHash, storeBlock.PrevHash);
+            Assert.AreEqual(block.Index, storeBlock.Index);
+
+            snapshot.GetBlock(2).Should().BeNull();
+        }
+
+        public void TestGetHeaderByIndex(Blockchain blockchain)
+        {
+            Snapshot snapshot = store.GetSnapshot();
+            TrimmedBlock block = new TrimmedBlock
+            {
+                ConsensusData = new ConsensusData(),
+                MerkleRoot = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"),
+                PrevHash = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
+                Timestamp = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp(),
+                Index = 10,
+                NextConsensus = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
+                Witness = new Witness
+                {
+                    InvocationScript = new byte[0],
+                    VerificationScript = new[] { (byte)OpCode.PUSHT }
+                },
+                Hashes = new UInt256[] { TestUtils.GetTransaction().Hash }
+            };
+
+            snapshot.Blocks.Add(block.Hash, block);
+            snapshot.Commit();
+
+            Type type = blockchain.GetType();
+            FieldInfo info = type.GetField("header_index", BindingFlags.NonPublic | BindingFlags.Instance);
+            var header_index = (List<UInt256>)info.GetValue(blockchain);
+            header_index.Add(block.Hash);
+
+            var storeHeader = snapshot.GetHeader(1);
+            header_index.RemoveAt(1);
+            Assert.AreEqual(storeHeader.Index, block.Index);
+            Assert.AreEqual(storeHeader.MerkleRoot, block.MerkleRoot);
+            Assert.AreEqual(storeHeader.NextConsensus, block.NextConsensus);
+            Assert.AreEqual(storeHeader.PrevHash, block.PrevHash);
+            Assert.AreEqual(storeHeader.Timestamp, block.Timestamp);
+
+            snapshot.GetHeader(2).Should().BeNull();
+        }
+
+        public void TestGetNexBlockHash(Blockchain blockchain)
+        {
+            Snapshot snapshot = store.GetSnapshot();
+            TrimmedBlock block1 = new TrimmedBlock
+            {
+                ConsensusData = new ConsensusData(),
+                MerkleRoot = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
+                PrevHash = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
+                Timestamp = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp(),
+                Index = 1,
+                NextConsensus = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
+                Witness = new Witness
+                {
+                    InvocationScript = new byte[0],
+                    VerificationScript = new[] { (byte)OpCode.PUSHT }
+                },
+                Hashes = new UInt256[] { TestUtils.GetTransaction().Hash }
+            };
+            TrimmedBlock block2 = new TrimmedBlock
+            {
+                ConsensusData = new ConsensusData(),
+                MerkleRoot = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"),
+                PrevHash = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"),
+                Timestamp = new DateTime(1968, 06, 02, 0, 0, 0, DateTimeKind.Utc).ToTimestamp(),
+                Index = 2,
+                NextConsensus = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff02"),
+                Witness = new Witness
+                {
+                    InvocationScript = new byte[0],
+                    VerificationScript = new[] { (byte)OpCode.PUSHT }
+                },
+                Hashes = new UInt256[] { TestUtils.GetTransaction().Hash }
+            };
+
+            snapshot.Blocks.Add(block1.Hash, block1);
+            snapshot.Blocks.Add(block2.Hash, block2);
+            snapshot.Commit();
+
+            Type type = blockchain.GetType();
+            FieldInfo info = type.GetField("header_index", BindingFlags.NonPublic | BindingFlags.Instance);
+            var header_index = (List<UInt256>)info.GetValue(blockchain);
+            header_index.Add(block1.Hash);
+            header_index.Add(block2.Hash);
+
+            var nextBlockHash = snapshot.GetNextBlockHash(block1.Hash);
+            header_index.RemoveAt(2);
+            header_index.RemoveAt(1);
+            nextBlockHash.Should().Be(block2.Hash);
+            snapshot.GetNextBlockHash(block2.Hash).Should().BeNull();
+        }
+
+        [TestMethod]
         public void TestContainsTransaction()
         {
             Snapshot snapshot = store.GetSnapshot();
@@ -104,7 +240,7 @@ namespace Neo.UnitTests.Persistence
                 MerkleRoot = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"),
                 PrevHash = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
                 Timestamp = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp(),
-                Index = 10,
+                Index = 15,
                 NextConsensus = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
                 Witness = new Witness
                 {
@@ -150,6 +286,8 @@ namespace Neo.UnitTests.Persistence
             snapshot.Commit();
             Assert.AreEqual(snapshot.GetHeader(block.Hash), block.Header);
         }
+
+        
 
         [TestMethod]
         public void TestGetTransaction()

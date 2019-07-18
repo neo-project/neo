@@ -17,8 +17,7 @@ namespace Neo.Persistence.LevelDB
         {
             this.db = new DB(new Options { CreateIfMissing = true }, path);
             byte[] value = db.Get(new byte[] { Prefixes.SYS_Version }, new ReadOptions());
-            if (value == null) return;
-            if (Version.TryParse(Encoding.UTF8.GetString(value), out Version version) && version >= Version.Parse("2.9.1")) return;
+            if (value != null && Version.TryParse(Encoding.UTF8.GetString(value), out Version version) && version >= Version.Parse("2.9.1")) return;
             WriteBatch batch = new WriteBatch();
             ReadOptions options = new ReadOptions { FillCache = false };
             using (Iterator it = db.CreateIterator(options))
