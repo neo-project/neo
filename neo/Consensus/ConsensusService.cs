@@ -188,7 +188,7 @@ namespace Neo.Consensus
             if (message.NewViewNumber <= expectedView)
                 return;
 
-            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber}");
+            Log($"{nameof(OnChangeViewReceived)}: height={payload.BlockIndex} view={message.ViewNumber} index={payload.ValidatorIndex} nv={message.NewViewNumber} reason={message.Reason}");
             context.ChangeViewPayloads[payload.ValidatorIndex] = payload;
             CheckExpectedView(message.NewViewNumber);
         }
@@ -597,7 +597,7 @@ namespace Neo.Consensus
                 RequestRecovery();
                 return;
             }
-            Log($"request change view: height={context.Block.Index} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted} nf={context.CountFailed}");
+            Log($"request change view: height={context.Block.Index} view={context.ViewNumber} nv={expectedView} nc={context.CountCommitted} nf={context.CountFailed} reason={reason}");
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeChangeView(reason) });
             CheckExpectedView(expectedView);
         }

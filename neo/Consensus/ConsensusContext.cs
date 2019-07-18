@@ -43,6 +43,8 @@ namespace Neo.Consensus
         private readonly Store store;
         private readonly Random random = new Random();
 
+        private bool nextBlockLight = false;
+
         public int F => (Validators.Length - 1) / 3;
         public int M => Validators.Length - F;
         public bool IsPrimary => MyIndex == Block.ConsensusData.PrimaryIndex;
@@ -213,6 +215,15 @@ namespace Neo.Consensus
             IEnumerable<Transaction> memoryPoolTransactions = Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions();
             foreach (IPolicyPlugin plugin in Plugin.Policies)
                 memoryPoolTransactions = plugin.FilterForBlock(memoryPoolTransactions);
+
+            if (nextBlockLight)
+            {
+                // Reduce the next proposal
+
+                nextBlockLight = false;
+                memoryPoolTransactions = memoryPoolTransactions.Take(memoryPoolTransactions.Count() / 2);
+            }
+
             List<Transaction> transactions = memoryPoolTransactions.ToList();
             TransactionHashes = transactions.Select(p => p.Hash).ToArray();
             Transactions = transactions.ToDictionary(p => p.Hash);
@@ -270,6 +281,15 @@ namespace Neo.Consensus
 
         public void Reset(byte viewNumber)
         {
+            // The last consensus was no agreement because some TX
+
+            nextBlockLight = ChangeViewPayloads?.Count(
+                    u =>
+                    {
+                        var reason = u.GetDeserializedMessage<ChangeView>().Reason;
+                        return reason == ChangeViewReason.TxInvalid || reason == ChangeViewReason.TxNotFound;
+                    }) > F;
+
             if (viewNumber == 0)
             {
                 Snapshot?.Dispose();
@@ -318,6 +338,11 @@ namespace Neo.Consensus
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
             if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int)Block.Index;
+
+            if (!IsPrimary)
+            {
+                nextBlockLight = false;
+            }
         }
 
         public void Save()
