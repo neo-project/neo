@@ -67,7 +67,6 @@ namespace Neo.UnitTests.Persistence
             Assert.AreEqual(block.PrevHash, storeBlock.PrevHash);
             Assert.AreEqual(block.Index, storeBlock.Index);
             Assert.AreEqual(block.Hashes[0].ToString(), storeBlock.Hashes[0].ToString());
-
         }
 
         [TestMethod]

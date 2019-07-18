@@ -17,7 +17,6 @@ namespace Neo.UnitTests.Persistence.LevelDB
     public class UT_LevelDBStore
     {
         private LevelDBStore store;
-
         private string dbPath;
 
         [TestInitialize]
@@ -79,7 +78,6 @@ namespace Neo.UnitTests.Persistence.LevelDB
             blocks.Delete(block.Hash);
             Assert.IsNull(blocks.TryGet(block.Hash));
             Assert.IsNull(blocks.TryGet(UInt256.Zero));
-
         }
 
         [TestMethod]
@@ -165,7 +163,6 @@ namespace Neo.UnitTests.Persistence.LevelDB
             var storeStorageItem = store.GetStorages().TryGet(key);
             Assert.AreEqual(storeStorageItem.Value.ToHexString(), storageItem.Value.ToHexString());
             Assert.AreEqual(storeStorageItem.IsConstant, storageItem.IsConstant);
-
         }
 
         [TestMethod]

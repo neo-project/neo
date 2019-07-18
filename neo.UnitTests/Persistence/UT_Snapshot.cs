@@ -44,9 +44,7 @@ namespace Neo.UnitTests.Persistence
     public class UT_Snapshot
     {
         private Snapshot snapshot;
-
         private LevelDBStore store;
-
         private string dbPath;
 
         [TestInitialize]
@@ -67,7 +65,6 @@ namespace Neo.UnitTests.Persistence
             store = null;
             TestUtils.DeleteFile(dbPath);
         }
-
 
         [TestMethod]
         public void TestGetCurrentHeaderHash()

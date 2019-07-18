@@ -68,7 +68,8 @@ namespace Neo.UnitTests.Persistence
         }
 
         [TestMethod]
-        public void TestAsSequence() {
+        public void TestAsSequence()
+        {
             lock (locker)
             {
                 var neoSystem = new NeoSystem(store);
@@ -227,7 +228,6 @@ namespace Neo.UnitTests.Persistence
             Assert.AreEqual(snapshot.ContainsTransaction(tx.Hash), true);
             bool result = snapshot.ContainsTransaction(UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000000"));
             Assert.AreEqual(result, false);
-
         }
 
         [TestMethod]
@@ -286,8 +286,6 @@ namespace Neo.UnitTests.Persistence
             snapshot.Commit();
             Assert.AreEqual(snapshot.GetHeader(block.Hash), block.Header);
         }
-
-        
 
         [TestMethod]
         public void TestGetTransaction()
