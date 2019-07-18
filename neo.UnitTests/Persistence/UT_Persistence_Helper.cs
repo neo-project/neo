@@ -1,11 +1,11 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Persistence.LevelDB;
-using System;
-using System.IO;
-using Neo.Persistence;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.Persistence.LevelDB;
 using Neo.VM;
+using System;
+using System.IO;
 using System.Threading;
 
 namespace Neo.UnitTests.Persistence
@@ -27,7 +27,6 @@ namespace Neo.UnitTests.Persistence
                 store = new LevelDBStore(dbPath);
             }
         }
-
 
         [TestCleanup]
         public void DeleteDir()
