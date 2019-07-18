@@ -1,10 +1,7 @@
 ﻿using Neo.IO.Json;
 
-namespace Neo.SDK.RPC.Model
+namespace Neo.Network.RPC.Model
 {
-    /// <summary>
-    /// RPC Response from rpc server
-    /// </summary>
     public class RpcResponse
     {
         public int? Id { get; set; }

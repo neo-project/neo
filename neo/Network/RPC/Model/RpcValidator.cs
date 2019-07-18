@@ -1,7 +1,7 @@
 ﻿using Neo.IO.Json;
 using System.Numerics;
 
-namespace Neo.SDK.RPC.Model
+namespace Neo.Network.RPC.Model
 {
     public class RpcValidator
     {

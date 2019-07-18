@@ -1,11 +1,11 @@
 ﻿using Neo.IO.Json;
-using Neo.SDK.RPC.Model;
+using Neo.Network.RPC.Model;
 using System;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Neo.SDK.RPC
+namespace Neo.Network.RPC
 {
     public class HttpService : IDisposable
     {
@@ -36,7 +36,7 @@ namespace Neo.SDK.RPC
 
             if (response.Error != null)
             {
-                throw new NeoSdkException(response.Error.Code, response.Error.Message, response.Error.Data);
+                throw new RpcException(response.Error.Code, response.Error.Message);
             }
 
             return response;

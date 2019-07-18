@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Neo.IO.Json;
+﻿using Neo.IO.Json;
 using Neo.Ledger;
-using Neo.Network.P2P.Payloads;
-using Neo.Network.RPC;
-using Neo.SDK.RPC;
-using Neo.SDK.RPC.Model;
+using Neo.Network.RPC.Model;
+using System;
+using System.Linq;
 
-namespace Neo.SDK
+namespace Neo.Network.RPC
 {
     public class RpcClient : IRpcClient, IDisposable
     {
