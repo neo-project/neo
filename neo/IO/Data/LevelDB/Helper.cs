@@ -35,12 +35,16 @@ namespace Neo.IO.Data.LevelDB
 
         public static T Get<T>(this DB db, ReadOptions options, byte prefix, ISerializable key) where T : class, ISerializable, new()
         {
-            return db.Get(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), options).ToArray().AsSerializable<T>();
+            var value = db.Get(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), options);
+            if (value == null) throw new LevelDBException("not found");
+            return value.AsSerializable<T>();
         }
 
         public static T Get<T>(this DB db, ReadOptions options, byte prefix, ISerializable key, Func<Slice, T> resultSelector)
         {
-            return resultSelector(db.Get(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), options));
+            var value = db.Get(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), options);
+            if (value == null) throw new LevelDBException("not found");
+            return resultSelector(value);
         }
 
         public static void Put(this WriteBatch batch, byte prefix, ISerializable key, ISerializable value)
