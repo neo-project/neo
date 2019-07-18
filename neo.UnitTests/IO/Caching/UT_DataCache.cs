@@ -206,20 +206,6 @@ namespace Neo.UnitTests.IO.Caching
             {
                 e.Should().NotBeNull();
             }
-
-            // This case cannot be accessed!
-            //  myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            //  myDataCache.Commit();
-            //  myDataCache.Delete(new MyKey("key1"));
-            //try
-            //{
-            //    MyValue value2 = myDataCache[new MyKey("key1")];
-            //    false.Should().BeTrue();
-            //}
-            //catch (KeyNotFoundException e)
-            //{
-            //    e.Should().NotBeNull();
-            //}
         }
 
         [TestMethod]
@@ -269,14 +255,6 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.InnerDict[new MyKey("key1")].Should().Be(new MyValue("value1"));
             myDataCache.InnerDict.ContainsKey(new MyKey("key2")).Should().BeFalse();
             myDataCache.InnerDict[new MyKey("key3")].Should().Be(new MyValue("value4"));
-
-            //try
-            //{   // This case canot be accessed.
-            //    myDataCache.Commit();
-            //}catch(ArgumentException e)
-            //{
-            //    e.Should().BeNull();
-            //}
         }
 
         [TestMethod]
@@ -314,10 +292,6 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.TryGet(new MyKey("key2")).Should().BeNull();
             myDataCache.InnerDict.ContainsKey(new MyKey("key1")).Should().BeFalse();
             myDataCache.InnerDict.ContainsKey(new MyKey("key2")).Should().BeFalse();
-
-            //This case canot be accessed.
-            //myDataCache.InnerDict.ContainsKey(new MyKey("key3")).Should().BeFalse();
-            //myDataCache.InnerDict.ContainsKey(new MyKey("key4")).Should().BeFalse();
         }
 
         [TestMethod]

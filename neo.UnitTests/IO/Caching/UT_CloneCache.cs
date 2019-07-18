@@ -35,9 +35,6 @@ namespace Neo.UnitTests.IO.Caching
 
             cloneCache.Commit();
             myDataCache[new MyKey("key1")].Should().Be(new MyValue("value1"));
-
-            // This case cannot be access
-            // myDataCache.InnerDict[new MyKey("key1")].Should().Be(new MyValue("value1"));
         }
 
 
@@ -50,13 +47,6 @@ namespace Neo.UnitTests.IO.Caching
 
             cloneCache.TryGet(new MyKey("key1")).Should().BeNull();
             myDataCache.TryGet(new MyKey("key1")).Should().BeNull();
-
-            // This case cannot be access.
-            //myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
-            //cloneCache.Delete(new MyKey("key2"));   //  trackable.State = TrackState.Deleted 
-            //cloneCache.Commit();
-            //cloneCache.TryGet(new MyKey("key2")).Should().BeNull();
-            //myDataCache.InnerDict.ContainsKey(new MyKey("key2")).Should().BeFalse();
         }
 
 
@@ -139,9 +129,6 @@ namespace Neo.UnitTests.IO.Caching
             cloneCache[new MyKey("key2")].Should().Be(new MyValue("value_new_2"));
             cloneCache[new MyKey("key3")].Should().Be(new MyValue("value_new_3"));
             myDataCache[new MyKey("key2")].Should().Be(new MyValue("value_new_2"));
-
-            // This case cannot be access
-            // myDataCache.InnerDict[new MyKey("key3")].Should().Be(new MyValue("value_new_3"));
         }
     }
 }
