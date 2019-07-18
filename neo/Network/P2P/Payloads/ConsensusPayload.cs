@@ -58,7 +58,6 @@ namespace Neo.Network.P2P.Payloads
             PrevHash.Size +     //PrevHash
             sizeof(uint) +      //BlockIndex
             sizeof(ushort) +    //ValidatorIndex
-            sizeof(uint) +      //Timestamp
             Data.GetVarSize() + //Data
             1 + Witness.Size;   //Witness
 
