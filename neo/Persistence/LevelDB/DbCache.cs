@@ -26,12 +26,12 @@ namespace Neo.Persistence.LevelDB
 
         protected override void AddInternal(TKey key, TValue value)
         {
-            batch?.Put(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), value.ToArray());
+            batch?.Put(SliceBuilder.Begin(prefix).Add(key).ToArray(), value.ToArray());
         }
 
         public override void DeleteInternal(TKey key)
         {
-            batch?.Delete(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray());
+            batch?.Delete(SliceBuilder.Begin(prefix).Add(key).ToArray());
         }
 
         protected override IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix)
@@ -51,7 +51,7 @@ namespace Neo.Persistence.LevelDB
 
         protected override void UpdateInternal(TKey key, TValue value)
         {
-            batch?.Put(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), value.ToArray());
+            batch?.Put(SliceBuilder.Begin(prefix).Add(key).ToArray(), value.ToArray());
         }
     }
 }
