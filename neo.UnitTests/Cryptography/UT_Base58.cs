@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using System;
 
 namespace Neo.UnitTests.Cryptography
 {
@@ -20,6 +21,8 @@ namespace Neo.UnitTests.Cryptography
         public void TestDecode()
         {
             Base58.Decode(encoded).Should().BeEquivalentTo(decoded);
+            Action action = () => Base58.Decode(encoded + "l").Should().BeEquivalentTo(decoded);
+            action.ShouldThrow<FormatException>();
         }
     }
 }
