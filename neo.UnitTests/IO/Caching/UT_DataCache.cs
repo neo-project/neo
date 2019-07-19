@@ -179,15 +179,10 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestAccessByNotFoundKey()
         {
-            try
-            {
-                MyValue value1 = myDataCache[new MyKey("key1")];
-                false.Should().BeTrue();
-            }
-            catch (KeyNotFoundException e)
-            {
-                e.Should().NotBeNull();
-            }
+            Action action = () => {
+                var item = myDataCache[new MyKey("key1")];
+            };
+            action.ShouldThrow<KeyNotFoundException>();
         }
 
         [TestMethod]
@@ -196,15 +191,10 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.InnerDict.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Delete(new MyKey("key1"));
 
-            try
-            {
-                MyValue value1 = myDataCache[new MyKey("key1")];
-                false.Should().BeTrue();
-            }
-            catch (KeyNotFoundException e)
-            {
-                e.Should().NotBeNull();
-            }
+            Action action = () => {
+                var item = myDataCache[new MyKey("key1")];
+            };
+            action.ShouldThrow<KeyNotFoundException>();
         }
 
         [TestMethod]
@@ -213,28 +203,15 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache[new MyKey("key1")].Should().Be(new MyValue("value1"));
 
-            try
-            {
-                myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-                false.Should().BeTrue();
-            }
-            catch (ArgumentException e)
-            {
-                e.Should().NotBeNull();
-            }
+            Action action = () => myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            action.ShouldThrow<ArgumentException>();
 
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
             myDataCache.Delete(new MyKey("key2"));                      // trackable.State = TrackState.Deleted    
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));  // trackable.State = TrackState.Changed
-            try
-            {
-                myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
-                false.Should().BeTrue();
-            }
-            catch (ArgumentException e)
-            {
-                e.Should().NotBeNull();
-            }
+     
+            action = () => myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
+            action.ShouldThrow<ArgumentException>();
         }
 
         [TestMethod]

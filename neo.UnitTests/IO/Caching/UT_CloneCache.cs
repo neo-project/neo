@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.IO.Caching;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -87,15 +88,10 @@ namespace Neo.UnitTests.IO.Caching
             cloneCache[new MyKey("key2")].Should().Be(new MyValue("value2"));
             cloneCache[new MyKey("key3")].Should().Be(new MyValue("value3"));
 
-            try
-            {
+            Action action = () => {
                 var item = cloneCache[new MyKey("key4")];
-                false.Should().BeTrue();
-            }
-            catch (KeyNotFoundException e)
-            {
-                e.Should().NotBeNull();
-            }
+            };
+            action.ShouldThrow<KeyNotFoundException>();
         }
 
         [TestMethod]
