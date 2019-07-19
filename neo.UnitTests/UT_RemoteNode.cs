@@ -1,4 +1,4 @@
-﻿using Akka.IO;
+using Akka.IO;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -9,6 +9,7 @@ using Neo.Network.P2P.Payloads;
 namespace Neo.UnitTests
 {
     [TestClass]
+    [NotReRunnable]
     public class UT_RemoteNode : TestKit
     {
         private static NeoSystem testBlockchain;
