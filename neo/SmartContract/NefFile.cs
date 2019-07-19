@@ -67,20 +67,6 @@ namespace Neo.SmartContract
             Script.GetVarSize() +       // Script
             sizeof(uint);               // Checksum
 
-        /// <summary>
-        /// Read Script Header from a binary
-        /// </summary>
-        /// <param name="script">Script</param>
-        /// <returns>Return script header</returns>
-        public static NefFile FromByteArray(byte[] script)
-        {
-            using (var stream = new MemoryStream(script))
-            using (var reader = new BinaryReader(stream))
-            {
-                return reader.ReadSerializable<NefFile>();
-            }
-        }
-
         public void Serialize(BinaryWriter writer)
         {
             writer.Write((int)Magic);

@@ -24,7 +24,7 @@ namespace Neo.UnitTests
             file.CheckSum = NefFile.ComputeChecksum(file);
 
             var data = file.ToArray();
-            file = NefFile.FromByteArray(data);
+            file = data.AsSerializable<NefFile>();
 
             Assert.AreEqual(NefFile.NefMagic.NEF3, file.Magic);
             Assert.AreEqual("".PadLeft(32, ' '), file.Compiler);
@@ -57,14 +57,14 @@ namespace Neo.UnitTests
             file.ScriptHash = file.Script.ToScriptHash();
             var data = file.ToArray();
 
-            Assert.ThrowsException<FormatException>(() => NefFile.FromByteArray(data));
+            Assert.ThrowsException<FormatException>(() => data.AsSerializable<NefFile>());
 
             // Wrong script hash
 
             file.Script = new byte[1024 * 1024];
             data = file.ToArray();
 
-            Assert.ThrowsException<FormatException>(() => NefFile.FromByteArray(data));
+            Assert.ThrowsException<FormatException>(() => data.AsSerializable<NefFile>());
 
             // Wrong checksum
 
@@ -72,7 +72,7 @@ namespace Neo.UnitTests
             data = file.ToArray();
             file.CheckSum = NefFile.ComputeChecksum(file) + 1;
 
-            Assert.ThrowsException<FormatException>(() => NefFile.FromByteArray(data));
+            Assert.ThrowsException<FormatException>(() => data.AsSerializable<NefFile>());
         }
     }
 }
