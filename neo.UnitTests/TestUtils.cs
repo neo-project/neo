@@ -109,16 +109,16 @@ namespace Neo.UnitTests
             return newObj;
         }
 
-        public static void DeleteFiles(string file)
+        public static void DeleteFiles(string folder)
         {
-            DirectoryInfo fileInfo = new DirectoryInfo(file)
+            DirectoryInfo fileInfo = new DirectoryInfo(folder)
             {
                 Attributes = FileAttributes.Normal & FileAttributes.Directory
             };
-            File.SetAttributes(file, FileAttributes.Normal);
-            if (Directory.Exists(file))
+            if (Directory.Exists(folder))
             {
-                foreach (string f in Directory.GetFileSystemEntries(file))
+                File.SetAttributes(folder, FileAttributes.Normal);
+                foreach (string f in Directory.GetFileSystemEntries(folder))
                 {
                     if (File.Exists(f))
                     {
@@ -129,7 +129,7 @@ namespace Neo.UnitTests
                         DeleteFiles(f);
                     }
                 }
-                Directory.Delete(file);
+                Directory.Delete(folder);
             }
         }
     }
