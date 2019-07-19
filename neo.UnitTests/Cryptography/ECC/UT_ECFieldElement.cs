@@ -1,9 +1,9 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.ECC;
 using System;
 using System.Numerics;
 using System.Reflection;
-using Neo.Cryptography.ECC;
 
 namespace Neo.UnitTests.Cryptography.ECC
 {
@@ -26,7 +26,7 @@ namespace Neo.UnitTests.Cryptography.ECC
         public void TestEquals()
         {
             BigInteger input = new BigInteger(100);
-            Object element = new ECFieldElement(input, ECCurve.Secp256k1);
+            object element = new ECFieldElement(input, ECCurve.Secp256k1);
             element.Equals(element).Should().BeTrue();
             element.Equals(1).Should().BeFalse();
 
