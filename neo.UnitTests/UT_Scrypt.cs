@@ -10,10 +10,10 @@ namespace Neo.UnitTests
         [TestMethod]
         public void DeriveKeyTest()
         {
-            int N = 16384, r = 8, p = 8;
+            int N = 32, r = 2, p = 2;
 
             var derivedkey = SCrypt.DeriveKey(new byte[] { 0x01, 0x02, 0x03 }, new byte[] { 0x04, 0x05, 0x06 }, N, r, p, 64).ToHexString();
-            Assert.AreEqual("2bb9c7bb9c392f0dd37821b76e42b01944902520f48d00946a51e72c960fba0a3c62a87d835c9df10a8ad66a04cdf02fbb10b9d7396c20959f28d6cb3ddfdffb", derivedkey);
+            Assert.AreEqual("b6274d3a81892c24335ab46a08ec16d040ac00c5943b212099a44b76a9b8102631ab988fa07fb35357cee7b0e3910098c0774c0e97399997676d890b2bf2bb25", derivedkey);
         }
     }
 }
