@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace Neo.UnitTests
 {
-    //[TestClass]
+    [TestClass]
     public class UT_Culture
     {
         // This test runs all the other unit tests in the project, with a variety of cultures
