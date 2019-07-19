@@ -1,11 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
-using Neo.IO.Wrappers;
 using Neo.Wallets.SQLite;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace Neo.UnitTests

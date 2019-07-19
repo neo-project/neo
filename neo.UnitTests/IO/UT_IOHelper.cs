@@ -409,7 +409,6 @@ namespace Neo.UnitTests.IO
         {
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
-
             Neo.IO.Helper.WriteBytesWithGrouping(writer, new byte[] { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
                                                                       0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
                                                                       0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
@@ -464,7 +463,6 @@ namespace Neo.UnitTests.IO
                     {
                         MemoryStream stream = new MemoryStream();
                         BinaryWriter writer = new BinaryWriter(stream);
-
                         Neo.IO.Helper.WriteFixedString(writer, "拉拉", Encoding.UTF8.GetBytes("拉拉").Length - 1);
                     }
                     catch (Exception e)
@@ -558,7 +556,6 @@ namespace Neo.UnitTests.IO
                     byte[] byteArray = new byte[stream.Length];
                     stream.Read(byteArray, 0, (int)stream.Length);
                     Assert.AreEqual(0xFF, byteArray[0]);
-                    //long value has 8 bytes
                     Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00 }), Encoding.Default.GetString(byteArray.Skip(1).Take(byteArray.Length - 1).ToArray()));
                 }
             }
