@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using System;
 using System.Collections.Generic;
@@ -15,9 +16,9 @@ namespace Neo.UnitTests.IO
         public void TestAsSerializableGeneric()
         {
             byte[] caseArray = new byte[] { 0x00,0x00,0x00,0x00,0x00,
-                                         0x00,0x00,0x00,0x00,0x00,
-                                         0x00,0x00,0x00,0x00,0x00,
-                                         0x00,0x00,0x00,0x00,0x00};
+                                            0x00,0x00,0x00,0x00,0x00,
+                                            0x00,0x00,0x00,0x00,0x00,
+                                            0x00,0x00,0x00,0x00,0x00 };
             UInt160 result = Neo.IO.Helper.AsSerializable<UInt160>(caseArray);
             Assert.AreEqual(UInt160.Zero, result);
         }
@@ -30,22 +31,16 @@ namespace Neo.UnitTests.IO
                 if (i == 0)
                 {
                     byte[] caseArray = new byte[] { 0x00,0x00,0x00,0x00,0x00,
-                                         0x00,0x00,0x00,0x00,0x00,
-                                         0x00,0x00,0x00,0x00,0x00,
-                                         0x00,0x00,0x00,0x00,0x00};
+                                                    0x00,0x00,0x00,0x00,0x00,
+                                                    0x00,0x00,0x00,0x00,0x00,
+                                                    0x00,0x00,0x00,0x00,0x00 };
                     ISerializable result = Neo.IO.Helper.AsSerializable(caseArray, typeof(UInt160));
                     Assert.AreEqual(UInt160.Zero, result);
                 }
                 else
                 {
-                    try
-                    {
-                        ISerializable result = Neo.IO.Helper.AsSerializable(new byte[0], typeof(Double));
-                    }
-                    catch (Exception e)
-                    {
-                        Assert.IsTrue(e is InvalidCastException);
-                    }
+                    Action action = () => Neo.IO.Helper.AsSerializable(new byte[0], typeof(Double));
+                    action.ShouldThrow<InvalidCastException>();
                 }
             }
         }
@@ -335,7 +330,6 @@ namespace Neo.UnitTests.IO
                     {
                         Assert.IsTrue(e is FormatException);
                     }
-
                 }
             }
         }
