@@ -14,7 +14,7 @@ using System.Threading;
 namespace Neo.UnitTests.Persistence
 {
     [TestClass]
-    public class UT_P_Helper
+    public class UT_Persistence_Helper
     {
         private LevelDBStore store;
         private string dbPath;
@@ -24,7 +24,7 @@ namespace Neo.UnitTests.Persistence
         public void TestSetup()
         {
             string threadName = Thread.CurrentThread.ManagedThreadId.ToString();
-            dbPath = Path.GetFullPath(nameof(UT_P_Helper) + string.Format("_Chain_{0}", new Random().Next(1, 1000000).ToString("X8")) + threadName);
+            dbPath = Path.GetFullPath(nameof(UT_Persistence_Helper) + string.Format("_Chain_{0}", new Random().Next(1, 1000000).ToString("X8")) + threadName);
             if (store == null)
             {
                 store = new LevelDBStore(dbPath);
@@ -259,7 +259,6 @@ namespace Neo.UnitTests.Persistence
             Assert.AreEqual(storeBlock.Index, block.Index);
             Assert.AreEqual(storeBlock.NextConsensus, block.NextConsensus);
             Assert.AreEqual(storeBlock.Witness, block.Witness);
-
         }
 
         [TestMethod]
@@ -298,13 +297,13 @@ namespace Neo.UnitTests.Persistence
                 SystemFee = 4200000000,
                 Attributes = new TransactionAttribute[0],
                 Witnesses = new[]
-            {
-                new Witness
                 {
-                    InvocationScript = new byte[0],
-                    VerificationScript = new byte[0]
+                    new Witness
+                    {
+                        InvocationScript = new byte[0],
+                        VerificationScript = new byte[0]
+                    }
                 }
-            }
             };
             TransactionState txState = new TransactionState();
             txState.Transaction = tx;

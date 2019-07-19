@@ -13,9 +13,7 @@ namespace Neo.UnitTests.Persistence.LevelDB
     public class UT_DbSnapshot
     {
         private Snapshot dbSnapshot;
-
         private LevelDBStore store;
-
         private string dbPath;
 
         [TestInitialize]

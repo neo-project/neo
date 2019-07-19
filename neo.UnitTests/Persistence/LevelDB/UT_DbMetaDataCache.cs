@@ -14,7 +14,6 @@ namespace Neo.UnitTests.Persistence.LevelDB
     public class UT_DbMetaDataCache
     {
         private DB db;
-
         private string DbPath;
 
         [TestInitialize]

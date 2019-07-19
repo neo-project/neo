@@ -17,7 +17,6 @@ namespace Neo.UnitTests.Persistence
     public class UT_Store
     {
         private LevelDBStore store;
-
         private string dbPath;
 
         [TestInitialize]
