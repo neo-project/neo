@@ -15,34 +15,22 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestGetPrivateKeyEncrypted()
+        public void TestSetAndGetPrivateKeyEncrypted()
         {
-            Account account = new Account();
-            account.PrivateKeyEncrypted = new byte[] { 0x01 };
+            Account account = new Account
+            {
+                PrivateKeyEncrypted = new byte[] { 0x01 }
+            };
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01 }), Encoding.Default.GetString(account.PrivateKeyEncrypted));
         }
 
         [TestMethod]
-        public void TestSetPrivateKeyEncrypted()
+        public void TestSetAndGetPublicKeyHash()
         {
-            Account account = new Account();
-            account.PrivateKeyEncrypted = new byte[] { 0x01 };
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01 }), Encoding.Default.GetString(account.PrivateKeyEncrypted));
-        }
-
-        [TestMethod]
-        public void TestGetPublicKeyHash()
-        {
-            Account account = new Account();
-            account.PublicKeyHash = new byte[] { 0x01 };
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01 }), Encoding.Default.GetString(account.PublicKeyHash));
-        }
-
-        [TestMethod]
-        public void TestSetPublicKeyHash()
-        {
-            Account account = new Account();
-            account.PublicKeyHash = new byte[] { 0x01 };
+            Account account = new Account
+            {
+                PublicKeyHash = new byte[] { 0x01 }
+            };
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01 }), Encoding.Default.GetString(account.PublicKeyHash));
         }
     }
