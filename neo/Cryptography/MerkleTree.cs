@@ -5,18 +5,15 @@ using System.Linq;
 
 namespace Neo.Cryptography
 {
-    /// <summary>
-    /// 哈希树
-    /// </summary>
     public class MerkleTree
     {
         private MerkleTreeNode root;
 
         public int Depth { get; private set; }
 
-        internal MerkleTree(UInt256[] hashes)
+        internal MerkleTree(IReadOnlyList<UInt256> hashes)
         {
-            if (hashes.Length == 0) throw new ArgumentException();
+            if (hashes.Count == 0) throw new ArgumentException();
             this.root = Build(hashes.Select(p => new MerkleTreeNode { Hash = p }).ToArray());
             int depth = 1;
             for (MerkleTreeNode i = root; i.LeftChild != null; i = i.LeftChild)
@@ -48,15 +45,10 @@ namespace Neo.Cryptography
             return Build(parents); //TailCall
         }
 
-        /// <summary>
-        /// 计算根节点的值
-        /// </summary>
-        /// <param name="hashes">子节点列表</param>
-        /// <returns>返回计算的结果</returns>
-        public static UInt256 ComputeRoot(UInt256[] hashes)
+        public static UInt256 ComputeRoot(IReadOnlyList<UInt256> hashes)
         {
-            if (hashes.Length == 0) throw new ArgumentException();
-            if (hashes.Length == 1) return hashes[0];
+            if (hashes.Count == 0) throw new ArgumentException();
+            if (hashes.Count == 1) return hashes[0];
             MerkleTree tree = new MerkleTree(hashes);
             return tree.root.Hash;
         }

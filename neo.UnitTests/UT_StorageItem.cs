@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Core;
 using Neo.IO;
+using Neo.Ledger;
 using System.IO;
 using System.Text;
 
@@ -27,7 +27,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Value_Set()
         {
-            byte[] val = new byte[] { 0x42, 0x32};
+            byte[] val = new byte[] { 0x42, 0x32 };
             uut.Value = val;
             uut.Value.Length.Should().Be(2);
             uut.Value[0].Should().Be(val[0]);
@@ -56,7 +56,7 @@ namespace Neo.UnitTests
             StorageItem newSi = ((ICloneable<StorageItem>)uut).Clone();
             newSi.Value.Length.Should().Be(10);
             newSi.Value[0].Should().Be(0x42);
-            for (int i=1; i<10; i++)
+            for (int i = 1; i < 10; i++)
             {
                 newSi.Value[i].Should().Be(0x20);
             }
@@ -65,7 +65,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Deserialize()
         {
-            byte[] data = new byte[] { 0, 10, 66, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
+            byte[] data = new byte[] { 10, 66, 32, 32, 32, 32, 32, 32, 32, 32, 32, 0 };
             int index = 0;
             using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
             {
@@ -97,10 +97,10 @@ namespace Neo.UnitTests
                 }
             }
 
-            byte[] requiredData = new byte[] { 0, 10, 66, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
+            byte[] requiredData = new byte[] { 10, 66, 32, 32, 32, 32, 32, 32, 32, 32, 32, 0 };
 
-            data.Length.Should().Be(12);
-            for (int i = 0; i < 12; i++)
+            data.Length.Should().Be(requiredData.Length);
+            for (int i = 0; i < requiredData.Length; i++)
             {
                 data[i].Should().Be(requiredData[i]);
             }

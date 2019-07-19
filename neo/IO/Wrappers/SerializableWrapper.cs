@@ -3,20 +3,25 @@ using System.IO;
 
 namespace Neo.IO.Wrappers
 {
-    public abstract class SerializableWrapper : ISerializable
+    public abstract class SerializableWrapper<T> : IEquatable<T>, IEquatable<SerializableWrapper<T>>, ISerializable
+        where T : struct, IEquatable<T>
     {
+        protected T value;
+
         public abstract int Size { get; }
 
         public abstract void Deserialize(BinaryReader reader);
-        public abstract void Serialize(BinaryWriter writer);
 
-        public static implicit operator SerializableWrapper(byte value)
+        public bool Equals(T other)
         {
-            return new ByteWrapper(value);
+            return value.Equals(other);
         }
-    }
 
-    public abstract class SerializableWrapper<T> : SerializableWrapper where T : IEquatable<T>
-    {
+        public bool Equals(SerializableWrapper<T> other)
+        {
+            return value.Equals(other.value);
+        }
+
+        public abstract void Serialize(BinaryWriter writer);
     }
 }

@@ -10,7 +10,7 @@ namespace Neo.Wallets
         public bool Lock;
         public Contract Contract;
 
-        public string Address => Wallet.ToAddress(ScriptHash);
+        public string Address => ScriptHash.ToAddress();
         public abstract bool HasKey { get; }
         public bool WatchOnly => Contract == null;
 

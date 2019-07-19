@@ -1,161 +1,62 @@
-﻿using Neo.Core;
-using Neo.Cryptography.ECC;
-using Neo.IO.Caching;
+﻿using Moq;
+using Neo.IO.Wrappers;
+using Neo.Ledger;
+using Neo.Persistence;
 using System;
-using System.Collections.Generic;
 
 namespace Neo.UnitTests
 {
-    public class TestBlockchain : Blockchain
+    public static class TestBlockchain
     {
-        private UInt256 _assetId;
+        private static NeoSystem TheNeoSystem;
+        private static Mock<Store> _Store;
 
-        /// <summary>
-        /// Return true if haven't got valid handle
-        /// </summary>
-        public override bool IsDisposed => false;
-
-        public TestBlockchain(UInt256 assetId)
+        public static Store GetStore()
         {
-            _assetId = assetId;
+            if (_Store == null) InitializeMockNeoSystem();
+            return _Store.Object;
         }
 
-        public override UInt256 CurrentBlockHash => throw new NotImplementedException();
-
-        public override UInt256 CurrentHeaderHash => throw new NotImplementedException();
-
-        public override uint HeaderHeight => throw new NotImplementedException();
-
-        public override uint Height => throw new NotImplementedException();
-
-        public override bool AddBlock(Block block)
+        public static NeoSystem InitializeMockNeoSystem()
         {
-            throw new NotImplementedException();
-        }
+            if (TheNeoSystem == null)
+            {
+                var mockSnapshot = new Mock<Snapshot>();
+                mockSnapshot.SetupGet(p => p.Blocks).Returns(new TestDataCache<UInt256, TrimmedBlock>());
+                mockSnapshot.SetupGet(p => p.Transactions).Returns(new TestDataCache<UInt256, TransactionState>());
+                mockSnapshot.SetupGet(p => p.Contracts).Returns(new TestDataCache<UInt160, ContractState>());
+                mockSnapshot.SetupGet(p => p.Storages).Returns(new TestDataCache<StorageKey, StorageItem>());
+                mockSnapshot.SetupGet(p => p.HeaderHashList).Returns(new TestDataCache<UInt32Wrapper, HeaderHashList>());
+                mockSnapshot.SetupGet(p => p.BlockHashIndex).Returns(new TestMetaDataCache<HashIndexState>());
+                mockSnapshot.SetupGet(p => p.HeaderHashIndex).Returns(new TestMetaDataCache<HashIndexState>());
 
-        public override bool ContainsBlock(UInt256 hash)
-        {
-            return true; // for verify in UT_Block
-        }
+                _Store = new Mock<Store>();
 
-        public override bool ContainsTransaction(UInt256 hash)
-        {
-            throw new NotImplementedException();
-        }
+                var defaultTx = TestUtils.CreateRandomHashTransaction();
+                _Store.Setup(p => p.GetBlocks()).Returns(new TestDataCache<UInt256, TrimmedBlock>());
+                _Store.Setup(p => p.GetTransactions()).Returns(new TestDataCache<UInt256, TransactionState>(
+                    new TransactionState
+                    {
+                        BlockIndex = 1,
+                        Transaction = defaultTx
+                    }));
 
-        public override bool ContainsUnspent(UInt256 hash, ushort index)
-        {
-            throw new NotImplementedException();
-        }
+                _Store.Setup(p => p.GetContracts()).Returns(new TestDataCache<UInt160, ContractState>());
+                _Store.Setup(p => p.GetStorages()).Returns(new TestDataCache<StorageKey, StorageItem>());
+                _Store.Setup(p => p.GetHeaderHashList()).Returns(new TestDataCache<UInt32Wrapper, HeaderHashList>());
+                _Store.Setup(p => p.GetBlockHashIndex()).Returns(new TestMetaDataCache<HashIndexState>());
+                _Store.Setup(p => p.GetHeaderHashIndex()).Returns(new TestMetaDataCache<HashIndexState>());
+                _Store.Setup(p => p.GetSnapshot()).Returns(mockSnapshot.Object);
 
-        public override MetaDataCache<T> GetMetaData<T>()
-        {
-            return new TestMetaDataCache<T>();
-        }
+                Console.WriteLine("initialize NeoSystem");
+                TheNeoSystem = new NeoSystem(_Store.Object); // new Mock<NeoSystem>(mockStore.Object);
 
-        public override DataCache<TKey, TValue> GetStates<TKey, TValue>()
-        {
-            return new TestDataCache<TKey, TValue>();
-        }
+                // Ensure that blockchain is loaded
 
-        public override void Dispose()
-        {
-            // do nothing
-        }
+                var blockchain = Blockchain.Singleton;
+            }
 
-        public override AccountState GetAccountState(UInt160 script_hash)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override AssetState GetAssetState(UInt256 asset_id)
-        {
-            if (asset_id == UInt256.Zero) return null;
-            UInt160 val = new UInt160(TestUtils.GetByteArray(20, asset_id.ToArray()[0]));
-            return new AssetState() { Issuer = val };
-        }
-
-        public override Block GetBlock(UInt256 hash)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override UInt256 GetBlockHash(uint height)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ContractState GetContract(UInt160 hash)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override IEnumerable<ValidatorState> GetEnrollments()
-        {
-            ECPoint ecp = TestUtils.StandbyValidators[0];
-            return new ValidatorState[] { new ValidatorState() { PublicKey = ecp } };
-        }
-
-        public override Header GetHeader(uint height)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override Header GetHeader(UInt256 hash)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override Block GetNextBlock(UInt256 hash)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override UInt256 GetNextBlockHash(UInt256 hash)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override StorageItem GetStorageItem(StorageKey key)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override long GetSysFeeAmount(UInt256 hash)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override Transaction GetTransaction(UInt256 hash, out int height)
-        {
-            height = 0;
-            // take part of the trans hash and use that for the scripthash of the testtransaction
-            return new TestTransaction(_assetId, TransactionType.ClaimTransaction, new UInt160(TestUtils.GetByteArray(20, hash.ToArray()[0])));
-        }
-
-        public override Dictionary<ushort, SpentCoin> GetUnclaimed(UInt256 hash)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override TransactionOutput GetUnspent(UInt256 hash, ushort index)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override IEnumerable<TransactionOutput> GetUnspent(UInt256 hash)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool IsDoubleSpend(Transaction tx)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override void AddHeaders(IEnumerable<Header> headers)
-        {
-            throw new NotImplementedException();
+            return TheNeoSystem;
         }
     }
 }

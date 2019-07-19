@@ -1,15 +1,15 @@
-﻿using Neo.VM;
+﻿using Neo.Network.P2P.Payloads;
 using System;
 
 namespace Neo.SmartContract
 {
     public class LogEventArgs : EventArgs
     {
-        public IScriptContainer ScriptContainer { get; }
+        public IVerifiable ScriptContainer { get; }
         public UInt160 ScriptHash { get; }
         public string Message { get; }
 
-        public LogEventArgs(IScriptContainer container, UInt160 script_hash, string message)
+        public LogEventArgs(IVerifiable container, UInt160 script_hash, string message)
         {
             this.ScriptContainer = container;
             this.ScriptHash = script_hash;

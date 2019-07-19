@@ -43,18 +43,6 @@ namespace Neo
             return result;
         }
 
-        public Fixed8 ToFixed8()
-        {
-            try
-            {
-                return new Fixed8((long)ChangeDecimals(8).value);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidCastException(ex.Message, ex);
-            }
-        }
-
         public override string ToString()
         {
             BigInteger divisor = BigInteger.Pow(10, decimals);

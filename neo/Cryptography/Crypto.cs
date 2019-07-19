@@ -1,11 +1,10 @@
-﻿using Neo.VM;
-using System;
+﻿using System;
 using System.Linq;
 using System.Security.Cryptography;
 
 namespace Neo.Cryptography
 {
-    public class Crypto : ICrypto
+    public class Crypto
     {
         public static readonly Crypto Default = new Crypto();
 

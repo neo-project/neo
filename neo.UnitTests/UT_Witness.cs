@@ -1,7 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Core;
 using Neo.IO.Json;
+using Neo.Network.P2P.Payloads;
 
 namespace Neo.UnitTests
 {
@@ -28,7 +28,7 @@ namespace Neo.UnitTests
             byte[] dataArray = new byte[] { 0, 32, 32, 20, 32, 32 };
             uut.InvocationScript = dataArray;
             uut.InvocationScript.Length.Should().Be(6);
-            Assert.AreEqual(uut.InvocationScript.ToHexString(), "002020142020");          
+            Assert.AreEqual(uut.InvocationScript.ToHexString(), "002020142020");
         }
 
         private void setupWitnessWithValues(Witness uut, int lenghtInvocation, int lengthVerification, out byte[] invocationScript, out byte[] verificationScript)
@@ -68,10 +68,9 @@ namespace Neo.UnitTests
 
             JObject json = uut.ToJson();
             Assert.IsTrue(json.ContainsProperty("invocation"));
-            Assert.IsTrue(json.ContainsProperty("verification"));            
+            Assert.IsTrue(json.ContainsProperty("verification"));
             Assert.AreEqual(json["invocation"].AsString(), "2020");
             Assert.AreEqual(json["verification"].AsString(), "202020");
-
         }
     }
 }

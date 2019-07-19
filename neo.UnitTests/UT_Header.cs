@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Network.P2P.Payloads;
 using System.IO;
 using System.Text;
-using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Core;
 
 namespace Neo.UnitTests
 {
@@ -23,31 +21,21 @@ namespace Neo.UnitTests
         public void Size_Get()
         {
             UInt256 val256 = UInt256.Zero;
-            UInt256 merkRootVal;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            TestUtils.SetupHeaderWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
-            // blockbase 4 + 32 + 32 + 4 + 4 + 8 + 20 + 1 + 3
+            TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
+            // blockbase 4 + 32 + 32 + 4 + 4 + 20 + 4
             // header 1
-            uut.Size.Should().Be(109);
+            uut.Size.Should().Be(101);
         }
 
         [TestMethod]
         public void Deserialize()
         {
             UInt256 val256 = UInt256.Zero;
-            UInt256 merkRoot;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            TestUtils.SetupHeaderWithValues(new Header(), val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
+            TestUtils.SetupHeaderWithValues(new Header(), val256, out UInt256 merkRoot, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal);
 
             uut.MerkleRoot = merkRoot; // need to set for deserialise to be valid
 
-            byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 0 };
+            byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 41, 176, 215, 72, 169, 204, 248, 197, 175, 60, 222, 16, 219, 62, 54, 236, 154, 95, 114, 6, 67, 162, 188, 180, 173, 215, 107, 61, 175, 65, 216, 128, 171, 4, 253, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 0 };
             int index = 0;
             using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
             {
@@ -57,20 +45,19 @@ namespace Neo.UnitTests
                 }
             }
 
-            assertStandardHeaderTestVals(val256, merkRoot, val160, timestampVal, indexVal, consensusDataVal, scriptVal);
+            assertStandardHeaderTestVals(val256, merkRoot, val160, timestampVal, indexVal, scriptVal);
         }
 
-        private void assertStandardHeaderTestVals(UInt256 val256, UInt256 merkRoot, UInt160 val160, uint timestampVal, uint indexVal, ulong consensusDataVal, Witness scriptVal)
+        private void assertStandardHeaderTestVals(UInt256 val256, UInt256 merkRoot, UInt160 val160, uint timestampVal, uint indexVal, Witness scriptVal)
         {
             uut.PrevHash.Should().Be(val256);
             uut.MerkleRoot.Should().Be(merkRoot);
             uut.Timestamp.Should().Be(timestampVal);
             uut.Index.Should().Be(indexVal);
-            uut.ConsensusData.Should().Be(consensusDataVal);
             uut.NextConsensus.Should().Be(val160);
-            uut.Script.InvocationScript.Length.Should().Be(0);
-            uut.Script.Size.Should().Be(scriptVal.Size);
-            uut.Script.VerificationScript[0].Should().Be(scriptVal.VerificationScript[0]);            
+            uut.Witness.InvocationScript.Length.Should().Be(0);
+            uut.Witness.Size.Should().Be(scriptVal.Size);
+            uut.Witness.VerificationScript[0].Should().Be(scriptVal.VerificationScript[0]);
         }
 
         [TestMethod]
@@ -85,19 +72,14 @@ namespace Neo.UnitTests
         {
             uut.Equals(uut).Should().BeTrue();
         }
-     
+
         [TestMethod]
         public void Equals_SameHash()
         {
-            Header newHeader = new Header();            
+            Header newHeader = new Header();
             UInt256 prevHash = new UInt256(TestUtils.GetByteArray(32, 0x42));
-            UInt256 merkRoot;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            TestUtils.SetupHeaderWithValues(newHeader, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
-            TestUtils.SetupHeaderWithValues(uut, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
+            TestUtils.SetupHeaderWithValues(newHeader, prevHash, out _, out _, out _, out _, out _);
+            TestUtils.SetupHeaderWithValues(uut, prevHash, out _, out _, out _, out _, out _);
 
             uut.Equals(newHeader).Should().BeTrue();
         }
@@ -109,33 +91,10 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void FromTrimmedData()
-        {
-            UInt256 val256 = UInt256.Zero;
-            UInt256 merkRoot;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            TestUtils.SetupHeaderWithValues(new Header(), val256, out merkRoot, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
-
-            byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 0 };
-
-            uut = Header.FromTrimmedData(data, 0);
-
-            assertStandardHeaderTestVals(val256, merkRoot, val160, timestampVal, indexVal, consensusDataVal, scriptVal);
-        }
-
-        [TestMethod]
         public void Serialize()
         {
             UInt256 val256 = UInt256.Zero;
-            UInt256 merkRootVal;
-            UInt160 val160;
-            uint timestampVal, indexVal;
-            ulong consensusDataVal;
-            Witness scriptVal;
-            TestUtils.SetupHeaderWithValues(uut, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out consensusDataVal, out scriptVal);
+            TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
 
             byte[] data;
             using (MemoryStream stream = new MemoryStream())
@@ -147,10 +106,10 @@ namespace Neo.UnitTests
                 }
             }
 
-            byte[] requiredData = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, 128, 171, 4, 253, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 0 };
+            byte[] requiredData = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 41, 176, 215, 72, 169, 204, 248, 197, 175, 60, 222, 16, 219, 62, 54, 236, 154, 95, 114, 6, 67, 162, 188, 180, 173, 215, 107, 61, 175, 65, 216, 128, 171, 4, 253, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 81, 0 };
 
-            data.Length.Should().Be(109);
-            for (int i = 0; i < 109; i++)
+            data.Length.Should().Be(requiredData.Length);
+            for (int i = 0; i < data.Length; i++)
             {
                 data[i].Should().Be(requiredData[i]);
             }

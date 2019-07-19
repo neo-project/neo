@@ -1,14 +1,19 @@
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using System;
 using System.IO;
-using Neo.Core;
 
 namespace Neo.UnitTests
 {
     public class TestVerifiable : IVerifiable
     {
-        private string testStr = "testStr";
+        private readonly string testStr = "testStr";
 
-        public Witness[] Scripts { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public Witness[] Witnesses
+        {
+            get => throw new NotImplementedException();
+            set => throw new NotImplementedException();
+        }
 
         public int Size => throw new NotImplementedException();
 
@@ -22,12 +27,7 @@ namespace Neo.UnitTests
             throw new NotImplementedException();
         }
 
-        public byte[] GetMessage()
-        {
-            throw new NotImplementedException();
-        }
-
-        public UInt160[] GetScriptHashesForVerifying()
+        public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
         {
             throw new NotImplementedException();
         }
@@ -39,7 +39,7 @@ namespace Neo.UnitTests
 
         public void SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write((string) testStr);
+            writer.Write((string)testStr);
         }
     }
 }

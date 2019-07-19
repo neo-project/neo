@@ -1,12 +1,15 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
-using System.Reflection;
 using System.Text;
 
 namespace Neo.IO.Json
 {
     public class JNumber : JObject
     {
+        public static readonly long MAX_SAFE_INTEGER = (long)Math.Pow(2, 53) - 1;
+        public static readonly long MIN_SAFE_INTEGER = -MAX_SAFE_INTEGER;
+
         public double Value { get; private set; }
 
         public JNumber(double value = 0)
@@ -16,34 +19,7 @@ namespace Neo.IO.Json
 
         public override bool AsBoolean()
         {
-            if (Value == 0)
-                return false;
-            return true;
-        }
-
-        public override T AsEnum<T>(bool ignoreCase = false)
-        {
-            Type t = typeof(T);
-            TypeInfo ti = t.GetTypeInfo();
-            if (!ti.IsEnum)
-                throw new InvalidCastException();
-            if (ti.GetEnumUnderlyingType() == typeof(byte))
-                return (T)Enum.ToObject(t, (byte)Value);
-            if (ti.GetEnumUnderlyingType() == typeof(int))
-                return (T)Enum.ToObject(t, (int)Value);
-            if (ti.GetEnumUnderlyingType() == typeof(long))
-                return (T)Enum.ToObject(t, (long)Value);
-            if (ti.GetEnumUnderlyingType() == typeof(sbyte))
-                return (T)Enum.ToObject(t, (sbyte)Value);
-            if (ti.GetEnumUnderlyingType() == typeof(short))
-                return (T)Enum.ToObject(t, (short)Value);
-            if (ti.GetEnumUnderlyingType() == typeof(uint))
-                return (T)Enum.ToObject(t, (uint)Value);
-            if (ti.GetEnumUnderlyingType() == typeof(ulong))
-                return (T)Enum.ToObject(t, (ulong)Value);
-            if (ti.GetEnumUnderlyingType() == typeof(ushort))
-                return (T)Enum.ToObject(t, (ushort)Value);
-            throw new InvalidCastException();
+            return Value != 0 && !double.IsNaN(Value);
         }
 
         public override double AsNumber()
@@ -53,46 +29,76 @@ namespace Neo.IO.Json
 
         public override string AsString()
         {
-            return Value.ToString();
+            if (double.IsPositiveInfinity(Value)) throw new FormatException("Positive infinity number");
+            if (double.IsNegativeInfinity(Value)) throw new FormatException("Negative infinity number");
+            return Value.ToString(CultureInfo.InvariantCulture);
         }
 
-        public override bool CanConvertTo(Type type)
-        {
-            if (type == typeof(bool))
-                return true;
-            if (type == typeof(double))
-                return true;
-            if (type == typeof(string))
-                return true;
-            TypeInfo ti = type.GetTypeInfo();
-            if (ti.IsEnum && Enum.IsDefined(type, Convert.ChangeType(Value, ti.GetEnumUnderlyingType())))
-                return true;
-            return false;
-        }
-
-        internal new static JNumber Parse(TextReader reader)
+        internal static JNumber Parse(TextReader reader)
         {
             SkipSpace(reader);
             StringBuilder sb = new StringBuilder();
-            while (true)
+            char nextchar = (char)reader.Read();
+            if (nextchar == '-')
             {
-                char c = (char)reader.Peek();
-                if (c >= '0' && c <= '9' || c == '.' || c == '-')
+                sb.Append(nextchar);
+                nextchar = (char)reader.Read();
+            }
+            if (nextchar < '0' || nextchar > '9') throw new FormatException();
+            sb.Append(nextchar);
+            if (nextchar > '0')
+            {
+                while (true)
                 {
-                    sb.Append(c);
-                    reader.Read();
-                }
-                else
-                {
-                    break;
+                    char c = (char)reader.Peek();
+                    if (c < '0' || c > '9') break;
+                    sb.Append((char)reader.Read());
                 }
             }
-            return new JNumber(double.Parse(sb.ToString()));
+            nextchar = (char)reader.Peek();
+            if (nextchar == '.')
+            {
+                sb.Append((char)reader.Read());
+                nextchar = (char)reader.Read();
+                if (nextchar < '0' || nextchar > '9') throw new FormatException();
+                sb.Append(nextchar);
+                while (true)
+                {
+                    nextchar = (char)reader.Peek();
+                    if (nextchar < '0' || nextchar > '9') break;
+                    sb.Append((char)reader.Read());
+                }
+            }
+            if (nextchar == 'e' || nextchar == 'E')
+            {
+                sb.Append((char)reader.Read());
+                nextchar = (char)reader.Read();
+                if (nextchar == '-' || nextchar == '+')
+                {
+                    sb.Append(nextchar);
+                    nextchar = (char)reader.Read();
+                }
+                if (nextchar < '0' || nextchar > '9') throw new FormatException();
+                sb.Append(nextchar);
+                while (true)
+                {
+                    nextchar = (char)reader.Peek();
+                    if (nextchar < '0' || nextchar > '9') break;
+                    sb.Append((char)reader.Read());
+                }
+            }
+
+            var value = double.Parse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture);
+
+            if (value > MAX_SAFE_INTEGER || value < MIN_SAFE_INTEGER)
+                throw new FormatException();
+
+            return new JNumber(value);
         }
 
         public override string ToString()
         {
-            return Value.ToString();
+            return AsString();
         }
 
         public DateTime ToTimestamp()
@@ -100,6 +106,22 @@ namespace Neo.IO.Json
             if (Value < 0 || Value > ulong.MaxValue)
                 throw new InvalidCastException();
             return ((ulong)Value).ToDateTime();
+        }
+
+        public override T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false)
+        {
+            Type enumType = typeof(T);
+            object value;
+            try
+            {
+                value = Convert.ChangeType(Value, enumType.GetEnumUnderlyingType());
+            }
+            catch (OverflowException)
+            {
+                return defaultValue;
+            }
+            object result = Enum.ToObject(enumType, value);
+            return Enum.IsDefined(enumType, result) ? (T)result : defaultValue;
         }
     }
 }

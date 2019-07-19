@@ -20,23 +20,13 @@ namespace Neo.VM
             return sb;
         }
 
-        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, bool useTailCall = false)
-        {
-            return sb.EmitAppCall(scriptHash.ToArray(), useTailCall);
-        }
-
-        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, params ContractParameter[] parameters)
-        {
-            for (int i = parameters.Length - 1; i >= 0; i--)
-                sb.EmitPush(parameters[i]);
-            return sb.EmitAppCall(scriptHash);
-        }
-
         public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation)
         {
-            sb.EmitPush(false);
+            sb.EmitPush(0);
+            sb.Emit(OpCode.NEWARRAY);
             sb.EmitPush(operation);
-            sb.EmitAppCall(scriptHash);
+            sb.EmitPush(scriptHash);
+            sb.EmitSysCall(InteropService.System_Contract_Call);
             return sb;
         }
 
@@ -47,7 +37,8 @@ namespace Neo.VM
             sb.EmitPush(args.Length);
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
-            sb.EmitAppCall(scriptHash);
+            sb.EmitPush(scriptHash);
+            sb.EmitSysCall(InteropService.System_Contract_Call);
             return sb;
         }
 
@@ -58,7 +49,8 @@ namespace Neo.VM
             sb.EmitPush(args.Length);
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
-            sb.EmitAppCall(scriptHash);
+            sb.EmitPush(scriptHash);
+            sb.EmitSysCall(InteropService.System_Contract_Call);
             return sb;
         }
 
@@ -163,49 +155,78 @@ namespace Neo.VM
             return sb;
         }
 
-        public static ScriptBuilder EmitSysCall(this ScriptBuilder sb, string api, params object[] args)
+        public static ScriptBuilder EmitSysCall(this ScriptBuilder sb, uint method, params object[] args)
         {
             for (int i = args.Length - 1; i >= 0; i--)
                 EmitPush(sb, args[i]);
-            return sb.EmitSysCall(api);
+            return sb.EmitSysCall(method);
         }
 
         public static ContractParameter ToParameter(this StackItem item)
         {
+            return ToParameter(item, null);
+        }
+
+        private static ContractParameter ToParameter(StackItem item, List<Tuple<StackItem, ContractParameter>> context)
+        {
+            ContractParameter parameter = null;
             switch (item)
             {
                 case VMArray array:
-                    return new ContractParameter
+                    if (context is null)
+                        context = new List<Tuple<StackItem, ContractParameter>>();
+                    else
+                        parameter = context.FirstOrDefault(p => ReferenceEquals(p.Item1, item))?.Item2;
+                    if (parameter is null)
                     {
-                        Type = ContractParameterType.Array,
-                        Value = array.Select(p => p.ToParameter()).ToArray()
-                    };
+                        parameter = new ContractParameter { Type = ContractParameterType.Array };
+                        context.Add(new Tuple<StackItem, ContractParameter>(item, parameter));
+                        parameter.Value = array.Select(p => ToParameter(p, context)).ToList();
+                    }
+                    break;
+                case Map map:
+                    if (context is null)
+                        context = new List<Tuple<StackItem, ContractParameter>>();
+                    else
+                        parameter = context.FirstOrDefault(p => ReferenceEquals(p.Item1, item))?.Item2;
+                    if (parameter is null)
+                    {
+                        parameter = new ContractParameter { Type = ContractParameterType.Map };
+                        context.Add(new Tuple<StackItem, ContractParameter>(item, parameter));
+                        parameter.Value = map.Select(p => new KeyValuePair<ContractParameter, ContractParameter>(ToParameter(p.Key, context), ToParameter(p.Value, context))).ToList();
+                    }
+                    break;
                 case VMBoolean _:
-                    return new ContractParameter
+                    parameter = new ContractParameter
                     {
                         Type = ContractParameterType.Boolean,
                         Value = item.GetBoolean()
                     };
+                    break;
                 case ByteArray _:
-                    return new ContractParameter
+                    parameter = new ContractParameter
                     {
                         Type = ContractParameterType.ByteArray,
                         Value = item.GetByteArray()
                     };
+                    break;
                 case Integer _:
-                    return new ContractParameter
+                    parameter = new ContractParameter
                     {
                         Type = ContractParameterType.Integer,
                         Value = item.GetBigInteger()
                     };
+                    break;
                 case InteropInterface _:
-                    return new ContractParameter
+                    parameter = new ContractParameter
                     {
                         Type = ContractParameterType.InteropInterface
                     };
+                    break;
                 default:
                     throw new ArgumentException();
             }
+            return parameter;
         }
     }
 }
