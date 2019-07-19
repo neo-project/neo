@@ -57,10 +57,7 @@ namespace Neo.Persistence.LevelDB
 
         public override void Dispose()
         {
-            if (options != null) {
-                MethodInfo method = options.GetType().GetMethod("FreeUnManagedObjects", BindingFlags.NonPublic | BindingFlags.Instance);
-                method.Invoke(options, null);
-            }
+            options?.Dispose();
         }
     }
 }
