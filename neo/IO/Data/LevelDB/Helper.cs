@@ -49,7 +49,7 @@ namespace Neo.IO.Data.LevelDB
 
         public static void Put(this WriteBatch batch, byte prefix, ISerializable key, ISerializable value)
         {
-            batch.Put(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), value.ToArray());
+            batch.Put(SliceBuilder.Begin(prefix).Add(key).ToArray(), value.ToArray());
         }
 
         public static T TryGet<T>(this DB db, ReadOptions options, byte prefix, ISerializable key) where T : class, ISerializable, new()
