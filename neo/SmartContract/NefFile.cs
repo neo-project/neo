@@ -45,6 +45,11 @@ namespace Neo.SmartContract
         public Version Version { get; set; }
 
         /// <summary>
+        /// Script Hash
+        /// </summary>
+        public UInt160 ScriptHash { get; set; }
+
+        /// <summary>
         /// Script
         /// </summary>
         public byte[] Script { get; set; }
@@ -54,13 +59,8 @@ namespace Neo.SmartContract
         /// </summary>
         public uint CheckSum { get; set; }
 
-        /// <summary>
-        /// Script Hash
-        /// </summary>
-        public UInt160 ScriptHash { get; set; }
-
         public int Size =>
-            sizeof(NefMagic) +          // Engine
+            sizeof(NefMagic) +          // Magic
             Compiler.GetVarSize() +     // Compiler
             (sizeof(int) * 4) +         // Version
             ScriptHash.Size +           // ScriptHash
