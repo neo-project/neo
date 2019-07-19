@@ -1,9 +1,9 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Neo.UnitTests
 {
@@ -18,7 +18,7 @@ namespace Neo.UnitTests
         {
             // get all tests in the unit test project assembly
             var testClasses = (from t in typeof(NotReRunnableAttribute).GetTypeInfo().Assembly.DefinedTypes
-                               where t.GetCustomAttribute<TestClassAttribute>() != null
+                               where t.GetCustomAttribute<TestClassAttribute>() != null && t.GetCustomAttribute<NotReRunnableAttribute>() == null
                                select new
                                {
                                    Constructor = t.GetConstructor(new Type[] { }),
