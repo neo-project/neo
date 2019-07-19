@@ -62,7 +62,7 @@ namespace Neo.IO.Data.LevelDB
             return new SliceBuilder().Add(prefix);
         }
 
-        public byte [] ToArray()
+        public byte[] ToArray()
         {
             return data.ToArray();
         }
