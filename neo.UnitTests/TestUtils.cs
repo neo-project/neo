@@ -109,7 +109,7 @@ namespace Neo.UnitTests
             return newObj;
         }
 
-        public static void DeleteFile(string file)
+        public static void DeleteFiles(string file)
         {
             DirectoryInfo fileInfo = new DirectoryInfo(file)
             {
