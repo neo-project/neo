@@ -1,7 +1,9 @@
-﻿using System;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using System;
+using System.Reflection;
+using System.Collections;
 
 namespace Neo.UnitTests.Cryptography
 {
@@ -63,7 +65,7 @@ namespace Neo.UnitTests.Cryptography
             byte[] result = new byte[m];
             filter.GetBits(result);
             foreach (byte value in result)
-                value.Should().Be(0);
+                value.Should().Be(0);           
         }
     }
 }
