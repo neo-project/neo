@@ -1,9 +1,9 @@
-﻿using System;
-using Akka.IO;
+﻿using Akka.IO;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
+using System;
 
 namespace Neo.UnitTests.Network.P2P
 {
