@@ -80,7 +80,6 @@ namespace Neo.UnitTests.IO.Caching
         {
             od.TryGetValue("a", out uint i).Should().BeTrue();
             i.Should().Be(1);
-
             od.TryGetValue("d", out uint j).Should().BeFalse();
             j.Should().Be(0);
         }
