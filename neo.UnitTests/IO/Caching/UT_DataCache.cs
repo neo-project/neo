@@ -176,7 +176,6 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache[new MyKey("key3")].Should().Be(new MyValue("value3"));
         }
 
-
         [TestMethod]
         public void TestAccessByNotFoundKey()
         {
@@ -347,7 +346,6 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.GetAndChange(new MyKey("key3"), () => new MyValue("value_bk_3")).Should().Be(new MyValue("value_bk_3"));
             myDataCache.GetAndChange(new MyKey("key4"), () => new MyValue("value_bk_4")).Should().Be(new MyValue("value_bk_4"));
         }
-
 
         [TestMethod]
         public void TestGetOrAdd()
