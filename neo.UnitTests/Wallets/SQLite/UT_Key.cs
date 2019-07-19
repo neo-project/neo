@@ -15,34 +15,22 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestGetName()
+        public void TestSetAndGetName()
         {
-            Key key = new Key();
-            key.Name = "AAA";
+            Key key = new Key
+            {
+                Name = "AAA"
+            };
             Assert.AreEqual("AAA", key.Name);
         }
 
         [TestMethod]
-        public void TestSetName()
+        public void TestSetAndGetValue()
         {
-            Key key = new Key();
-            key.Name = "AAA";
-            Assert.AreEqual("AAA", key.Name);
-        }
-
-        [TestMethod]
-        public void TestGetValue()
-        {
-            Key key = new Key();
-            key.Value= new byte[] { 0x01 };
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01 }), Encoding.Default.GetString(key.Value));
-        }
-
-        [TestMethod]
-        public void TestSetValue()
-        {
-            Key key = new Key();
-            key.Value = new byte[] { 0x01 };
+            Key key = new Key
+            {
+                Value = new byte[] { 0x01 }
+            };
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01 }), Encoding.Default.GetString(key.Value));
         }
     }

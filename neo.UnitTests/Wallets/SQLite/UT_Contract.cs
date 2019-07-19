@@ -15,55 +15,37 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestGetRawData()
+        public void TestSetAndGetRawData()
         {
-            Contract contract = new Contract();
-            contract.RawData = new byte[] { 0x01 };
+            Contract contract = new Contract
+            {
+                RawData = new byte[] { 0x01 }
+            };
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01 }), Encoding.Default.GetString(contract.RawData));
         }
 
         [TestMethod]
-        public void TestSetRawData()
+        public void TestSetAndGetScriptHash()
         {
-            Contract contract = new Contract();
-            contract.RawData = new byte[] { 0x01 };
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01 }), Encoding.Default.GetString(contract.RawData));
-        }
-
-        [TestMethod]
-        public void TestGetScriptHash()
-        {
-            Contract contract = new Contract();
-            contract.ScriptHash = new byte[] { 0x01 };
+            Contract contract = new Contract
+            {
+                ScriptHash = new byte[] { 0x01 }
+            };
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01 }), Encoding.Default.GetString(contract.ScriptHash));
         }
 
         [TestMethod]
-        public void TestSetScriptHash()
+        public void TestSetAndGetPublicKeyHash()
         {
-            Contract contract = new Contract();
-            contract.ScriptHash = new byte[] { 0x01 };
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01 }), Encoding.Default.GetString(contract.ScriptHash));
-        }
-
-        [TestMethod]
-        public void TestGetPublicKeyHash()
-        {
-            Contract contract = new Contract();
-            contract.PublicKeyHash = new byte[] { 0x01 };
+            Contract contract = new Contract
+            {
+                PublicKeyHash = new byte[] { 0x01 }
+            };
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01 }), Encoding.Default.GetString(contract.PublicKeyHash));
         }
 
         [TestMethod]
-        public void TestSetPublicKeyHash()
-        {
-            Contract contract = new Contract();
-            contract.PublicKeyHash = new byte[] { 0x01 };
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01 }), Encoding.Default.GetString(contract.PublicKeyHash));
-        }
-
-        [TestMethod]
-        public void TestGetAccount()
+        public void TestSetAndGetAccount()
         {
             Contract contract = new Contract();
             Account account = new Account();
@@ -72,25 +54,7 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestSetAccount()
-        {
-            Contract contract = new Contract();
-            Account account = new Account();
-            contract.Account = account;
-            Assert.AreEqual(account, contract.Account);
-        }
-
-        [TestMethod]
-        public void TestGetAddress()
-        {
-            Contract contract = new Contract();
-            Address address = new Address();
-            contract.Address = address;
-            Assert.AreEqual(address, contract.Address);
-        }
-
-        [TestMethod]
-        public void TestSetAddress()
+        public void TestSetAndGetAddress()
         {
             Contract contract = new Contract();
             Address address = new Address();

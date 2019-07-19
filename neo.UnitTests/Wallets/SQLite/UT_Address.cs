@@ -15,18 +15,12 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestGetScriptHash()
+        public void TestSetAndGetScriptHash()
         {
-            Address address = new Address();
-            address.ScriptHash = new byte[] { 0x01 };
-            Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01 }), Encoding.Default.GetString(address.ScriptHash));
-        }
-
-        [TestMethod]
-        public void TestSetScriptHash()
-        {
-            Address address = new Address();
-            address.ScriptHash = new byte[] { 0x01 };
+            Address address = new Address
+            {
+                ScriptHash = new byte[] { 0x01 }
+            };
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01 }), Encoding.Default.GetString(address.ScriptHash));
         }
     }

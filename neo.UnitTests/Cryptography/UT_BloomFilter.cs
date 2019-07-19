@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using System;
 using System.Reflection;
-using System.Collections;
 
 namespace Neo.UnitTests.Cryptography
 {
@@ -66,6 +65,18 @@ namespace Neo.UnitTests.Cryptography
             filter.GetBits(result);
             foreach (byte value in result)
                 value.Should().Be(0);           
+        }
+
+        [TestMethod]
+        public void TestSetTweak()
+        {
+            int m = 7, n = 10;
+            uint nTweak = 123456;
+            byte[] elements = { 0, 1, 2, 3, 4 };
+            BloomFilter filter = new BloomFilter(m, n, nTweak);
+            MethodInfo dynMethod = typeof(BloomFilter).GetMethod("set_Tweak", BindingFlags.NonPublic | BindingFlags.Instance);
+            dynMethod.Invoke(filter, new object[] {1000u});
+            filter.Tweak.Should().Be(1000u);
         }
     }
 }
