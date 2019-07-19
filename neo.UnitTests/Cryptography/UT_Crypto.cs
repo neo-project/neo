@@ -44,13 +44,16 @@ namespace Neo.UnitTests.Cryptography
         {
             byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
             byte[] signature = Crypto.Default.Sign(message, key.PrivateKey, key.PublicKey.EncodePoint(false).Skip(1).ToArray());
-            Crypto.Default.VerifySignature(message, signature, key.PublicKey.EncodePoint(true)).Should().BeTrue();
             Crypto.Default.VerifySignature(message, signature, key.PublicKey.EncodePoint(false)).Should().BeTrue();
             Crypto.Default.VerifySignature(message, signature, key.PublicKey.EncodePoint(false).Skip(1).ToArray()).Should().BeTrue();
             Crypto.Default.VerifySignature(message, signature, key.PublicKey.EncodePoint(false).Skip(1).ToArray()).Should().BeTrue();
 
             byte[] wrongKey = new byte[33];
             wrongKey[0] = 0x02;
+            Crypto.Default.VerifySignature(message, signature, wrongKey).Should().BeFalse();
+
+            wrongKey[0] = 0x03;
+            for (int i = 1; i < 33; i++) wrongKey[i] = byte.MaxValue;
             Crypto.Default.VerifySignature(message, signature, wrongKey).Should().BeFalse();
 
             wrongKey = new byte[36];

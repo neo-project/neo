@@ -1,11 +1,11 @@
-﻿using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
+using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
-using System.Linq;
-using System.IO;
 using ECCurve = Neo.Cryptography.ECC.ECCurve;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
@@ -36,8 +36,10 @@ namespace Neo.UnitTests.Cryptography.ECC
             ECPoint point3 = new ECPoint(X1, Y2, ECCurve.Secp256k1);
 
             point1.CompareTo(point1).Should().Be(0);
-            point1.CompareTo(point2).Should().NotBe(0);
-            point1.CompareTo(point3).Should().NotBe(0);
+            point1.CompareTo(point2).Should().Be(-1);
+            point2.CompareTo(point1).Should().Be(1);
+            point1.CompareTo(point3).Should().Be(-1);
+            point3.CompareTo(point1).Should().Be(1);
         }
 
         [TestMethod]

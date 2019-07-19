@@ -1,10 +1,10 @@
-﻿using FluentAssertions;
+﻿using System;
+using System.Numerics;
+using System.Reflection;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Wallets;
-using System;
-using System.Numerics;
-using System.Reflection;
 using ECDsa = Neo.Cryptography.ECC.ECDsa;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
