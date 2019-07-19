@@ -38,7 +38,7 @@ namespace Neo.Persistence.LevelDB
 
         public override byte[] Get(byte prefix, byte[] key)
         {
-            return db.Get(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), new ReadOptions());
+            return db.Get(SliceBuilder.Begin(prefix).Add(key).ToArray(), new ReadOptions());
         }
 
         public override DataCache<UInt256, TrimmedBlock> GetBlocks()
@@ -83,12 +83,12 @@ namespace Neo.Persistence.LevelDB
 
         public override void Put(byte prefix, byte[] key, byte[] value)
         {
-            db.Put(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), value, new WriteOptions());
+            db.Put(SliceBuilder.Begin(prefix).Add(key).ToArray(), value, new WriteOptions());
         }
 
         public override void PutSync(byte prefix, byte[] key, byte[] value)
         {
-            db.Put(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), value, new WriteOptions { Sync = true });
+            db.Put(SliceBuilder.Begin(prefix).Add(key).ToArray(), value, new WriteOptions { Sync = true });
         }
     }
 }
