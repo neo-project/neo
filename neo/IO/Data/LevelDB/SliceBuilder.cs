@@ -6,11 +6,9 @@ namespace Neo.IO.Data.LevelDB
 {
     public class SliceBuilder
     {
-        private List<byte> data = new List<byte>();
+        private readonly List<byte> data = new List<byte>();
 
-        private SliceBuilder()
-        {
-        }
+        private SliceBuilder() { }
 
         public SliceBuilder Add(byte value)
         {
@@ -62,6 +60,11 @@ namespace Neo.IO.Data.LevelDB
         public static SliceBuilder Begin(byte prefix)
         {
             return new SliceBuilder().Add(prefix);
+        }
+
+        public byte [] ToArray()
+        {
+            return data.ToArray();
         }
 
         public static implicit operator Slice(SliceBuilder value)
