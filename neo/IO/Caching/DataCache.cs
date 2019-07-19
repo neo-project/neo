@@ -4,9 +4,10 @@ using System.Linq;
 
 namespace Neo.IO.Caching
 {
-    public abstract class DataCache<TKey, TValue>
+    public abstract class DataCache<TKey, TValue> : IDisposable
         where TKey : IEquatable<TKey>, ISerializable
         where TValue : class, ICloneable<TValue>, ISerializable, new()
+
     {
         public class Trackable
         {
@@ -242,5 +243,9 @@ namespace Neo.IO.Caching
         protected abstract TValue TryGetInternal(TKey key);
 
         protected abstract void UpdateInternal(TKey key, TValue value);
+
+        public virtual void Dispose()
+        {
+        }
     }
 }

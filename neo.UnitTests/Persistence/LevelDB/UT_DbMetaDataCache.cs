@@ -1,12 +1,12 @@
+using LevelDB;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.IO;
 using Neo.IO;
 using Neo.IO.Data.LevelDB;
-using Neo.Persistence.LevelDB;
 using Neo.Ledger;
-using System.Threading;
+using Neo.Persistence.LevelDB;
 using System;
-using LevelDB;
+using System.IO;
+using System.Threading;
 
 namespace Neo.UnitTests.Persistence.LevelDB
 {

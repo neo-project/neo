@@ -2,6 +2,7 @@
 using Neo.IO;
 using Neo.IO.Caching;
 using System;
+using System.Reflection;
 
 namespace Neo.Persistence.LevelDB
 {
@@ -36,6 +37,15 @@ namespace Neo.Persistence.LevelDB
         protected override void UpdateInternal(T item)
         {
             batch?.Put(new byte[] { prefix }, item.ToArray());
+        }
+
+        public override void Dispose()
+        {
+            if (options != null)
+            {
+                MethodInfo method = options.GetType().GetMethod("FreeUnManagedObjects", BindingFlags.NonPublic | BindingFlags.Instance);
+                method.Invoke(options, null);
+            }
         }
     }
 }

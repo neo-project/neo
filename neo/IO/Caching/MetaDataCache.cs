@@ -2,7 +2,7 @@
 
 namespace Neo.IO.Caching
 {
-    public abstract class MetaDataCache<T>
+    public abstract class MetaDataCache<T> : IDisposable
         where T : class, ICloneable<T>, ISerializable, new()
     {
         private T Item;
@@ -56,6 +56,10 @@ namespace Neo.IO.Caching
             if (State == TrackState.None)
                 State = TrackState.Changed;
             return item;
+        }
+
+        public virtual void Dispose()
+        {
         }
     }
 }

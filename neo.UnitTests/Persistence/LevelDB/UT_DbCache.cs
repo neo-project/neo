@@ -1,11 +1,11 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Persistence.LevelDB;
+using Neo.IO.Caching;
+using Neo.Ledger;
 using Neo.Persistence;
+using Neo.Persistence.LevelDB;
+using Neo.SmartContract.Manifest;
 using System;
 using System.IO;
-using Neo.Ledger;
-using Neo.IO.Caching;
-using Neo.SmartContract.Manifest;
 using System.Threading;
 
 namespace Neo.UnitTests.Persistence.LevelDB
