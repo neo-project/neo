@@ -1,10 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
 using Neo.IO.Wrappers;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace Neo.UnitTests
@@ -31,7 +27,6 @@ namespace Neo.UnitTests
             temp.Deserialize(reader);
             MemoryStream stream2 = new MemoryStream();
             BinaryWriter writer2 = new BinaryWriter(stream2);
-            BinaryReader reader2 = new BinaryReader(stream2);
             temp.Serialize(writer2);
             stream2.Seek(0, SeekOrigin.Begin);
             byte[] byteArray = new byte[stream2.Length];
@@ -52,7 +47,6 @@ namespace Neo.UnitTests
             temp.Deserialize(reader);
             MemoryStream stream2 = new MemoryStream();
             BinaryWriter writer2 = new BinaryWriter(stream2);
-            BinaryReader reader2 = new BinaryReader(stream2);
             temp.Serialize(writer2);
             stream2.Seek(0, SeekOrigin.Begin);
             byte[] byteArray = new byte[stream2.Length];
@@ -112,7 +106,6 @@ namespace Neo.UnitTests
         {
             UInt32Wrapper temp = 1;
             Assert.AreEqual(true, temp.Equals((uint)1));
-
         }
     }
 }
