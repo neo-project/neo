@@ -111,9 +111,11 @@ namespace Neo.UnitTests
 
         public static void DeleteFile(string file)
         {
-            System.IO.DirectoryInfo fileInfo = new DirectoryInfo(file);
-            fileInfo.Attributes = FileAttributes.Normal & FileAttributes.Directory;
-            System.IO.File.SetAttributes(file, System.IO.FileAttributes.Normal);
+            DirectoryInfo fileInfo = new DirectoryInfo(file)
+            {
+                Attributes = FileAttributes.Normal & FileAttributes.Directory
+            };
+            File.SetAttributes(file, FileAttributes.Normal);
             if (Directory.Exists(file))
             {
                 foreach (string f in Directory.GetFileSystemEntries(file))
