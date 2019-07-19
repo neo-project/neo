@@ -9,7 +9,7 @@ namespace Neo.IO.Data.LevelDB
     {
         public static void Delete(this WriteBatch batch, byte prefix, ISerializable key)
         {
-            batch.Delete(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray());
+            batch.Delete(SliceBuilder.Begin(prefix).Add(key).ToArray());
         }
 
         public static IEnumerable<T> Find<T>(this DB db, ReadOptions options, byte prefix) where T : class, ISerializable, new()
