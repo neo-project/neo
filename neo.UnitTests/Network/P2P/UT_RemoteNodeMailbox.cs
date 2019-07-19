@@ -1,13 +1,14 @@
-﻿using Akka.IO;
+﻿using System;
+using Akka.IO;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
-using System;
 
 namespace Neo.UnitTests.Network.P2P
 {
     [TestClass]
+    [NotReRunnable]
     public class UT_RemoteNodeMailbox : TestKit
     {
         private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
