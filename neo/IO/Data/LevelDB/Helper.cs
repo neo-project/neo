@@ -35,14 +35,14 @@ namespace Neo.IO.Data.LevelDB
 
         public static T Get<T>(this DB db, ReadOptions options, byte prefix, ISerializable key) where T : class, ISerializable, new()
         {
-            var value = db.Get(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), options);
+            var value = db.Get(SliceBuilder.Begin(prefix).Add(key).ToArray(), options);
             if (value == null) throw new LevelDBException("not found");
             return value.AsSerializable<T>();
         }
 
         public static T Get<T>(this DB db, ReadOptions options, byte prefix, ISerializable key, Func<Slice, T> resultSelector)
         {
-            var value = db.Get(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), options);
+            var value = db.Get(SliceBuilder.Begin(prefix).Add(key).ToArray(), options);
             if (value == null) throw new LevelDBException("not found");
             return resultSelector(value);
         }
@@ -54,13 +54,13 @@ namespace Neo.IO.Data.LevelDB
 
         public static T TryGet<T>(this DB db, ReadOptions options, byte prefix, ISerializable key) where T : class, ISerializable, new()
         {
-            var value = db.Get(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), options);
+            var value = db.Get(SliceBuilder.Begin(prefix).Add(key).ToArray(), options);
             return value?.AsSerializable<T>();
         }
 
         public static T TryGet<T>(this DB db, ReadOptions options, byte prefix, ISerializable key, Func<Slice, T> resultSelector) where T : class
         {
-            var value = db.Get(((Slice)SliceBuilder.Begin(prefix).Add(key)).ToArray(), options);
+            var value = db.Get(SliceBuilder.Begin(prefix).Add(key).ToArray(), options);
             return value == null ? null : resultSelector(value);
         }
     }
