@@ -32,7 +32,7 @@ namespace Neo.UnitTests.Persistence.LevelDB
         public void TestCleanUp()
         {
             db.Dispose();
-            TestUtils.DeleteFile(DbPath);
+            TestUtils.DeleteFiles(DbPath);
         }
 
         [TestMethod]

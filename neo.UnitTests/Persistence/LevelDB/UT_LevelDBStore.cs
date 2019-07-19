@@ -35,7 +35,7 @@ namespace Neo.UnitTests.Persistence.LevelDB
         {
             store.Dispose();
             store = null;
-            TestUtils.DeleteFile(dbPath);
+            TestUtils.DeleteFiles(dbPath);
         }
 
         [TestMethod]

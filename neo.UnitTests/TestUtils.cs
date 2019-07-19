@@ -126,7 +126,7 @@ namespace Neo.UnitTests
                     }
                     else
                     {
-                        DeleteFile(f);
+                        DeleteFiles(f);
                     }
                 }
                 Directory.Delete(file);

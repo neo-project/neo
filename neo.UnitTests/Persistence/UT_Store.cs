@@ -35,7 +35,7 @@ namespace Neo.UnitTests.Persistence
         {
             store.Dispose();
             store = null;
-            TestUtils.DeleteFile(dbPath);
+            TestUtils.DeleteFiles(dbPath);
         }
 
         [TestMethod]
