@@ -12,7 +12,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void ParseTest()
         {
-            var script = new NefFile()
+            var file = new NefFile()
             {
                 Magic = NefFile.NefMagic.NEF3,
                 Compiler = "".PadLeft(32, ' '),
@@ -20,47 +20,57 @@ namespace Neo.UnitTests
                 Script = new byte[] { 0x01, 0x02, 0x03 }
             };
 
-            script.ScriptHash = script.Script.ToScriptHash();
+            file.ScriptHash = file.Script.ToScriptHash();
+            file.CheckSum = NefFile.ComputeChecksum(file);
 
-            var data = script.ToArray();
-            script = NefFile.FromByteArray(data);
+            var data = file.ToArray();
+            file = NefFile.FromByteArray(data);
 
-            Assert.AreEqual(NefFile.NefMagic.NEF3, script.Magic);
-            Assert.AreEqual("".PadLeft(32, ' '), script.Compiler);
-            Assert.AreEqual(new Version(1, 2, 3, 4), script.Version);
-            Assert.AreEqual(script.Script.ToScriptHash(), script.ScriptHash);
-            CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, script.Script);
+            Assert.AreEqual(NefFile.NefMagic.NEF3, file.Magic);
+            Assert.AreEqual("".PadLeft(32, ' '), file.Compiler);
+            Assert.AreEqual(new Version(1, 2, 3, 4), file.Version);
+            Assert.AreEqual(file.Script.ToScriptHash(), file.ScriptHash);
+            CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, file.Script);
         }
 
         [TestMethod]
         public void LimitTest()
         {
-            var script = new NefFile()
+            var file = new NefFile()
             {
                 Magic = NefFile.NefMagic.NEF3,
                 Compiler = "".PadLeft(byte.MaxValue, ' '),
                 Version = new Version(1, 2, 3, 4),
                 Script = new byte[1024 * 1024],
-                ScriptHash = new byte[1024 * 1024].ToScriptHash()
+                ScriptHash = new byte[1024 * 1024].ToScriptHash(),
+                CheckSum = 0
             };
 
             // Wrong compiler
 
-            Assert.ThrowsException<ArgumentException>(() => script.ToArray());
+            Assert.ThrowsException<ArgumentException>(() => file.ToArray());
 
             // Wrong script
 
-            script.Compiler = "";
-            script.Script = new byte[(1024 * 1024) + 1];
-            script.ScriptHash = script.Script.ToScriptHash();
-            var data = script.ToArray();
+            file.Compiler = "";
+            file.Script = new byte[(1024 * 1024) + 1];
+            file.ScriptHash = file.Script.ToScriptHash();
+            var data = file.ToArray();
 
             Assert.ThrowsException<FormatException>(() => NefFile.FromByteArray(data));
 
             // Wrong script hash
 
-            script.Script = new byte[1024 * 1024];
-            data = script.ToArray();
+            file.Script = new byte[1024 * 1024];
+            data = file.ToArray();
+
+            Assert.ThrowsException<FormatException>(() => NefFile.FromByteArray(data));
+
+            // Wrong checksum
+
+            file.Script = new byte[1024];
+            data = file.ToArray();
+            file.CheckSum = NefFile.ComputeChecksum(file) + 1;
 
             Assert.ThrowsException<FormatException>(() => NefFile.FromByteArray(data));
         }
