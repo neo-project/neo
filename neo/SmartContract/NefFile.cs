@@ -12,7 +12,7 @@ namespace Neo.SmartContract
     /// +------------+-----------+------------------------------------------------------------+
     /// | Magic      | 4 bytes   | Magic header                                               |
     /// | Compiler   | 32 bytes  | Compiler used                                              |
-    /// | Version    | 16 bytes  | Compiler version(Mayor, Minor, Build, Version)             |
+    /// | Version    | 16 bytes  | Compiler version (Mayor, Minor, Build, Version)            |
     /// | ScriptHash | 20 bytes  | ScriptHash for the script                                  |
     /// | Script     | Var bytes | Var bytes for the payload                                  |
     /// | Checksum   | 4 bytes   | Sha256 of the whole file whithout the last for bytes(CRC)  |
