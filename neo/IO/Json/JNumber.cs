@@ -101,7 +101,6 @@ namespace Neo.IO.Json
             return AsString();
         }
 
-
         public override T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false)
         {
             Type enumType = typeof(T);
