@@ -88,7 +88,7 @@ namespace Neo.UnitTests.IO.Caching
 
         public bool Equals(MyValue other)
         {
-            return Value.Equals(other.Value);
+            return (Value == null && other.Value == null) || Value.Equals(other.Value);
         }
 
         public override bool Equals(object obj)
@@ -179,7 +179,8 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestAccessByNotFoundKey()
         {
-            Action action = () => {
+            Action action = () =>
+            {
                 var item = myDataCache[new MyKey("key1")];
             };
             action.ShouldThrow<KeyNotFoundException>();
@@ -191,7 +192,8 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.InnerDict.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Delete(new MyKey("key1"));
 
-            Action action = () => {
+            Action action = () =>
+            {
                 var item = myDataCache[new MyKey("key1")];
             };
             action.ShouldThrow<KeyNotFoundException>();
@@ -209,7 +211,7 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
             myDataCache.Delete(new MyKey("key2"));                      // trackable.State = TrackState.Deleted    
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));  // trackable.State = TrackState.Changed
-     
+
             action = () => myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
             action.ShouldThrow<ArgumentException>();
         }
