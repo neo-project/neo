@@ -12,7 +12,7 @@ namespace Neo.Network.P2P.Payloads
     public class Block : BlockBase, IInventory, IEquatable<Block>
     {
         public const int MaxContentsPerBlock = ushort.MaxValue;
-        public const int MaxTransactionsPerBlock = MaxContentsPerBlock - 1;
+        public const int MaxTransactionsPerBlock = MaxContentsPerBlock;
 
         public ConsensusData ConsensusData;
         public Transaction[] Transactions;
@@ -41,13 +41,13 @@ namespace Neo.Network.P2P.Payloads
         InventoryType IInventory.InventoryType => InventoryType.Block;
 
         public override int Size => base.Size
-            + IO.Helper.GetVarSize(Transactions.Length + 1) //Count
+            + IO.Helper.GetVarSize(Transactions.Length)     //Count
             + ConsensusData.Size                            //ConsensusData
             + Transactions.Sum(p => p.Size);                //Transactions
 
         public static UInt256 CalculateMerkleRoot(UInt256 consensusDataHash, params UInt256[] transactionHashes)
         {
-            List<UInt256> hashes = new List<UInt256>(transactionHashes.Length + 1) { consensusDataHash };
+            List<UInt256> hashes = new List<UInt256>(transactionHashes.Length) { consensusDataHash };
             hashes.AddRange(transactionHashes);
             return MerkleTree.ComputeRoot(hashes);
         }
@@ -58,7 +58,7 @@ namespace Neo.Network.P2P.Payloads
             int count = (int)reader.ReadVarInt(MaxContentsPerBlock);
             if (count == 0) throw new FormatException();
             ConsensusData = reader.ReadSerializable<ConsensusData>();
-            Transactions = new Transaction[count - 1];
+            Transactions = new Transaction[count];
             for (int i = 0; i < Transactions.Length; i++)
                 Transactions[i] = reader.ReadSerializable<Transaction>();
             if (Transactions.Distinct().Count() != Transactions.Length)
@@ -76,7 +76,8 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Equals(object obj)
         {
-            return Equals(obj as Block);
+            if (!(obj is Block b)) return false;
+            return Equals(b);
         }
 
         public override int GetHashCode()
@@ -92,7 +93,7 @@ namespace Neo.Network.P2P.Payloads
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.WriteVarInt(Transactions.Length + 1);
+            writer.WriteVarInt(Transactions.Length);
             writer.Write(ConsensusData);
             foreach (Transaction tx in Transactions)
                 writer.Write(tx);
