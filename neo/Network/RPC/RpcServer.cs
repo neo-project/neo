@@ -69,7 +69,6 @@ namespace Neo.Network.RPC
             }
         }
 
-        protected readonly LocalNode LocalNode;
         public Wallet Wallet { get; set; }
         public long MaxGasInvoke { get; }
 
