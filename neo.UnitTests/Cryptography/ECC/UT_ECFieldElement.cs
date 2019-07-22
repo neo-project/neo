@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Numerics;
 using System.Reflection;
@@ -27,7 +27,7 @@ namespace Neo.UnitTests.Cryptography.ECC
         public void TestEquals()
         {
             BigInteger input = new BigInteger(100);
-            Object element = new ECFieldElement(input, ECCurve.Secp256k1);
+            object element = new ECFieldElement(input, ECCurve.Secp256k1);
             element.Equals(element).Should().BeTrue();
             element.Equals(1).Should().BeFalse();
 

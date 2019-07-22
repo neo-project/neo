@@ -46,9 +46,9 @@ namespace Neo.UnitTests.IO
             tr = new StringReader("\"\\s\"");
             Assert.ThrowsException<FormatException>(() => JString.Parse(tr));
 
-            tr = new StringReader("\"hello world\\\\\\/\\b\\f\\n\\r\\t\"");
+            tr = new StringReader("\"\\\"\\\\\\/\\b\\f\\n\\r\\t\"");
             s = JString.Parse(tr).Value;
-            Assert.AreEqual("hello world\\/\b\f\n\r\t", s);
+            Assert.AreEqual("\"\\/\b\f\n\r\t", s);
 
             tr = new StringReader("\"\\u0030\"");
             s = JString.Parse(tr).Value;

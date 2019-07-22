@@ -88,7 +88,7 @@ namespace Neo.UnitTests.IO.Caching
 
         public bool Equals(MyValue other)
         {
-            return Value.Equals(other.Value);
+            return (Value == null && other.Value == null) || Value.Equals(other.Value);
         }
 
         public override bool Equals(object obj)
@@ -176,19 +176,14 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache[new MyKey("key3")].Should().Be(new MyValue("value3"));
         }
 
-
         [TestMethod]
         public void TestAccessByNotFoundKey()
         {
-            try
+            Action action = () =>
             {
-                MyValue value1 = myDataCache[new MyKey("key1")];
-                false.Should().BeTrue();
-            }
-            catch (KeyNotFoundException e)
-            {
-                e.Should().NotBeNull();
-            }
+                var item = myDataCache[new MyKey("key1")];
+            };
+            action.ShouldThrow<KeyNotFoundException>();
         }
 
         [TestMethod]
@@ -197,15 +192,11 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.InnerDict.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Delete(new MyKey("key1"));
 
-            try
+            Action action = () =>
             {
-                MyValue value1 = myDataCache[new MyKey("key1")];
-                false.Should().BeTrue();
-            }
-            catch (KeyNotFoundException e)
-            {
-                e.Should().NotBeNull();
-            }
+                var item = myDataCache[new MyKey("key1")];
+            };
+            action.ShouldThrow<KeyNotFoundException>();
         }
 
         [TestMethod]
@@ -214,28 +205,15 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache[new MyKey("key1")].Should().Be(new MyValue("value1"));
 
-            try
-            {
-                myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-                false.Should().BeTrue();
-            }
-            catch (ArgumentException e)
-            {
-                e.Should().NotBeNull();
-            }
+            Action action = () => myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            action.ShouldThrow<ArgumentException>();
 
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
             myDataCache.Delete(new MyKey("key2"));                      // trackable.State = TrackState.Deleted    
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));  // trackable.State = TrackState.Changed
-            try
-            {
-                myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
-                false.Should().BeTrue();
-            }
-            catch (ArgumentException e)
-            {
-                e.Should().NotBeNull();
-            }
+
+            action = () => myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
+            action.ShouldThrow<ArgumentException>();
         }
 
         [TestMethod]
@@ -347,7 +325,6 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.GetAndChange(new MyKey("key3"), () => new MyValue("value_bk_3")).Should().Be(new MyValue("value_bk_3"));
             myDataCache.GetAndChange(new MyKey("key4"), () => new MyValue("value_bk_4")).Should().Be(new MyValue("value_bk_4"));
         }
-
 
         [TestMethod]
         public void TestGetOrAdd()
