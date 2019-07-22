@@ -10,7 +10,7 @@ namespace Neo
         public byte AddressVersion { get; }
         public string[] StandbyValidators { get; }
         public string[] SeedList { get; }
-        public uint SecondsPerBlock { get; }
+        public uint MillisecondsPerBlock { get; }
 
         static ProtocolSettings _default;
 
@@ -69,7 +69,7 @@ namespace Neo
                     "seed4.neo.org:10333",
                     "seed5.neo.org:10333"
                 };
-            this.SecondsPerBlock = section.GetValue("SecondsPerBlock", 15u);
+            this.MillisecondsPerBlock = section.GetValue("SecondsPerBlock", 15000u);
         }
     }
 }

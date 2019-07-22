@@ -1,5 +1,5 @@
 {
   "ProtocolConfiguration": {
-    "SecondsPerBlock": 2
+    "MillisecondsPerBlock": 2000
   }
 }
