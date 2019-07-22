@@ -140,15 +140,6 @@ namespace Neo
             return (i & (BigInteger.One << index)) > BigInteger.Zero;
         }
 
-        public static DateTime ToDateTime(this uint timestamp)
-        {
-            return unixEpoch.AddSeconds(timestamp).ToLocalTime();
-        }
-
-        public static DateTime ToDateTime(this ulong timestamp)
-        {
-            return unixEpoch.AddSeconds(timestamp).ToLocalTime();
-        }
 
         public static string ToHexString(this IEnumerable<byte> value)
         {
@@ -179,6 +170,11 @@ namespace Neo
         public static uint ToTimestamp(this DateTime time)
         {
             return (uint)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
+        }
+
+        public static ulong ToTimestampMS(this DateTime time)
+        {
+            return (ulong)(time.ToUniversalTime() - unixEpoch).TotalMilliseconds;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

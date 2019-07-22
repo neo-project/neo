@@ -21,10 +21,10 @@ namespace Neo.Ledger
         private const int BlocksTillRebroadcastHighPriorityPoolTx = 10;
         private int RebroadcastMultiplierThreshold => Capacity / 10;
 
-        private static readonly double MaxSecondsToReverifyTx = (double)Blockchain.SecondsPerBlock / 3;
+        private static readonly double MaxMillisecondsToReverifyTx = (double)Blockchain.MillisecondsPerBlock / 3;
 
         // These two are not expected to be hit, they are just safegaurds.
-        private static readonly double MaxSecondsToReverifyTxPerIdle = (double)Blockchain.SecondsPerBlock / 15;
+        private static readonly double MaxMillisecondsToReverifyTxPerIdle = (double)Blockchain.MillisecondsPerBlock / 15;
 
         private readonly NeoSystem _system;
 
@@ -378,7 +378,7 @@ namespace Neo.Ledger
                 return;
 
             ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
-                _maxTxPerBlock, MaxSecondsToReverifyTx, snapshot);
+                _maxTxPerBlock, MaxMillisecondsToReverifyTx, snapshot);
         }
 
         internal void InvalidateAllTransactions()
@@ -395,9 +395,9 @@ namespace Neo.Ledger
         }
 
         private int ReverifyTransactions(SortedSet<PoolItem> verifiedSortedTxPool,
-            SortedSet<PoolItem> unverifiedSortedTxPool, int count, double secondsTimeout, Snapshot snapshot)
+            SortedSet<PoolItem> unverifiedSortedTxPool, int count, double millisecondsTimeout, Snapshot snapshot)
         {
-            DateTime reverifyCutOffTimeStamp = DateTime.UtcNow.AddSeconds(secondsTimeout);
+            DateTime reverifyCutOffTimeStamp = DateTime.UtcNow.AddMilliseconds(millisecondsTimeout);
             List<PoolItem> reverifiedItems = new List<PoolItem>(count);
             List<PoolItem> invalidItems = new List<PoolItem>();
 
@@ -421,8 +421,8 @@ namespace Neo.Ledger
                 if (Count > RebroadcastMultiplierThreshold)
                     blocksTillRebroadcast = blocksTillRebroadcast * Count / RebroadcastMultiplierThreshold;
 
-                var rebroadcastCutOffTime = DateTime.UtcNow.AddSeconds(
-                    -Blockchain.SecondsPerBlock * blocksTillRebroadcast);
+                var rebroadcastCutOffTime = DateTime.UtcNow.AddMilliseconds(
+                    -Blockchain.MillisecondsPerBlock * blocksTillRebroadcast);
                 foreach (PoolItem item in reverifiedItems)
                 {
                     if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
@@ -477,7 +477,7 @@ namespace Neo.Ledger
             {
                 int verifyCount = _sortedTransactions.Count > _maxTxPerBlock ? 1 : maxToVerify;
                 ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
-                    verifyCount, MaxSecondsToReverifyTxPerIdle, snapshot);
+                    verifyCount, MaxMillisecondsToReverifyTxPerIdle, snapshot);
             }
 
             return _unverifiedTransactions.Count > 0;

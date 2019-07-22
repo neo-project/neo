@@ -101,13 +101,6 @@ namespace Neo.IO.Json
             return AsString();
         }
 
-        public DateTime ToTimestamp()
-        {
-            if (Value < 0 || Value > ulong.MaxValue)
-                throw new InvalidCastException();
-            return ((ulong)Value).ToDateTime();
-        }
-
         public override T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false)
         {
             Type enumType = typeof(T);
