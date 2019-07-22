@@ -109,35 +109,15 @@ namespace Neo.UnitTests.IO.Caching
             cache.Add("hello");
             cache.Add("world");
             string[] temp = new string[2];
-            try
-            {
-                cache.CopyTo(null, 1);
-                false.Should().BeTrue();
-            }
-            catch (ArgumentNullException e)
-            {
-                e.Should().NotBeNull();
-            }
 
-            try
-            {
-                cache.CopyTo(temp, -1);
-                false.Should().BeTrue();
-            }
-            catch (ArgumentOutOfRangeException e)
-            {
-                e.Should().NotBeNull();
-            }
+            Action action = () => cache.CopyTo(null, 1);
+            action.ShouldThrow<ArgumentNullException>();
 
-            try
-            {
-                cache.CopyTo(temp, 1);
-                false.Should().BeTrue();
-            }
-            catch (ArgumentException e)
-            {
-                e.Should().NotBeNull();
-            }
+            action = () => cache.CopyTo(temp, -1);
+            action.ShouldThrow<ArgumentOutOfRangeException>();
+
+            action = () => cache.CopyTo(temp, 1);
+            action.ShouldThrow<ArgumentException>();
 
             cache.CopyTo(temp, 0);
             temp[0].Should().Be("hello");
@@ -181,15 +161,11 @@ namespace Neo.UnitTests.IO.Caching
             cache["hello".GetHashCode()].Should().Be("hello");
             cache["world".GetHashCode()].Should().Be("world");
 
-            try
+            Action action = () =>
             {
                 string temp = cache["non exist string".GetHashCode()];
-                false.Should().BeTrue();
-            }
-            catch (KeyNotFoundException e)
-            {
-                e.Should().NotBeNull();
-            }
+            };
+            action.ShouldThrow<KeyNotFoundException>();
         }
 
         [TestMethod]
@@ -227,15 +203,12 @@ namespace Neo.UnitTests.IO.Caching
             cache.Add("hello");
             cache.Add("world");
             cache.Dispose();
-            try
+
+            Action action = () =>
             {
                 int count = cache.Count;
-                false.Should().BeTrue();
-            }
-            catch (ObjectDisposedException e)
-            {
-                e.Should().NotBeNull();
-            }
+            };
+            action.ShouldThrow<ObjectDisposedException>();
         }
     }
 }
