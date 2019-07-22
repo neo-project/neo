@@ -46,7 +46,7 @@ namespace Neo.UnitTests.Persistence
             block.ConsensusData = new ConsensusData();
             block.MerkleRoot = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02");
             block.PrevHash = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-            block.Timestamp = new DateTime(1968, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp();
+            block.Timestamp = new DateTime(1980, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp();
             block.Index = 10;
             block.NextConsensus = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             block.Witness = new Witness
