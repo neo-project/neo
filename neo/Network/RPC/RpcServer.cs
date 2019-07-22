@@ -35,13 +35,12 @@ namespace Neo.Network.RPC
         {
             private readonly UInt160[] _scriptHashesForVerifying;
             public Witness[] Witnesses { get; set; }
+            public int Size { get; }
 
             public CheckWitnessHashes(UInt160[] scriptHashesForVerifying)
             {
                 _scriptHashesForVerifying = scriptHashesForVerifying;
             }
-
-            public int Size { get; }
 
             public void Serialize(BinaryWriter writer)
             {
