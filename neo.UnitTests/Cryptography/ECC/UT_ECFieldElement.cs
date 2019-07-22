@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Numerics;
 using System.Reflection;
 using FluentAssertions;
@@ -47,6 +48,23 @@ namespace Neo.UnitTests.Cryptography.ECC
                 "0355008852387781904431955206172450241620273083920976877257520258622942315361481829146774445786497935462753780354074019371263126918226216372821" +
                 "48377922151055949114088968720000000000000000000000000000000000000000000000000000"));
             result[1].Should().Be(BigInteger.Parse("3796195317861153360631143355305468876976676103901517708672250570346390638982"));
+        }
+
+        [TestMethod]
+        public void TestSqrt()
+        {
+            ECFieldElement element = new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1);
+            element.Sqrt().Should().Be(new ECFieldElement(BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007908834671653"), ECCurve.Secp256k1));
+
+            ConstructorInfo constructor = typeof(ECCurve).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(BigInteger), typeof(BigInteger), typeof(BigInteger), typeof(BigInteger), typeof(byte[]) }, null);
+            ECCurve testCruve = constructor.Invoke(new object[] {
+                BigInteger.Parse("00FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.AllowHexSpecifier),
+                BigInteger.Parse("00FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC", NumberStyles.AllowHexSpecifier),
+                BigInteger.Parse("005AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B", NumberStyles.AllowHexSpecifier),
+                BigInteger.Parse("00FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551", NumberStyles.AllowHexSpecifier),
+                ("04" + "6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296" + "4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5").HexToBytes() }) as ECCurve;
+            element = new ECFieldElement(new BigInteger(200), testCruve);
+            element.Sqrt();
         }
 
         [TestMethod]

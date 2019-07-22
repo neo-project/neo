@@ -48,11 +48,14 @@ namespace Neo.UnitTests.Cryptography.ECC
         {
             ECDsa sa = new ECDsa(key.PrivateKey, key.PublicKey.Curve);
             byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 30; i++)
             {
                 BigInteger[] result = sa.GenerateSignature(message);
                 result.Length.Should().Be(2);
             }
+            sa = new ECDsa(key.PublicKey);
+            Action action = () => sa.GenerateSignature(message);
+            action.ShouldThrow<InvalidOperationException>();
         }
 
         [TestMethod]

@@ -18,6 +18,8 @@ namespace Neo.UnitTests
             BigDecimal result2 = originalValue.ChangeDecimals(3);
             result2.Value.Should().Be(new BigInteger(123));
             result2.Decimals.Should().Be(3);
+            BigDecimal result3 = originalValue.ChangeDecimals(5);
+            result3.Value.Should().Be(originalValue.Value);
             Action action = () => originalValue.ChangeDecimals(2);
             action.ShouldThrow<ArgumentOutOfRangeException>();
         }
