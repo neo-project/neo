@@ -108,27 +108,5 @@ namespace Neo.UnitTests
 
             return newObj;
         }
-
-        public static void DeleteFile(string file)
-        {
-            System.IO.DirectoryInfo fileInfo = new DirectoryInfo(file);
-            fileInfo.Attributes = FileAttributes.Normal & FileAttributes.Directory;
-            System.IO.File.SetAttributes(file, System.IO.FileAttributes.Normal);
-            if (Directory.Exists(file))
-            {
-                foreach (string f in Directory.GetFileSystemEntries(file))
-                {
-                    if (File.Exists(f))
-                    {
-                        File.Delete(f);
-                    }
-                    else
-                    {
-                        DeleteFile(f);
-                    }
-                }
-                Directory.Delete(file);
-            }
-        }
     }
 }
