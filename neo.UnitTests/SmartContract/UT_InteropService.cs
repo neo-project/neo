@@ -3,7 +3,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests.SmartContract
 {
     [TestClass]
     public class UT_InteropService
