@@ -1,5 +1,3 @@
-sudo: required
-
 language: csharp
 
 os:
@@ -15,7 +13,6 @@ dotnet: 2.2.300
 before_install:
   - cd neo.UnitTests
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 2048; fi
-
 
 script:
  - dotnet restore
