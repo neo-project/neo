@@ -26,7 +26,7 @@ namespace Neo.SmartContract
             /// <summary>
             /// NEO Executable Format 3
             /// </summary>
-            NEF3 = 0x4E454633
+            NEF3 = 0x3346454E
         }
 
         /// <summary>
