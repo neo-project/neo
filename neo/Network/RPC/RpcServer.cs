@@ -243,7 +243,7 @@ namespace Neo.Network.RPC
                         CheckWitnessHashes checkWitnessHashes = null;
                         if (_params.Count > 1)
                         {
-                            UInt160[] scriptHashesForVerifying = { UInt160.Parse(_params[1].AsString()) };
+                            UInt160[] scriptHashesForVerifying = _params.Skip(1).Select(u => UInt160.Parse(u.AsString())).ToArray();
                             checkWitnessHashes = new CheckWitnessHashes(scriptHashesForVerifying);
                         }
                         return GetInvokeResult(script, checkWitnessHashes);
