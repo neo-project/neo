@@ -28,10 +28,10 @@ namespace Neo.UnitTests.Cryptography
             BigInteger n = key.PublicKey.Curve.N;
             byte[] message = System.Text.Encoding.Default.GetBytes("HelloWorld");
             MethodInfo dynMethod = typeof(ECDsa).GetMethod("CalculateE", BindingFlags.NonPublic | BindingFlags.Instance);
-            ((BigInteger)dynMethod.Invoke(sa, new object[] { n, message})).Should().Be(BigInteger.Parse("341881320659934023674980"));
+            ((BigInteger)dynMethod.Invoke(sa, new object[] { n, message })).Should().Be(BigInteger.Parse("341881320659934023674980"));
 
             n = new BigInteger(10000000);
-            ((BigInteger)dynMethod.Invoke(sa, new object[] { n, message})).Should().Be(BigInteger.Parse("4744556"));
+            ((BigInteger)dynMethod.Invoke(sa, new object[] { n, message })).Should().Be(BigInteger.Parse("4744556"));
         }
 
         [TestMethod]
