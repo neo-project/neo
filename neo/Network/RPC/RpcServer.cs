@@ -34,6 +34,7 @@ namespace Neo.Network.RPC
         private class CheckWitnessHashes : IVerifiable
         {
             private readonly UInt160[] _scriptHashesForVerifying;
+            public Witness[] Witnesses { get; set; }
 
             public CheckWitnessHashes(UInt160[] scriptHashesForVerifying)
             {
@@ -52,19 +53,12 @@ namespace Neo.Network.RPC
                 throw new NotImplementedException();
             }
 
-            public byte[] GetMessage()
-            {
-                throw new NotImplementedException();
-            }
-
-            public Witness[] Scripts { get; set; }
-
             public void DeserializeUnsigned(BinaryReader reader)
             {
                 throw new NotImplementedException();
             }
 
-            public UInt160[] GetScriptHashesForVerifying()
+            public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
             {
                 return _scriptHashesForVerifying;
             }
@@ -117,7 +111,7 @@ namespace Neo.Network.RPC
             }
         }
 
-        private static JObject GetInvokeResult(byte[] script, IVerifiable checkWitnessHashes = null)
+        private JObject GetInvokeResult(byte[] script, IVerifiable checkWitnessHashes = null)
         {
             ApplicationEngine engine = ApplicationEngine.Run(script, checkWitnessHashes, extraGAS: MaxGasInvoke);
             JObject json = new JObject();
