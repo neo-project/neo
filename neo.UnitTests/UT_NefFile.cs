@@ -14,7 +14,6 @@ namespace Neo.UnitTests
         {
             var file = new NefFile()
             {
-                Magic = NefFile.NefMagic.NEF3,
                 Compiler = "".PadLeft(32, ' '),
                 Version = new Version(1, 2, 3, 4),
                 Script = new byte[] { 0x01, 0x02, 0x03 }
@@ -26,7 +25,6 @@ namespace Neo.UnitTests
             var data = file.ToArray();
             file = data.AsSerializable<NefFile>();
 
-            Assert.AreEqual(NefFile.NefMagic.NEF3, file.Magic);
             Assert.AreEqual("".PadLeft(32, ' '), file.Compiler);
             Assert.AreEqual(new Version(1, 2, 3, 4), file.Version);
             Assert.AreEqual(file.Script.ToScriptHash(), file.ScriptHash);
@@ -38,7 +36,6 @@ namespace Neo.UnitTests
         {
             var file = new NefFile()
             {
-                Magic = NefFile.NefMagic.NEF3,
                 Compiler = "".PadLeft(byte.MaxValue, ' '),
                 Version = new Version(1, 2, 3, 4),
                 Script = new byte[1024 * 1024],

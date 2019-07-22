@@ -6,7 +6,6 @@ using System.IO;
 namespace Neo.SmartContract
 {
     /// <summary>
-    /// 
     /// +------------+-----------+------------------------------------------------------------+
     /// |   Field    |  Length   |                          Comment                           |
     /// +------------+-----------+------------------------------------------------------------+
@@ -17,22 +16,13 @@ namespace Neo.SmartContract
     /// | Script     | Var bytes | Var bytes for the payload                                  |
     /// | Checksum   | 4 bytes   | Sha256 of the whole file whithout the last for bytes(CRC)  |
     /// +------------+-----------+------------------------------------------------------------+
-    /// 
     /// </summary>
     public class NefFile : ISerializable
     {
-        public enum NefMagic : int
-        {
-            /// <summary>
-            /// NEO Executable Format 3
-            /// </summary>
-            NEF3 = 0x3346454E
-        }
-
         /// <summary>
-        /// Magic
+        /// NEO Executable Format 3 (NEF3)
         /// </summary>
-        public NefMagic Magic { get; set; }
+        private const uint Magic = 0x3346454E;
 
         /// <summary>
         /// Compiler
@@ -60,7 +50,7 @@ namespace Neo.SmartContract
         public uint CheckSum { get; set; }
 
         public int Size =>
-            sizeof(NefMagic) +          // Magic
+            sizeof(uint) +              // Magic
             Compiler.GetVarSize() +     // Compiler
             (sizeof(int) * 4) +         // Version
             ScriptHash.Size +           // ScriptHash
@@ -69,7 +59,7 @@ namespace Neo.SmartContract
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write((int)Magic);
+            writer.Write(Magic);
             writer.WriteFixedString(Compiler, 32);
 
             // Version
@@ -85,9 +75,7 @@ namespace Neo.SmartContract
 
         public void Deserialize(BinaryReader reader)
         {
-            Magic = (NefMagic)reader.ReadInt32();
-
-            if (Magic != NefMagic.NEF3)
+            if (reader.ReadUInt32() != Magic)
             {
                 throw new FormatException("Wrong magic");
             }
