@@ -40,7 +40,6 @@ namespace Neo.UnitTests.IO.Caching
 
         public override bool Equals(object obj)
         {
-            if (obj is null) return false;
             if (!(obj is MyKey)) return false;
             return Equals((MyKey)obj);
         }
@@ -93,7 +92,6 @@ namespace Neo.UnitTests.IO.Caching
 
         public override bool Equals(object obj)
         {
-            if (obj is null) return false;
             if (!(obj is MyValue)) return false;
             return Equals((MyValue)obj);
         }
@@ -161,7 +159,6 @@ namespace Neo.UnitTests.IO.Caching
         {
             myDataCache = new MyDataCache<MyKey, MyValue>();
         }
-
 
         [TestMethod]
         public void TestAccessByKey()
@@ -252,7 +249,6 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Delete(new MyKey("key2"));
             myDataCache.Commit();
             myDataCache.InnerDict.ContainsKey(new MyKey("key2")).Should().BeFalse();
-
         }
 
         [TestMethod]
