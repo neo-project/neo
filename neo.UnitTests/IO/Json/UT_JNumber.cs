@@ -46,20 +46,6 @@ namespace Neo.UnitTests.IO.Json
         }
 
         [TestMethod]
-        public void TestToTimestamp()
-        {
-            var num = new JNumber(1563173462);
-            Action action = () => string.Format("{0:yyyy-MM-dd HH:mm:ss}", num.ToTimestamp());
-            action.ShouldNotThrow<Exception>();
-
-            Action action1 = () => minInt.ToTimestamp();
-            action1.ShouldThrow<InvalidCastException>();
-
-            Action action2 = () => maxInt.ToTimestamp();
-            action2.ShouldThrow<ArgumentOutOfRangeException>();
-        }
-
-        [TestMethod]
         public void TestTryGetEnum()
         {
             zero.TryGetEnum<Woo>().Should().Be(Woo.Tom);
