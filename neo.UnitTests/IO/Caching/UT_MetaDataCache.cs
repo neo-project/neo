@@ -11,9 +11,7 @@ namespace Neo.UnitTests.IO.Caching
     {
         public T Value;
 
-        public MyMetaCache(Func<T> factory) : base(factory)
-        {
-        }
+        public MyMetaCache(Func<T> factory) : base(factory) { }
 
         protected override void AddInternal(T item)
         {

@@ -9,7 +9,6 @@ using System.Linq;
 
 namespace Neo.UnitTests.IO.Caching
 {
-
     class MyKey : ISerializable, IEquatable<MyKey>
     {
         public string Key;
@@ -56,9 +55,7 @@ namespace Neo.UnitTests.IO.Caching
 
         public int Size => Value.Length;
 
-
         public MyValue() { }
-
 
         public MyValue(string val)
         {
@@ -106,7 +103,6 @@ namespace Neo.UnitTests.IO.Caching
            where TKey : IEquatable<TKey>, ISerializable, new()
            where TValue : class, ICloneable<TValue>, ISerializable, new()
     {
-
         public Dictionary<TKey, TValue> InnerDict = new Dictionary<TKey, TValue>();
 
         public override void DeleteInternal(TKey key)
@@ -147,7 +143,6 @@ namespace Neo.UnitTests.IO.Caching
             InnerDict[key] = value;
         }
     }
-
 
     [TestClass]
     public class UT_DataCache
