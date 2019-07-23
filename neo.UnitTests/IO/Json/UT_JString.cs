@@ -9,7 +9,6 @@ using Neo.SmartContract;
 
 namespace Neo.UnitTests.IO
 {
-
     [TestClass]
     public class UT_JString
     {
