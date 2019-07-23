@@ -7,7 +7,6 @@ namespace Neo.UnitTests.IO.Caching
     [TestClass]
     public class UT_CloneMetaCache
     {
-
         MyMetaCache<MyValue> myMetaCache;
         CloneMetaCache<MyValue> cloneMetaCache;
 
@@ -22,12 +21,6 @@ namespace Neo.UnitTests.IO.Caching
         public void TestConstructor()
         {
             cloneMetaCache.Should().NotBeNull();
-        }
-
-        [TestMethod]
-        public void TestAddInternal()
-        {
-            // Skip, as CloneMetaCache.AddInternal cannot be reached
         }
 
         [TestMethod]
