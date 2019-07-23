@@ -123,7 +123,7 @@ namespace Neo.IO.Caching
         {
             lock (dictionary)
             {
-                return FindUnsorder(key_prefix).OrderBy(u => u.Key, this);
+                return FindUnsorted(key_prefix).OrderBy(u => u.Key, this);
             }
         }
 
@@ -160,7 +160,7 @@ namespace Neo.IO.Caching
         /// </summary>
         /// <param name="key_prefix">Key prefix</param>
         /// <returns>Unsorted key/value</returns>
-        private IEnumerable<KeyValuePair<TKey, TValue>> FindUnsorder(byte[] key_prefix = null)
+        private IEnumerable<KeyValuePair<TKey, TValue>> FindUnsorted(byte[] key_prefix = null)
         {
             lock (dictionary)
             {
