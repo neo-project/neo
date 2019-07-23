@@ -47,10 +47,10 @@ namespace Neo.UnitTests.Consensus
             int timeIndex = 0;
             var timeValues = new[] {
               //new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // For tests here
-              new DateTime(1968, 06, 01, 0, 0, 1, DateTimeKind.Utc),  // For receiving block
-              new DateTime(1968, 06, 01, 0, 0, (int) Blockchain.SecondsPerBlock, DateTimeKind.Utc), // For Initialize
-              new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc), // unused
-              new DateTime(1968, 06, 01, 0, 0, 15, DateTimeKind.Utc)  // unused
+              new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc),  // For receiving block
+              new DateTime(1980, 06, 01, 0, 0, (int) Blockchain.MillisecondsPerBlock / 1000, 100, DateTimeKind.Utc), // For Initialize
+              new DateTime(1980, 06, 01, 0, 0, 15, 001, DateTimeKind.Utc), // unused
+              new DateTime(1980, 06, 01, 0, 0, 15, 001, DateTimeKind.Utc)  // unused
             };
             //TimeProvider.Current.UtcNow.ToTimestamp().Should().Be(4244941711); //1968-06-01 00:00:15
 
@@ -74,12 +74,12 @@ namespace Neo.UnitTests.Consensus
 
             // Creating proposed block
             Header header = new Header();
-            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal);
-            header.Size.Should().Be(101);
+            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
+            header.Size.Should().Be(105);
 
-            Console.WriteLine($"header {header} hash {header.Hash} timstamp {timestampVal}");
+            Console.WriteLine($"header {header} hash {header.Hash} timestamp {timestampVal}");
 
-            timestampVal.Should().Be(4244941696); //1968-06-01 00:00:00
+            timestampVal.Should().Be(328665601001);    // GMT: Sunday, June 1, 1980 12:00:01.001 AM
                                                   // check basic ConsensusContext
                                                   //mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
 
@@ -197,7 +197,7 @@ namespace Neo.UnitTests.Consensus
                 consensusContext.CommitPayloads[6] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx2.Hash.ToArray()) }, 3, new[] { (byte)'6', (byte)'7' });
             }
 
-            consensusContext.Block.Timestamp = TimeProvider.Current.UtcNow.ToTimestamp();
+            consensusContext.Block.Timestamp = TimeProvider.Current.UtcNow.ToTimestampMS();
 
             consensusContext.ChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
             consensusContext.ChangeViewPayloads[0] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = 6 }, 0, new[] { (byte)'A' });
