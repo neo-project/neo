@@ -53,7 +53,6 @@ namespace Neo.Ledger
             Transactions = new[] { DeployNativeContracts() }
         };
 
-        private const int MemoryPoolMaxTransactions = 50_000;
         private const int MaxTxToReverifyPerIdle = 10;
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
@@ -89,7 +88,7 @@ namespace Neo.Ledger
         public Blockchain(NeoSystem system, Store store)
         {
             this.system = system;
-            this.MemPool = new MemoryPool(system, MemoryPoolMaxTransactions);
+            this.MemPool = new MemoryPool(system, ProtocolSettings.Default.MemoryPoolMaxTransactions);
             this.Store = store;
             lock (lockObj)
             {
