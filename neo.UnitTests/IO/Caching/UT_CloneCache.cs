@@ -37,7 +37,6 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache[new MyKey("key1")].Should().Be(new MyValue("value1"));
         }
 
-
         [TestMethod]
         public void TestDeleteInternal()
         {
@@ -48,7 +47,6 @@ namespace Neo.UnitTests.IO.Caching
             cloneCache.TryGet(new MyKey("key1")).Should().BeNull();
             myDataCache.TryGet(new MyKey("key1")).Should().BeNull();
         }
-
 
         [TestMethod]
         public void TestFindInternal()
@@ -75,7 +73,6 @@ namespace Neo.UnitTests.IO.Caching
             items = cloneCache.Find(new MyKey("key4").ToArray());
             items.Count().Should().Be(0);
         }
-
 
         [TestMethod]
         public void TestGetInternal()
