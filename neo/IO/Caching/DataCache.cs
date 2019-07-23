@@ -123,7 +123,93 @@ namespace Neo.IO.Caching
         {
             lock (dictionary)
             {
-                return FindUnsorted(key_prefix).OrderBy(u => u.Key, this);
+                // Retrive cached results
+
+                var cached = dictionary.
+                    Where(pair => pair.Value.State != TrackState.Deleted &&
+                    (
+                        key_prefix == null || pair.Key.ToArray()
+                        .Take(key_prefix.Length)
+                        .SequenceEqual(key_prefix))
+                    )
+                    .Select(u => new KeyValuePair<TKey, TValue>(u.Key, u.Value.Item))
+                    .ToList();
+
+                var withCache = cached.Count == 0;
+                KeyValuePair<TKey, TValue> n = new KeyValuePair<TKey, TValue>();
+
+                using (var iterator = FindInternal(key_prefix ?? new byte[0]).GetEnumerator())
+                {
+                    do
+                    {
+                        KeyValuePair<TKey, TValue> a = n, b = n;
+
+                        if (iterator.MoveNext())
+                        {
+                            a = iterator.Current;
+                            if (iterator.MoveNext()) b = iterator.Current;
+                        }
+
+                        // We need to return a, b and cached results between them
+
+                        if (a.Key == null && a.Value == null)
+                        {
+                            // Without internal data
+
+                            foreach (var item in cached) yield return item;
+                            yield break;
+                        }
+                        else if (b.Key == null && b.Value == null)
+                        {
+                            // The last internal data, sort cached with them
+
+                            foreach
+                                (
+                                var item in cached
+                                .Concat(new KeyValuePair<TKey, TValue>[] { a }).OrderBy(u => u.Key, this)
+                                .ToArray()
+                                )
+                            {
+                                yield return item;
+                            }
+
+                            // We don't need to process anything else.
+                            break;
+                        }
+                        else
+                        {
+                            if (withCache)
+                            {
+                                yield return a;
+                                yield return b;
+                            }
+                            else
+                            {
+                                // We need to find the item between 'a' and 'b'
+
+                                foreach
+                                    (
+                                    var item in cached
+                                    .Concat(new KeyValuePair<TKey, TValue>[] { a, b })
+                                    .OrderBy(u => u.Key, this)
+                                    .ToArray()
+                                    )
+                                {
+                                    yield return item;
+
+                                    if (Compare(item.Key, b.Key) == 0) break;
+
+                                    // Remove it from cache
+
+                                    cached.Remove(item);
+                                }
+
+                                withCache = cached.Count == 0;
+                            }
+                        }
+                    }
+                    while (true);
+                }
             }
         }
 
@@ -153,24 +239,6 @@ namespace Neo.IO.Caching
                 if (result != 0) return result;
             }
             return a.Length.CompareTo(b.Length);
-        }
-
-        /// <summary>
-        /// This will produce unsorted result between cached and uncached results
-        /// </summary>
-        /// <param name="key_prefix">Key prefix</param>
-        /// <returns>Unsorted key/value</returns>
-        private IEnumerable<KeyValuePair<TKey, TValue>> FindUnsorted(byte[] key_prefix = null)
-        {
-            lock (dictionary)
-            {
-                foreach (var pair in FindInternal(key_prefix ?? new byte[0]))
-                    if (!dictionary.ContainsKey(pair.Key))
-                        yield return pair;
-                foreach (var pair in dictionary)
-                    if (pair.Value.State != TrackState.Deleted && (key_prefix == null || pair.Key.ToArray().Take(key_prefix.Length).SequenceEqual(key_prefix)))
-                        yield return new KeyValuePair<TKey, TValue>(pair.Key, pair.Value.Item);
-            }
         }
 
         protected abstract IEnumerable<KeyValuePair<TKey, TValue>> FindInternal(byte[] key_prefix);
