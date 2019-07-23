@@ -135,7 +135,7 @@ namespace Neo.IO.Caching
                     .Select(u => new KeyValuePair<TKey, TValue>(u.Key, u.Value.Item))
                     .ToList();
 
-                var withCache = cached.Count == 0;
+                var withoutCache = cached.Count == 0;
                 KeyValuePair<TKey, TValue> n = new KeyValuePair<TKey, TValue>();
 
                 using (var iterator = FindInternal(key_prefix ?? new byte[0]).GetEnumerator())
@@ -178,7 +178,7 @@ namespace Neo.IO.Caching
                         }
                         else
                         {
-                            if (withCache)
+                            if (withoutCache)
                             {
                                 yield return a;
                                 yield return b;
@@ -204,7 +204,7 @@ namespace Neo.IO.Caching
                                     cached.Remove(item);
                                 }
 
-                                withCache = cached.Count == 0;
+                                withoutCache = cached.Count == 0;
                             }
                         }
                     }
