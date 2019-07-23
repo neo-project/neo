@@ -37,6 +37,11 @@ namespace Neo.Consensus
         // if this node never heard from validator i, LastSeenMessage[i] will be -1.
         public int[] LastSeenMessage;
 
+        public ConsensusPayload[] FuturePreparationPayloads;
+        public ConsensusPayload[] FutureCommitPayloads;
+        public ConsensusPayload[] FutureChangeViewPayloads;
+        public ConsensusPayload[] FutureRecoveryPayloads;
+
         public Snapshot Snapshot { get; private set; }
         private KeyPair keyPair;
         private readonly Wallet wallet;
@@ -268,7 +273,7 @@ namespace Neo.Consensus
             });
         }
 
-        public void Reset(byte viewNumber)
+        public void Reset(byte viewNumber, bool resetFutures = true)
         {
             if (viewNumber == 0)
             {
@@ -318,6 +323,17 @@ namespace Neo.Consensus
             TransactionHashes = null;
             PreparationPayloads = new ConsensusPayload[Validators.Length];
             if (MyIndex >= 0) LastSeenMessage[MyIndex] = (int)Block.Index;
+
+            if (resetFutures)
+                ResetFuturePayloads();
+        }
+
+        public void ResetFuturePayloads()
+        {
+            FutureCommitPayloads = new ConsensusPayload[Validators.Length];
+            FutureRecoveryPayloads = new ConsensusPayload[Validators.Length];
+            FutureChangeViewPayloads = new ConsensusPayload[Validators.Length];
+            FutureRecoveryPayloads = new ConsensusPayload[Validators.Length];
         }
 
         public void Save()

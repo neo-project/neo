@@ -146,7 +146,10 @@ namespace Neo.Consensus
 
         private void InitializeConsensus(byte viewNumber)
         {
-            context.Reset(viewNumber);
+            bool resetFuturePayload = true;
+            //Set to False if there is any future payload
+
+            context.Reset(viewNumber, resetFuturePayload);
             if (viewNumber > 0)
                 Log($"changeview: view={viewNumber} primary={context.Validators[context.GetPrimaryIndex((byte)(viewNumber - 1u))]}", LogLevel.Warning);
             Log($"initialize: height={context.Block.Index} view={viewNumber} index={context.MyIndex} role={(context.IsPrimary ? "Primary" : context.WatchOnly ? "WatchOnly" : "Backup")}");
@@ -169,6 +172,13 @@ namespace Neo.Consensus
             else
             {
                 ChangeTimer(TimeSpan.FromMilliseconds(Blockchain.MillisecondsPerBlock << (viewNumber + 1)));
+            }
+
+            // Speed up consensus with cached future payloads
+            if(!resetFuturePayload)
+            {
+                //Try to load all Future payloads
+                context.ResetFuturePayloads();
             }
         }
 
@@ -237,8 +247,55 @@ namespace Neo.Consensus
                 ChangeTimer(nextDelay);
         }
 
+        private void TryToSaveFuturePayloads(ConsensusPayload payload)
+        {         
+            if (payload.BlockIndex > context.Block.Index)
+            {
+                ConsensusMessage futureMessage;
+                try
+                {
+                    futureMessage = payload.ConsensusMessage;
+                }
+                catch (FormatException)
+                {
+                    return;
+                }
+                catch (IOException)
+                {
+                    return;
+                }
+
+                byte lastViewNumber = 0;
+                switch (futureMessage)
+                {
+                    case ChangeView view:
+                        lastViewNumber = context.FutureChangeViewPayloads[payload.ValidatorIndex] != null ? (byte)context.FutureChangeViewPayloads[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber : (byte)0;
+                        context.FutureChangeViewPayloads[payload.ValidatorIndex] = (lastViewNumber != 0 && futureMessage.ViewNumber > lastViewNumber) ? payload : context.FutureChangeViewPayloads[payload.ValidatorIndex];
+                        break;
+                    case PrepareRequest request:
+                        lastViewNumber = context.FuturePreparationPayloads[payload.ValidatorIndex] != null ? (byte)context.FuturePreparationPayloads[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber : (byte)0;
+                        context.FuturePreparationPayloads[payload.ValidatorIndex] = (lastViewNumber != 0 && futureMessage.ViewNumber > lastViewNumber) ? payload : context.FuturePreparationPayloads[payload.ValidatorIndex];
+                        break;
+                    case PrepareResponse response:
+                        lastViewNumber = context.FuturePreparationPayloads[payload.ValidatorIndex] != null ? (byte)context.FuturePreparationPayloads[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber : (byte)0;
+                        context.FuturePreparationPayloads[payload.ValidatorIndex] = (lastViewNumber != 0 && futureMessage.ViewNumber > lastViewNumber) ? payload : context.FuturePreparationPayloads[payload.ValidatorIndex];
+                        break;
+                    case Commit commit:
+                        lastViewNumber = context.FutureCommitPayloads[payload.ValidatorIndex] != null ? (byte)context.FutureCommitPayloads[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber : (byte)0;
+                        context.FutureCommitPayloads[payload.ValidatorIndex] = (lastViewNumber != 0 && futureMessage.ViewNumber > lastViewNumber) ? payload : context.FutureCommitPayloads[payload.ValidatorIndex];
+                        break;
+                    case RecoveryMessage recovery:
+                        lastViewNumber = context.FutureRecoveryPayloads[payload.ValidatorIndex] != null ? (byte)context.FutureRecoveryPayloads[payload.ValidatorIndex]?.GetDeserializedMessage<ChangeView>().ViewNumber : (byte)0;
+                        context.FutureRecoveryPayloads[payload.ValidatorIndex] = (lastViewNumber != 0 && futureMessage.ViewNumber > lastViewNumber) ? payload : context.FutureRecoveryPayloads[payload.ValidatorIndex];
+                        break;
+                }
+            }
+        }
+
         private void OnConsensusPayload(ConsensusPayload payload)
         {
+            TryToSaveFuturePayloads(payload);
+
             if (context.BlockSent) return;
             if (payload.Version != context.Block.Version) return;
             if (payload.PrevHash != context.Block.PrevHash || payload.BlockIndex != context.Block.Index)
