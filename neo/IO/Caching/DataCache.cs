@@ -1,10 +1,11 @@
-﻿using System;
+using Neo.Ledger;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.IO.Caching
 {
-    public abstract class DataCache<TKey, TValue>
+    public abstract class DataCache<TKey, TValue> : IComparer<TKey>
         where TKey : IEquatable<TKey>, ISerializable
         where TValue : class, ICloneable<TValue>, ISerializable, new()
     {
@@ -119,6 +120,47 @@ namespace Neo.IO.Caching
         }
 
         public IEnumerable<KeyValuePair<TKey, TValue>> Find(byte[] key_prefix = null)
+        {
+            lock (dictionary)
+            {
+                return FindUnsorder(key_prefix).OrderBy(u => u.Key, this);
+            }
+        }
+
+        public int Compare(TKey x, TKey y)
+        {
+            if (x is StorageKey xx && y is StorageKey yy)
+            {
+                var result = xx.ScriptHash.CompareTo(yy.ScriptHash);
+                if (result != 0) return result;
+
+                return Compare(xx.Key, yy.Key);
+            }
+            else
+            {
+                var a = x.ToArray();
+                var b = y.ToArray();
+
+                return Compare(a, b);
+            }
+        }
+
+        private int Compare(byte[] a, byte[] b)
+        {
+            for (int index = 0, max = Math.Min(a.Length, b.Length); index < max; index++)
+            {
+                var result = a[index].CompareTo(b[index]);
+                if (result != 0) return result;
+            }
+            return a.Length.CompareTo(b.Length);
+        }
+
+        /// <summary>
+        /// This will produce unsorted result between cached and uncached results
+        /// </summary>
+        /// <param name="key_prefix">Key prefix</param>
+        /// <returns>Unsorted key/value</returns>
+        private IEnumerable<KeyValuePair<TKey, TValue>> FindUnsorder(byte[] key_prefix = null)
         {
             lock (dictionary)
             {
