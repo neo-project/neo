@@ -15,7 +15,7 @@ using System.Collections.Generic;
 namespace Neo.UnitTests
 {
     [TestClass]
-    public class UT_ProtocolHandlerMailbox  : TestKit
+    public class UT_ProtocolHandlerMailbox : TestKit
     {
         private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
 
@@ -96,99 +96,99 @@ namespace Neo.UnitTests
             // Version (no drop)
             msg = Message.Create(MessageCommand.Version, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
             // Verack (no drop)
             msg = Message.Create(MessageCommand.Verack, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
 
             //connectivity
             // GetAddr (drop)
             msg = Message.Create(MessageCommand.GetAddr, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(true);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(true);
             // Addr (no drop)
             msg = Message.Create(MessageCommand.Addr, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
             // Ping (no drop)
             msg = Message.Create(MessageCommand.Ping, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
             // Pong (no drop)
             msg = Message.Create(MessageCommand.Pong, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
 
             //synchronization
             // GetHeaders (drop)
             msg = Message.Create(MessageCommand.GetHeaders, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(true);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(true);
             // Headers (no drop)
             msg = Message.Create(MessageCommand.Headers, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
             // GetBlocks (drop)
             msg = Message.Create(MessageCommand.GetBlocks, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(true);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(true);
             // Mempool (drop)
             msg = Message.Create(MessageCommand.Mempool, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(true);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(true);
             // Inv (no drop)
             msg = Message.Create(MessageCommand.Inv, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
             // GetData (drop)
             msg = Message.Create(MessageCommand.GetData, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(true);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(true);
             // NotFound (no drop)
             msg = Message.Create(MessageCommand.NotFound, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
             // Transaction (no drop)
             msg = Message.Create(MessageCommand.Transaction, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
             // Block (no drop)
             msg = Message.Create(MessageCommand.Block, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
             // Consensus (no drop)
             msg = Message.Create(MessageCommand.Consensus, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
             // Reject (no drop)
             msg = Message.Create(MessageCommand.Reject, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
 
             //SPV protocol
             // FilterLoad (no drop)
             msg = Message.Create(MessageCommand.FilterLoad, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
             // FilterAdd (no drop)
             msg = Message.Create(MessageCommand.FilterAdd, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
             // FilterClear (no drop)
             msg = Message.Create(MessageCommand.FilterClear, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
             // MerkleBlock (no drop)
             msg = Message.Create(MessageCommand.MerkleBlock, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
 
             //others
             // Alert (no drop)
             msg = Message.Create(MessageCommand.Alert, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
-            uut.ShallDrop(msg, new object[]{ msg }).Should().Be(false);
+            uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
         }
     }
 }

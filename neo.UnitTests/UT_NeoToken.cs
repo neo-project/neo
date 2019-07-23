@@ -91,7 +91,7 @@ namespace Neo.UnitTests
                 Blockchain.StandbyValidators).ToScriptHash().ToArray();
 
             var unclaim = Check_UnclaimedGas(snapshot, from);
-            unclaim.Value.Should().Be(new BigInteger(800000000000));
+            unclaim.Value.Should().Be(new BigInteger(600000000000));
             unclaim.State.Should().BeTrue();
 
             unclaim = Check_UnclaimedGas(snapshot, new byte[19]);
@@ -146,7 +146,7 @@ namespace Neo.UnitTests
             // Check unclaim
 
             var unclaim = Check_UnclaimedGas(snapshot, from);
-            unclaim.Value.Should().Be(new BigInteger(800000000000));
+            unclaim.Value.Should().Be(new BigInteger(600000000000));
             unclaim.State.Should().BeTrue();
 
             // Transfer
@@ -344,7 +344,7 @@ namespace Neo.UnitTests
 
         internal static void CheckBalance(byte[] account, DataCache<StorageKey, StorageItem>.Trackable trackable, BigInteger balance, BigInteger height, ECPoint[] votes)
         {
-            var st = (VM.Types.Struct)trackable.Item.Value.DeserializeStackItem(3);
+            var st = (VM.Types.Struct)trackable.Item.Value.DeserializeStackItem(3, 32);
 
             st.Count.Should().Be(3);
             st.Select(u => u.GetType()).ToArray().Should().BeEquivalentTo(new Type[] { typeof(VM.Types.Integer), typeof(VM.Types.Integer), typeof(VM.Types.ByteArray) }); // Balance
