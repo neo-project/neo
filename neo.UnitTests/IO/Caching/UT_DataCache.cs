@@ -39,8 +39,8 @@ namespace Neo.UnitTests.IO.Caching
 
         public override bool Equals(object obj)
         {
-            if (!(obj is MyKey)) return false;
-            return Equals((MyKey)obj);
+            if (!(obj is MyKey key)) return false;
+            return Equals(key);
         }
 
         public override int GetHashCode()
@@ -89,8 +89,8 @@ namespace Neo.UnitTests.IO.Caching
 
         public override bool Equals(object obj)
         {
-            if (!(obj is MyValue)) return false;
-            return Equals((MyValue)obj);
+            if (!(obj is MyValue key)) return false;
+            return Equals(key);
         }
 
         public override int GetHashCode()
