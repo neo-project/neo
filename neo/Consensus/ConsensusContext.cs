@@ -222,7 +222,7 @@ namespace Neo.Consensus
             Transactions = new Dictionary<UInt256, Transaction>();
             using (var snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                maxBlockSize = NativeContract.Policy.GetMaxBlockSize(snapshot);
+                maxBlockSize = Math.Min(Network.P2P.Message.PayloadMaxSize, NativeContract.Policy.GetMaxBlockSize(snapshot));
                 TransactionHashes = new UInt256[NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot)];
             }
 
