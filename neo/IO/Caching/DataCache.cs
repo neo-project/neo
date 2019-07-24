@@ -150,7 +150,7 @@ namespace Neo.IO.Caching
                 .Where(p => !dictionary.ContainsKey(p.Key))
                 .Select(p =>
                 (
-                    KeyBytes: p.Key.ToArray(),
+                    KeyBytes: ToByteArray(p.Key),
                     p.Key,
                     p.Value
                 ));
