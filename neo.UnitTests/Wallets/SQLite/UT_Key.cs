@@ -2,7 +2,7 @@
 using Neo.Wallets.SQLite;
 using System.Text;
 
-namespace Neo.UnitTests
+namespace Neo.UnitTests.Wallets.SQLite
 {
     [TestClass]
     public class UT_Key
