@@ -1,11 +1,11 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.IO;
 using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Reflection;
 using ECCurve = Neo.Cryptography.ECC.ECCurve;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
@@ -78,21 +78,6 @@ namespace Neo.UnitTests.Cryptography.ECC
 
             action = () => ECPoint.DecodePoint(input3.Take(input3.Length - 1).ToArray(), ECCurve.Secp256k1);
             action.ShouldThrow<FormatException>();
-        }
-
-        [TestMethod]
-        public void TestDecompressPoint()
-        {
-            ECPoint point = new ECPoint(null, null, ECCurve.Secp256k1);
-            MethodInfo dynMethod = typeof(ECPoint).GetMethod("DecompressPoint", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-            Action action = () => dynMethod.Invoke(point, new object[] { 10, new BigInteger(100), ECCurve.Secp256k1 });
-            action.ShouldThrow<TargetInvocationException>().WithInnerException<ArithmeticException>();
-
-            BigInteger X1 = new BigInteger(new byte[] { 150, 194, 152, 216, 69, 57, 161, 244, 160, 51, 235, 45, 129, 125, 3, 119, 242, 64, 164, 99, 229, 230, 188, 248, 71, 66, 44, 225,
-                242, 209, 23, 107, 0 });
-            ((ECPoint)dynMethod.Invoke(point, new object[] { 1, X1, ECCurve.Secp256r1 })).Should().Be(ECCurve.Secp256r1.G);
-            ECPoint result = (ECPoint)dynMethod.Invoke(point, new object[] { 0, X1, ECCurve.Secp256r1 });
-            result.Should().Be(-ECCurve.Secp256r1.G);
         }
 
         [TestMethod]
@@ -235,10 +220,10 @@ namespace Neo.UnitTests.Cryptography.ECC
         public void TestDeserialize()
         {
             ECPoint point = new ECPoint(null, null, ECCurve.Secp256k1);
+            ISerializable serializable = point;
             byte[] input = { 4, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152,
                 72, 58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184 };
-            MethodInfo dynMethod = typeof(ECPoint).GetMethod("Neo.IO.ISerializable.Deserialize", BindingFlags.NonPublic | BindingFlags.Instance);
-            dynMethod.Invoke(point, new object[] { new BinaryReader(new MemoryStream(input)) });
+            serializable.Deserialize(new BinaryReader(new MemoryStream(input)));
             point.X.Should().Be(ECCurve.Secp256k1.G.X);
             point.Y.Should().Be(ECCurve.Secp256k1.G.Y);
         }
@@ -248,8 +233,8 @@ namespace Neo.UnitTests.Cryptography.ECC
         {
             MemoryStream stream = new MemoryStream();
             ECPoint point = new ECPoint(null, null, ECCurve.Secp256k1);
-            MethodInfo dynMethod = typeof(ECPoint).GetMethod("Neo.IO.ISerializable.Serialize", BindingFlags.NonPublic | BindingFlags.Instance);
-            dynMethod.Invoke(point, new object[] { new BinaryWriter(stream) });
+            ISerializable serializable = point;
+            serializable.Serialize(new BinaryWriter(stream));
             stream.ToArray().Should().BeEquivalentTo(new byte[] { 0 });
         }
 

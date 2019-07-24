@@ -36,21 +36,6 @@ namespace Neo.UnitTests.Cryptography.ECC
         }
 
         [TestMethod]
-        public void TestFastLucasSequence()
-        {
-            BigInteger input = new BigInteger(100);
-            ECFieldElement element = new ECFieldElement(input, ECCurve.Secp256k1);
-            BigInteger p = ECCurve.Secp256k1.Q, P = new BigInteger(100), Q = new BigInteger(100), k = new BigInteger(100);
-            MethodInfo dynMethod = typeof(ECFieldElement).GetMethod("FastLucasSequence", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-            BigInteger[] result = (BigInteger[])dynMethod.Invoke(element, new object[] { p, P, Q, k });
-            result.Length.Should().Be(2);
-            result[0].Should().Be(BigInteger.Parse("54291889122352983044815998754139869736752555616211571799996439440928031994584335748393871158396540907297549" +
-                "0355008852387781904431955206172450241620273083920976877257520258622942315361481829146774445786497935462753780354074019371263126918226216372821" +
-                "48377922151055949114088968720000000000000000000000000000000000000000000000000000"));
-            result[1].Should().Be(BigInteger.Parse("3796195317861153360631143355305468876976676103901517708672250570346390638982"));
-        }
-
-        [TestMethod]
         public void TestSqrt()
         {
             ECFieldElement element = new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1);
