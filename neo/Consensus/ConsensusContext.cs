@@ -210,14 +210,45 @@ namespace Neo.Consensus
         {
             byte[] buffer = new byte[sizeof(ulong)];
             random.NextBytes(buffer);
+            Block.ConsensusData.Nonce = BitConverter.ToUInt64(buffer, 0);
+
             IEnumerable<Transaction> memoryPoolTransactions = Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions();
             foreach (IPolicyPlugin plugin in Plugin.Policies)
                 memoryPoolTransactions = plugin.FilterForBlock(memoryPoolTransactions);
+
             List<Transaction> transactions = memoryPoolTransactions.ToList();
-            TransactionHashes = transactions.Select(p => p.Hash).ToArray();
-            Transactions = transactions.ToDictionary(p => p.Hash);
+
+            uint maxBlockSize;
+            Transactions = new Dictionary<UInt256, Transaction>();
+            using (var snapshot = Blockchain.Singleton.GetSnapshot())
+            {
+                maxBlockSize = NativeContract.Policy.GetMaxBlockSize(snapshot);
+                TransactionHashes = new UInt256[NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot)];
+            }
+
+            // Prevent that block exceed the max size
+
+            Block.Transactions = new Transaction[0];
+            var fixedSize = Block.Size + IO.Helper.GetVarSize(TransactionHashes.Length); // ensure that the var size grows without exceed the max size
+
+            for (int x = 0; x < transactions.Count; x++)
+            {
+                var tx = transactions[x];
+
+                // Check if exceed
+                if (fixedSize + UInt256.Length + tx.Size > maxBlockSize) break;
+
+                TransactionHashes[x] = tx.Hash;
+                Transactions.Add(tx.Hash, tx);
+            }
+
+            // Truncate null values
+
+            Array.Resize(ref TransactionHashes, Transactions.Count);
+
+            // Create valid request
+
             Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestampMS(), PrevHeader.Timestamp + 1);
-            Block.ConsensusData.Nonce = BitConverter.ToUInt64(buffer, 0);
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareRequest
             {
                 Timestamp = Block.Timestamp,
