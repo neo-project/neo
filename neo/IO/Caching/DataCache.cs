@@ -118,13 +118,25 @@ namespace Neo.IO.Caching
             }
         }
 
+        public byte[] ToByteArray(TKey x)
+        {
+            if (x is StorageKey xx)
+            {
+                return xx.Key;
+            }
+            else
+            {
+                return x.ToArray();
+            }
+        }
+
         public IEnumerable<KeyValuePair<TKey, TValue>> Find(byte[] key_prefix = null)
         {
             IEnumerable<(byte[], TKey, TValue)> cached;
             lock (dictionary)
             {
                 cached = dictionary
-                    .Where(p => p.Value.State != TrackState.Deleted && (key_prefix == null || p.Key.ToArray().Take(key_prefix.Length).SequenceEqual(key_prefix)))
+                    .Where(p => p.Value.State != TrackState.Deleted && (key_prefix == null || ToByteArray(p.Key).Take(key_prefix.Length).SequenceEqual(key_prefix)))
                     .Select(p =>
                     (
                         KeyBytes: p.Key.ToArray(),
