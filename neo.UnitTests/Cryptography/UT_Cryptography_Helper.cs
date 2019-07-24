@@ -126,8 +126,6 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestSha256()
         {
-            //byte[] value = "hello world".HexToBytes();
-
             byte[] value = Encoding.ASCII.GetBytes("hello world");      
             byte[] result = value.Sha256(0, value.Length);
             string resultStr = result.ToHexString();
