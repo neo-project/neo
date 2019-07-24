@@ -25,12 +25,22 @@ namespace Neo.UnitTests
 
             storages.Add
                 (
+                new StorageKey() { Key = new byte[] { 0x01, 0x01 }, ScriptHash = UInt160.Zero },
+                new StorageItem() { IsConstant = false, Value = new byte[] { } }
+                );
+            storages.Add
+                (
                 new StorageKey() { Key = new byte[] { 0x00, 0x01 }, ScriptHash = UInt160.Zero },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             storages.Add
                 (
                 new StorageKey() { Key = new byte[] { 0x00, 0x03 }, ScriptHash = UInt160.Zero },
+                new StorageItem() { IsConstant = false, Value = new byte[] { } }
+                );
+            cache.Add
+                (
+                new StorageKey() { Key = new byte[] { 0x01, 0x02 }, ScriptHash = UInt160.Zero },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
             cache.Add
@@ -61,9 +71,19 @@ namespace Neo.UnitTests
                 new StorageKey() { Key = new byte[] { 0x00, 0x01 }, ScriptHash = UInt160.Zero },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
+            storages.Add
+                (
+                new StorageKey() { Key = new byte[] { 0x01, 0x01 }, ScriptHash = UInt160.Zero },
+                new StorageItem() { IsConstant = false, Value = new byte[] { } }
+                );
             cache.Add
                 (
                 new StorageKey() { Key = new byte[] { 0x00, 0x02 }, ScriptHash = UInt160.Zero },
+                new StorageItem() { IsConstant = false, Value = new byte[] { } }
+                );
+            cache.Add
+                (
+                new StorageKey() { Key = new byte[] { 0x01, 0x02 }, ScriptHash = UInt160.Zero },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
 
@@ -87,6 +107,11 @@ namespace Neo.UnitTests
             cache.Add
                 (
                 new StorageKey() { Key = new byte[] { 0x00, 0x02 }, ScriptHash = UInt160.Zero },
+                new StorageItem() { IsConstant = false, Value = new byte[] { } }
+                );
+            cache.Add
+                (
+                new StorageKey() { Key = new byte[] { 0x01, 0x02 }, ScriptHash = UInt160.Zero },
                 new StorageItem() { IsConstant = false, Value = new byte[] { } }
                 );
 
