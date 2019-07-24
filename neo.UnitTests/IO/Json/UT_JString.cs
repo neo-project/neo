@@ -1,11 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Text;
 using Neo.IO.Json;
-using System.IO;
 using Neo.SmartContract;
+using System;
+using System.IO;
 
 namespace Neo.UnitTests.IO
 {

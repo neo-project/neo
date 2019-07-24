@@ -17,9 +17,7 @@ namespace Neo.UnitTests.Cryptography
             byte[] block = Encoding.ASCII.GetBytes("00000000000000000000000000000000");
             byte[] key = Encoding.ASCII.GetBytes("1234567812345678");
             byte[] result = block.AES256Encrypt(key);
-            string encryptString = "";
-            for (int i = 0; i < 32; i++)
-                encryptString += result[i].ToString("x2");
+            string encryptString = result.ToHexString();
             encryptString.Should().Be("f69e0923d8247eef417d6a78944a4b39f69e0923d8247eef417d6a78944a4b39");    
         }
 
@@ -42,9 +40,8 @@ namespace Neo.UnitTests.Cryptography
             byte[] key = Encoding.ASCII.GetBytes("12345678123456781234567812345678");
             byte[] iv = Encoding.ASCII.GetBytes("1234567812345678");
             byte[] result = data.AesEncrypt(key, iv);
-            string encryptString = "";
-            for (int i = 0; i < data.Length; i++)
-                encryptString += result[i].ToString("x2");
+
+            string encryptString = result.ToHexString();
             encryptString.Should().Be("07c748cf7d326782f82e60ebe60e2fac289e84e9ce91c1bc41565d14ecb53640");
 
             byte[] nullData = null;
@@ -129,11 +126,11 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestSha256()
         {
+            //byte[] value = "hello world".HexToBytes();
+
             byte[] value = Encoding.ASCII.GetBytes("hello world");      
             byte[] result = value.Sha256(0, value.Length);
-            string resultStr = "";
-            for (int i = 0; i < result.Length; i++)
-                resultStr += result[i].ToString("x2");
+            string resultStr = result.ToHexString();
             resultStr.Should().Be("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9");
         }
 
@@ -174,8 +171,7 @@ namespace Neo.UnitTests.Cryptography
             string password = "hello world";
             string string1 = "bc62d4b80d9e36da29c16c5d4d9f11731f36052c72401a76c23c0fb5a9b74423";
             byte[] byteArray = new byte[string1.Length / 2];
-            for (int i = 0; i < string1.Length / 2; i++)
-                byteArray[i] = Convert.ToByte(string1.Substring(i * 2, 2), 16);
+            byteArray = string1.HexToBytes();            
             password.ToAesKey().Should().Equal(byteArray);
         }
 
@@ -196,8 +192,7 @@ namespace Neo.UnitTests.Cryptography
             password.AppendChar('d');
             string string1 = "bc62d4b80d9e36da29c16c5d4d9f11731f36052c72401a76c23c0fb5a9b74423";
             byte[] byteArray = new byte[string1.Length / 2];
-            for (int i = 0; i < string1.Length / 2; i++)
-                byteArray[i] = Convert.ToByte(string1.Substring(i * 2, 2), 16);
+            byteArray = string1.HexToBytes();
             password.ToAesKey().Should().Equal(byteArray);
         }
 
