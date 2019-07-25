@@ -118,6 +118,11 @@ namespace Neo.IO.Caching
             }
         }
 
+        /// <summary>
+        /// Find the entries that start with the `key_prefix`
+        /// </summary>
+        /// <param name="key_prefix">Must maintain the deserialized format of TKey</param>
+        /// <returns>Entries found with the desired prefix</returns>
         public IEnumerable<KeyValuePair<TKey, TValue>> Find(byte[] key_prefix = null)
         {
             IEnumerable<(byte[], TKey, TValue)> cached;
