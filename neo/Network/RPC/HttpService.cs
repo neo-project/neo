@@ -53,8 +53,5 @@ namespace Neo.Network.RPC
                 throw ex.GetBaseException();
             }
         }
-
     }
-
-
 }

@@ -34,6 +34,4 @@ namespace Neo.Network.RPC.Model
             return block;
         }
     }
-
-
 }

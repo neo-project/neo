@@ -66,5 +66,4 @@ namespace Neo.Network.RPC.Model
             return stackJson;
         }
     }
-
 }
