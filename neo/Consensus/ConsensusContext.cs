@@ -231,7 +231,7 @@ namespace Neo.Consensus
             Block.Transactions = new Transaction[0];
             var fixedSize = Block.Size + IO.Helper.GetVarSize(TransactionHashes.Length); // ensure that the var size grows without exceed the max size
 
-            for (int x = 0; x < transactions.Count; x++)
+            for (int x = 0, max = Math.Min(Transactions.Count, transactions.Count); x < max; x++)
             {
                 var tx = transactions[x];
 
