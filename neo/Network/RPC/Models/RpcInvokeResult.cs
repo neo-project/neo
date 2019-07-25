@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using System.Linq;
 
-namespace Neo.Network.RPC.Model
+namespace Neo.Network.RPC.Models
 {
     public class RpcInvokeResult
     {
