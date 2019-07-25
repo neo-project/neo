@@ -81,7 +81,7 @@ namespace Neo.Network.RPC
             this.MaxGasInvoke = maxGasInvoke;
         }
 
-        internal static JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
+        private static JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
         {
             JObject response = CreateResponse(id);
             response["error"] = new JObject();
@@ -92,7 +92,7 @@ namespace Neo.Network.RPC
             return response;
         }
 
-        internal static JObject CreateResponse(JObject id)
+        private static JObject CreateResponse(JObject id)
         {
             JObject response = new JObject();
             response["jsonrpc"] = "2.0";

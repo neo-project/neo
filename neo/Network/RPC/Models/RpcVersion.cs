@@ -1,6 +1,6 @@
 ﻿using Neo.IO.Json;
 
-namespace Neo.Network.RPC.Model
+namespace Neo.Network.RPC.Models
 {
     public class RpcVersion
     {

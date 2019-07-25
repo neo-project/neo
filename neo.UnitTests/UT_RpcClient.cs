@@ -6,7 +6,7 @@ using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.RPC;
-using Neo.Network.RPC.Model;
+using Neo.Network.RPC.Models;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
@@ -17,7 +17,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.UnitTests.SDK
+namespace Neo.UnitTests
 {
     [TestClass]
     public class UT_RpcClient
@@ -36,8 +36,7 @@ namespace Neo.UnitTests.SDK
                 BaseAddress = new Uri("http://seed1.neo.org:10331"),
             };
 
-            var helper = new HttpService(httpClient);
-            rpc = new RpcClient(helper);
+            rpc = new RpcClient(httpClient);
         }
 
         private void MockResponse(string content)
@@ -58,10 +57,29 @@ namespace Neo.UnitTests.SDK
                .Verifiable();
         }
 
+        private JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
+        {
+            JObject response = CreateResponse(id);
+            response["error"] = new JObject();
+            response["error"]["code"] = code;
+            response["error"]["message"] = message;
+            if (data != null)
+                response["error"]["data"] = data;
+            return response;
+        }
+
+        private JObject CreateResponse(JObject id)
+        {
+            JObject response = new JObject();
+            response["jsonrpc"] = "2.0";
+            response["id"] = id;
+            return response;
+        }
+
         [TestMethod]
         public void TestErrorResponse()
         {
-            JObject response = RpcServer.CreateErrorResponse(null, -32700, "Parse error");
+            JObject response = CreateErrorResponse(null, -32700, "Parse error");
             MockResponse(response.ToString());
             try
             {
@@ -77,7 +95,7 @@ namespace Neo.UnitTests.SDK
         [TestMethod]
         public void TestGetBestBlockHash()
         {
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = "000000002deadfa82cbc4682f5800";
             MockResponse(response.ToString());
 
@@ -88,7 +106,7 @@ namespace Neo.UnitTests.SDK
         [TestMethod]
         public void TestGetBlockHex()
         {
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = "000000002deadfa82cbc4682f5800";
             MockResponse(response.ToString());
 
@@ -101,7 +119,7 @@ namespace Neo.UnitTests.SDK
         {
             // create block
             var block = new Block();
-            TestUtils.SetupBlockWithValues(block, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, 0);
+            TestUtils.SetupBlockWithValues(block, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, 0);
 
             block.Transactions = new[]
             {
@@ -111,7 +129,7 @@ namespace Neo.UnitTests.SDK
             };
 
             JObject json = block.ToJson();
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
@@ -135,7 +153,7 @@ namespace Neo.UnitTests.SDK
         [TestMethod]
         public void TestGetBlockCount()
         {
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = 100;
             MockResponse(response.ToString());
 
@@ -146,7 +164,7 @@ namespace Neo.UnitTests.SDK
         [TestMethod]
         public void TestGetBlockHash()
         {
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = "0x4c1e879872344349067c3b1a30781eeb4f9040d3795db7922f513f6f9660b9b2";
             MockResponse(response.ToString());
 
@@ -157,7 +175,7 @@ namespace Neo.UnitTests.SDK
         [TestMethod]
         public void TestGetBlockHeaderHex()
         {
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = "0x4c1e879872344349067c3b1a30781eeb4f9040d3795db7922f513f6f9660b9b2";
             MockResponse(response.ToString());
 
@@ -169,10 +187,10 @@ namespace Neo.UnitTests.SDK
         public void TestGetBlockHeader()
         {
             Header header = new Header();
-            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out uint timestampVal, out uint indexVal, out Witness scriptVal);
+            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
 
             JObject json = header.ToJson();
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
@@ -191,7 +209,7 @@ namespace Neo.UnitTests.SDK
         [TestMethod]
         public void TestGetBlockSysFee()
         {
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = "195500";
             MockResponse(response.ToString());
 
@@ -202,7 +220,7 @@ namespace Neo.UnitTests.SDK
         [TestMethod]
         public void TestGetConnectionCount()
         {
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = 9;
             MockResponse(response.ToString());
 
@@ -222,7 +240,7 @@ namespace Neo.UnitTests.SDK
                 Manifest = ContractManifest.CreateDefault(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"))
             };
 
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = state.ToJson();
             MockResponse(response.ToString());
 
@@ -235,7 +253,7 @@ namespace Neo.UnitTests.SDK
         [TestMethod]
         public void TestGetPeers()
         {
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = JObject.Parse(@"{
                                                     ""unconnected"": [
                                                         {
@@ -273,7 +291,7 @@ namespace Neo.UnitTests.SDK
         [TestMethod]
         public void TestGetRawMempool()
         {
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = JObject.Parse(@"[
                                                     ""0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e"",
                                                     ""0xb488ad25eb474f89d5ca3f985cc047ca96bc7373a6d3da8c0f192722896c1cd7"",
@@ -293,7 +311,7 @@ namespace Neo.UnitTests.SDK
             json["verified"] = new JArray(new[] { "0x9786cce0dddb524c40ddbdd5e31a41ed1f6b5c8a683c122f627ca4a007a7cf4e" }.Select(p => (JObject)p));
             json["unverified"] = new JArray(new[] { "0xb488ad25eb474f89d5ca3f985cc047ca96bc7373a6d3da8c0f192722896c1cd7", "0xf86f6f2c08fbf766ebe59dc84bc3b8829f1053f0a01deb26bf7960d99fa86cd6" }.Select(p => (JObject)p));
 
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
@@ -308,7 +326,7 @@ namespace Neo.UnitTests.SDK
         {
             var json = TestUtils.GetTransaction().ToArray().ToHexString();
 
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
@@ -322,7 +340,7 @@ namespace Neo.UnitTests.SDK
         {
             var transaction = TestUtils.GetTransaction();
             JObject json = transaction.ToJson();
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
@@ -345,7 +363,7 @@ namespace Neo.UnitTests.SDK
         public void TestGetStorage()
         {
             JObject json = "4c696e";
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
@@ -357,7 +375,7 @@ namespace Neo.UnitTests.SDK
         public void TestGetTransactionHeight()
         {
             JObject json = 10000;
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
@@ -380,7 +398,7 @@ namespace Neo.UnitTests.SDK
                                                     ""active"": true
                                                 }
                                             ]");
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
@@ -405,7 +423,7 @@ namespace Neo.UnitTests.SDK
                                         }");
             Assert.AreEqual(json.ToString(), json1.ToString());
 
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
@@ -430,7 +448,7 @@ namespace Neo.UnitTests.SDK
                 ],
                 ""tx"":""d101361426ae7c6c9861ec418468c1f0fdc4a7f2963eb89151c10962616c616e63654f6667be39e7b562f60cbfe2aebca375a2e5ee28737caf000000000000000000000000""
             }");
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
@@ -454,7 +472,7 @@ namespace Neo.UnitTests.SDK
                 ],
                 ""tx"":""d101361426ae7c6c9861ec418468c1f0fdc4a7f2963eb89151c10962616c616e63654f6667be39e7b562f60cbfe2aebca375a2e5ee28737caf000000000000000000000000""
             }");
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
@@ -473,7 +491,7 @@ namespace Neo.UnitTests.SDK
                     ""IPolicyPlugin""
                 ]
             }]");
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
@@ -485,7 +503,7 @@ namespace Neo.UnitTests.SDK
         public void TestSendRawTransaction()
         {
             JObject json = true;
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
@@ -497,7 +515,7 @@ namespace Neo.UnitTests.SDK
         public void TestSubmitBlock()
         {
             JObject json = true;
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 
@@ -511,7 +529,7 @@ namespace Neo.UnitTests.SDK
             JObject json = new JObject();
             json["address"] = "AQVh2pG732YvtNaxEGkQUei3YA4cvo7d2i";
             json["isvalid"] = false;
-            JObject response = RpcServer.CreateResponse(1);
+            JObject response = CreateResponse(1);
             response["result"] = json;
             MockResponse(response.ToString());
 

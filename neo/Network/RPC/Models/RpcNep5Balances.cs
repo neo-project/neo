@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Numerics;
 
-namespace Neo.Network.RPC.Model
+namespace Neo.Network.RPC.Models
 {
     public class RpcNep5Balances
     {
