@@ -105,6 +105,7 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckValidators(engine)) return false;
             uint value = (uint)args[0].GetBigInteger();
+            if (Network.P2P.Message.PayloadMaxSize <= value) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize));
             storage.Value = BitConverter.GetBytes(value);
             return true;

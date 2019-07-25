@@ -74,6 +74,17 @@ namespace Neo.UnitTests
             ret.Should().BeOfType<VM.Types.Integer>();
             ret.GetBigInteger().Should().Be(1024 * 256);
 
+            // More than expected
+
+            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
+                 "setMaxBlockSize", new ContractParameter(ContractParameterType.Integer) { Value = Network.P2P.Message.PayloadMaxSize });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeFalse();
+
+            ret = NativeContract.Policy.Call(snapshot, "getMaxBlockSize");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetBigInteger().Should().Be(1024 * 256);
+
             // With signature
 
             ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
