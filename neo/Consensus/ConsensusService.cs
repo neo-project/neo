@@ -8,6 +8,7 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
+using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -78,6 +79,19 @@ namespace Neo.Consensus
                 // if we are the primary for this view, but acting as a backup because we recovered our own
                 // previously sent prepare request, then we don't want to send a prepare response.
                 if (context.IsPrimary || context.WatchOnly) return true;
+
+                // Check policy
+                using (var snapshot = Blockchain.Singleton.GetSnapshot())
+                {
+                    var block = context.CreateBlock();
+
+                    if (block.Size > NativeContract.Policy.GetMaxBlockSize(snapshot))
+                    {
+                        Log($"rejected block: {block.Hash}{Environment.NewLine} The size '{block.Size}' exceed the policy", LogLevel.Warning);
+                        RequestChangeView(ChangeViewReason.TxRejectedByPolicy);
+                        return false;
+                    }
+                }
 
                 // Timeout extension due to prepare response sent
                 // around 2*15/M=30.0/5 ~ 40% block time (for M=5)
