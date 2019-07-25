@@ -88,7 +88,7 @@ namespace Neo.Consensus
                     if (block.Size > NativeContract.Policy.GetMaxBlockSize(snapshot))
                     {
                         Log($"rejected block: {block.Hash}{Environment.NewLine} The size '{block.Size}' exceed the policy", LogLevel.Warning);
-                        RequestChangeView(ChangeViewReason.TxRejectedByPolicy);
+                        RequestChangeView(ChangeViewReason.BlockRejectedByPolicy);
                         return false;
                     }
                 }
