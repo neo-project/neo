@@ -172,6 +172,5 @@ namespace Neo.Network.RPC
         {
             return RpcValidateAddressResult.FromJson(RpcSend("validateaddress", address));
         }
-
     }
 }
