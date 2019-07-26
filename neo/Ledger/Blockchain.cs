@@ -27,17 +27,17 @@ namespace Neo.Ledger
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
 
-        public static readonly uint SecondsPerBlock = ProtocolSettings.Default.SecondsPerBlock;
+        public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public const uint DecrementInterval = 2000000;
         public const int MaxValidators = 1024;
         public static readonly uint[] GenerationAmount = { 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-        public static readonly TimeSpan TimePerBlock = TimeSpan.FromSeconds(SecondsPerBlock);
+        public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
         public static readonly ECPoint[] StandbyValidators = ProtocolSettings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
 
         public static readonly Block GenesisBlock = new Block
         {
             PrevHash = UInt256.Zero,
-            Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestamp(),
+            Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestampMS(),
             Index = 0,
             NextConsensus = GetConsensusAddress(StandbyValidators),
             Witness = new Witness
@@ -53,7 +53,6 @@ namespace Neo.Ledger
             Transactions = new[] { DeployNativeContracts() }
         };
 
-        private const int MemoryPoolMaxTransactions = 50_000;
         private const int MaxTxToReverifyPerIdle = 10;
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
@@ -89,7 +88,7 @@ namespace Neo.Ledger
         public Blockchain(NeoSystem system, Store store)
         {
             this.system = system;
-            this.MemPool = new MemoryPool(system, MemoryPoolMaxTransactions);
+            this.MemPool = new MemoryPool(system, ProtocolSettings.Default.MemoryPoolMaxTransactions);
             this.Store = store;
             lock (lockObj)
             {
@@ -283,7 +282,10 @@ namespace Neo.Ledger
                     block_cache_unverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
 
-                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, (15 - SecondsPerBlock)))) continue;
+                    // 15000 is the default among of seconds per block, while MilliSecondsPerBlock is the current
+                    uint extraBlocks = (15000 - MillisecondsPerBlock) / 1000;
+
+                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, extraBlocks))) continue;
                     // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
                     // Increase in the rate of 1 block per second in configurations with faster blocks
 
