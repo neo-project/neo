@@ -220,14 +220,14 @@ namespace Neo.Consensus
 
             Transactions = new Dictionary<UInt256, Transaction>();
             uint maxBlockSize = NativeContract.Policy.GetMaxBlockSize(Snapshot);
-            TransactionHashes = new UInt256[NativeContract.Policy.GetMaxTransactionsPerBlock(Snapshot)];
+            TransactionHashes = new UInt256[Math.Min(transactions.Count, NativeContract.Policy.GetMaxTransactionsPerBlock(Snapshot))];
 
             // Prevent that block exceed the max size
 
             Block.Transactions = new Transaction[0];
             var fixedSize = Block.Size + IO.Helper.GetVarSize(TransactionHashes.Length); // ensure that the var size grows without exceed the max size
 
-            for (int x = 0, max = Math.Min(Transactions.Count, transactions.Count); x < max; x++)
+            for (int x = 0, max = TransactionHashes.Length; x < max; x++)
             {
                 var tx = transactions[x];
 
@@ -240,7 +240,10 @@ namespace Neo.Consensus
 
             // Truncate null values
 
-            Array.Resize(ref TransactionHashes, Transactions.Count);
+            if (TransactionHashes.Length > Transactions.Count)
+            {
+                Array.Resize(ref TransactionHashes, Transactions.Count);
+            }
 
             // Create valid request
 
