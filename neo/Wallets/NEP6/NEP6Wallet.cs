@@ -28,7 +28,7 @@ namespace Neo.Wallets.NEP6
 
         public override string Name => name;
         public override Version Version => version;
-        public override uint WalletHeight => indexer != null ? indexer.IndexHeight : 0;
+        public override uint WalletHeight => indexer != null ? indexer.IndexHeight : default;
 
         public NEP6Wallet(WalletIndexer indexer, string path, string name = null)
         {
@@ -221,7 +221,7 @@ namespace Neo.Wallets.NEP6
         public override IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts)
         {
             if (indexer == null)
-                throw new Exception("Null Wallet Indexer");
+                return Enumerable.Empty<Coin>();
 
             if (unconfirmed.Count == 0)
                 return indexer.GetCoins(accounts);
@@ -276,15 +276,15 @@ namespace Neo.Wallets.NEP6
 
         public override IEnumerable<UInt256> GetTransactions()
         {
-            if (indexer == null)
-                throw new Exception("Null Wallet Indexer");
-
-            foreach (UInt256 hash in indexer.GetTransactions(accounts.Keys))
-                yield return hash;
-            lock (unconfirmed)
+            if (indexer != null)
             {
-                foreach (UInt256 hash in unconfirmed.Keys)
+                foreach (UInt256 hash in indexer.GetTransactions(accounts.Keys))
                     yield return hash;
+                lock (unconfirmed)
+                {
+                    foreach (UInt256 hash in unconfirmed.Keys)
+                        yield return hash;
+                }
             }
         }
 
