@@ -97,7 +97,7 @@ namespace Neo.Consensus
 
         public void Deserialize(BinaryReader reader)
         {
-            Reset(0);
+            Reset(0, true);
             if (reader.ReadUInt32() != Block.Version) throw new FormatException();
             if (reader.ReadUInt32() != Block.Index) throw new InvalidOperationException();
             Block.Timestamp = reader.ReadUInt64();
@@ -273,7 +273,7 @@ namespace Neo.Consensus
             });
         }
 
-        public void Reset(byte viewNumber, bool resetFutures = true)
+        public void Reset(byte viewNumber, bool resetFutures)
         {
             if (viewNumber == 0)
             {
@@ -331,9 +331,26 @@ namespace Neo.Consensus
         public void ResetFuturePayloads()
         {
             FutureCommitPayloads = new ConsensusPayload[Validators.Length];
-            FutureRecoveryPayloads = new ConsensusPayload[Validators.Length];
+            FuturePreparationPayloads = new ConsensusPayload[Validators.Length];
             FutureChangeViewPayloads = new ConsensusPayload[Validators.Length];
             FutureRecoveryPayloads = new ConsensusPayload[Validators.Length];
+        }
+
+        public bool HasFuturePayloads()
+        {
+            foreach (var payload in FuturePreparationPayloads)
+                if (!(payload is null))
+                    return true;
+            foreach (var payload in FutureChangeViewPayloads)
+                if (!(payload is null))
+                    return true;
+            foreach (var payload in FutureCommitPayloads)
+                if (!(payload is null))
+                    return true;
+            foreach (var payload in FutureRecoveryPayloads)
+                if (!(payload is null))
+                    return true;
+            return false;
         }
 
         public void Save()
