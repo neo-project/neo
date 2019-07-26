@@ -37,6 +37,12 @@ namespace Neo.Consensus
         // if this node never heard from validator i, LastSeenMessage[i] will be -1.
         public int[] LastSeenMessage;
 
+
+        /// <summary>
+        /// Future payloads used when CN are probably lagged
+        /// Verified ConsensusPayloads are cached and the lastest height are stored
+        /// They are possibly used when the nodes syncs to the last height
+        /// </summary>
         public ConsensusPayload[] FuturePreparationPayloads;
         public ConsensusPayload[] FutureCommitPayloads;
         public ConsensusPayload[] FutureChangeViewPayloads;
