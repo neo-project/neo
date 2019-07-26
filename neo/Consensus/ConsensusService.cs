@@ -81,16 +81,13 @@ namespace Neo.Consensus
                 if (context.IsPrimary || context.WatchOnly) return true;
 
                 // Check policy
-                using (var snapshot = Blockchain.Singleton.GetSnapshot())
-                {
-                    var block = context.CreateBlock();
+                var block = context.CreateBlock();
 
-                    if (block.Size > NativeContract.Policy.GetMaxBlockSize(snapshot))
-                    {
-                        Log($"rejected block: {block.Hash}{Environment.NewLine} The size '{block.Size}' exceed the policy", LogLevel.Warning);
-                        RequestChangeView(ChangeViewReason.BlockRejectedByPolicy);
-                        return false;
-                    }
+                if (block.Size > NativeContract.Policy.GetMaxBlockSize(context.Snapshot))
+                {
+                    Log($"rejected block: {block.Hash}{Environment.NewLine} The size '{block.Size}' exceed the policy", LogLevel.Warning);
+                    RequestChangeView(ChangeViewReason.BlockRejectedByPolicy);
+                    return false;
                 }
 
                 // Timeout extension due to prepare response sent

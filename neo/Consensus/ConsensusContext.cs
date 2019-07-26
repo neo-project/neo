@@ -218,13 +218,9 @@ namespace Neo.Consensus
 
             List<Transaction> transactions = memoryPoolTransactions.ToList();
 
-            uint maxBlockSize;
             Transactions = new Dictionary<UInt256, Transaction>();
-            using (var snapshot = Blockchain.Singleton.GetSnapshot())
-            {
-                maxBlockSize = NativeContract.Policy.GetMaxBlockSize(snapshot);
-                TransactionHashes = new UInt256[NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot)];
-            }
+            uint maxBlockSize = NativeContract.Policy.GetMaxBlockSize(Snapshot);
+            TransactionHashes = new UInt256[NativeContract.Policy.GetMaxTransactionsPerBlock(Snapshot)];
 
             // Prevent that block exceed the max size
 
