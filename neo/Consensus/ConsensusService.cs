@@ -176,16 +176,16 @@ namespace Neo.Consensus
             if(!hasFuturePayload)
             {
                 // Try to load all Future payloads
-                foreach (var payload in FuturePreparationPayloads)
+                foreach (var payload in context.FuturePreparationPayloads)
                     if (!(payload is null))
                         OnConsensusPayload(payload);
-                foreach (var payload in FutureChangeViewPayloads)
+                foreach (var payload in context.FutureChangeViewPayloads)
                     if (!(payload is null))
                         OnConsensusPayload(payload);
-                foreach (var payload in FutureCommitPayloads)
+                foreach (var payload in context.FutureCommitPayloads)
                     if (!(payload is null))
                         OnConsensusPayload(payload);
-                foreach (var payload in FutureRecoveryPayloads)
+                foreach (var payload in context.FutureRecoveryPayloads)
                     if (!(payload is null))
                         OnConsensusPayload(payload);
                 // Reset all future payloads after trying to process them
