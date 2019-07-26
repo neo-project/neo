@@ -318,6 +318,7 @@ namespace Neo.Wallets
                             if (engine.State.HasFlag(VMState.FAULT)) return null;
                             balances.Add((account, engine.ResultStack.Pop().GetBigInteger()));
                         }
+                        balances = balances.Where(p => p.Value != 0).ToList();
                         BigInteger sum = balances.Aggregate(BigInteger.Zero, (x, y) => x + y.Value);
                         if (sum < output.Value) return null;
                         if (sum != output.Value)
