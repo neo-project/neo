@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using System;
 using System.Linq;
 using System.Threading;
 
@@ -10,7 +11,8 @@ namespace Neo
         public byte AddressVersion { get; }
         public string[] StandbyValidators { get; }
         public string[] SeedList { get; }
-        public uint SecondsPerBlock { get; }
+        public uint MillisecondsPerBlock { get; }
+        public int MemoryPoolMaxTransactions { get; }
 
         static ProtocolSettings _default;
 
@@ -69,7 +71,8 @@ namespace Neo
                     "seed4.neo.org:10333",
                     "seed5.neo.org:10333"
                 };
-            this.SecondsPerBlock = section.GetValue("SecondsPerBlock", 15u);
+            this.MillisecondsPerBlock = section.GetValue("SecondsPerBlock", 15000u);
+            this.MemoryPoolMaxTransactions = Math.Max(1, section.GetValue("MemoryPoolMaxTransactions", 50_000));
         }
     }
 }
