@@ -173,23 +173,40 @@ namespace Neo.Consensus
             }
 
             // Try to speed up consensus if cached future payloads exists
-            if(!hasFuturePayload)
+            // however, if payloads from future heights it is not loaded 
+            if(hasFuturePayload)
             {
                 // Try to load all Future payloads
                 foreach (var payload in context.FuturePreparationPayloads)
                     if (!(payload is null))
-                        OnConsensusPayload(payload);
+                        if (payload.BlockIndex == context.Block.Index)
+                        {
+                            OnConsensusPayload(payload);
+                            // set payload in FuturePreparationPayloads to null
+                        }
                 foreach (var payload in context.FutureChangeViewPayloads)
                     if (!(payload is null))
-                        OnConsensusPayload(payload);
+                        if (payload.BlockIndex == context.Block.Index)
+                        {
+                            OnConsensusPayload(payload);
+                            // set payload in FuturePreparationPayloads to null
+                        }
                 foreach (var payload in context.FutureCommitPayloads)
                     if (!(payload is null))
-                        OnConsensusPayload(payload);
+                        if (payload.BlockIndex == context.Block.Index)
+                        {
+                            OnConsensusPayload(payload);
+                            // set payload in FuturePreparationPayloads to null
+                        }
                 foreach (var payload in context.FutureRecoveryPayloads)
                     if (!(payload is null))
-                        OnConsensusPayload(payload);
+                        if (payload.BlockIndex == context.Block.Index)
+                        {
+                            OnConsensusPayload(payload);
+                            // set payload in FuturePreparationPayloads to null
+                        }
                 // Reset all future payloads after trying to process them
-                context.ResetFuturePayloads();
+                // context.ResetFuturePayloads();
             }
         }
 
