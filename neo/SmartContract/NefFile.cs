@@ -13,8 +13,10 @@ namespace Neo.SmartContract
     /// | Compiler   | 32 bytes  | Compiler used                                              |
     /// | Version    | 16 bytes  | Compiler version (Mayor, Minor, Build, Version)            |
     /// | ScriptHash | 20 bytes  | ScriptHash for the script                                  |
+    /// +------------+-----------+------------------------------------------------------------+
+    /// | Checksum   | 4 bytes   | Sha256 of the header (CRC)                                 |
+    /// +------------+-----------+------------------------------------------------------------+
     /// | Script     | Var bytes | Var bytes for the payload                                  |
-    /// | Checksum   | 4 bytes   | Sha256 of the whole file whithout the last for bytes(CRC)  |
     /// +------------+-----------+------------------------------------------------------------+
     /// </summary>
     public class NefFile : ISerializable
@@ -40,22 +42,25 @@ namespace Neo.SmartContract
         public UInt160 ScriptHash { get; set; }
 
         /// <summary>
-        /// Script
-        /// </summary>
-        public byte[] Script { get; set; }
-
-        /// <summary>
         /// Checksum
         /// </summary>
         public uint CheckSum { get; set; }
 
-        public int Size =>
+        /// <summary>
+        /// Script
+        /// </summary>
+        public byte[] Script { get; set; }
+
+        private const int HeaderSize =
             sizeof(uint) +              // Magic
-            Compiler.GetVarSize() +     // Compiler
+            32 +                        // Compiler
             (sizeof(int) * 4) +         // Version
-            ScriptHash.Size +           // ScriptHash
-            Script.GetVarSize() +       // Script
+            UInt160.Length +            // ScriptHash
             sizeof(uint);               // Checksum
+
+        public int Size =>
+            HeaderSize +              // Header
+            Script.GetVarSize();      // Script
 
         public void Serialize(BinaryWriter writer)
         {
@@ -69,8 +74,8 @@ namespace Neo.SmartContract
             writer.Write(Version.Revision);
 
             writer.Write(ScriptHash);
-            writer.WriteVarBytes(Script);
             writer.Write(CheckSum);
+            writer.WriteVarBytes(Script ?? new byte[0]);
         }
 
         public void Deserialize(BinaryReader reader)
@@ -83,17 +88,18 @@ namespace Neo.SmartContract
             Compiler = reader.ReadFixedString(32);
             Version = new Version(reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32());
             ScriptHash = reader.ReadSerializable<UInt160>();
-
-            Script = reader.ReadVarBytes(1024 * 1024);
-            if (Script.ToScriptHash() != ScriptHash)
-            {
-                throw new FormatException("ScriptHash is different");
-            }
-
             CheckSum = reader.ReadUInt32();
+
             if (CheckSum != ComputeChecksum(this))
             {
                 throw new FormatException("CRC verification fail");
+            }
+
+            Script = reader.ReadVarBytes(1024 * 1024);
+
+            if (Script.ToScriptHash() != ScriptHash)
+            {
+                throw new FormatException("ScriptHash is different");
             }
         }
 
@@ -110,7 +116,9 @@ namespace Neo.SmartContract
                 file.Serialize(wr);
                 wr.Flush();
 
-                var buffer = new byte[ms.Length - sizeof(uint)];
+                // Read header without CRC
+
+                var buffer = new byte[HeaderSize - sizeof(uint)];
                 ms.Seek(0, SeekOrigin.Begin);
                 ms.Read(buffer, 0, buffer.Length);
 
