@@ -71,7 +71,7 @@ namespace Neo
                     "seed4.neo.org:10333",
                     "seed5.neo.org:10333"
                 };
-            this.MillisecondsPerBlock = section.GetValue("SecondsPerBlock", 15000u);
+            this.MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", 15000u);
             this.MemoryPoolMaxTransactions = Math.Max(1, section.GetValue("MemoryPoolMaxTransactions", 50_000));
         }
     }
