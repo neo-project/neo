@@ -56,6 +56,10 @@ namespace Neo.UnitTests.Cryptography.ECC
             point.X.Should().Be(X);
             point.Y.Should().Be(Y);
             point.Curve.Should().Be(ECCurve.Secp256k1);
+            Action action = () => new ECPoint(X, null, ECCurve.Secp256k1);
+            action.ShouldThrow<ArgumentException>();
+            action = () => new ECPoint(null, Y, ECCurve.Secp256k1);
+            action.ShouldThrow<ArgumentException>();
         }
 
         [TestMethod]
@@ -146,6 +150,30 @@ namespace Neo.UnitTests.Cryptography.ECC
         }
 
         [TestMethod]
+        public void TestEqualsObject()
+        {
+            object point = ECCurve.Secp256k1.G;
+            point.Equals(point).Should().BeTrue();
+            point.Equals(null).Should().BeFalse();
+            point.Equals(1u).Should().BeFalse();
+
+            point = new ECPoint(null, null, ECCurve.Secp256k1);
+            point.Equals(new ECPoint(null, null, ECCurve.Secp256r1)).Should().BeTrue();
+            point.Equals(ECCurve.Secp256r1.G).Should().BeFalse();
+            ECCurve.Secp256r1.G.Equals(point).Should().BeFalse();
+
+            ECFieldElement X1 = new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1);
+            ECFieldElement Y1 = new ECFieldElement(new BigInteger(200), ECCurve.Secp256k1);
+            ECFieldElement X2 = new ECFieldElement(new BigInteger(300), ECCurve.Secp256k1);
+            ECFieldElement Y2 = new ECFieldElement(new BigInteger(400), ECCurve.Secp256k1);
+            object point1 = new ECPoint(X1, Y1, ECCurve.Secp256k1);
+            object point2 = new ECPoint(X2, Y1, ECCurve.Secp256k1);
+            object point3 = new ECPoint(X1, Y2, ECCurve.Secp256k1);
+            point1.Equals(point2).Should().BeFalse();
+            point1.Equals(point3).Should().BeFalse();
+        }
+
+        [TestMethod]
         public void TestFromBytes()
         {
             byte[] input1 = { 0 };
@@ -174,6 +202,13 @@ namespace Neo.UnitTests.Cryptography.ECC
             ECPoint.FromBytes(input6, ECCurve.Secp256k1).Should().Be(new ECPoint(new ECFieldElement(BigInteger.Parse("3634473727541135791764834762056624681715094789735830699031648" +
                 "273128038409767"), ECCurve.Secp256k1), new ECFieldElement(BigInteger.Parse("18165245710263168158644330920009617039772504630129940696140050972160274286151"),
                 ECCurve.Secp256k1), ECCurve.Secp256k1));
+        }
+
+        [TestMethod]
+        public void TestGetSize()
+        {
+            ECCurve.Secp256k1.G.Size.Should().Be(33);
+            ECCurve.Secp256k1.Infinity.Size.Should().Be(1);
         }
 
         [TestMethod]
@@ -277,6 +312,13 @@ namespace Neo.UnitTests.Cryptography.ECC
             n[0] = 1;
             (p * n).Should().Be(new ECPoint(new ECFieldElement(BigInteger.Parse("63395642421589016740518975608504846303065672135176650115036476193363423546538"), ECCurve.Secp256k1),
                 new ECFieldElement(BigInteger.Parse("29236048674093813394523910922582374630829081423043497254162533033164154049666"), ECCurve.Secp256k1), ECCurve.Secp256k1));
+        }
+
+        [TestMethod]
+        public void TestOpSubtraction()
+        {
+            (ECCurve.Secp256k1.G - ECCurve.Secp256k1.Infinity).Should().Be(ECCurve.Secp256k1.G);
+            (ECCurve.Secp256k1.G - ECCurve.Secp256k1.G).Should().Be(ECCurve.Secp256k1.Infinity);
         }
 
         [TestMethod]
