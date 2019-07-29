@@ -17,8 +17,8 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestHashCore()
         {
-            byte[] array = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
-            array.Murmur32(10u).Should().Be(676699735u);
+            byte[] array = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1 };
+            array.Murmur32(10u).Should().Be(378574820u);
         }
     }
 }
