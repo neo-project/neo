@@ -20,6 +20,8 @@ namespace Neo.SmartContract
             public byte[] Script;
             public ContractParameter[] Parameters;
             public Dictionary<ECPoint, byte[]> Signatures;
+            public WitnessScope Scope;
+            public UInt160 ScopedHash;
 
             private ContextItem() { }
 
@@ -92,15 +94,17 @@ namespace Neo.SmartContract
             this.ContextItems = new Dictionary<UInt160, ContextItem>();
         }
 
-        public bool Add(Contract contract, int index, object parameter)
+        public bool Add(Contract contract, int index, object parameter, WitnessScope scope, UInt160 scopedHash)
         {
             ContextItem item = CreateItem(contract);
             if (item == null) return false;
             item.Parameters[index].Value = parameter;
+            item.Scope = scope;
+            item.ScopedHash = scopedHash;
             return true;
         }
 
-        public bool AddSignature(Contract contract, ECPoint pubkey, byte[] signature)
+        public bool AddSignature(Contract contract, ECPoint pubkey, byte[] signature, WitnessScope scope, UInt160 scopedHash)
         {
             if (contract.Script.IsMultiSigContract(out _, out _))
             {
@@ -144,7 +148,7 @@ namespace Neo.SmartContract
                         Index = dic[p.Key]
                     }).OrderByDescending(p => p.Index).Select(p => p.Signature).ToArray();
                     for (int i = 0; i < sigs.Length; i++)
-                        if (!Add(contract, i, sigs[i]))
+                        if (!Add(contract, i, sigs[i], scope, scopedHash))
                             throw new InvalidOperationException();
                     item.Signatures = null;
                 }
@@ -166,7 +170,7 @@ namespace Neo.SmartContract
                     // return now to prevent array index out of bounds exception
                     return false;
                 }
-                return Add(contract, index, signature);
+                return Add(contract, index, signature, scope, scopedHash);
             }
         }
 
@@ -227,6 +231,8 @@ namespace Neo.SmartContract
                     }
                     witnesses[i] = new Witness
                     {
+                        Scope = item.Scope,
+                        ScopedHash = item.ScopedHash,
                         InvocationScript = sb.ToArray(),
                         VerificationScript = item.Script ?? new byte[0]
                     };

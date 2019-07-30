@@ -148,8 +148,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // Sign
 
                 var data = new ContractParametersContext(tx);
-                Assert.IsTrue(walletA.Sign(data));
-                Assert.IsTrue(walletB.Sign(data));
+                Assert.IsTrue(walletA.Sign(data, WitnessScope.Global, UInt160.Zero));
+                Assert.IsTrue(walletB.Sign(data, WitnessScope.Global, UInt160.Zero));
                 Assert.IsTrue(data.Completed);
 
                 tx.Witnesses = data.GetWitnesses();
@@ -221,7 +221,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // Sign
 
                 var data = new ContractParametersContext(tx);
-                Assert.IsTrue(wallet.Sign(data));
+                Assert.IsTrue(wallet.Sign(data, WitnessScope.Global, UInt160.Zero));
                 tx.Witnesses = data.GetWitnesses();
 
                 // Fast check
