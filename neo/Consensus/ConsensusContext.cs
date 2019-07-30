@@ -217,20 +217,21 @@ namespace Neo.Consensus
                 memoryPoolTransactions = plugin.FilterForBlock(memoryPoolTransactions);
 
             List<Transaction> transactions = memoryPoolTransactions.ToList();
-            // Limit Speaker proposal to the limit `MaxTransactionsPerBlock` or all available transactions of the mempool
-            TransactionHashes = new UInt256[Math.Min(transactions.Count, NativeContract.Policy.GetMaxTransactionsPerBlock(Snapshot))];
 
             Transactions = new Dictionary<UInt256, Transaction>();
-            // Prevent that block exceed the max size
-            Block.Transactions = new Transaction[0];
             uint maxBlockSize = NativeContract.Policy.GetMaxBlockSize(Snapshot);
-            // Ensure that the var size grows without exceed the max size
-            var fixedSize = Block.Size + IO.Helper.GetVarSize(TransactionHashes.Length); 
+            TransactionHashes = new UInt256[Math.Min(transactions.Count, NativeContract.Policy.GetMaxTransactionsPerBlock(Snapshot))];
+
+            // Prevent that block exceed the max size
+
+            Block.Transactions = new Transaction[0];
+            var fixedSize = Block.Size + IO.Helper.GetVarSize(TransactionHashes.Length); // ensure that the var size grows without exceed the max size
+
             for (int x = 0, max = TransactionHashes.Length; x < max; x++)
             {
                 var tx = transactions[x];
 
-                // Check if maximum block size has been already exceeded with the current selected set
+                // Check if exceed
                 if (fixedSize + UInt256.Length + tx.Size > maxBlockSize) break;
 
                 TransactionHashes[x] = tx.Hash;
@@ -238,8 +239,13 @@ namespace Neo.Consensus
             }
 
             // Truncate null values
+
             if (TransactionHashes.Length > Transactions.Count)
+            {
                 Array.Resize(ref TransactionHashes, Transactions.Count);
+            }
+
+            // Create valid request
 
             Block.Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestampMS(), PrevHeader.Timestamp + 1);
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareRequest
