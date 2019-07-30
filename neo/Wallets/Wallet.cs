@@ -276,7 +276,20 @@ namespace Neo.Wallets
                 }
                 if (balances_gas is null)
                     balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
-                TransactionAttribute[] attributes = cosigners.Select(p => new TransactionAttribute { Usage = TransactionAttributeUsage.Cosigner, Data = p.ToArray() }).ToArray();
+                TransactionAttribute[] attributes = cosigners.Select(p => new TransactionAttribute
+                {
+                    Usage = TransactionAttributeUsage.Cosigner,
+                    Data = new CosignerUsage
+                    {
+                        Scope = new WitnessScope
+                        {
+                            // default access for transfers should be 'root-access'
+                            Type = WitnessScopeType.RootAccess,
+                            ScopeData = new byte[0] // no extra data is needed
+                        },
+                        ScriptHash = new UInt160(p.ToArray())
+                    }.ToArray()
+                }).ToArray();
                 return MakeTransaction(snapshot, attributes, script, balances_gas);
             }
         }
