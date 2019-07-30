@@ -43,9 +43,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, 0);
-            // blockbase 4 + 64 + 32 + 4 + 4 + 20 + 4
+            // blockbase 4 + 64 + 1 + 32 + 4 + 4 + 20 + 4
             // block 9 + 1
-            uut.Size.Should().Be(114);
+            uut.Size.Should().Be(115);
         }
 
         [TestMethod]
@@ -59,7 +59,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 TestUtils.GetTransaction()
             };
 
-            uut.Size.Should().Be(165);
+            uut.Size.Should().Be(167);
         }
 
         [TestMethod]
@@ -75,7 +75,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 TestUtils.GetTransaction()
             };
 
-            uut.Size.Should().Be(267);
+            uut.Size.Should().Be(271);
         }
 
         [TestMethod]
@@ -218,7 +218,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
             jObj["hash"].AsString().Should().Be("0x4e1d8392e7c44830e7e45c18e5e0e3ef3c36af883868846d3691a436a62494b2");
-            jObj["size"].AsNumber().Should().Be(165);
+            jObj["size"].AsNumber().Should().Be(167);
             jObj["version"].AsNumber().Should().Be(0);
             jObj["previousblockhash"].AsString().Should().Be("0x0000000000000000000000000000000000000000000000000000000000000000");
             jObj["merkleroot"].AsString().Should().Be("0xd841af3d6bd7adb4bca24306725f9aec363edb10de3cafc5f8cca948d7b0290f");
@@ -233,7 +233,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             jObj["tx"].Should().NotBeNull();
             JArray txObj = (JArray)jObj["tx"];
             txObj[0]["hash"].AsString().Should().Be("0x64ed4e0d79407c60bde534feb44fbbd19bd065282d27ecd3a1a7a647f66affa6");
-            txObj[0]["size"].AsNumber().Should().Be(51);
+            txObj[0]["size"].AsNumber().Should().Be(52);
             txObj[0]["version"].AsNumber().Should().Be(0);
             ((JArray)txObj[0]["attributes"]).Count.Should().Be(0);
             txObj[0]["net_fee"].AsString().Should().Be("0");

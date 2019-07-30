@@ -22,9 +22,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
-            // blockbase 4 + 64 + 32 + 4 + 4 + 20 + 4
+            // blockbase 4 + 64 + 1 + 32 + 4 + 4 + 20 + 4
             // header 1
-            uut.Size.Should().Be(105);
+            uut.Size.Should().Be(106);
         }
 
         [TestMethod]
@@ -56,6 +56,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.Timestamp.Should().Be(timestampVal);
             uut.Index.Should().Be(indexVal);
             uut.NextConsensus.Should().Be(val160);
+            uut.Witness.Scope.Should().Be(WitnessScope.Global);
+            uut.Witness.ScopedHash.Should().Be(UInt160.Zero);
             uut.Witness.InvocationScript.Length.Should().Be(0);
             uut.Witness.Size.Should().Be(scriptVal.Size);
             uut.Witness.VerificationScript[0].Should().Be(scriptVal.VerificationScript[0]);

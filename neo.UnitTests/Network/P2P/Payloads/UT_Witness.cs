@@ -35,6 +35,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             invocationScript = TestUtils.GetByteArray(lenghtInvocation, 0x20);
             verificationScript = TestUtils.GetByteArray(lengthVerification, 0x20);
+            uut.Scope = WitnessScope.Global;
+            uut.ScopedHash = UInt160.Zero;
             uut.InvocationScript = invocationScript;
             uut.VerificationScript = verificationScript;
         }
@@ -46,7 +48,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             byte[] verificationScript;
             setupWitnessWithValues(uut, 252, 253, out invocationScript, out verificationScript);
 
-            uut.Size.Should().Be(509); // (1 + 252*1) + (1 + 2 + 253*1)
+            uut.Size.Should().Be(510); // (1 + 252*1) + (1) + (1 + 2 + 253*1)
         }
 
         [TestMethod]
@@ -56,7 +58,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             byte[] verificationScript;
             setupWitnessWithValues(uut, 65535, 65536, out invocationScript, out verificationScript);
 
-            uut.Size.Should().Be(131079); // (1 + 2 + 65535*1) + (1 + 4 + 65536*1)
+            uut.Size.Should().Be(131080); // (1 + 2 + 65535*1) + (1) + (1 + 4 + 65536*1)
         }
 
         [TestMethod]

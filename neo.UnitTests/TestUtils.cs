@@ -71,6 +71,8 @@ namespace Neo.UnitTests
             bb.NextConsensus = val160;
             scriptVal = new Witness
             {
+                Scope = WitnessScope.Global,
+                ScopedHash = UInt160.Zero,
                 InvocationScript = new byte[0],
                 VerificationScript = new[] { (byte)OpCode.PUSHT }
             };
@@ -90,6 +92,8 @@ namespace Neo.UnitTests
                 {
                     new Witness
                     {
+                        Scope = WitnessScope.Global,
+                        ScopedHash = UInt160.Zero,
                         InvocationScript = new byte[0],
                         VerificationScript = new byte[0]
                     }

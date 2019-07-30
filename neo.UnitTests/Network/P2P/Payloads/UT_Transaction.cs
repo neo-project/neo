@@ -70,6 +70,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 new Witness
                 {
+                    Scope = WitnessScope.Global,
+                    ScopedHash = UInt160.Zero,
                     InvocationScript = new byte[0],
                     VerificationScript = new byte[0]
                 }
@@ -78,7 +80,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
             uut.Script.GetVarSize().Should().Be(33);
-            uut.Size.Should().Be(82);
+            uut.Size.Should().Be(83);
         }
 
         private NEP6Wallet GenerateTestWallet()
@@ -260,6 +262,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 new Witness
                 {
+                    Scope = WitnessScope.Global,
+                    ScopedHash = UInt160.Zero,
                     InvocationScript = new byte[0],
                     VerificationScript = new byte[0]
                 }
@@ -268,7 +272,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
             jObj["hash"].AsString().Should().Be("0xee00d595ccd48a650f62adaccbb9c979e2dc7ef66fb5b1413f0f74d563a2d9c6");
-            jObj["size"].AsNumber().Should().Be(82);
+            jObj["size"].AsNumber().Should().Be(83);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
             jObj["net_fee"].AsString().Should().Be("0");
