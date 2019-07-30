@@ -10,6 +10,17 @@ namespace Neo.Network.P2P.Payloads
         public TransactionAttributeUsage Usage;
         public byte[] Data;
 
+        public WitnessScope DataAsWitnessScope()
+        {
+            WitnessScope scope = null;
+            using (MemoryStream ms = new MemoryStream(Data, false))
+            using (BinaryReader r = new BinaryReader(ms))
+            {
+                scope = r.ReadSerializable<WitnessScope>();
+            }
+            return scope;
+        }
+
         public int Size => sizeof(TransactionAttributeUsage) + Data.GetVarSize();
 
         void ISerializable.Deserialize(BinaryReader reader)
