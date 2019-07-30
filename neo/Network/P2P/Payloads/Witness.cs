@@ -45,9 +45,7 @@ namespace Neo.Network.P2P.Payloads
         {
             writer.Write((byte)Scope);
             if (HasScopedHash)
-            {
                 writer.Write(ScopedHash);
-            }
             writer.WriteVarBytes(InvocationScript);
             writer.WriteVarBytes(VerificationScript);
         }
