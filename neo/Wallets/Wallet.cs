@@ -342,12 +342,12 @@ namespace Neo.Wallets
                     if (script is null) continue;
                     if (script.IsSignatureContract())
                     {
-                        size += 66 + script.GetVarSize();
+                        size += 1 + 66 + script.GetVarSize();
                         tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] + ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] + InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null);
                     }
                     else if (script.IsMultiSigContract(out int m, out int n))
                     {
-                        int size_inv = 65 * m;
+                        int size_inv = 1 + 65 * m;
                         size += IO.Helper.GetVarSize(size_inv) + size_inv + script.GetVarSize();
                         tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] * m;
                         using (ScriptBuilder sb = new ScriptBuilder())
