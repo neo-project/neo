@@ -155,8 +155,7 @@ namespace Neo.SmartContract
 
                     case WitnessScope.Global: return true;
                     case WitnessScope.CustomScriptHash: return engine.CurrentScriptHash == witness.ScopedHash;
-                    case WitnessScope.InitScriptHash:
-                        return engine.CurrentScriptHash == engine.EntryScriptHash;
+                    case WitnessScope.InitScriptHash: return engine.CurrentScriptHash == engine.EntryScriptHash;
                     case WitnessScope.ExecutingGroupPubKey:
                         {
                             var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
