@@ -8,9 +8,10 @@
         Global = 0x00,
 
         /// <summary>
-        /// EntryScriptHash - no params (root-only witnesses) - can be default safe choice for native NEO/GAS (neo2 attach mode)
+        /// RootAccess means that this condition must hold: EntryScriptHash == CallingScriptHash
+        /// No params is needed. This can be default safe choice for native NEO/GAS (previously used on Neo 2 as "attach" mode)
         /// </summary>
-        InitScriptHash = 0x01,
+        RootAccess = 0x01,
 
         /// <summary>
         /// Custom hash for contract-specific
