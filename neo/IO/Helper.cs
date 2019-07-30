@@ -92,17 +92,16 @@ namespace Neo.IO
         {
             using (MemoryStream ms = new MemoryStream())
             {
-                int padding = 0;
+                int count;
                 do
                 {
                     byte[] group = reader.ReadBytes(GroupingSizeInBytes);
-                    padding = reader.ReadByte();
-                    if (padding > GroupingSizeInBytes)
+                    count = reader.ReadByte();
+                    if (count > GroupingSizeInBytes)
                         throw new FormatException();
-                    int count = GroupingSizeInBytes - padding;
                     if (count > 0)
                         ms.Write(group, 0, count);
-                } while (padding == 0);
+                } while (count == GroupingSizeInBytes);
                 return ms.ToArray();
             }
         }
@@ -200,7 +199,7 @@ namespace Neo.IO
             while (remain >= GroupingSizeInBytes)
             {
                 writer.Write(value, index, GroupingSizeInBytes);
-                writer.Write((byte)0);
+                writer.Write((byte)GroupingSizeInBytes);
                 index += GroupingSizeInBytes;
                 remain -= GroupingSizeInBytes;
             }
@@ -209,7 +208,7 @@ namespace Neo.IO
             int padding = GroupingSizeInBytes - remain;
             for (int i = 0; i < padding; i++)
                 writer.Write((byte)0);
-            writer.Write((byte)padding);
+            writer.Write((byte)remain);
         }
 
         public static void WriteFixedString(this BinaryWriter writer, string value, int length)

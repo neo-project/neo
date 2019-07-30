@@ -118,16 +118,58 @@ namespace Neo.IO.Caching
             }
         }
 
+        /// <summary>
+        /// Find the entries that start with the `key_prefix`
+        /// </summary>
+        /// <param name="key_prefix">Must maintain the deserialized format of TKey</param>
+        /// <returns>Entries found with the desired prefix</returns>
         public IEnumerable<KeyValuePair<TKey, TValue>> Find(byte[] key_prefix = null)
         {
+            IEnumerable<(byte[], TKey, TValue)> cached;
             lock (dictionary)
             {
-                foreach (var pair in FindInternal(key_prefix ?? new byte[0]))
-                    if (!dictionary.ContainsKey(pair.Key))
-                        yield return pair;
-                foreach (var pair in dictionary)
-                    if (pair.Value.State != TrackState.Deleted && (key_prefix == null || pair.Key.ToArray().Take(key_prefix.Length).SequenceEqual(key_prefix)))
-                        yield return new KeyValuePair<TKey, TValue>(pair.Key, pair.Value.Item);
+                cached = dictionary
+                    .Where(p => p.Value.State != TrackState.Deleted && (key_prefix == null || p.Key.ToArray().Take(key_prefix.Length).SequenceEqual(key_prefix)))
+                    .Select(p =>
+                    (
+                        KeyBytes: p.Key.ToArray(),
+                        p.Key,
+                        p.Value.Item
+                    ))
+                    .OrderBy(p => p.KeyBytes, ByteArrayComparer.Default)
+                    .ToArray();
+            }
+            var uncached = FindInternal(key_prefix ?? new byte[0])
+                .Where(p => !dictionary.ContainsKey(p.Key))
+                .Select(p =>
+                (
+                    KeyBytes: p.Key.ToArray(),
+                    p.Key,
+                    p.Value
+                ));
+            using (var e1 = cached.GetEnumerator())
+            using (var e2 = uncached.GetEnumerator())
+            {
+                (byte[] KeyBytes, TKey Key, TValue Item) i1, i2;
+                bool c1 = e1.MoveNext();
+                bool c2 = e2.MoveNext();
+                i1 = c1 ? e1.Current : default;
+                i2 = c2 ? e2.Current : default;
+                while (c1 || c2)
+                {
+                    if (!c2 || (c1 && ByteArrayComparer.Default.Compare(i1.KeyBytes, i2.KeyBytes) < 0))
+                    {
+                        yield return new KeyValuePair<TKey, TValue>(i1.Key, i1.Item);
+                        c1 = e1.MoveNext();
+                        i1 = c1 ? e1.Current : default;
+                    }
+                    else
+                    {
+                        yield return new KeyValuePair<TKey, TValue>(i2.Key, i2.Item);
+                        c2 = e2.MoveNext();
+                        i2 = c2 ? e2.Current : default;
+                    }
+                }
             }
         }
 
