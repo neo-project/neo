@@ -83,7 +83,7 @@ namespace Neo.SmartContract
                 return true;
             return AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
         }
-        
+
         private static Block CreateDummyBlock(Snapshot snapshot)
         {
             var currentBlock = snapshot.Blocks[snapshot.CurrentBlockHash];
@@ -134,6 +134,47 @@ namespace Neo.SmartContract
             NotifyEventArgs notification = new NotifyEventArgs(ScriptContainer, script_hash, state);
             Notify?.Invoke(this, notification);
             notifications.Add(notification);
+        }
+
+        internal UInt160[] GetScopedScriptHashesForVerifying()
+        {
+            UInt160[] hashesForVerifying = ScriptContainer.GetScriptHashesForVerifying(Snapshot);
+
+            Witness[] witnesses = ScriptContainer.Witnesses;
+
+            List<UInt160> scopedHashes = new List<UInt160>();
+
+            for (int i = 0; i < hashesForVerifying.Length; i++)
+            {
+                UInt160 scriptHash = hashesForVerifying[i];
+                for (int w = 0; w < ScriptContainer.Witnesses.Length; w++)
+                {
+                    Witness witness = ScriptContainer.Witnesses[w];
+
+                    if (scriptHash == witness.ScriptHash)
+                    {
+                        // check if scope is fine
+
+                        // global
+                        if (witness.WitnessScope.Type == WitnessScopeType.Global)
+                        {
+                            scopedHashes.Add(scriptHash);
+                            break;
+                        }
+
+                        // root access
+                        if ((witness.WitnessScope.Type == WitnessScopeType.RootAccess) && (CallingScriptHash == EntryScriptHash))
+                        {
+                            scopedHashes.Add(scriptHash);
+                            break;
+                        }
+
+                        // add two others (least important now)
+                    }
+                }
+            }
+
+            return scopedHashes.ToArray();
         }
     }
 }

@@ -34,7 +34,7 @@ namespace Neo.Network.P2P.Payloads
         public static WitnessScope FromJson(JObject json)
         {
             WitnessScope scope = new WitnessScope();
-            scope.Type = (WitnessScopeType) json["type"].AsString().HexToBytes()[0];
+            scope.Type = (WitnessScopeType)json["type"].AsString().HexToBytes()[0];
             scope.ScopeData = json["scopeData"].AsString().HexToBytes();
             return scope;
         }
