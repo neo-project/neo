@@ -126,8 +126,10 @@ namespace Neo.UnitTests.Ledger
                 {
                     new Witness
                     {
-                        Scope = WitnessScope.Global,
-                        ScopedHash = UInt160.Zero,
+                        Scope = new WitnessScope{
+                            Type = WitnessScopeType.Global,
+                            ScopeData = UInt160.Zero.ToArray()
+                        },
                         InvocationScript = new byte[0],
                         VerificationScript = new byte[0]
                     }

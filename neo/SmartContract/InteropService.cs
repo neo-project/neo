@@ -149,19 +149,19 @@ namespace Neo.SmartContract
             {
                 if (witness.ScriptHash != hash) continue;
 
-                switch (witness.Scope)
+                switch (witness.Scope.Type)
                 {
                     default: return false;
 
-                    case WitnessScope.Global: return true;
-                    case WitnessScope.CustomScriptHash: return engine.CurrentScriptHash == witness.ScopedHash;
-                    case WitnessScope.InitScriptHash: return engine.CurrentScriptHash == engine.EntryScriptHash;
-                    case WitnessScope.ExecutingGroupPubKey:
+                    case WitnessScopeType.Global: return true;
+                    case WitnessScopeType.CustomScriptHash: return engine.CurrentScriptHash == new UInt160(witness.Scope.ScopeData);
+                    case WitnessScopeType.RootAccess: return engine.CurrentScriptHash == engine.EntryScriptHash;
+                    case WitnessScopeType.ExecutingGroupPubKey:
                         {
                             var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
                             if (contract == null || contract.Manifest.Groups == null) return false;
 
-                            return contract.Manifest.Groups.All(u => u.IsValid(witness.ScopedHash));
+                            return contract.Manifest.Groups.All(u => u.IsValid(new UInt160(witness.Scope.ScopeData)));
                         }
                 }
             }

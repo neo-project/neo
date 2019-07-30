@@ -82,7 +82,7 @@ namespace Neo.Consensus
             for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
             {
                 if (CommitPayloads[i]?.ConsensusMessage.ViewNumber != ViewNumber) continue;
-                sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, WitnessScope.Global, UInt160.Zero);
+                sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature, WitnessScopeType.Global, UInt160.Zero);
                 j++;
             }
             Block.Witness = sc.GetWitnesses()[0];
@@ -197,7 +197,7 @@ namespace Neo.Consensus
             try
             {
                 sc = new ContractParametersContext(payload);
-                wallet.Sign(sc, WitnessScope.Global, UInt160.Zero);
+                wallet.Sign(sc, WitnessScopeType.Global, UInt160.Zero);
             }
             catch (InvalidOperationException)
             {

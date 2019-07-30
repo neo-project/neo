@@ -368,7 +368,7 @@ namespace Neo.Wallets
             throw new InvalidOperationException("Insufficient GAS");
         }
 
-        public bool Sign(ContractParametersContext context, WitnessScope scope, UInt160 scopedHash)
+        public bool Sign(ContractParametersContext context, WitnessScopeType scope, UInt160 scopedHash)
         {
             bool fSuccess = false;
             foreach (UInt160 scriptHash in context.ScriptHashes)

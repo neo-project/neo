@@ -1,26 +1,42 @@
-﻿namespace Neo.Network.P2P.Payloads
+﻿using Neo.IO;
+using Neo.IO.Json;
+using System.IO;
+
+namespace Neo.Network.P2P.Payloads
 {
-    public enum WitnessScope : byte
+    public class WitnessScope : ISerializable
     {
-        /// <summary>
-        /// (neo2) - no params
-        /// </summary>
-        Global = 0x00,
+        public WitnessScopeType Type;
+        public byte[] ScopeData;
 
-        /// <summary>
-        /// RootAccess means that this condition must hold: EntryScriptHash == CallingScriptHash
-        /// No params is needed. This can be default safe choice for native NEO/GAS (previously used on Neo 2 as "attach" mode)
-        /// </summary>
-        RootAccess = 0x01,
+        public int Size => 1 + ScopeData.GetVarSize();
 
-        /// <summary>
-        /// Custom hash for contract-specific
-        /// </summary>
-        CustomScriptHash = 0x02,
+        void ISerializable.Deserialize(BinaryReader reader)
+        {
+            Type = (WitnessScopeType)reader.ReadByte();
+            ScopeData = reader.ReadVarBytes(65536);
+        }
 
-        /// <summary>
-        ///  Custom pubkey for group members
-        /// </summary>
-        ExecutingGroupPubKey = 0x03
+        void ISerializable.Serialize(BinaryWriter writer)
+        {
+            writer.Write((byte)Type);
+            writer.WriteVarBytes(ScopeData);
+        }
+
+        public JObject ToJson()
+        {
+            JObject json = new JObject();
+            json["type"] = (new byte[] { (byte)Type }).ToHexString();
+            json["scopeData"] = ScopeData.ToHexString();
+            return json;
+        }
+
+        public static WitnessScope FromJson(JObject json)
+        {
+            WitnessScope scope = new WitnessScope();
+            scope.Type = (WitnessScopeType)json["type"].AsString().HexToBytes()[0];
+            scope.ScopeData = json["scopeData"].AsString().HexToBytes();
+            return scope;
+        }
     }
 }

@@ -70,8 +70,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 new Witness
                 {
-                    Scope = WitnessScope.Global,
-                    ScopedHash = UInt160.Zero,
+                    Scope = new WitnessScope{
+                        Type = WitnessScopeType.Global,
+                        ScopeData = UInt160.Zero.ToArray()
+                    },
                     InvocationScript = new byte[0],
                     VerificationScript = new byte[0]
                 }
@@ -150,8 +152,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // Sign
 
                 var data = new ContractParametersContext(tx);
-                Assert.IsTrue(walletA.Sign(data, WitnessScope.Global, UInt160.Zero));
-                Assert.IsTrue(walletB.Sign(data, WitnessScope.Global, UInt160.Zero));
+                Assert.IsTrue(walletA.Sign(data, WitnessScopeType.Global, UInt160.Zero));
+                Assert.IsTrue(walletB.Sign(data, WitnessScopeType.Global, UInt160.Zero));
                 Assert.IsTrue(data.Completed);
 
                 tx.Witnesses = data.GetWitnesses();
@@ -223,7 +225,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // Sign
 
                 var data = new ContractParametersContext(tx);
-                Assert.IsTrue(wallet.Sign(data, WitnessScope.Global, UInt160.Zero));
+                Assert.IsTrue(wallet.Sign(data, WitnessScopeType.Global, UInt160.Zero));
                 tx.Witnesses = data.GetWitnesses();
 
                 // Fast check
@@ -262,8 +264,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 new Witness
                 {
-                    Scope = WitnessScope.Global,
-                    ScopedHash = UInt160.Zero,
+                    Scope = new WitnessScope
+                    {
+                        Type = WitnessScopeType.Global,
+                        ScopeData = UInt160.Zero.ToArray()
+                    },
                     InvocationScript = new byte[0],
                     VerificationScript = new byte[0]
                 }

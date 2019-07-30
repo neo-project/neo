@@ -21,7 +21,7 @@ namespace Neo.SmartContract
             public ContractParameter[] Parameters;
             public Dictionary<ECPoint, byte[]> Signatures;
             public WitnessScope Scope;
-            public UInt160 ScopedHash;
+            //public UInt160 ScopedHash;
 
             private ContextItem() { }
 
@@ -94,17 +94,19 @@ namespace Neo.SmartContract
             this.ContextItems = new Dictionary<UInt160, ContextItem>();
         }
 
-        public bool Add(Contract contract, int index, object parameter, WitnessScope scope, UInt160 scopedHash)
+        public bool Add(Contract contract, int index, object parameter, WitnessScopeType scope, UInt160 scopedHash)
         {
             ContextItem item = CreateItem(contract);
             if (item == null) return false;
             item.Parameters[index].Value = parameter;
-            item.Scope = scope;
-            item.ScopedHash = scopedHash;
+            item.Scope = new WitnessScope{
+                Type = scope,
+                ScopeData = scopedHash.ToArray()
+            };
             return true;
         }
 
-        public bool AddSignature(Contract contract, ECPoint pubkey, byte[] signature, WitnessScope scope, UInt160 scopedHash)
+        public bool AddSignature(Contract contract, ECPoint pubkey, byte[] signature, WitnessScopeType scope, UInt160 scopedHash)
         {
             if (contract.Script.IsMultiSigContract(out _, out _))
             {
@@ -232,7 +234,6 @@ namespace Neo.SmartContract
                     witnesses[i] = new Witness
                     {
                         Scope = item.Scope,
-                        ScopedHash = item.ScopedHash,
                         InvocationScript = sb.ToArray(),
                         VerificationScript = item.Script ?? new byte[0]
                     };
