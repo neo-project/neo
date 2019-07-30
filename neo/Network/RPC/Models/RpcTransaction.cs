@@ -1,7 +1,7 @@
 ﻿using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
 
-namespace Neo.Network.RPC.Model
+namespace Neo.Network.RPC.Models
 {
     public class RpcTransaction
     {
@@ -38,6 +38,4 @@ namespace Neo.Network.RPC.Model
             return transaction;
         }
     }
-
-
 }
