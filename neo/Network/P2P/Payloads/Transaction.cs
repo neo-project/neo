@@ -177,6 +177,21 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
+        public static Transaction FromJson(JObject json)
+        {
+            Transaction tx = new Transaction();
+            tx.Version = byte.Parse(json["version"].AsString());
+            tx.Nonce = uint.Parse(json["nonce"].AsString());
+            tx.Sender = json["sender"].AsString().ToScriptHash();
+            tx.SystemFee = long.Parse(json["sys_fee"].AsString());
+            tx.NetworkFee = long.Parse(json["net_fee"].AsString());
+            tx.ValidUntilBlock = uint.Parse(json["valid_until_block"].AsString());
+            tx.Attributes = ((JArray)json["attributes"]).Select(p => TransactionAttribute.FromJson(p)).ToArray();
+            tx.Script = json["script"].AsString().HexToBytes();
+            tx.Witnesses = ((JArray)json["witnesses"]).Select(p => Witness.FromJson(p)).ToArray();
+            return tx;
+        }
+
         bool IInventory.Verify(Snapshot snapshot)
         {
             return Verify(snapshot, Enumerable.Empty<Transaction>());
