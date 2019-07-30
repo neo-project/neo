@@ -64,5 +64,13 @@ namespace Neo.Ledger
             json["manifest"] = Manifest.ToJson();
             return json;
         }
+
+        public static ContractState FromJson(JObject json)
+        {
+            ContractState contractState = new ContractState();
+            contractState.Script = json["script"].AsString().HexToBytes();
+            contractState.Manifest = ContractManifest.FromJson(json["manifest"]);
+            return contractState;
+        }
     }
 }

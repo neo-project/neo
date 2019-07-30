@@ -33,5 +33,13 @@ namespace Neo.Network.P2P.Payloads
             json["data"] = Data.ToHexString();
             return json;
         }
+
+        public static TransactionAttribute FromJson(JObject json)
+        {
+            TransactionAttribute transactionAttribute = new TransactionAttribute();
+            transactionAttribute.Usage = (TransactionAttributeUsage)(byte.Parse(json["usage"].AsString()));
+            transactionAttribute.Data = json["data"].AsString().HexToBytes();
+            return transactionAttribute;
+        }
     }
 }
