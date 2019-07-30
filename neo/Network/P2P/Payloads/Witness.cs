@@ -8,6 +8,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public class Witness : ISerializable
     {
+        public WitnessScope WitnessScope;
         public byte[] InvocationScript;
         public byte[] VerificationScript;
 
@@ -24,16 +25,18 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public int Size => InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
+        public int Size => WitnessScope.Size + InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
+            WitnessScope = reader.ReadSerializable<WitnessScope>();
             InvocationScript = reader.ReadVarBytes(65536);
             VerificationScript = reader.ReadVarBytes(65536);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
+            writer.Write(WitnessScope);
             writer.WriteVarBytes(InvocationScript);
             writer.WriteVarBytes(VerificationScript);
         }
@@ -41,6 +44,7 @@ namespace Neo.Network.P2P.Payloads
         public JObject ToJson()
         {
             JObject json = new JObject();
+            json["scope"] = WitnessScope.ToJson();
             json["invocation"] = InvocationScript.ToHexString();
             json["verification"] = VerificationScript.ToHexString();
             return json;
@@ -49,6 +53,7 @@ namespace Neo.Network.P2P.Payloads
         public static Witness FromJson(JObject json)
         {
             Witness witness = new Witness();
+            witness.WitnessScope = WitnessScope.FromJson(json["scope"]);
             witness.InvocationScript = json["invocation"].AsString().HexToBytes();
             witness.VerificationScript = json["verification"].AsString().HexToBytes();
             return witness;
