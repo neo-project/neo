@@ -30,6 +30,18 @@ namespace Neo.Wallets
         public abstract WalletAccount GetAccount(UInt160 scriptHash);
         public abstract IEnumerable<WalletAccount> GetAccounts();
 
+        private class FakeWitness : Witness
+        {
+            private readonly UInt160 _ScriptHash;
+
+            public override UInt160 ScriptHash => _ScriptHash;
+
+            public FakeWitness(UInt160 scriptHash)
+            {
+                _ScriptHash = scriptHash;
+            }
+        }
+
         public WalletAccount CreateAccount()
         {
             byte[] privateKey = new byte[32];
@@ -303,6 +315,10 @@ namespace Neo.Wallets
                     ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
                     Attributes = attributes
                 };
+
+                UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
+                tx.Witnesses = hashes.Select(u => new FakeWitness(u)).ToArray();
+
                 using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, tx, testMode: true))
                 {
                     if (engine.State.HasFlag(VMState.FAULT))
@@ -318,7 +334,7 @@ namespace Neo.Wallets
                             tx.SystemFee -= remainder;
                     }
                 }
-                UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
+                tx.Witnesses = null;
                 int size = Transaction.HeaderSize + attributes.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
                 foreach (UInt160 hash in hashes)
                 {
