@@ -36,7 +36,7 @@ namespace Neo.Network.P2P.Payloads
         public static CosignerUsage FromJson(JObject json)
         {
             CosignerUsage usage = new CosignerUsage();
-            usage.Scope = (WitnessScope)Enum.Parse(typeof(WitnessScope), json["scope"].AsString()))
+            usage.Scope = (WitnessScope)Enum.Parse(typeof(WitnessScope), json["scope"].AsString());
             usage.ScriptHash = UInt160.Parse(json["scriptHash"].AsString());
             return usage;
         }

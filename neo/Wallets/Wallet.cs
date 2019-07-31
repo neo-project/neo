@@ -358,12 +358,12 @@ namespace Neo.Wallets
                     {
                         // get Usage/size for this hash (logic can be vastly improved)
                         int sz = 0;
-                        for(var i=0; i<attributes.Length; i++)
+                        for (var i = 0; i < attributes.Length; i++)
                         {
-                            if(attributes[i].Usage == TransactionAttributeUsage.Cosigner)
+                            if (attributes[i].Usage == TransactionAttributeUsage.Cosigner)
                             {
                                 CosignerUsage usage = attributes[i].DataAsCosignerUsage();
-                                if(usage.ScriptHash == hash)
+                                if (usage.ScriptHash == hash)
                                 {
                                     // sz is usually 1 (for Global or RootAccess, and variable size otherwise)
                                     sz = usage.Scope.Size;
@@ -379,12 +379,12 @@ namespace Neo.Wallets
                     {
                         // get Usage/size for this hash (logic can be vastly improved)
                         int sz = 0;
-                        for(var i=0; i<attributes.Length; i++)
+                        for (var i = 0; i < attributes.Length; i++)
                         {
-                            if(attributes[i].Usage == TransactionAttributeUsage.Cosigner)
+                            if (attributes[i].Usage == TransactionAttributeUsage.Cosigner)
                             {
                                 CosignerUsage usage = attributes[i].DataAsCosignerUsage();
-                                if(usage.ScriptHash == hash)
+                                if (usage.ScriptHash == hash)
                                 {
                                     // sz is usually 1 (for Global or RootAccess, and variable size otherwise)
                                     sz = usage.Scope.Size;
@@ -414,7 +414,7 @@ namespace Neo.Wallets
             throw new InvalidOperationException("Insufficient GAS");
         }
 
-        public bool Sign(ContractParametersContext context, WitnessScopeType scope, UInt160 scopedHash)
+        public bool Sign(ContractParametersContext context, WitnessScope scope)
         {
             bool fSuccess = false;
             foreach (UInt160 scriptHash in context.ScriptHashes)
@@ -423,7 +423,7 @@ namespace Neo.Wallets
                 if (account?.HasKey != true) continue;
                 KeyPair key = account.GetKey();
                 byte[] signature = context.Verifiable.Sign(key);
-                fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature, scope, scopedHash);
+                fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature, scope);
             }
             return fSuccess;
         }

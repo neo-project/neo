@@ -4,8 +4,14 @@ using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class WitnessScope : ISerializable
+    public class WitnessScope : ISerializable, ICloneable<WitnessScope>
     {
+        public static readonly WitnessScope Global = new WitnessScope()
+        {
+            Type = WitnessScopeType.Global,
+            ScopeData = new byte[0]
+        };
+
         public WitnessScopeType Type;
         public byte[] ScopeData;
 
@@ -37,6 +43,21 @@ namespace Neo.Network.P2P.Payloads
             scope.Type = (WitnessScopeType)json["type"].AsString().HexToBytes()[0];
             scope.ScopeData = json["scopeData"].AsString().HexToBytes();
             return scope;
+        }
+
+        public WitnessScope Clone()
+        {
+            return new WitnessScope()
+            {
+                Type = Type,
+                ScopeData = ScopeData
+            };
+        }
+
+        public void FromReplica(WitnessScope replica)
+        {
+            Type = replica.Type;
+            ScopeData = replica.ScopeData;
         }
     }
 }

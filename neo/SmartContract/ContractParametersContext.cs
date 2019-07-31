@@ -94,19 +94,16 @@ namespace Neo.SmartContract
             this.ContextItems = new Dictionary<UInt160, ContextItem>();
         }
 
-        public bool Add(Contract contract, int index, object parameter, WitnessScopeType scope, UInt160 scopedHash)
+        public bool Add(Contract contract, int index, object parameter, WitnessScope scope)
         {
             ContextItem item = CreateItem(contract);
             if (item == null) return false;
             item.Parameters[index].Value = parameter;
-            item.Scope = new WitnessScope{
-                Type = scope,
-                ScopeData = scopedHash.ToArray()
-            };
+            item.Scope = scope.Clone();
             return true;
         }
 
-        public bool AddSignature(Contract contract, ECPoint pubkey, byte[] signature, WitnessScopeType scope, UInt160 scopedHash)
+        public bool AddSignature(Contract contract, ECPoint pubkey, byte[] signature, WitnessScope scope)
         {
             if (contract.Script.IsMultiSigContract(out _, out _))
             {
@@ -150,7 +147,7 @@ namespace Neo.SmartContract
                         Index = dic[p.Key]
                     }).OrderByDescending(p => p.Index).Select(p => p.Signature).ToArray();
                     for (int i = 0; i < sigs.Length; i++)
-                        if (!Add(contract, i, sigs[i], scope, scopedHash))
+                        if (!Add(contract, i, sigs[i], scope))
                             throw new InvalidOperationException();
                     item.Signatures = null;
                 }
@@ -172,7 +169,7 @@ namespace Neo.SmartContract
                     // return now to prevent array index out of bounds exception
                     return false;
                 }
-                return Add(contract, index, signature, scope, scopedHash);
+                return Add(contract, index, signature, scope);
             }
         }
 
