@@ -213,12 +213,10 @@ namespace Neo.Consensus
         internal void EnsureMaxBlockSize(IEnumerable<Transaction> txs)
         {
             var transactions = txs.ToList();
-
-            Transactions = new Dictionary<UInt256, Transaction>();
-            uint maxBlockSize = NativeContract.Policy.GetMaxBlockSize(Snapshot);
+            // Limit Speaker proposal to the limit `MaxTransactionsPerBlock` or all available transactions of the mempool
             TransactionHashes = new UInt256[Math.Min(transactions.Count, NativeContract.Policy.GetMaxTransactionsPerBlock(Snapshot))];
+            
             Block.Transactions = new Transaction[0];
-
             // TODO: Real expected witness
             Block.Witness = new Witness()
             {
@@ -226,14 +224,15 @@ namespace Neo.Consensus
                 VerificationScript = new byte[0]
             };
 
+            Transactions = new Dictionary<UInt256, Transaction>();
+            uint maxBlockSize = NativeContract.Policy.GetMaxBlockSize(Snapshot);
             var fixedSize = Block.Size + IO.Helper.GetVarSize(TransactionHashes.Length); // ensure that the var size grows without exceed the max size
             Block.Witness = null;
-
             for (int x = 0, max = TransactionHashes.Length; x < max; x++)
             {
                 var tx = transactions[x];
 
-                // Check if exceed
+                // Check if maximum block size has been already exceeded with the current selected set
                 if (fixedSize + UInt256.Length + tx.Size > maxBlockSize) break;
 
                 TransactionHashes[x] = tx.Hash;
@@ -241,11 +240,8 @@ namespace Neo.Consensus
             }
 
             // Truncate null values
-
             if (TransactionHashes.Length > Transactions.Count)
-            {
                 Array.Resize(ref TransactionHashes, Transactions.Count);
-            }
         }
 
         public ConsensusPayload MakePrepareRequest()
