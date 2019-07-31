@@ -206,17 +206,9 @@ namespace Neo.Consensus
             payload.Witness = sc.GetWitnesses()[0];
         }
 
-        public ConsensusPayload MakePrepareRequest()
+        internal void EnsureMaxBlockSize(IEnumerable<Transaction> txs)
         {
-            byte[] buffer = new byte[sizeof(ulong)];
-            random.NextBytes(buffer);
-            Block.ConsensusData.Nonce = BitConverter.ToUInt64(buffer, 0);
-
-            IEnumerable<Transaction> memoryPoolTransactions = Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions();
-            foreach (IPolicyPlugin plugin in Plugin.Policies)
-                memoryPoolTransactions = plugin.FilterForBlock(memoryPoolTransactions);
-
-            List<Transaction> transactions = memoryPoolTransactions.ToList();
+            var transactions = txs.ToList();
 
             Transactions = new Dictionary<UInt256, Transaction>();
             uint maxBlockSize = NativeContract.Policy.GetMaxBlockSize(Snapshot);
@@ -244,6 +236,19 @@ namespace Neo.Consensus
             {
                 Array.Resize(ref TransactionHashes, Transactions.Count);
             }
+        }
+
+        public ConsensusPayload MakePrepareRequest()
+        {
+            byte[] buffer = new byte[sizeof(ulong)];
+            random.NextBytes(buffer);
+            Block.ConsensusData.Nonce = BitConverter.ToUInt64(buffer, 0);
+
+            IEnumerable<Transaction> memoryPoolTransactions = Blockchain.Singleton.MemPool.GetSortedVerifiedTransactions();
+            foreach (IPolicyPlugin plugin in Plugin.Policies)
+                memoryPoolTransactions = plugin.FilterForBlock(memoryPoolTransactions);
+
+            EnsureMaxBlockSize(memoryPoolTransactions);
 
             // Create valid request
 
