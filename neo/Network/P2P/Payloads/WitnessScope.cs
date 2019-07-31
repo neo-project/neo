@@ -15,18 +15,21 @@ namespace Neo.Network.P2P.Payloads
         public WitnessScopeType Type;
         public byte[] ScopeData;
 
-        public int Size => 1 + ScopeData.GetVarSize();
+        public bool HasData => (Type == WitnessScopeType.CustomScriptHash) || (Type == WitnessScopeType.ExecutingGroupPubKey);
+
+        public int Size => 1 + (HasData ? ScopeData.GetVarSize() : 0);
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Type = (WitnessScopeType)reader.ReadByte();
-            ScopeData = reader.ReadVarBytes(65536);
+            ScopeData = (HasData ? reader.ReadVarBytes(65536) : new byte[0]);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Type);
-            writer.WriteVarBytes(ScopeData);
+            if(HasData)
+                writer.WriteVarBytes(ScopeData);
         }
 
         public JObject ToJson()

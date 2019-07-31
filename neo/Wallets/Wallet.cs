@@ -331,6 +331,7 @@ namespace Neo.Wallets
                 };
 
                 UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
+                // using a fake witness just to setup ScriptHash field manually
                 tx.Witnesses = hashes.Select(u => new FakeWitness(u)).ToArray();
 
                 using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, tx, testMode: true))
