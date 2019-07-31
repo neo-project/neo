@@ -5,6 +5,7 @@ using Neo.Consensus;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
+using System;
 using System.Linq;
 
 namespace Neo.UnitTests.Consensus
@@ -45,19 +46,37 @@ namespace Neo.UnitTests.Consensus
             var tx2 = CreateTransactionWithSize(256 * 1024);
             context.EnsureMaxBlockSize(new Transaction[] { tx1, tx2 });
             EnsureContext(context, tx1);
+
+            // Exceed txs
+
+            var max = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(context.Snapshot);
+            var txs = new Transaction[max + 1];
+
+            for (int x = 0; x < max; x++) txs[x] = CreateTransactionWithSize(100);
+
+            context.EnsureMaxBlockSize(txs);
+            EnsureContext(context, txs.Take(max).ToArray());
+
+            // All txs
+
+            txs = txs.Take(max).ToArray();
+
+            context.EnsureMaxBlockSize(txs);
+            EnsureContext(context, txs);
         }
 
         private Transaction CreateTransactionWithSize(int v)
         {
+            var r = new Random();
             var tx = new Transaction()
             {
                 Attributes = new TransactionAttribute[0],
                 NetworkFee = 0,
-                Nonce = 0,
+                Nonce = (uint)Environment.TickCount,
                 Script = new byte[0],
                 Sender = UInt160.Zero,
                 SystemFee = 0,
-                ValidUntilBlock = 0,
+                ValidUntilBlock = (uint)r.Next(),
                 Version = 0,
                 Witnesses = new Witness[0],
             };
