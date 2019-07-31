@@ -90,7 +90,10 @@ namespace Neo.UnitTests.Consensus
         {
             // Check all tx
 
+            Assert.AreEqual(expected.Length, context.Transactions.Count);
             Assert.IsTrue(expected.All(tx => context.Transactions.ContainsKey(tx.Hash)));
+
+            Assert.AreEqual(expected.Length, context.TransactionHashes.Length);
             Assert.IsTrue(expected.All(tx => context.TransactionHashes.Count(t => t == tx.Hash) == 1));
 
             // Ensure length
