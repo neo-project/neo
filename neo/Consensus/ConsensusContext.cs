@@ -206,6 +206,10 @@ namespace Neo.Consensus
             payload.Witness = sc.GetWitnesses()[0];
         }
 
+        /// <summary>
+        /// Prevent that block exceed the max size
+        /// </summary>
+        /// <param name="txs">Ordered transactions</param>
         internal void EnsureMaxBlockSize(IEnumerable<Transaction> txs)
         {
             var transactions = txs.ToList();
@@ -213,11 +217,17 @@ namespace Neo.Consensus
             Transactions = new Dictionary<UInt256, Transaction>();
             uint maxBlockSize = NativeContract.Policy.GetMaxBlockSize(Snapshot);
             TransactionHashes = new UInt256[Math.Min(transactions.Count, NativeContract.Policy.GetMaxTransactionsPerBlock(Snapshot))];
-
-            // Prevent that block exceed the max size
-
             Block.Transactions = new Transaction[0];
+
+            // TODO: Real expected witness
+            Block.Witness = new Witness()
+            {
+                InvocationScript = new byte[0],
+                VerificationScript = new byte[0]
+            };
+
             var fixedSize = Block.Size + IO.Helper.GetVarSize(TransactionHashes.Length); // ensure that the var size grows without exceed the max size
+            Block.Witness = null;
 
             for (int x = 0, max = TransactionHashes.Length; x < max; x++)
             {
