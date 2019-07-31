@@ -151,22 +151,43 @@ namespace Neo.SmartContract
 
                 switch (witness.Scope.Type)
                 {
-                    default: return false;
-
-                    case WitnessScopeType.Global: return true;
-                    case WitnessScopeType.CustomScriptHash: return engine.CurrentScriptHash == new UInt160(witness.Scope.ScopeData);
-                    case WitnessScopeType.RootAccess: return engine.CurrentScriptHash == engine.EntryScriptHash;
+                    case WitnessScopeType.Global:
+                        {
+                            // ignore
+                            break;
+                        }
+                    case WitnessScopeType.CustomScriptHash:
+                        {
+                            // verify if context is correct for execution
+                            if (engine.CurrentScriptHash != new UInt160(witness.Scope.ScopeData))
+                                return false;
+                            break;
+                        }
+                    case WitnessScopeType.RootAccess:
+                        {
+                            // verify if context is correct for execution
+                            if (engine.CurrentScriptHash != engine.EntryScriptHash)
+                                return false;
+                            break;
+                        }
                     case WitnessScopeType.ExecutingGroupPubKey:
                         {
                             var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
                             if (contract == null || contract.Manifest.Groups == null) return false;
-
-                            return contract.Manifest.Groups.All(u => u.IsValid(new UInt160(witness.Scope.ScopeData)));
+                            // check if current group is the required one
+                            if (!contract.Manifest.Groups.All(u => u.IsValid(new UInt160(witness.Scope.ScopeData))))
+                                return false;
+                            break;
+                        }
+                    default:
+                        {
+                            // ignore
+                            break;
                         }
                 }
             }
 
-            return false;
+            return true;
         }
 
         private static bool CheckWitness(ApplicationEngine engine, ECPoint pubkey)
