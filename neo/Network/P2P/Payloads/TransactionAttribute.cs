@@ -10,17 +10,6 @@ namespace Neo.Network.P2P.Payloads
         public TransactionAttributeUsage Usage;
         public byte[] Data;
 
-        public CosignerUsage DataAsCosignerUsage()
-        {
-            CosignerUsage cousage = null;
-            using (MemoryStream ms = new MemoryStream(Data, false))
-            using (BinaryReader r = new BinaryReader(ms))
-            {
-                cousage = r.ReadSerializable<CosignerUsage>();
-            }
-            return cousage;
-        }
-
         public int Size => sizeof(TransactionAttributeUsage) + Data.GetVarSize();
 
         void ISerializable.Deserialize(BinaryReader reader)

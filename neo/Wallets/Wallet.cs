@@ -362,7 +362,7 @@ namespace Neo.Wallets
                         {
                             if (attributes[i].Usage == TransactionAttributeUsage.Cosigner)
                             {
-                                CosignerUsage usage = attributes[i].DataAsCosignerUsage();
+                                CosignerUsage usage = attributes[i].Data.AsSerializable<CosignerUsage>();
                                 if (usage.ScriptHash == hash)
                                 {
                                     // sz is usually 1 (for Global or RootAccess, and variable size otherwise)
@@ -383,7 +383,7 @@ namespace Neo.Wallets
                         {
                             if (attributes[i].Usage == TransactionAttributeUsage.Cosigner)
                             {
-                                CosignerUsage usage = attributes[i].DataAsCosignerUsage();
+                                CosignerUsage usage = attributes[i].Data.AsSerializable<CosignerUsage>();
                                 if (usage.ScriptHash == hash)
                                 {
                                     // sz is usually 1 (for Global or RootAccess, and variable size otherwise)
