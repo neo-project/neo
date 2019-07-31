@@ -175,6 +175,7 @@ namespace Neo.Consensus
 
         private void Log(string message, LogLevel level = LogLevel.Info)
         {
+            Console.WriteLine($"[{DateTime.Now.TimeOfDay:hh\\:mm\\:ss\\.fff}] {message}");
             Plugin.Log(nameof(ConsensusService), level, message);
         }
 
