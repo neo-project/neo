@@ -21,7 +21,6 @@ namespace Neo.SmartContract
             public ContractParameter[] Parameters;
             public Dictionary<ECPoint, byte[]> Signatures;
             public WitnessScope Scope;
-            //public UInt160 ScopedHash;
 
             private ContextItem() { }
 

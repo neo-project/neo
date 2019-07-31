@@ -71,11 +71,7 @@ namespace Neo.UnitTests
             bb.NextConsensus = val160;
             scriptVal = new Witness
             {
-                Scope = new WitnessScope
-                {
-                    Type = WitnessScopeType.Global,
-                    ScopeData = UInt160.Zero.ToArray()
-                },
+                Scope = WitnessScope.Global.Clone(),
                 InvocationScript = new byte[0],
                 VerificationScript = new[] { (byte)OpCode.PUSHT }
             };
@@ -95,11 +91,7 @@ namespace Neo.UnitTests
                 {
                     new Witness
                     {
-                        Scope = new WitnessScope
-                        {
-                            Type = WitnessScopeType.Global,
-                            ScopeData = UInt160.Zero.ToArray()
-                        },
+                        Scope = WitnessScope.Global.Clone(),
                         InvocationScript = new byte[0],
                         VerificationScript = new byte[0]
                     }
