@@ -3,6 +3,7 @@
 
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
@@ -24,6 +25,14 @@ namespace Neo.SmartContract.Native
         public PolicyContract()
         {
             Manifest.Features = ContractFeatures.HasStorage;
+        }
+
+        internal bool CheckPolicy(Transaction tx, Snapshot snapshot)
+        {
+            UInt160[] blockedAccounts = GetBlockedAccounts(snapshot);
+            if (blockedAccounts.Intersect(tx.GetScriptHashesForVerifying(snapshot)).Any())
+                return false;
+            return true;
         }
 
         private bool CheckValidators(ApplicationEngine engine)
