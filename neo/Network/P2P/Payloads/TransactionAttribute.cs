@@ -10,15 +10,15 @@ namespace Neo.Network.P2P.Payloads
         public TransactionAttributeUsage Usage;
         public byte[] Data;
 
-        public WitnessScope DataAsWitnessScope()
+        public CosignerUsage DataAsCosignerUsage()
         {
-            WitnessScope scope = null;
+            CosignerUsage cousage = null;
             using (MemoryStream ms = new MemoryStream(Data, false))
             using (BinaryReader r = new BinaryReader(ms))
             {
-                scope = r.ReadSerializable<WitnessScope>();
+                cousage = r.ReadSerializable<CosignerUsage>();
             }
-            return scope;
+            return cousage;
         }
 
         public int Size => sizeof(TransactionAttributeUsage) + Data.GetVarSize();

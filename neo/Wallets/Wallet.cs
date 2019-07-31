@@ -276,20 +276,21 @@ namespace Neo.Wallets
                 }
                 if (balances_gas is null)
                     balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
-                TransactionAttribute[] attributes = cosigners.Select(p => new TransactionAttribute
-                {
-                    Usage = TransactionAttributeUsage.Cosigner,
-                    Data = new CosignerUsage
-                    {
-                        Scope = new WitnessScope
+                TransactionAttribute[] attributes = cosigners.Select(p =>
+                        new TransactionAttribute
                         {
-                            // default access for transfers should be 'root-access'
-                            Type = WitnessScopeType.RootAccess,
-                            ScopeData = new byte[0] // no extra data is needed
-                        },
-                        ScriptHash = new UInt160(p.ToArray())
-                    }.ToArray()
-                }).ToArray();
+                            Usage = TransactionAttributeUsage.Cosigner,
+                            Data = new CosignerUsage
+                            {
+                                Scope = new WitnessScope
+                                {
+                                    // default access for transfers should be 'root-access'
+                                    Type = WitnessScopeType.RootAccess,
+                                    ScopeData = new byte[0] // no extra data is needed for 'root-access'
+                                },
+                                ScriptHash = new UInt160(p.ToArray())
+                            }.ToArray()
+                        }).ToArray();
                 return MakeTransaction(snapshot, attributes, script, balances_gas);
             }
         }
@@ -355,12 +356,44 @@ namespace Neo.Wallets
                     if (script is null) continue;
                     if (script.IsSignatureContract())
                     {
-                        size += 1 + 66 + script.GetVarSize();
+                        // get Usage/size for this hash (logic can be vastly improved)
+                        int sz = 0;
+                        for(var i=0; i<attributes.Length; i++)
+                        {
+                            if(attributes[i].Usage == TransactionAttributeUsage.Cosigner)
+                            {
+                                CosignerUsage usage = attributes[i].DataAsCosignerUsage();
+                                if(usage.ScriptHash == hash)
+                                {
+                                    // sz is usually 1 (for Global or RootAccess, and variable size otherwise)
+                                    sz = usage.Scope.Size;
+                                    break;
+                                }
+                            }
+                        }
+
+                        size += sz + 66 + script.GetVarSize();
                         tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] + ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] + InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null);
                     }
                     else if (script.IsMultiSigContract(out int m, out int n))
                     {
-                        int size_inv = 1 + 65 * m;
+                        // get Usage/size for this hash (logic can be vastly improved)
+                        int sz = 0;
+                        for(var i=0; i<attributes.Length; i++)
+                        {
+                            if(attributes[i].Usage == TransactionAttributeUsage.Cosigner)
+                            {
+                                CosignerUsage usage = attributes[i].DataAsCosignerUsage();
+                                if(usage.ScriptHash == hash)
+                                {
+                                    // sz is usually 1 (for Global or RootAccess, and variable size otherwise)
+                                    sz = usage.Scope.Size;
+                                    break;
+                                }
+                            }
+                        }
+
+                        int size_inv = sz + 65 * m;
                         size += IO.Helper.GetVarSize(size_inv) + size_inv + script.GetVarSize();
                         tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] * m;
                         using (ScriptBuilder sb = new ScriptBuilder())
