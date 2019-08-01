@@ -85,8 +85,7 @@ namespace Neo.UnitTests
             {
                 Script = randomBytes,
                 Sender = UInt160.Zero,
-                Attributes = new TransactionAttribute[]{
-                    new TransactionAttribute {
+                Attributes = new TransactionAttribute[] {
                     /*
                     // NO NEED FOR ATTRIBUTE ON ALL TX
                     new TransactionAttribute {
@@ -98,7 +97,6 @@ namespace Neo.UnitTests
                         }.ToArray()
                     }
                     */
-                    }
                 },
                 Witnesses = new[]
                 {
