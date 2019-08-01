@@ -143,61 +143,41 @@ namespace Neo.SmartContract
 
         internal static bool CheckWitness(ApplicationEngine engine, UInt160 hash)
         {
-            if (engine.ScriptContainer?.Witnesses == null) return false;
-
-            Transaction tx = engine.ScriptContainer as Transaction;
-
-            if(tx == null)
+            if (engine.ScriptContainer is Transaction tx)
             {
-                // TODO: check what to do on other cases... such as for Blocks
-                return false;
-            }
-
-            foreach (var attribute in tx.Attributes)
-            {
-                if(attribute.Usage != TransactionAttributeUsage.Cosigner) continue;
-                CosignerUsage usage = attribute.Data.AsSerializable<CosignerUsage>();
-                if (usage.ScriptHash != hash) continue;
-
-                switch (usage.Scope.Type)
+                foreach (var attribute in tx.Attributes)
                 {
-                    case WitnessScopeType.Global:
-                        {
-                            // ignore
-                            break;
-                        }
-                    case WitnessScopeType.CustomScriptHash:
-                        {
-                            // verify if context is correct for execution
-                            if (engine.CurrentScriptHash != new UInt160(usage.Scope.ScopeData))
-                                return false;
-                            break;
-                        }
-                    case WitnessScopeType.RootAccess:
-                        {
-                            // verify if context is correct for execution
-                            if (engine.CurrentScriptHash != engine.EntryScriptHash)
-                                return false;
-                            break;
-                        }
-                    case WitnessScopeType.ExecutingGroupPubKey:
-                        {
-                            var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
-                            if (contract == null || contract.Manifest.Groups == null) return false;
-                            // check if current group is the required one
-                            if (!contract.Manifest.Groups.All(u => u.IsValid(new UInt160(usage.Scope.ScopeData))))
-                                return false;
-                            break;
-                        }
-                    default:
-                        {
-                            // ignore
-                            break;
-                        }
+                    if (attribute.Usage != TransactionAttributeUsage.Cosigner) continue;
+                    CosignerUsage usage = attribute.Data.AsSerializable<CosignerUsage>();
+                    if (usage.ScriptHash != hash) continue;
+
+                    switch (usage.Scope.Type)
+                    {
+                        case WitnessScopeType.Global: return true;
+                        case WitnessScopeType.CustomScriptHash:
+                            {
+                                // verify if context is correct for execution
+                                return engine.CurrentScriptHash == new UInt160(usage.Scope.ScopeData);
+                            }
+                        case WitnessScopeType.RootAccess:
+                            {
+                                // verify if context is correct for execution
+                                return engine.CurrentScriptHash == engine.EntryScriptHash;
+                            }
+                        case WitnessScopeType.ExecutingGroupPubKey:
+                            {
+                                var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
+                                if (contract == null || contract.Manifest.Groups == null) return false;
+                                // check if current group is the required one
+                                return contract.Manifest.Groups.All(u => u.IsValid(new UInt160(usage.Scope.ScopeData)));
+                            }
+                        default: return false;
+                    }
                 }
             }
 
-            return true;
+            var _hashes_for_verifying = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot);
+            return _hashes_for_verifying.Contains(hash);
         }
 
         private static bool CheckWitness(ApplicationEngine engine, ECPoint pubkey)
