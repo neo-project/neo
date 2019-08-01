@@ -273,9 +273,9 @@ namespace Neo.Wallets
                             {
                                 Scope = new WitnessScope
                                 {
-                                    // default access for transfers should be 'root-access'
-                                    Type = WitnessScopeType.RootAccess,
-                                    ScopeData = new byte[0] // no extra data is needed for 'root-access'
+                                    // default access for transfers should be valid only for first invocation
+                                    Type = WitnessScopeType.EntryOnly,
+                                    ScopeData = new byte[0] // no extra data is needed for entry only
                                 },
                                 ScriptHash = new UInt160(p.ToArray())
                             }.ToArray()
@@ -351,7 +351,7 @@ namespace Neo.Wallets
                                 CosignerUsage usage = attributes[i].Data.AsSerializable<CosignerUsage>();
                                 if (usage.ScriptHash == hash)
                                 {
-                                    // sz is usually 1 (for Global or RootAccess, and variable size otherwise)
+                                    // sz is usually 1 (for Global or EntryOnly, and variable size otherwise)
                                     sz = usage.Scope.Size;
                                     break;
                                 }
@@ -372,7 +372,7 @@ namespace Neo.Wallets
                                 CosignerUsage usage = attributes[i].Data.AsSerializable<CosignerUsage>();
                                 if (usage.ScriptHash == hash)
                                 {
-                                    // sz is usually 1 (for Global or RootAccess, and variable size otherwise)
+                                    // sz is usually 1 (for Global or EntryOnly, and variable size otherwise)
                                     sz = usage.Scope.Size;
                                     break;
                                 }
