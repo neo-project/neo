@@ -228,7 +228,7 @@ namespace Neo.Ledger
             {
                 if (Store.ContainsTransaction(tx.Hash))
                     continue;
-                if (!Plugin.CheckPolicy(tx))
+                if (!NativeContract.Policy.CheckPolicy(tx, currentSnapshot))
                     continue;
                 // First remove the tx if it is unverified in the pool.
                 MemPool.TryRemoveUnVerified(tx.Hash, out _);
@@ -361,7 +361,7 @@ namespace Neo.Ledger
                 return RelayResultReason.OutOfMemory;
             if (!transaction.Verify(currentSnapshot, MemPool.GetVerifiedTransactions()))
                 return RelayResultReason.Invalid;
-            if (!Plugin.CheckPolicy(transaction))
+            if (!NativeContract.Policy.CheckPolicy(transaction, currentSnapshot))
                 return RelayResultReason.PolicyFail;
 
             if (!MemPool.TryAdd(transaction.Hash, transaction))
