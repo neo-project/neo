@@ -264,7 +264,8 @@ namespace Neo.Wallets
                 }
                 if (balances_gas is null)
                     balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
-                TransactionAttribute[] attributes = cosigners.Select(p =>
+
+                var attributes = cosigners.Select(p =>
                         new TransactionAttribute
                         {
                             Usage = TransactionAttributeUsage.Cosigner,
