@@ -394,6 +394,7 @@ namespace Neo.Wallets
                         //We can support more contract types in the future.
                     }
                 }
+                Console.WriteLine($"TX SIZE{size} NETEXECFEE{tx.NetworkFee}");
                 tx.NetworkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
