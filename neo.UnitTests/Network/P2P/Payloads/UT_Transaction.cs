@@ -222,6 +222,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // Make transaction
 
+                // self-transfer of 1e-8 GAS
                 var tx = wallet.MakeTransaction(new TransferOutput[]
                 {
                     new TransferOutput()
@@ -234,11 +235,24 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 Assert.IsNotNull(tx);
 
+                // TODO: why this value is here?
+                tx.NetworkFee.Should().Be(1259240);
+
+                // ----
                 // Sign
+                // ----
 
                 var data = new ContractParametersContext(tx);
-                Assert.IsTrue(wallet.Sign(data, WitnessScope.Global));
+                // 'from' is always required as witness
+                data.ScriptHashes.Count.Should().Be(1);
+                data.ScriptHashes[0].ShouldBeEquivalentTo(acc.ScriptHash);
+                // if not included on cosigner with a scope, its scope will be considered 'Global'
+                // why sign 'data' on scope 'global'? doesn't it have a scope already defined by tx itself?
+                bool signed = wallet.Sign(data, WitnessScope.Global);
+                Assert.IsTrue(signed);
+                // get witnesses from signed 'data'
                 tx.Witnesses = data.GetWitnesses();
+                tx.Witnesses.Length.Should().Be(1);
 
                 // Fast check
 

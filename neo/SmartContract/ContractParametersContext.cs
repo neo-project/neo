@@ -73,7 +73,12 @@ namespace Neo.SmartContract
             }
         }
 
+        // Cache for public ScriptHashes field
+
         private UInt160[] _ScriptHashes = null;
+
+        // ScriptHashes are the verifiable ScriptHashes from Verifiable element
+        // Equivalent to: Verifiable.GetScriptHashesForVerifying(Blockchain.Singleton.GetSnapshot())
         public IReadOnlyList<UInt160> ScriptHashes
         {
             get
