@@ -400,7 +400,7 @@ namespace Neo.Wallets
             throw new InvalidOperationException("Insufficient GAS");
         }
 
-        public bool Sign(ContractParametersContext context, WitnessScope scope)
+        public bool Sign(ContractParametersContext context)
         {
             bool fSuccess = false;
             foreach (UInt160 scriptHash in context.ScriptHashes)
@@ -409,7 +409,7 @@ namespace Neo.Wallets
                 if (account?.HasKey != true) continue;
                 KeyPair key = account.GetKey();
                 byte[] signature = context.Verifiable.Sign(key);
-                fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature, scope);
+                fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
             }
             return fSuccess;
         }

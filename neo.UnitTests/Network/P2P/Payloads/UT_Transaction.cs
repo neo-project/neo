@@ -161,8 +161,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // Sign
 
                 var data = new ContractParametersContext(tx);
-                Assert.IsTrue(walletA.Sign(data, WitnessScope.Global));
-                Assert.IsTrue(walletB.Sign(data, WitnessScope.Global));
+                Assert.IsTrue(walletA.Sign(data));
+                Assert.IsTrue(walletB.Sign(data));
                 Assert.IsTrue(data.Completed);
 
                 tx.Witnesses = data.GetWitnesses();
@@ -244,11 +244,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 var data = new ContractParametersContext(tx);
                 // 'from' is always required as witness
+                // if not included on cosigner with a scope, its scope should be considered 'EntryOnly'
                 data.ScriptHashes.Count.Should().Be(1);
                 data.ScriptHashes[0].ShouldBeEquivalentTo(acc.ScriptHash);
-                // if not included on cosigner with a scope, its scope will be considered 'Global'
-                // why sign 'data' on scope 'global'? doesn't it have a scope already defined by tx itself?
-                bool signed = wallet.Sign(data, WitnessScope.Global);
+                // will sign tx
+                bool signed = wallet.Sign(data);
                 Assert.IsTrue(signed);
                 // get witnesses from signed 'data'
                 tx.Witnesses = data.GetWitnesses();
