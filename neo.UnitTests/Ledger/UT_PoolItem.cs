@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Ledger;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using System;
 
@@ -121,15 +122,22 @@ namespace Neo.UnitTests.Ledger
                 Script = overrideScriptBytes ?? new byte[0],
                 Sender = UInt160.Zero,
                 NetworkFee = networkFee,
-                Attributes = new TransactionAttribute[0],
+                Attributes = new TransactionAttribute[]{
+                    new TransactionAttribute {
+                        Usage = TransactionAttributeUsage.Cosigner,
+                        Data = new CosignerUsage
+                        {
+                            Scope = new WitnessScope {
+                                Type = WitnessScopeType.Global,
+                                ScopeData = UInt160.Zero.ToArray()
+                            }
+                        }.ToArray()
+                    }
+                },
                 Witnesses = new[]
                 {
                     new Witness
                     {
-                        Scope = new WitnessScope{
-                            Type = WitnessScopeType.Global,
-                            ScopeData = UInt160.Zero.ToArray()
-                        },
                         InvocationScript = new byte[0],
                         VerificationScript = new byte[0]
                     }

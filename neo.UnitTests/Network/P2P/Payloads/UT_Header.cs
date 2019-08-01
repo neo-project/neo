@@ -55,8 +55,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.Timestamp.Should().Be(timestampVal);
             uut.Index.Should().Be(indexVal);
             uut.NextConsensus.Should().Be(val160);
-            uut.Witness.Scope.Type.Should().Be(WitnessScopeType.Global);
-            uut.Witness.Scope.ScopeData.Should().BeEquivalentTo(UInt160.Zero.ToArray());
             uut.Witness.InvocationScript.Length.Should().Be(0);
             uut.Witness.Size.Should().Be(scriptVal.Size);
             uut.Witness.VerificationScript[0].Should().Be(scriptVal.VerificationScript[0]);

@@ -65,15 +65,22 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             uut.Script = TestUtils.GetByteArray(32, 0x42);
             uut.Sender = UInt160.Zero;
-            uut.Attributes = new TransactionAttribute[0];
+            uut.Attributes = new TransactionAttribute[] {
+                    new TransactionAttribute {
+                        Usage = TransactionAttributeUsage.Cosigner,
+                        Data = new CosignerUsage
+                        {
+                            Scope = new WitnessScope {
+                                Type = WitnessScopeType.Global,
+                                ScopeData = UInt160.Zero.ToArray()
+                            }
+                        }.ToArray()
+                    }
+                };
             uut.Witnesses = new[]
             {
                 new Witness
                 {
-                    Scope = new WitnessScope{
-                        Type = WitnessScopeType.Global,
-                        ScopeData = UInt160.Zero.ToArray()
-                    },
                     InvocationScript = new byte[0],
                     VerificationScript = new byte[0]
                 }
@@ -259,12 +266,19 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.Script = TestUtils.GetByteArray(32, 0x42);
             uut.Sender = UInt160.Zero;
             uut.SystemFee = 4200000000;
-            uut.Attributes = new TransactionAttribute[0];
+            uut.Attributes = new TransactionAttribute[]{
+                    new TransactionAttribute {
+                        Usage = TransactionAttributeUsage.Cosigner,
+                        Data = new CosignerUsage
+                        {
+                            Scope = WitnessScope.Global.Clone()
+                        }.ToArray()
+                    }
+                };
             uut.Witnesses = new[]
             {
                 new Witness
                 {
-                    Scope = WitnessScope.Global.Clone(),
                     InvocationScript = new byte[0],
                     VerificationScript = new byte[0]
                 }

@@ -229,7 +229,6 @@ namespace Neo.SmartContract
                     }
                     witnesses[i] = new Witness
                     {
-                        Scope = item.Scope,
                         InvocationScript = sb.ToArray(),
                         VerificationScript = item.Script ?? new byte[0]
                     };

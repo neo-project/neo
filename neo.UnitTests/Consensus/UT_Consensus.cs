@@ -567,10 +567,6 @@ namespace Neo.UnitTests.Consensus
                 ConsensusMessage = message,
                 Witness = new Witness
                 {
-                    Scope = new WitnessScope{
-                        Type = WitnessScopeType.Global,
-                        ScopeData = UInt160.Zero.ToArray()
-                    },
                     InvocationScript = witnessInvocationScript,
                     VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[validatorIndex])
                 }

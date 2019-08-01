@@ -35,7 +35,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             invocationScript = TestUtils.GetByteArray(lenghtInvocation, 0x20);
             verificationScript = TestUtils.GetByteArray(lengthVerification, 0x20);
-            uut.Scope = WitnessScope.Global.Clone();
             uut.InvocationScript = invocationScript;
             uut.VerificationScript = verificationScript;
         }

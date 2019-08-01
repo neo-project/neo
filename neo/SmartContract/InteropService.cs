@@ -145,11 +145,21 @@ namespace Neo.SmartContract
         {
             if (engine.ScriptContainer?.Witnesses == null) return false;
 
-            foreach (var witness in engine.ScriptContainer.Witnesses)
-            {
-                if (witness.ScriptHash != hash) continue;
+            Transaction tx = engine.ScriptContainer as Transaction;
 
-                switch (witness.Scope.Type)
+            if(tx == null)
+            {
+                // TODO: check what to do on other cases... such as for Blocks
+                return false;
+            }
+
+            foreach (var attribute in tx.Attributes)
+            {
+                if(attribute.Usage != TransactionAttributeUsage.Cosigner) continue;
+                CosignerUsage usage = attribute.Data.AsSerializable<CosignerUsage>();
+                if (usage.ScriptHash != hash) continue;
+
+                switch (usage.Scope.Type)
                 {
                     case WitnessScopeType.Global:
                         {
@@ -159,7 +169,7 @@ namespace Neo.SmartContract
                     case WitnessScopeType.CustomScriptHash:
                         {
                             // verify if context is correct for execution
-                            if (engine.CurrentScriptHash != new UInt160(witness.Scope.ScopeData))
+                            if (engine.CurrentScriptHash != new UInt160(usage.Scope.ScopeData))
                                 return false;
                             break;
                         }
@@ -175,7 +185,7 @@ namespace Neo.SmartContract
                             var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
                             if (contract == null || contract.Manifest.Groups == null) return false;
                             // check if current group is the required one
-                            if (!contract.Manifest.Groups.All(u => u.IsValid(new UInt160(witness.Scope.ScopeData))))
+                            if (!contract.Manifest.Groups.All(u => u.IsValid(new UInt160(usage.Scope.ScopeData))))
                                 return false;
                             break;
                         }
