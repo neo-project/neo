@@ -87,12 +87,17 @@ namespace Neo.UnitTests
                 Sender = UInt160.Zero,
                 Attributes = new TransactionAttribute[]{
                     new TransactionAttribute {
+                    /*
+                    // NO NEED FOR ATTRIBUTE ON ALL TX
+                    new TransactionAttribute {
                         Usage = TransactionAttributeUsage.Cosigner,
                         Data = new CosignerUsage
                         {
                             Scope = WitnessScope.Global.Clone(),
                             ScriptHash = UInt160.Zero
                         }.ToArray()
+                    }
+                    */
                     }
                 },
                 Witnesses = new[]
