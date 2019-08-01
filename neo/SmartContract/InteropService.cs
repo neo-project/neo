@@ -176,8 +176,8 @@ namespace Neo.SmartContract
                 }
             }
 
-            var _hashes_for_verifying = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot);
-            return _hashes_for_verifying.Contains(hash);
+            var hashes_for_verifying = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot);
+            return hashes_for_verifying.Contains(hash);
         }
 
         private static bool CheckWitness(ApplicationEngine engine, ECPoint pubkey)
