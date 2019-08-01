@@ -90,7 +90,8 @@ namespace Neo.UnitTests
                         Usage = TransactionAttributeUsage.Cosigner,
                         Data = new CosignerUsage
                         {
-                            Scope = WitnessScope.Global.Clone()
+                            Scope = WitnessScope.Global.Clone(),
+                            ScriptHash = UInt160.Zero
                         }.ToArray()
                     }
                 },
