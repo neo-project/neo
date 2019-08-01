@@ -128,6 +128,18 @@ namespace Neo.Consensus
             LastChangeViewPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
             for (int i = 0; i < LastChangeViewPayloads.Length; i++)
                 LastChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
+            FuturePreparationPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
+            for (int i = 0; i < FuturePreparationPayloads.Length; i++)
+                FuturePreparationPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
+            FutureCommitPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
+            for (int i = 0; i < FutureCommitPayloads.Length; i++)
+                FutureCommitPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
+            FutureChangeViewPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
+            for (int i = 0; i < FutureChangeViewPayloads.Length; i++)
+                FutureChangeViewPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;
+            FutureRecoveryPayloads = new ConsensusPayload[reader.ReadVarInt(Blockchain.MaxValidators)];
+            for (int i = 0; i < FutureRecoveryPayloads.Length; i++)
+                FutureRecoveryPayloads[i] = reader.ReadBoolean() ? reader.ReadSerializable<ConsensusPayload>() : null;                
         }
 
         public void Dispose()
@@ -398,6 +410,38 @@ namespace Neo.Consensus
             }
             writer.WriteVarInt(LastChangeViewPayloads.Length);
             foreach (var payload in LastChangeViewPayloads)
+            {
+                bool hasPayload = !(payload is null);
+                writer.Write(hasPayload);
+                if (!hasPayload) continue;
+                writer.Write(payload);
+            }
+            writer.WriteVarInt(FuturePreparationPayloads.Length);
+            foreach (var payload in FuturePreparationPayloads)
+            {
+                bool hasPayload = !(payload is null);
+                writer.Write(hasPayload);
+                if (!hasPayload) continue;
+                writer.Write(payload);
+            }
+            writer.WriteVarInt(FutureCommitPayloads.Length);
+            foreach (var payload in FutureCommitPayloads)
+            {
+                bool hasPayload = !(payload is null);
+                writer.Write(hasPayload);
+                if (!hasPayload) continue;
+                writer.Write(payload);
+            }
+            writer.WriteVarInt(FutureChangeViewPayloads.Length);
+            foreach (var payload in FutureChangeViewPayloads)
+            {
+                bool hasPayload = !(payload is null);
+                writer.Write(hasPayload);
+                if (!hasPayload) continue;
+                writer.Write(payload);
+            }
+            writer.WriteVarInt(FutureRecoveryPayloads.Length);
+            foreach (var payload in FutureRecoveryPayloads)
             {
                 bool hasPayload = !(payload is null);
                 writer.Write(hasPayload);
