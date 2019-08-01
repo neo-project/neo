@@ -163,7 +163,7 @@ namespace Neo.SmartContract
                             {
                                 // verify if context is correct for execution
                                 return engine.CallingScriptHash == engine.EntryScriptHash;
-                            }   
+                            }
                         case WitnessScopeType.ExecutingGroupPubKey:
                             {
                                 var contract = engine.Snapshot.Contracts[engine.CallingScriptHash];
