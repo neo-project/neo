@@ -175,8 +175,21 @@ namespace Neo.Consensus
 
         private void Log(string message, LogLevel level = LogLevel.Info)
         {
+            var currentColor = new ConsoleColorSet();
+
+            switch (level)
+            {
+                case LogLevel.Debug: ConsoleColorSet.Debug.Apply(); break;
+                case LogLevel.Error: ConsoleColorSet.Error.Apply(); break;
+                case LogLevel.Fatal: ConsoleColorSet.Fatal.Apply(); break;
+                case LogLevel.Info: ConsoleColorSet.Info.Apply(); break;
+                case LogLevel.Warning: ConsoleColorSet.Warning.Apply(); break;
+            }
+
             Console.WriteLine($"[{DateTime.Now.TimeOfDay:hh\\:mm\\:ss\\.fff}] {message}");
             Plugin.Log(nameof(ConsensusService), level, message);
+
+            currentColor.Apply();
         }
 
         private void OnChangeViewReceived(ConsensusPayload payload, ChangeView message)
