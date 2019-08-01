@@ -122,7 +122,8 @@ namespace Neo.UnitTests.Ledger
                 Script = overrideScriptBytes ?? new byte[0],
                 Sender = UInt160.Zero,
                 NetworkFee = networkFee,
-                Attributes = new TransactionAttribute[]{
+                Attributes = new TransactionAttribute[] {
+                    /*
                     new TransactionAttribute {
                         Usage = TransactionAttributeUsage.Cosigner,
                         Data = new CosignerUsage
@@ -131,8 +132,10 @@ namespace Neo.UnitTests.Ledger
                                 Type = WitnessScopeType.Global,
                                 ScopeData = UInt160.Zero.ToArray()
                             }
+                            // MUST INITIALIZE ScriptHash FIELD HERE TOO!
                         }.ToArray()
                     }
+                    */
                 },
                 Witnesses = new[]
                 {
@@ -143,6 +146,9 @@ namespace Neo.UnitTests.Ledger
                     }
                 }
             };
+
+            tx.Attributes.Length.Should().Be(0);
+            //tx.Attributes[0].Usage.Should().Be(TransactionAttributeUsage.Cosigner);
 
             int diff = size - tx.Size;
             if (diff < 0) throw new ArgumentException();

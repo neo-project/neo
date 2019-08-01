@@ -66,6 +66,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.Script = TestUtils.GetByteArray(32, 0x42);
             uut.Sender = UInt160.Zero;
             uut.Attributes = new TransactionAttribute[] {
+                /*
                     new TransactionAttribute {
                         Usage = TransactionAttributeUsage.Cosigner,
                         Data = new CosignerUsage
@@ -76,6 +77,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                             }
                         }.ToArray()
                     }
+                    */
                 };
             uut.Witnesses = new[]
             {
@@ -89,7 +91,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.Version.Should().Be(0);
             uut.Script.Length.Should().Be(32);
             uut.Script.GetVarSize().Should().Be(33);
-            uut.Size.Should().Be(83);
+            uut.Size.Should().Be(82);
         }
 
         private NEP6Wallet GenerateTestWallet()
@@ -267,6 +269,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.Sender = UInt160.Zero;
             uut.SystemFee = 4200000000;
             uut.Attributes = new TransactionAttribute[]{
+                /*
                     new TransactionAttribute {
                         Usage = TransactionAttributeUsage.Cosigner,
                         Data = new CosignerUsage
@@ -274,6 +277,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                             Scope = WitnessScope.Global.Clone()
                         }.ToArray()
                     }
+                    */
                 };
             uut.Witnesses = new[]
             {
@@ -287,7 +291,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
             jObj["hash"].AsString().Should().Be("0xee00d595ccd48a650f62adaccbb9c979e2dc7ef66fb5b1413f0f74d563a2d9c6");
-            jObj["size"].AsNumber().Should().Be(83);
+            jObj["size"].AsNumber().Should().Be(82);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);
             jObj["net_fee"].AsString().Should().Be("0");
