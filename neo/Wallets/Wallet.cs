@@ -335,51 +335,22 @@ namespace Neo.Wallets
                             tx.SystemFee -= remainder;
                     }
                 }
+
+                // base size for transaction: includes const_header + attributes (including cosigners with scopes) + script + { hashes (what's this ???) }
                 int size = Transaction.HeaderSize + attributes.GetVarSize() + script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
+
                 foreach (UInt160 hash in hashes)
                 {
                     script = GetAccount(hash)?.Contract?.Script ?? snapshot.Contracts.TryGet(hash)?.Script;
                     if (script is null) continue;
                     if (script.IsSignatureContract())
                     {
-                        // get Usage/size for this hash (logic can be vastly improved)
-                        int sz = 0;
-                        for (var i = 0; i < attributes.Length; i++)
-                        {
-                            if (attributes[i].Usage == TransactionAttributeUsage.Cosigner)
-                            {
-                                CosignerUsage usage = attributes[i].Data.AsSerializable<CosignerUsage>();
-                                if (usage.ScriptHash == hash)
-                                {
-                                    // sz is usually 1 (for Global or EntryOnly, and variable size otherwise)
-                                    sz = usage.Scope.Size;
-                                    break;
-                                }
-                            }
-                        }
-
-                        size += sz + 66 + script.GetVarSize();
+                        size += 66 + script.GetVarSize();
                         tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] + ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES33] + InteropService.GetPrice(InteropService.Neo_Crypto_CheckSig, null);
                     }
                     else if (script.IsMultiSigContract(out int m, out int n))
                     {
-                        // get Usage/size for this hash (logic can be vastly improved)
-                        int sz = 0;
-                        for (var i = 0; i < attributes.Length; i++)
-                        {
-                            if (attributes[i].Usage == TransactionAttributeUsage.Cosigner)
-                            {
-                                CosignerUsage usage = attributes[i].Data.AsSerializable<CosignerUsage>();
-                                if (usage.ScriptHash == hash)
-                                {
-                                    // sz is usually 1 (for Global or EntryOnly, and variable size otherwise)
-                                    sz = usage.Scope.Size;
-                                    break;
-                                }
-                            }
-                        }
-
-                        int size_inv = sz + 65 * m;
+                        int size_inv = 65 * m;
                         size += IO.Helper.GetVarSize(size_inv) + size_inv + script.GetVarSize();
                         tx.NetworkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHBYTES64] * m;
                         using (ScriptBuilder sb = new ScriptBuilder())

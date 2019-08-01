@@ -235,8 +235,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 Assert.IsNotNull(tx);
 
-                // TODO: why this value is here?
-                tx.NetworkFee.Should().Be(1259240);
+                // check pre-computed network fee (already guessing signature sizes)
+                tx.NetworkFee.Should().Be(1258240);
 
                 // ----
                 // Sign
@@ -278,16 +278,17 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // ------------------
                 // check tx_size cost
                 // ------------------
-                // 259 there?? Why?
                 Assert.AreEqual(tx.Size, 258);
-                Assert.AreEqual(tx.Size, 259); // result from code
-                    /*
-                    tx.Size  =>  HeaderSize +
-                Attributes.GetVarSize() +   //Attributes
-                Script.GetVarSize() +       //Script
-                Witnesses.GetVarSize();     //Witnesses
-                */
+
+                // will verify tx size, step by step
+                //tx.Size  =>  HeaderSize +
+                //Attributes.GetVarSize() +   //Attributes
+                //Script.GetVarSize() +       //Script
+                //Witnesses.GetVarSize();     //Witnesses
+                
+                // Part I
                 Assert.AreEqual(Transaction.HeaderSize, 45);
+                // Part II
                 Assert.AreEqual(tx.Attributes.GetVarSize(), 24);
                 Assert.AreEqual(tx.Attributes.Length, 1);
                 Assert.AreEqual(tx.Attributes[0].Size, 23);
@@ -295,12 +296,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.AreEqual(tx.Attributes[0].Usage, TransactionAttributeUsage.Cosigner);
                 CosignerUsage usage = tx.Attributes[0].Data.AsSerializable<CosignerUsage>();
                 Assert.IsNotNull(usage);
-                Assert.AreEqual(usage.Size, 21);
                 // Note that Data size and Usage size are different (because of first byte on GetVarSize())
-
+                Assert.AreEqual(usage.Size, 21);
+                // Part III
                 Assert.AreEqual(tx.Script.GetVarSize(), 82);
+                // Part IV
                 Assert.AreEqual(tx.Witnesses.GetVarSize(), 107);
-                Assert.AreEqual(tx.Size, 45 + 24 + 82 + 107);
+                // I + II + III + IV
+                Assert.AreEqual(tx.Size, 45 + 24 + 82 + 107); 
 
                 Assert.AreEqual(NativeContract.Policy.GetFeePerByte(snapshot), 1000);
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
@@ -308,7 +311,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 
                 // final check on sum: verification_cost + tx_size
                 Assert.AreEqual(verificationGas + sizeGas, 1258240);
-                Assert.AreEqual(tx.NetworkFee, 1258240);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
