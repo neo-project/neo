@@ -162,7 +162,7 @@ namespace Neo.SmartContract
                         case WitnessScopeType.RootAccess:
                             {
                                 // verify if context is correct for execution
-                                return engine.CurrentScriptHash == engine.EntryScriptHash;
+                                return engine.CallingScriptHash == engine.EntryScriptHash;
                             }
                         case WitnessScopeType.ExecutingGroupPubKey:
                             {
