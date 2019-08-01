@@ -17,7 +17,9 @@ namespace Neo.Network.P2P.Payloads
 
         public bool HasData => (Type == WitnessScopeType.CustomScriptHash) || (Type == WitnessScopeType.ExecutingGroupPubKey);
 
-        public int Size => 1 + (HasData ? ScopeData.GetVarSize() : 0);
+        public int Size =>
+            sizeof(WitnessScopeType) +              // Type
+            (HasData ? ScopeData.GetVarSize() : 0); // ScopeData
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
@@ -28,7 +30,7 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Type);
-            if(HasData)
+            if (HasData)
                 writer.WriteVarBytes(ScopeData);
         }
 
