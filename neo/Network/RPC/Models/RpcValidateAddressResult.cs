@@ -5,7 +5,7 @@ namespace Neo.Network.RPC.Models
     public class RpcValidateAddressResult
     {
         public string Address { get; set; }
-        
+
         public bool IsValid { get; set; }
 
         public JObject ToJson()
