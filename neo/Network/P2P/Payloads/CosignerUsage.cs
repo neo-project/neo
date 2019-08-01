@@ -22,8 +22,7 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(Scope);
-            if(ScriptHash != null)
-                writer.Write(ScriptHash);
+            writer.Write(ScriptHash);
         }
 
         public JObject ToJson()
