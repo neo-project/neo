@@ -13,41 +13,28 @@ namespace Neo.UnitTests.Extensions
 {
     public static class Nep5NativeContractExtensions
     {
-        internal class ManualWitness : Witness
+        internal class ManualWitness : IVerifiable
         {
-            UInt160 _ScriptHash;
-
-            public override UInt160 ScriptHash => _ScriptHash;
-
-            public ManualWitness(UInt160 scriptHash)
-            {
-                _ScriptHash = scriptHash;
-            }
-        }
-
-        internal class ManualWitnessPayload : IVerifiable
-        {
-            private ManualWitness[] _witness;
+            private readonly UInt160[] _hashForVerify;
 
             public Witness[] Witnesses
             {
-                get => _witness;
+                get => throw new NotImplementedException();
                 set => throw new NotImplementedException();
             }
 
             public int Size => 0;
 
-            public ManualWitnessPayload(params UInt160[] hashForVerify)
+            public ManualWitness(params UInt160[] hashForVerify)
             {
-                _witness = hashForVerify == null ? new ManualWitness[0] :
-                    hashForVerify.Select(u => new ManualWitness(u)).ToArray();
+                _hashForVerify = hashForVerify ?? new UInt160[0];
             }
 
             public void Deserialize(BinaryReader reader) { }
 
             public void DeserializeUnsigned(BinaryReader reader) { }
 
-            public UInt160[] GetScriptHashesForVerifying(Neo.Persistence.Snapshot snapshot) => _witness.Select(u => u.ScriptHash).ToArray();
+            public UInt160[] GetScriptHashesForVerifying(Persistence.Snapshot snapshot) => _hashForVerify;
 
             public void Serialize(BinaryWriter writer) { }
 
@@ -57,7 +44,7 @@ namespace Neo.UnitTests.Extensions
         public static bool Transfer(this NativeContract contract, Neo.Persistence.Snapshot snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)
         {
             var engine = new ApplicationEngine(TriggerType.Application,
-                new ManualWitnessPayload(signFrom ? new UInt160(from) : null), snapshot, 0, true);
+                new ManualWitness(signFrom ? new UInt160(from) : null), snapshot, 0, true);
 
             engine.LoadScript(contract.Script);
 
