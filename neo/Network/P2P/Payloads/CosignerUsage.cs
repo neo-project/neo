@@ -11,7 +11,7 @@ namespace Neo.Network.P2P.Payloads
         public UInt160 ScriptHash;
 
         public int Size =>
-            sizeof(WitnessScope) +                  // Type
+            sizeof(WitnessScope) +                      // Type
             (HasData ? ScopeData.GetVarSize() : 0) +    // ScopeData
             ScriptHash.Size;                            // ScriptHash
 
